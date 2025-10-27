@@ -237,9 +237,36 @@ result = client.exports.create_s3_export(
 print(f"S3 export created: {result.trigger_id}")
 ```
 
-#### Download Dataview as CSV
+### download_dataview_csv()
 
-Download processed data from a Mammoth dataview as a CSV file:
+Download processed data from a Mammoth dataview as a CSV file - a convenient utility for quick data exports.
+
+```python
+download_dataview_csv(
+    workspace_id: int,
+    project_id: int,
+    dataset_id: int,
+    dataview_id: int,
+    output_path: Optional[Union[str, Path]] = None,
+    timeout: int = 300
+) -> Path
+```
+
+**Parameters:**
+- `workspace_id` (int): ID of the workspace
+- `project_id` (int): ID of the project
+- `dataset_id` (int): ID of the dataset
+- `dataview_id` (int): ID of the dataview to export
+- `output_path` (Union[str, Path], optional): Path where to save the CSV file. If None, uses default name
+- `timeout` (int): Timeout in seconds to wait for export completion. Defaults to 300
+
+**Returns:** `Path` - Path to the downloaded CSV file
+
+**Raises:**
+- `MammothAPIError`: If the API request fails
+- `ValueError`: If job processing times out or fails, or if no download URL provided
+
+**Examples:**
 
 ```python
 # Download with default filename
@@ -247,17 +274,31 @@ file_path = client.exports.download_dataview_csv(
     workspace_id=1,
     project_id=1,
     dataset_id=123,
-    view_id=456
+    dataview_id=456
 )
+print(f"CSV downloaded to: {file_path}")
 
 # Download to specific path
 file_path = client.exports.download_dataview_csv(
     workspace_id=1,
     project_id=1,
     dataset_id=123,
-    view_id=456,
+    dataview_id=456,
     output_path="my_export.csv",
     timeout=600  # 10 minutes for large datasets
+)
+
+# Download to custom directory
+from pathlib import Path
+output_dir = Path("exports")
+output_dir.mkdir(exist_ok=True)
+
+file_path = client.exports.download_dataview_csv(
+    workspace_id=1,
+    project_id=1,
+    dataset_id=123,
+    dataview_id=456,
+    output_path=output_dir / "data_export.csv"
 )
 ```
 

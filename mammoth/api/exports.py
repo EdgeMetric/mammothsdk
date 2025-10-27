@@ -118,7 +118,7 @@ class ExportsAPI:
         response = self._client._request(
             "POST",
             f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports",
-            json=export_spec.dict()
+            json=export_spec.model_dump()
         )
         
         # Check if response contains job information (202 response)
@@ -332,13 +332,19 @@ class ExportsAPI:
             raise ValueError("Export job was not created successfully - no job ID returned")
         
         # Wait for job completion using the existing jobs API
-        completed_job = self._client.jobs.wait_for_job(job_id, timeout=timeout)
+        completed_job = self._client.jobs.wait_for_job(job_id, workspace_id=workspace_id, timeout=timeout)
         
         # Extract download URL from job response
-        if not completed_job.response or 'url' not in completed_job.response:
+        # Handle both dict and object responses
+        if isinstance(completed_job, dict):
+            job_response = completed_job.get('response', {})
+        else:
+            job_response = getattr(completed_job, 'response', {})
+            
+        if not job_response or 'url' not in job_response:
             raise ValueError("Export job completed but no download URL was provided")
         
-        download_url = completed_job.response['url']
+        download_url = job_response['url']
         
         # Download the CSV file
         return self._download_file(download_url, output_path)

@@ -11,6 +11,12 @@ from .api.exports import ExportsAPI
 from .exceptions import MammothAPIError, MammothAuthError
 from .api.files import FilesAPI
 from .api.jobs import JobsAPI
+from .api.workspace import WorkspaceAPI
+from .api.clientapps import ClientAppsAPI
+from .api.projects import ProjectsAPI
+from .api.folders import FoldersAPI
+from .api.datasets import DatasetsAPI
+from .api.dataviews import DataviewsAPI
 
 
 class MammothClient:
@@ -75,6 +81,15 @@ class MammothClient:
         self.files = FilesAPI(self)
         self.jobs = JobsAPI(self)
         self.exports = ExportsAPI(self)
+        self.workspaces = WorkspaceAPI(self)
+        self.client_apps = ClientAppsAPI(self)
+        self.projects = ProjectsAPI(self)
+        self.folders = FoldersAPI(self)
+        self.datasets = DatasetsAPI(self)
+        self.dataviews = DataviewsAPI(self)
+        
+        # Cache for auto-detected workspace
+        self._auto_workspace_id = None
     
     def _request(
         self,
@@ -114,14 +129,21 @@ class MammothClient:
         if params:
             request_kwargs['params'] = params
         
+        # Handle headers
+        headers = self.session.headers.copy()
+        if 'headers' in kwargs:
+            headers.update(kwargs.pop('headers'))
+        
         if files:
             # Remove Content-Type header for multipart requests
             request_kwargs['files'] = files
-        elif json:
-            headers = self.session.headers.copy()
             request_kwargs['headers'] = headers
+        elif json:
             headers['Content-Type'] = 'application/json'
+            request_kwargs['headers'] = headers
             request_kwargs['json'] = json
+        else:
+            request_kwargs['headers'] = headers
         
         # Make request with retries
         last_exception = None
@@ -184,6 +206,18 @@ class MammothClient:
         
         # If all retries failed, raise the last exception
         raise last_exception
+    
+    def _auto_detect_workspace_id(self) -> Optional[int]:
+        response = self._request("GET", "/workspaces", params={"fields": "id,name"})
+        print(f"Auto-detect workspaces response: {response}")
+        workspaces = response.get('workspaces', [])
+        if len(workspaces) == 1:
+            return workspaces[0].get('id')
+        return None
+
+    def get_workspace_id(self) -> Optional[int]:
+        #     return self._auto_workspace_id
+        return self._auto_detect_workspace_id()
     
     def test_connection(self) -> bool:
         """

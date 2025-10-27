@@ -1,11 +1,8 @@
 """
-Jobs API client for tracking asynchronous operations in Mammoth.
+Jobs API client for tracking job status in Mammoth.
 """
 
-import time
-from typing import List, Optional
-from ..models.jobs import JobResponse, JobsGetResponse, JobSchema, JobStatus
-from ..exceptions import MammothJobTimeoutError, MammothJobFailedError
+from typing import Optional, Dict, Any, List, Union
 
 
 class JobsAPI:
@@ -14,144 +11,194 @@ class JobsAPI:
     def __init__(self, client):
         self._client = client
     
-    def get_job(self, job_id: int) -> JobSchema:
+    def get_job(
+        self,
+        job_id: int,
+        workspace_id: Optional[int] = None
+    ) -> Dict[str, Any]:
         """
-        Get details of a specific job by its ID.
+        Get job status by ID.
         
         Args:
-            job_id: Unique identifier of the job
+            job_id: ID of the job to track
+            workspace_id: ID of the workspace (auto-detected if not provided)
             
         Returns:
-            JobSchema: Job details including status and response
+            Dict containing job information including status, response, timestamps
             
         Raises:
             MammothAPIError: If the API request fails
         """
-        response = self._client._request("GET", f"/jobs/{job_id}")
-        job_response = JobResponse(**response)
-        return job_response.job
+        if workspace_id is None:
+            workspace_id = self._client.get_workspace_id()
+            if workspace_id is None:
+                raise ValueError("Unable to determine workspace ID from API credentials")
+        
+        headers = {"x-workspace-id": str(workspace_id)}
+        
+        response = self._client._request(
+            "GET",
+            f"/jobs/{job_id}",
+            headers=headers
+        )
+        return response
     
-    def get_jobs(self, job_ids: List[int]) -> List[JobSchema]:
+    def get_jobs(
+        self,
+        job_ids: Union[List[int], str],
+        workspace_id: Optional[int] = None
+    ) -> Dict[str, Any]:
         """
-        Get details of multiple jobs by their IDs.
+        Track multiple job IDs.
         
         Args:
-            job_ids: List of job IDs to retrieve
+            job_ids: List of job IDs or comma-separated string of job IDs
+            workspace_id: ID of the workspace (auto-detected if not provided)
             
         Returns:
-            List[JobSchema]: List of job details
+            Dict containing jobs list with status information
             
         Raises:
             MammothAPIError: If the API request fails
         """
-        params = {"job_ids": ",".join(str(jid) for jid in job_ids)}
-        response = self._client._request("GET", "/jobs", params=params)
-        jobs_response = JobsGetResponse(**response)
-        return jobs_response.jobs
+        if workspace_id is None:
+            workspace_id = self._client.get_workspace_id()
+            if workspace_id is None:
+                raise ValueError("Unable to determine workspace ID from API credentials")
+        
+        # Convert list to comma-separated string if needed
+        if isinstance(job_ids, list):
+            job_ids_str = ",".join(str(job_id) for job_id in job_ids)
+        else:
+            job_ids_str = str(job_ids)
+        
+        params = {
+            "job_ids": job_ids_str
+        }
+        
+        headers = {"x-workspace-id": str(workspace_id)}
+        
+        response = self._client._request(
+            "GET",
+            "/jobs",
+            params=params,
+            headers=headers
+        )
+        return response
     
     def wait_for_job(
-        self, 
-        job_id: int, 
+        self,
+        job_id: int,
+        workspace_id: Optional[int] = None,
         timeout: int = 300,
-        poll_interval: int = 5
-    ) -> JobSchema:
+        poll_interval: int = 2
+    ) -> Dict[str, Any]:
         """
-        Wait for a job to complete, polling until success or failure.
+        Wait for a job to complete and return the result.
         
         Args:
             job_id: ID of the job to wait for
+            workspace_id: ID of the workspace (auto-detected if not provided)
             timeout: Maximum time to wait in seconds (default: 300)
-            poll_interval: Time between polls in seconds (default: 5)
+            poll_interval: Time between polling attempts in seconds (default: 2)
             
         Returns:
-            JobSchema: Final job details when completed
+            Dict containing the completed job information
             
         Raises:
-            MammothJobTimeoutError: If job doesn't complete within timeout
-            MammothJobFailedError: If job fails during execution
+            ValueError: If job fails or times out
+            MammothAPIError: If the API request fails
         """
-        start_time = time.time()
+        import time
         
+        if workspace_id is None:
+            workspace_id = self._client.get_workspace_id()
+            if workspace_id is None:
+                raise ValueError("Unable to determine workspace ID from API credentials")
+        
+        start_time = time.time()
         while time.time() - start_time < timeout:
-            job = self.get_job(job_id)
+            job_response = self.get_job(job_id, workspace_id=workspace_id)
             
-            if job.status == JobStatus.SUCCESS:
+            # Extract job from response
+            if 'job' in job_response:
+                job = job_response['job']
+            else:
+                job = job_response
+            
+            status = job.get('status')
+            
+            if status == 'success':
                 return job
-            elif job.status in [JobStatus.FAILURE, JobStatus.ERROR]:
-                failure_reason = None
-                if hasattr(job, 'response') and isinstance(job.response, dict):
-                    failure_reason = job.response.get('failure_reason')
-                raise MammothJobFailedError(job_id, failure_reason)
-            elif job.status == JobStatus.PROCESSING:
+            elif status in ['failure', 'error']:
+                error_msg = job.get('response', {}).get('error', 'Job failed')
+                raise ValueError(f"Job {job_id} failed: {error_msg}")
+            elif status == 'processing':
+                # Job still running, continue polling
                 time.sleep(poll_interval)
             else:
                 # Unknown status, continue polling
                 time.sleep(poll_interval)
         
-        raise MammothJobTimeoutError(job_id, timeout)
+        # Timeout reached
+        raise ValueError(f"Job {job_id} timed out after {timeout} seconds")
     
     def wait_for_jobs(
         self,
-        job_ids: List[int],
+        job_ids: Union[List[int], str],
         timeout: int = 300,
-        poll_interval: int = 5
-    ) -> List[JobSchema]:
+        poll_interval: int = 2
+    ) -> Dict[str, Any]:
         """
         Wait for multiple jobs to complete.
         
         Args:
-            job_ids: List of job IDs to wait for
-            timeout: Maximum time to wait in seconds (default: 300) 
-            poll_interval: Time between polls in seconds (default: 5)
+            job_ids: List of job IDs or comma-separated string
+            timeout: Maximum time to wait in seconds (default: 300)
+            poll_interval: Time between polling attempts in seconds (default: 2)
             
         Returns:
-            List[JobSchema]: Final job details for all completed jobs
+            Dict containing all completed jobs information
             
         Raises:
-            MammothJobTimeoutError: If any job doesn't complete within timeout
-            MammothJobFailedError: If any job fails during execution
+            ValueError: If any job fails or times out
+            MammothAPIError: If the API request fails
         """
-        completed_jobs = []
-        remaining_job_ids = job_ids.copy()
-        start_time = time.time()
+        import time
         
-        while remaining_job_ids and time.time() - start_time < timeout:
-            jobs = self.get_jobs(remaining_job_ids)
+        # Convert to list if string
+        if isinstance(job_ids, str):
+            job_ids_list = [int(x.strip()) for x in job_ids.split(',')]
+        else:
+            job_ids_list = job_ids
+        
+        start_time = time.time()
+        completed_jobs = {}
+        
+        while time.time() - start_time < timeout:
+            jobs_response = self.get_jobs(job_ids_list)
+            jobs = jobs_response.get('jobs', [])
+            
+            all_completed = True
             
             for job in jobs:
-                if job.status == JobStatus.SUCCESS:
-                    completed_jobs.append(job)
-                    remaining_job_ids.remove(job.id)
-                elif job.status in [JobStatus.FAILURE, JobStatus.ERROR]:
-                    failure_reason = None
-                    if hasattr(job, 'response') and isinstance(job.response, dict):
-                        failure_reason = job.response.get('failure_reason')
-                    raise MammothJobFailedError(job.id, failure_reason)
+                job_id = job.get('id')
+                status = job.get('status')
+                
+                if status == 'success':
+                    completed_jobs[job_id] = job
+                elif status in ['failure', 'error']:
+                    error_msg = job.get('response', {}).get('error', 'Job failed')
+                    raise ValueError(f"Job {job_id} failed: {error_msg}")
+                elif status == 'processing':
+                    all_completed = False
+                else:
+                    all_completed = False
             
-            if remaining_job_ids:
-                time.sleep(poll_interval)
+            if all_completed:
+                return {'jobs': list(completed_jobs.values())}
+            
+            time.sleep(poll_interval)
         
-        if remaining_job_ids:
-            raise MammothJobTimeoutError(remaining_job_ids[0], timeout)
-            
-        return completed_jobs
-    
-    def extract_dataset_ids(self, jobs: List[JobSchema]) -> List[Optional[int]]:
-        """
-        Extract dataset IDs from completed job responses.
-        
-        Args:
-            jobs: List of completed job schemas
-            
-        Returns:
-            List of dataset IDs (None if not found in response)
-        """
-        dataset_ids = []
-        for job in jobs:
-            ds_id = None
-            if (hasattr(job, 'response') and 
-                isinstance(job.response, dict) and 
-                'ds_id' in job.response):
-                ds_id = job.response['ds_id']
-            dataset_ids.append(ds_id)
-        return dataset_ids
+        # Timeout reached
+        raise ValueError(f"Jobs {job_ids_list} timed out after {timeout} seconds")

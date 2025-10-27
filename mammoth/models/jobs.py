@@ -4,46 +4,45 @@ Job-related data models for the Mammoth Analytics SDK.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from typing import Optional, Any, Dict
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class JobStatus(str, Enum):
-    """Status values for jobs."""
+    """Job status enumeration."""
     SUCCESS = "success"
-    FAILURE = "failure" 
+    FAILURE = "failure"
     PROCESSING = "processing"
     ERROR = "error"
 
 
 class JobSchema(BaseModel):
-    """Schema for a job object."""
+    """Job schema model."""
     
-    id: int = Field(..., description="Unique identifier of the job")
-    status: JobStatus = Field(..., description="Current status of the job")
-    response: Dict[str, Any] = Field(..., description="Result of the asynchronous task")
-    last_updated_at: datetime = Field(..., description="Timestamp of the most recent job status update")
-    created_at: datetime = Field(..., description="Timestamp when the asynchronous task was created")
-    path: str = Field(..., description="API request path associated with the job operation")
-    operation: str = Field(..., description="Name of the asynchronous operation tracked by the job")
+    id: int = Field(..., description="Job ID")
+    status: JobStatus = Field(..., description="Job status can be success, failure or processing")
+    response: Dict[str, Any] = Field(..., description="Result of async task is stored in response")
+    last_updated_at: datetime = Field(..., description="Job last updated at is the time when Job status was last updated")
+    created_at: datetime = Field(..., description="Create at is time when async task was created")
+    path: str = Field(..., description="API request path of the Job operation")
+    operation: str = Field(..., description="Operation is async task name which Job is tracking")
 
 
 class JobResponse(BaseModel):
-    """Response model for single job details."""
+    """Job response model."""
     
-    job: JobSchema
+    job: JobSchema = Field(..., description="Job information")
 
 
 class JobsGetResponse(BaseModel):
-    """Response model for multiple jobs."""
+    """Multiple jobs response model."""
     
-    jobs: List[JobSchema] = Field(..., description="List of job objects")
+    jobs: list[JobSchema] = Field(..., description="List of jobs")
 
 
 class ObjectJobSchema(BaseModel):
-    """Schema for job creation response."""
+    """Object job schema model."""
     
-    status_code: Optional[int] = Field(None, description="HTTP status code")
-    job_id: Optional[int] = Field(None, description="Unique identifier for the created job")
+    status_code: Optional[int] = Field(None, description="Status code")
+    job_id: Optional[int] = Field(None, description="Created job id")
     failure_reason: Optional[str] = Field(None, description="Failure reason if status is failure")
-

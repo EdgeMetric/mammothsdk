@@ -143,12 +143,13 @@ class FilesAPI:
             timeout: Timeout in seconds when waiting for completion
             
         Returns:
-            List of dataset IDs if multiple files uploaded, single dataset ID if one file
+            If wait_for_completion=False: Initial job ID for tracking
+            If wait_for_completion=True: List of dataset IDs if multiple files uploaded, 
+            single dataset ID if one file, or None if no datasets created
             
         Raises:
             MammothAPIError: If the API request fails
-            MammothJobTimeoutError: If job processing times out
-            MammothJobFailedError: If job processing fails
+            ValueError: If job processing times out or fails
         """
         # Normalize files to list
         if not isinstance(files, list):
@@ -196,26 +197,46 @@ class FilesAPI:
             for file_obj in opened_files:
                 file_obj.close()
         
-        # Parse job response
-        obj_jobs = [ObjectJobSchema(**obj_job) for obj_job in response]
-        job_ids = [job.job_id for job in obj_jobs if job.job_id is not None]
+        # Parse the new async job response format
+        # Response format: {"id": 19264, "status": "processing", "response": {}, ...}
+        initial_job_id = response.get("id")
         
         if not wait_for_completion:
-            return job_ids
+            return initial_job_id
         
-        # Wait for jobs to complete and extract dataset IDs
-        if job_ids:
-            completed_jobs = self._client.jobs.wait_for_jobs(job_ids, timeout=timeout)
-            dataset_ids = self._client.jobs.extract_dataset_ids(completed_jobs)
+        # Wait for initial job to complete
+        if initial_job_id:
+            # Step 1: Wait for the initial validation/upload job
+            completed_initial_job = self._client.jobs.wait_for_job(initial_job_id, workspace_id=workspace_id, timeout=timeout)
             
-            # Filter out None values
-            valid_dataset_ids = [ds_id for ds_id in dataset_ids if ds_id is not None]
+            # Step 2: Extract nested job_ids from the response
+            # Format: {"response": {"job_ids": [{"job_id": 19265}]}}
+            job_response = completed_initial_job.get('response', {})
+            nested_job_ids = job_response.get('job_ids', [])
             
+            if not nested_job_ids:
+                return None
+            
+            # Step 3: Wait for the nested jobs (actual file processing) to complete
+            dataset_ids = []
+            for job_info in nested_job_ids:
+                nested_job_id = job_info.get('job_id')
+                if nested_job_id:
+                    completed_nested_job = self._client.jobs.wait_for_job(nested_job_id, workspace_id=workspace_id, timeout=timeout)
+                    
+                    # Extract ds_id from the nested job response
+                    # Format: {"response": {"ds_id": 1569, "status": "ready"}}
+                    nested_response = completed_nested_job.get('response', {})
+                    ds_id = nested_response.get('ds_id')
+                    if ds_id:
+                        dataset_ids.append(ds_id)
+            
+            # Return single dataset ID for single file, list for multiple files
             if len(files) == 1:
-                return valid_dataset_ids[0] if valid_dataset_ids else None
-            return valid_dataset_ids
+                return dataset_ids[0] if dataset_ids else None
+            return dataset_ids
         
-        return [] if len(files) > 1 else None
+        return None
     
     def delete_file(
         self,
@@ -288,7 +309,7 @@ class FilesAPI:
         response = self._client._request(
             "PATCH",
             f"/workspaces/{workspace_id}/projects/{project_id}/files/{file_id}",
-            json=patch_request.dict()
+            json=patch_request.model_dump()
         )
         return ObjectJobSchema(**response)
     

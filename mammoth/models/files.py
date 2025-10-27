@@ -5,7 +5,7 @@ File-related data models for the Mammoth Analytics SDK.
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional, Union, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class SheetInfo(BaseModel):
@@ -100,8 +100,8 @@ class FilePatchRequest(BaseModel):
     
     patch: List[FilePatchData] = Field(..., description="List of patch operations")
     
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "patch": [
@@ -126,5 +126,6 @@ class FilePatchRequest(BaseModel):
                 }
             ]
         }
+    )
 
 
