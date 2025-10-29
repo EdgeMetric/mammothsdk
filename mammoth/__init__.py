@@ -6,6 +6,7 @@ A Python client for the Mammoth Analytics platform API.
 
 from .client import MammothClient
 from .exceptions import MammothError, MammothAPIError, MammothAuthError
+from .helpers import parse_path
 from .models import *
 
 __version__ = "0.1.0"
@@ -14,4 +15,5 @@ __all__ = [
     "MammothError", 
     "MammothAPIError",
     "MammothAuthError",
+    "parse_path",
 ]

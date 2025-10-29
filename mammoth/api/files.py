@@ -20,8 +20,6 @@ class FilesAPI:
     
     def list_files(
         self,
-        workspace_id: int,
-        project_id: int,
         fields: Optional[str] = None,
         file_ids: Optional[List[int]] = None,
         names: Optional[List[str]] = None,
@@ -36,8 +34,6 @@ class FilesAPI:
         List files in a project with optional filtering and pagination.
         
         Args:
-            workspace_id: ID of the workspace
-            project_id: ID of the project  
             fields: Fields to return (e.g., "__standard", "__full", "__min", or comma-separated)
             file_ids: List of specific file IDs to retrieve
             names: List of file names to filter by
@@ -54,6 +50,11 @@ class FilesAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
         params = {}
         
         if fields:
@@ -84,8 +85,6 @@ class FilesAPI:
     
     def get_file_details(
         self,
-        workspace_id: int,
-        project_id: int,
         file_id: int,
         fields: Optional[str] = None
     ) -> FileSchema:
@@ -93,8 +92,6 @@ class FilesAPI:
         Get detailed information about a specific file.
         
         Args:
-            workspace_id: ID of the workspace
-            project_id: ID of the project
             file_id: ID of the file
             fields: Fields to return (default: "__standard")
             
@@ -104,6 +101,11 @@ class FilesAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
         params = {}
         if fields:
             params["fields"] = fields
@@ -118,9 +120,7 @@ class FilesAPI:
     
     def upload_files(
         self,
-        workspace_id: int,
-        project_id: int,
-        files: Union[List[Union[str, Path, BinaryIO]], str, Path, BinaryIO],
+        files: Union[List[Union[str, Path, BinaryIO]], str, Path, BinaryIO] = None,
         folder_resource_id: Optional[str] = None,
         append_to_ds_id: Optional[int] = None,
         override_target_schema: Optional[bool] = None,
@@ -133,8 +133,6 @@ class FilesAPI:
         will be preserved, and the files will be placed in their respective folders.
         
         Args:
-            workspace_id: ID of the workspace
-            project_id: ID of the project
             files: File(s) to upload - can be file paths, Path objects, or file-like objects
             folder_resource_id: Resource ID of target folder. This is the resource ID of the Mammoth folder
             append_to_ds_id: Dataset ID to append to (if appending to existing dataset)
@@ -143,13 +141,22 @@ class FilesAPI:
             timeout: Timeout in seconds when waiting for completion
             
         Returns:
-            List of dataset IDs if multiple files uploaded, single dataset ID if one file
+            If wait_for_completion=False: Initial job ID for tracking
+            If wait_for_completion=True: List of dataset IDs if multiple files uploaded, 
+            single dataset ID if one file, or None if no datasets created
             
         Raises:
             MammothAPIError: If the API request fails
-            MammothJobTimeoutError: If job processing times out
-            MammothJobFailedError: If job processing fails
+            ValueError: If job processing times out or fails
         """
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        
+        if files is None:
+            raise ValueError("files parameter is required")
         # Normalize files to list
         if not isinstance(files, list):
             files = [files]
@@ -196,44 +203,106 @@ class FilesAPI:
             for file_obj in opened_files:
                 file_obj.close()
         
-        # Parse job response
-        obj_jobs = [ObjectJobSchema(**obj_job) for obj_job in response]
-        job_ids = [job.job_id for job in obj_jobs if job.job_id is not None]
+        # Parse the new async job response format
+        # Response format: {"id": 19264, "status": "processing", "response": {}, ...}
+        initial_job_id = response.get("id")
         
         if not wait_for_completion:
-            return job_ids
+            return initial_job_id
         
-        # Wait for jobs to complete and extract dataset IDs
-        if job_ids:
-            completed_jobs = self._client.jobs.wait_for_jobs(job_ids, timeout=timeout)
-            dataset_ids = self._client.jobs.extract_dataset_ids(completed_jobs)
+        # Wait for initial job to complete
+        if initial_job_id:
+            # Step 1: Wait for the initial validation/upload job
+            completed_initial_job = self._client.jobs.wait_for_job(initial_job_id, timeout=timeout)
             
-            # Filter out None values
-            valid_dataset_ids = [ds_id for ds_id in dataset_ids if ds_id is not None]
+            # Step 2: Extract nested job_ids from the response
+            # Format: {"response": {"job_ids": [{"job_id": 19265}]}}
+            job_response = completed_initial_job.get('response', {})
+            nested_job_ids = job_response.get('job_ids', [])
             
+            if not nested_job_ids:
+                return None
+            
+            # Step 3: Wait for the nested jobs (actual file processing) to complete
+            dataset_ids = []
+            for job_info in nested_job_ids:
+                nested_job_id = job_info.get('job_id')
+                if nested_job_id:
+                    completed_nested_job = self._client.jobs.wait_for_job(nested_job_id, timeout=timeout)
+                    
+                    # Extract ds_id from the nested job response
+                    # Format: {"response": {"ds_id": 1569, "status": "ready"}}
+                    nested_response = completed_nested_job.get('response', {})
+                    ds_id = nested_response.get('ds_id')
+                    if ds_id:
+                        dataset_ids.append(ds_id)
+            
+            # Return single dataset ID for single file, list for multiple files
             if len(files) == 1:
-                return valid_dataset_ids[0] if valid_dataset_ids else None
-            return valid_dataset_ids
+                return dataset_ids[0] if dataset_ids else None
+            return dataset_ids
         
-        return [] if len(files) > 1 else None
+        return None
+    
+    def upload_folder(
+        self,
+        folder_path: Union[str, Path],
+        folder_resource_id: Optional[str] = None,
+        wait_for_completion: bool = True,
+        timeout: int = 300
+    ) -> Union[List[int], int, None]:
+        """
+        Upload all files in a folder to create datasets.
+        
+        Args:
+            folder_path: Path to the folder containing files to upload
+            folder_resource_id: Resource ID of target folder in Mammoth
+            wait_for_completion: Whether to wait for upload processing to complete
+            timeout: Timeout in seconds when waiting for completion
+            
+        Returns:
+            If wait_for_completion=False: Initial job ID for tracking
+            If wait_for_completion=True: List of dataset IDs
+            
+        Raises:
+            MammothAPIError: If the API request fails
+            ValueError: If folder doesn't exist or contains no files
+        """
+        folder_path = Path(folder_path)
+        if not folder_path.exists() or not folder_path.is_dir():
+            raise ValueError(f"Folder not found or not a directory: {folder_path}")
+        
+        # Find all files in the folder (non-recursive for now)
+        files = [f for f in folder_path.iterdir() if f.is_file()]
+        if not files:
+            raise ValueError(f"No files found in folder: {folder_path}")
+        
+        # Use the existing upload_files method
+        return self.upload_files(
+            files=files,
+            folder_resource_id=folder_resource_id,
+            wait_for_completion=wait_for_completion,
+            timeout=timeout
+        )
     
     def delete_file(
         self,
-        workspace_id: int,
-        project_id: int, 
         file_id: int
     ) -> None:
         """
         Delete a specific file.
         
         Args:
-            workspace_id: ID of the workspace
-            project_id: ID of the project
             file_id: ID of the file to delete
             
         Raises:
             MammothAPIError: If the API request fails
         """
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
         self._client._request(
             "DELETE",
             f"/workspaces/{workspace_id}/projects/{project_id}/files/{file_id}"
@@ -241,21 +310,22 @@ class FilesAPI:
     
     def delete_files(
         self,
-        workspace_id: int,
-        project_id: int,
         file_ids: List[int]
     ) -> None:
         """
         Delete multiple files.
         
         Args:
-            workspace_id: ID of the workspace
-            project_id: ID of the project
             file_ids: List of file IDs to delete
             
         Raises:
             MammothAPIError: If the API request fails
         """
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
         params = {"ids": ",".join(str(fid) for fid in file_ids)}
         self._client._request(
             "DELETE",
@@ -265,8 +335,6 @@ class FilesAPI:
     
     def update_file_config(
         self,
-        workspace_id: int,
-        project_id: int,
         file_id: int,
         patch_request: FilePatchRequest
     ) -> ObjectJobSchema:
@@ -274,8 +342,6 @@ class FilesAPI:
         Update file configuration (e.g., set password, extract sheets).
         
         Args:
-            workspace_id: ID of the workspace
-            project_id: ID of the project
             file_id: ID of the file to update
             patch_request: Configuration changes to apply
             
@@ -285,17 +351,20 @@ class FilesAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
         response = self._client._request(
             "PATCH",
             f"/workspaces/{workspace_id}/projects/{project_id}/files/{file_id}",
-            json=patch_request.dict()
+            json=patch_request.model_dump()
         )
         return ObjectJobSchema(**response)
     
     def set_file_password(
         self,
-        workspace_id: int,
-        project_id: int,
         file_id: int,
         password: str
     ) -> ObjectJobSchema:
@@ -303,8 +372,6 @@ class FilesAPI:
         Set password for a password-protected file.
         
         Args:
-            workspace_id: ID of the workspace
-            project_id: ID of the project  
             file_id: ID of the file
             password: Password to set
             
@@ -317,12 +384,10 @@ class FilesAPI:
             value=password
         )
         patch_request = FilePatchRequest(patch=[patch_data])
-        return self.update_file_config(workspace_id, project_id, file_id, patch_request)
+        return self.update_file_config(file_id, patch_request)
     
     def extract_sheets(
         self,
-        workspace_id: int,
-        project_id: int,
         file_id: int,
         sheets: List[str],
         delete_file_after_extract: bool = True,
@@ -332,8 +397,6 @@ class FilesAPI:
         Extract specific sheets from an Excel file.
         
         Args:
-            workspace_id: ID of the workspace
-            project_id: ID of the project
             file_id: ID of the Excel file
             sheets: List of sheet names to extract
             delete_file_after_extract: Whether to delete main file after extraction
@@ -356,4 +419,4 @@ class FilesAPI:
             value=extract_config
         )
         patch_request = FilePatchRequest(patch=[patch_data])
-        return self.update_file_config(workspace_id, project_id, file_id, patch_request)
+        return self.update_file_config(file_id, patch_request)

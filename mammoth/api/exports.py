@@ -10,6 +10,7 @@ from ..models.exports import (
 from ..models.jobs import JobResponse
 from pathlib import Path
 import requests
+from .jobs import JobsAPI
 
 
 class ExportsAPI:
@@ -17,12 +18,57 @@ class ExportsAPI:
     
     def __init__(self, client):
         self._client = client
+        self._jobs_api = JobsAPI(client)
+
+    def _find_dataset_for_dataview(self, dataview_id: int) -> int:
+        """
+        Internal helper to find which dataset contains the specified dataview.
+        
+        Args:
+            dataview_id: ID of the dataview to search for
+            
+        Returns:
+            int: The dataset_id that contains this dataview
+            
+        Raises:
+            ValueError: If dataview is not found in any dataset
+        """
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        
+        # Get all datasets in the project
+        datasets_response = self._client.datasets.list_datasets(
+            workspace_id=workspace_id,
+            project_id=project_id
+        )
+        
+        # Search through each dataset's dataviews
+        for dataset in datasets_response.get('datasets', []):
+            dataset_id = dataset['id']
+            try:
+                # Get dataviews for this dataset
+                dataviews_response = self._client.dataviews.list_dataviews(
+                    dataset_id=dataset_id,
+                    workspace_id=workspace_id,
+                    project_id=project_id
+                )
+                
+                # Check if our target dataview_id is in this dataset
+                for dataview in dataviews_response.get('dataviews', []):
+                    if dataview.get('id') == dataview_id:
+                        return dataset_id
+                        
+            except Exception:
+                # Skip datasets we can't access
+                continue
+        
+        raise ValueError(f"Dataview {dataview_id} not found in any dataset in project {project_id}")
+    
     
     def list_exports(
         self,
-        workspace_id: int,
-        project_id: int,
-        dataset_id: int,
         dataview_id: int,
         fields: Optional[str] = None,
         limit: int = 50,
@@ -39,9 +85,6 @@ class ExportsAPI:
         Get dataview pipeline exports information with optional filtering and pagination.
         
         Args:
-            workspace_id: ID of the workspace
-            project_id: ID of the project
-            dataset_id: ID of the dataset
             dataview_id: ID of the dataview
             fields: Fields to return (e.g., "__standard", "__full", "__min", or comma-separated)
             limit: Maximum number of results (0-100, default: 50)
@@ -60,6 +103,14 @@ class ExportsAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        
+        # Auto-detect dataset_id - completely internal
+        dataset_id = self._find_dataset_for_dataview(dataview_id)
         params = {}
         
         if fields:
@@ -92,21 +143,19 @@ class ExportsAPI:
     
     def add_export(
         self,
-        workspace_id: int,
-        project_id: int,
-        dataset_id: int,
         dataview_id: int,
-        export_spec: AddExportSpec
+        export_spec: AddExportSpec,
+        dataset_id: Optional[int] = None,
+        project_id: Optional[int] = None
     ) -> Union[PipelineExportsModificationResp, JobResponse]:
         """
         Add a new export to the dataview pipeline.
         
         Args:
-            workspace_id: ID of the workspace
-            project_id: ID of the project
-            dataset_id: ID of the dataset
             dataview_id: ID of the dataview
             export_spec: Export specification defining the export configuration
+            dataset_id: ID of the dataset (required for API call)
+            project_id: ID of the project (uses client default if not provided)
             
         Returns:
             PipelineExportsModificationResp: If export is added/draft mode (201)
@@ -115,10 +164,19 @@ class ExportsAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
+        # Use client's workspace_id and project_id if not provided
+        workspace_id = self._client.workspace_id
+        if project_id is None:
+            project_id = getattr(self._client, 'project_id', None)
+            if project_id is None:
+                raise ValueError("project_id must be provided either to the method or set on the client")
+        
+        if dataset_id is None:
+            raise ValueError("dataset_id is required for adding exports")
         response = self._client._request(
             "POST",
             f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports",
-            json=export_spec.dict()
+            json=export_spec.model_dump()
         )
         
         # Check if response contains job information (202 response)
@@ -130,11 +188,8 @@ class ExportsAPI:
     
     def create_s3_export(
         self,
-        workspace_id: int,
-        project_id: int,
-        dataset_id: int,
         dataview_id: int,
-        file: str,
+        file: Optional[str] = None,
         file_type: str = "csv",
         include_hidden: bool = False,
         is_format_set: bool = True,
@@ -142,21 +197,19 @@ class ExportsAPI:
         sequence: Optional[int] = None,
         trigger_id: Optional[int] = None,
         end_of_pipeline: bool = True,
-        trigger_type: TriggerType = TriggerType.NONE,
+        trigger_type: TriggerType = TriggerType.PIPELINE,
         condition: Optional[dict] = None,
         run_immediately: bool = True,
         validate_only: bool = False,
-        additional_properties: Optional[dict] = None
-    ) -> Union[PipelineExportsModificationResp, JobResponse]:
+        additional_properties: Optional[dict] = None,
+        dataset_id: Optional[int] = None
+    ) -> Union[PipelineExportsModificationResp, JobResponse, dict]:
         """
         Create an S3 export with simplified parameters.
         
         Args:
-            workspace_id: ID of the workspace
-            project_id: ID of the project
-            dataset_id: ID of the dataset
             dataview_id: ID of the dataview
-            file: Output filename
+            file: Output filename (default: auto-generated from dataview_id)
             file_type: File format type (default: "csv")
             include_hidden: Include hidden columns (default: False)
             is_format_set: Format explicitly set (default: True)
@@ -164,16 +217,33 @@ class ExportsAPI:
             sequence: Position in pipeline (default: None - append to end)
             trigger_id: Trigger ID for editing existing export (default: None)
             end_of_pipeline: Execute at end of pipeline (default: True)
-            trigger_type: Type of trigger (default: NONE)
+            trigger_type: Type of trigger (default: PIPELINE)
             condition: Export conditions (default: empty dict)
             run_immediately: Execute immediately (default: True)
             validate_only: Only validate config (default: False)
             additional_properties: Additional configuration (default: empty dict)
+            dataset_id: ID of the dataset (optional, will auto-detect if not provided)
             
         Returns:
-            PipelineExportsModificationResp or JobResponse: Result of the operation
+            Dict with URL and trigger_id if job completes, otherwise JobResponse
         """
         from ..models.exports import S3TargetProperties
+        
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        
+        # Use provided dataset_id or auto-detect
+        if dataset_id is None:
+            dataset_id = self._find_dataset_for_dataview(dataview_id)
+        
+        # Generate default filename if not provided
+        if file is None:
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            file = f"dataview_{dataview_id}_export_{timestamp}.{file_type}"
         
         target_properties = S3TargetProperties(
             file=file,
@@ -197,13 +267,26 @@ class ExportsAPI:
             validate_only=validate_only
         )
         
-        return self.add_export(workspace_id, project_id, dataset_id, dataview_id, export_spec)
+        export_result = self.add_export(dataview_id, export_spec, dataset_id, project_id)
+        
+        # Wait for job completion 
+        if hasattr(export_result, 'job') and export_result.job and export_result.job.id:
+            job_id = export_result.job.id
+            print(f"Waiting for export job {job_id} to complete...")
+            
+            # Wait for job completion
+            completed_job = self._jobs_api.wait_for_job(job_id, timeout=300)
+            
+            # Extract URL and trigger ID from completed job
+            if completed_job.get('response', {}).get('url'):
+                return {'url': completed_job['response']['url'], 'trigger_id': completed_job['response'].get('trigger_id')}
+            
+            return completed_job
+        
+        return export_result
     
     def create_internal_dataset_export(
         self,
-        workspace_id: int,
-        project_id: int,
-        dataset_id: int,
         dataview_id: int,
         dataset_name: str,
         column_mapping: Optional[dict] = None,
@@ -220,11 +303,10 @@ class ExportsAPI:
         Create an internal dataset export with simplified parameters.
         
         Args:
-            workspace_id: ID of the workspace
-            project_id: ID of the project
-            dataset_id: ID of the dataset
             dataview_id: ID of the dataview
             dataset_name: Name for the created dataset
+            dataset_id: ID of the dataset (required for API call)
+            project_id: ID of the project (uses client default if not provided)
             column_mapping: Column mapping configuration (default: None)
             sequence: Position in pipeline (default: None - append to end)
             trigger_id: Trigger ID for editing existing export (default: None)
@@ -238,6 +320,15 @@ class ExportsAPI:
         Returns:
             PipelineExportsModificationResp or JobResponse: Result of the operation
         """
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        
+        # Auto-detect dataset_id - completely internal
+        dataset_id = self._find_dataset_for_dataview(dataview_id)
+        
         target_properties = {
             "dataset_name": dataset_name
         }
@@ -258,16 +349,14 @@ class ExportsAPI:
             validate_only=validate_only
         )
         
-        return self.add_export(workspace_id, project_id, dataset_id, dataview_id, export_spec)
+        return self.add_export(dataview_id, export_spec, dataset_id, project_id)
 
     def download_dataview_csv(
         self,
-        workspace_id: int,
-        project_id: int,
-        dataset_id: int,
         dataview_id: int,
         output_path: Optional[Union[str, Path]] = None,
-        timeout: int = 300
+        timeout: int = 300,
+        dataset_id: Optional[int] = None
     ) -> Path:
         """
         Download dataview data as a CSV file.
@@ -276,12 +365,10 @@ class ExportsAPI:
         and downloads the resulting CSV file from the provided URL.
         
         Args:
-            workspace_id: ID of the workspace
-            project_id: ID of the project
-            dataset_id: ID of the dataset
             dataview_id: ID of the dataview to export
             output_path: Path where to save the CSV file. If None, uses a default name
             timeout: Timeout in seconds to wait for export completion (default: 300)
+            dataset_id: ID of the dataset (optional, will auto-detect if not provided)
             
         Returns:
             Path: Path to the downloaded CSV file
@@ -290,8 +377,15 @@ class ExportsAPI:
             MammothAPIError: If the API request fails
             MammothJobTimeoutError: If export job times out
             MammothJobFailedError: If export job fails
-            ValueError: If the job response doesn't contain a download URL
+            ValueError: If dataview is not found or client configuration is missing
         """
+        project_id = getattr(self._client, 'project_id', None)
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        
+        # Use provided dataset_id or auto-detect
+        if dataset_id is None:
+            dataset_id = self._find_dataset_for_dataview(dataview_id)
         # Determine output file path
         if output_path is None:
             output_path = f"dataview_{dataset_id}_{dataview_id}_export.csv"
@@ -318,30 +412,29 @@ class ExportsAPI:
         )
         
         # Create the export job
-        export_result = self.add_export(workspace_id, project_id, dataset_id, dataview_id, export_spec)
+        export_result = self.add_export(dataview_id, export_spec, dataset_id)
         
-        # Extract job ID from the result
-        job_id = None
-        if isinstance(export_result, JobResponse):
-            job_id = export_result.job.id if export_result.job else None
-        elif hasattr(export_result, 'future_id') and export_result.future_id:
-            # If we get a modification response with future_id, use that as job_id
-            job_id = export_result.future_id
-        
-        if not job_id:
-            raise ValueError("Export job was not created successfully - no job ID returned")
-        
-        # Wait for job completion using the existing jobs API
-        completed_job = self._client.jobs.wait_for_job(job_id, timeout=timeout)
-        
-        # Extract download URL from job response
-        if not completed_job.response or 'url' not in completed_job.response:
-            raise ValueError("Export job completed but no download URL was provided")
-        
-        download_url = completed_job.response['url']
-        
-        # Download the CSV file
-        return self._download_file(download_url, output_path)
+        # Wait for job completion and download the file
+        if hasattr(export_result, 'job') and export_result.job and export_result.job.id:
+            job_id = export_result.job.id
+            print(f"Waiting for export job {job_id} to complete...")
+            
+            # Wait for job completion
+            completed_job = self._jobs_api.wait_for_job(job_id, timeout)
+            
+            # Extract download URL from completed job
+            if completed_job.get('response', {}).get('url'):
+                download_url = completed_job['response']['url']
+                print(f"Download URL: {download_url}")
+                
+                # Download the file
+                downloaded_file = self._download_file(download_url, output_path)
+                return downloaded_file
+            else:
+                raise ValueError(f"No download URL found in completed job {job_id}")
+        else:
+            raise ValueError("No job ID found in export result")
+
     
     def _download_file(self, url: str, output_path: Path) -> Path:
         """

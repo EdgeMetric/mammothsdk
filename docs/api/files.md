@@ -43,13 +43,20 @@ upload_files(
 - `timeout` (int): Timeout in seconds when waiting for completion. Defaults to 300
 
 **Returns:**
-- Single file: `int` (dataset ID) or `None`
-- Multiple files: `List[int]` (list of dataset IDs)
+- If `wait_for_completion=False`: Initial job ID (`int`) for tracking
+- If `wait_for_completion=True`:
+  - Single file: `int` (dataset ID) or `None` if no dataset created
+  - Multiple files: `List[int]` (list of dataset IDs)
 
 **Raises:**
 - `MammothAPIError`: If the API request fails
-- `MammothJobTimeoutError`: If job processing times out
-- `MammothJobFailedError`: If job processing fails
+- `ValueError`: If job processing times out or fails
+
+**New Async Job Handling:**
+The upload process now uses a two-step async job system:
+1. Initial validation/upload job returns with job ID
+2. Nested processing jobs handle actual file processing and return dataset IDs
+3. The SDK automatically handles both steps when `wait_for_completion=True`
 
 **Examples:**
 
@@ -85,13 +92,28 @@ dataset_id = client.files.upload_files(
     override_target_schema=False
 )
 
-# Async upload (don't wait)
-job_ids = client.files.upload_files(
+# Async upload (don't wait for completion)
+initial_job_id = client.files.upload_files(
     workspace_id=1,
     project_id=1,
     files="large_file.csv",
     wait_for_completion=False
 )
+print(f"Upload started with job ID: {initial_job_id}")
+
+# Later, manually track the job
+job_status = client.jobs.get_job(initial_job_id, workspace_id=1)
+print(f"Job status: {job_status['status']}")
+
+# Wait for completion when ready
+completed_job = client.jobs.wait_for_job(initial_job_id, workspace_id=1)
+# Extract nested job IDs for actual file processing
+nested_jobs = completed_job['response']['job_ids']
+for nested_job_info in nested_jobs:
+    nested_job_id = nested_job_info['job_id']
+    nested_completed = client.jobs.wait_for_job(nested_job_id, workspace_id=1)
+    dataset_id = nested_completed['response']['ds_id']
+    print(f"Dataset created: {dataset_id}")
 ```
 
 ### list_files()

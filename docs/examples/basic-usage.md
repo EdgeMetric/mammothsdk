@@ -6,13 +6,13 @@ This guide provides simple, practical examples to get you started with the Mammo
 
 ```python
 import os
-from mammoth import MammothClient
+from mammoth import MammothClient, parse_path
 
 # Initialize the client with environment variables (recommended)
 client = MammothClient(
     api_key=os.getenv("MAMMOTH_API_KEY"),
     api_secret=os.getenv("MAMMOTH_API_SECRET"),
-    base_url=os.getenv("MAMMOTH_BASE_URL", "https://api.mammoth.io")
+    base_url=os.getenv("MAMMOTH_BASE_URL", "https://app.mammoth.io/api/v2")
 )
 
 # Test the connection
@@ -20,6 +20,25 @@ if client.test_connection():
     print("✓ Connected to Mammoth successfully!")
 else:
     print("✗ Connection failed. Check your credentials.")
+```
+
+## URL Parsing for Easy Setup
+
+The SDK includes a convenient utility to extract workspace, project, and dataview IDs from Mammoth URLs:
+
+```python
+# Parse a Mammoth URL to get IDs
+url = "https://mirai.mammoth.io/#/workspaces/11/projects/426/views/1699"
+parsed_ids = parse_path(url)
+
+workspace_id = parsed_ids['workspace_id']  # 11
+project_id = parsed_ids['project_id']      # 426  
+dataview_id = parsed_ids['dataview_id']    # 1699
+
+print(f"Extracted - Workspace: {workspace_id}, Project: {project_id}, Dataview: {dataview_id}")
+
+# Use these IDs in your API calls
+client = MammothClient(api_key="...", api_secret="...", base_url="...")
 ```
 
 ## File Upload Examples
@@ -35,6 +54,46 @@ dataset_id = client.files.upload_files(
 )
 
 print(f"✓ File uploaded! Dataset ID: {dataset_id}")
+```
+
+### Upload File and Download as CSV
+
+**Problem:** You want to upload a file, let Mammoth process it, and then download the cleaned data as CSV.
+
+```python
+# Step 1: Upload file
+print("📤 Uploading file...")
+dataset_id = client.files.upload_files(
+    workspace_id=1,
+    project_id=1,
+    files="raw_data.csv"
+)
+print(f"✅ Dataset created: {dataset_id}")
+
+# Step 2: Get dataviews for the dataset
+print("🔍 Getting dataviews...")
+dataviews = client.dataviews.list_dataviews(
+    dataset_id=dataset_id,
+    workspace_id=1,
+    project_id=1
+)
+
+# Step 3: Download first dataview as CSV
+if dataviews['dataviews']:
+    dataview_id = dataviews['dataviews'][0]['id']
+    print(f"📥 Downloading dataview {dataview_id}...")
+    
+    csv_file = client.exports.download_dataview_csv(
+        workspace_id=1,
+        project_id=1,
+        dataset_id=dataset_id,
+        dataview_id=dataview_id,
+        output_path="processed_data.csv"
+    )
+    
+    print(f"✅ CSV downloaded: {csv_file}")
+else:
+    print("❌ No dataviews found for dataset")
 ```
 
 ### Multiple File Upload
@@ -461,6 +520,88 @@ if __name__ == "__main__":
     dataset_ids = complete_upload_workflow()
     if dataset_ids:
         print(f"\nCreated datasets: {dataset_ids}")
+```
+
+## Advanced Export Examples
+
+### S3 Export Creation
+
+```python
+# Create an S3 export for automated data export
+s3_export = client.exports.create_s3_export(
+    workspace_id=workspace_id,
+    project_id=project_id,
+    dataset_id=dataset_id,
+    dataview_id=dataview_id,
+    file="monthly_report.csv",
+    file_type="csv",
+    trigger_type="pipeline",
+    end_of_pipeline=True
+)
+
+print(f"S3 export created: {s3_export}")
+```
+
+### Internal Dataset Export
+
+```python
+# Create an internal dataset export
+internal_export = client.exports.create_internal_dataset_export(
+    workspace_id=workspace_id,
+    project_id=project_id,
+    dataset_id=dataset_id,
+    dataview_id=dataview_id,
+    dataset_name="processed_customer_data",
+    column_mapping={"id": "customer_id", "name": "customer_name"}
+)
+
+print(f"Internal dataset export created: {internal_export}")
+```
+
+### List and Monitor Exports
+
+```python
+# List existing exports
+exports = client.exports.list_exports(
+    workspace_id=workspace_id,
+    project_id=project_id,
+    dataset_id=dataset_id,
+    dataview_id=dataview_id
+)
+
+print(f"Found {len(exports.get('exports', []))} exports")
+for export in exports.get('exports', []):
+    print(f"  Export ID: {export.get('id')}, Status: {export.get('status')}")
+```
+
+## Working with Test Files
+
+The SDK includes comprehensive test files that demonstrate real-world usage:
+
+### Running the S3 Export Test
+
+```bash
+# Set your credentials as environment variables
+export MAMMOTH_API_KEY="your-api-key"
+export MAMMOTH_API_SECRET="your-api-secret"
+export MAMMOTH_BASE_URL="https://your-instance.mammoth.io/api/v2"
+
+# Run the comprehensive S3 export test
+python test_s3.py
+```
+
+The `test_s3.py` file demonstrates:
+- URL parsing with `parse_path()`
+- S3 export creation and management
+- Internal dataset export creation
+- Export listing and monitoring
+- Comprehensive error handling
+
+### Running the URL Parsing Test
+
+```bash
+# Test URL parsing functionality
+python test_url_parsing.py
 ```
 
 ## Next Steps
