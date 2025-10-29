@@ -14,14 +14,14 @@ class JobsAPI:
     def get_job(
         self,
         job_id: int,
-        workspace_id: Optional[int] = None
+        timeout: int = 300
     ) -> Dict[str, Any]:
         """
         Get job status by ID.
         
         Args:
             job_id: ID of the job to track
-            workspace_id: ID of the workspace (auto-detected if not provided)
+            timeout: Timeout for the request (unused, kept for compatibility)
             
         Returns:
             Dict containing job information including status, response, timestamps
@@ -29,10 +29,7 @@ class JobsAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
-        if workspace_id is None:
-            workspace_id = self._client.get_workspace_id()
-            if workspace_id is None:
-                raise ValueError("Unable to determine workspace ID from API credentials")
+        workspace_id = self._client.workspace_id
         
         headers = {"x-workspace-id": str(workspace_id)}
         
@@ -45,15 +42,13 @@ class JobsAPI:
     
     def get_jobs(
         self,
-        job_ids: Union[List[int], str],
-        workspace_id: Optional[int] = None
+        job_ids: Union[List[int], str]
     ) -> Dict[str, Any]:
         """
         Track multiple job IDs.
         
         Args:
             job_ids: List of job IDs or comma-separated string of job IDs
-            workspace_id: ID of the workspace (auto-detected if not provided)
             
         Returns:
             Dict containing jobs list with status information
@@ -61,10 +56,7 @@ class JobsAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
-        if workspace_id is None:
-            workspace_id = self._client.get_workspace_id()
-            if workspace_id is None:
-                raise ValueError("Unable to determine workspace ID from API credentials")
+        workspace_id = self._client.workspace_id
         
         # Convert list to comma-separated string if needed
         if isinstance(job_ids, list):
@@ -73,7 +65,7 @@ class JobsAPI:
             job_ids_str = str(job_ids)
         
         params = {
-            "job_ids": job_ids_str
+            "job_ids": j
         }
         
         headers = {"x-workspace-id": str(workspace_id)}
@@ -89,7 +81,6 @@ class JobsAPI:
     def wait_for_job(
         self,
         job_id: int,
-        workspace_id: Optional[int] = None,
         timeout: int = 300,
         poll_interval: int = 2
     ) -> Dict[str, Any]:
@@ -98,7 +89,6 @@ class JobsAPI:
         
         Args:
             job_id: ID of the job to wait for
-            workspace_id: ID of the workspace (auto-detected if not provided)
             timeout: Maximum time to wait in seconds (default: 300)
             poll_interval: Time between polling attempts in seconds (default: 2)
             
@@ -111,14 +101,11 @@ class JobsAPI:
         """
         import time
         
-        if workspace_id is None:
-            workspace_id = self._client.get_workspace_id()
-            if workspace_id is None:
-                raise ValueError("Unable to determine workspace ID from API credentials")
+        workspace_id = self._client.workspace_id
         
         start_time = time.time()
         while time.time() - start_time < timeout:
-            job_response = self.get_job(job_id, workspace_id=workspace_id)
+            job_response = self.get_job(job_id)
             
             # Extract job from response
             if 'job' in job_response:

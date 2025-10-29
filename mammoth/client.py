@@ -30,12 +30,12 @@ class MammothClient:
         client = MammothClient(
             api_key="your-api-key",
             api_secret="your-api-secret",
-            base_url="https://your-mammoth-instance.com"
+            workspace_id=11,
+            base_url="https://your-mammoth-instance.com/api/v2"
         )
         
         # Upload a file
         dataset_id = client.files.upload_files(
-            workspace_id=1,
             project_id=1,
             files="data.csv"
         )
@@ -45,6 +45,7 @@ class MammothClient:
         self,
         api_key: str,
         api_secret: str,
+        workspace_id: int,
         base_url: str = "https://app.mammoth.io/api/v2",
         timeout: int = 30,
         max_retries: int = 3
@@ -55,15 +56,20 @@ class MammothClient:
         Args:
             api_key: Your Mammoth API key
             api_secret: Your Mammoth API secret
-            base_url: Base URL for the Mammoth API (default: https://api.mammoth.io)
+            workspace_id: Your Mammoth workspace ID
+            base_url: Base URL for the Mammoth API (default: https://app.mammoth.io/api/v2)
             timeout: Request timeout in seconds (default: 30)
             max_retries: Maximum number of retries for failed requests (default: 3)
         """
         self.api_key = api_key
         self.api_secret = api_secret
+        self.workspace_id = workspace_id
         self.base_url = base_url.rstrip('/')
         self.timeout = timeout
         self.max_retries = max_retries
+        
+        # Optional project_id that can be set for convenience
+        self.project_id = None
         
         # Ensure base URL includes API version path
         if not self.base_url.endswith('/api/v2'):
@@ -88,8 +94,6 @@ class MammothClient:
         self.datasets = DatasetsAPI(self)
         self.dataviews = DataviewsAPI(self)
         
-        # Cache for auto-detected workspace
-        self._auto_workspace_id = None
     
     def _request(
         self,
@@ -207,17 +211,14 @@ class MammothClient:
         # If all retries failed, raise the last exception
         raise last_exception
     
-    def _auto_detect_workspace_id(self) -> Optional[int]:
-        response = self._request("GET", "/workspaces", params={"fields": "id,name"})
-        print(f"Auto-detect workspaces response: {response}")
-        workspaces = response.get('workspaces', [])
-        if len(workspaces) == 1:
-            return workspaces[0].get('id')
-        return None
-
-    def get_workspace_id(self) -> Optional[int]:
-        #     return self._auto_workspace_id
-        return self._auto_detect_workspace_id()
+    def set_project_id(self, project_id: int) -> None:
+        """
+        Set the default project ID for the client.
+        
+        Args:
+            project_id: ID of the project to use as default
+        """
+        self.project_id = project_id
     
     def test_connection(self) -> bool:
         """
@@ -230,7 +231,8 @@ class MammothClient:
             # Use a simple endpoint to test connectivity
             # Since we don't have a dedicated health endpoint, we'll use jobs with invalid params
             # This should return a 400 error but confirm we can connect and authenticate
-            self._request("GET", "/jobs", params={"job_ids": ""})
+            headers = {"x-workspace-id": str(self.workspace_id)}
+            self._request("GET", "/jobs", params={"job_ids": ""}, headers=headers)
             return True
         except MammothAuthError:
             return False

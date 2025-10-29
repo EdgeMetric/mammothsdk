@@ -14,8 +14,6 @@ class DataviewsAPI:
     def list_dataviews(
         self,
         dataset_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
         limit: int = 100,
         sort: str = "(created_at:desc)"
     ) -> Dict[str, Any]:
@@ -24,8 +22,6 @@ class DataviewsAPI:
         
         Args:
             dataset_id: ID of the dataset
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            project_id: ID of the project (auto-detected if not provided)
             limit: Maximum number of results (default: 100)
             sort: Sort order (default: "(created_at:desc)")
             
@@ -35,14 +31,11 @@ class DataviewsAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
-        if workspace_id is None:
-            workspace_id = self._client.get_workspace_id()
-            if workspace_id is None:
-                raise ValueError("Unable to determine workspace ID from API credentials")
-        
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
         if project_id is None:
-            project = self._client.projects.get_project(workspace_id=workspace_id)
-            project_id = project['id']
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
             
         params = {
             "limit": limit,
@@ -59,9 +52,7 @@ class DataviewsAPI:
     def get_dataview(
         self,
         dataset_id: int,
-        dataview_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None
+        dataview_id: int
     ) -> Dict[str, Any]:
         """
         Get dataview information like id, row_count, column_count, metadata, taskwise info, status, etc.
@@ -69,8 +60,6 @@ class DataviewsAPI:
         Args:
             dataset_id: ID of the dataset
             dataview_id: ID of the dataview
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            project_id: ID of the project (auto-detected if not provided)
             
         Returns:
             Dict: Complete dataview information
@@ -79,14 +68,11 @@ class DataviewsAPI:
             ValueError: If dataview cannot be found
             MammothAPIError: If the API request fails
         """
-        if workspace_id is None:
-            workspace_id = self._client.get_workspace_id()
-            if workspace_id is None:
-                raise ValueError("Unable to determine workspace ID from API credentials")
-        
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
         if project_id is None:
-            project = self._client.projects.get_project(workspace_id=workspace_id)
-            project_id = project['id']
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
             
         response = self._client._request(
             "GET",
@@ -98,9 +84,7 @@ class DataviewsAPI:
         self,
         dataset_id: int,
         name: Optional[str] = "View",
-        clone_config_from: Optional[int] = None,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None
+        clone_config_from: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Create or duplicate dataview.
@@ -109,8 +93,6 @@ class DataviewsAPI:
             dataset_id: ID of the dataset
             name: Name of the dataview (default: "View")
             clone_config_from: ID of dataview to clone config from (optional)
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            project_id: ID of the project (auto-detected if not provided)
             
         Returns:
             Dict: Created dataview information
@@ -118,14 +100,11 @@ class DataviewsAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
-        if workspace_id is None:
-            workspace_id = self._client.get_workspace_id()
-            if workspace_id is None:
-                raise ValueError("Unable to determine workspace ID from API credentials")
-        
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
         if project_id is None:
-            project = self._client.projects.get_project(workspace_id=workspace_id)
-            project_id = project['id']
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
         
         payload = {
             "name": name
@@ -145,9 +124,7 @@ class DataviewsAPI:
         self,
         dataset_id: int,
         dataview_id: int,
-        patch_data: List[Dict[str, Any]],
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None
+        patch_data: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """
         Update dataview properties like rename a dataview, reset a dataview, or apply display properties.
@@ -156,8 +133,6 @@ class DataviewsAPI:
             dataset_id: ID of the dataset
             dataview_id: ID of the dataview to update
             patch_data: List of patch operations (max 1, min 1)
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            project_id: ID of the project (auto-detected if not provided)
             
         Returns:
             Dict: Update operation result
@@ -165,14 +140,11 @@ class DataviewsAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
-        if workspace_id is None:
-            workspace_id = self._client.get_workspace_id()
-            if workspace_id is None:
-                raise ValueError("Unable to determine workspace ID from API credentials")
-        
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
         if project_id is None:
-            project = self._client.projects.get_project(workspace_id=workspace_id)
-            project_id = project['id']
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
         
         payload = {"patch": patch_data}
             
@@ -186,9 +158,7 @@ class DataviewsAPI:
     def delete_dataview(
         self,
         dataset_id: int,
-        dataview_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None
+        dataview_id: int
     ) -> Dict[str, Any]:
         """
         Delete dataview safely.
@@ -196,8 +166,6 @@ class DataviewsAPI:
         Args:
             dataset_id: ID of the dataset
             dataview_id: ID of the dataview to delete
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            project_id: ID of the project (auto-detected if not provided)
             
         Returns:
             Dict: Delete operation result
@@ -205,14 +173,11 @@ class DataviewsAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
-        if workspace_id is None:
-            workspace_id = self._client.get_workspace_id()
-            if workspace_id is None:
-                raise ValueError("Unable to determine workspace ID from API credentials")
-        
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
         if project_id is None:
-            project = self._client.projects.get_project(workspace_id=workspace_id)
-            project_id = project['id']
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
             
         response = self._client._request(
             "DELETE",
@@ -223,9 +188,7 @@ class DataviewsAPI:
     def delete_dataviews(
         self,
         dataset_id: int,
-        dataview_ids: Union[List[int], str],
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None
+        dataview_ids: Union[List[int], str]
     ) -> Dict[str, Any]:
         """
         Delete multiple dataviews.
@@ -233,8 +196,6 @@ class DataviewsAPI:
         Args:
             dataset_id: ID of the dataset
             dataview_ids: List of dataview IDs or comma-separated string
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            project_id: ID of the project (auto-detected if not provided)
             
         Returns:
             Dict: Bulk delete operation result
@@ -242,14 +203,11 @@ class DataviewsAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
-        if workspace_id is None:
-            workspace_id = self._client.get_workspace_id()
-            if workspace_id is None:
-                raise ValueError("Unable to determine workspace ID from API credentials")
-        
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
         if project_id is None:
-            project = self._client.projects.get_project(workspace_id=workspace_id)
-            project_id = project['id']
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
         
         # Convert list to comma-separated string if needed
         if isinstance(dataview_ids, list):
@@ -271,9 +229,7 @@ class DataviewsAPI:
     def get_dataview_data(
         self,
         dataset_id: int,
-        dataview_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None
+        dataview_id: int
     ) -> Dict[str, Any]:
         """
         Get dataview data (GET method).
@@ -281,8 +237,6 @@ class DataviewsAPI:
         Args:
             dataset_id: ID of the dataset
             dataview_id: ID of the dataview
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            project_id: ID of the project (auto-detected if not provided)
             
         Returns:
             Dict: Dataview data
@@ -290,14 +244,11 @@ class DataviewsAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
-        if workspace_id is None:
-            workspace_id = self._client.get_workspace_id()
-            if workspace_id is None:
-                raise ValueError("Unable to determine workspace ID from API credentials")
-        
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
         if project_id is None:
-            project = self._client.projects.get_project(workspace_id=workspace_id)
-            project_id = project['id']
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
             
         response = self._client._request(
             "GET",
@@ -314,9 +265,7 @@ class DataviewsAPI:
         limit: int = 400,
         columns: Optional[List[str]] = None,
         condition: Optional[Dict[str, Any]] = None,
-        sort: Optional[str] = None,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None
+        sort: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Get dataview data with filtering options (POST method).
@@ -330,8 +279,6 @@ class DataviewsAPI:
             columns: List of column names to fetch (optional)
             condition: JSON condition for filtering rows (optional)
             sort: Sort specification as string (optional)
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            project_id: ID of the project (auto-detected if not provided)
             
         Returns:
             Dict: Filtered dataview data
@@ -339,14 +286,11 @@ class DataviewsAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
-        if workspace_id is None:
-            workspace_id = self._client.get_workspace_id()
-            if workspace_id is None:
-                raise ValueError("Unable to determine workspace ID from API credentials")
-        
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
         if project_id is None:
-            project = self._client.projects.get_project(workspace_id=workspace_id)
-            project_id = project['id']
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
         
         payload = {
             "sequence": sequence,
@@ -371,9 +315,7 @@ class DataviewsAPI:
     def get_active_users(
         self,
         dataset_id: int,
-        dataview_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None
+        dataview_id: int
     ) -> Dict[str, Any]:
         """
         Get list of active users on this dataview.
@@ -381,8 +323,6 @@ class DataviewsAPI:
         Args:
             dataset_id: ID of the dataset
             dataview_id: ID of the dataview
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            project_id: ID of the project (auto-detected if not provided)
             
         Returns:
             Dict: List of active users
@@ -390,14 +330,11 @@ class DataviewsAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
-        if workspace_id is None:
-            workspace_id = self._client.get_workspace_id()
-            if workspace_id is None:
-                raise ValueError("Unable to determine workspace ID from API credentials")
-        
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
         if project_id is None:
-            project = self._client.projects.get_project(workspace_id=workspace_id)
-            project_id = project['id']
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
             
         response = self._client._request(
             "GET",
@@ -408,9 +345,7 @@ class DataviewsAPI:
     def mark_active_user(
         self,
         dataset_id: int,
-        dataview_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None
+        dataview_id: int
     ) -> Dict[str, Any]:
         """
         Mark active user on this dataview.
@@ -418,8 +353,6 @@ class DataviewsAPI:
         Args:
             dataset_id: ID of the dataset
             dataview_id: ID of the dataview
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            project_id: ID of the project (auto-detected if not provided)
             
         Returns:
             Dict: Updated active users list
@@ -427,14 +360,11 @@ class DataviewsAPI:
         Raises:
             MammothAPIError: If the API request fails
         """
-        if workspace_id is None:
-            workspace_id = self._client.get_workspace_id()
-            if workspace_id is None:
-                raise ValueError("Unable to determine workspace ID from API credentials")
-        
+        # Use client's workspace_id and project_id
+        workspace_id = self._client.workspace_id
+        project_id = getattr(self._client, 'project_id', None)
         if project_id is None:
-            project = self._client.projects.get_project(workspace_id=workspace_id)
-            project_id = project['id']
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
             
         response = self._client._request(
             "POST",
