@@ -1,6 +1,7 @@
 # Mammoth Python SDK
 
-Python SDK for the Mammoth Analytics platform with simplified API design.
+A Python SDK for programmatic access to Mammoth Analytics' services. Enables automated data workflows through file ingestion and flexible data export capabilities. Upload datasets directly to your workspace, then download transformed views as CSV files or push results to S3 storage. Designed for data engineers building automated pipelines and integrating Mammoth's transformation engine into existing data infrastructure.
+
 
 ## Installation
 
@@ -10,140 +11,148 @@ pip install git+ssh://git@github.com/EdgeMetric/mm-pysdk.git
 
 ## Quick Start
 
-### 1. Client Setup
+### 1. Create credentials for API access
+- Log in to your Mammoth account.
+- Navigate to **Workspace Settings > API Keys**.
+- Create a new API key and secret for your workspace using the **Create Token** button.
+- Give name of the token, description, and project where it will be used.
+- Copy the generated **API Secret** as it will not be shown again.
+- Click **Submit** to store the API key.
+- Copy the **API Key**.
+- Note down the **Workspace ID** and **Project ID** from the URL or settings.
+
+
+### 2. Client Setup
 
 ```python
-from mammoth import MammothClient, parse_path
+from mammoth import MammothClient
 
+MAMMOTH_WORKSPACE_ID = <your_workspace_id>
+MAMMOTH_PROJECT_ID = <your_project_id>
+MAMMOTH_API_KEY = "<your_api_key>"
+MAMMOTH_API_SECRET = "<your_api_secret>"
 # Method 1: Direct initialization
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
-    workspace_id=11,
-    base_url="https://mirai.mammoth.io/api/v2"
+    api_key=MAMMOTH_API_KEY,
+    api_secret=MAMMOTH_API_SECRET,
+    workspace_id=MAMMOTH_WORKSPACE_ID,
 )
-client.set_project_id(426)
+client.set_project_id(MAMMOTH_PROJECT_ID)
 
 # Method 2: Extract from URL
+# You can also extract workspace and project IDs from a Mammoth URL
+from mammoth import parse_path
 url = "https://mirai.mammoth.io/#/workspaces/11/projects/426/views/1707"
 parsed_ids = parse_path(url)
+MAMMOTH_WORKSPACE_ID = parsed_ids['workspace_id']
+MAMMOTH_PROJECT_ID = parsed_ids['project_id']
+MAMMOTH_API_KEY = "<your_api_key>"
+MAMMOTH_API_SECRET = "<your_api_secret>"
 
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret", 
-    workspace_id=parsed_ids['workspace_id'],
-    base_url="https://mirai.mammoth.io/api/v2"
+    api_key=MAMMOTH_API_KEY,
+    api_secret=MAMMOTH_API_SECRET,
+    workspace_id=MAMMOTH_WORKSPACE_ID,
 )
-client.set_project_id(parsed_ids['project_id'])
+client.set_project_id(MAMMOTH_PROJECT_ID)
 ```
 
-### 2. Upload Files
+### 3. Upload Files
 
 ```python
 # Upload single file
-dataset_id = client.files.upload_files(files="data.csv")
+# Supported file types: .txt .csv .tsv .psv .xls .xlsx .zip .bz2 .gz .tar .7z .pdf .tiff .jpeg .jpg .png .heic .webp
+# Maximum file size: 50MB
+FILE_PATH = "<path/to/your/file.csv>"
+dataset_id = client.files.upload_files(files=FILE_PATH)
 
-# Upload multiple files 
-dataset_ids = client.files.upload_files(files=["file1.csv", "file2.xlsx"])
+# Upload multiple files
+LIST_OF_FILES = ["file1.csv", "file2.xlsx"]
+dataset_ids = client.files.upload_files(files=LIST_OF_FILES)
 
 # Upload folder
-dataset_ids = client.files.upload_folder(folder_path="./data_folder")
+folder_path = "<path/to/your/folder>"
+dataset_ids = client.files.upload_folder(folder_path=folder_path)
 ```
 
-### 3. Download Data
+### 4. Download Data as csv
 
 ```python
-# Download dataview as CSV (use existing dataview_id you have access to)
+# Method 1: If you know view id
+# Download view as CSV
+VIEW_ID = <your_view_id>
+output_path = "./exported_data.csv"
 csv_file = client.exports.download_dataview_csv(
-    dataview_id=1707,  # Replace with your dataview_id
-    output_path="./export.csv"
+    dataview_id=VIEW_ID,
+    output_path=output_path
 )
 
-# Create S3 export
-s3_result = client.exports.create_s3_export(dataview_id=1707)  # Replace with your dataview_id
-print(f"URL: {s3_result['url']}")
+# Method 2: If you know url of the view
+url = "https://app.mammoth.io/#/workspaces/11/projects/426/views/1707"
+parsed_ids = parse_path(url)
+VIEW_ID = parsed_ids['dataview_id']
+csv_file = client.exports.download_dataview_csv(
+    dataview_id=VIEW_ID,
+    output_path=output_path
+)
+
+
+
+```
+
+### 5. Create S3 Export
+
+```python
+# Method 1: If you know view id
+VIEW_ID = <your_view_id>
+# Create S3 export for a dataview
+s3_result = client.exports.create_s3_export(
+    dataview_id=VIEW_ID,
+    file="exported_data.csv"
+)
+print(f"Export URL: {s3_result['url']}")  
+
+# Method 2: If you know url of the view
+url = "https://app.mammoth.io/#/workspaces/11/projects/426/views/1707"
+parsed_ids = parse_path(url)
+VIEW_ID = parsed_ids['dataview_id']
+s3_result = client.exports.create_s3_export(
+    dataview_id=VIEW_ID,
+    file="exported_data.csv"
+)
+print(f"Export URL: {s3_result['url']}")
 ```
 
 ## Working with Uploaded Files
 
-### Use Dataset ID from Upload
+### Exporting uploaded files to s3
 
 ```python
 # Upload file and get dataset_id
-dataset_id = client.files.upload_files(files="sales_data.csv")
+FILE_PATH = "sales_data.csv"
+dataset_id = client.files.upload_files(files=FILE_PATH)
 
-# List dataviews in the dataset
-dataviews = client.dataviews.list_dataviews(dataset_id=dataset_id)
-dataview_id = dataviews['dataviews'][0]['id']
+# List views in the dataset
+views = client.dataviews.list_dataviews(dataset_id=dataset_id)
+# By default, one view is created for a dataset, pick the first view
+view_id = views['dataviews'][0]['id']
 
 # Download processed data
 csv_file = client.exports.download_dataview_csv(
-    dataview_id=dataview_id,
+    dataview_id=view_id,
     dataset_id=dataset_id,  # Use known dataset_id
     output_path="./processed_sales.csv"
 )
 
 # Create S3 export for the dataview
 s3_result = client.exports.create_s3_export(
-    dataview_id=dataview_id,
+    dataview_id=view_id,
     dataset_id=dataset_id,  # Use known dataset_id
     file="automated_export.csv"
 )
 ```
 
-### File Management
 
-```python
-# List uploaded files
-files = client.files.list_files(limit=10)
-for file in files.files:
-    print(f"File: {file.name} - Status: {file.status}")
-
-# Get file details
-file_details = client.files.get_file_details(file_id=123)
-
-# Delete files
-client.files.delete_file(file_id=123)
-client.files.delete_files(file_ids=[123, 124, 125])
-```
-
-### Complete Workflow Example
-
-```python
-from mammoth import MammothClient, parse_path
-
-# Initialize from URL
-url = "https://mirai.mammoth.io/#/workspaces/11/projects/426/views/1707"
-parsed_ids = parse_path(url)
-
-client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
-    workspace_id=parsed_ids['workspace_id'],
-    base_url="https://mirai.mammoth.io/api/v2"
-)
-client.set_project_id(parsed_ids['project_id'])
-
-# Upload → Process → Export workflow
-dataset_id = client.files.upload_files(files="data.csv")
-dataviews = client.dataviews.list_dataviews(dataset_id=dataset_id)
-dataview_id = dataviews['dataviews'][0]['id']
-
-# Download processed CSV
-csv_file = client.exports.download_dataview_csv(
-    dataview_id=dataview_id,
-    dataset_id=dataset_id,
-    output_path="./processed.csv"
-)
-
-# Create automated S3 export
-s3_result = client.exports.create_s3_export(
-    dataview_id=dataview_id,
-    dataset_id=dataset_id,
-    file="daily_export.csv"
-)
-print(f"Export URL: {s3_result['url']}")
-```
 
 ### Dataset Operations
 
@@ -158,37 +167,6 @@ dataset_info = client.datasets.get_dataset(dataset_id=1576)
 print(f"Rows: {dataset_info.row_count}, Columns: {dataset_info.column_count}")
 ```
 
-### Export Management
-
-```python
-# List exports for a dataview
-exports = client.exports.list_exports(
-    dataview_id=dataview_id,  # Use your dataview_id
-    status="active"
-)
-
-# Create internal dataset export (copy data)
-dataset_export = client.exports.create_internal_dataset_export(
-    dataview_id=dataview_id,  # Use your dataview_id  
-    dataset_id=dataset_id,    # Use your dataset_id
-    dataset_name="Customer Analysis Copy"
-)
-```
-
-## Async Operations
-
-```python
-# Start upload without waiting
-job_id = client.files.upload_files(
-    files="large_file.csv",
-    wait_for_completion=False
-)
-
-# Check status later
-job_status = client.jobs.get_job(job_id)
-completed_job = client.jobs.wait_for_job(job_id, timeout=600)
-```
-
 ## Key APIs
 
 | Method | Description |
@@ -200,18 +178,6 @@ completed_job = client.jobs.wait_for_job(job_id, timeout=600)
 | `client.dataviews.list_dataviews()` | List dataviews |
 | `client.jobs.wait_for_job()` | Wait for async jobs |
 
-## Error Handling
-
-```python
-from mammoth.exceptions import MammothAPIError, MammothJobTimeoutError
-
-try:
-    dataset_id = client.files.upload_files(files="data.csv")
-except MammothJobTimeoutError:
-    print("Upload timed out")
-except MammothAPIError as e:
-    print(f"API error: {e}")
-```
 
 ## Support
 
