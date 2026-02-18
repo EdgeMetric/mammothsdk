@@ -2,57 +2,49 @@
 Client Apps API for managing API tokens and client applications in Mammoth.
 """
 
-from typing import Optional, List
+from typing import Optional
 from ..models.clientapps import (
-    ClientAppsListResponse, ClientAppSchema, ClientAppPostResponse, 
+    ClientAppsListResponse, ClientAppSchema, ClientAppPostResponse,
     ClientAppCreate, PatchRequest
 )
 
 
 class ClientAppsAPI:
-    """Client for interacting with Mammoth Client Apps API."""
-    
+    """Client for interacting with Mammoth Client Apps API.
+
+    Access via client.client_apps:
+        apps = client.client_apps.list()
+        app = client.client_apps.create(app_name="My App")
+        client.client_apps.delete(client_key="...")
+    """
+
     def __init__(self, client):
         self._client = client
-        self._workspace_id = None
-    
-    def _get_workspace_id(self) -> int:
-        """
-        Get the workspace ID associated with the current API credentials.
-        Uses the main client's get_workspace_id method.
-        """
-        workspace_id = self._client.get_workspace_id()
-        if workspace_id is None:
-            raise ValueError("Unable to determine workspace ID from API credentials")
-        return workspace_id
-    
-    def list_client_apps(
+
+    def _ws(self) -> int:
+        return self._client.workspace_id
+
+    def list(
         self,
         workspace_id: Optional[int] = None,
         limit: int = 10,
         offset: int = 0,
         fields: Optional[str] = None,
-        sort: Optional[str] = None
+        sort: Optional[str] = None,
     ) -> ClientAppsListResponse:
-        """
-        List client apps for a workspace.
-        
+        """List client apps for a workspace.
+
         Args:
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            limit: Maximum number of results (0-100, default: 10)
-            offset: Number of results to skip (default: 0)
-            fields: Fields to return (e.g., "id,app_name", default: "__standard")
-            sort: Sort specification (e.g., "(last_usage:asc),(id:desc)")
-            
+            workspace_id: ID of the workspace (uses client default if not provided).
+            limit: Maximum number of results (0-100, default 10).
+            offset: Number of results to skip (default 0).
+            fields: Fields to return (e.g., "id,app_name").
+            sort: Sort specification.
+
         Returns:
-            ClientAppsListResponse: List of client apps
-            
-        Raises:
-            MammothAPIError: If the API request fails
+            ClientAppsListResponse with list of client apps.
         """
-        if workspace_id is None:
-            workspace_id = self._get_workspace_id()
-            
+        ws = workspace_id or self._ws()
         params = {}
         if limit != 10:
             params["limit"] = limit
@@ -62,131 +54,85 @@ class ClientAppsAPI:
             params["fields"] = fields
         if sort:
             params["sort"] = sort
-            
-        response = self._client._request(
-            "GET",
-            f"/workspaces/{workspace_id}/clientapps",
-            params=params
-        )
+        response = self._client._request("GET", f"/workspaces/{ws}/clientapps", params=params)
         return ClientAppsListResponse(**response)
-    
-    def create_client_app(
+
+    def create(
         self,
         app_name: str,
         description: Optional[str] = None,
-        workspace_id: Optional[int] = None
+        workspace_id: Optional[int] = None,
     ) -> ClientAppPostResponse:
-        """
-        Create a new client app to generate API tokens.
-        
+        """Create a new client app to generate API tokens.
+
         Args:
-            app_name: Name for the client app
-            description: Optional description for the app
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            
+            app_name: Name for the client app.
+            description: Optional description.
+            workspace_id: ID of the workspace (uses client default if not provided).
+
         Returns:
-            ClientAppPostResponse: Created client app details with tokens
-            
-        Raises:
-            MammothAPIError: If the API request fails
+            ClientAppPostResponse with created app details and tokens.
         """
-        if workspace_id is None:
-            workspace_id = self._get_workspace_id()
-            
+        ws = workspace_id or self._ws()
         payload = {"app_name": app_name}
         if description:
             payload["description"] = description
-            
-        response = self._client._request(
-            "POST",
-            f"/workspaces/{workspace_id}/clientapps",
-            json=payload
-        )
+        response = self._client._request("POST", f"/workspaces/{ws}/clientapps", json=payload)
         return ClientAppPostResponse(**response)
-    
-    def get_client_app(
+
+    def get(
         self,
         client_key: str,
         workspace_id: Optional[int] = None,
-        fields: Optional[str] = None
+        fields: Optional[str] = None,
     ) -> ClientAppSchema:
-        """
-        Get details of a specific client app.
-        
+        """Get details of a specific client app.
+
         Args:
-            client_key: Client key/ID of the app
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            fields: Fields to return (e.g., "id,app_name", default: "__standard")
-            
+            client_key: Client key/ID of the app.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            fields: Fields to return.
+
         Returns:
-            ClientAppSchema: Client app details
-            
-        Raises:
-            MammothAPIError: If the API request fails
+            ClientAppSchema with client app details.
         """
-        if workspace_id is None:
-            workspace_id = self._get_workspace_id()
-            
+        ws = workspace_id or self._ws()
         params = {}
         if fields:
             params["fields"] = fields
-            
-        response = self._client._request(
-            "GET",
-            f"/workspaces/{workspace_id}/clientapps/{client_key}",
-            params=params
-        )
+        response = self._client._request("GET", f"/workspaces/{ws}/clientapps/{client_key}", params=params)
         return ClientAppSchema(**response)
-    
-    def update_client_app(
+
+    def update(
         self,
         client_key: str,
         patch_request: PatchRequest,
-        workspace_id: Optional[int] = None
+        workspace_id: Optional[int] = None,
     ) -> ClientAppSchema:
-        """
-        Update client app details like name, description, etc.
-        
+        """Update client app details.
+
         Args:
-            client_key: Client key/ID of the app
-            patch_request: PatchRequest containing patch operations
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            
+            client_key: Client key/ID of the app.
+            patch_request: PatchRequest containing patch operations.
+            workspace_id: ID of the workspace (uses client default if not provided).
+
         Returns:
-            ClientAppSchema: Updated client app details
-            
-        Raises:
-            MammothAPIError: If the API request fails
+            ClientAppSchema with updated details.
         """
-        if workspace_id is None:
-            workspace_id = self._get_workspace_id()
-            
-        response = self._client._request(
-            "PATCH",
-            f"/workspaces/{workspace_id}/clientapps/{client_key}",
-            json=patch_request.dict()
-        )
+        ws = workspace_id or self._ws()
+        response = self._client._request("PATCH", f"/workspaces/{ws}/clientapps/{client_key}", json=patch_request.dict())
         return ClientAppSchema(**response)
-    
-    def delete_client_app(
+
+    def delete(
         self,
         client_key: str,
-        workspace_id: Optional[int] = None
+        workspace_id: Optional[int] = None,
     ) -> None:
-        """
-        Delete a client app.
-        
+        """Delete a client app.
+
         Args:
-            client_key: Client key/ID of the app to delete
-            workspace_id: ID of the workspace (auto-detected if not provided)
-            
-        Raises:
-            MammothAPIError: If the API request fails
+            client_key: Client key/ID of the app to delete.
+            workspace_id: ID of the workspace (uses client default if not provided).
         """
-        if workspace_id is None:
-            workspace_id = self._get_workspace_id()
-            
-        self._client._request(
-            "DELETE",
-            f"/workspaces/{workspace_id}/clientapps/{client_key}"
-        )
+        ws = workspace_id or self._ws()
+        self._client._request("DELETE", f"/workspaces/{ws}/clientapps/{client_key}")

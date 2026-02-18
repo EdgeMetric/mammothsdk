@@ -11,22 +11,27 @@ from .workspaces import *
 from .projects import *
 from .clientapps import *
 from .folders import *
+from .pipeline import *
+from .connectors import *
+from .dashboards import *
+from .webhooks import *
+from .automations import *
 
 __all__ = [
     # Files models
     "FileSchema",
-    "FileDetails", 
+    "FileDetails",
     "FilesList",
     "AdditionalInfo",
-    "StatusInfo", 
+    "StatusInfo",
     "SheetInfo",
     "FilePatchRequest",
     "FilePatchData",
     "ExtractSheetsPatch",
-    # Jobs models  
+    # Jobs models
     "JobSchema",
     "JobResponse",
-    "JobsGetResponse", 
+    "JobsGetResponse",
     "ObjectJobSchema",
     "JobStatus",
     # Exports models
@@ -71,4 +76,31 @@ __all__ = [
     "AddUsersToProject",
     "ProjectUserPatch",
     "ProjectsPatch",
+    # Pipeline models
+    "Operator",
+    "ColumnType",
+    "ValueType",
+    "JoinType",
+    "TextCase",
+    "DateComponent",
+    "WindowFunction",
+    "FillDirection",
+    "AggregateFunction",
+    "PipelineTaskInfo",
+    "PipelineTasksList",
+    "PipelineInfo",
+    # Connectors models
+    "ConnectorInfo",
+    "ConnectionInfo",
+    "DsConfigInfo",
+    # Dashboards models
+    "DashboardInfo",
+    "DashboardSource",
+    "DashboardAnalytics",
+    # Webhooks models
+    "WebhookInfo",
+    "WebhookCreate",
+    # Automations models
+    "AutomationInfo",
+    "ScheduleInfo",
 ]

@@ -46,9 +46,26 @@ class MammothJobTimeoutError(MammothError):
 
 class MammothJobFailedError(MammothError):
     """Exception raised when a job fails."""
-    
+
     def __init__(self, job_id: int, failure_reason: Optional[str] = None):
         message = f"Job {job_id} failed"
         if failure_reason:
             message += f": {failure_reason}"
         super().__init__(message, {"job_id": job_id, "failure_reason": failure_reason})
+
+
+class MammothTransformError(MammothError):
+    """Exception raised when a transformation task fails."""
+
+    def __init__(self, message: str, task_key: Optional[str] = None, details: Optional[Dict[str, Any]] = None):
+        super().__init__(message, details or {})
+        self.task_key = task_key
+
+
+class MammothColumnError(MammothError):
+    """Exception raised when a column name cannot be resolved."""
+
+    def __init__(self, column_name: str, available_columns: Optional[list] = None):
+        available = f". Available columns: {available_columns}" if available_columns else ""
+        message = f"Column '{column_name}' not found{available}"
+        super().__init__(message, {"column_name": column_name, "available_columns": available_columns})
