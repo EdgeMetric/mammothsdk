@@ -30,3 +30,7 @@ htmlcov/
 .pytype/
 .pyre/
 
+# MCP server local config
+mammoth-mcp/.venv/
+mammoth-mcp/poetry.toml
+

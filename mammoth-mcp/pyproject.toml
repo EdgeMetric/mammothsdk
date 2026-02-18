@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "mammoth-mcp"
+version = "0.1.0"
+description = "MCP server for Mammoth Analytics — lets LLMs explore, transform, and export data"
+authors = ["Mammoth Analytics"]
+packages = [{include = "mammoth_mcp"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+mcp = "^1.0.0"
+mammoth = {path = "../", develop = true}
+
+[tool.poetry.scripts]
+mammoth-mcp = "mammoth_mcp.server:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
