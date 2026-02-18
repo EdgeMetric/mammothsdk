@@ -2,7 +2,14 @@
 Connectors API client for managing cloud data source connectors and connections.
 """
 
-from typing import Optional, Dict, Any, List
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..client import MammothClient
+
+_list = list  # Alias to avoid shadowing by method name
 
 
 class ConnectorsAPI:
@@ -14,22 +21,22 @@ class ConnectorsAPI:
         client.connectors.delete_connection("postgres", "conn_key")
     """
 
-    def __init__(self, client):
+    def __init__(self, client: MammothClient) -> None:
         self._client = client
 
     def _ws(self) -> int:
         return self._client.workspace_id
 
-    def list(self) -> list:
+    def list(self) -> _list[dict[str, Any]]:
         """List all available connectors.
 
         Returns:
             List of connector dicts.
         """
-        response = self._client._request("GET", f"/workspaces/{self._ws()}/connectors")
-        return response.get("connectors", response if isinstance(response, list) else [])
+        response = self._client._request_json("GET", f"/workspaces/{self._ws()}/connectors")
+        return response.get("connectors", response if isinstance(response, _list) else [])
 
-    def get(self, connector_key: str) -> dict:
+    def get(self, connector_key: str) -> dict[str, Any]:
         """Get details of a specific connector.
 
         Args:
@@ -38,9 +45,11 @@ class ConnectorsAPI:
         Returns:
             Dict with connector details.
         """
-        return self._client._request("GET", f"/workspaces/{self._ws()}/connectors/{connector_key}")
+        return self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/connectors/{connector_key}"
+        )
 
-    def list_connections(self, connector_key: str) -> list:
+    def list_connections(self, connector_key: str) -> _list[dict[str, Any]]:
         """List connections for a connector type.
 
         Args:
@@ -49,10 +58,12 @@ class ConnectorsAPI:
         Returns:
             List of connection dicts.
         """
-        response = self._client._request("GET", f"/workspaces/{self._ws()}/connectors/{connector_key}/connections")
-        return response.get("connections", response if isinstance(response, list) else [])
+        response = self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/connectors/{connector_key}/connections"
+        )
+        return response.get("connections", response if isinstance(response, _list) else [])
 
-    def create_connection(self, connector_key: str, config: Dict[str, Any]) -> dict:
+    def create_connection(self, connector_key: str, config: dict[str, Any]) -> dict[str, Any]:
         """Create a new connection for a connector.
 
         Args:
@@ -62,9 +73,11 @@ class ConnectorsAPI:
         Returns:
             Dict with created connection info.
         """
-        return self._client._request("POST", f"/workspaces/{self._ws()}/connectors/{connector_key}/connections", json=config)
+        return self._client._request_json(
+            "POST", f"/workspaces/{self._ws()}/connectors/{connector_key}/connections", json=config
+        )
 
-    def get_connection(self, connector_key: str, connection_key: str) -> dict:
+    def get_connection(self, connector_key: str, connection_key: str) -> dict[str, Any]:
         """Get details of a specific connection.
 
         Args:
@@ -74,9 +87,14 @@ class ConnectorsAPI:
         Returns:
             Dict with connection details.
         """
-        return self._client._request("GET", f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}")
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}",
+        )
 
-    def update_connection(self, connector_key: str, connection_key: str, config: Dict[str, Any]) -> dict:
+    def update_connection(
+        self, connector_key: str, connection_key: str, config: dict[str, Any]
+    ) -> dict[str, Any]:
         """Update a connection's configuration.
 
         Args:
@@ -87,9 +105,13 @@ class ConnectorsAPI:
         Returns:
             Dict with updated connection info.
         """
-        return self._client._request("PATCH", f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}", json=config)
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}",
+            json=config,
+        )
 
-    def delete_connection(self, connector_key: str, connection_key: str) -> dict:
+    def delete_connection(self, connector_key: str, connection_key: str) -> dict[str, Any]:
         """Delete a connection.
 
         Args:
@@ -99,9 +121,12 @@ class ConnectorsAPI:
         Returns:
             Dict with deletion result.
         """
-        return self._client._request("DELETE", f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}")
+        return self._client._request_json(
+            "DELETE",
+            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}",
+        )
 
-    def list_ds_configs(self, connector_key: str, connection_key: str) -> list:
+    def list_ds_configs(self, connector_key: str, connection_key: str) -> _list[dict[str, Any]]:
         """List data source configurations for a connection.
 
         Args:
@@ -111,10 +136,15 @@ class ConnectorsAPI:
         Returns:
             List of data source config dicts.
         """
-        response = self._client._request("GET", f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs")
-        return response.get("ds_configs", response if isinstance(response, list) else [])
+        response = self._client._request_json(
+            "GET",
+            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs",
+        )
+        return response.get("ds_configs", response if isinstance(response, _list) else [])
 
-    def create_ds_config(self, connector_key: str, connection_key: str, config: Dict[str, Any]) -> dict:
+    def create_ds_config(
+        self, connector_key: str, connection_key: str, config: dict[str, Any]
+    ) -> dict[str, Any]:
         """Create a data source configuration.
 
         Args:
@@ -125,9 +155,15 @@ class ConnectorsAPI:
         Returns:
             Dict with created data source config.
         """
-        return self._client._request("POST", f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs", json=config)
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs",
+            json=config,
+        )
 
-    def get_ds_config(self, connector_key: str, connection_key: str, ds_config_key: str) -> dict:
+    def get_ds_config(
+        self, connector_key: str, connection_key: str, ds_config_key: str
+    ) -> dict[str, Any]:
         """Get a specific data source configuration.
 
         Args:
@@ -138,9 +174,14 @@ class ConnectorsAPI:
         Returns:
             Dict with data source config details.
         """
-        return self._client._request("GET", f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}")
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
+        )
 
-    def update_ds_config(self, connector_key: str, connection_key: str, ds_config_key: str, config: Dict[str, Any]) -> dict:
+    def update_ds_config(
+        self, connector_key: str, connection_key: str, ds_config_key: str, config: dict[str, Any]
+    ) -> dict[str, Any]:
         """Update a data source configuration.
 
         Args:
@@ -152,9 +193,15 @@ class ConnectorsAPI:
         Returns:
             Dict with updated config.
         """
-        return self._client._request("PATCH", f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}", json=config)
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
+            json=config,
+        )
 
-    def delete_ds_config(self, connector_key: str, connection_key: str, ds_config_key: str) -> dict:
+    def delete_ds_config(
+        self, connector_key: str, connection_key: str, ds_config_key: str
+    ) -> dict[str, Any]:
         """Delete a data source configuration.
 
         Args:
@@ -165,13 +212,16 @@ class ConnectorsAPI:
         Returns:
             Dict with deletion result.
         """
-        return self._client._request("DELETE", f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}")
+        return self._client._request_json(
+            "DELETE",
+            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
+        )
 
-    def active_connectors(self) -> list:
+    def active_connectors(self) -> _list[dict[str, Any]]:
         """List active connectors with established connections.
 
         Returns:
             List of active connector dicts.
         """
-        response = self._client._request("GET", f"/workspaces/{self._ws()}/active_connectors")
-        return response.get("connectors", response if isinstance(response, list) else [])
+        response = self._client._request_json("GET", f"/workspaces/{self._ws()}/active_connectors")
+        return response.get("connectors", response if isinstance(response, _list) else [])

@@ -2,40 +2,43 @@
 Dashboard data models.
 """
 
-from typing import Optional, Dict, Any, List
-from pydantic import BaseModel
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
 
 
 class DashboardInfo(BaseModel):
     """Information about a dashboard."""
-    id: Optional[int] = None
-    name: Optional[str] = None
-    status: Optional[str] = None
-    url: Optional[str] = None
-    config: Optional[Dict[str, Any]] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
-    created_by: Optional[str] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
+
+    id: int | None = None
+    name: str | None = None
+    status: str | None = None
+    url: str | None = None
+    config: dict[str, Any] | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    created_by: str | None = None
 
 
 class DashboardSource(BaseModel):
     """Dashboard data source information."""
-    id: Optional[int] = None
-    name: Optional[str] = None
-    type: Optional[str] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
+
+    id: int | None = None
+    name: str | None = None
+    type: str | None = None
 
 
 class DashboardAnalytics(BaseModel):
     """Dashboard analytics information."""
-    views: Optional[int] = None
-    unique_users: Optional[int] = None
-    last_viewed: Optional[str] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
+
+    views: int | None = None
+    unique_users: int | None = None
+    last_viewed: str | None = None

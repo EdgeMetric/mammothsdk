@@ -2,20 +2,131 @@
 Data models for the Mammoth Analytics SDK.
 """
 
-from .files import *
-from .jobs import *
-from .exports import *
-from .datasets import *
-from .dataviews import *
-from .workspaces import *
-from .projects import *
-from .clientapps import *
-from .folders import *
-from .pipeline import *
-from .connectors import *
-from .dashboards import *
-from .webhooks import *
-from .automations import *
+from __future__ import annotations
+
+from .automations import (
+    AutomationInfo,
+    ScheduleInfo,
+)
+from .clientapps import (
+    ClientAppCreate,
+    ClientAppPostResponse,
+    ClientAppSchema,
+    ClientAppsListResponse,
+    ValueWrapper,
+)
+from .connectors import (
+    ConnectionInfo,
+    ConnectorInfo,
+    DsConfigInfo,
+)
+from .dashboards import (
+    DashboardAnalytics,
+    DashboardInfo,
+    DashboardSource,
+)
+from .datasets import (
+    DatasetCreateSpec,
+    DatasetDataResponse,
+    DatasetPatchData,
+    DatasetPatchRequest,
+    DatasetProperties,
+    DatasetSchema,
+    DatasetsList,
+)
+from .dataviews import (
+    ActiveUser,
+    ActiveUsersList,
+    DataviewColumn,
+    DataviewCreateRequest,
+    DataviewDataRequest,
+    DataviewDataResponse,
+    DataviewPatchData,
+    DataviewPatchRequest,
+    DataviewProperties,
+    DataviewSchema,
+    DataviewsList,
+)
+from .exports import (
+    AddExportSpec,
+    ExportStatus,
+    HandlerType,
+    ItemExportInfo,
+    PipelineExportsModificationResp,
+    PipelineExportsPaginated,
+    S3TargetProperties,
+    TriggerType,
+)
+from .files import (
+    AdditionalInfo,
+    ExtractSheetsPatch,
+    FileDetails,
+    FilePatchData,
+    FilePatchOperation,
+    FilePatchPath,
+    FilePatchRequest,
+    FileSchema,
+    FilesList,
+    SheetInfo,
+    StatusInfo,
+)
+from .folders import (
+    BulkFolderPatchRequest,
+    CreateFolder,
+    FolderDetails,
+    FolderSchema,
+    FoldersList,
+)
+from .jobs import (
+    JobResponse,
+    JobSchema,
+    JobsGetResponse,
+    JobStatus,
+    ObjectJobSchema,
+)
+from .pipeline import (
+    AggregateFunction,
+    ColumnType,
+    DateComponent,
+    DateDiffUnit,
+    FillDirection,
+    FilterType,
+    JoinType,
+    JsonType,
+    MathOperator,
+    Operator,
+    PipelineInfo,
+    PipelineTaskInfo,
+    PipelineTasksList,
+    ProviderType,
+    SetValue,
+    SortDirection,
+    SubstringDirection,
+    TaskType,
+    TextCase,
+    ValueType,
+    WindowFunction,
+    WindowRange,
+)
+from .projects import (
+    AddUsersToProject,
+    PatchOperation,
+    ProjectCreate,
+    ProjectList,
+    ProjectPatch,
+    ProjectProperties,
+    ProjectSchema,
+    ProjectsPatch,
+    ProjectUserPatch,
+)
+from .webhooks import (
+    WebhookCreate,
+    WebhookInfo,
+)
+from .workspaces import (
+    WorkspaceSchema,
+    WorkspacesSchema,
+)
 
 __all__ = [
     # Files models
@@ -28,6 +139,8 @@ __all__ = [
     "FilePatchRequest",
     "FilePatchData",
     "ExtractSheetsPatch",
+    "FilePatchOperation",
+    "FilePatchPath",
     # Jobs models
     "JobSchema",
     "JobResponse",
@@ -76,6 +189,18 @@ __all__ = [
     "AddUsersToProject",
     "ProjectUserPatch",
     "ProjectsPatch",
+    # Client Apps models
+    "ValueWrapper",
+    "ClientAppSchema",
+    "ClientAppsListResponse",
+    "ClientAppCreate",
+    "ClientAppPostResponse",
+    # Folders models
+    "FolderSchema",
+    "FoldersList",
+    "CreateFolder",
+    "FolderDetails",
+    "BulkFolderPatchRequest",
     # Pipeline models
     "Operator",
     "ColumnType",
@@ -83,9 +208,19 @@ __all__ = [
     "JoinType",
     "TextCase",
     "DateComponent",
+    "DateDiffUnit",
     "WindowFunction",
+    "WindowRange",
     "FillDirection",
     "AggregateFunction",
+    "ProviderType",
+    "FilterType",
+    "SortDirection",
+    "MathOperator",
+    "SubstringDirection",
+    "JsonType",
+    "TaskType",
+    "SetValue",
     "PipelineTaskInfo",
     "PipelineTasksList",
     "PipelineInfo",

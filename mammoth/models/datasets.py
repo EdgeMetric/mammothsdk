@@ -2,84 +2,94 @@
 Pydantic models for Datasets API responses.
 """
 
-from typing import Optional, List, Dict, Any, Union
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict
 
 
 class DatasetProperties(BaseModel):
     """Dataset properties configuration."""
+
     model_config = ConfigDict(extra="allow")
-    
-    file_type: Optional[str] = None
-    encoding: Optional[str] = None
-    delimiter: Optional[str] = None
-    has_headers: Optional[bool] = None
-    row_count: Optional[int] = None
-    column_count: Optional[int] = None
-    file_size: Optional[int] = None
+
+    file_type: str | None = None
+    encoding: str | None = None
+    delimiter: str | None = None
+    has_headers: bool | None = None
+    row_count: int | None = None
+    column_count: int | None = None
+    file_size: int | None = None
 
 
 class DatasetSchema(BaseModel):
     """Dataset schema model."""
+
     model_config = ConfigDict(extra="allow")
-    
+
     id: int
     name: str
-    status: Optional[str] = None
-    description: Optional[str] = None
-    properties: Optional[DatasetProperties] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    created_by: Optional[int] = None
-    workspace_id: Optional[int] = None
-    project_id: Optional[int] = None
-    folder_id: Optional[int] = None
+    status: str | None = None
+    description: str | None = None
+    properties: DatasetProperties | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    created_by: int | None = None
+    workspace_id: int | None = None
+    project_id: int | None = None
+    folder_id: int | None = None
 
 
 class DatasetsList(BaseModel):
     """List of datasets response."""
+
     model_config = ConfigDict(extra="allow")
-    
-    datasets: List[DatasetSchema]
-    total: Optional[int] = None
-    limit: Optional[int] = None
-    offset: Optional[int] = None
+
+    datasets: list[DatasetSchema]
+    total: int | None = None
+    limit: int | None = None
+    offset: int | None = None
 
 
 class DatasetCreateSpec(BaseModel):
     """Dataset creation specification."""
+
     model_config = ConfigDict(extra="allow")
-    
-    name: Optional[str] = None
-    description: Optional[str] = None
+
+    name: str | None = None
+    description: str | None = None
     source_type: str  # e.g., "file", "url", "database"
-    source_config: Dict[str, Any]
-    properties: Optional[DatasetProperties] = None
+    source_config: dict[str, Any]
+    properties: DatasetProperties | None = None
 
 
 class DatasetPatchData(BaseModel):
     """Dataset patch operation data."""
+
     model_config = ConfigDict(extra="allow")
-    
+
     op: str  # "replace", "add", "remove"
     path: str
-    value: Optional[Any] = None
+    value: Any | None = None
 
 
 class DatasetPatchRequest(BaseModel):
     """Dataset patch request."""
+
     model_config = ConfigDict(extra="allow")
-    
-    patch: List[DatasetPatchData]
+
+    patch: list[DatasetPatchData]
 
 
 class DatasetDataResponse(BaseModel):
     """Dataset data response."""
+
     model_config = ConfigDict(extra="allow")
-    
-    data: List[Dict[str, Any]]
-    columns: Optional[List[str]] = None
-    total_rows: Optional[int] = None
-    offset: Optional[int] = None
-    limit: Optional[int] = None
+
+    data: list[dict[str, Any]]
+    columns: list[str] | None = None
+    total_rows: int | None = None
+    offset: int | None = None
+    limit: int | None = None

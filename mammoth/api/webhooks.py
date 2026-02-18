@@ -2,7 +2,14 @@
 Webhooks API client for managing event notification webhooks in Mammoth.
 """
 
-from typing import Dict, Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..client import MammothClient
+
+_list = list  # Alias to avoid shadowing by method name
 
 
 class WebhooksAPI:
@@ -14,22 +21,30 @@ class WebhooksAPI:
         client.webhooks.delete(webhook_id)
     """
 
-    def __init__(self, client):
+    def __init__(self, client: MammothClient) -> None:
         self._client = client
 
     def _ws(self) -> int:
         return self._client.workspace_id
 
-    def list(self) -> list:
+    def _proj(self) -> int:
+        proj = getattr(self._client, "project_id", None)
+        if proj is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        return proj
+
+    def list(self) -> _list[dict[str, Any]]:
         """List all webhooks.
 
         Returns:
             List of webhook dicts.
         """
-        response = self._client._request("GET", f"/workspaces/{self._ws()}/webhooks")
-        return response.get("webhooks", response if isinstance(response, list) else [])
+        response = self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/projects/{self._proj()}/webhooks"
+        )
+        return response.get("webhooks", response if isinstance(response, _list) else [])
 
-    def create(self, config: Dict[str, Any]) -> dict:
+    def create(self, config: dict[str, Any]) -> dict[str, Any]:
         """Create a new webhook.
 
         Args:
@@ -38,9 +53,11 @@ class WebhooksAPI:
         Returns:
             Dict with created webhook info.
         """
-        return self._client._request("POST", f"/workspaces/{self._ws()}/webhooks", json=config)
+        return self._client._request_json(
+            "POST", f"/workspaces/{self._ws()}/projects/{self._proj()}/webhooks", json=config
+        )
 
-    def get(self, webhook_id: int) -> dict:
+    def get(self, webhook_id: int) -> dict[str, Any]:
         """Get webhook details.
 
         Args:
@@ -49,9 +66,11 @@ class WebhooksAPI:
         Returns:
             Dict with webhook details.
         """
-        return self._client._request("GET", f"/workspaces/{self._ws()}/webhooks/{webhook_id}")
+        return self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/projects/{self._proj()}/webhooks/{webhook_id}"
+        )
 
-    def update(self, webhook_id: int, config: Dict[str, Any]) -> dict:
+    def update(self, webhook_id: int, config: dict[str, Any]) -> dict[str, Any]:
         """Update a webhook.
 
         Args:
@@ -61,9 +80,13 @@ class WebhooksAPI:
         Returns:
             Dict with updated webhook info.
         """
-        return self._client._request("PATCH", f"/workspaces/{self._ws()}/webhooks/{webhook_id}", json=config)
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{self._ws()}/projects/{self._proj()}/webhooks/{webhook_id}",
+            json=config,
+        )
 
-    def delete(self, webhook_id: int) -> dict:
+    def delete(self, webhook_id: int) -> dict[str, Any]:
         """Delete a webhook.
 
         Args:
@@ -72,4 +95,6 @@ class WebhooksAPI:
         Returns:
             Dict with deletion result.
         """
-        return self._client._request("DELETE", f"/workspaces/{self._ws()}/webhooks/{webhook_id}")
+        return self._client._request_json(
+            "DELETE", f"/workspaces/{self._ws()}/projects/{self._proj()}/webhooks/{webhook_id}"
+        )

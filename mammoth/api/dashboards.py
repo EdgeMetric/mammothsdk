@@ -2,7 +2,14 @@
 Dashboards API client for managing dashboards in Mammoth.
 """
 
-from typing import Optional, Dict, Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..client import MammothClient
+
+_list = list  # Alias to avoid shadowing by method name
 
 
 class DashboardsAPI:
@@ -15,22 +22,22 @@ class DashboardsAPI:
         client.dashboards.delete(dashboard_id)
     """
 
-    def __init__(self, client):
+    def __init__(self, client: MammothClient) -> None:
         self._client = client
 
     def _ws(self) -> int:
         return self._client.workspace_id
 
-    def list(self) -> list:
+    def list(self) -> _list[dict[str, Any]]:
         """List all dashboards.
 
         Returns:
             List of dashboard dicts.
         """
-        response = self._client._request("GET", f"/workspaces/{self._ws()}/dashboards")
-        return response.get("dashboards", response if isinstance(response, list) else [])
+        response = self._client._request_json("GET", f"/workspaces/{self._ws()}/dashboards")
+        return response.get("dashboards", response if isinstance(response, _list) else [])
 
-    def create(self, config: Dict[str, Any]) -> dict:
+    def create(self, config: dict[str, Any]) -> dict[str, Any]:
         """Create a new dashboard.
 
         Args:
@@ -39,9 +46,11 @@ class DashboardsAPI:
         Returns:
             Dict with created dashboard info (may include job ID for async creation).
         """
-        return self._client._request("POST", f"/workspaces/{self._ws()}/dashboards", json=config)
+        return self._client._request_json(
+            "POST", f"/workspaces/{self._ws()}/dashboards", json=config
+        )
 
-    def get(self, dashboard_id: int) -> dict:
+    def get(self, dashboard_id: int) -> dict[str, Any]:
         """Get dashboard details.
 
         Args:
@@ -50,9 +59,11 @@ class DashboardsAPI:
         Returns:
             Dict with dashboard details.
         """
-        return self._client._request("GET", f"/workspaces/{self._ws()}/dashboards/{dashboard_id}")
+        return self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/dashboards/{dashboard_id}"
+        )
 
-    def update(self, dashboard_id: int, config: Dict[str, Any]) -> dict:
+    def update(self, dashboard_id: int, config: dict[str, Any]) -> dict[str, Any]:
         """Update a dashboard.
 
         Args:
@@ -62,9 +73,11 @@ class DashboardsAPI:
         Returns:
             Dict with updated dashboard info.
         """
-        return self._client._request("PATCH", f"/workspaces/{self._ws()}/dashboards/{dashboard_id}", json=config)
+        return self._client._request_json(
+            "PATCH", f"/workspaces/{self._ws()}/dashboards/{dashboard_id}", json=config
+        )
 
-    def delete(self, dashboard_id: int) -> dict:
+    def delete(self, dashboard_id: int) -> dict[str, Any]:
         """Delete a dashboard.
 
         Args:
@@ -73,18 +86,20 @@ class DashboardsAPI:
         Returns:
             Dict with deletion result.
         """
-        return self._client._request("DELETE", f"/workspaces/{self._ws()}/dashboards/{dashboard_id}")
+        return self._client._request_json(
+            "DELETE", f"/workspaces/{self._ws()}/dashboards/{dashboard_id}"
+        )
 
-    def get_sources(self) -> list:
+    def get_sources(self) -> _list[dict[str, Any]]:
         """Get available dashboard data sources.
 
         Returns:
             List of source dicts.
         """
-        response = self._client._request("GET", f"/workspaces/{self._ws()}/dashboards/sources")
-        return response.get("sources", response if isinstance(response, list) else [])
+        response = self._client._request_json("GET", f"/workspaces/{self._ws()}/dashboards/sources")
+        return response.get("sources", response if isinstance(response, _list) else [])
 
-    def get_analytics(self, dashboard_id: int) -> dict:
+    def get_analytics(self, dashboard_id: int) -> dict[str, Any]:
         """Get dashboard analytics (views, users).
 
         Args:
@@ -93,9 +108,11 @@ class DashboardsAPI:
         Returns:
             Dict with analytics data.
         """
-        return self._client._request("GET", f"/workspaces/{self._ws()}/dashboards/{dashboard_id}/analytics")
+        return self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/dashboards/{dashboard_id}/analytics"
+        )
 
-    def share(self, dashboard_id: int, config: Dict[str, Any]) -> dict:
+    def share(self, dashboard_id: int, config: dict[str, Any]) -> dict[str, Any]:
         """Share a dashboard.
 
         Args:
@@ -105,9 +122,11 @@ class DashboardsAPI:
         Returns:
             Dict with sharing result.
         """
-        return self._client._request("POST", f"/workspaces/{self._ws()}/dashboards/{dashboard_id}/share", json=config)
+        return self._client._request_json(
+            "POST", f"/workspaces/{self._ws()}/dashboards/{dashboard_id}/share", json=config
+        )
 
-    def action(self, dashboard_id: int, action_config: Dict[str, Any]) -> dict:
+    def action(self, dashboard_id: int, action_config: dict[str, Any]) -> dict[str, Any]:
         """Perform an action on a dashboard.
 
         Args:
@@ -117,9 +136,11 @@ class DashboardsAPI:
         Returns:
             Dict with action result.
         """
-        return self._client._request("POST", f"/workspaces/{self._ws()}/dashboards/{dashboard_id}/action", json=action_config)
+        return self._client._request_json(
+            "POST", f"/workspaces/{self._ws()}/dashboards/{dashboard_id}/action", json=action_config
+        )
 
-    def get_by_url(self, url: str) -> dict:
+    def get_by_url(self, url: str) -> dict[str, Any]:
         """Get dashboard by URL slug.
 
         Args:
@@ -128,9 +149,9 @@ class DashboardsAPI:
         Returns:
             Dict with dashboard details.
         """
-        return self._client._request("GET", f"/workspaces/{self._ws()}/dashboards/url/{url}")
+        return self._client._request_json("GET", f"/workspaces/{self._ws()}/dashboards/url/{url}")
 
-    def get_draft_data(self, dashboard_id: int, sql: str) -> dict:
+    def get_draft_data(self, dashboard_id: int, sql: str) -> dict[str, Any]:
         """Get draft data using SQL query.
 
         Args:
@@ -140,9 +161,13 @@ class DashboardsAPI:
         Returns:
             Dict with query results.
         """
-        return self._client._request("POST", f"/workspaces/{self._ws()}/dashboards/{dashboard_id}/getDraftData", json={"sql": sql})
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{self._ws()}/dashboards/{dashboard_id}/getDraftData",
+            json={"sql": sql},
+        )
 
-    def get_publish_data(self, dashboard_id: int, sql: str) -> dict:
+    def get_publish_data(self, dashboard_id: int, sql: str) -> dict[str, Any]:
         """Get published data using SQL query.
 
         Args:
@@ -152,4 +177,8 @@ class DashboardsAPI:
         Returns:
             Dict with query results.
         """
-        return self._client._request("POST", f"/workspaces/{self._ws()}/dashboards/{dashboard_id}/getPublishData", json={"sql": sql})
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{self._ws()}/dashboards/{dashboard_id}/getPublishData",
+            json={"sql": sql},
+        )

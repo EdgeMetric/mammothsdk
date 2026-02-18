@@ -2,7 +2,14 @@
 Datasets API client for managing datasets in Mammoth.
 """
 
-from typing import Optional, Dict, Any, List
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..client import MammothClient
+
+_list = list  # Alias to avoid shadowing by method name
 
 
 class DatasetsAPI:
@@ -14,27 +21,27 @@ class DatasetsAPI:
         data = client.datasets.get_data(123)
     """
 
-    def __init__(self, client):
+    def __init__(self, client: MammothClient) -> None:
         self._client = client
 
     def _ws(self) -> int:
         return self._client.workspace_id
 
-    def _proj(self, project_id: Optional[int] = None) -> int:
+    def _proj(self, project_id: int | None = None) -> int:
         if project_id is not None:
             return project_id
-        proj = getattr(self._client, 'project_id', None)
+        proj = getattr(self._client, "project_id", None)
         if proj is not None:
             return proj
         raise ValueError("project_id must be set on the client using client.set_project_id()")
 
     def list(
         self,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
         limit: int = 100,
         sort: str = "(created_at:desc)",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get list of datasets in a project.
 
         Args:
@@ -49,14 +56,16 @@ class DatasetsAPI:
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
         params = {"fields": "id,name", "limit": limit, "sort": sort}
-        return self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/datasets", params=params)
+        return self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets", params=params
+        )
 
     def get(
         self,
         dataset_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Get dataset details by ID.
 
         Args:
@@ -69,16 +78,18 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}")
+        return self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}"
+        )
 
     def get_data(
         self,
         dataset_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
         timeout: int = 300,
         poll_interval: int = 2,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get the actual data from a dataset. Polls the job until completion.
 
         Args:
@@ -94,25 +105,29 @@ class DatasetsAPI:
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
 
-        response = self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/data")
+        response = self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/data"
+        )
 
-        if isinstance(response, dict) and 'job_id' in response:
-            job_id = response['job_id']
+        if isinstance(response, dict) and "job_id" in response:
+            job_id = response["job_id"]
             completed_job = self._client.jobs.wait_for_job(
-                job_id=job_id, timeout=timeout, poll_interval=poll_interval,
+                job_id=job_id,
+                timeout=timeout,
+                poll_interval=poll_interval,
             )
-            return completed_job.get('response', completed_job)
+            return completed_job.get("response", completed_job)
 
         return response
 
     def create(
         self,
-        dataset_spec: Dict[str, Any],
+        dataset_spec: dict[str, Any],
         ds_creation_type: str,
-        folder_resource_id: Optional[str] = None,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        folder_resource_id: str | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Create a new dataset.
 
         Args:
@@ -128,19 +143,24 @@ class DatasetsAPI:
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
 
-        payload: Dict[str, Any] = {"dataset_spec": dataset_spec, "ds_creation_type": ds_creation_type}
+        payload: dict[str, Any] = {
+            "dataset_spec": dataset_spec,
+            "ds_creation_type": ds_creation_type,
+        }
         if folder_resource_id is not None:
             payload["folder_resource_id"] = folder_resource_id
 
-        return self._client._request("POST", f"/workspaces/{ws}/projects/{proj}/datasets", json=payload)
+        return self._client._request_json(
+            "POST", f"/workspaces/{ws}/projects/{proj}/datasets", json=payload
+        )
 
     def update(
         self,
         dataset_id: int,
-        patch_data: Dict[str, Any],
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        patch_data: dict[str, Any],
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Update a dataset.
 
         Args:
@@ -154,13 +174,17 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request("PATCH", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}", json={"patch": patch_data})
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}",
+            json={"patch": patch_data},
+        )
 
     def delete(
         self,
         dataset_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
     ) -> None:
         """Delete a dataset.
 
@@ -171,14 +195,16 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        self._client._request("DELETE", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}")
+        self._client._request_json(
+            "DELETE", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}"
+        )
 
     def bulk_update(
         self,
-        patch_data: Dict[str, Any],
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        patch_data: dict[str, Any],
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Update multiple datasets (bulk operation).
 
         Args:
@@ -191,12 +217,14 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request("PATCH", f"/workspaces/{ws}/projects/{proj}/datasets", json={"patch": patch_data})
+        return self._client._request_json(
+            "PATCH", f"/workspaces/{ws}/projects/{proj}/datasets", json={"patch": patch_data}
+        )
 
     def bulk_delete(
         self,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
     ) -> None:
         """Delete multiple datasets (bulk operation).
 
@@ -206,14 +234,14 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        self._client._request("DELETE", f"/workspaces/{ws}/projects/{proj}/datasets")
+        self._client._request_json("DELETE", f"/workspaces/{ws}/projects/{proj}/datasets")
 
     def browse(
         self,
         dataset_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Browse dataset contents (dataviews, metadata).
 
         Args:
@@ -226,14 +254,16 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/browse")
+        return self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/browse"
+        )
 
     def list_batches(
         self,
         dataset_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> list:
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> _list[dict[str, Any]]:
         """List batches for a dataset.
 
         Args:
@@ -246,16 +276,18 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        response = self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches")
-        return response.get("batches", response if isinstance(response, list) else [])
+        response = self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches"
+        )
+        return response.get("batches", response if isinstance(response, _list) else [])
 
     def get_batch(
         self,
         dataset_id: int,
         batch_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Get details of a specific batch.
 
         Args:
@@ -269,14 +301,16 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches/{batch_id}")
+        return self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches/{batch_id}"
+        )
 
     def get_file_settings(
         self,
         dataset_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Get file settings for a dataset.
 
         Args:
@@ -289,4 +323,6 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        return self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/file_settings")
+        return self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/file_settings"
+        )

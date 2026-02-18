@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mammoth"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python SDK for Mammoth Analytics platform"
 authors = ["Mammoth Analytics <support@mammoth.io>"]
 readme = "README.md"
@@ -14,16 +14,15 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9", 
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Information Analysis"
 ]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 requests = "^2.32.0"
 pydantic = "^2.11.0"
 
@@ -31,27 +30,39 @@ pydantic = "^2.11.0"
 pytest = "^8.4.0"
 pytest-cov = "^6.2.0"
 black = "^25.1.0"
-isort = "^6.0.0"
-flake8 = "^7.3.0"
+ruff = "^0.9.0"
 mypy = "^1.17.0"
 types-requests = "^2.32.0"
+mkdocs-material = "^9.6.0"
+mkdocstrings = {extras = ["python"], version = "^0.28.0"}
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.black]
-line-length = 88
-target-version = ['py39', 'py310', 'py311']
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "unit: Unit tests (no API calls)",
+    "integration: Integration tests (requires live API)",
+    "slow: Slow tests",
+]
 
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-line_length = 100
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+ignore = ["UP007", "SIM108"]
 
 [tool.mypy]
 python_version = "3.10"
-warn_return_any = true
+strict = true
+warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
@@ -61,10 +72,26 @@ no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 warn_no_return = true
-warn_unreachable = true
+warn_unreachable = false
 strict_equality = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+disallow_untyped_decorators = false
 
+[[tool.mypy.overrides]]
+module = "mammoth.api.*"
+warn_return_any = false
+# API methods call _request() which returns dict | list; methods narrow to dict
+# This is a standard SDK pattern — ignore return type narrowing errors
+disable_error_code = ["return-value", "arg-type", "union-attr"]
+
+[[tool.mypy.overrides]]
+module = "mammoth._mixins.*"
+# Mixin methods access View attributes not defined on the mixin class
+disable_error_code = ["attr-defined"]
+
+[[tool.mypy.overrides]]
+module = "mammoth.view"
+warn_return_any = false

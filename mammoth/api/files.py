@@ -2,14 +2,27 @@
 Files API client for managing files and datasets in Mammoth.
 """
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
-from typing import List, Optional, Union, BinaryIO
+from typing import TYPE_CHECKING, Any, BinaryIO
+
+if TYPE_CHECKING:
+    from ..client import MammothClient
+
 from ..models.files import (
-    FilesList, FileDetails, FileSchema, FilePatchRequest,
-    FilePatchData, FilePatchOperation, FilePatchPath
+    FileDetails,
+    FilePatchData,
+    FilePatchOperation,
+    FilePatchPath,
+    FilePatchRequest,
+    FileSchema,
+    FilesList,
 )
 from ..models.jobs import ObjectJobSchema
+
+_list = list  # Alias to avoid shadowing by method name
 
 
 class FilesAPI:
@@ -22,29 +35,29 @@ class FilesAPI:
         client.files.delete(123)
     """
 
-    def __init__(self, client):
+    def __init__(self, client: MammothClient) -> None:
         self._client = client
 
     def _ws(self) -> int:
         return self._client.workspace_id
 
     def _proj(self) -> int:
-        proj = getattr(self._client, 'project_id', None)
+        proj = getattr(self._client, "project_id", None)
         if proj is None:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
         return proj
 
     def list(
         self,
-        fields: Optional[str] = None,
-        file_ids: Optional[List[int]] = None,
-        names: Optional[List[str]] = None,
-        statuses: Optional[List[str]] = None,
-        created_at: Optional[str] = None,
-        updated_at: Optional[str] = None,
+        fields: str | None = None,
+        file_ids: _list[int] | None = None,
+        names: _list[str] | None = None,
+        statuses: _list[str] | None = None,
+        created_at: str | None = None,
+        updated_at: str | None = None,
         limit: int = 50,
         offset: int = 0,
-        sort: Optional[str] = None,
+        sort: str | None = None,
     ) -> FilesList:
         """List files in a project with optional filtering and pagination.
 
@@ -64,7 +77,7 @@ class FilesAPI:
         """
         ws = self._ws()
         proj = self._proj()
-        params = {}
+        params: dict[str, Any] = {}
         if fields:
             params["fields"] = fields
         if file_ids:
@@ -84,13 +97,15 @@ class FilesAPI:
         if sort:
             params["sort"] = sort
 
-        response = self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/files", params=params)
+        response = self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/files", params=params
+        )
         return FilesList(**response)
 
     def get(
         self,
         file_id: int,
-        fields: Optional[str] = None,
+        fields: str | None = None,
     ) -> FileSchema:
         """Get detailed information about a specific file.
 
@@ -103,22 +118,24 @@ class FilesAPI:
         """
         ws = self._ws()
         proj = self._proj()
-        params = {}
+        params: dict[str, Any] = {}
         if fields:
             params["fields"] = fields
-        response = self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/files/{file_id}", params=params)
+        response = self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/files/{file_id}", params=params
+        )
         file_details = FileDetails(**response)
         return file_details.file
 
     def upload(
         self,
-        files: Union[List[Union[str, Path, BinaryIO]], str, Path, BinaryIO] = None,
-        folder_resource_id: Optional[str] = None,
-        append_to_ds_id: Optional[int] = None,
-        override_target_schema: Optional[bool] = None,
+        files: _list[str | Path | BinaryIO] | str | Path | BinaryIO | None = None,
+        folder_resource_id: str | None = None,
+        append_to_ds_id: int | None = None,
+        override_target_schema: bool | None = None,
         wait_for_completion: bool = True,
         timeout: int = 300,
-    ) -> Union[List[int], int, None]:
+    ) -> _list[int] | int | None:
         """Upload one or more files to create datasets.
 
         Each file becomes a separate dataset. Folder structure is preserved.
@@ -140,11 +157,11 @@ class FilesAPI:
 
         if files is None:
             raise ValueError("files parameter is required")
-        if not isinstance(files, list):
+        if not isinstance(files, _list):
             files = [files]
 
-        file_data = []
-        opened_files = []
+        file_data: _list[tuple[str, tuple[str, Any, str]]] = []
+        opened_files: _list[Any] = []
 
         try:
             for file_input in files:
@@ -152,16 +169,18 @@ class FilesAPI:
                     file_path = Path(file_input)
                     if not file_path.exists():
                         raise ValueError(f"File not found: {file_path}")
-                    file_obj = open(file_path, 'rb')
+                    file_obj = open(file_path, "rb")  # noqa: SIM115
                     opened_files.append(file_obj)
-                    file_data.append(('files', (file_path.name, file_obj, 'application/octet-stream')))
+                    file_data.append(
+                        ("files", (file_path.name, file_obj, "application/octet-stream"))
+                    )
                 else:
-                    filename = getattr(file_input, 'name', 'uploaded_file')
-                    if hasattr(filename, 'split'):
+                    filename = getattr(file_input, "name", "uploaded_file")
+                    if hasattr(filename, "split"):
                         filename = os.path.basename(filename)
-                    file_data.append(('files', (filename, file_input, 'application/octet-stream')))
+                    file_data.append(("files", (filename, file_input, "application/octet-stream")))
 
-            params = {}
+            params: dict[str, Any] = {}
             if folder_resource_id:
                 params["folder_resource_id"] = folder_resource_id
             if append_to_ds_id:
@@ -169,9 +188,11 @@ class FilesAPI:
             if override_target_schema is not None:
                 params["override_target_schema"] = override_target_schema
 
-            response = self._client._request(
-                "POST", f"/workspaces/{ws}/projects/{proj}/files",
-                params=params, files=file_data,
+            response = self._client._request_json(
+                "POST",
+                f"/workspaces/{ws}/projects/{proj}/files",
+                params=params,
+                files=file_data,
             )
 
         finally:
@@ -185,19 +206,21 @@ class FilesAPI:
 
         if initial_job_id:
             completed_initial_job = self._client.jobs.wait_for_job(initial_job_id, timeout=timeout)
-            job_response = completed_initial_job.get('response', {})
-            nested_job_ids = job_response.get('job_ids', [])
+            job_response = completed_initial_job.get("response", {})
+            nested_job_ids = job_response.get("job_ids", [])
 
             if not nested_job_ids:
                 return None
 
             dataset_ids = []
             for job_info in nested_job_ids:
-                nested_job_id = job_info.get('job_id')
+                nested_job_id = job_info.get("job_id")
                 if nested_job_id:
-                    completed_nested_job = self._client.jobs.wait_for_job(nested_job_id, timeout=timeout)
-                    nested_response = completed_nested_job.get('response', {})
-                    ds_id = nested_response.get('ds_id')
+                    completed_nested_job = self._client.jobs.wait_for_job(
+                        nested_job_id, timeout=timeout
+                    )
+                    nested_response = completed_nested_job.get("response", {})
+                    ds_id = nested_response.get("ds_id")
                     if ds_id:
                         dataset_ids.append(ds_id)
 
@@ -209,11 +232,11 @@ class FilesAPI:
 
     def upload_folder(
         self,
-        folder_path: Union[str, Path],
-        folder_resource_id: Optional[str] = None,
+        folder_path: str | Path,
+        folder_resource_id: str | None = None,
         wait_for_completion: bool = True,
         timeout: int = 300,
-    ) -> Union[List[int], int, None]:
+    ) -> _list[int] | int | None:
         """Upload all files in a folder to create datasets.
 
         Args:
@@ -248,9 +271,9 @@ class FilesAPI:
         """
         ws = self._ws()
         proj = self._proj()
-        self._client._request("DELETE", f"/workspaces/{ws}/projects/{proj}/files/{file_id}")
+        self._client._request_json("DELETE", f"/workspaces/{ws}/projects/{proj}/files/{file_id}")
 
-    def bulk_delete(self, file_ids: List[int]) -> None:
+    def bulk_delete(self, file_ids: _list[int]) -> None:
         """Delete multiple files.
 
         Args:
@@ -259,7 +282,9 @@ class FilesAPI:
         ws = self._ws()
         proj = self._proj()
         params = {"ids": ",".join(str(fid) for fid in file_ids)}
-        self._client._request("DELETE", f"/workspaces/{ws}/projects/{proj}/files", params=params)
+        self._client._request_json(
+            "DELETE", f"/workspaces/{ws}/projects/{proj}/files", params=params
+        )
 
     def update(self, file_id: int, patch_request: FilePatchRequest) -> ObjectJobSchema:
         """Update file configuration (e.g., set password, extract sheets).
@@ -273,7 +298,11 @@ class FilesAPI:
         """
         ws = self._ws()
         proj = self._proj()
-        response = self._client._request("PATCH", f"/workspaces/{ws}/projects/{proj}/files/{file_id}", json=patch_request.model_dump())
+        response = self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/files/{file_id}",
+            json=patch_request.model_dump(),
+        )
         return ObjectJobSchema(**response)
 
     def set_password(self, file_id: int, password: str) -> ObjectJobSchema:
@@ -297,7 +326,7 @@ class FilesAPI:
     def extract_sheets(
         self,
         file_id: int,
-        sheets: List[str],
+        sheets: _list[str],
         delete_file_after_extract: bool = True,
         combine_after_extract: bool = False,
     ) -> ObjectJobSchema:

@@ -2,9 +2,17 @@
 Folders API client for managing folders in Mammoth.
 """
 
-from typing import Optional, Dict, Any, List
-from ..models.folders import FoldersList, FolderDetails, CreateFolder, BulkFolderPatchRequest
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..client import MammothClient
+
+from ..models.folders import BulkFolderPatchRequest, CreateFolder, FolderDetails, FoldersList
 from ..models.jobs import ObjectJobSchema
+
+_list = list  # Alias to avoid shadowing by method name
 
 
 class FoldersAPI:
@@ -17,34 +25,34 @@ class FoldersAPI:
         client.folders.move(resource_ids=[...], target_folder_resource_id="...")
     """
 
-    def __init__(self, client):
+    def __init__(self, client: MammothClient) -> None:
         self._client = client
 
     def _ws(self) -> int:
         return self._client.workspace_id
 
-    def _proj(self, project_id=None) -> int:
+    def _proj(self, project_id: int | None = None) -> int:
         if project_id is not None:
             return project_id
-        proj = getattr(self._client, 'project_id', None)
+        proj = getattr(self._client, "project_id", None)
         if proj is not None:
             return proj
         raise ValueError("project_id must be set on the client using client.set_project_id()")
 
     def list(
         self,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-        fields: Optional[str] = None,
-        folder_ids: Optional[List[int]] = None,
-        names: Optional[List[str]] = None,
-        statuses: Optional[List[str]] = None,
-        created_at: Optional[str] = None,
-        updated_at: Optional[str] = None,
-        created_by: Optional[List[str]] = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+        fields: str | None = None,
+        folder_ids: _list[int] | None = None,
+        names: _list[str] | None = None,
+        statuses: _list[str] | None = None,
+        created_at: str | None = None,
+        updated_at: str | None = None,
+        created_by: _list[str] | None = None,
         limit: int = 50,
         offset: int = 0,
-        sort: Optional[str] = None,
+        sort: str | None = None,
     ) -> FoldersList:
         """List folders in a project with optional filtering and pagination.
 
@@ -68,7 +76,7 @@ class FoldersAPI:
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
 
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if fields:
             params["fields"] = fields
         if folder_ids:
@@ -90,15 +98,17 @@ class FoldersAPI:
         if sort:
             params["sort"] = sort
 
-        response = self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/folders", params=params)
+        response = self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/folders", params=params
+        )
         return FoldersList(**response)
 
     def create(
         self,
         name: str,
-        parent_resource_id: Optional[str] = None,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
+        parent_resource_id: str | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
     ) -> FolderDetails:
         """Create a new folder.
 
@@ -114,14 +124,18 @@ class FoldersAPI:
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
         folder_data = CreateFolder(name=name, parent_resource_id=parent_resource_id)
-        response = self._client._request("POST", f"/workspaces/{ws}/projects/{proj}/folders", json=folder_data.dict(exclude_none=True))
+        response = self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/folders",
+            json=folder_data.model_dump(exclude_none=True),
+        )
         return FolderDetails(**response)
 
     def delete(
         self,
-        folder_ids: List[int],
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
+        folder_ids: _list[int],
+        workspace_id: int | None = None,
+        project_id: int | None = None,
         check_dependency: bool = True,
         remove_contents: bool = True,
     ) -> None:
@@ -141,15 +155,17 @@ class FoldersAPI:
             "check_dependency": check_dependency,
             "remove_contents": remove_contents,
         }
-        self._client._request("DELETE", f"/workspaces/{ws}/projects/{proj}/folders", params=params)
+        self._client._request_json(
+            "DELETE", f"/workspaces/{ws}/projects/{proj}/folders", params=params
+        )
 
     def move(
         self,
-        resource_ids: List[str],
-        target_folder_resource_id: Optional[str] = None,
-        source_folder_resource_id: Optional[str] = None,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
+        resource_ids: _list[str],
+        target_folder_resource_id: str | None = None,
+        source_folder_resource_id: str | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
     ) -> ObjectJobSchema:
         """Move resources between folders.
 
@@ -171,5 +187,9 @@ class FoldersAPI:
             resource_ids=resource_ids,
             operation="move",
         )
-        response = self._client._request("PATCH", f"/workspaces/{ws}/projects/{proj}/folders", json=move_request.dict(exclude_none=True))
+        response = self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/folders",
+            json=move_request.model_dump(exclude_none=True),
+        )
         return ObjectJobSchema(**response)

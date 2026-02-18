@@ -2,7 +2,12 @@
 AI/LLM features API client for Mammoth.
 """
 
-from typing import Optional, Dict, Any, List
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..client import MammothClient
 
 
 class AIAPI:
@@ -14,19 +19,19 @@ class AIAPI:
         suggestions = client.ai.get_suggestions(dataview_id=1039)
     """
 
-    def __init__(self, client):
+    def __init__(self, client: MammothClient) -> None:
         self._client = client
 
     def _ws(self) -> int:
         return self._client.workspace_id
 
     def _proj(self) -> int:
-        proj = getattr(self._client, 'project_id', None)
+        proj = getattr(self._client, "project_id", None)
         if proj is None:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
         return proj
 
-    def _find_dataset(self, dataview_id: int, dataset_id: Optional[int] = None) -> int:
+    def _find_dataset(self, dataview_id: int, dataset_id: int | None = None) -> int:
         """Find dataset for a dataview."""
         if dataset_id is not None:
             return dataset_id
@@ -35,8 +40,8 @@ class AIAPI:
     def generate_profile(
         self,
         dataview_id: int,
-        dataset_id: Optional[int] = None,
-    ) -> dict:
+        dataset_id: int | None = None,
+    ) -> dict[str, Any]:
         """Generate an AI profile/summary of the dataview data.
 
         Args:
@@ -49,7 +54,7 @@ class AIAPI:
         ws = self._ws()
         proj = self._proj()
         ds = self._find_dataset(dataview_id, dataset_id)
-        return self._client._request(
+        return self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/ai/profile",
         )
@@ -57,9 +62,9 @@ class AIAPI:
     def generate_data(
         self,
         dataview_id: int,
-        config: Dict[str, Any],
-        dataset_id: Optional[int] = None,
-    ) -> dict:
+        config: dict[str, Any],
+        dataset_id: int | None = None,
+    ) -> dict[str, Any]:
         """Generate synthetic data for a dataview.
 
         Args:
@@ -73,7 +78,7 @@ class AIAPI:
         ws = self._ws()
         proj = self._proj()
         ds = self._find_dataset(dataview_id, dataset_id)
-        return self._client._request(
+        return self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/ai/generate",
             json=config,
@@ -82,8 +87,8 @@ class AIAPI:
     def get_data_gen_info(
         self,
         dataview_id: int,
-        dataset_id: Optional[int] = None,
-    ) -> dict:
+        dataset_id: int | None = None,
+    ) -> dict[str, Any]:
         """Get data generation information for a dataview.
 
         Args:
@@ -96,7 +101,7 @@ class AIAPI:
         ws = self._ws()
         proj = self._proj()
         ds = self._find_dataset(dataview_id, dataset_id)
-        return self._client._request(
+        return self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/ai/generate",
         )
@@ -104,8 +109,8 @@ class AIAPI:
     def generate_sql(
         self,
         intent: str,
-        dataview_ids: Optional[List[int]] = None,
-    ) -> dict:
+        dataview_ids: list[int] | None = None,
+    ) -> dict[str, Any]:
         """Generate SQL from natural language intent.
 
         Args:
@@ -116,16 +121,16 @@ class AIAPI:
             Dict with generated SQL and metadata.
         """
         ws = self._ws()
-        payload: Dict[str, Any] = {"intent": intent}
+        payload: dict[str, Any] = {"intent": intent}
         if dataview_ids:
             payload["dataview_ids"] = dataview_ids
-        return self._client._request("POST", f"/workspaces/{ws}/ai/sql", json=payload)
+        return self._client._request_json("POST", f"/workspaces/{ws}/ai/sql", json=payload)
 
     def get_suggestions(
         self,
         dataview_id: int,
-        dataset_id: Optional[int] = None,
-    ) -> dict:
+        dataset_id: int | None = None,
+    ) -> dict[str, Any]:
         """Get AI-powered transformation suggestions for a dataview.
 
         Args:
@@ -138,7 +143,7 @@ class AIAPI:
         ws = self._ws()
         proj = self._proj()
         ds = self._find_dataset(dataview_id, dataset_id)
-        return self._client._request(
+        return self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/ai/suggestions",
         )
@@ -148,7 +153,7 @@ class AIAPI:
         connector_key: str,
         connection_key: str,
         prompt: str,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Generate a query for a connector using AI.
 
         Args:
@@ -160,7 +165,7 @@ class AIAPI:
             Dict with generated query.
         """
         ws = self._ws()
-        return self._client._request(
+        return self._client._request_json(
             "POST",
             f"/workspaces/{ws}/connectors/{connector_key}/connections/{connection_key}/query_gen",
             json={"prompt": prompt},

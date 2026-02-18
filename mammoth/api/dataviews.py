@@ -2,7 +2,14 @@
 Dataviews API client for managing dataviews in Mammoth.
 """
 
-from typing import Optional, Dict, Any, Union, List
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..client import MammothClient
+
+_list = list  # Alias to avoid shadowing by method name
 
 
 class DataviewsAPI:
@@ -16,14 +23,14 @@ class DataviewsAPI:
     For rich View objects with transformation methods, use client.views instead.
     """
 
-    def __init__(self, client):
+    def __init__(self, client: MammothClient) -> None:
         self._client = client
 
     def _ws(self) -> int:
         return self._client.workspace_id
 
     def _proj(self) -> int:
-        proj = getattr(self._client, 'project_id', None)
+        proj = getattr(self._client, "project_id", None)
         if proj is None:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
         return proj
@@ -31,11 +38,11 @@ class DataviewsAPI:
     def list(
         self,
         dataset_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
         limit: int = 100,
         sort: str = "(created_at:desc)",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get list of dataviews in a dataset.
 
         Args:
@@ -51,15 +58,19 @@ class DataviewsAPI:
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
         params = {"limit": limit, "sort": sort}
-        return self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews", params=params)
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews",
+            params=params,
+        )
 
     def get(
         self,
         dataset_id: int,
         dataview_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Get dataview information.
 
         Args:
@@ -73,16 +84,18 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}")
+        return self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}"
+        )
 
     def create(
         self,
         dataset_id: int,
-        name: Optional[str] = "View",
-        clone_config_from: Optional[int] = None,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        name: str | None = "View",
+        clone_config_from: int | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Create or duplicate a dataview.
 
         Args:
@@ -97,19 +110,23 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        payload: Dict[str, Any] = {"name": name}
+        payload: dict[str, Any] = {"name": name}
         if clone_config_from is not None:
             payload["clone_config_from"] = clone_config_from
-        return self._client._request("POST", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews", json=payload)
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews",
+            json=payload,
+        )
 
     def update(
         self,
         dataset_id: int,
         dataview_id: int,
-        patch_data: List[Dict[str, Any]],
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        patch_data: _list[dict[str, Any]],
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Update dataview properties.
 
         Args:
@@ -124,15 +141,19 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request("PATCH", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}", json={"patch": patch_data})
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}",
+            json={"patch": patch_data},
+        )
 
     def delete(
         self,
         dataset_id: int,
         dataview_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Delete a dataview.
 
         Args:
@@ -146,15 +167,18 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request("DELETE", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}")
+        return self._client._request_json(
+            "DELETE",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}",
+        )
 
     def bulk_delete(
         self,
         dataset_id: int,
-        dataview_ids: Union[List[int], str],
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        dataview_ids: _list[int] | str,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Delete multiple dataviews.
 
         Args:
@@ -168,19 +192,23 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        if isinstance(dataview_ids, list):
+        if isinstance(dataview_ids, _list):
             ids_str = ",".join(str(id) for id in dataview_ids)
         else:
             ids_str = str(dataview_ids)
-        return self._client._request("DELETE", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews", params={"ids": ids_str})
+        return self._client._request_json(
+            "DELETE",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews",
+            params={"ids": ids_str},
+        )
 
     def get_data(
         self,
         dataset_id: int,
         dataview_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Get dataview data (GET method).
 
         Args:
@@ -194,7 +222,10 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/data")
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/data",
+        )
 
     def query_data(
         self,
@@ -203,12 +234,12 @@ class DataviewsAPI:
         sequence: int = 0,
         offset: int = 1,
         limit: int = 400,
-        columns: Optional[List[str]] = None,
-        condition: Optional[Dict[str, Any]] = None,
-        sort: Optional[str] = None,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        columns: _list[str] | None = None,
+        condition: dict[str, Any] | None = None,
+        sort: str | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Get dataview data with filtering options (POST method).
 
         Args:
@@ -228,22 +259,26 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        payload: Dict[str, Any] = {"sequence": sequence, "offset": offset, "limit": limit}
+        payload: dict[str, Any] = {"sequence": sequence, "offset": offset, "limit": limit}
         if columns is not None:
             payload["columns"] = columns
         if condition is not None:
             payload["condition"] = condition
         if sort is not None:
             payload["sort"] = sort
-        return self._client._request("POST", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/data", json=payload)
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/data",
+            json=payload,
+        )
 
     def active_users(
         self,
         dataset_id: int,
         dataview_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Get list of active users on this dataview.
 
         Args:
@@ -257,15 +292,18 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/activities")
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/activities",
+        )
 
     def mark_active(
         self,
         dataset_id: int,
         dataview_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Mark current user as active on this dataview.
 
         Args:
@@ -279,15 +317,18 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request("POST", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/activities")
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/activities",
+        )
 
     def conditional_format_list(
         self,
         dataset_id: int,
         dataview_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> list:
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> _list[dict[str, Any]]:
         """List conditional formatting rules.
 
         Args:
@@ -301,17 +342,20 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        response = self._client._request("GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional_format")
-        return response.get("rules", response if isinstance(response, list) else [])
+        response = self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional_format",
+        )
+        return response.get("rules", response if isinstance(response, _list) else [])
 
     def conditional_format_create(
         self,
         dataset_id: int,
         dataview_id: int,
-        rule: Dict[str, Any],
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        rule: dict[str, Any],
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Create a conditional formatting rule.
 
         Args:
@@ -326,16 +370,20 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request("POST", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional_format", json=rule)
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional_format",
+            json=rule,
+        )
 
     def conditional_format_update(
         self,
         dataset_id: int,
         dataview_id: int,
-        rule: Dict[str, Any],
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        rule: dict[str, Any],
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Update a conditional formatting rule.
 
         Args:
@@ -350,15 +398,19 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request("PATCH", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional_format", json=rule)
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional_format",
+            json=rule,
+        )
 
     def conditional_format_delete(
         self,
         dataset_id: int,
         dataview_id: int,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Delete all conditional formatting rules.
 
         Args:
@@ -372,16 +424,19 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request("DELETE", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional_format")
+        return self._client._request_json(
+            "DELETE",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional_format",
+        )
 
     def draft_mode(
         self,
         dataset_id: int,
         dataview_id: int,
         command: str,
-        workspace_id: Optional[int] = None,
-        project_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
         """Manage draft mode for a dataview pipeline.
 
         Args:
@@ -396,7 +451,7 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request(
+        return self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/draft",
             json={"command": command},

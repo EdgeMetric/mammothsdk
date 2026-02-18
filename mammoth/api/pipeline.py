@@ -5,7 +5,12 @@ Internal module used by the View object to manage transformation pipeline tasks.
 Not intended for direct use — use client.views.get(id) to get a View object instead.
 """
 
-from typing import Optional, Dict, Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..client import MammothClient
 
 
 class PipelineAPI:
@@ -14,10 +19,12 @@ class PipelineAPI:
     Used internally by View objects. Access via client.pipeline.
     """
 
-    def __init__(self, client):
+    def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def _resolve_ids(self, dataview_id: int, dataset_id: Optional[int] = None) -> tuple:
+    def _resolve_ids(
+        self, dataview_id: int, dataset_id: int | None = None
+    ) -> tuple[int, int, int, int]:
         """Resolve workspace, project, dataset IDs for a dataview.
 
         Args:
@@ -28,7 +35,7 @@ class PipelineAPI:
             Tuple of (workspace_id, project_id, dataset_id, dataview_id).
         """
         workspace_id = self._client.workspace_id
-        project_id = getattr(self._client, 'project_id', None)
+        project_id = getattr(self._client, "project_id", None)
         if project_id is None:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
 
@@ -50,25 +57,22 @@ class PipelineAPI:
             ValueError: If dataview is not found in any dataset.
         """
         workspace_id = self._client.workspace_id
-        project_id = getattr(self._client, 'project_id', None)
+        project_id = getattr(self._client, "project_id", None)
         if project_id is None:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
 
         datasets_response = self._client.datasets.list(
-            workspace_id=workspace_id,
-            project_id=project_id
+            workspace_id=workspace_id, project_id=project_id
         )
 
-        for dataset in datasets_response.get('datasets', []):
-            dataset_id = dataset['id']
+        for dataset in datasets_response.get("datasets", []):
+            dataset_id = dataset["id"]
             try:
                 dataviews_response = self._client.dataviews.list(
-                    dataset_id=dataset_id,
-                    workspace_id=workspace_id,
-                    project_id=project_id
+                    dataset_id=dataset_id, workspace_id=workspace_id, project_id=project_id
                 )
-                for dv in dataviews_response.get('dataviews', []):
-                    if dv.get('id') == dataview_id:
+                for dv in dataviews_response.get("dataviews", []):
+                    if dv.get("id") == dataview_id:
                         return dataset_id
             except Exception:
                 continue
@@ -78,7 +82,7 @@ class PipelineAPI:
     def _base_url(self, ws_id: int, proj_id: int, ds_id: int, dv_id: int) -> str:
         return f"/workspaces/{ws_id}/projects/{proj_id}/datasets/{ds_id}/dataviews/{dv_id}/pipeline"
 
-    def get_pipeline(self, dataview_id: int, dataset_id: Optional[int] = None) -> dict:
+    def get_pipeline(self, dataview_id: int, dataset_id: int | None = None) -> dict[str, Any]:
         """Get pipeline state for a dataview.
 
         Args:
@@ -89,9 +93,9 @@ class PipelineAPI:
             Pipeline state dict.
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request("GET", self._base_url(ws, proj, ds, dv))
+        return self._client._request_json("GET", self._base_url(ws, proj, ds, dv))
 
-    def list_tasks(self, dataview_id: int, dataset_id: Optional[int] = None) -> dict:
+    def list_tasks(self, dataview_id: int, dataset_id: int | None = None) -> dict[str, Any]:
         """List all pipeline tasks for a dataview.
 
         Args:
@@ -102,9 +106,11 @@ class PipelineAPI:
             Dict with tasks list.
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request("GET", f"{self._base_url(ws, proj, ds, dv)}/tasks")
+        return self._client._request_json("GET", f"{self._base_url(ws, proj, ds, dv)}/tasks")
 
-    def add_task(self, dataview_id: int, task_spec: Dict[str, Any], dataset_id: Optional[int] = None) -> dict:
+    def add_task(
+        self, dataview_id: int, task_spec: dict[str, Any], dataset_id: int | None = None
+    ) -> dict[str, Any]:
         """Add a new transformation task to the pipeline.
 
         Args:
@@ -116,13 +122,14 @@ class PipelineAPI:
             Dict with created task info or job info.
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request(
-            "POST",
-            f"{self._base_url(ws, proj, ds, dv)}/tasks",
-            json=task_spec
+        payload = {"DATAVIEW_ID": dv, **task_spec}
+        return self._client._request_json(
+            "POST", f"{self._base_url(ws, proj, ds, dv)}/tasks", json=payload
         )
 
-    def get_task(self, dataview_id: int, task_id: int, dataset_id: Optional[int] = None) -> dict:
+    def get_task(
+        self, dataview_id: int, task_id: int, dataset_id: int | None = None
+    ) -> dict[str, Any]:
         """Get a specific pipeline task.
 
         Args:
@@ -134,9 +141,17 @@ class PipelineAPI:
             Task details dict.
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request("GET", f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}")
+        return self._client._request_json(
+            "GET", f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}"
+        )
 
-    def update_task(self, dataview_id: int, task_id: int, task_spec: Dict[str, Any], dataset_id: Optional[int] = None) -> dict:
+    def update_task(
+        self,
+        dataview_id: int,
+        task_id: int,
+        task_spec: dict[str, Any],
+        dataset_id: int | None = None,
+    ) -> dict[str, Any]:
         """Update an existing pipeline task.
 
         Args:
@@ -149,13 +164,13 @@ class PipelineAPI:
             Updated task dict.
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request(
-            "PATCH",
-            f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}",
-            json=task_spec
+        return self._client._request_json(
+            "PATCH", f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}", json=task_spec
         )
 
-    def delete_task(self, dataview_id: int, task_id: int, dataset_id: Optional[int] = None) -> dict:
+    def delete_task(
+        self, dataview_id: int, task_id: int, dataset_id: int | None = None
+    ) -> dict[str, Any]:
         """Delete a pipeline task.
 
         Args:
@@ -167,9 +182,13 @@ class PipelineAPI:
             Delete confirmation dict.
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request("DELETE", f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}")
+        return self._client._request_json(
+            "DELETE", f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}"
+        )
 
-    def preview_task(self, dataview_id: int, task_spec: Dict[str, Any], dataset_id: Optional[int] = None) -> dict:
+    def preview_task(
+        self, dataview_id: int, task_spec: dict[str, Any], dataset_id: int | None = None
+    ) -> dict[str, Any]:
         """Preview task results without adding to pipeline.
 
         Args:
@@ -181,13 +200,13 @@ class PipelineAPI:
             Preview result dict with sample data.
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request(
-            "POST",
-            f"{self._base_url(ws, proj, ds, dv)}/tasks/preview",
-            json=task_spec
+        return self._client._request_json(
+            "POST", f"{self._base_url(ws, proj, ds, dv)}/tasks/preview", json=task_spec
         )
 
-    def draft_mode(self, dataview_id: int, command: str, dataset_id: Optional[int] = None) -> dict:
+    def draft_mode(
+        self, dataview_id: int, command: str, dataset_id: int | None = None
+    ) -> dict[str, Any]:
         """Manage draft mode for a dataview pipeline.
 
         Args:
@@ -199,8 +218,6 @@ class PipelineAPI:
             Draft mode state dict.
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request(
-            "POST",
-            f"{self._base_url(ws, proj, ds, dv)}/draft",
-            json={"command": command}
+        return self._client._request_json(
+            "POST", f"{self._base_url(ws, proj, ds, dv)}/draft", json={"command": command}
         )

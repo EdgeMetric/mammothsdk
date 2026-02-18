@@ -2,7 +2,14 @@
 Projects API client for managing projects in Mammoth.
 """
 
-from typing import Optional, Dict, Any, Union, List
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..client import MammothClient
+
+_list = list  # Alias to avoid shadowing by method name
 
 
 class ProjectsAPI:
@@ -16,7 +23,7 @@ class ProjectsAPI:
         client.projects.delete(123)
     """
 
-    def __init__(self, client):
+    def __init__(self, client: MammothClient) -> None:
         self._client = client
 
     def _ws(self) -> int:
@@ -24,9 +31,9 @@ class ProjectsAPI:
 
     def list(
         self,
-        workspace_id: Optional[int] = None,
+        workspace_id: int | None = None,
         limit: int = 100,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """List all projects in a workspace.
 
         Args:
@@ -38,13 +45,13 @@ class ProjectsAPI:
         """
         ws = workspace_id or self._ws()
         params = {"fields": "id,name", "limit": limit}
-        return self._client._request("GET", f"/workspaces/{ws}/projects", params=params)
+        return self._client._request_json("GET", f"/workspaces/{ws}/projects", params=params)
 
     def get(
         self,
-        project: Union[int, str, None] = None,
-        workspace_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        project: int | str | None = None,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
         """Get a single project by ID, name, or auto-selection.
 
         Behavior:
@@ -63,30 +70,31 @@ class ProjectsAPI:
             ValueError: If project not found or multiple projects without specification.
         """
         projects_response = self.list(workspace_id=workspace_id)
-        projects = projects_response.get('projects', [])
+        projects = projects_response.get("projects", [])
 
         if not projects:
             raise ValueError("No projects found in workspace")
 
         if isinstance(project, int):
-            matching = [p for p in projects if p['id'] == project]
+            matching = [p for p in projects if p["id"] == project]
             if not matching:
-                available = [(p['name'], p['id']) for p in projects]
+                available = [(p["name"], p["id"]) for p in projects]
                 raise ValueError(f"Project ID {project} not found. Available projects: {available}")
-            return {"id": matching[0]['id'], "name": matching[0]['name']}
+            return {"id": matching[0]["id"], "name": matching[0]["name"]}
 
         if project is None:
             if len(projects) == 1:
-                return {"id": projects[0]['id'], "name": projects[0]['name']}
+                return {"id": projects[0]["id"], "name": projects[0]["name"]}
             project_list = "\n".join([f"  - {p['name']} (ID: {p['id']})" for p in projects])
             raise ValueError(
-                f"Multiple projects found ({len(projects)}). Please specify project by name or ID:\n{project_list}"
+                f"Multiple projects found ({len(projects)}). "
+                f"Please specify project by name or ID:\n{project_list}"
             )
 
         if isinstance(project, str):
-            matching = [p for p in projects if p['name'] == project]
+            matching = [p for p in projects if p["name"] == project]
             if not matching:
-                available = [p['name'] for p in projects]
+                available = [p["name"] for p in projects]
                 raise ValueError(f"Project '{project}' not found. Available projects: {available}")
             if len(matching) > 1:
                 project_list = "\n".join([f"  - {p['name']} (ID: {p['id']})" for p in matching])
@@ -94,16 +102,16 @@ class ProjectsAPI:
                     f"Multiple projects found with name '{project}':\n{project_list}\n"
                     "Please specify project by ID instead."
                 )
-            return {"id": matching[0]['id'], "name": matching[0]['name']}
+            return {"id": matching[0]["id"], "name": matching[0]["name"]}
 
         raise ValueError(f"Invalid project type: {type(project)}. Expected int, str, or None")
 
     def create(
         self,
         name: str,
-        color: Optional[str] = None,
-        workspace_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        color: str | None = None,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
         """Create a new project.
 
         Args:
@@ -115,18 +123,18 @@ class ProjectsAPI:
             Dict with created project info.
         """
         ws = workspace_id or self._ws()
-        payload: Dict[str, Any] = {"name": name}
+        payload: dict[str, Any] = {"name": name}
         if color:
             payload["color"] = color
-        return self._client._request("POST", f"/workspaces/{ws}/projects", json=payload)
+        return self._client._request_json("POST", f"/workspaces/{ws}/projects", json=payload)
 
     def update(
         self,
         project_id: int,
-        name: Optional[str] = None,
-        color: Optional[str] = None,
-        workspace_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        name: str | None = None,
+        color: str | None = None,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
         """Update a project.
 
         Args:
@@ -145,13 +153,15 @@ class ProjectsAPI:
         if color is not None:
             operations.append({"op": "replace", "path": "/color", "value": color})
         payload = {"patch": operations}
-        return self._client._request("PATCH", f"/workspaces/{ws}/projects/{project_id}", json=payload)
+        return self._client._request_json(
+            "PATCH", f"/workspaces/{ws}/projects/{project_id}", json=payload
+        )
 
     def delete(
         self,
         project_id: int,
-        workspace_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
         """Delete a project.
 
         Args:
@@ -162,13 +172,13 @@ class ProjectsAPI:
             Dict with deletion result.
         """
         ws = workspace_id or self._ws()
-        return self._client._request("DELETE", f"/workspaces/{ws}/projects/{project_id}")
+        return self._client._request_json("DELETE", f"/workspaces/{ws}/projects/{project_id}")
 
     def bulk_update(
         self,
-        patch_data: Dict[str, Any],
-        workspace_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        patch_data: dict[str, Any],
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
         """Bulk update multiple projects.
 
         Args:
@@ -179,13 +189,13 @@ class ProjectsAPI:
             Dict with bulk update result.
         """
         ws = workspace_id or self._ws()
-        return self._client._request("PATCH", f"/workspaces/{ws}/projects", json=patch_data)
+        return self._client._request_json("PATCH", f"/workspaces/{ws}/projects", json=patch_data)
 
     def bulk_delete(
         self,
-        project_ids: List[int],
-        workspace_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        project_ids: _list[int],
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
         """Bulk delete multiple projects.
 
         Args:
@@ -197,15 +207,17 @@ class ProjectsAPI:
         """
         ws = workspace_id or self._ws()
         ids_str = ",".join(str(pid) for pid in project_ids)
-        return self._client._request("DELETE", f"/workspaces/{ws}/projects", params={"ids": ids_str})
+        return self._client._request_json(
+            "DELETE", f"/workspaces/{ws}/projects", params={"ids": ids_str}
+        )
 
     def add_users(
         self,
         project_id: int,
-        user_ids: List[str],
-        role: Optional[str] = None,
-        workspace_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        user_ids: _list[str],
+        role: str | None = None,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
         """Add users to a project.
 
         Args:
@@ -218,17 +230,19 @@ class ProjectsAPI:
             Dict with result.
         """
         ws = workspace_id or self._ws()
-        payload: Dict[str, Any] = {"user_emails": user_ids}
+        payload: dict[str, Any] = {"user_emails": user_ids}
         if role:
             payload["role"] = role
-        return self._client._request("POST", f"/workspaces/{ws}/projects/{project_id}/users", json=payload)
+        return self._client._request_json(
+            "POST", f"/workspaces/{ws}/projects/{project_id}/users", json=payload
+        )
 
     def remove_users(
         self,
         project_id: int,
-        user_ids: List[str],
-        workspace_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        user_ids: _list[str],
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
         """Remove users from a project.
 
         Args:
@@ -241,13 +255,15 @@ class ProjectsAPI:
         """
         ws = workspace_id or self._ws()
         ids_str = ",".join(str(uid) for uid in user_ids)
-        return self._client._request("DELETE", f"/workspaces/{ws}/projects/{project_id}/users", params={"ids": ids_str})
+        return self._client._request_json(
+            "DELETE", f"/workspaces/{ws}/projects/{project_id}/users", params={"ids": ids_str}
+        )
 
     def browse(
         self,
         project_id: int,
-        workspace_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
         """Browse project contents (datasets, folders).
 
         Args:
@@ -258,4 +274,4 @@ class ProjectsAPI:
             Dict with project contents.
         """
         ws = workspace_id or self._ws()
-        return self._client._request("GET", f"/workspaces/{ws}/projects/{project_id}/browse")
+        return self._client._request_json("GET", f"/workspaces/{ws}/projects/{project_id}/browse")

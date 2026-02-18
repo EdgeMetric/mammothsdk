@@ -2,7 +2,14 @@
 Automations API client for managing automations and schedules in Mammoth.
 """
 
-from typing import Dict, Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..client import MammothClient
+
+_list = list  # Alias to avoid shadowing by method name
 
 
 class AutomationsAPI:
@@ -15,24 +22,32 @@ class AutomationsAPI:
         client.automations.create_schedule(config={...})
     """
 
-    def __init__(self, client):
+    def __init__(self, client: MammothClient) -> None:
         self._client = client
 
     def _ws(self) -> int:
         return self._client.workspace_id
 
+    def _proj(self) -> int:
+        proj = getattr(self._client, "project_id", None)
+        if proj is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        return proj
+
     # ── Automations ──────────────────────────────────────────────
 
-    def list(self) -> list:
+    def list(self) -> _list[dict[str, Any]]:
         """List all automations.
 
         Returns:
             List of automation dicts.
         """
-        response = self._client._request("GET", f"/workspaces/{self._ws()}/automations")
-        return response.get("automations", response if isinstance(response, list) else [])
+        response = self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/projects/{self._proj()}/automations"
+        )
+        return response.get("automations", response if isinstance(response, _list) else [])
 
-    def create(self, config: Dict[str, Any]) -> dict:
+    def create(self, config: dict[str, Any]) -> dict[str, Any]:
         """Create a new automation.
 
         Args:
@@ -41,9 +56,11 @@ class AutomationsAPI:
         Returns:
             Dict with created automation info.
         """
-        return self._client._request("POST", f"/workspaces/{self._ws()}/automations", json=config)
+        return self._client._request_json(
+            "POST", f"/workspaces/{self._ws()}/projects/{self._proj()}/automations", json=config
+        )
 
-    def get(self, automation_id: int) -> dict:
+    def get(self, automation_id: int) -> dict[str, Any]:
         """Get automation details.
 
         Args:
@@ -52,9 +69,11 @@ class AutomationsAPI:
         Returns:
             Dict with automation details.
         """
-        return self._client._request("GET", f"/workspaces/{self._ws()}/automations/{automation_id}")
+        return self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}"
+        )
 
-    def update(self, automation_id: int, config: Dict[str, Any]) -> dict:
+    def update(self, automation_id: int, config: dict[str, Any]) -> dict[str, Any]:
         """Update an automation.
 
         Args:
@@ -64,9 +83,13 @@ class AutomationsAPI:
         Returns:
             Dict with updated automation info.
         """
-        return self._client._request("PATCH", f"/workspaces/{self._ws()}/automations/{automation_id}", json=config)
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}",
+            json=config,
+        )
 
-    def delete(self, automation_id: int) -> dict:
+    def delete(self, automation_id: int) -> dict[str, Any]:
         """Delete an automation.
 
         Args:
@@ -75,20 +98,25 @@ class AutomationsAPI:
         Returns:
             Dict with deletion result.
         """
-        return self._client._request("DELETE", f"/workspaces/{self._ws()}/automations/{automation_id}")
+        return self._client._request_json(
+            "DELETE",
+            f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}",
+        )
 
     # ── Schedules ────────────────────────────────────────────────
 
-    def list_schedules(self) -> list:
+    def list_schedules(self) -> _list[dict[str, Any]]:
         """List all schedules.
 
         Returns:
             List of schedule dicts.
         """
-        response = self._client._request("GET", f"/workspaces/{self._ws()}/schedules")
-        return response.get("schedules", response if isinstance(response, list) else [])
+        response = self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/projects/{self._proj()}/schedules"
+        )
+        return response.get("schedules", response if isinstance(response, _list) else [])
 
-    def create_schedule(self, config: Dict[str, Any]) -> dict:
+    def create_schedule(self, config: dict[str, Any]) -> dict[str, Any]:
         """Create a new schedule.
 
         Args:
@@ -97,9 +125,11 @@ class AutomationsAPI:
         Returns:
             Dict with created schedule info.
         """
-        return self._client._request("POST", f"/workspaces/{self._ws()}/schedules", json=config)
+        return self._client._request_json(
+            "POST", f"/workspaces/{self._ws()}/projects/{self._proj()}/schedules", json=config
+        )
 
-    def update_schedule(self, schedule_id: int, config: Dict[str, Any]) -> dict:
+    def update_schedule(self, schedule_id: int, config: dict[str, Any]) -> dict[str, Any]:
         """Update a schedule.
 
         Args:
@@ -109,9 +139,13 @@ class AutomationsAPI:
         Returns:
             Dict with updated schedule info.
         """
-        return self._client._request("PATCH", f"/workspaces/{self._ws()}/schedules/{schedule_id}", json=config)
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{self._ws()}/projects/{self._proj()}/schedules/{schedule_id}",
+            json=config,
+        )
 
-    def delete_schedule(self, schedule_id: int) -> dict:
+    def delete_schedule(self, schedule_id: int) -> dict[str, Any]:
         """Delete a schedule.
 
         Args:
@@ -120,4 +154,6 @@ class AutomationsAPI:
         Returns:
             Dict with deletion result.
         """
-        return self._client._request("DELETE", f"/workspaces/{self._ws()}/schedules/{schedule_id}")
+        return self._client._request_json(
+            "DELETE", f"/workspaces/{self._ws()}/projects/{self._proj()}/schedules/{schedule_id}"
+        )

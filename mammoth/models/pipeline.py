@@ -1,22 +1,52 @@
-"""
-Pipeline transformation enums and response models.
+"""Pipeline transformation enums and response models.
 
-Provides enums for operators, column types, join types, and other
-transformation parameters, plus Pydantic models for pipeline task responses.
+Provides enums for all transformation parameters used by View methods.
+Import commonly-used enums directly from ``mammoth``::
+
+    from mammoth import Operator, ColumnType, JoinType, DateComponent
+
+Enums by category:
+
+    Filtering: Operator, FilterType
+    Column types: ColumnType, ValueType
+    Joins: JoinType
+    Text: TextCase
+    Dates: DateComponent, DateDiffUnit
+    Aggregation: AggregateFunction
+    Windows: WindowFunction, WindowRange
+    Fill: FillDirection
+    SET values: ProviderType
+    Sort: SortDirection
+    Math: MathOperator
+    Substring: SubstringDirection
+    JSON: JsonType
+    Tasks: TaskType
+
+Also includes Pydantic models for pipeline task API responses
+and the SetValue dataclass for set_values() calls.
 """
 
+from __future__ import annotations
+
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, List, Dict, Any
+from typing import TYPE_CHECKING, Any
+
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from mammoth.condition import CompoundCondition, Condition
 
 
 class Operator(str, Enum):
     """Filter operators for conditions.
 
-    Use with Condition to build row filters:
+    Use with Condition to build row filters::
+
         Condition("Sales", Operator.GTE, 1000)
         Condition("Region", Operator.IN_LIST, ["West", "East"])
     """
+
     IN_LIST = "IN_LIST"
     NOT_IN_LIST = "NOT_IN_LIST"
     GT = "GT"
@@ -41,6 +71,7 @@ class Operator(str, Enum):
 
 class ColumnType(str, Enum):
     """Column data types for new columns and conversions."""
+
     TEXT = "TEXT"
     NUMERIC = "NUMERIC"
     DATE = "DATE"
@@ -48,6 +79,7 @@ class ColumnType(str, Enum):
 
 class ValueType(str, Enum):
     """Value types for expressions."""
+
     FIXED = "FIXED"
     EXPRESSION = "EXPRESSION"
     COLUMN = "COLUMN"
@@ -57,6 +89,7 @@ class ValueType(str, Enum):
 
 class JoinType(str, Enum):
     """Join types for combining dataviews."""
+
     INNER = "INNER"
     LEFT = "LEFT"
     RIGHT = "RIGHT"
@@ -65,13 +98,58 @@ class JoinType(str, Enum):
 
 class TextCase(str, Enum):
     """Text case transformations."""
+
     UPPER = "UPPER"
     LOWER = "LOWER"
     TITLE = "TITLE"
 
 
 class DateComponent(str, Enum):
-    """Date components for extraction and date math."""
+    """Date components for extraction.
+
+    Backend uses lowercase values. The enum values are lowercase
+    to match the expected COMPONENT payload format.
+
+    Basic components:
+        year, month, day, hour, minute, second, week, quarter
+
+    Text-based extractions (return TEXT columns):
+        weekday_text, month_text
+
+    Composite date formats (return DATE or TEXT):
+        year_month_day_as_date, month_day_year_hour_minute_second
+    """
+
+    YEAR = "year"
+    MONTH = "month"
+    DAY = "day"
+    HOUR = "hour"
+    MINUTE = "minute"
+    SECOND = "second"
+    WEEK = "week"
+    QUARTER = "quarter"
+    DAY_OF_WEEK = "day_of_week"
+    DAY_OF_YEAR = "day_of_year"
+    WEEKDAY_TEXT = "weekday_text"
+    MONTH_TEXT = "month_text"
+    YEAR_MONTH = "year_month"
+    YEAR_WEEK = "year_week"
+    YEAR_QUARTER = "year_quarter"
+    MONTH_DAY = "month_day"
+    HOUR_MINUTE = "hour_minute"
+    HOUR_MINUTE_SECOND = "hour_minute_second"
+    YEAR_MONTH_DAY = "year_month_day"
+    YEAR_MONTH_DAY_AS_DATE = "year_month_day_as_date"
+    MONTH_DAY_YEAR_HOUR_MINUTE_SECOND = "month_day_year_hour_minute_second"
+    DATE_ONLY = "date_only"
+
+
+class DateDiffUnit(str, Enum):
+    """Date units for date_diff calculations.
+
+    Uses UPPERCASE values (distinct from DateComponent which is lowercase).
+    """
+
     YEAR = "YEAR"
     MONTH = "MONTH"
     DAY = "DAY"
@@ -80,12 +158,11 @@ class DateComponent(str, Enum):
     SECOND = "SECOND"
     WEEK = "WEEK"
     QUARTER = "QUARTER"
-    DAY_OF_WEEK = "DAY_OF_WEEK"
-    DAY_OF_YEAR = "DAY_OF_YEAR"
 
 
 class WindowFunction(str, Enum):
     """Window function types."""
+
     ROW_NUMBER = "ROW_NUMBER"
     RANK = "RANK"
     DENSE_RANK = "DENSE_RANK"
@@ -104,14 +181,23 @@ class WindowFunction(str, Enum):
     NTILE = "NTILE"
 
 
+class WindowRange(str, Enum):
+    """Window range types."""
+
+    UNBOUNDED = "UNBOUNDED"
+    RUNNING = "RUNNING"
+
+
 class FillDirection(str, Enum):
     """Fill directions for missing value imputation."""
+
     FIRST_VALUE = "FIRST_VALUE"
     LAST_VALUE = "LAST_VALUE"
 
 
 class AggregateFunction(str, Enum):
     """Aggregate functions for pivot/group operations."""
+
     SUM = "SUM"
     AVG = "AVG"
     MIN = "MIN"
@@ -123,35 +209,155 @@ class AggregateFunction(str, Enum):
     MEDIAN = "MEDIAN"
     FIRST = "FIRST"
     LAST = "LAST"
+    CONCAT = "CONCAT"
+
+
+class ProviderType(str, Enum):
+    """Value provider types for SET task VALUES items.
+
+    Use in set_values() value specs to control how the value is determined:
+        FIXED — a literal value (e.g. "High", 42).
+        EXPRESSION — a system expression (e.g. "__TIME__" for current timestamp).
+    """
+
+    FIXED = "FIXED"
+    EXPRESSION = "EXPRESSION"
+
+
+class FilterType(str, Enum):
+    """Filter types for SELECT (filter_rows) tasks.
+
+    Controls whether matching rows are kept or removed:
+        SHOW — keep rows that match the condition.
+        REMOVE — discard rows that match the condition.
+    """
+
+    SHOW = "SHOW"
+    REMOVE = "REMOVE"
+
+
+class SortDirection(str, Enum):
+    """Sort direction for order_by clauses."""
+
+    ASC = "ASC"
+    DESC = "DESC"
+
+
+class MathOperator(str, Enum):
+    """Arithmetic operators for math expressions."""
+
+    ADD = "+"
+    SUBTRACT = "-"
+    MULTIPLY = "*"
+    DIVIDE = "/"
+    MODULO = "%"
+
+
+class SubstringDirection(str, Enum):
+    """Extraction direction for substring operations.
+
+    START/END: extract first/last N characters (use with num_char).
+    LEFT/RIGHT: extract characters before/after position (use with char_position).
+    """
+
+    START = "START"
+    END = "END"
+    LEFT = "LEFT"
+    RIGHT = "RIGHT"
+
+
+class JsonType(str, Enum):
+    """JSON structure types for json_extract."""
+
+    OBJECT = "OBJECT"
+    LIST = "LIST"
+
+
+class TaskType(str, Enum):
+    """Pipeline task types."""
+
+    SET = "SET"
+    SELECT = "SELECT"
+    MATH = "MATH"
+    JOIN = "JOIN"
+    PIVOT = "PIVOT"
+    WINDOW = "WINDOW"
+    FILL = "FILL"
+    LIMIT = "LIMIT"
+    LOOKUP = "LOOKUP"
+    COMBINE = "COMBINE"
+    CONVERT = "CONVERT"
+    COPY = "COPY"
+    DELETE = "DELETE"
+    ADD_COLUMN = "ADD_COLUMN"
+    REPLACE = "REPLACE"
+    SPLIT = "SPLIT"
+    SUBSTRING = "SUBSTRING"
+    TEXT_TRANSFORM = "TEXT_TRANSFORM"
+    EXTRACT_DATE = "EXTRACT_DATE"
+    DATE_DIFF = "DATE_DIFF"
+    INCREMENT_DATE = "INCREMENT_DATE"
+    UNNEST = "UNNEST"
+    CROSSTAB = "CROSSTAB"
+    JSON_HANDLE = "JSON_HANDLE"
+    GEN_AI = "GEN_AI"
+    SQL = "SQL"
+    DISCARD_DUPLICATES = "DISCARD_DUPLICATES"
+
+
+@dataclass
+class SetValue:
+    """A value specification for set_values().
+
+    Args:
+        value: The literal value to set.
+        condition: Optional condition — rows matching this condition get this value.
+
+    Example::
+
+        from mammoth import SetValue, Condition, Operator
+
+        values = [
+            SetValue("High", condition=Condition("Sales", Operator.GTE, 10000)),
+            SetValue("Low"),
+        ]
+        view.set_values(new_column="Risk", values=values)
+    """
+
+    value: Any
+    condition: Condition | CompoundCondition | None = field(default=None)
+
+
+# ── Pydantic response models ──────────────────────────────────
 
 
 class PipelineTaskInfo(BaseModel):
     """Information about a single pipeline task."""
-    id: Optional[int] = None
-    dataview_id: Optional[int] = None
-    sequence: Optional[int] = None
-    task_key: Optional[str] = None
-    status: Optional[str] = None
-    params: Optional[Dict[str, Any]] = None
 
-    class Config:
-        extra = "allow"
+    model_config = {"extra": "allow"}
+
+    id: int | None = None
+    dataview_id: int | None = None
+    sequence: int | None = None
+    task_key: str | None = None
+    status: str | None = None
+    params: dict[str, Any] | None = None
 
 
 class PipelineTasksList(BaseModel):
     """List of pipeline tasks."""
-    tasks: List[PipelineTaskInfo] = []
-    total: Optional[int] = None
 
-    class Config:
-        extra = "allow"
+    model_config = {"extra": "allow"}
+
+    tasks: list[PipelineTaskInfo] = []
+    total: int | None = None
 
 
 class PipelineInfo(BaseModel):
     """Pipeline state information."""
-    dataview_id: Optional[int] = None
-    draft_mode: Optional[bool] = None
-    tasks: List[PipelineTaskInfo] = []
 
-    class Config:
-        extra = "allow"
+    model_config = {"extra": "allow"}
+
+    dataview_id: int | None = None
+    draft_mode: bool | None = None
+    tasks: list[PipelineTaskInfo] = []

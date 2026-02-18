@@ -2,10 +2,18 @@
 Client Apps API for managing API tokens and client applications in Mammoth.
 """
 
-from typing import Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ..client import MammothClient
+
 from ..models.clientapps import (
-    ClientAppsListResponse, ClientAppSchema, ClientAppPostResponse,
-    ClientAppCreate, PatchRequest
+    ClientAppPostResponse,
+    ClientAppSchema,
+    ClientAppsListResponse,
+    PatchRequest,
 )
 
 
@@ -18,7 +26,7 @@ class ClientAppsAPI:
         client.client_apps.delete(client_key="...")
     """
 
-    def __init__(self, client):
+    def __init__(self, client: MammothClient) -> None:
         self._client = client
 
     def _ws(self) -> int:
@@ -26,11 +34,11 @@ class ClientAppsAPI:
 
     def list(
         self,
-        workspace_id: Optional[int] = None,
+        workspace_id: int | None = None,
         limit: int = 10,
         offset: int = 0,
-        fields: Optional[str] = None,
-        sort: Optional[str] = None,
+        fields: str | None = None,
+        sort: str | None = None,
     ) -> ClientAppsListResponse:
         """List client apps for a workspace.
 
@@ -45,7 +53,7 @@ class ClientAppsAPI:
             ClientAppsListResponse with list of client apps.
         """
         ws = workspace_id or self._ws()
-        params = {}
+        params: dict[str, Any] = {}
         if limit != 10:
             params["limit"] = limit
         if offset != 0:
@@ -54,14 +62,14 @@ class ClientAppsAPI:
             params["fields"] = fields
         if sort:
             params["sort"] = sort
-        response = self._client._request("GET", f"/workspaces/{ws}/clientapps", params=params)
+        response = self._client._request_json("GET", f"/workspaces/{ws}/clientapps", params=params)
         return ClientAppsListResponse(**response)
 
     def create(
         self,
         app_name: str,
-        description: Optional[str] = None,
-        workspace_id: Optional[int] = None,
+        description: str | None = None,
+        workspace_id: int | None = None,
     ) -> ClientAppPostResponse:
         """Create a new client app to generate API tokens.
 
@@ -77,14 +85,14 @@ class ClientAppsAPI:
         payload = {"app_name": app_name}
         if description:
             payload["description"] = description
-        response = self._client._request("POST", f"/workspaces/{ws}/clientapps", json=payload)
+        response = self._client._request_json("POST", f"/workspaces/{ws}/clientapps", json=payload)
         return ClientAppPostResponse(**response)
 
     def get(
         self,
         client_key: str,
-        workspace_id: Optional[int] = None,
-        fields: Optional[str] = None,
+        workspace_id: int | None = None,
+        fields: str | None = None,
     ) -> ClientAppSchema:
         """Get details of a specific client app.
 
@@ -100,14 +108,16 @@ class ClientAppsAPI:
         params = {}
         if fields:
             params["fields"] = fields
-        response = self._client._request("GET", f"/workspaces/{ws}/clientapps/{client_key}", params=params)
+        response = self._client._request_json(
+            "GET", f"/workspaces/{ws}/clientapps/{client_key}", params=params
+        )
         return ClientAppSchema(**response)
 
     def update(
         self,
         client_key: str,
         patch_request: PatchRequest,
-        workspace_id: Optional[int] = None,
+        workspace_id: int | None = None,
     ) -> ClientAppSchema:
         """Update client app details.
 
@@ -120,13 +130,15 @@ class ClientAppsAPI:
             ClientAppSchema with updated details.
         """
         ws = workspace_id or self._ws()
-        response = self._client._request("PATCH", f"/workspaces/{ws}/clientapps/{client_key}", json=patch_request.dict())
+        response = self._client._request_json(
+            "PATCH", f"/workspaces/{ws}/clientapps/{client_key}", json=patch_request.model_dump()
+        )
         return ClientAppSchema(**response)
 
     def delete(
         self,
         client_key: str,
-        workspace_id: Optional[int] = None,
+        workspace_id: int | None = None,
     ) -> None:
         """Delete a client app.
 
@@ -135,4 +147,4 @@ class ClientAppsAPI:
             workspace_id: ID of the workspace (uses client default if not provided).
         """
         ws = workspace_id or self._ws()
-        self._client._request("DELETE", f"/workspaces/{ws}/clientapps/{client_key}")
+        self._client._request_json("DELETE", f"/workspaces/{ws}/clientapps/{client_key}")

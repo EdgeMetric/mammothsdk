@@ -2,28 +2,30 @@
 Webhook data models.
 """
 
-from typing import Optional, Dict, Any, List
-from pydantic import BaseModel
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict
 
 
 class WebhookInfo(BaseModel):
     """Information about a webhook."""
-    id: Optional[int] = None
-    name: Optional[str] = None
-    url: Optional[str] = None
-    events: Optional[List[str]] = None
-    status: Optional[str] = None
-    secret: Optional[str] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
+
+    id: int | None = None
+    name: str | None = None
+    url: str | None = None
+    events: list[str] | None = None
+    status: str | None = None
+    secret: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class WebhookCreate(BaseModel):
     """Specification for creating a webhook."""
+
     name: str
     url: str
-    events: List[str] = []
-    secret: Optional[str] = None
+    events: list[str] = []
+    secret: str | None = None
