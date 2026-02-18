@@ -152,7 +152,7 @@ class TextOpsMixin:
             self._build_as_column(nc["name"], nc.get("type", "TEXT")) for nc in new_columns
         ]
 
-        return self._add_task(  # type: ignore[attr-defined]
+        return self._add_task(
             {
                 "SPLIT": {
                     "SOURCE": self._resolve_column(column),

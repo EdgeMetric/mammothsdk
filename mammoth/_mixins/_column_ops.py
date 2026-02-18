@@ -23,7 +23,7 @@ class ColumnOpsMixin:
         Returns:
             API response dict.
         """
-        return self._add_task(  # type: ignore[attr-defined]
+        return self._add_task(
             {
                 "ADD_COLUMN": [
                     {

@@ -258,7 +258,7 @@ class AdvancedOpsMixin:
                 new_column="Sentiment",
             )
         """
-        return self._add_task(  # type: ignore[attr-defined]
+        return self._add_task(
             {
                 "GEN_AI": {
                     "AS": self._build_as_column(new_column, "TEXT"),

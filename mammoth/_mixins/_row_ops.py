@@ -80,7 +80,7 @@ class RowOpsMixin:
             view.discard_duplicates(ignore_columns=["Notes", "Timestamp"])
         """
         resolved = self._resolve_columns(ignore_columns) if ignore_columns else []
-        return self._add_task(  # type: ignore[attr-defined]
+        return self._add_task(
             {
                 "DISCARD_DUPLICATES": True,
                 "IGNORE_COLUMNS": resolved,
@@ -118,7 +118,7 @@ class RowOpsMixin:
                 }
             )
 
-        return self._add_task(  # type: ignore[attr-defined]
+        return self._add_task(
             {
                 "UNNEST": {
                     "COLUMNS": col_specs,

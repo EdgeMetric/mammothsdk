@@ -169,7 +169,7 @@ class AggregateOpsMixin:
         """
         func = select["function"]
         func_str = func.upper() if isinstance(func, str) else str(func)
-        return self._add_task(  # type: ignore[attr-defined]
+        return self._add_task(
             {
                 "CROSSTAB": {
                     "ROWS": [
