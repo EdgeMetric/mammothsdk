@@ -192,8 +192,6 @@ LOGIN_HTML = """\
       <input type="password" name="api_secret" required placeholder="Your Mammoth API secret">
       <label>Workspace ID</label>
       <input type="number" name="workspace_id" required placeholder="e.g. 2">
-      <label>Base URL <span style="font-weight:400;color:#999">(optional)</span></label>
-      <input type="text" name="base_url" placeholder="https://app.mammoth.io/api/v2">
       <button type="submit">Connect</button>
     </form>
   </div>
