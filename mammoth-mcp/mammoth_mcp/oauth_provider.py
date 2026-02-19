@@ -63,7 +63,7 @@ class MammothOAuthProvider:
         state_key = secrets.token_urlsafe(32)
         await self._store.store_state(state_key, state_data)
         login_url = f"{self._settings.server_url}/login?state={state_key}"
-        logger.info("Authorization started, redirecting to login (state=%s)", state_key[:8])
+        logger.info("Authorization started: our_state=%s, claude_state=%s, redirect_uri=%s", state_key[:8], params.state[:16] if params.state else "NONE", params.redirect_uri)
         return login_url
 
     # ── Authorization code exchange ────────────────────────────
@@ -294,6 +294,9 @@ def register_login_routes(mcp_server: Any, settings: Settings, token_store: Redi
         # Redirect back to client with authorization code and Claude's original state
         redirect_uri = state_data["redirect_uri"]
         oauth_state = state_data.get("oauth_state", state)
-        params = urllib.parse.urlencode({"code": auth_code, "state": oauth_state})
+        redirect_params = urllib.parse.urlencode({"code": auth_code, "state": oauth_state})
         sep = "&" if "?" in redirect_uri else "?"
-        return RedirectResponse(url=f"{redirect_uri}{sep}{params}", status_code=302)
+        redirect_url = f"{redirect_uri}{sep}{redirect_params}"
+        logger.info("Login callback: redirect_uri=%s, oauth_state=%s, our_state=%s", redirect_uri, oauth_state[:16] if oauth_state else "NONE", state[:16])
+        logger.info("Login callback: full redirect URL=%s", redirect_url)
+        return RedirectResponse(url=redirect_url, status_code=302)
