@@ -134,14 +134,20 @@ class MammothOAuthProvider:
     # ── Token verification & revocation ────────────────────────
 
     async def load_access_token(self, token: str) -> AccessToken | None:
-        logger.debug("load_access_token called, token=%s...", token[:8] if token else "NONE")
-        data = await self._store.get_token(token)
+        logger.info("load_access_token: token=%s...", token[:8] if token else "NONE")
+        try:
+            data = await self._store.get_token(token)
+        except Exception:
+            logger.exception("Redis error in load_access_token")
+            return None
         if data is None:
-            logger.warning("Access token not found in Redis: %s...", token[:8] if token else "NONE")
+            logger.error("Access token NOT FOUND in Redis: %s...", token[:8] if token else "NONE")
             return None
         if data.get("expires_at") and data["expires_at"] < time.time():
+            logger.error("Access token EXPIRED: %s...", token[:8] if token else "NONE")
             await self._store.delete_token(token)
             return None
+        logger.info("Access token valid for client %s", data["client_id"])
         return AccessToken(
             token=token,
             client_id=data["client_id"],
