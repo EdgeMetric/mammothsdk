@@ -120,7 +120,7 @@ values. Use for grading, tagging, or classifying data.
 **Limitation**: No advanced expressions or cross-row logic. Data type \
 mismatches not allowed. Complex logic must be split into multiple tasks.
 
-### math
+### math_transform
 Perform arithmetic using column values, constants, and functions: SUM, AVG, \
 MIN, MAX, COUNT, INT, ABS. Supports BODMAS rules, nested expressions, and \
 conditions. Create new numeric columns for totals, averages, percentages, \
@@ -220,7 +220,7 @@ randomly retained. Does not control which duplicate is preserved.
 
 ## Advanced
 
-### join
+### join_views
 Combine with another view using LEFT, RIGHT, INNER, or OUTER join. Map \
 columns across data types, select which columns to bring, and add prefixes.
 **Limitation**: Equality-based key matching only. No many-to-many joins or \

@@ -16,11 +16,11 @@ logger = logging.getLogger(__name__)
 
 @mcp.tool()
 @log_tool_call
-async def list_views(ctx: Context, dataset_id: int) -> dict[str, Any]:
+async def list_views(ctx: Context, dataset_id: int | None = None) -> dict[str, Any]:
     """List all views in a dataset.
 
     Args:
-        dataset_id: The dataset ID.
+        dataset_id: The dataset ID (auto-detected if not provided).
     """
     try:
         manager = await get_manager(ctx)
