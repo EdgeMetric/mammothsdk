@@ -26,18 +26,16 @@ settings = Settings()
 async def lifespan(server: FastMCP) -> AsyncIterator[dict[str, Any]]:
     """Create resources based on mode and expose them to all tools."""
     if settings.mode == "remote":
-        from mammoth_mcp.state import UserClientRegistry
-
-        # _shared_token_store is created in _build_server() and shared with the
-        # OAuth provider.  We connect it here so Redis is ready before any request.
+        # _shared_token_store and _shared_registry are created once in
+        # _build_server().  We verify Redis connectivity here on first session.
         assert _shared_token_store is not None
+        assert _shared_registry is not None
         await _shared_token_store.connect()
-        registry = UserClientRegistry(_shared_token_store, job_timeout=settings.mammoth_job_timeout)
         logger.info("Mammoth MCP server starting (remote mode)")
         try:
-            yield {"registry": registry}
+            yield {"registry": _shared_registry}
         finally:
-            await _shared_token_store.close()
+            pass  # Redis stays open across sessions
     else:
         config = MammothConfig.from_env()
         logger.info(
@@ -52,14 +50,16 @@ async def lifespan(server: FastMCP) -> AsyncIterator[dict[str, Any]]:
 # ── Server construction ──────────────────────────────────────
 
 _shared_token_store = None  # set in _build_server() for remote mode
+_shared_registry = None  # set in _build_server() for remote mode
 
 
 def _build_server() -> FastMCP:
     """Build the FastMCP server with appropriate auth settings for the mode."""
-    global _shared_token_store
+    global _shared_token_store, _shared_registry
 
     if settings.mode == "remote":
         from mammoth_mcp.oauth_provider import MammothOAuthProvider, register_login_routes
+        from mammoth_mcp.state import UserClientRegistry
         from mammoth_mcp.token_store import RedisTokenStore
         from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
         from mcp.server.transport_security import TransportSecuritySettings
@@ -71,6 +71,7 @@ def _build_server() -> FastMCP:
             auth_code_ttl=settings.auth_code_ttl,
             access_token_ttl=settings.access_token_ttl,
         )
+        _shared_registry = UserClientRegistry(_shared_token_store, job_timeout=settings.mammoth_job_timeout)
         provider = MammothOAuthProvider(settings, _shared_token_store)
 
         auth_settings = AuthSettings(
