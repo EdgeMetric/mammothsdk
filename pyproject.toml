@@ -1,13 +1,15 @@
 [tool.poetry]
-name = "mammoth"
+name = "mammoth-io"
 version = "0.2.0"
 description = "Python SDK for Mammoth Analytics platform"
 authors = ["Mammoth Analytics <support@mammoth.io>"]
 readme = "README.md"
+license = "MIT"
 homepage = "https://mammoth.io"
-repository = "https://github.com/mammoth-analytics/mammoth-python-sdk"
+repository = "https://github.com/EdgeMetric/mm-pysdk"
 documentation = "https://docs.mammoth.io"
 keywords = ["mammoth", "analytics", "data", "api", "sdk"]
+packages = [{include = "mammoth"}]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

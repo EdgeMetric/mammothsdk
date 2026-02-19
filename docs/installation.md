@@ -2,75 +2,85 @@
 
 ## Requirements
 
-- Python 3.9 or higher
+- Python 3.10 or higher
 - pip or Poetry package manager
 
-## Installation Methods
-
-### Using pip (Recommended)
+## Install from PyPI
 
 ```bash
-pip install mammoth-python-sdk
+pip install mammoth-io
 ```
 
-### Using Poetry
+Or with Poetry:
 
 ```bash
-poetry add mammoth-python-sdk
-```
-
-### Development Installation
-
-If you want to contribute to the SDK or install from source:
-
-```bash
-# Clone the repository
-git clone https://github.com/mammoth-analytics/mammoth-python-sdk
-cd mammoth-python-sdk
-
-# Install with Poetry
-poetry install
-
-# Or install with pip
-pip install -e .
+poetry add mammoth-io
 ```
 
 ## Dependencies
 
-The SDK has minimal dependencies:
+The SDK has two runtime dependencies, installed automatically:
 
-- `requests` (^2.32.0) - HTTP client for API requests
-- `pydantic` (^2.11.0) - Data validation and serialization
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `requests` | ^2.32.0 | HTTP client for API requests |
+| `pydantic` | ^2.11.0 | Data validation and response models |
 
-Development dependencies include:
-- `pytest` - Testing framework
-- `black` - Code formatting
-- `isort` - Import sorting
-- `flake8` - Linting
-- `mypy` - Type checking
+## Development installation
 
-## Verify Installation
+Clone the repository and install with dev dependencies:
+
+```bash
+git clone https://github.com/EdgeMetric/mm-pysdk.git
+cd mm-pysdk
+poetry install
+```
+
+Or install the dev extras via pip:
+
+```bash
+pip install mammoth-io[dev]
+```
+
+### Dev tools
+
+The project uses these development tools:
+
+| Tool | Purpose |
+|------|---------|
+| `ruff` | Linting and import sorting |
+| `black` | Code formatting |
+| `mypy` | Static type checking |
+| `pytest` | Test framework |
+| `pytest-cov` | Coverage reporting |
+
+Run the dev toolchain:
+
+```bash
+# Lint
+ruff check mammoth/
+
+# Format
+black mammoth/
+
+# Type check
+mypy mammoth/
+
+# Test
+pytest
+```
+
+## Verify installation
 
 After installation, verify the SDK is working:
 
 ```python
 from mammoth import MammothClient
 
-# This should not raise any import errors
 print("Mammoth SDK installed successfully!")
 ```
 
-## Environment Setup
+## Next steps
 
-For development or testing, you may want to set up environment variables:
-
-```bash
-export MAMMOTH_API_KEY="your-api-key"
-export MAMMOTH_API_SECRET="your-api-secret"
-export MAMMOTH_BASE_URL="https://your-instance.mammoth.io"
-```
-
-## Next Steps
-
-- [Authentication Setup](authentication.md)
-- [Quick Start Guide](quick-start.md)
+- [Quick Start Guide](quick-start.md) -- create your first client and apply transformations
+- [Authentication](authentication.md) -- set up API credentials

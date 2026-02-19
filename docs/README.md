@@ -1,129 +1,74 @@
-# Mammoth Python SDK Documentation
+# Mammoth Analytics Python SDK
 
-A production-ready Python SDK for the Mammoth Analytics platform API.
+**Version 0.2.0** | Python 3.10+ | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mm-pysdk)
 
-## Quick Start
+The official Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data pipelines, apply transformations, and export results -- all from Python.
+
+## Features
+
+- **MammothClient** -- single entry point with organized sub-clients for every API resource
+- **View objects** -- rich domain objects with 25+ transformation methods (filter, set, join, pivot, window, math, and more)
+- **Condition builder** -- Pythonic filter conditions with `&` (AND) and `|` (OR) operator overloading
+- **Export helpers** -- download CSV, push to S3, PostgreSQL, BigQuery, and other destinations
+- **Type safety** -- full type hints, enums for all parameters, Pydantic models for responses
+- **MCP server** -- Model Context Protocol server for AI-assisted analytics
+
+## Quick example
 
 ```python
-from mammoth import MammothClient
+from mammoth import MammothClient, Condition, Operator, ColumnType, SetValue
 
 client = MammothClient(
     api_key="your-api-key",
-    api_secret="your-api-secret"
+    api_secret="your-api-secret",
+    workspace_id=11,
+)
+client.set_project_id(10)
+
+# Get a View and apply transformations
+view = client.views.get(1039)
+view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+view.set_values(
+    new_column="Category",
+    column_type=ColumnType.TEXT,
+    values=[
+        SetValue("High", condition=Condition("Sales", Operator.GTE, 10000)),
+        SetValue("Low"),
+    ],
 )
 
-# Upload a file and create dataset
-dataset_id = client.files.upload_files(
-    workspace_id=1,
-    project_id=1,
-    files="data.csv"
-)
+# Export results
+view.export.to_csv("output.csv")
 ```
 
-## Documentation Structure
+## Documentation
 
-### Getting Started
-- [Installation](installation.md) - Install the SDK and dependencies
-- [Authentication](authentication.md) - Set up API credentials
-- [Quick Start Guide](quick-start.md) - Your first API calls
+| Section | Description |
+|---------|-------------|
+| [Installation](installation.md) | Install the SDK and set up your environment |
+| [Quick Start](quick-start.md) | Get up and running in five minutes |
+| [Authentication](authentication.md) | API credentials and authentication |
+| [Client API](api/client.md) | `MammothClient` constructor, sub-clients, and methods |
+| [Views](api/views.md) | `View` class -- properties, transformations, data access |
+| [Conditions](api/conditions.md) | `Condition` and `CompoundCondition` filter builder |
+| [Enums](api/enums.md) | All enums: `Operator`, `ColumnType`, `JoinType`, and more |
+| [Exports](api/exports.md) | `ViewExport` and `ExportsAPI` -- CSV, S3, databases |
+| [Exceptions](api/exceptions.md) | Error classes and handling |
+| [Transformations](examples/transformations.md) | Practical transformation workflow examples |
+| [Changelog](changelog.md) | Release history |
 
-### API Reference
-- [Client](api/client.md) - MammothClient configuration and methods
-- [Files API](api/files.md) - File upload, management, and operations
-- [Jobs API](api/jobs.md) - Asynchronous job tracking and monitoring
-- [Exports API](api/exports.md) - Export to Mammoth internal dataset or External sources
-- [Data Models](api/models.md) - Request/response schemas and types
-- [Exceptions](api/exceptions.md) - Error handling and custom exceptions
-- [Utilities](api/utilities.md) - Helper functions and utilities
+## Version information
 
-### Examples & Guides
-- [Basic Usage](examples/basic-usage.md) - Simple operations and common patterns
-- [File Operations](examples/file-operations.md) - Advanced file management
-- [Job Management](examples/job-management.md) - Working with asynchronous operations
-- [Error Handling](examples/error-handling.md) - Handling errors gracefully
-- [Best Practices](examples/best-practices.md) - Recommended patterns and tips
-
-### Advanced Topics
-- [Integration Examples](advanced/integrations.md) - Database integrations and workflows
-- [Async Operations](advanced/async-operations.md) - Managing long-running tasks
-- [Configuration](advanced/configuration.md) - Advanced client configuration
-- [Troubleshooting](advanced/troubleshooting.md) - Common issues and solutions
-
-## Documentation Features
-
-### Code Examples
-Every documentation page includes:
-- ✅ Working code examples
-- ✅ Complete, runnable snippets
-- ✅ Real-world use cases
-- ✅ Error handling demonstrations
-
-### Type Information
-All examples include:
-- ✅ Full type hints
-- ✅ Parameter documentation
-- ✅ Return value specifications
-- ✅ Exception information
-
-### Cross-References
-Documentation includes:
-- ✅ Links between related topics
-- ✅ "See Also" sections
-- ✅ API cross-references
-- ✅ Example cross-links
-
-## Contributing to Documentation
-
-### Updating Examples
-When updating the SDK:
-1. Update relevant API documentation
-2. Add new examples for new features
-3. Update version information
-4. Test all code examples
-
-### Adding New Sections
-For new features:
-1. Add API reference documentation
-2. Create practical examples
-3. Update navigation links
-4. Add cross-references
-
-### Documentation Standards
-- Use clear, concise language
-- Include complete, working examples
-- Provide proper error handling
-- Link to related documentation
-
-## Support and Feedback
-
-### Getting Help
-- 📖 Check relevant documentation section
-- 🔍 Use the search functionality
-- 💬 Contact support@mammoth.io
-- 🐛 Report issues on GitHub
-
-### Improving Documentation
-- 📝 Suggest improvements
-- 🚀 Contribute examples
-- 🔧 Report documentation bugs
-- 💡 Request new topics
-
-## Version Information
-
-This documentation covers:
-- **SDK Version**: 0.1.0
-- **Python Version**: 3.9+
-- **API Version**: v2
-- **Last Updated**: Current release
-
-For version-specific information, see the [Changelog](changelog.md).
-
+- **SDK version**: 0.2.0
+- **Python**: 3.10+
+- **API version**: v2
 
 ## Support
 
-- **Mammoth Analytics Documentation**: [https://mammoth.io/docs](https://mammoth.io/docs)
+- **Documentation**: [https://docs.mammoth.io](https://docs.mammoth.io)
 - **Issues**: [GitHub Issues](https://github.com/EdgeMetric/mm-pysdk/issues)
+- **Email**: support@mammoth.io
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT License -- see LICENSE file for details.

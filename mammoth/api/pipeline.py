@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from ..exceptions import MammothAPIError
+
 if TYPE_CHECKING:
     from ..client import MammothClient
 
@@ -74,7 +76,7 @@ class PipelineAPI:
                 for dv in dataviews_response.get("dataviews", []):
                     if dv.get("id") == dataview_id:
                         return dataset_id
-            except Exception:
+            except (MammothAPIError, KeyError):
                 continue
 
         raise ValueError(f"Dataview {dataview_id} not found in any dataset in project {project_id}")

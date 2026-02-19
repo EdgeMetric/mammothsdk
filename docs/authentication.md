@@ -1,17 +1,17 @@
 # Authentication
 
-The Mammoth SDK uses API key and secret-based authentication for secure access to the Mammoth Analytics platform.
+The Mammoth SDK uses API key and secret-based authentication. Every request includes your credentials in HTTP headers automatically.
 
-## Getting API Credentials
+## Getting API credentials
 
-1. Log into your Mammoth Analytics dashboard
+1. Log in to your Mammoth Analytics dashboard
 2. Navigate to your profile settings
 3. Generate or retrieve your API key and secret
 4. Store these credentials securely
 
-## Authentication Methods
+## Client setup
 
-### Direct Authentication
+### Direct authentication
 
 ```python
 from mammoth import MammothClient
@@ -19,21 +19,19 @@ from mammoth import MammothClient
 client = MammothClient(
     api_key="your-api-key",
     api_secret="your-api-secret",
-    base_url="https://your-instance.mammoth.io"  # Optional, defaults to https://api.mammoth.io
+    workspace_id=11,
 )
+client.set_project_id(10)
 ```
 
-### Environment Variables (Recommended)
+### Environment variables (recommended)
 
-Set up environment variables for better security:
+Store credentials in environment variables for better security:
 
 ```bash
 export MAMMOTH_API_KEY="your-api-key"
 export MAMMOTH_API_SECRET="your-api-secret"
-export MAMMOTH_BASE_URL="https://your-instance.mammoth.io"
 ```
-
-Then initialize the client:
 
 ```python
 import os
@@ -42,54 +40,47 @@ from mammoth import MammothClient
 client = MammothClient(
     api_key=os.getenv("MAMMOTH_API_KEY"),
     api_secret=os.getenv("MAMMOTH_API_SECRET"),
-    base_url=os.getenv("MAMMOTH_BASE_URL", "https://api.mammoth.io")
+    workspace_id=11,
 )
 ```
 
-### Configuration File
+### Configuration file
 
-Create a configuration file (e.g., `mammoth_config.py`):
+For projects with multiple environments:
 
 ```python
-# mammoth_config.py
+# config.py
+import os
+
 MAMMOTH_CONFIG = {
-    "api_key": "your-api-key",
-    "api_secret": "your-api-secret",
-    "base_url": "https://your-instance.mammoth.io"
+    "api_key": os.getenv("MAMMOTH_API_KEY"),
+    "api_secret": os.getenv("MAMMOTH_API_SECRET"),
+    "workspace_id": int(os.getenv("MAMMOTH_WORKSPACE_ID", "11")),
+    "base_url": os.getenv("MAMMOTH_BASE_URL", "https://app.mammoth.io/api/v2"),
 }
 ```
 
-Use it in your application:
-
 ```python
 from mammoth import MammothClient
-from mammoth_config import MAMMOTH_CONFIG
+from config import MAMMOTH_CONFIG
 
 client = MammothClient(**MAMMOTH_CONFIG)
 ```
 
-## Testing Connection
+## How authentication works
 
-Always test your connection after setup:
+The client adds these headers to every request automatically:
 
-```python
-from mammoth import MammothClient
+| Header | Value |
+|--------|-------|
+| `X-API-KEY` | Your API key |
+| `X-API-SECRET` | Your API secret |
+| `X-WORKSPACE-ID` | Your workspace ID |
+| `User-Agent` | `mammoth-io/0.2.0` |
 
-client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret"
-)
+## Error handling
 
-# Test the connection
-if client.test_connection():
-    print("✓ Connected successfully!")
-else:
-    print("✗ Connection failed. Check your credentials.")
-```
-
-## Error Handling
-
-Handle authentication errors gracefully:
+Authentication errors raise `MammothAuthError` (HTTP 401):
 
 ```python
 from mammoth import MammothClient, MammothAuthError
@@ -97,74 +88,33 @@ from mammoth import MammothClient, MammothAuthError
 try:
     client = MammothClient(
         api_key="invalid-key",
-        api_secret="invalid-secret"
+        api_secret="invalid-secret",
+        workspace_id=1,
     )
-    files = client.files.list_files(workspace_id=1, project_id=1)
+    projects = client.projects.list()
 except MammothAuthError:
-    print("Authentication failed - check your API credentials")
+    print("Authentication failed -- check your API credentials")
 ```
 
-## Security Best Practices
+## Security best practices
 
-### 1. Never Hardcode Credentials
-
-❌ **Don't do this:**
-```python
-client = MammothClient(
-    api_key="pk_live_123456789",  # Never hardcode!
-    api_secret="sk_live_987654321"
-)
-```
-
-✅ **Do this instead:**
-```python
-client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET")
-)
-```
-
-### 2. Use Different Credentials for Different Environments
+**Never hardcode credentials** -- use environment variables or a secrets manager:
 
 ```python
-# config.py
-import os
+# Do not do this:
+client = MammothClient(api_key="pk_live_123456789", ...)
 
-def get_mammoth_config():
-    if os.getenv("ENVIRONMENT") == "production":
-        return {
-            "api_key": os.getenv("MAMMOTH_PROD_API_KEY"),
-            "api_secret": os.getenv("MAMMOTH_PROD_API_SECRET"),
-            "base_url": "https://api.mammoth.io"
-        }
-    else:
-        return {
-            "api_key": os.getenv("MAMMOTH_DEV_API_KEY"),
-            "api_secret": os.getenv("MAMMOTH_DEV_API_SECRET"),
-            "base_url": "https://dev-api.mammoth.io"
-        }
+# Do this instead:
+client = MammothClient(api_key=os.getenv("MAMMOTH_API_KEY"), ...)
 ```
 
-### 3. Rotate Credentials Regularly
+**Use different credentials per environment** -- separate dev, staging, and production keys.
 
-- Regularly rotate your API credentials
-- Invalidate old credentials promptly
-- Monitor API usage for unusual activity
+**Rotate credentials regularly** -- regenerate API keys periodically and invalidate old ones.
 
-## Custom Headers and Configuration
+**Do not commit credentials** -- add `.env` and config files with secrets to `.gitignore`.
 
-You can customize the client with additional settings:
-
-```python
-client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
-    timeout=60,  # Request timeout in seconds
-    max_retries=5  # Maximum number of retries for failed requests
-)
-```
-
-## Next Steps
+## Next steps
 
 - [Quick Start Guide](quick-start.md)
-- [Basic Usage Examples](examples/basic-usage.md)
+- [Client API Reference](api/client.md)

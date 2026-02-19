@@ -56,6 +56,14 @@ from mammoth.api.webhooks import WebhooksAPI
 from mammoth.api.workspace import WorkspaceAPI
 from mammoth.exceptions import MammothAPIError, MammothAuthError
 
+# Lazy __version__ import to avoid circular dependency with __init__
+def _get_version() -> str:
+    try:
+        from mammoth import __version__
+        return __version__
+    except ImportError:
+        return "0.2.0"
+
 # ── Configurable defaults ─────────────────────────────────────
 DEFAULT_TIMEOUT = 30  # seconds — max time for any single API call
 DEFAULT_JOB_TIMEOUT = 60  # seconds — max time to poll a job to completion
@@ -234,7 +242,7 @@ class MammothClient:
                 "X-API-KEY": self.api_key,
                 "X-API-SECRET": self.api_secret,
                 "X-WORKSPACE-ID": str(self.workspace_id),
-                "User-Agent": "mammoth-python-sdk/0.1.0",
+                "User-Agent": f"mammoth-io/{_get_version()}",
             }
         )
 

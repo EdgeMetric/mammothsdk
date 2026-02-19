@@ -2,17 +2,24 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from mcp.server.fastmcp import Context
 
+from mammoth.exceptions import MammothAPIError, MammothColumnError
 from mammoth_mcp.helpers import error_response, format_view_info, success_response
 from mammoth_mcp.server import mcp
 from mammoth_mcp.state import ClientManager
 
+logger = logging.getLogger(__name__)
+
 
 def _get_manager(ctx: Context) -> ClientManager:
-    return ctx.request_context.lifespan_context["manager"]
+    try:
+        return ctx.request_context.lifespan_context["manager"]
+    except KeyError:
+        raise RuntimeError("MCP server not initialized — check environment variables")
 
 
 @mcp.tool()
@@ -42,7 +49,12 @@ def ai_transform(
             new_column=new_column,
         )
         return success_response(format_view_info(view), "AI transform applied")
+    except (MammothAPIError, MammothColumnError) as e:
+        return error_response(e)
+    except (ValueError, KeyError, TypeError) as e:
+        return error_response(e)
     except Exception as e:
+        logger.exception("Unexpected error in ai_transform")
         return error_response(e)
 
 
@@ -79,5 +91,10 @@ def sql_query(
             return success_response(format_view_info(view), "SQL query applied")
         else:
             return error_response(ValueError("Either intent or raw_sql must be provided"))
+    except (MammothAPIError, MammothColumnError) as e:
+        return error_response(e)
+    except (ValueError, KeyError, TypeError) as e:
+        return error_response(e)
     except Exception as e:
+        logger.exception("Unexpected error in sql_query")
         return error_response(e)

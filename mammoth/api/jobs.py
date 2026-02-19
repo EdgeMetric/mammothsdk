@@ -4,7 +4,10 @@ Jobs API client for tracking job status in Mammoth.
 
 from __future__ import annotations
 
+import time
 from typing import TYPE_CHECKING, Any
+
+from ..exceptions import MammothJobFailedError, MammothJobTimeoutError
 
 if TYPE_CHECKING:
     from ..client import MammothClient
@@ -80,14 +83,14 @@ class JobsAPI:
             Dict containing the completed job information
 
         Raises:
-            ValueError: If job fails or times out
-            MammothAPIError: If the API request fails
+            MammothJobFailedError: If the job fails.
+            MammothJobTimeoutError: If the job does not complete within timeout.
+            MammothAPIError: If the API request fails.
         """
-        import time
-
         if timeout is None:
             timeout = getattr(self._client, "job_timeout", 60)
-        assert timeout is not None
+        if timeout is None:
+            raise TypeError("timeout must not be None — set client.job_timeout or pass explicitly")
 
         start_time = time.time()
         while time.time() - start_time < timeout:
@@ -111,7 +114,7 @@ class JobsAPI:
                     inner = resp["response"]
                     error_msg = inner.get("detail") or inner.get("error")
                 error_msg = error_msg or "Job failed"
-                raise ValueError(f"Job {job_id} failed: {error_msg}")
+                raise MammothJobFailedError(job_id, error_msg)
             elif status == "processing":
                 # Job still running, continue polling
                 time.sleep(poll_interval)
@@ -120,7 +123,7 @@ class JobsAPI:
                 time.sleep(poll_interval)
 
         # Timeout reached
-        raise ValueError(f"Job {job_id} timed out after {timeout} seconds")
+        raise MammothJobTimeoutError(job_id, timeout)
 
     def wait_for_jobs(
         self, job_ids: list[int] | str, timeout: int | None = None, poll_interval: int = 2
@@ -137,14 +140,14 @@ class JobsAPI:
             Dict containing all completed jobs information
 
         Raises:
-            ValueError: If any job fails or times out
-            MammothAPIError: If the API request fails
+            MammothJobFailedError: If any job fails.
+            MammothJobTimeoutError: If jobs do not complete within timeout.
+            MammothAPIError: If the API request fails.
         """
-        import time
-
         if timeout is None:
             timeout = getattr(self._client, "job_timeout", 60)
-        assert timeout is not None
+        if timeout is None:
+            raise TypeError("timeout must not be None — set client.job_timeout or pass explicitly")
 
         # Convert to list if string
         if isinstance(job_ids, str):
@@ -169,7 +172,7 @@ class JobsAPI:
                     completed_jobs[job_id] = job
                 elif status in ["failure", "error"]:
                     error_msg = job.get("response", {}).get("error", "Job failed")
-                    raise ValueError(f"Job {job_id} failed: {error_msg}")
+                    raise MammothJobFailedError(job_id, error_msg)
                 elif status == "processing":
                     all_completed = False
                 else:
@@ -180,5 +183,6 @@ class JobsAPI:
 
             time.sleep(poll_interval)
 
-        # Timeout reached
-        raise ValueError(f"Jobs {job_ids_list} timed out after {timeout} seconds")
+        # Timeout reached — use first pending job ID for error
+        pending_ids = [jid for jid in job_ids_list if jid not in completed_jobs]
+        raise MammothJobTimeoutError(pending_ids[0] if pending_ids else job_ids_list[0], timeout)

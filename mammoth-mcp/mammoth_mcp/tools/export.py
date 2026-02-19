@@ -2,17 +2,24 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from mcp.server.fastmcp import Context
 
+from mammoth.exceptions import MammothAPIError, MammothColumnError
 from mammoth_mcp.helpers import error_response, success_response
 from mammoth_mcp.server import mcp
 from mammoth_mcp.state import ClientManager
 
+logger = logging.getLogger(__name__)
+
 
 def _get_manager(ctx: Context) -> ClientManager:
-    return ctx.request_context.lifespan_context["manager"]
+    try:
+        return ctx.request_context.lifespan_context["manager"]
+    except KeyError:
+        raise RuntimeError("MCP server not initialized — check environment variables")
 
 
 @mcp.tool()
@@ -70,7 +77,12 @@ def export_data(
         else:
             return error_response(ValueError(f"Unknown format '{format}'. Use: csv, s3, email, dataset"))
 
+    except (MammothAPIError, MammothColumnError) as e:
+        return error_response(e)
+    except (ValueError, KeyError, TypeError) as e:
+        return error_response(e)
     except Exception as e:
+        logger.exception("Unexpected error in export_data")
         return error_response(e)
 
 
@@ -137,5 +149,10 @@ def export_to_database(
             )
 
         return success_response(result, f"Exported to {db_type}")
+    except (MammothAPIError, MammothColumnError) as e:
+        return error_response(e)
+    except (ValueError, KeyError, TypeError) as e:
+        return error_response(e)
     except Exception as e:
+        logger.exception("Unexpected error in export_to_database")
         return error_response(e)

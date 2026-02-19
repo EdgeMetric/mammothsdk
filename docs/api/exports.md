@@ -1,597 +1,390 @@
-# Exports API Reference
+# Exports Reference
 
-The Exports API handles dataview pipeline exports, allowing you to send processed data to external destinations or create internal datasets.
+The SDK provides two ways to export data:
 
-## Class: ExportsAPI
+1. **ViewExport** (`view.export`) -- export methods attached to a View object
+2. **ExportsAPI** (`client.exports`) -- lower-level export operations
 
-Access through the client: `client.exports`
+## ViewExport
 
-```python
-exports_api = client.exports
-```
+Access via `view.export`. This is the recommended way to export data from a View.
 
-## Methods
+### to_csv
 
-### list_exports()
-
-Get dataview pipeline exports information with optional filtering and pagination.
+Download the view data as a local CSV file.
 
 ```python
-list_exports(
-    workspace_id: int,
-    project_id: int,
-    dataset_id: int,
-    dataview_id: int,
-    fields: Optional[str] = None,
-    limit: int = 50,
-    offset: int = 0,
-    sort: Optional[str] = None,
-    sequence: Optional[int] = None,
-    status: Optional[ExportStatus] = None,
-    reordered: Optional[bool] = None,
-    handler_type: Optional[HandlerType] = None,
-    end_of_pipeline: Optional[bool] = None,
-    runnable: Optional[bool] = None
-) -> PipelineExportsPaginated
-```
-
-**Parameters:**
-- `workspace_id` (int): ID of the workspace
-- `project_id` (int): ID of the project  
-- `dataset_id` (int): ID of the dataset
-- `dataview_id` (int): ID of the dataview
-- `fields` (str, optional): Fields to return ("__standard", "__full", "__min", or comma-separated)
-- `limit` (int): Maximum number of results (0-100). Defaults to 50
-- `offset` (int): Number of results to skip for pagination. Defaults to 0
-- `sort` (str, optional): Sort specification (e.g., "(id:asc)", "(sequence:desc)")
-- `sequence` (int, optional): Filter by specific sequence number
-- `status` (ExportStatus, optional): Filter by export status
-- `reordered` (bool, optional): Filter by reordered status
-- `handler_type` (HandlerType, optional): Filter by export destination type
-- `end_of_pipeline` (bool, optional): Filter by end-of-pipeline exports
-- `runnable` (bool, optional): Filter by runnable status
-
-**Returns:** `PipelineExportsPaginated` - Paginated list of pipeline exports
-
-**Raises:**
-- `MammothAPIError`: If the API request fails
-
-**Examples:**
-
-```python
-# List all exports with standard fields
-exports_list = client.exports.list_exports(
-    workspace_id=1,
-    project_id=1,
-    dataset_id=123,
-    dataview_id=456,
-    fields="__standard"
-)
-
-# List only S3 exports that are executed
-s3_exports = client.exports.list_exports(
-    workspace_id=1,
-    project_id=1,
-    dataset_id=123,
-    dataview_id=456,
-    handler_type=HandlerType.S3,
-    status=ExportStatus.EXECUTED,
-    limit=10
-)
-
-# With pagination and sorting
-exports_page = client.exports.list_exports(
-    workspace_id=1,
-    project_id=1,
-    dataset_id=123,
-    dataview_id=456,
-    sort="(last_modified_time:desc)",
-    limit=25,
-    offset=0
-)
-
-# Access results
-for export in exports_list.exports:
-    print(f"Export {export.id}: {export.handler_type} - {export.status}")
-```
-
-### add_export()
-
-Add a new export to the dataview pipeline with full configuration control.
-
-```python
-add_export(
-    workspace_id: int,
-    project_id: int,
-    dataset_id: int,
-    dataview_id: int,
-    export_spec: AddExportSpec
-) -> Union[PipelineExportsModificationResp, JobResponse]
-```
-
-**Parameters:**
-- `workspace_id` (int): ID of the workspace
-- `project_id` (int): ID of the project
-- `dataset_id` (int): ID of the dataset  
-- `dataview_id` (int): ID of the dataview
-- `export_spec` (AddExportSpec): Complete export specification
-
-**Returns:**
-- `PipelineExportsModificationResp` - If export is added immediately (status 201)
-- `JobResponse` - If export creation is processed asynchronously (status 202)
-
-**Raises:**
-- `MammothAPIError`: If the API request fails
-
-**Example:**
-
-```python
-from mammoth.models.exports import AddExportSpec, HandlerType, TriggerType, S3TargetProperties
-
-# Create S3 target properties
-target_props = S3TargetProperties(
-    file="monthly_report.csv",
-    file_type="csv", 
-    include_hidden=False,
-    is_format_set=True,
-    use_format=True
-)
-
-# Create export specification
-export_spec = AddExportSpec(
-    DATAVIEW_ID=456,
-    handler_type=HandlerType.S3,
-    trigger_type=TriggerType.PIPELINE,
-    target_properties=target_props,
-    additional_properties={},
-    condition={},
-    run_immediately=True,
-    validate_only=False
-)
-
-# Add the export
-result = client.exports.add_export(
-    workspace_id=1,
-    project_id=1,
-    dataset_id=123,
-    dataview_id=456,
-    export_spec=export_spec
-)
-
-print(f"Export created with trigger_id: {result.trigger_id}")
-```
-
-### create_s3_export()
-
-Create an S3 export with simplified parameters - a convenience method for common S3 exports.
-
-```python
-create_s3_export(
-    workspace_id: int,
-    project_id: int,
-    dataset_id: int,
-    dataview_id: int,
-    file: str,
-    file_type: str = "csv",
-    include_hidden: bool = False,
-    is_format_set: bool = True,
-    use_format: bool = True,
-    sequence: Optional[int] = None,
-    trigger_id: Optional[int] = None,
-    end_of_pipeline: bool = True,
-    trigger_type: TriggerType = TriggerType.NONE,
-    condition: Optional[dict] = None,
-    run_immediately: bool = True,
-    validate_only: bool = False,
-    additional_properties: Optional[dict] = None
-) -> Union[PipelineExportsModificationResp, JobResponse]
-```
-
-**Parameters:**
-- `workspace_id` (int): ID of the workspace
-- `project_id` (int): ID of the project
-- `dataset_id` (int): ID of the dataset
-- `dataview_id` (int): ID of the dataview
-- `file` (str): Output filename
-- `file_type` (str): File format type. Defaults to "csv"
-- `include_hidden` (bool): Include hidden columns. Defaults to False
-- `is_format_set` (bool): Format explicitly set. Defaults to True
-- `use_format` (bool): Apply formatting. Defaults to True
-- `sequence` (int, optional): Position in pipeline (None = append to end)
-- `trigger_id` (int, optional): Trigger ID for editing existing export
-- `end_of_pipeline` (bool): Execute at end of pipeline. Defaults to True
-- `trigger_type` (TriggerType): Type of trigger. Defaults to NONE
-- `condition` (dict, optional): Export conditions. Defaults to empty
-- `run_immediately` (bool): Execute immediately. Defaults to True
-- `validate_only` (bool): Only validate config. Defaults to False
-- `additional_properties` (dict, optional): Additional configuration
-
-**Returns:** `PipelineExportsModificationResp` or `JobResponse` - Result of the operation
-
-**Example:**
-
-```python
-# Simple S3 export
-result = client.exports.create_s3_export(
-    workspace_id=1,
-    project_id=1,
-    dataset_id=123,
-    dataview_id=456,
-    file="data_export.csv"
-)
-
-# S3 export with custom settings
-result = client.exports.create_s3_export(
-    workspace_id=1,
-    project_id=1,
-    dataset_id=123,
-    dataview_id=456,
-    file="detailed_export.json",
-    file_type="json",
-    include_hidden=True,
-    trigger_type=TriggerType.SCHEDULE,
-    condition={"status": "active"},
-    run_immediately=False
-)
-
-print(f"S3 export created: {result.trigger_id}")
-```
-
-### download_dataview_csv()
-
-Download processed data from a Mammoth dataview as a CSV file - a convenient utility for quick data exports.
-
-```python
-download_dataview_csv(
-    workspace_id: int,
-    project_id: int,
-    dataset_id: int,
-    dataview_id: int,
-    output_path: Optional[Union[str, Path]] = None,
-    timeout: int = 300
+view.export.to_csv(
+    output_path: str | None = None,
+    timeout: int = 300,
 ) -> Path
 ```
 
-**Parameters:**
-- `workspace_id` (int): ID of the workspace
-- `project_id` (int): ID of the project
-- `dataset_id` (int): ID of the dataset
-- `dataview_id` (int): ID of the dataview to export
-- `output_path` (Union[str, Path], optional): Path where to save the CSV file. If None, uses default name
-- `timeout` (int): Timeout in seconds to wait for export completion. Defaults to 300
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `output_path` | `str \| None` | `None` | Output file path (auto-generated if not provided) |
+| `timeout` | `int` | `300` | Timeout in seconds for the export job |
 
-**Returns:** `Path` - Path to the downloaded CSV file
-
-**Raises:**
-- `MammothAPIError`: If the API request fails
-- `ValueError`: If job processing times out or fails, or if no download URL provided
-
-**Examples:**
+Returns a `pathlib.Path` to the downloaded file.
 
 ```python
-# Download with default filename
-file_path = client.exports.download_dataview_csv(
-    workspace_id=1,
-    project_id=1,
-    dataset_id=123,
-    dataview_id=456
-)
-print(f"CSV downloaded to: {file_path}")
+path = view.export.to_csv("output.csv")
+print(f"Downloaded to {path}")
 
-# Download to specific path
-file_path = client.exports.download_dataview_csv(
-    workspace_id=1,
-    project_id=1,
-    dataset_id=123,
-    dataview_id=456,
-    output_path="my_export.csv",
-    timeout=600  # 10 minutes for large datasets
-)
+# Auto-generated filename
+path = view.export.to_csv()
+```
 
-# Download to custom directory
-from pathlib import Path
-output_dir = Path("exports")
-output_dir.mkdir(exist_ok=True)
+### to_s3
 
-file_path = client.exports.download_dataview_csv(
-    workspace_id=1,
-    project_id=1,
-    dataset_id=123,
-    dataview_id=456,
-    output_path=output_dir / "data_export.csv"
+Export to S3 storage.
+
+```python
+view.export.to_s3(
+    file_name: str | None = None,
+    file_type: str = "csv",
+    include_hidden: bool = False,
+    **kwargs,
+) -> dict[str, Any]
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `file_name` | `str \| None` | `None` | Output filename (auto-generated if not provided) |
+| `file_type` | `str` | `"csv"` | File format (`"csv"`, `"json"`, etc.) |
+| `include_hidden` | `bool` | `False` | Include hidden columns |
+
+```python
+result = view.export.to_s3(file_name="report.csv")
+result = view.export.to_s3(file_name="data.json", file_type="json", include_hidden=True)
+```
+
+### to_postgres
+
+Export to a PostgreSQL database.
+
+```python
+view.export.to_postgres(
+    host: str,
+    port: int,
+    database: str,
+    table: str,
+    username: str,
+    password: str,
+    **kwargs,
+) -> dict[str, Any]
+```
+
+```python
+view.export.to_postgres(
+    host="db.example.com",
+    port=5432,
+    database="analytics",
+    table="sales_data",
+    username="user",
+    password="pass",
 )
 ```
 
+### to_mysql
 
-### create_internal_dataset_export()
-
-Create an internal dataset export with simplified parameters - a convenience method for creating new datasets in Mammoth.
+Export to a MySQL database.
 
 ```python
-create_internal_dataset_export(
-    workspace_id: int,
-    project_id: int,
-    dataset_id: int,
+view.export.to_mysql(
+    host: str,
+    port: int,
+    database: str,
+    table: str,
+    username: str,
+    password: str,
+    **kwargs,
+) -> dict[str, Any]
+```
+
+```python
+view.export.to_mysql(
+    host="mysql.example.com",
+    port=3306,
+    database="analytics",
+    table="sales_data",
+    username="user",
+    password="pass",
+)
+```
+
+### to_bigquery
+
+Export to Google BigQuery.
+
+```python
+view.export.to_bigquery(**kwargs) -> dict[str, Any]
+```
+
+Pass BigQuery connection and table configuration as keyword arguments.
+
+### to_redshift
+
+Export to Amazon Redshift.
+
+```python
+view.export.to_redshift(**kwargs) -> dict[str, Any]
+```
+
+### to_elasticsearch
+
+Export to Elasticsearch.
+
+```python
+view.export.to_elasticsearch(**kwargs) -> dict[str, Any]
+```
+
+### to_ftp
+
+Export to an FTP server.
+
+```python
+view.export.to_ftp(
+    host: str,
+    path: str,
+    username: str,
+    password: str,
+    port: int = 21,
+    **kwargs,
+) -> dict[str, Any]
+```
+
+### to_sftp
+
+Export to an SFTP server.
+
+```python
+view.export.to_sftp(
+    host: str,
+    path: str,
+    username: str,
+    password: str,
+    port: int = 22,
+    **kwargs,
+) -> dict[str, Any]
+```
+
+### to_email
+
+Export via email.
+
+```python
+view.export.to_email(recipients: list[str], **kwargs) -> dict[str, Any]
+```
+
+```python
+view.export.to_email(recipients=["analyst@example.com", "team@example.com"])
+```
+
+### to_dataset
+
+Export to another Mammoth dataset (branch out).
+
+```python
+view.export.to_dataset(
+    dest_dataset_id: int,
+    column_mapping: dict[str, str] | None = None,
+    **kwargs,
+) -> dict[str, Any]
+```
+
+```python
+view.export.to_dataset(dest_dataset_id=42)
+view.export.to_dataset(
+    dest_dataset_id=42,
+    column_mapping={"Sales": "revenue", "Region": "area"},
+)
+```
+
+### publish_to_db
+
+Publish the dataview to a database.
+
+```python
+view.export.publish_to_db(**kwargs) -> dict[str, Any]
+```
+
+### list
+
+List all exports for this dataview.
+
+```python
+exports = view.export.list()
+for exp in exports:
+    print(exp["id"], exp["handler_type"])
+```
+
+### delete
+
+Delete an export by ID.
+
+```python
+view.export.delete(export_id=123)
+```
+
+## branch_out (View method)
+
+Convenience method on the View itself. Equivalent to `view.export.to_dataset()`.
+
+```python
+view.branch_out(
+    dest_dataset_id: int,
+    column_mapping: dict[str, str] | None = None,
+    **kwargs,
+) -> dict[str, Any]
+```
+
+```python
+view.branch_out(dest_dataset_id=42)
+```
+
+---
+
+## ExportsAPI
+
+Lower-level export operations available via `client.exports`. These methods require explicit IDs rather than working through a View object.
+
+### client.exports.to_csv
+
+Download dataview data as CSV.
+
+```python
+client.exports.to_csv(
+    dataview_id: int,
+    output_path: str | Path | None = None,
+    timeout: int = 300,
+    dataset_id: int | None = None,
+) -> Path
+```
+
+```python
+path = client.exports.to_csv(dataview_id=1039, output_path="export.csv")
+```
+
+### client.exports.to_s3
+
+Create an S3 export. Waits for job completion and returns the download URL.
+
+```python
+client.exports.to_s3(
+    dataview_id: int,
+    file: str | None = None,
+    file_type: str = "csv",
+    include_hidden: bool = False,
+    dataset_id: int | None = None,
+    ...,
+) -> dict[str, Any]
+```
+
+```python
+result = client.exports.to_s3(dataview_id=1039, file="report.csv")
+print(result["url"])  # download URL
+```
+
+### client.exports.to_dataset
+
+Create an internal dataset export (branch out).
+
+```python
+client.exports.to_dataset(
     dataview_id: int,
     dataset_name: str,
-    column_mapping: Optional[dict] = None,
-    sequence: Optional[int] = None,
-    trigger_id: Optional[int] = None,
-    end_of_pipeline: bool = True,
-    trigger_type: TriggerType = TriggerType.PIPELINE,
-    condition: Optional[dict] = None,
-    run_immediately: bool = True,
-    validate_only: bool = False,
-    additional_properties: Optional[dict] = None
-) -> Union[PipelineExportsModificationResp, JobResponse]
+    column_mapping: dict[str, Any] | None = None,
+    ...,
+) -> PipelineExportsModificationResp | JobResponse
 ```
 
-**Parameters:**
-- `workspace_id` (int): ID of the workspace
-- `project_id` (int): ID of the project
-- `dataset_id` (int): ID of the dataset
-- `dataview_id` (int): ID of the dataview
-- `dataset_name` (str): Name for the created dataset
-- `column_mapping` (dict, optional): Column mapping configuration
-- `sequence` (int, optional): Position in pipeline (None = append to end)
-- `trigger_id` (int, optional): Trigger ID for editing existing export
-- `end_of_pipeline` (bool): Execute at end of pipeline. Defaults to True
-- `trigger_type` (TriggerType): Type of trigger. Defaults to PIPELINE
-- `condition` (dict, optional): Export conditions. Defaults to empty
-- `run_immediately` (bool): Execute immediately. Defaults to True
-- `validate_only` (bool): Only validate config. Defaults to False
-- `additional_properties` (dict, optional): Additional configuration
+```python
+client.exports.to_dataset(dataview_id=1039, dataset_name="processed_data")
+```
 
-**Returns:** `PipelineExportsModificationResp` or `JobResponse` - Result of the operation
+### client.exports.list
 
-**Example:**
+List exports for a dataview with filtering and pagination.
 
 ```python
-# Simple internal dataset export
-result = client.exports.create_internal_dataset_export(
-    workspace_id=1,
-    project_id=1,
-    dataset_id=123,
-    dataview_id=456,
-    dataset_name="processed_customer_data"
+client.exports.list(
+    dataview_id: int,
+    fields: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    sort: str | None = None,
+    status: ExportStatus | None = None,
+    handler_type: HandlerType | None = None,
+    ...,
+) -> PipelineExportsPaginated
+```
+
+### client.exports.create
+
+Create a new export with full control over the export specification.
+
+```python
+from mammoth.models.exports import AddExportSpec, HandlerType, TriggerType
+
+spec = AddExportSpec(
+    DATAVIEW_ID=1039,
+    handler_type=HandlerType.S3,
+    trigger_type=TriggerType.PIPELINE,
+    target_properties={
+        "file": "report.csv",
+        "file_type": "csv",
+        "include_hidden": False,
+        "is_format_set": True,
+        "use_format": True,
+    },
+    additional_properties={},
+    condition={},
+    run_immediately=True,
+    validate_only=False,
 )
 
-# Internal dataset export with column mapping
-result = client.exports.create_internal_dataset_export(
-    workspace_id=1,
-    project_id=1,
-    dataset_id=123,
-    dataview_id=456,
-    dataset_name="customer_summary",
-    column_mapping={
-        "customer_id": "id",
-        "full_name": "name", 
-        "email_address": "email"
-    },
-    condition={"customer_status": "active"}
+result = client.exports.create(
+    dataview_id=1039,
+    export_spec=spec,
+    dataset_id=42,
+)
+```
+
+## Export workflow example
+
+```python
+from mammoth import MammothClient, Condition, Operator
+
+client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
+client.set_project_id(10)
+
+# Get a view and transform it
+view = client.views.get(1039)
+view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+
+# Export to CSV locally
+csv_path = view.export.to_csv("filtered_sales.csv")
+print(f"CSV saved to {csv_path}")
+
+# Export to S3
+s3_result = view.export.to_s3(file_name="filtered_sales.csv")
+
+# Export to PostgreSQL
+view.export.to_postgres(
+    host="db.example.com",
+    port=5432,
+    database="analytics",
+    table="filtered_sales",
+    username="user",
+    password="pass",
 )
 
-print(f"Internal dataset export created: {result.trigger_id}")
+# Branch out to another dataset
+view.branch_out(dest_dataset_id=42)
 ```
 
-## Data Models
+## See also
 
-### PipelineExportsPaginated
-
-Response model for listing exports with pagination information.
-
-**Fields:**
-- `exports` (List[ItemExportInfo]): List of export items
-- `limit` (int): Maximum number of items in this page  
-- `offset` (int): Starting position in the full result set
-- `next` (str): URL for retrieving the next page of results
-
-### ItemExportInfo
-
-Information about an individual export in the pipeline.
-
-**Fields:**
-- `id` (int, optional): Unique identifier for the export
-- `dataview_id` (int, optional): ID of the dataview this export belongs to
-- `sequence` (int, optional): Position in pipeline execution order
-- `handler_type` (HandlerType, optional): Type of export destination
-- `trigger_type` (TriggerType, optional): How the export is triggered
-- `status` (ExportStatus, optional): Current status of the export
-- `target_properties` (dict, optional): Destination-specific configuration
-- `last_modified_time` (datetime, optional): When export was last modified
-- `execution_start_time` (datetime, optional): When execution started
-- `execution_end_time` (datetime, optional): When execution ended
-- `error_info` (dict, optional): Error information if execution failed
-
-### PipelineExportsModificationResp
-
-Response for export modification operations.
-
-**Fields:**
-- `trigger_id` (int): ID of the created or modified export
-- `status` (ExportStatus, optional): New status of the export
-- `future_id` (int, optional): ID of trackable background job if operation is asynchronous
-
-## Usage Patterns
-
-### Creating Simple Data Exports
-
-```python
-# Export processed data to CSV
-try:
-    result = client.exports.create_s3_export(
-        workspace_id=1,
-        project_id=1,
-        dataset_id=123,
-        dataview_id=456,
-        file="monthly_sales.csv",
-        trigger_type=TriggerType.PIPELINE,
-        run_immediately=True
-    )
-    
-    print(f"Export created successfully: {result.trigger_id}")
-    
-    if result.future_id:
-        # Track async job if needed
-        job = client.jobs.get_job(result.future_id)
-        print(f"Job status: {job.status}")
-
-except MammothAPIError as e:
-    print(f"Export creation failed: {e.message}")
-```
-
-### Export Status Monitoring
-
-```python
-# Check export status regularly
-exports = client.exports.list_exports(
-    workspace_id=1,
-    project_id=1,
-    dataset_id=123,
-    dataview_id=456,
-    sort="(last_modified_time:desc)",
-    limit=10
-)
-
-for export in exports.exports:
-    print(f"Export {export.id}: {export.status}")
-    
-    if export.status == ExportStatus.EXECUTED:
-        print(f"  ✓ Completed at {export.execution_end_time}")
-    elif export.status == ExportStatus.EXECUTING:
-        print(f"  ⏳ Running since {export.execution_start_time}")
-    elif export.error_info:
-        print(f"  ✗ Error: {export.error_info}")
-```
-
-### Batch Export Creation
-
-```python
-# Create multiple exports for different destinations
-export_configs = [
-    {
-        "file": "sales_summary.csv",
-        "condition": {"department": "sales"},
-        "trigger_type": TriggerType.PIPELINE
-    },
-    {
-        "file": "marketing_data.json", 
-        "file_type": "json",
-        "condition": {"department": "marketing"},
-        "trigger_type": TriggerType.SCHEDULE
-    }
-]
-
-created_exports = []
-for config in export_configs:
-    try:
-        result = client.exports.create_s3_export(
-            workspace_id=1,
-            project_id=1,
-            dataset_id=123,
-            dataview_id=456,
-            **config
-        )
-        created_exports.append(result.trigger_id)
-        print(f"Created export: {result.trigger_id}")
-        
-    except MammothAPIError as e:
-        print(f"Failed to create export {config['file']}: {e.message}")
-
-print(f"Successfully created {len(created_exports)} exports")
-```
-
-### Working with Internal Dataset Exports
-
-```python
-# Create processed datasets for downstream use
-processed_datasets = [
-    {
-        "dataset_name": "customer_analytics",
-        "column_mapping": {
-            "id": "customer_id",
-            "name": "customer_name",
-            "email": "contact_email"
-        },
-        "condition": {"status": "active"}
-    },
-    {
-        "dataset_name": "sales_metrics", 
-        "column_mapping": {
-            "transaction_id": "id",
-            "amount": "sale_amount",
-            "date": "sale_date"
-        },
-        "condition": {"amount": ">0"}
-    }
-]
-
-for dataset_config in processed_datasets:
-    try:
-        result = client.exports.create_internal_dataset_export(
-            workspace_id=1,
-            project_id=1,
-            dataset_id=123,
-            dataview_id=456,
-            **dataset_config
-        )
-        
-        print(f"Created dataset export: {dataset_config['dataset_name']}")
-        print(f"  Trigger ID: {result.trigger_id}")
-        
-        if result.future_id:
-            # Wait for completion if needed
-            completed_job = client.jobs.wait_for_job(result.future_id, timeout=300)
-            if 'ds_id' in completed_job.response:
-                new_dataset_id = completed_job.response['ds_id']
-                print(f"  New Dataset ID: {new_dataset_id}")
-                
-    except MammothJobFailedError as e:
-        print(f"Dataset creation failed: {e.details.get('failure_reason', 'Unknown error')}")
-    except MammothAPIError as e:
-        print(f"API error: {e.message}")
-```
-
-### Conditional Exports with Filtering
-
-```python
-# Create exports with complex conditions
-conditional_exports = [
-    {
-        "name": "high_value_customers",
-        "condition": {
-            "total_purchases": ">1000",
-            "status": "active",
-            "registration_date": ">2023-01-01"
-        }
-    },
-    {
-        "name": "recent_transactions", 
-        "condition": {
-            "transaction_date": ">30_days_ago",
-            "amount": ">50"
-        }
-    }
-]
-
-for export_config in conditional_exports:
-    result = client.exports.create_s3_export(
-        workspace_id=1,
-        project_id=1,
-        dataset_id=123,
-        dataview_id=456,
-        file=f"{export_config['name']}.csv",
-        condition=export_config['condition'],
-        trigger_type=TriggerType.SCHEDULE,
-        run_immediately=False  # Schedule for later
-    )
-    
-    print(f"Scheduled export: {export_config['name']} (ID: {result.trigger_id})")
-```
-
-## See Also
-
-- [Jobs API Reference](jobs.md) - Track export processing jobs
-- [Exports Models](models/exports.md) - Complete model definitions  
-- [Export Operations Examples](../examples/export-operations.md) - Detailed examples
-- [Error Handling](../examples/error-handling.md) - Handle export operation errors
+- [Views](views.md) -- View object and transformation methods
+- [Client](client.md) -- MammothClient and sub-clients

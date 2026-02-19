@@ -1,612 +1,181 @@
 # Basic Usage Examples
 
-This guide provides simple, practical examples to get you started with the Mammoth Python SDK.
+Practical examples to get started with the Mammoth Python SDK.
 
-## Setup and Authentication
+## Client setup
 
 ```python
 import os
 from mammoth import MammothClient, parse_path
 
-# Initialize the client with environment variables (recommended)
 client = MammothClient(
     api_key=os.getenv("MAMMOTH_API_KEY"),
     api_secret=os.getenv("MAMMOTH_API_SECRET"),
-    base_url=os.getenv("MAMMOTH_BASE_URL", "https://app.mammoth.io/api/v2")
+    workspace_id=11,
 )
-
-# Test the connection
-if client.test_connection():
-    print("✓ Connected to Mammoth successfully!")
-else:
-    print("✗ Connection failed. Check your credentials.")
+client.set_project_id(10)
 ```
 
-## URL Parsing for Easy Setup
+## Parse a Mammoth URL
 
-The SDK includes a convenient utility to extract workspace, project, and dataview IDs from Mammoth URLs:
+Extract IDs from a browser URL:
 
 ```python
-# Parse a Mammoth URL to get IDs
-url = "https://mirai.mammoth.io/#/workspaces/11/projects/426/views/1699"
-parsed_ids = parse_path(url)
+from mammoth import parse_path
 
-workspace_id = parsed_ids['workspace_id']  # 11
-project_id = parsed_ids['project_id']      # 426  
-dataview_id = parsed_ids['dataview_id']    # 1699
-
-print(f"Extracted - Workspace: {workspace_id}, Project: {project_id}, Dataview: {dataview_id}")
-
-# Use these IDs in your API calls
-client = MammothClient(api_key="...", api_secret="...", base_url="...")
+ids = parse_path("https://app.mammoth.io/#/workspaces/11/projects/10/views/1039")
+print(ids)
+# {"workspace_id": 11, "project_id": 10, "dataview_id": 1039}
 ```
 
-## File Upload Examples
-
-### Single File Upload
+## List resources
 
 ```python
-# Upload a single CSV file
-dataset_id = client.files.upload_files(
-    workspace_id=1,
-    project_id=1,
-    files="sales_data.csv"
+# List projects
+projects = client.projects.list()
+
+# List datasets
+datasets = client.datasets.list()
+
+# List views in a dataset
+views = client.views.list(dataset_id=42)
+for v in views:
+    print(f"{v.id}: {v.name} ({len(v.display_names)} columns)")
+```
+
+## Get a View and inspect it
+
+```python
+view = client.views.get(1039)
+
+print(f"Name: {view.name}")
+print(f"Columns: {view.display_names}")
+print(f"Types: {view.column_types}")
+print(f"Column mapping: {view.columns}")
+```
+
+## Fetch data
+
+```python
+# First 100 rows
+result = view.data(limit=100)
+
+# Specific columns
+result = view.data(columns=["Sales", "Region"], limit=50)
+
+# With a condition
+from mammoth import Condition, Operator
+result = view.data(
+    condition=Condition("Sales", Operator.GTE, 1000),
+    limit=200,
 )
-
-print(f"✓ File uploaded! Dataset ID: {dataset_id}")
 ```
 
-### Upload File and Download as CSV
-
-**Problem:** You want to upload a file, let Mammoth process it, and then download the cleaned data as CSV.
+## Apply a transformation
 
 ```python
-# Step 1: Upload file
-print("📤 Uploading file...")
-dataset_id = client.files.upload_files(
-    workspace_id=1,
-    project_id=1,
-    files="raw_data.csv"
-)
-print(f"✅ Dataset created: {dataset_id}")
+from mammoth import Condition, Operator
 
-# Step 2: Get dataviews for the dataset
-print("🔍 Getting dataviews...")
-dataviews = client.dataviews.list_dataviews(
-    dataset_id=dataset_id,
-    workspace_id=1,
-    project_id=1
-)
-
-# Step 3: Download first dataview as CSV
-if dataviews['dataviews']:
-    dataview_id = dataviews['dataviews'][0]['id']
-    print(f"📥 Downloading dataview {dataview_id}...")
-    
-    csv_file = client.exports.download_dataview_csv(
-        workspace_id=1,
-        project_id=1,
-        dataset_id=dataset_id,
-        dataview_id=dataview_id,
-        output_path="processed_data.csv"
-    )
-    
-    print(f"✅ CSV downloaded: {csv_file}")
-else:
-    print("❌ No dataviews found for dataset")
+view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+print(f"Columns after filter: {view.display_names}")
 ```
 
-### Multiple File Upload
+## Export to CSV
 
 ```python
-# Upload multiple files at once
-files_to_upload = [
-    "sales_data.csv",
-    "customer_data.csv",
-    "product_catalog.xlsx"
-]
-
-dataset_ids = client.files.upload_files(
-    workspace_id=1,
-    project_id=1,
-    files=files_to_upload
-)
-
-print(f"✓ Uploaded {len(dataset_ids)} files:")
-for i, dataset_id in enumerate(dataset_ids):
-    print(f"  {files_to_upload[i]} → Dataset {dataset_id}")
+path = view.export.to_csv("output.csv")
+print(f"Saved to {path}")
 ```
 
-### Upload from File Objects
+## Context manager
 
 ```python
-# Upload from file objects or streams
-with open("data.csv", "rb") as file_obj:
-    dataset_id = client.files.upload_files(
-        workspace_id=1,
-        project_id=1,
-        files=file_obj
-    )
-    print(f"✓ Uploaded from file object: Dataset {dataset_id}")
-```
-
-### Upload to Specific Folder
-
-```python
-# Upload to a specific folder in your project
-dataset_id = client.files.upload_files(
-    workspace_id=1,
-    project_id=1,
-    files="quarterly_report.xlsx",
-    folder_resource_id="folder_123"
-)
-
-print(f"✓ File uploaded to folder: Dataset {dataset_id}")
-```
-
-## File Listing and Management
-
-### Basic File Listing
-
-```python
-# Get all files in a project
-files_list = client.files.list_files(
-    workspace_id=1,
-    project_id=1
-)
-
-print(f"Found {len(files_list.files)} files:")
-for file in files_list.files:
-    print(f"  - {file.name} (ID: {file.id}, Status: {file.status})")
-```
-
-### Filtered File Listing
-
-```python
-# List only processed files
-processed_files = client.files.list_files(
-    workspace_id=1,
-    project_id=1,
-    statuses=["processed"],
-    limit=20,
-    sort="(created_at:desc)"
-)
-
-print("Recently processed files:")
-for file in processed_files.files:
-    print(f"  - {file.name} (Created: {file.created_at})")
-```
-
-### File Details
-
-```python
-# Get detailed information about a specific file
-file_details = client.files.get_file_details(
-    workspace_id=1,
-    project_id=1,
-    file_id=123,
-    fields="__full"
-)
-
-print(f"File Details:")
-print(f"  Name: {file_details.name}")
-print(f"  Status: {file_details.status}")
-print(f"  Created: {file_details.created_at}")
-
-# Check if dataset was created
-if file_details.additional_info and file_details.additional_info.final_ds_id:
-    dataset_id = file_details.additional_info.final_ds_id
-    print(f"  Dataset ID: {dataset_id}")
-```
-
-## Job Management
-
-### Asynchronous Upload
-
-```python
-# Start upload without waiting for completion
-job_ids = client.files.upload_files(
-    workspace_id=1,
-    project_id=1,
-    files="large_dataset.csv",
-    wait_for_completion=False
-)
-
-if job_ids:
-    job_id = job_ids[0]
-    print(f"Upload started with job ID: {job_id}")
-    
-    # Check job status manually
-    job = client.jobs.get_job(job_id)
-    print(f"Job status: {job.status}")
-    
-    # Wait for completion
-    completed_job = client.jobs.wait_for_job(job_id, timeout=600)
-    
-    if completed_job.status == "success":
-        dataset_id = completed_job.response.get('ds_id')
-        print(f"✓ Upload completed! Dataset ID: {dataset_id}")
-```
-
-### Monitoring Multiple Jobs
-
-```python
-# Upload multiple files and track all jobs
-files = ["file1.csv", "file2.csv", "file3.csv"]
-all_job_ids = []
-
-# Start all uploads
-for file_path in files:
-    job_ids = client.files.upload_files(
-        workspace_id=1,
-        project_id=1,
-        files=file_path,
-        wait_for_completion=False
-    )
-    all_job_ids.extend(job_ids)
-
-print(f"Started {len(all_job_ids)} upload jobs")
-
-# Wait for all to complete
-try:
-    completed_jobs = client.jobs.wait_for_jobs(all_job_ids, timeout=900)
-    dataset_ids = client.jobs.extract_dataset_ids(completed_jobs)
-    
-    print(f"✓ All uploads completed!")
-    print(f"Created datasets: {dataset_ids}")
-    
-except Exception as e:
-    print(f"Some uploads failed: {e}")
-```
-
-## Working with Excel Files
-
-### Basic Excel Upload
-
-```python
-# Upload Excel file (automatic processing)
-try:
-    dataset_id = client.files.upload_files(
-        workspace_id=1,
-        project_id=1,
-        files="financial_report.xlsx"
-    )
-    print(f"✓ Excel file processed: Dataset {dataset_id}")
-    
-except Exception as e:
-    print(f"Excel upload failed: {e}")
-    # May need manual sheet selection (see advanced examples)
-```
-
-### Extract Specific Sheets
-
-```python
-# First upload the Excel file
-files_list = client.files.list_files(
-    workspace_id=1,
-    project_id=1,
-    names=["financial_report.xlsx"]
-)
-
-if files_list.files:
-    file_id = files_list.files[0].id
-    
-    # Extract specific sheets
-    job = client.files.extract_sheets(
-        workspace_id=1,
-        project_id=1,
-        file_id=file_id,
-        sheets=["Revenue", "Expenses", "Summary"],
-        delete_file_after_extract=True
-    )
-    
-    print(f"Sheet extraction started: Job {job.job_id}")
-```
-
-## Error Handling
-
-### Basic Error Handling
-
-```python
-from mammoth.exceptions import MammothAPIError, MammothAuthError
-
-try:
-    dataset_id = client.files.upload_files(
-        workspace_id=1,
-        project_id=1,
-        files="data.csv"
-    )
-    print(f"✓ Success: Dataset {dataset_id}")
-    
-except MammothAuthError:
-    print("✗ Authentication failed - check your API credentials")
-    
-except MammothAPIError as e:
-    print(f"✗ API Error: {e.message}")
-    if e.status_code == 404:
-        print("  Workspace or project not found")
-    elif e.status_code == 400:
-        print("  Invalid request - check your parameters")
-        
-except FileNotFoundError:
-    print("✗ File not found - check the file path")
-    
-except Exception as e:
-    print(f"✗ Unexpected error: {e}")
-```
-
-### Job Error Handling
-
-```python
-from mammoth.exceptions import MammothJobTimeoutError, MammothJobFailedError
-
-try:
-    dataset_id = client.files.upload_files(
-        workspace_id=1,
-        project_id=1,
-        files="data.csv",
-        timeout=300
-    )
-    print(f"✓ Upload completed: Dataset {dataset_id}")
-    
-except MammothJobTimeoutError as e:
-    job_id = e.details['job_id']
-    timeout = e.details['timeout']
-    print(f"✗ Job {job_id} timed out after {timeout} seconds")
-    print("  File may still be processing - check later")
-    
-except MammothJobFailedError as e:
-    job_id = e.details['job_id']
-    reason = e.details.get('failure_reason', 'Unknown error')
-    print(f"✗ Job {job_id} failed: {reason}")
-```
-
-## File Deletion
-
-### Delete Single File
-
-```python
-# Delete a specific file
-try:
-    client.files.delete_file(
-        workspace_id=1,
-        project_id=1,
-        file_id=123
-    )
-    print("✓ File deleted successfully")
-    
-except MammothAPIError as e:
-    print(f"✗ Failed to delete file: {e.message}")
-```
-
-### Delete Multiple Files
-
-```python
-# Delete multiple files at once
-file_ids_to_delete = [123, 124, 125]
-
-try:
-    client.files.delete_files(
-        workspace_id=1,
-        project_id=1,
-        file_ids=file_ids_to_delete
-    )
-    print(f"✓ Deleted {len(file_ids_to_delete)} files")
-    
-except MammothAPIError as e:
-    print(f"✗ Failed to delete files: {e.message}")
-```
-
-## Context Manager Usage
-
-```python
-# Use context manager for automatic cleanup
 with MammothClient(
     api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET")
+    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    workspace_id=11,
 ) as client:
-    
-    # Upload file
-    dataset_id = client.files.upload_files(
-        workspace_id=1,
-        project_id=1,
-        files="data.csv"
-    )
-    
-    # List files
-    files = client.files.list_files(workspace_id=1, project_id=1)
-    
-    print(f"Uploaded dataset {dataset_id}")
-    print(f"Total files: {len(files.files)}")
-    
-# Connection automatically closed here
+    client.set_project_id(10)
+    view = client.views.get(1039)
+    view.export.to_csv("output.csv")
+# Session closed automatically
 ```
 
-## Date Range Filtering
+## Pipeline management
 
 ```python
-from mammoth.utils.helpers import format_date_range
-from datetime import datetime, timedelta
+# List tasks on a view
+tasks = view.list_tasks()
+for task in tasks:
+    print(f"Task {task['id']}: {task.get('task_key', 'unknown')}")
 
-# Get files from the last 7 days
-end_date = datetime.now()
-start_date = end_date - timedelta(days=7)
-date_filter = format_date_range(start_date, end_date)
+# Delete a task
+view.delete_task(task_id=42)
 
-recent_files = client.files.list_files(
-    workspace_id=1,
-    project_id=1,
-    created_at=date_filter
-)
-
-print(f"Files from last 7 days: {len(recent_files.files)}")
-for file in recent_files.files:
-    print(f"  - {file.name} ({file.created_at})")
+# Preview a task before applying
+preview = view.preview_task({"SELECT": "ALL", "CONDITION": {...}})
 ```
 
-## Complete Workflow Example
+## Create and clone views
+
+```python
+# Create a new empty view
+new_view = client.views.create(dataset_id=42, name="My Analysis")
+
+# Clone from an existing view
+clone = client.views.create(dataset_id=42, name="Copy of Analysis", clone_from=1039)
+
+# Delete a view
+client.views.delete(view_id=new_view.id)
+```
+
+## Complete workflow
 
 ```python
 import os
-from mammoth import MammothClient
-from mammoth.exceptions import MammothAPIError
+from mammoth import (
+    MammothClient, Condition, Operator,
+    ColumnType, SetValue, MammothAPIError,
+)
 
-def complete_upload_workflow():
-    """Complete example of uploading and managing files."""
-    
-    # Initialize client
+def main():
     client = MammothClient(
         api_key=os.getenv("MAMMOTH_API_KEY"),
-        api_secret=os.getenv("MAMMOTH_API_SECRET")
+        api_secret=os.getenv("MAMMOTH_API_SECRET"),
+        workspace_id=11,
     )
-    
-    # Configuration
-    workspace_id = 1
-    project_id = 1
-    files_to_upload = ["sales.csv", "customers.csv"]
-    
+    client.set_project_id(10)
+
     try:
-        print("🚀 Starting upload workflow...")
-        
-        # 1. Test connection
-        if not client.test_connection():
-            raise Exception("Failed to connect to Mammoth")
-        print("✓ Connection verified")
-        
-        # 2. Upload files
-        print(f"📤 Uploading {len(files_to_upload)} files...")
-        dataset_ids = client.files.upload_files(
-            workspace_id=workspace_id,
-            project_id=project_id,
-            files=files_to_upload,
-            timeout=600
+        view = client.views.get(1039)
+        print(f"View: {view.name} ({len(view.display_names)} columns)")
+
+        # Filter
+        view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+
+        # Add a label
+        view.set_values(
+            new_column="Tier",
+            column_type=ColumnType.TEXT,
+            values=[
+                SetValue("Premium", condition=Condition("Sales", Operator.GTE, 10000)),
+                SetValue("Standard"),
+            ],
         )
-        print(f"✓ Uploaded {len(dataset_ids)} files successfully")
-        
-        # 3. List updated files
-        print("📋 Listing current files...")
-        files_list = client.files.list_files(
-            workspace_id=workspace_id,
-            project_id=project_id,
-            limit=10,
-            sort="(created_at:desc)"
-        )
-        
-        print(f"📊 Current files in project:")
-        for file in files_list.files[:5]:  # Show latest 5
-            status_emoji = "✅" if file.status == "processed" else "⏳"
-            print(f"  {status_emoji} {file.name} (Status: {file.status})")
-        
-        # 4. Get details of uploaded files
-        for i, dataset_id in enumerate(dataset_ids):
-            print(f"\n📄 Details for {files_to_upload[i]}:")
-            print(f"   Dataset ID: {dataset_id}")
-            
-        print("\n🎉 Workflow completed successfully!")
-        return dataset_ids
-        
+
+        # Export
+        path = view.export.to_csv("output.csv")
+        print(f"Exported to {path}")
+
     except MammothAPIError as e:
-        print(f"❌ API Error: {e.message}")
-        if e.status_code:
-            print(f"   Status Code: {e.status_code}")
-        return None
-        
-    except Exception as e:
-        print(f"❌ Unexpected error: {e}")
-        return None
+        print(f"Error: {e.message} (HTTP {e.status_code})")
 
-# Run the workflow
 if __name__ == "__main__":
-    dataset_ids = complete_upload_workflow()
-    if dataset_ids:
-        print(f"\nCreated datasets: {dataset_ids}")
+    main()
 ```
 
-## Advanced Export Examples
+## See also
 
-### S3 Export Creation
-
-```python
-# Create an S3 export for automated data export
-s3_export = client.exports.create_s3_export(
-    workspace_id=workspace_id,
-    project_id=project_id,
-    dataset_id=dataset_id,
-    dataview_id=dataview_id,
-    file="monthly_report.csv",
-    file_type="csv",
-    trigger_type="pipeline",
-    end_of_pipeline=True
-)
-
-print(f"S3 export created: {s3_export}")
-```
-
-### Internal Dataset Export
-
-```python
-# Create an internal dataset export
-internal_export = client.exports.create_internal_dataset_export(
-    workspace_id=workspace_id,
-    project_id=project_id,
-    dataset_id=dataset_id,
-    dataview_id=dataview_id,
-    dataset_name="processed_customer_data",
-    column_mapping={"id": "customer_id", "name": "customer_name"}
-)
-
-print(f"Internal dataset export created: {internal_export}")
-```
-
-### List and Monitor Exports
-
-```python
-# List existing exports
-exports = client.exports.list_exports(
-    workspace_id=workspace_id,
-    project_id=project_id,
-    dataset_id=dataset_id,
-    dataview_id=dataview_id
-)
-
-print(f"Found {len(exports.get('exports', []))} exports")
-for export in exports.get('exports', []):
-    print(f"  Export ID: {export.get('id')}, Status: {export.get('status')}")
-```
-
-## Working with Test Files
-
-The SDK includes comprehensive test files that demonstrate real-world usage:
-
-### Running the S3 Export Test
-
-```bash
-# Set your credentials as environment variables
-export MAMMOTH_API_KEY="your-api-key"
-export MAMMOTH_API_SECRET="your-api-secret"
-export MAMMOTH_BASE_URL="https://your-instance.mammoth.io/api/v2"
-
-# Run the comprehensive S3 export test
-python test_s3.py
-```
-
-The `test_s3.py` file demonstrates:
-- URL parsing with `parse_path()`
-- S3 export creation and management
-- Internal dataset export creation
-- Export listing and monitoring
-- Comprehensive error handling
-
-### Running the URL Parsing Test
-
-```bash
-# Test URL parsing functionality
-python test_url_parsing.py
-```
-
-## Next Steps
-
-- [File Operations Guide](file-operations.md) - Advanced file management
-- [Job Management Examples](job-management.md) - Advanced job tracking
-- [Error Handling Guide](error-handling.md) - Comprehensive error handling
-- [API Reference](../api/client.md) - Complete API documentation
+- [Transformation examples](transformations.md) -- 25+ transformation workflows
+- [Error handling](error-handling.md) -- handling errors gracefully
+- [Views reference](../api/views.md) -- complete View API

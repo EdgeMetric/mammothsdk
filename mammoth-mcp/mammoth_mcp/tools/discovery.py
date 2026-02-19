@@ -2,17 +2,24 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from mcp.server.fastmcp import Context
 
+from mammoth.exceptions import MammothAPIError, MammothColumnError
 from mammoth_mcp.helpers import error_response, success_response
 from mammoth_mcp.server import mcp
 from mammoth_mcp.state import ClientManager
 
+logger = logging.getLogger(__name__)
+
 
 def _get_manager(ctx: Context) -> ClientManager:
-    return ctx.request_context.lifespan_context["manager"]
+    try:
+        return ctx.request_context.lifespan_context["manager"]
+    except KeyError:
+        raise RuntimeError("MCP server not initialized — check environment variables")
 
 
 @mcp.tool()
@@ -31,7 +38,12 @@ def list_projects(ctx: Context) -> dict[str, Any]:
             for p in items
         ]
         return success_response(result, f"Found {len(result)} projects")
+    except (MammothAPIError, MammothColumnError) as e:
+        return error_response(e)
+    except (ValueError, KeyError, TypeError) as e:
+        return error_response(e)
     except Exception as e:
+        logger.exception("Unexpected error in list_projects")
         return error_response(e)
 
 
@@ -52,7 +64,12 @@ def list_datasets(ctx: Context) -> dict[str, Any]:
             for d in items
         ]
         return success_response(result, f"Found {len(result)} datasets")
+    except (MammothAPIError, MammothColumnError) as e:
+        return error_response(e)
+    except (ValueError, KeyError, TypeError) as e:
+        return error_response(e)
     except Exception as e:
+        logger.exception("Unexpected error in list_datasets")
         return error_response(e)
 
 
@@ -67,7 +84,12 @@ def get_dataset(ctx: Context, dataset_id: int) -> dict[str, Any]:
         manager = _get_manager(ctx)
         ds = manager.client.datasets.get(dataset_id)
         return success_response(ds)
+    except (MammothAPIError, MammothColumnError) as e:
+        return error_response(e)
+    except (ValueError, KeyError, TypeError) as e:
+        return error_response(e)
     except Exception as e:
+        logger.exception("Unexpected error in get_dataset")
         return error_response(e)
 
 
@@ -85,5 +107,10 @@ def upload_file(ctx: Context, file_path: str) -> dict[str, Any]:
             {"dataset_ids": result if isinstance(result, list) else [result]},
             "File uploaded successfully",
         )
+    except (MammothAPIError, MammothColumnError) as e:
+        return error_response(e)
+    except (ValueError, KeyError, TypeError) as e:
+        return error_response(e)
     except Exception as e:
+        logger.exception("Unexpected error in upload_file")
         return error_response(e)

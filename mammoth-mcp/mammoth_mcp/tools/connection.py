@@ -2,17 +2,24 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from mcp.server.fastmcp import Context
 
+from mammoth.exceptions import MammothAPIError, MammothColumnError
 from mammoth_mcp.helpers import error_response, success_response
 from mammoth_mcp.server import mcp
 from mammoth_mcp.state import ClientManager
 
+logger = logging.getLogger(__name__)
+
 
 def _get_manager(ctx: Context) -> ClientManager:
-    return ctx.request_context.lifespan_context["manager"]
+    try:
+        return ctx.request_context.lifespan_context["manager"]
+    except KeyError:
+        raise RuntimeError("MCP server not initialized — check environment variables")
 
 
 @mcp.tool()
@@ -24,7 +31,12 @@ def test_connection(ctx: Context) -> dict[str, Any]:
         if ok:
             return success_response(manager.config.summary(), "Connection successful")
         return error_response(Exception("Connection failed — check API key/secret"))
+    except (MammothAPIError, MammothColumnError) as e:
+        return error_response(e)
+    except (ValueError, KeyError, TypeError) as e:
+        return error_response(e)
     except Exception as e:
+        logger.exception("Unexpected error in test_connection")
         return error_response(e)
 
 
@@ -42,7 +54,12 @@ def set_project(ctx: Context, project_id: int) -> dict[str, Any]:
             {"project_id": project_id},
             f"Active project set to {project_id}",
         )
+    except (MammothAPIError, MammothColumnError) as e:
+        return error_response(e)
+    except (ValueError, KeyError, TypeError) as e:
+        return error_response(e)
     except Exception as e:
+        logger.exception("Unexpected error in set_project")
         return error_response(e)
 
 
@@ -58,5 +75,8 @@ def parse_mammoth_url(url: str) -> dict[str, Any]:
 
         ids = parse_path(url)
         return success_response(ids)
+    except (ValueError, KeyError, TypeError) as e:
+        return error_response(e)
     except Exception as e:
+        logger.exception("Unexpected error in parse_mammoth_url")
         return error_response(e)

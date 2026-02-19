@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from mcp.server.fastmcp import Context
 
+from mammoth.exceptions import MammothAPIError, MammothColumnError
 from mammoth_mcp.helpers import (
     error_response,
     format_view_info,
@@ -15,9 +17,14 @@ from mammoth_mcp.helpers import (
 from mammoth_mcp.server import mcp
 from mammoth_mcp.state import ClientManager
 
+logger = logging.getLogger(__name__)
+
 
 def _get_manager(ctx: Context) -> ClientManager:
-    return ctx.request_context.lifespan_context["manager"]
+    try:
+        return ctx.request_context.lifespan_context["manager"]
+    except KeyError:
+        raise RuntimeError("MCP server not initialized — check environment variables")
 
 
 @mcp.tool()
@@ -181,5 +188,10 @@ def transform_advanced(
             )
 
         return success_response(format_view_info(view), f"{op} applied successfully")
+    except (MammothAPIError, MammothColumnError) as e:
+        return error_response(e)
+    except (ValueError, KeyError, TypeError) as e:
+        return error_response(e)
     except Exception as e:
+        logger.exception("Unexpected error in transform_advanced")
         return error_response(e)

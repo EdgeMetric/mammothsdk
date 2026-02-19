@@ -37,6 +37,7 @@ Exports are accessed via ``view.export``::
 
 from __future__ import annotations
 
+import datetime
 import random
 import string
 from pathlib import Path
@@ -446,8 +447,6 @@ class ViewExport:
             Export result dict with download URL.
         """
         if file_name is None:
-            import datetime
-
             ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             file_name = f"view_{self._view.id}_export_{ts}.{file_type}"
 

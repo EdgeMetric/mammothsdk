@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
@@ -12,11 +14,14 @@ from mcp.server.fastmcp import FastMCP
 from mammoth_mcp.config import MammothConfig
 from mammoth_mcp.state import ClientManager
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(server: FastMCP) -> AsyncIterator[dict[str, Any]]:
     """Create the ClientManager from env vars and expose it to all tools."""
     config = MammothConfig.from_env()
+    logger.info("Mammoth MCP server starting — workspace=%s, project=%s", config.workspace_id, config.project_id)
     manager = ClientManager(config)
     yield {"manager": manager}
 
@@ -102,6 +107,11 @@ from mammoth_mcp.tools import (  # noqa: E402
 
 def main() -> None:
     """Run the MCP server (stdio transport)."""
+    logging.basicConfig(
+        level=logging.INFO,
+        stream=sys.stderr,
+        format="%(asctime)s %(name)s %(levelname)s: %(message)s",
+    )
     mcp.run(transport="stdio")
 
 

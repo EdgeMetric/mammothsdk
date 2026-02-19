@@ -2,17 +2,26 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from mcp.server.fastmcp import Context
 
+from mammoth.exceptions import MammothAPIError, MammothColumnError
 from mammoth_mcp.helpers import build_condition, error_response, success_response
 from mammoth_mcp.server import mcp
 from mammoth_mcp.state import ClientManager
 
+logger = logging.getLogger(__name__)
+
+_MAX_ROWS = 400
+
 
 def _get_manager(ctx: Context) -> ClientManager:
-    return ctx.request_context.lifespan_context["manager"]
+    try:
+        return ctx.request_context.lifespan_context["manager"]
+    except KeyError:
+        raise RuntimeError("MCP server not initialized — check environment variables")
 
 
 @mcp.tool()
@@ -41,14 +50,27 @@ def get_data(
         manager = _get_manager(ctx)
         view = manager.get_view(view_id, dataset_id)
 
+        truncated = limit > _MAX_ROWS
+        actual_limit = min(limit, _MAX_ROWS)
+
         cond_obj = build_condition(condition) if condition else None
         result = view.data(
-            limit=min(limit, 400),
+            limit=actual_limit,
             offset=offset,
             columns=columns,
             condition=cond_obj,
             sort=sort,
         )
-        return success_response(result)
+
+        message = None
+        if truncated:
+            message = f"(Note: results limited to {_MAX_ROWS} rows. Request fewer rows for faster responses.)"
+
+        return success_response(result, message)
+    except (MammothAPIError, MammothColumnError) as e:
+        return error_response(e)
+    except (ValueError, KeyError, TypeError) as e:
+        return error_response(e)
     except Exception as e:
+        logger.exception("Unexpected error in get_data")
         return error_response(e)

@@ -1,0 +1,80 @@
+site_name: Mammoth Analytics Python SDK
+site_url: https://docs.mammoth.io
+site_description: Python SDK for the Mammoth Analytics platform
+site_author: Mammoth Analytics
+repo_url: https://github.com/EdgeMetric/mm-pysdk
+repo_name: EdgeMetric/mm-pysdk
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: false
+            show_root_heading: true
+            heading_level: 3
+            docstring_style: google
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: README.md
+  - Installation: installation.md
+  - Quick Start: quick-start.md
+  - Authentication: authentication.md
+  - API Reference:
+      - Client: api/client.md
+      - Views: api/views.md
+      - Conditions: api/conditions.md
+      - Enums: api/enums.md
+      - Exports: api/exports.md
+      - Exceptions: api/exceptions.md
+  - Examples:
+      - Transformations: examples/transformations.md
+      - Basic Usage: examples/basic-usage.md
+      - Error Handling: examples/error-handling.md
+  - Advanced:
+      - Configuration: advanced/configuration.md
+      - Job Lifecycle: advanced/async-operations.md
+      - Integrations: advanced/integrations.md
+      - Troubleshooting: advanced/troubleshooting.md
+  - Changelog: changelog.md
