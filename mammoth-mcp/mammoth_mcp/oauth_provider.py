@@ -57,7 +57,7 @@ class MammothOAuthProvider:
             "code_challenge": params.code_challenge,
             "scopes": params.scopes or [],
             "redirect_uri_provided_explicitly": params.redirect_uri_provided_explicitly,
-            "resource": params.resource,
+            "resource": str(params.resource) if params.resource else None,
             "oauth_state": params.state,
         }
         state_key = secrets.token_urlsafe(32)
