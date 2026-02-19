@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from mammoth.models.pipeline import DateComponent, DateDiffUnit
 
 if TYPE_CHECKING:
-    from mammoth.condition import CompoundCondition, Condition
+    from mammoth.condition import CompoundCondition, Condition, NotCondition
 
 
 class DateOpsMixin:
@@ -106,7 +106,7 @@ class DateOpsMixin:
         delta: dict[str, int],
         new_column: str | None = None,
         existing_column: str | None = None,
-        condition: Condition | CompoundCondition | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> dict[str, Any]:
         """Add or subtract from a date column (INCREMENT_DATE task).
 

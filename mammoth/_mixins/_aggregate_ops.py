@@ -12,7 +12,7 @@ from mammoth.models.pipeline import (
 )
 
 if TYPE_CHECKING:
-    from mammoth.condition import CompoundCondition, Condition
+    from mammoth.condition import CompoundCondition, Condition, NotCondition
 
 
 class AggregateOpsMixin:
@@ -32,7 +32,7 @@ class AggregateOpsMixin:
         self,
         group_by: list[str],
         aggregations: list[dict[str, Any]],
-        condition: Condition | CompoundCondition | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> dict[str, Any]:
         """Group / aggregate / pivot (PIVOT task).
 

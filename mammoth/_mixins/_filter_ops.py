@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from mammoth.models.pipeline import ColumnType, FilterType, SetValue
 
 if TYPE_CHECKING:
-    from mammoth.condition import CompoundCondition, Condition
+    from mammoth.condition import CompoundCondition, Condition, NotCondition
 
 
 class FilterOpsMixin:
@@ -15,7 +15,7 @@ class FilterOpsMixin:
 
     def filter_rows(
         self,
-        condition: Condition | CompoundCondition,
+        condition: Condition | CompoundCondition | NotCondition,
         filter_type: FilterType = FilterType.SHOW,
         prompt: str = "",
     ) -> dict[str, Any]:
@@ -47,7 +47,7 @@ class FilterOpsMixin:
         new_column: str | None = None,
         column_type: ColumnType = ColumnType.TEXT,
         existing_column: str | None = None,
-        condition: Condition | CompoundCondition | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> dict[str, Any]:
         """Label and insert values into a new or existing column (SET task).
 

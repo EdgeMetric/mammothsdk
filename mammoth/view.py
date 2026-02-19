@@ -53,7 +53,7 @@ from mammoth._mixins import (
     RowOpsMixin,
     TextOpsMixin,
 )
-from mammoth.condition import CompoundCondition, Condition
+from mammoth.condition import CompoundCondition, Condition, NotCondition
 
 _list = list  # Alias to avoid shadowing by method name
 
@@ -173,7 +173,7 @@ class View(
         }
 
     def _build_condition(
-        self, condition: Condition | CompoundCondition | dict[str, Any] | None
+        self, condition: Condition | CompoundCondition | NotCondition | dict[str, Any] | None
     ) -> dict[str, Any] | None:
         """Build condition dict from Condition object or raw dict."""
         if condition is None:

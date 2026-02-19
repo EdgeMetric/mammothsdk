@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from mammoth.models.pipeline import SubstringDirection, TextCase
 
 if TYPE_CHECKING:
-    from mammoth.condition import CompoundCondition, Condition
+    from mammoth.condition import CompoundCondition, Condition, NotCondition
 
 
 class TextOpsMixin:
@@ -18,7 +18,7 @@ class TextOpsMixin:
         columns: list[str],
         case: TextCase | None = None,
         trim: bool = False,
-        condition: Condition | CompoundCondition | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> dict[str, Any]:
         """Apply text case change or trim (TEXT_TRANSFORM task).
 
@@ -51,7 +51,7 @@ class TextOpsMixin:
         replace: str,
         match_case: bool = False,
         match_words: bool = False,
-        condition: Condition | CompoundCondition | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> dict[str, Any]:
         """Find and replace values (REPLACE task).
 
@@ -85,7 +85,7 @@ class TextOpsMixin:
         mapping: list[dict[str, Any]],
         match_case: bool = True,
         match_words: bool = False,
-        condition: Condition | CompoundCondition | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> dict[str, Any]:
         """Bulk find-and-replace across one or more columns (REPLACE with MAPPING).
 
@@ -172,7 +172,7 @@ class TextOpsMixin:
         regex_invert: bool = False,
         new_column: str | None = None,
         existing_column: str | None = None,
-        condition: Condition | CompoundCondition | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> dict[str, Any]:
         """Extract text from a column (SUBSTRING task).
 

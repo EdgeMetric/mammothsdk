@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from mammoth.models.pipeline import ColumnType
 
 if TYPE_CHECKING:
-    from mammoth.condition import CompoundCondition, Condition
+    from mammoth.condition import CompoundCondition, Condition, NotCondition
 
 
 class ColumnOpsMixin:
@@ -80,7 +80,7 @@ class ColumnOpsMixin:
         column_type: ColumnType = ColumnType.TEXT,
         existing_column: str | None = None,
         separator: str = " ",
-        condition: Condition | CompoundCondition | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> dict[str, Any]:
         """Concatenate columns (COMBINE task).
 

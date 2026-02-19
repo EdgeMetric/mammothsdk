@@ -8,7 +8,7 @@ from mammoth._expression_parser import parse_expression
 from mammoth.models.pipeline import ColumnType
 
 if TYPE_CHECKING:
-    from mammoth.condition import CompoundCondition, Condition
+    from mammoth.condition import CompoundCondition, Condition, NotCondition
 
 
 class MathOpsMixin:
@@ -20,7 +20,7 @@ class MathOpsMixin:
         new_column: str | None = None,
         column_type: ColumnType = ColumnType.NUMERIC,
         existing_column: str | None = None,
-        condition: Condition | CompoundCondition | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> dict[str, Any]:
         """Apply arithmetic operations (MATH task).
 

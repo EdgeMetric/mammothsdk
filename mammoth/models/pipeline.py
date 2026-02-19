@@ -35,7 +35,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from mammoth.condition import CompoundCondition, Condition
+    from mammoth.condition import CompoundCondition, Condition, NotCondition
 
 
 class Operator(str, Enum):
@@ -325,7 +325,7 @@ class SetValue:
     """
 
     value: Any
-    condition: Condition | CompoundCondition | None = field(default=None)
+    condition: Condition | CompoundCondition | NotCondition | None = field(default=None)
 
 
 # ── Pydantic response models ──────────────────────────────────

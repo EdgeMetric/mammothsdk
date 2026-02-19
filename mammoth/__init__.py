@@ -42,7 +42,7 @@ Key modules:
 from __future__ import annotations
 
 from mammoth.client import DEFAULT_JOB_TIMEOUT, DEFAULT_TIMEOUT, MammothClient
-from mammoth.condition import CompoundCondition, Condition
+from mammoth.condition import CompoundCondition, Condition, NotCondition
 from mammoth.exceptions import (
     MammothAPIError,
     MammothAuthError,
@@ -85,6 +85,7 @@ __all__ = [
     # Condition builder
     "Condition",
     "CompoundCondition",
+    "NotCondition",
     # View
     "View",
     "ViewExport",
