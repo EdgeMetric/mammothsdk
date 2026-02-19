@@ -212,6 +212,7 @@ async def validate_mammoth_credentials(
     headers = {
         "X-API-KEY": api_key,
         "X-API-SECRET": api_secret,
+        "X-WORKSPACE-ID": str(workspace_id),
     }
     try:
         async with httpx.AsyncClient(timeout=15) as client:
