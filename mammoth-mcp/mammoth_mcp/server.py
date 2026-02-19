@@ -12,6 +12,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from mammoth_mcp.config import MammothConfig
+from mammoth_mcp.instructions import MAMMOTH_INSTRUCTIONS
 from mammoth_mcp.settings import Settings
 from mammoth_mcp.state import ClientManager
 
@@ -91,6 +92,7 @@ def _build_server() -> FastMCP:
 
         server = FastMCP(
             "Mammoth Analytics",
+            instructions=MAMMOTH_INSTRUCTIONS,
             lifespan=lifespan,
             auth_server_provider=provider,
             auth=auth_settings,
@@ -101,7 +103,7 @@ def _build_server() -> FastMCP:
         register_login_routes(server, settings, _shared_token_store)
         return server
     else:
-        return FastMCP("Mammoth Analytics", lifespan=lifespan)
+        return FastMCP("Mammoth Analytics", instructions=MAMMOTH_INSTRUCTIONS, lifespan=lifespan)
 
 
 mcp = _build_server()
