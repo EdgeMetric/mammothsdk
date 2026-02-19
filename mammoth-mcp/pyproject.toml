@@ -20,8 +20,12 @@ packages = [{include = "mammoth_mcp"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-mcp = "^1.0.0"
+mcp = "^1.26.0"
 mammoth-io = "^0.2.0"
+redis = {version = "^5.0", extras = ["hiredis"]}
+httpx = "^0.28"
+pydantic-settings = "^2.0"
+uvicorn = {version = "^0.34", extras = ["standard"]}
 
 [tool.poetry.scripts]
 mammoth-mcp = "mammoth_mcp.server:main"

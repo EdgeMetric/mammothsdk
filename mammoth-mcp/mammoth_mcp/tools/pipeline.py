@@ -8,22 +8,14 @@ from typing import Any
 from mcp.server.fastmcp import Context
 
 from mammoth.exceptions import MammothAPIError, MammothColumnError
-from mammoth_mcp.helpers import error_response, success_response
+from mammoth_mcp.helpers import error_response, get_manager, success_response
 from mammoth_mcp.server import mcp
-from mammoth_mcp.state import ClientManager
 
 logger = logging.getLogger(__name__)
 
 
-def _get_manager(ctx: Context) -> ClientManager:
-    try:
-        return ctx.request_context.lifespan_context["manager"]
-    except KeyError:
-        raise RuntimeError("MCP server not initialized — check environment variables")
-
-
 @mcp.tool()
-def list_tasks(ctx: Context, view_id: int, dataset_id: int | None = None) -> dict[str, Any]:
+async def list_tasks(ctx: Context, view_id: int, dataset_id: int | None = None) -> dict[str, Any]:
     """List all pipeline transformation steps applied to a view.
 
     Args:
@@ -31,7 +23,7 @@ def list_tasks(ctx: Context, view_id: int, dataset_id: int | None = None) -> dic
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     try:
-        manager = _get_manager(ctx)
+        manager = await get_manager(ctx)
         view = manager.get_view(view_id, dataset_id)
         tasks = view.list_tasks()
         result = []
@@ -54,7 +46,7 @@ def list_tasks(ctx: Context, view_id: int, dataset_id: int | None = None) -> dic
 
 
 @mcp.tool()
-def delete_task(
+async def delete_task(
     ctx: Context,
     view_id: int,
     task_id: int,
@@ -68,7 +60,7 @@ def delete_task(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     try:
-        manager = _get_manager(ctx)
+        manager = await get_manager(ctx)
         view = manager.get_view(view_id, dataset_id)
         view.delete_task(task_id)
         return success_response(message=f"Deleted task {task_id} from view {view_id}")

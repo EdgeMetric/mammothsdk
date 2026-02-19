@@ -12,24 +12,17 @@ from mammoth_mcp.helpers import (
     build_condition,
     error_response,
     format_view_info,
+    get_manager,
     resolve_enum,
     success_response,
 )
 from mammoth_mcp.server import mcp
-from mammoth_mcp.state import ClientManager
 
 logger = logging.getLogger(__name__)
 
 
-def _get_manager(ctx: Context) -> ClientManager:
-    try:
-        return ctx.request_context.lifespan_context["manager"]
-    except KeyError:
-        raise RuntimeError("MCP server not initialized — check environment variables")
-
-
 @mcp.tool()
-def transform_columns(
+async def transform_columns(
     ctx: Context,
     view_id: int,
     type: str,
@@ -70,7 +63,7 @@ def transform_columns(
     try:
         from mammoth import ColumnType
 
-        manager = _get_manager(ctx)
+        manager = await get_manager(ctx)
         view = manager.get_view(view_id, dataset_id)
         op = type.lower()
 

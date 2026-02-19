@@ -9,6 +9,28 @@ from mammoth import (
     Condition,
     Operator,
 )
+from mcp.server.fastmcp import Context
+
+from mammoth_mcp.state import ClientManager
+
+
+async def get_manager(ctx: Context) -> ClientManager:
+    """Resolve per-user ClientManager from request context."""
+    lc = ctx.request_context.lifespan_context
+    registry = lc.get("registry")
+    if registry:
+        # Remote mode — resolve via bearer token from auth context
+        from mcp.server.auth.middleware.auth_context import get_access_token
+
+        access_token = get_access_token()
+        if not access_token:
+            raise RuntimeError("Not authenticated — missing access token")
+        return await registry.get_manager(access_token.token)
+    # Stdio mode — single manager from env vars
+    manager = lc.get("manager")
+    if not manager:
+        raise RuntimeError("MCP server not initialized — check environment variables")
+    return manager
 
 
 def build_condition(d: dict[str, Any]) -> Condition | CompoundCondition:

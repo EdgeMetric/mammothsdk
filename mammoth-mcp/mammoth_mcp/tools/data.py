@@ -8,24 +8,16 @@ from typing import Any
 from mcp.server.fastmcp import Context
 
 from mammoth.exceptions import MammothAPIError, MammothColumnError
-from mammoth_mcp.helpers import build_condition, error_response, success_response
+from mammoth_mcp.helpers import build_condition, error_response, get_manager, success_response
 from mammoth_mcp.server import mcp
-from mammoth_mcp.state import ClientManager
 
 logger = logging.getLogger(__name__)
 
 _MAX_ROWS = 400
 
 
-def _get_manager(ctx: Context) -> ClientManager:
-    try:
-        return ctx.request_context.lifespan_context["manager"]
-    except KeyError:
-        raise RuntimeError("MCP server not initialized — check environment variables")
-
-
 @mcp.tool()
-def get_data(
+async def get_data(
     ctx: Context,
     view_id: int,
     limit: int = 100,
@@ -47,7 +39,7 @@ def get_data(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     try:
-        manager = _get_manager(ctx)
+        manager = await get_manager(ctx)
         view = manager.get_view(view_id, dataset_id)
 
         truncated = limit > _MAX_ROWS

@@ -8,22 +8,14 @@ from typing import Any
 from mcp.server.fastmcp import Context
 
 from mammoth.exceptions import MammothAPIError, MammothColumnError
-from mammoth_mcp.helpers import error_response, format_view_info, success_response
+from mammoth_mcp.helpers import error_response, format_view_info, get_manager, success_response
 from mammoth_mcp.server import mcp
-from mammoth_mcp.state import ClientManager
 
 logger = logging.getLogger(__name__)
 
 
-def _get_manager(ctx: Context) -> ClientManager:
-    try:
-        return ctx.request_context.lifespan_context["manager"]
-    except KeyError:
-        raise RuntimeError("MCP server not initialized — check environment variables")
-
-
 @mcp.tool()
-def ai_transform(
+async def ai_transform(
     ctx: Context,
     view_id: int,
     prompt: str,
@@ -41,7 +33,7 @@ def ai_transform(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     try:
-        manager = _get_manager(ctx)
+        manager = await get_manager(ctx)
         view = manager.get_view(view_id, dataset_id)
         view.gen_ai(
             prompt=prompt,
@@ -59,7 +51,7 @@ def ai_transform(
 
 
 @mcp.tool()
-def sql_query(
+async def sql_query(
     ctx: Context,
     view_id: int,
     intent: str | None = None,
@@ -77,7 +69,7 @@ def sql_query(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     try:
-        manager = _get_manager(ctx)
+        manager = await get_manager(ctx)
         view = manager.get_view(view_id, dataset_id)
 
         if intent:

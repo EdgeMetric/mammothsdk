@@ -12,21 +12,88 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from mammoth_mcp.config import MammothConfig
+from mammoth_mcp.settings import Settings
 from mammoth_mcp.state import ClientManager
 
 logger = logging.getLogger(__name__)
 
+settings = Settings()
+
+
+# ── Lifespan ─────────────────────────────────────────────────
 
 @asynccontextmanager
 async def lifespan(server: FastMCP) -> AsyncIterator[dict[str, Any]]:
-    """Create the ClientManager from env vars and expose it to all tools."""
-    config = MammothConfig.from_env()
-    logger.info("Mammoth MCP server starting — workspace=%s, project=%s", config.workspace_id, config.project_id)
-    manager = ClientManager(config)
-    yield {"manager": manager}
+    """Create resources based on mode and expose them to all tools."""
+    if settings.mode == "remote":
+        from mammoth_mcp.state import UserClientRegistry
+
+        # _shared_token_store is created in _build_server() and shared with the
+        # OAuth provider.  We connect it here so Redis is ready before any request.
+        assert _shared_token_store is not None
+        await _shared_token_store.connect()
+        registry = UserClientRegistry(_shared_token_store, job_timeout=settings.mammoth_job_timeout)
+        logger.info("Mammoth MCP server starting (remote mode)")
+        try:
+            yield {"registry": registry}
+        finally:
+            await _shared_token_store.close()
+    else:
+        config = MammothConfig.from_env()
+        logger.info(
+            "Mammoth MCP server starting (stdio) — workspace=%s, project=%s",
+            config.workspace_id,
+            config.project_id,
+        )
+        manager = ClientManager(config)
+        yield {"manager": manager}
 
 
-mcp = FastMCP("Mammoth Analytics", lifespan=lifespan)
+# ── Server construction ──────────────────────────────────────
+
+_shared_token_store = None  # set in _build_server() for remote mode
+
+
+def _build_server() -> FastMCP:
+    """Build the FastMCP server with appropriate auth settings for the mode."""
+    global _shared_token_store
+
+    if settings.mode == "remote":
+        from mammoth_mcp.oauth_provider import MammothOAuthProvider, register_login_routes
+        from mammoth_mcp.token_store import RedisTokenStore
+        from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
+
+        # Single token store instance shared between OAuth provider and lifespan.
+        # Created here (unconnected), connected in lifespan().
+        _shared_token_store = RedisTokenStore(
+            redis_url=settings.redis_url,
+            auth_code_ttl=settings.auth_code_ttl,
+            access_token_ttl=settings.access_token_ttl,
+        )
+        provider = MammothOAuthProvider(settings, _shared_token_store)
+
+        auth_settings = AuthSettings(
+            issuer_url=settings.server_url,
+            resource_server_url=settings.server_url,
+            client_registration_options=ClientRegistrationOptions(enabled=True),
+            revocation_options=RevocationOptions(enabled=True),
+        )
+
+        server = FastMCP(
+            "Mammoth Analytics",
+            lifespan=lifespan,
+            auth_server_provider=provider,
+            auth=auth_settings,
+        )
+
+        # Register custom login routes
+        register_login_routes(server, settings, _shared_token_store)
+        return server
+    else:
+        return FastMCP("Mammoth Analytics", lifespan=lifespan)
+
+
+mcp = _build_server()
 
 
 # ── Resources ────────────────────────────────────────────────
@@ -105,14 +172,34 @@ from mammoth_mcp.tools import (  # noqa: E402
 )
 
 
+# ── Entry points ─────────────────────────────────────────────
+
+def create_app():
+    """ASGI app factory for uvicorn (remote mode)."""
+    return mcp.streamable_http_app()
+
+
 def main() -> None:
-    """Run the MCP server (stdio transport)."""
+    """Run the MCP server."""
     logging.basicConfig(
-        level=logging.INFO,
+        level=getattr(logging, settings.log_level.upper(), logging.INFO),
         stream=sys.stderr,
-        format="%(asctime)s %(name)s %(levelname)s: %(message)s",
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
-    mcp.run(transport="stdio")
+    if settings.mode == "remote":
+        import uvicorn
+
+        logger.info("Starting remote MCP server on %s:%s", settings.host, settings.port)
+        uvicorn.run(
+            "mammoth_mcp.server:create_app",
+            factory=True,
+            host=settings.host,
+            port=settings.port,
+            log_level=settings.log_level.lower(),
+        )
+    else:
+        mcp.run(transport="stdio")
 
 
 if __name__ == "__main__":

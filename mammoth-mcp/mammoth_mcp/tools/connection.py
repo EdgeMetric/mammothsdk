@@ -8,25 +8,17 @@ from typing import Any
 from mcp.server.fastmcp import Context
 
 from mammoth.exceptions import MammothAPIError, MammothColumnError
-from mammoth_mcp.helpers import error_response, success_response
+from mammoth_mcp.helpers import error_response, get_manager, success_response
 from mammoth_mcp.server import mcp
-from mammoth_mcp.state import ClientManager
 
 logger = logging.getLogger(__name__)
 
 
-def _get_manager(ctx: Context) -> ClientManager:
-    try:
-        return ctx.request_context.lifespan_context["manager"]
-    except KeyError:
-        raise RuntimeError("MCP server not initialized — check environment variables")
-
-
 @mcp.tool()
-def test_connection(ctx: Context) -> dict[str, Any]:
+async def test_connection(ctx: Context) -> dict[str, Any]:
     """Test that the Mammoth API credentials are valid and the connection works."""
     try:
-        manager = _get_manager(ctx)
+        manager = await get_manager(ctx)
         ok = manager.client.test_connection()
         if ok:
             return success_response(manager.config.summary(), "Connection successful")
@@ -41,14 +33,14 @@ def test_connection(ctx: Context) -> dict[str, Any]:
 
 
 @mcp.tool()
-def set_project(ctx: Context, project_id: int) -> dict[str, Any]:
+async def set_project(ctx: Context, project_id: int) -> dict[str, Any]:
     """Set the active project ID for subsequent API calls.
 
     Args:
         project_id: The Mammoth project ID to use.
     """
     try:
-        manager = _get_manager(ctx)
+        manager = await get_manager(ctx)
         manager.set_project(project_id)
         return success_response(
             {"project_id": project_id},
