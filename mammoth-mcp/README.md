@@ -154,7 +154,7 @@ The OAuth flow will prompt the user for their Mammoth API credentials (API key, 
 | `MAMMOTH_BASE_URL` | `https://app.mammoth.io/api/v2` | Default Mammoth API base URL |
 | `MAMMOTH_JOB_TIMEOUT` | `120` | Default job timeout (seconds) |
 
-## Available Tools (22)
+## Available Tools (40)
 
 ### Connection & Configuration
 
@@ -199,25 +199,47 @@ The OAuth flow will prompt the user for their Mammoth API credentials (API key, 
 
 | Tool | Description |
 |---|---|
-| `transform_columns` | Add, delete, copy, combine, or convert columns. Set `type` to one of: `add_column`, `delete_columns`, `copy_columns`, `combine_columns`, `convert_type` |
+| `add_column` | Create a new empty column of a specified data type |
+| `delete_columns` | Permanently delete one or more columns from the view |
+| `copy_columns` | Duplicate columns with new names and optional type changes |
+| `combine_columns` | Merge multiple column values into a single column with a separator |
+| `convert_type` | Change column types: TEXT, NUMERIC, DATE, DATETIME |
 
 ### Value Transformations
 
 | Tool | Description |
 |---|---|
-| `transform_values` | Filter rows, set values, math expressions, text transforms, replace, split, or substring. Set `type` to one of: `filter_rows`, `set_values`, `math`, `text_transform`, `replace_values`, `bulk_replace`, `split_column`, `substring` |
+| `filter_rows` | Keep or remove rows matching a condition |
+| `set_values` | Populate or annotate columns with conditional values |
+| `math_transform` | Perform arithmetic using column values, constants, and functions |
+| `text_transform` | Standardize text — change case and/or trim whitespace |
+| `replace_values` | Find and replace text in one or more columns |
+| `bulk_replace` | Replace multiple value variations with standardized values |
+| `split_column` | Split a text column by delimiter into multiple new columns |
+| `substring` | Extract substrings using position-based slicing, delimiters, or regex |
 
 ### Aggregate Transformations
 
 | Tool | Description |
 |---|---|
-| `transform_aggregate` | Pivot, window functions, crosstab, unnest, fill missing, limit rows, or discard duplicates. Set `type` to one of: `pivot`, `window`, `crosstab`, `unnest`, `fill_missing`, `limit_rows`, `discard_duplicates` |
+| `pivot` | Group rows and aggregate values (SUM, AVG, COUNT, MAX, MIN) |
+| `window` | Row-aware calculations across partitions (ROW_NUMBER, RANK, SUM, LAG, LEAD, etc.) |
+| `crosstab` | Pivot a column's distinct values into new column headers with aggregation |
+| `unnest` | Transform wide format to long format by stacking columns into rows |
+| `fill_missing` | Fill blank cells by copying from the nearest non-empty cell above or below |
+| `limit_rows` | Keep only the top or bottom N rows, optionally sorted |
+| `discard_duplicates` | Remove rows with identical values across all columns |
 
 ### Advanced Transformations
 
 | Tool | Description |
 |---|---|
-| `transform_advanced` | Join, lookup, JSON extraction, and date operations. Set `type` to one of: `join`, `lookup`, `json_extract`, `extract_date`, `date_diff`, `increment_date` |
+| `join_views` | Combine with another view using LEFT, RIGHT, INNER, or OUTER join |
+| `lookup` | VLOOKUP-style: fetch a single column from a reference view by key |
+| `json_extract` | Parse JSON text into structured columns (objects) or rows (lists) |
+| `extract_date` | Extract a component from a date column (year, month, day, weekday, etc.) |
+| `date_diff` | Calculate time difference between two date columns |
+| `increment_date` | Add or subtract time units from a date column |
 
 ### AI & SQL
 

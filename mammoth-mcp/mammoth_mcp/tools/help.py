@@ -41,8 +41,8 @@ columns — names may change after transformations.
 ## Modification Tools
 - `create_view` / `delete_view` — manage views (clone a view to experiment safely)
 - `upload_file` — upload CSV or Excel to create a new dataset
-- `transform_columns`, `transform_values`, `transform_aggregate`, \
-`transform_advanced` — apply transformations (call `get_help("transformations")` for details)
+- `filter_rows`, `set_values`, `math_transform`, `pivot`, `window`, \
+`join_views`, `lookup`, `convert_type`, etc. — call `get_help("transformations")` for the full list
 - `ai_transform` — AI-generated column from a natural language prompt
 - `sql_query` — transform via natural language intent or raw SQL
 - `export_data` / `export_to_database` — export results to CSV, S3, email, \
@@ -57,12 +57,12 @@ database, or another dataset
     "transformations": """\
 # Available Transformations
 
-Each transformation is applied via one of four tools using a `type` parameter. \
+Each transformation is its own tool — call it directly by name. \
 Every transformation adds a pipeline task that can be undone with `delete_task`.
 
 ---
 
-## Column Structure (`transform_columns`)
+## Column Structure
 
 ### add_column
 Create one or more empty columns of a specified data type (TEXT, NUMERIC, or \
@@ -102,7 +102,7 @@ numbers become NULL. Does not handle mixed-type content without prior cleaning.
 
 ---
 
-## Value Transformations (`transform_values`)
+## Value Transformations
 
 ### filter_rows
 Keep or remove rows based on conditions across text, numeric, or date \
@@ -168,7 +168,7 @@ to partial or empty results. Cannot chain multiple extractions in one step.
 
 ---
 
-## Aggregation & Reshaping (`transform_aggregate`)
+## Aggregation & Reshaping
 
 ### pivot
 Group rows and aggregate values with SUM, AVG, COUNT, MAX, MIN. Supports \
@@ -218,7 +218,7 @@ randomly retained. Does not control which duplicate is preserved.
 
 ---
 
-## Advanced (`transform_advanced`)
+## Advanced
 
 ### join
 Combine with another view using LEFT, RIGHT, INNER, or OUTER join. Map \
@@ -389,31 +389,31 @@ follow this structured workflow.
 ### Text Quality
 | Issue | How to spot | Fix |
 |-------|------------|-----|
-| **Mixed case** ("new york" vs "New York") | Same entity, different casing | `transform_values` type=`text_transform` with case=UPPER/LOWER/TITLE |
-| **Leading/trailing whitespace** | Values look same but aren't equal | `transform_values` type=`text_transform` with trim=true |
-| **Inconsistent values** (typos, abbreviations) | "NY", "New York", "new york" | `transform_values` type=`bulk_replace` to standardize |
-| **Specific wrong values** | Known typos or outdated terms | `transform_values` type=`replace_values` with find/replace |
+| **Mixed case** ("new york" vs "New York") | Same entity, different casing | `text_transform` with case=UPPER/LOWER/TITLE |
+| **Leading/trailing whitespace** | Values look same but aren't equal | `text_transform` with trim=true |
+| **Inconsistent values** (typos, abbreviations) | "NY", "New York", "new york" | `bulk_replace` to standardize |
+| **Specific wrong values** | Known typos or outdated terms | `replace_values` with find/replace |
 
 ### Type Issues
 | Issue | How to spot | Fix |
 |-------|------------|-----|
-| **Numbers stored as TEXT** | Column type TEXT but values are "123", "45.6" | `transform_columns` type=`convert_type` with to=NUMERIC |
-| **Dates stored as TEXT** | Column type TEXT but values are "2024-01-15" | `transform_columns` type=`convert_type` with to=DATE |
+| **Numbers stored as TEXT** | Column type TEXT but values are "123", "45.6" | `convert_type` with to=NUMERIC |
+| **Dates stored as TEXT** | Column type TEXT but values are "2024-01-15" | `convert_type` with to=DATE |
 | **Mixed types in column** | Some values numeric, some text in same column | Clean non-conforming values first, then convert |
 
 ### Structural Issues
 | Issue | How to spot | Fix |
 |-------|------------|-----|
-| **Composite columns** | "City, State" or "First Last" in one column | `transform_values` type=`split_column` with delimiter |
-| **Duplicate rows** | Identical rows appear multiple times | `transform_aggregate` type=`discard_duplicates` |
-| **Missing values** | Empty cells or NULLs in important columns | `transform_aggregate` type=`fill_missing` (directional) or `transform_values` type=`set_values` (fixed value) |
-| **Unnecessary columns** | Columns with no useful data | `transform_columns` type=`delete_columns` |
+| **Composite columns** | "City, State" or "First Last" in one column | `split_column` with delimiter |
+| **Duplicate rows** | Identical rows appear multiple times | `discard_duplicates` |
+| **Missing values** | Empty cells or NULLs in important columns | `fill_missing` (directional) or `set_values` (fixed value) |
+| **Unnecessary columns** | Columns with no useful data | `delete_columns` |
 
 ### Date Issues
 | Issue | How to spot | Fix |
 |-------|------------|-----|
-| **Date components needed** | Need year/month/quarter separately | `transform_advanced` type=`extract_date` with component |
-| **Date arithmetic needed** | Need age, duration, or future dates | `transform_advanced` type=`date_diff` or `increment_date` |
+| **Date components needed** | Need year/month/quarter separately | `extract_date` with component |
+| **Date arithmetic needed** | Need age, duration, or future dates | `date_diff` or `increment_date` |
 
 ## Step 3: Report Findings
 Present each issue with:

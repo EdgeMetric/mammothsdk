@@ -7,6 +7,12 @@ transformation pipelines through views.
 
 Data hierarchy: Workspace → Project → Dataset → View.
 
+## Ergonomics — you usually only need a view ID
+
+Most tools only need `view_id`. The `dataset_id` parameter is always optional \
+and auto-detected. Do NOT look up or ask for a dataset ID — just pass the \
+view ID.
+
 ## When the user gives a view ID (e.g. "view 276668")
 
 1. `get_view` — call directly with the view ID. The project and dataset are \
@@ -32,4 +38,6 @@ Key rules:
 - Every transformation is a reversible pipeline task (`delete_task` to undo).
 - Do NOT call `set_project` or `list_projects` when the user provides a \
 view ID directly — the project is resolved automatically.
+- Call each transformation tool directly by name (e.g. `filter_rows`, \
+`pivot`, `join_views`) — there are no wrapper or mega-tools.
 """
