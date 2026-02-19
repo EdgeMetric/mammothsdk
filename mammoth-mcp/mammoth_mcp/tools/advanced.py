@@ -2,24 +2,20 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from mcp.server.fastmcp import Context
 
 from mammoth import DateComponent, DateDiffUnit, JoinType, JsonType
-from mammoth.exceptions import MammothAPIError, MammothColumnError
 from mammoth_mcp.helpers import (
-    error_response,
     format_view_info,
     get_manager,
+    handle_errors,
     log_tool_call,
     resolve_enum,
     success_response,
 )
 from mammoth_mcp.server import mcp
-
-logger = logging.getLogger(__name__)
 
 
 # ── join_views ────────────────────────────────────────────────
@@ -27,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def join_views(
     ctx: Context,
     view_id: int,
@@ -37,7 +34,7 @@ async def join_views(
     column_prefix: str | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Combine with another view using LEFT, RIGHT, INNER, or OUTER join.
+    """Combine with another view using LEFT, RIGHT, INNER, or OUTER join. Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -48,34 +45,28 @@ async def join_views(
         column_prefix: Prefix for joined columns (optional).
         dataset_id: The dataset ID (auto-detected if not provided).
     """
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    jt = resolve_enum(JoinType, join_type)
+    # Try to get the foreign view for display-name resolution
     try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        jt = resolve_enum(JoinType, join_type)
-        # Try to get the foreign view for display-name resolution
-        try:
-            foreign_view = manager.get_view(foreign_view_id)
-            view.join(
-                foreign_view=foreign_view,
-                join_type=jt,
-                on=on,
-                select=select,
-                column_prefix=column_prefix,
-            )
-        except Exception:
-            view.join(
-                foreign_view=foreign_view_id,
-                join_type=jt,
-                on=on,
-                select=select,
-                column_prefix=column_prefix,
-            )
-        return success_response(format_view_info(view), "join_views applied successfully")
-    except (MammothAPIError, MammothColumnError, ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in join_views")
-        return error_response(e)
+        foreign_view = manager.get_view(foreign_view_id)
+        view.join(
+            foreign_view=foreign_view,
+            join_type=jt,
+            on=on,
+            select=select,
+            column_prefix=column_prefix,
+        )
+    except Exception:
+        view.join(
+            foreign_view=foreign_view_id,
+            join_type=jt,
+            on=on,
+            select=select,
+            column_prefix=column_prefix,
+        )
+    return success_response(format_view_info(view), "join_views applied successfully")
 
 
 # ── lookup ────────────────────────────────────────────────────
@@ -83,6 +74,7 @@ async def join_views(
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def lookup(
     ctx: Context,
     view_id: int,
@@ -94,7 +86,7 @@ async def lookup(
     existing_column: str | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """VLOOKUP-style: fetch a single column from a reference view by matching a shared key.
+    """VLOOKUP-style: fetch a single column from a reference view by matching a shared key. Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -106,23 +98,17 @@ async def lookup(
         existing_column: Existing column to overwrite.
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        view.lookup(
-            source=source,
-            lookup_view_id=lookup_view_id,
-            key=key,
-            value=value,
-            new_column=new_column,
-            existing_column=existing_column,
-        )
-        return success_response(format_view_info(view), "lookup applied successfully")
-    except (MammothAPIError, MammothColumnError, ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in lookup")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    view.lookup(
+        source=source,
+        lookup_view_id=lookup_view_id,
+        key=key,
+        value=value,
+        new_column=new_column,
+        existing_column=existing_column,
+    )
+    return success_response(format_view_info(view), "lookup applied successfully")
 
 
 # ── json_extract ──────────────────────────────────────────────
@@ -130,6 +116,7 @@ async def lookup(
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def json_extract(
     ctx: Context,
     view_id: int,
@@ -140,7 +127,7 @@ async def json_extract(
     keep_source: bool = False,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Parse JSON text into structured columns (objects) or rows (lists).
+    """Parse JSON text into structured columns (objects) or rows (lists). Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -151,23 +138,17 @@ async def json_extract(
         keep_source: Keep the original JSON column (default false).
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        jt_enum = resolve_enum(JsonType, json_type)
-        view.json_extract(
-            column=column,
-            json_type=jt_enum,
-            keys=keys,
-            extractions=extractions,
-            keep_source=keep_source,
-        )
-        return success_response(format_view_info(view), "json_extract applied successfully")
-    except (MammothAPIError, MammothColumnError, ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in json_extract")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    jt_enum = resolve_enum(JsonType, json_type)
+    view.json_extract(
+        column=column,
+        json_type=jt_enum,
+        keys=keys,
+        extractions=extractions,
+        keep_source=keep_source,
+    )
+    return success_response(format_view_info(view), "json_extract applied successfully")
 
 
 # ── extract_date ──────────────────────────────────────────────
@@ -175,6 +156,7 @@ async def json_extract(
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def extract_date(
     ctx: Context,
     view_id: int,
@@ -184,7 +166,7 @@ async def extract_date(
     existing_column: str | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Extract a component from a date column (year, month, day, hour, weekday, quarter, etc.).
+    """Extract a component from a date column (year, month, day, hour, weekday, quarter, etc.). Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -194,22 +176,16 @@ async def extract_date(
         existing_column: Existing column to overwrite.
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        dc = resolve_enum(DateComponent, component)
-        view.extract_date(
-            column=column,
-            component=dc,
-            new_column=new_column,
-            existing_column=existing_column,
-        )
-        return success_response(format_view_info(view), "extract_date applied successfully")
-    except (MammothAPIError, MammothColumnError, ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in extract_date")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    dc = resolve_enum(DateComponent, component)
+    view.extract_date(
+        column=column,
+        component=dc,
+        new_column=new_column,
+        existing_column=existing_column,
+    )
+    return success_response(format_view_info(view), "extract_date applied successfully")
 
 
 # ── date_diff ─────────────────────────────────────────────────
@@ -217,6 +193,7 @@ async def extract_date(
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def date_diff(
     ctx: Context,
     view_id: int,
@@ -227,7 +204,7 @@ async def date_diff(
     existing_column: str | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Calculate time difference between two date columns.
+    """Calculate time difference between two date columns. Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -238,23 +215,17 @@ async def date_diff(
         existing_column: Existing column to overwrite.
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        ddu = resolve_enum(DateDiffUnit, component)
-        view.date_diff(
-            component=ddu,
-            start=start,
-            end=end,
-            new_column=new_column,
-            existing_column=existing_column,
-        )
-        return success_response(format_view_info(view), "date_diff applied successfully")
-    except (MammothAPIError, MammothColumnError, ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in date_diff")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    ddu = resolve_enum(DateDiffUnit, component)
+    view.date_diff(
+        component=ddu,
+        start=start,
+        end=end,
+        new_column=new_column,
+        existing_column=existing_column,
+    )
+    return success_response(format_view_info(view), "date_diff applied successfully")
 
 
 # ── increment_date ────────────────────────────────────────────
@@ -262,6 +233,7 @@ async def date_diff(
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def increment_date(
     ctx: Context,
     view_id: int,
@@ -271,7 +243,7 @@ async def increment_date(
     existing_column: str | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Add or subtract time units from a date column.
+    """Add or subtract time units from a date column. Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -281,18 +253,12 @@ async def increment_date(
         existing_column: Existing column to overwrite.
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        view.increment_date(
-            column=column,
-            delta=delta,
-            new_column=new_column,
-            existing_column=existing_column,
-        )
-        return success_response(format_view_info(view), "increment_date applied successfully")
-    except (MammothAPIError, MammothColumnError, ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in increment_date")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    view.increment_date(
+        column=column,
+        delta=delta,
+        new_column=new_column,
+        existing_column=existing_column,
+    )
+    return success_response(format_view_info(view), "increment_date applied successfully")

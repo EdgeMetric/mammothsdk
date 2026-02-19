@@ -7,8 +7,7 @@ from typing import Any
 
 from mcp.server.fastmcp import Context
 
-from mammoth.exceptions import MammothAPIError, MammothColumnError
-from mammoth_mcp.helpers import error_response, get_manager, log_tool_call, success_response
+from mammoth_mcp.helpers import error_response, get_manager, handle_errors, log_tool_call, success_response
 from mammoth_mcp.server import mcp
 
 logger = logging.getLogger(__name__)
@@ -16,45 +15,31 @@ logger = logging.getLogger(__name__)
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def test_connection(ctx: Context) -> dict[str, Any]:
     """Test that the Mammoth API credentials are valid and the connection works."""
-    try:
-        manager = await get_manager(ctx)
-        ok = manager.client.test_connection()
-        if ok:
-            return success_response(manager.config.summary(), "Connection successful")
-        return error_response(Exception("Connection failed — check API key/secret"))
-    except (MammothAPIError, MammothColumnError) as e:
-        return error_response(e)
-    except (ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in test_connection")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    ok = manager.client.test_connection()
+    if ok:
+        return success_response(manager.config.summary(), "Connection successful")
+    raise RuntimeError("Connection failed — check API key/secret")
 
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def set_project(ctx: Context, project_id: int) -> dict[str, Any]:
     """Set the active project ID for subsequent API calls.
 
     Args:
         project_id: The Mammoth project ID to use.
     """
-    try:
-        manager = await get_manager(ctx)
-        manager.set_project(project_id)
-        return success_response(
-            {"project_id": project_id},
-            f"Active project set to {project_id}",
-        )
-    except (MammothAPIError, MammothColumnError) as e:
-        return error_response(e)
-    except (ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in set_project")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    manager.set_project(project_id)
+    return success_response(
+        {"project_id": project_id},
+        f"Active project set to {project_id}",
+    )
 
 
 @mcp.tool()

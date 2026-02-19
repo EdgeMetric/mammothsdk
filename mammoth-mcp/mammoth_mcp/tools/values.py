@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from mcp.server.fastmcp import Context
@@ -14,19 +13,16 @@ from mammoth import (
     SubstringDirection,
     TextCase,
 )
-from mammoth.exceptions import MammothAPIError, MammothColumnError
 from mammoth_mcp.helpers import (
     build_condition,
-    error_response,
     format_view_info,
     get_manager,
+    handle_errors,
     log_tool_call,
     resolve_enum,
     success_response,
 )
 from mammoth_mcp.server import mcp
-
-logger = logging.getLogger(__name__)
 
 
 # ── filter_rows ───────────────────────────────────────────────
@@ -34,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def filter_rows(
     ctx: Context,
     view_id: int,
@@ -42,7 +39,7 @@ async def filter_rows(
     prompt: str = "",
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Keep or remove rows matching a condition.
+    """Keep or remove rows matching a condition. Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -51,18 +48,12 @@ async def filter_rows(
         prompt: Natural-language description of the filter (optional).
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        cond = build_condition(condition)
-        ft = resolve_enum(FilterType, filter_type)
-        view.filter_rows(cond, filter_type=ft, prompt=prompt)
-        return success_response(format_view_info(view), "filter_rows applied successfully")
-    except (MammothAPIError, MammothColumnError, ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in filter_rows")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    cond = build_condition(condition)
+    ft = resolve_enum(FilterType, filter_type)
+    view.filter_rows(cond, filter_type=ft, prompt=prompt)
+    return success_response(format_view_info(view), "filter_rows applied successfully")
 
 
 # ── set_values ────────────────────────────────────────────────
@@ -70,6 +61,7 @@ async def filter_rows(
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def set_values(
     ctx: Context,
     view_id: int,
@@ -80,7 +72,7 @@ async def set_values(
     condition: dict[str, Any] | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Populate or annotate columns with conditional values.
+    """Populate or annotate columns with conditional values. Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -91,28 +83,22 @@ async def set_values(
         condition: Optional global filter condition as JSON.
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        sv_list = []
-        for v in values:
-            cond = build_condition(v["condition"]) if v.get("condition") else None
-            sv_list.append(SetValue(value=v["value"], condition=cond))
-        ct = resolve_enum(ColumnType, column_type)
-        global_cond = build_condition(condition) if condition else None
-        view.set_values(
-            values=sv_list,
-            new_column=new_column,
-            column_type=ct,
-            existing_column=existing_column,
-            condition=global_cond,
-        )
-        return success_response(format_view_info(view), "set_values applied successfully")
-    except (MammothAPIError, MammothColumnError, ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in set_values")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    sv_list = []
+    for v in values:
+        cond = build_condition(v["condition"]) if v.get("condition") else None
+        sv_list.append(SetValue(value=v["value"], condition=cond))
+    ct = resolve_enum(ColumnType, column_type)
+    global_cond = build_condition(condition) if condition else None
+    view.set_values(
+        values=sv_list,
+        new_column=new_column,
+        column_type=ct,
+        existing_column=existing_column,
+        condition=global_cond,
+    )
+    return success_response(format_view_info(view), "set_values applied successfully")
 
 
 # ── math_transform ────────────────────────────────────────────
@@ -120,6 +106,7 @@ async def set_values(
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def math_transform(
     ctx: Context,
     view_id: int,
@@ -130,7 +117,7 @@ async def math_transform(
     condition: dict[str, Any] | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Perform arithmetic using column values, constants, and functions (SUM, AVG, MIN, MAX, COUNT, INT, ABS).
+    """Perform arithmetic using column values, constants, and functions (SUM, AVG, MIN, MAX, COUNT, INT, ABS). Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -141,24 +128,18 @@ async def math_transform(
         condition: Optional filter condition as JSON.
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        ct = resolve_enum(ColumnType, column_type)
-        cond = build_condition(condition) if condition else None
-        view.math(
-            expression=expression,
-            new_column=new_column,
-            column_type=ct,
-            existing_column=existing_column,
-            condition=cond,
-        )
-        return success_response(format_view_info(view), "math_transform applied successfully")
-    except (MammothAPIError, MammothColumnError, ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in math_transform")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    ct = resolve_enum(ColumnType, column_type)
+    cond = build_condition(condition) if condition else None
+    view.math(
+        expression=expression,
+        new_column=new_column,
+        column_type=ct,
+        existing_column=existing_column,
+        condition=cond,
+    )
+    return success_response(format_view_info(view), "math_transform applied successfully")
 
 
 # ── text_transform ────────────────────────────────────────────
@@ -166,6 +147,7 @@ async def math_transform(
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def text_transform(
     ctx: Context,
     view_id: int,
@@ -175,7 +157,7 @@ async def text_transform(
     condition: dict[str, Any] | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Standardize text — change case (UPPER, LOWER, TITLE) and/or trim whitespace.
+    """Standardize text — change case (UPPER, LOWER, TITLE) and/or trim whitespace. Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -185,18 +167,12 @@ async def text_transform(
         condition: Optional filter condition as JSON.
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        tc = resolve_enum(TextCase, case) if case else None
-        cond = build_condition(condition) if condition else None
-        view.text_transform(columns=columns, case=tc, trim=trim, condition=cond)
-        return success_response(format_view_info(view), "text_transform applied successfully")
-    except (MammothAPIError, MammothColumnError, ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in text_transform")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    tc = resolve_enum(TextCase, case) if case else None
+    cond = build_condition(condition) if condition else None
+    view.text_transform(columns=columns, case=tc, trim=trim, condition=cond)
+    return success_response(format_view_info(view), "text_transform applied successfully")
 
 
 # ── replace_values ────────────────────────────────────────────
@@ -204,6 +180,7 @@ async def text_transform(
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def replace_values(
     ctx: Context,
     view_id: int,
@@ -215,7 +192,7 @@ async def replace_values(
     condition: dict[str, Any] | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Find and replace text in one or more columns.
+    """Find and replace text in one or more columns. Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -227,24 +204,18 @@ async def replace_values(
         condition: Optional filter condition as JSON.
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        cond = build_condition(condition) if condition else None
-        view.replace_values(
-            columns=columns,
-            find=find,
-            replace=replace,
-            match_case=match_case,
-            match_words=match_words,
-            condition=cond,
-        )
-        return success_response(format_view_info(view), "replace_values applied successfully")
-    except (MammothAPIError, MammothColumnError, ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in replace_values")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    cond = build_condition(condition) if condition else None
+    view.replace_values(
+        columns=columns,
+        find=find,
+        replace=replace,
+        match_case=match_case,
+        match_words=match_words,
+        condition=cond,
+    )
+    return success_response(format_view_info(view), "replace_values applied successfully")
 
 
 # ── bulk_replace ──────────────────────────────────────────────
@@ -252,6 +223,7 @@ async def replace_values(
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def bulk_replace(
     ctx: Context,
     view_id: int,
@@ -262,7 +234,7 @@ async def bulk_replace(
     condition: dict[str, Any] | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Replace multiple value variations with standardized values.
+    """Replace multiple value variations with standardized values. Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -273,23 +245,17 @@ async def bulk_replace(
         condition: Optional filter condition as JSON.
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        cond = build_condition(condition) if condition else None
-        view.bulk_replace(
-            columns=columns,
-            mapping=mapping,
-            match_case=match_case,
-            match_words=match_words,
-            condition=cond,
-        )
-        return success_response(format_view_info(view), "bulk_replace applied successfully")
-    except (MammothAPIError, MammothColumnError, ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in bulk_replace")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    cond = build_condition(condition) if condition else None
+    view.bulk_replace(
+        columns=columns,
+        mapping=mapping,
+        match_case=match_case,
+        match_words=match_words,
+        condition=cond,
+    )
+    return success_response(format_view_info(view), "bulk_replace applied successfully")
 
 
 # ── split_column ──────────────────────────────────────────────
@@ -297,6 +263,7 @@ async def bulk_replace(
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def split_column(
     ctx: Context,
     view_id: int,
@@ -305,7 +272,7 @@ async def split_column(
     new_columns: list[dict[str, str]],
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Split a text column by delimiter into multiple new columns.
+    """Split a text column by delimiter into multiple new columns. Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -314,16 +281,10 @@ async def split_column(
         new_columns: List of new column specs, e.g. [{"name": "First", "type": "TEXT"}].
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        view.split_column(column=column, delimiter=delimiter, new_columns=new_columns)
-        return success_response(format_view_info(view), "split_column applied successfully")
-    except (MammothAPIError, MammothColumnError, ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in split_column")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    view.split_column(column=column, delimiter=delimiter, new_columns=new_columns)
+    return success_response(format_view_info(view), "split_column applied successfully")
 
 
 # ── substring ─────────────────────────────────────────────────
@@ -331,6 +292,7 @@ async def split_column(
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def substring(
     ctx: Context,
     view_id: int,
@@ -345,7 +307,7 @@ async def substring(
     condition: dict[str, Any] | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Extract substrings using position-based slicing, delimiters, or regex.
+    """Extract substrings using position-based slicing, delimiters, or regex. Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -360,25 +322,19 @@ async def substring(
         condition: Optional filter condition as JSON.
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        dir_enum = resolve_enum(SubstringDirection, direction) if direction else None
-        cond = build_condition(condition) if condition else None
-        view.substring(
-            column=column,
-            direction=dir_enum,
-            num_char=num_char,
-            char_position=char_position,
-            regex_pattern=regex_pattern,
-            regex_invert=regex_invert,
-            new_column=new_column,
-            existing_column=existing_column,
-            condition=cond,
-        )
-        return success_response(format_view_info(view), "substring applied successfully")
-    except (MammothAPIError, MammothColumnError, ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in substring")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    dir_enum = resolve_enum(SubstringDirection, direction) if direction else None
+    cond = build_condition(condition) if condition else None
+    view.substring(
+        column=column,
+        direction=dir_enum,
+        num_char=num_char,
+        char_position=char_position,
+        regex_pattern=regex_pattern,
+        regex_invert=regex_invert,
+        new_column=new_column,
+        existing_column=existing_column,
+        condition=cond,
+    )
+    return success_response(format_view_info(view), "substring applied successfully")

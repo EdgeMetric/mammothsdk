@@ -2,20 +2,23 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from mcp.server.fastmcp import Context
 
-from mammoth.exceptions import MammothAPIError, MammothColumnError
-from mammoth_mcp.helpers import error_response, get_manager, log_tool_call, success_response
+from mammoth_mcp.helpers import (
+    error_response,
+    get_manager,
+    handle_errors,
+    log_tool_call,
+    success_response,
+)
 from mammoth_mcp.server import mcp
-
-logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def export_data(
     ctx: Context,
     view_id: int,
@@ -42,111 +45,133 @@ async def export_data(
         dest_dataset_id: (dataset) Target dataset ID for branch-out.
         column_mapping: (dataset) Column mapping dict (optional).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        fmt = format.lower()
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    fmt = format.lower()
 
-        if fmt == "csv":
-            path = view.export.to_csv()
-            return success_response({"file_path": str(path)}, f"Exported to {path}")
+    if fmt == "csv":
+        path = view.export.to_csv()
+        return success_response({"file_path": str(path)}, f"Exported to {path}")
 
-        elif fmt == "s3":
-            result = view.export.to_s3(file_name=file_name, file_type=file_type)
-            return success_response(result, "Exported to S3")
+    elif fmt == "s3":
+        result = view.export.to_s3(file_name=file_name, file_type=file_type)
+        return success_response(result, "Exported to S3")
 
-        elif fmt == "email":
-            if not recipients:
-                return error_response(ValueError("recipients is required for email export"))
-            result = view.export.to_email(recipients=recipients)
-            return success_response(result, f"Emailed to {', '.join(recipients)}")
+    elif fmt == "email":
+        if not recipients:
+            raise ValueError("recipients is required for email export")
+        result = view.export.to_email(recipients=recipients)
+        return success_response(result, f"Emailed to {', '.join(recipients)}")
 
-        elif fmt == "dataset":
-            if not dest_dataset_id:
-                return error_response(ValueError("dest_dataset_id is required for dataset export"))
-            result = view.export.to_dataset(dest_dataset_id, column_mapping)
-            return success_response(result, f"Branched out to dataset {dest_dataset_id}")
+    elif fmt == "dataset":
+        if not dest_dataset_id:
+            raise ValueError("dest_dataset_id is required for dataset export")
+        result = view.export.to_dataset(dest_dataset_id, column_mapping)
+        return success_response(result, f"Branched out to dataset {dest_dataset_id}")
 
-        else:
-            return error_response(ValueError(f"Unknown format '{format}'. Use: csv, s3, email, dataset"))
-
-    except (MammothAPIError, MammothColumnError) as e:
-        return error_response(e)
-    except (ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in export_data")
-        return error_response(e)
+    else:
+        raise ValueError(f"Unknown format '{format}'. Use: csv, s3, email, dataset")
 
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def export_to_database(
     ctx: Context,
     view_id: int,
     db_type: str,
+    # Common relational DB params (postgres, mysql, redshift)
     host: str | None = None,
     port: int | None = None,
     database: str | None = None,
     table: str | None = None,
     username: str | None = None,
     password: str | None = None,
+    # BigQuery params
+    project_name: str | None = None,
+    dataset_name: str | None = None,
+    service_account_json: str | None = None,
+    # Elasticsearch params
+    index: str | None = None,
+    # General
     dataset_id: int | None = None,
-    **kwargs: Any,
 ) -> dict[str, Any]:
     """Export view data to an external database.
+
+    SECURITY NOTE: Database credentials (password, service_account_json) are passed through
+    the LLM context and may appear in conversation logs. For production use, consider
+    configuring exports directly in the Mammoth UI instead.
 
     Args:
         view_id: The dataview ID to export from.
         db_type: Database type — one of: postgres, mysql, bigquery, redshift, elasticsearch.
-        host: Database host.
-        port: Database port.
-        database: Database name.
-        table: Target table name.
-        username: Database username.
-        password: Database password.
+        host: Database host (postgres, mysql, redshift).
+        port: Database port (postgres, mysql, redshift).
+        database: Database name (postgres, mysql, redshift).
+        table: Target table name (postgres, mysql, redshift).
+        username: Database username (postgres, mysql, redshift). Sensitive — may appear in logs.
+        password: Database password (postgres, mysql, redshift). Sensitive — may appear in logs.
+        project_name: GCP project name (bigquery).
+        dataset_name: BigQuery dataset name (bigquery).
+        service_account_json: GCP service account JSON string (bigquery). Sensitive — may appear in logs.
+        index: Elasticsearch index name (elasticsearch).
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        db = db_type.lower()
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    db = db_type.lower()
 
-        if db == "postgres":
-            if not all([host, port, database, table, username, password]):
-                return error_response(ValueError("host, port, database, table, username, password are all required"))
-            result = view.export.to_postgres(
-                host=host, port=port, database=database,
-                table=table, username=username, password=password,
-            )
+    if db == "postgres":
+        if not all([host, port, database, table, username, password]):
+            raise ValueError("host, port, database, table, username, password are all required for postgres")
+        result = view.export.to_postgres(
+            host=host, port=port, database=database,
+            table=table, username=username, password=password,
+        )
 
-        elif db == "mysql":
-            if not all([host, port, database, table, username, password]):
-                return error_response(ValueError("host, port, database, table, username, password are all required"))
-            result = view.export.to_mysql(
-                host=host, port=port, database=database,
-                table=table, username=username, password=password,
-            )
+    elif db == "mysql":
+        if not all([host, port, database, table, username, password]):
+            raise ValueError("host, port, database, table, username, password are all required for mysql")
+        result = view.export.to_mysql(
+            host=host, port=port, database=database,
+            table=table, username=username, password=password,
+        )
 
-        elif db == "bigquery":
-            result = view.export.to_bigquery(**kwargs)
+    elif db == "bigquery":
+        config: dict[str, Any] = {}
+        if project_name:
+            config["project_name"] = project_name
+        if dataset_name:
+            config["dataset_name"] = dataset_name
+        if table:
+            config["table"] = table
+        if service_account_json:
+            config["service_account_json"] = service_account_json
+        result = view.export.to_bigquery(**config)
 
-        elif db == "redshift":
-            result = view.export.to_redshift(**kwargs)
+    elif db == "redshift":
+        if not all([host, port, database, table, username, password]):
+            raise ValueError("host, port, database, table, username, password are all required for redshift")
+        result = view.export.to_redshift(
+            host=host, port=port, database=database,
+            table=table, username=username, password=password,
+        )
 
-        elif db == "elasticsearch":
-            result = view.export.to_elasticsearch(**kwargs)
+    elif db == "elasticsearch":
+        config = {}
+        if host:
+            config["host"] = host
+        if port:
+            config["port"] = port
+        if index:
+            config["index"] = index
+        if username:
+            config["username"] = username
+        if password:
+            config["password"] = password
+        result = view.export.to_elasticsearch(**config)
 
-        else:
-            return error_response(
-                ValueError(f"Unknown db_type '{db_type}'. Use: postgres, mysql, bigquery, redshift, elasticsearch")
-            )
+    else:
+        raise ValueError(f"Unknown db_type '{db_type}'. Use: postgres, mysql, bigquery, redshift, elasticsearch")
 
-        return success_response(result, f"Exported to {db_type}")
-    except (MammothAPIError, MammothColumnError) as e:
-        return error_response(e)
-    except (ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in export_to_database")
-        return error_response(e)
+    return success_response(result, f"Exported to {db_type}")
