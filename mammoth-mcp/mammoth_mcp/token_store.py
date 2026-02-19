@@ -23,10 +23,15 @@ class RedisTokenStore:
         self._url = redis_url
         self._auth_code_ttl = auth_code_ttl
         self._access_token_ttl = access_token_ttl
-        self._redis: aioredis.Redis | None = None
+        # Create the Redis client eagerly so OAuth handlers can use it
+        # before the lifespan context is entered.
+        self._redis: aioredis.Redis | None = aioredis.from_url(
+            redis_url, decode_responses=True
+        )
 
     async def connect(self) -> None:
-        self._redis = aioredis.from_url(self._url, decode_responses=True)
+        """Verify connectivity (call during lifespan startup)."""
+        assert self._redis is not None
         await self._redis.ping()
         logger.info("Connected to Redis at %s", self._url)
 
