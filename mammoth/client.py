@@ -106,21 +106,36 @@ class ViewsResource:
         )
         return View(self._client, data, dataset_id)
 
-    def list(self, dataset_id: int) -> _list[View]:
-        """List all dataviews in a dataset as View objects.
+    def list(self, dataset_id: int | None = None) -> _list[View]:
+        """List all dataviews as View objects.
 
         Args:
-            dataset_id: ID of the dataset.
+            dataset_id: ID of the dataset.  When *None*, returns views
+                from **all** datasets in the current project.
 
         Returns:
             List of View objects.
         """
         from mammoth.view import View
 
-        response = self._client.dataviews.list(dataset_id=dataset_id)
-        views = []
-        for dv in response.get("dataviews", []):
-            views.append(View(self._client, dv, dataset_id))
+        if dataset_id is not None:
+            response = self._client.dataviews.list(dataset_id=dataset_id)
+            return [View(self._client, dv, dataset_id) for dv in response.get("dataviews", [])]
+
+        # Iterate every dataset in the project
+        project_id = self._client.project_id
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        datasets_resp = self._client.datasets.list(
+            workspace_id=self._client.workspace_id,
+            project_id=project_id,
+        )
+        views: _list[View] = []
+        for ds in datasets_resp.get("datasets", []):
+            ds_id = ds["id"]
+            dv_resp = self._client.dataviews.list(dataset_id=ds_id)
+            for dv in dv_resp.get("dataviews", []):
+                views.append(View(self._client, dv, ds_id))
         return views
 
     def create(
@@ -169,16 +184,18 @@ class ViewsResource:
             dataset_id = self._client.pipeline._find_dataset_for_dataview(view_id)
         return self._client.dataviews.delete(dataset_id=dataset_id, dataview_id=view_id)
 
-    def bulk_delete(self, dataset_id: int, view_ids: _list[int]) -> dict[str, Any]:
+    def bulk_delete(self, view_ids: _list[int], dataset_id: int | None = None) -> dict[str, Any]:
         """Delete multiple dataviews.
 
         Args:
-            dataset_id: ID of the dataset.
             view_ids: List of dataview IDs to delete.
+            dataset_id: Dataset ID (auto-detected from the first view if not provided).
 
         Returns:
             Dict with bulk deletion result.
         """
+        if dataset_id is None:
+            dataset_id = self._client.pipeline._find_dataset_for_dataview(view_ids[0])
         return self._client.dataviews.bulk_delete(dataset_id=dataset_id, dataview_ids=view_ids)
 
 

@@ -42,40 +42,10 @@ class ExportsAPI:
     def _find_dataset_for_dataview(self, dataview_id: int) -> int:
         """Find which dataset contains the specified dataview.
 
-        Args:
-            dataview_id: ID of the dataview to search for.
-
-        Returns:
-            The dataset_id that contains this dataview.
-
-        Raises:
-            ValueError: If dataview is not found in any dataset.
+        Delegates to PipelineAPI._find_dataset_for_dataview to avoid
+        duplicating the dataset-scanning logic.
         """
-        workspace_id = self._client.workspace_id
-        project_id = getattr(self._client, "project_id", None)
-        if project_id is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
-
-        datasets_response = self._client.datasets.list(
-            workspace_id=workspace_id,
-            project_id=project_id,
-        )
-
-        for dataset in datasets_response.get("datasets", []):
-            dataset_id = dataset["id"]
-            try:
-                dataviews_response = self._client.dataviews.list(
-                    dataset_id=dataset_id,
-                    workspace_id=workspace_id,
-                    project_id=project_id,
-                )
-                for dataview in dataviews_response.get("dataviews", []):
-                    if dataview.get("id") == dataview_id:
-                        return dataset_id
-            except (MammothAPIError, KeyError):
-                continue
-
-        raise ValueError(f"Dataview {dataview_id} not found in any dataset in project {project_id}")
+        return self._client.pipeline._find_dataset_for_dataview(dataview_id)
 
     def list(
         self,
@@ -172,7 +142,7 @@ class ExportsAPI:
                 )
 
         if dataset_id is None:
-            raise ValueError("dataset_id is required for adding exports")
+            dataset_id = self._client.pipeline._find_dataset_for_dataview(dataview_id)
 
         response = self._client._request_json(
             "POST",
