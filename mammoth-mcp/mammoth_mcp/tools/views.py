@@ -35,7 +35,7 @@ async def list_views(ctx: Context, dataset_id: int | None = None) -> dict[str, A
 @log_tool_call
 @handle_errors
 async def get_view(ctx: Context, view_id: int, dataset_id: int | None = None) -> dict[str, Any]:
-    """Get detailed metadata for a view, including all columns and their types.
+    """Get detailed metadata for a view, including all columns and their types. Auto-discovers the project and dataset — no need to call set_project or list_projects first.
 
     Args:
         view_id: The dataview ID.

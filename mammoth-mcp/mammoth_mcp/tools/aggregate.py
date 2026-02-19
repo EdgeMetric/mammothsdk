@@ -38,7 +38,7 @@ async def pivot(
     condition: dict[str, Any] | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Group rows and aggregate values (SUM, AVG, COUNT, MAX, MIN). Apply last — reshapes the data. Adds a reversible pipeline task (undo with delete_task).
+    """Group rows and aggregate values (SUM, AVG, COUNT, MAX, MIN). IMPORTANT: Apply LAST — reshapes the data so original row-level columns become unavailable for subsequent tasks. Complete all filtering, calculations, and column operations first. Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -119,7 +119,7 @@ async def crosstab(
     select: dict[str, Any],
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Pivot a column's distinct values into new column headers with aggregation. Apply last — reshapes the data. Adds a reversible pipeline task (undo with delete_task).
+    """Pivot a column's distinct values into new column headers with aggregation. IMPORTANT: Apply LAST — reshapes the data so original row-level columns become unavailable for subsequent tasks. Complete all filtering and calculations first. Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.

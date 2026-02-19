@@ -260,15 +260,45 @@ dates. No timezone handling.
 
 ---
 
-## AI & SQL
+## AI & SQL — Power Tools
 
 ### ai_transform
-AI generates a new column from a natural language prompt and context columns \
-(up to 20). Use for classification, extraction, summarization, or enrichment.
+Uses an OpenAI LLM to generate a **new column** from a natural language prompt \
+and context columns (up to 20). Best for tasks requiring language understanding: \
+classification, sentiment analysis, entity extraction, content generation, data \
+standardization, and enrichment.
+- **Prerequisite**: Requires an OpenAI API key configured in workspace settings.
+- **Row limit**: 50,000 rows max. For larger datasets, use `filter_rows` to \
+batch the data first.
+- **Timing**: ~30-60 sec per 10K rows (simple classification), ~2-5 min per \
+10K rows (complex generation).
+- **Cost**: Consumes OpenAI API tokens. Prefer structured tools (`set_values`, \
+`replace_values`, `bulk_replace`) when deterministic logic suffices.
+- **Key rule**: Null inputs produce null outputs. Include only necessary context \
+columns.
+- Call `get_help("ai_transform")` for prompt engineering tips and examples.
 
 ### sql_query
-Transform via natural language intent (auto-generates SQL) or direct raw \
-SQL. Supports filtering, ranking, aggregation, and complex queries.
+Transforms data using **DuckDB SQL** — either from a natural language intent \
+(auto-generates SQL, ~20 sec) or a direct raw SQL query. Ideal for complex \
+multi-step queries, subqueries, CTEs, window functions, and custom aggregations \
+that would require many individual pipeline steps.
+- **Intent mode**: Describe what you want in plain English — Mammoth generates \
+and applies the DuckDB SQL automatically.
+- **Raw SQL mode**: Write DuckDB SQL directly. Reference columns by display name.
+- Best when you need: subqueries, CTEs, CASE WHEN, GROUP BY + HAVING, set \
+operations, or complex joins in a single step.
+- Call `get_help("sql_query")` for DuckDB dialect reference and examples.
+
+### Decision framework: which tool to use?
+1. **Structured tool first** (fastest, cheapest, most predictable): Use \
+`filter_rows`, `set_values`, `math_transform`, `pivot`, etc. when the logic \
+is deterministic and a dedicated tool exists.
+2. **SQL second** (powerful, flexible): Use `sql_query` when the task requires \
+multi-step logic, complex conditions, or operations not covered by a single \
+structured tool.
+3. **AI last** (most flexible, highest cost): Use `ai_transform` only when \
+the task requires language understanding, fuzzy matching, or creative generation.
 
 ---
 
@@ -439,6 +469,202 @@ Apply fixes in this order to avoid cascading issues:
 7. **Remove duplicates** — last, since earlier fixes may resolve apparent duplicates
 8. **Pivot/aggregate** — always last, reshapes the data
 """,
+    "ai_transform": """\
+# ai_transform — AI-Powered Column Generation
+
+## What It Does
+Uses an **OpenAI LLM** to generate a **new column** based on a natural language \
+prompt and existing column data. The AI reads each row's context columns and \
+produces a value for the new column. Null inputs produce null outputs.
+
+## Prerequisite
+Requires an **OpenAI API key** configured in the Mammoth workspace settings \
+(Settings → Integrations → OpenAI). Without it, ai_transform calls will fail.
+
+## Limits & Performance
+| Metric | Value |
+|--------|-------|
+| **Max rows** | 50,000 (hard limit) |
+| **Simple tasks** (classification, yes/no) | ~30-60 sec per 10K rows |
+| **Complex tasks** (generation, multi-sentence) | ~2-5 min per 10K rows |
+| **Max context columns** | 20 |
+
+For datasets over 50K rows, use `filter_rows` to create batches, apply \
+ai_transform to each batch, then remove the filter.
+
+## Prompt Engineering Best Practices
+
+### Be specific and constrain output values
+**Bad**: "Categorize this product"
+**Good**: "Classify the product into exactly one of: Electronics, Clothing, \
+Food, Home, Other. Output only the category name."
+
+### Provide examples in the prompt
+"Classify the customer feedback as Positive, Negative, or Neutral. \
+Examples: 'Great service!' → Positive, 'Terrible experience' → Negative, \
+'It was okay' → Neutral."
+
+### Specify output format explicitly
+"Extract the city name from the address. Return only the city name with no \
+extra text. If no city is found, return 'Unknown'."
+
+### Include only necessary context columns
+More columns = slower + more expensive. If classifying sentiment of a review, \
+include only the review column, not the product ID or timestamp.
+
+## Common Use Cases
+
+### 1. Sentiment Analysis
+- **Prompt**: "Analyze the sentiment of the review text. Output exactly one of: \
+Positive, Negative, Neutral."
+- **Context columns**: ["Review Text"]
+
+### 2. Geographic Enrichment
+- **Prompt**: "Based on the city and state, return the US region: Northeast, \
+Southeast, Midwest, Southwest, West."
+- **Context columns**: ["City", "State"]
+
+### 3. Categorization
+- **Prompt**: "Classify this transaction description into one category: \
+Groceries, Dining, Transportation, Entertainment, Utilities, Healthcare, Other."
+- **Context columns**: ["Transaction Description", "Merchant Name"]
+
+### 4. Content Generation
+- **Prompt**: "Write a one-sentence product description based on the product \
+name and features. Keep it under 20 words."
+- **Context columns**: ["Product Name", "Features"]
+
+### 5. Data Standardization
+- **Prompt**: "Standardize the company name to its official form. For example, \
+'MSFT' → 'Microsoft', 'AMZN' → 'Amazon'. If unknown, return the original value."
+- **Context columns**: ["Company Name"]
+
+## Cost Awareness
+Each row consumes OpenAI API tokens. For large datasets:
+- Test on a small sample first (use `filter_rows` + `limit_rows` to get ~100 rows)
+- Prefer structured tools when the logic is deterministic:
+  - Classification by rules → `set_values` with conditions
+  - Text cleanup → `replace_values`, `bulk_replace`, `text_transform`
+  - Lookup-based enrichment → `lookup` or `join_views`
+
+## Error Handling
+- If the AI produces unexpected results, use `delete_task` to undo and refine \
+your prompt.
+- Test on a small subset before applying to the full dataset.
+- If the task fails, check that the OpenAI API key is configured and the view \
+has ≤50K rows.
+""",
+    "sql_query": """\
+# sql_query — SQL-Powered Transformations
+
+## Two Modes
+
+### Intent Mode (natural language → SQL)
+Describe what you want in plain English. Mammoth auto-generates DuckDB SQL and \
+applies it to the view. Takes ~20 seconds for SQL generation.
+
+```
+intent: "Show the top 10 customers by total revenue, with their order count"
+```
+
+### Raw SQL Mode (direct DuckDB SQL)
+Write DuckDB SQL directly. Reference columns by **display name** — enclose \
+names containing spaces in double quotes.
+
+```
+raw_sql: "SELECT \\"Customer Name\\", SUM(\\"Order Total\\") as revenue, \
+COUNT(*) as orders FROM dataview GROUP BY \\"Customer Name\\" ORDER BY revenue \
+DESC LIMIT 10"
+```
+
+**Must provide exactly one** of `intent` or `raw_sql` (not both).
+
+## DuckDB SQL Dialect Reference
+
+### String Functions
+- Concatenation: `||` or `concat(a, b, c)`
+- Case: `upper()`, `lower()`, `initcap()`
+- Pattern: `LIKE`, `ILIKE` (case-insensitive), `regexp_matches(col, pattern)`
+- Extract: `substring(col, start, length)`, `split_part(col, delim, index)`
+- Trim: `trim()`, `ltrim()`, `rtrim()`
+- Replace: `replace(col, old, new)`
+
+### Date Functions
+- Current: `current_date`, `current_timestamp`
+- Extract: `extract(year FROM date_col)`, `date_part('month', date_col)`
+- Arithmetic: `date_col + INTERVAL '30 days'`, `date_diff('day', start, end)`
+- Truncate: `date_trunc('month', date_col)`
+- Format: `strftime(date_col, '%Y-%m-%d')`
+
+### Aggregate Functions
+`SUM`, `AVG`, `COUNT`, `MIN`, `MAX`, `COUNT(DISTINCT ...)`, `STRING_AGG`, \
+`MEDIAN`, `PERCENTILE_CONT`, `STDDEV`, `VARIANCE`
+
+### Window Functions
+`ROW_NUMBER()`, `RANK()`, `DENSE_RANK()`, `NTILE(n)`, `LAG()`, `LEAD()`, \
+`FIRST_VALUE()`, `LAST_VALUE()`, `SUM() OVER()`, `AVG() OVER()`
+
+### Other Key Features
+- **CTEs**: `WITH cte AS (SELECT ...) SELECT ... FROM cte`
+- **Subqueries**: In SELECT, FROM, WHERE
+- **CASE WHEN**: `CASE WHEN condition THEN value ELSE default END`
+- **GROUP BY + HAVING**: Full support
+- **Set operations**: `UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT`
+- **NULL handling**: `COALESCE()`, `NULLIF()`, `IS NULL`, `IS NOT NULL`
+- **Type casting**: `CAST(col AS INTEGER)`, `col::VARCHAR`
+- **No stored procedures or UDFs** — single-statement queries only.
+
+## When to Use SQL vs Structured Tools vs AI
+
+| Scenario | Best Tool |
+|----------|-----------|
+| Simple filter | `filter_rows` |
+| Add calculated column | `math_transform` |
+| Group + aggregate | `pivot` |
+| Running total / rank | `window` |
+| Multi-step query with subqueries | `sql_query` |
+| Complex CASE WHEN with many branches | `sql_query` |
+| GROUP BY + HAVING + ORDER BY in one step | `sql_query` |
+| CTE-based analysis | `sql_query` |
+| Classification requiring language understanding | `ai_transform` |
+| Text summarization or generation | `ai_transform` |
+
+## Intent Mode Tips
+- **Be specific**: "Count orders per customer" > "Analyze orders"
+- **Name columns explicitly**: "Group by \\"Product Category\\" and sum \\"Revenue\\""
+- **State exact conditions**: "where \\"Order Date\\" >= '2024-01-01'"
+- **Specify output**: "Show customer name, total orders, and average order value"
+
+## Example Intents
+- "Find customers who ordered more than 5 times in the last year"
+- "Calculate the running total of sales by date, partitioned by region"
+- "Show the top 3 products by revenue in each category"
+- "Identify duplicate rows based on email and phone number"
+- "Calculate month-over-month growth rate for revenue"
+
+## Example Raw SQL
+```sql
+-- Top customers with repeat purchases
+WITH customer_stats AS (
+  SELECT "Customer ID",
+         COUNT(*) as order_count,
+         SUM("Total") as total_spent,
+         AVG("Total") as avg_order
+  FROM dataview
+  GROUP BY "Customer ID"
+  HAVING COUNT(*) > 1
+)
+SELECT * FROM customer_stats
+ORDER BY total_spent DESC
+LIMIT 20
+```
+
+## Performance Notes
+- Intent mode takes ~20 seconds for SQL generation (one-time cost per query).
+- Raw SQL mode applies immediately.
+- Both modes create a pipeline task that can be undone with `delete_task`.
+- SQL operates on the full dataset — no row limit like ai_transform.
+""",
 }
 
 TOPIC_LIST = ", ".join(f"`{t}`" for t in HELP_TOPICS)
@@ -450,7 +676,7 @@ def get_help(topic: str) -> str:
 transformations or analyzing data quality.
 
     Args:
-        topic: One of: overview, transformations, conditions, data_cleaning.
+        topic: One of: overview, transformations, conditions, data_cleaning, ai_transform, sql_query.
     """
     doc = HELP_TOPICS.get(topic)
     if doc:
