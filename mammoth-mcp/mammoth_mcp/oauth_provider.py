@@ -218,7 +218,7 @@ async def validate_mammoth_credentials(
     }
     try:
         async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.get(f"{base_url}/projects", headers=headers)
+            resp = await client.get(f"{base_url}/workspaces/{workspace_id}/projects", headers=headers)
             return resp.status_code == 200
     except httpx.HTTPError:
         logger.exception("Credential validation failed")
