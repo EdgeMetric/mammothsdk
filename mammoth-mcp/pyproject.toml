@@ -21,7 +21,7 @@ packages = [{include = "mammoth_mcp"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 mcp = "^1.26.0"
-mammoth-io = "^0.2.0"
+mammoth-io = {path = "..", develop = true}
 redis = {version = "^5.0", extras = ["hiredis"]}
 httpx = "^0.28"
 pydantic-settings = "^2.0"
