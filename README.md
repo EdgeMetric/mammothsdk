@@ -4,7 +4,6 @@ Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data 
 
 [![PyPI](https://img.shields.io/pypi/v/mammoth-io)](https://pypi.org/project/mammoth-io/)
 [![Python](https://img.shields.io/pypi/pyversions/mammoth-io)](https://pypi.org/project/mammoth-io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Installation
 
@@ -418,7 +417,3 @@ pip install mammoth-mcp
 ```
 
 See the [mammoth-mcp](https://github.com/EdgeMetric/mm-pysdk/tree/main/mammoth-mcp) directory for configuration and usage details.
-
-## License
-
-[MIT](LICENSE)

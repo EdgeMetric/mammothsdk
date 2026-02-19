@@ -3,7 +3,6 @@ name = "mammoth-mcp"
 version = "0.1.0"
 description = "MCP server for Mammoth Analytics — lets LLMs explore, transform, and export data"
 authors = ["Mammoth Analytics <support@mammoth.io>"]
-license = "MIT"
 readme = "README.md"
 homepage = "https://mammoth.io"
 repository = "https://github.com/EdgeMetric/mm-pysdk"
@@ -11,7 +10,6 @@ keywords = ["mammoth", "analytics", "mcp", "llm", "ai"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",

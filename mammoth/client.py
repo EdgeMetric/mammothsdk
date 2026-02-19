@@ -56,6 +56,7 @@ from mammoth.api.webhooks import WebhooksAPI
 from mammoth.api.workspace import WorkspaceAPI
 from mammoth.exceptions import MammothAPIError, MammothAuthError
 
+
 # Lazy __version__ import to avoid circular dependency with __init__
 def _get_version() -> str:
     try:

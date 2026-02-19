@@ -68,7 +68,3 @@ view.export.to_csv("output.csv")
 - **Documentation**: [https://docs.mammoth.io](https://docs.mammoth.io)
 - **Issues**: [GitHub Issues](https://github.com/EdgeMetric/mm-pysdk/issues)
 - **Email**: support@mammoth.io
-
-## License
-
-MIT License -- see LICENSE file for details.
