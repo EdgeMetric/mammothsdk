@@ -58,6 +58,7 @@ class MammothOAuthProvider:
             "scopes": params.scopes or [],
             "redirect_uri_provided_explicitly": params.redirect_uri_provided_explicitly,
             "resource": params.resource,
+            "oauth_state": params.state,
         }
         state_key = secrets.token_urlsafe(32)
         await self._store.store_state(state_key, state_data)
@@ -290,8 +291,9 @@ def register_login_routes(mcp_server: Any, settings: Settings, token_store: Redi
         }
         await token_store.store_code(auth_code, code_data)
 
-        # Redirect back to client with authorization code
+        # Redirect back to client with authorization code and Claude's original state
         redirect_uri = state_data["redirect_uri"]
-        params = urllib.parse.urlencode({"code": auth_code, "state": state})
+        oauth_state = state_data.get("oauth_state", state)
+        params = urllib.parse.urlencode({"code": auth_code, "state": oauth_state})
         sep = "&" if "?" in redirect_uri else "?"
         return RedirectResponse(url=f"{redirect_uri}{sep}{params}", status_code=302)
