@@ -35,56 +35,73 @@ class ClientManager:
     def _ensure_project_for_view(self, view_id: int) -> None:
         """Auto-discover and set the project containing a view ID.
 
-        Searches across all projects in the workspace. Skips if project is
-        already set and the view is found in the current project.
+        Uses the SDK's _find_dataset_for_dataview per project. Sets the
+        project on the client so subsequent calls work.
         """
-        # If project is already set, try it first — fast path
+        # Fast path: current project already has the view
         if getattr(self.client, "project_id", None) is not None:
             try:
                 self.client.pipeline._find_dataset_for_dataview(view_id)
                 return  # Found in current project
-            except (ValueError, Exception):
-                pass  # Not in current project, search others
+            except Exception:
+                logger.info(
+                    "View %d not in current project %s, searching others...",
+                    view_id, self.client.project_id,
+                )
 
         # Search all projects
-        ws = self.client.workspace_id
+        original_project_id = getattr(self.client, "project_id", None)
         projects = self.client.projects.list()
+
         for proj in projects.get("projects", []):
             pid = proj["id"]
+            pname = proj.get("name", "")
             try:
-                datasets = self.client.datasets.list(workspace_id=ws, project_id=pid)
-                for ds in datasets.get("datasets", []):
-                    dvs = self.client.dataviews.list(
-                        dataset_id=ds["id"], workspace_id=ws, project_id=pid
-                    )
-                    for dv in dvs.get("dataviews", []):
-                        if dv["id"] == view_id:
-                            logger.info(
-                                "Auto-discovered view %d in project %d, dataset %d",
-                                view_id, pid, ds["id"],
-                            )
-                            self.set_project(pid)
-                            return
+                # Temporarily set project on client so SDK methods work
+                self.client.set_project_id(pid)
+                self.client.pipeline._find_dataset_for_dataview(view_id)
+                # Found it!
+                self.config.project_id = pid
+                self._view_cache.clear()
+                logger.info(
+                    "Auto-discovered view %d in project %d (%s)",
+                    view_id, pid, pname,
+                )
+                return
+            except ValueError:
+                # View not in this project (normal case)
+                logger.debug("View %d not in project %d (%s)", view_id, pid, pname)
+                continue
             except Exception:
-                continue  # Skip projects we can't access
+                # API error (500, network, etc.) — log and continue
+                logger.warning(
+                    "Error searching project %d (%s) for view %d",
+                    pid, pname, view_id, exc_info=True,
+                )
+                continue
+
+        # Restore original project if we didn't find the view
+        if original_project_id is not None:
+            self.client.set_project_id(original_project_id)
 
         raise ValueError(
-            f"View {view_id} not found in any project in workspace {ws}"
+            f"View {view_id} not found in any project in workspace "
+            f"{self.client.workspace_id}"
         )
 
     def get_view(self, view_id: int, dataset_id: int | None = None) -> View:
         """Get a View, using cache if available, always refreshing metadata.
 
-        Auto-discovers the project if not set.
+        Auto-discovers the project if needed (first call for a view).
         """
         if view_id in self._view_cache:
             view = self._view_cache[view_id]
             view.refresh()
             return view
 
-        # Auto-discover project if needed
-        if getattr(self.client, "project_id", None) is None:
-            self._ensure_project_for_view(view_id)
+        # Auto-discover project (handles both "no project set" and
+        # "wrong project set" by checking current project first)
+        self._ensure_project_for_view(view_id)
 
         view = self.client.views.get(view_id, dataset_id)
         self._view_cache[view_id] = view
