@@ -8,13 +8,14 @@ from typing import Any
 from mcp.server.fastmcp import Context
 
 from mammoth.exceptions import MammothAPIError, MammothColumnError
-from mammoth_mcp.helpers import error_response, get_manager, success_response
+from mammoth_mcp.helpers import error_response, get_manager, log_tool_call, success_response
 from mammoth_mcp.server import mcp
 
 logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
+@log_tool_call
 async def export_data(
     ctx: Context,
     view_id: int,
@@ -79,6 +80,7 @@ async def export_data(
 
 
 @mcp.tool()
+@log_tool_call
 async def export_to_database(
     ctx: Context,
     view_id: int,

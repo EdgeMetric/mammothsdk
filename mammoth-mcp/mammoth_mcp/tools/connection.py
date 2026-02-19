@@ -8,13 +8,14 @@ from typing import Any
 from mcp.server.fastmcp import Context
 
 from mammoth.exceptions import MammothAPIError, MammothColumnError
-from mammoth_mcp.helpers import error_response, get_manager, success_response
+from mammoth_mcp.helpers import error_response, get_manager, log_tool_call, success_response
 from mammoth_mcp.server import mcp
 
 logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
+@log_tool_call
 async def test_connection(ctx: Context) -> dict[str, Any]:
     """Test that the Mammoth API credentials are valid and the connection works."""
     try:
@@ -33,6 +34,7 @@ async def test_connection(ctx: Context) -> dict[str, Any]:
 
 
 @mcp.tool()
+@log_tool_call
 async def set_project(ctx: Context, project_id: int) -> dict[str, Any]:
     """Set the active project ID for subsequent API calls.
 

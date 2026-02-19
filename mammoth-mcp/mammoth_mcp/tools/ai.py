@@ -8,13 +8,14 @@ from typing import Any
 from mcp.server.fastmcp import Context
 
 from mammoth.exceptions import MammothAPIError, MammothColumnError
-from mammoth_mcp.helpers import error_response, format_view_info, get_manager, success_response
+from mammoth_mcp.helpers import error_response, format_view_info, get_manager, log_tool_call, success_response
 from mammoth_mcp.server import mcp
 
 logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
+@log_tool_call
 async def ai_transform(
     ctx: Context,
     view_id: int,
@@ -51,6 +52,7 @@ async def ai_transform(
 
 
 @mcp.tool()
+@log_tool_call
 async def sql_query(
     ctx: Context,
     view_id: int,

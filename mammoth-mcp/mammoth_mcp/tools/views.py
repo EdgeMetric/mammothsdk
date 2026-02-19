@@ -8,13 +8,14 @@ from typing import Any
 from mcp.server.fastmcp import Context
 
 from mammoth.exceptions import MammothAPIError, MammothColumnError
-from mammoth_mcp.helpers import error_response, format_view_info, get_manager, success_response
+from mammoth_mcp.helpers import error_response, format_view_info, get_manager, log_tool_call, success_response
 from mammoth_mcp.server import mcp
 
 logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
+@log_tool_call
 async def list_views(ctx: Context, dataset_id: int) -> dict[str, Any]:
     """List all views in a dataset.
 
@@ -36,6 +37,7 @@ async def list_views(ctx: Context, dataset_id: int) -> dict[str, Any]:
 
 
 @mcp.tool()
+@log_tool_call
 async def get_view(ctx: Context, view_id: int, dataset_id: int | None = None) -> dict[str, Any]:
     """Get detailed metadata for a view, including all columns and their types.
 
@@ -57,6 +59,7 @@ async def get_view(ctx: Context, view_id: int, dataset_id: int | None = None) ->
 
 
 @mcp.tool()
+@log_tool_call
 async def create_view(
     ctx: Context,
     dataset_id: int,
@@ -84,6 +87,7 @@ async def create_view(
 
 
 @mcp.tool()
+@log_tool_call
 async def delete_view(ctx: Context, view_id: int, dataset_id: int | None = None) -> dict[str, Any]:
     """Delete a view.
 
@@ -93,6 +97,7 @@ async def delete_view(ctx: Context, view_id: int, dataset_id: int | None = None)
     """
     try:
         manager = await get_manager(ctx)
+        manager._ensure_project_for_view(view_id)
         manager.client.views.delete(view_id, dataset_id)
         manager.invalidate_view(view_id)
         return success_response(message=f"Deleted view {view_id}")

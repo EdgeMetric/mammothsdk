@@ -11,8 +11,8 @@ HELP_TOPICS: dict[str, str] = {
 ## Entities
 
 - **Workspace**: Top-level container that owns billing, members, and projects.
-- **Project**: Groups related datasets within a workspace. You must call \
-`set_project` before any data operation.
+- **Project**: Groups related datasets within a workspace. Auto-discovered \
+when you call `get_view` with a view ID.
 - **Dataset**: One uploaded file (CSV, Excel) or connected data source. \
 A dataset always has at least one view.
 - **View**: A transformable lens on a dataset's data. Every transformation \

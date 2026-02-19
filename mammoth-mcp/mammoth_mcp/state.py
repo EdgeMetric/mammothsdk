@@ -32,12 +32,59 @@ class ClientManager:
 
         self._view_cache: dict[int, View] = {}
 
+    def _ensure_project_for_view(self, view_id: int) -> None:
+        """Auto-discover and set the project containing a view ID.
+
+        Searches across all projects in the workspace. Skips if project is
+        already set and the view is found in the current project.
+        """
+        # If project is already set, try it first — fast path
+        if getattr(self.client, "project_id", None) is not None:
+            try:
+                self.client.pipeline._find_dataset_for_dataview(view_id)
+                return  # Found in current project
+            except (ValueError, Exception):
+                pass  # Not in current project, search others
+
+        # Search all projects
+        ws = self.client.workspace_id
+        projects = self.client.projects.list()
+        for proj in projects.get("projects", []):
+            pid = proj["id"]
+            try:
+                datasets = self.client.datasets.list(workspace_id=ws, project_id=pid)
+                for ds in datasets.get("datasets", []):
+                    dvs = self.client.dataviews.list(
+                        dataset_id=ds["id"], workspace_id=ws, project_id=pid
+                    )
+                    for dv in dvs.get("dataviews", []):
+                        if dv["id"] == view_id:
+                            logger.info(
+                                "Auto-discovered view %d in project %d, dataset %d",
+                                view_id, pid, ds["id"],
+                            )
+                            self.set_project(pid)
+                            return
+            except Exception:
+                continue  # Skip projects we can't access
+
+        raise ValueError(
+            f"View {view_id} not found in any project in workspace {ws}"
+        )
+
     def get_view(self, view_id: int, dataset_id: int | None = None) -> View:
-        """Get a View, using cache if available, always refreshing metadata."""
+        """Get a View, using cache if available, always refreshing metadata.
+
+        Auto-discovers the project if not set.
+        """
         if view_id in self._view_cache:
             view = self._view_cache[view_id]
             view.refresh()
             return view
+
+        # Auto-discover project if needed
+        if getattr(self.client, "project_id", None) is None:
+            self._ensure_project_for_view(view_id)
 
         view = self.client.views.get(view_id, dataset_id)
         self._view_cache[view_id] = view

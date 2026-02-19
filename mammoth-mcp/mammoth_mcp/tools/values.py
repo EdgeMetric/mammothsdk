@@ -13,6 +13,7 @@ from mammoth_mcp.helpers import (
     error_response,
     format_view_info,
     get_manager,
+    log_tool_call,
     resolve_enum,
     success_response,
 )
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
+@log_tool_call
 async def transform_values(
     ctx: Context,
     view_id: int,

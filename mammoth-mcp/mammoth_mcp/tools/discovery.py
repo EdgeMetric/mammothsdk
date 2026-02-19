@@ -8,13 +8,14 @@ from typing import Any
 from mcp.server.fastmcp import Context
 
 from mammoth.exceptions import MammothAPIError, MammothColumnError
-from mammoth_mcp.helpers import error_response, get_manager, success_response
+from mammoth_mcp.helpers import error_response, get_manager, log_tool_call, success_response
 from mammoth_mcp.server import mcp
 
 logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
+@log_tool_call
 async def list_projects(ctx: Context) -> dict[str, Any]:
     """List all projects in the current workspace."""
     try:
@@ -40,6 +41,7 @@ async def list_projects(ctx: Context) -> dict[str, Any]:
 
 
 @mcp.tool()
+@log_tool_call
 async def list_datasets(ctx: Context) -> dict[str, Any]:
     """List all datasets in the current project."""
     try:
@@ -66,6 +68,7 @@ async def list_datasets(ctx: Context) -> dict[str, Any]:
 
 
 @mcp.tool()
+@log_tool_call
 async def get_dataset(ctx: Context, dataset_id: int) -> dict[str, Any]:
     """Get detailed info about a dataset, including its views.
 
@@ -86,6 +89,7 @@ async def get_dataset(ctx: Context, dataset_id: int) -> dict[str, Any]:
 
 
 @mcp.tool()
+@log_tool_call
 async def upload_file(ctx: Context, file_path: str) -> dict[str, Any]:
     """Upload a CSV or Excel file to create a new dataset.
 

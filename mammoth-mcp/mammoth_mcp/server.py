@@ -193,14 +193,22 @@ def create_app():
     return mcp.streamable_http_app()
 
 
+def _configure_logging() -> None:
+    """Set up logging to stderr and optionally to a file."""
+    level = getattr(logging, settings.log_level.upper(), logging.INFO)
+    fmt = "%(asctime)s %(levelname)s %(name)s: %(message)s"
+    datefmt = "%Y-%m-%d %H:%M:%S"
+
+    handlers: list[logging.Handler] = [logging.StreamHandler(sys.stderr)]
+    if settings.log_file:
+        handlers.append(logging.FileHandler(settings.log_file))
+
+    logging.basicConfig(level=level, handlers=handlers, format=fmt, datefmt=datefmt)
+
+
 def main() -> None:
     """Run the MCP server."""
-    logging.basicConfig(
-        level=getattr(logging, settings.log_level.upper(), logging.INFO),
-        stream=sys.stderr,
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
+    _configure_logging()
     if settings.mode == "remote":
         import uvicorn
 

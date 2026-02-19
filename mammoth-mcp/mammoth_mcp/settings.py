@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     server_url: str = "https://mcp.mammoth.io"
     mode: str = "stdio"  # "stdio" or "remote"
     log_level: str = "INFO"
+    log_file: str = ""  # Path to log file (empty = stderr only)
 
     # Redis (remote mode only)
     redis_url: str = "redis://localhost:6379/0"

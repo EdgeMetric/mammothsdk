@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import functools
+import inspect
+import logging
+import time
 from typing import Any
 
 from mammoth import (
@@ -12,6 +16,8 @@ from mammoth import (
 from mcp.server.fastmcp import Context
 
 from mammoth_mcp.state import ClientManager
+
+logger = logging.getLogger("mammoth_mcp.tools")
 
 
 async def get_manager(ctx: Context) -> ClientManager:
@@ -31,6 +37,36 @@ async def get_manager(ctx: Context) -> ClientManager:
     if not manager:
         raise RuntimeError("MCP server not initialized — check environment variables")
     return manager
+
+
+def log_tool_call(fn):
+    """Decorator that logs every MCP tool invocation with args and result status."""
+
+    @functools.wraps(fn)
+    async def wrapper(*args, **kwargs):
+        # Build a clean argument dict (skip 'ctx')
+        sig = inspect.signature(fn)
+        bound = sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+        log_args = {k: v for k, v in bound.arguments.items() if k != "ctx"}
+
+        logger.info("TOOL_CALL %s args=%s", fn.__name__, log_args)
+        start = time.monotonic()
+        try:
+            result = await fn(*args, **kwargs)
+            elapsed = time.monotonic() - start
+            success = result.get("success", False) if isinstance(result, dict) else True
+            logger.info(
+                "TOOL_RESULT %s success=%s elapsed=%.2fs",
+                fn.__name__, success, elapsed,
+            )
+            return result
+        except Exception:
+            elapsed = time.monotonic() - start
+            logger.exception("TOOL_ERROR %s elapsed=%.2fs", fn.__name__, elapsed)
+            raise
+
+    return wrapper
 
 
 def build_condition(d: dict[str, Any]) -> Condition | CompoundCondition:
