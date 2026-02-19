@@ -19,9 +19,6 @@ class ReportsAPI:
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def _ws(self) -> int:
-        return self._client.workspace_id
-
     def list(
         self,
         limit: int = 50,
@@ -36,10 +33,9 @@ class ReportsAPI:
         Returns:
             Dict with reports list and pagination info.
         """
-        ws = self._ws()
         params: dict[str, Any] = {}
         if limit != 50:
             params["limit"] = limit
         if offset != 0:
             params["offset"] = offset
-        return self._client._request_json("GET", f"/workspaces/{ws}/reports", params=params or None)
+        return self._client._request_json("GET", "/reports", params=params or None)

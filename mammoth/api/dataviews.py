@@ -344,7 +344,7 @@ class DataviewsAPI:
         proj = project_id or self._proj()
         response = self._client._request_json(
             "GET",
-            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional_format",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional-format",
         )
         return response.get("rules", response if isinstance(response, _list) else [])
 
@@ -372,7 +372,7 @@ class DataviewsAPI:
         proj = project_id or self._proj()
         return self._client._request_json(
             "POST",
-            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional_format",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional-format",
             json=rule,
         )
 
@@ -400,7 +400,7 @@ class DataviewsAPI:
         proj = project_id or self._proj()
         return self._client._request_json(
             "PATCH",
-            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional_format",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional-format",
             json=rule,
         )
 
@@ -426,7 +426,7 @@ class DataviewsAPI:
         proj = project_id or self._proj()
         return self._client._request_json(
             "DELETE",
-            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional_format",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional-format",
         )
 
     def draft_mode(
@@ -453,6 +453,6 @@ class DataviewsAPI:
         proj = project_id or self._proj()
         return self._client._request_json(
             "POST",
-            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/draft",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/draft-mode",
             json={"command": command},
         )

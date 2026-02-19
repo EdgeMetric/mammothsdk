@@ -27,6 +27,14 @@ class ConnectorsAPI:
     def _ws(self) -> int:
         return self._client.workspace_id
 
+    def _proj(self, project_id: int | None = None) -> int:
+        if project_id is not None:
+            return project_id
+        proj = getattr(self._client, "project_id", None)
+        if proj is not None:
+            return proj
+        raise ValueError("project_id must be set on the client using client.set_project_id()")
+
     def list(self) -> _list[dict[str, Any]]:
         """List all available connectors.
 
@@ -49,51 +57,73 @@ class ConnectorsAPI:
             "GET", f"/workspaces/{self._ws()}/connectors/{connector_key}"
         )
 
-    def list_connections(self, connector_key: str) -> _list[dict[str, Any]]:
+    def list_connections(
+        self, connector_key: str, project_id: int | None = None
+    ) -> _list[dict[str, Any]]:
         """List connections for a connector type.
 
         Args:
             connector_key: Key identifying the connector type.
+            project_id: Project ID (uses client default if not provided).
 
         Returns:
             List of connection dicts.
         """
+        ws = self._ws()
+        proj = self._proj(project_id)
         response = self._client._request_json(
-            "GET", f"/workspaces/{self._ws()}/connectors/{connector_key}/connections"
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections",
         )
         return response.get("connections", response if isinstance(response, _list) else [])
 
-    def create_connection(self, connector_key: str, config: dict[str, Any]) -> dict[str, Any]:
+    def create_connection(
+        self, connector_key: str, config: dict[str, Any], project_id: int | None = None
+    ) -> dict[str, Any]:
         """Create a new connection for a connector.
 
         Args:
             connector_key: Key identifying the connector type.
             config: Connection configuration (host, port, database, credentials, etc.).
+            project_id: Project ID (uses client default if not provided).
 
         Returns:
             Dict with created connection info.
         """
+        ws = self._ws()
+        proj = self._proj(project_id)
         return self._client._request_json(
-            "POST", f"/workspaces/{self._ws()}/connectors/{connector_key}/connections", json=config
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections",
+            json=config,
         )
 
-    def get_connection(self, connector_key: str, connection_key: str) -> dict[str, Any]:
+    def get_connection(
+        self, connector_key: str, connection_key: str, project_id: int | None = None
+    ) -> dict[str, Any]:
         """Get details of a specific connection.
 
         Args:
             connector_key: Key identifying the connector type.
             connection_key: Key identifying the connection.
+            project_id: Project ID (uses client default if not provided).
 
         Returns:
             Dict with connection details.
         """
+        ws = self._ws()
+        proj = self._proj(project_id)
         return self._client._request_json(
             "GET",
-            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}",
         )
 
     def update_connection(
-        self, connector_key: str, connection_key: str, config: dict[str, Any]
+        self,
+        connector_key: str,
+        connection_key: str,
+        config: dict[str, Any],
+        project_id: int | None = None,
     ) -> dict[str, Any]:
         """Update a connection's configuration.
 
@@ -101,49 +131,66 @@ class ConnectorsAPI:
             connector_key: Key identifying the connector type.
             connection_key: Key identifying the connection.
             config: Updated connection configuration.
+            project_id: Project ID (uses client default if not provided).
 
         Returns:
             Dict with updated connection info.
         """
+        ws = self._ws()
+        proj = self._proj(project_id)
         return self._client._request_json(
             "PATCH",
-            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}",
             json=config,
         )
 
-    def delete_connection(self, connector_key: str, connection_key: str) -> dict[str, Any]:
+    def delete_connection(
+        self, connector_key: str, connection_key: str, project_id: int | None = None
+    ) -> dict[str, Any]:
         """Delete a connection.
 
         Args:
             connector_key: Key identifying the connector type.
             connection_key: Key identifying the connection.
+            project_id: Project ID (uses client default if not provided).
 
         Returns:
             Dict with deletion result.
         """
+        ws = self._ws()
+        proj = self._proj(project_id)
         return self._client._request_json(
             "DELETE",
-            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}",
         )
 
-    def list_ds_configs(self, connector_key: str, connection_key: str) -> _list[dict[str, Any]]:
+    def list_ds_configs(
+        self, connector_key: str, connection_key: str, project_id: int | None = None
+    ) -> _list[dict[str, Any]]:
         """List data source configurations for a connection.
 
         Args:
             connector_key: Key identifying the connector type.
             connection_key: Key identifying the connection.
+            project_id: Project ID (uses client default if not provided).
 
         Returns:
             List of data source config dicts.
         """
+        ws = self._ws()
+        proj = self._proj(project_id)
         response = self._client._request_json(
             "GET",
-            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/ds_configs",
         )
         return response.get("ds_configs", response if isinstance(response, _list) else [])
 
     def create_ds_config(
-        self, connector_key: str, connection_key: str, config: dict[str, Any]
+        self,
+        connector_key: str,
+        connection_key: str,
+        config: dict[str, Any],
+        project_id: int | None = None,
     ) -> dict[str, Any]:
         """Create a data source configuration.
 
@@ -151,18 +198,25 @@ class ConnectorsAPI:
             connector_key: Key identifying the connector type.
             connection_key: Key identifying the connection.
             config: Data source configuration.
+            project_id: Project ID (uses client default if not provided).
 
         Returns:
             Dict with created data source config.
         """
+        ws = self._ws()
+        proj = self._proj(project_id)
         return self._client._request_json(
             "POST",
-            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/ds_configs",
             json=config,
         )
 
     def get_ds_config(
-        self, connector_key: str, connection_key: str, ds_config_key: str
+        self,
+        connector_key: str,
+        connection_key: str,
+        ds_config_key: str,
+        project_id: int | None = None,
     ) -> dict[str, Any]:
         """Get a specific data source configuration.
 
@@ -170,17 +224,25 @@ class ConnectorsAPI:
             connector_key: Key identifying the connector type.
             connection_key: Key identifying the connection.
             ds_config_key: Key identifying the data source config.
+            project_id: Project ID (uses client default if not provided).
 
         Returns:
             Dict with data source config details.
         """
+        ws = self._ws()
+        proj = self._proj(project_id)
         return self._client._request_json(
             "GET",
-            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
         )
 
     def update_ds_config(
-        self, connector_key: str, connection_key: str, ds_config_key: str, config: dict[str, Any]
+        self,
+        connector_key: str,
+        connection_key: str,
+        ds_config_key: str,
+        config: dict[str, Any],
+        project_id: int | None = None,
     ) -> dict[str, Any]:
         """Update a data source configuration.
 
@@ -189,18 +251,25 @@ class ConnectorsAPI:
             connection_key: Key identifying the connection.
             ds_config_key: Key identifying the data source config.
             config: Updated data source configuration.
+            project_id: Project ID (uses client default if not provided).
 
         Returns:
             Dict with updated config.
         """
+        ws = self._ws()
+        proj = self._proj(project_id)
         return self._client._request_json(
             "PATCH",
-            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
             json=config,
         )
 
     def delete_ds_config(
-        self, connector_key: str, connection_key: str, ds_config_key: str
+        self,
+        connector_key: str,
+        connection_key: str,
+        ds_config_key: str,
+        project_id: int | None = None,
     ) -> dict[str, Any]:
         """Delete a data source configuration.
 
@@ -208,13 +277,16 @@ class ConnectorsAPI:
             connector_key: Key identifying the connector type.
             connection_key: Key identifying the connection.
             ds_config_key: Key identifying the data source config.
+            project_id: Project ID (uses client default if not provided).
 
         Returns:
             Dict with deletion result.
         """
+        ws = self._ws()
+        proj = self._proj(project_id)
         return self._client._request_json(
             "DELETE",
-            f"/workspaces/{self._ws()}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
         )
 
     def active_connectors(self) -> _list[dict[str, Any]]:

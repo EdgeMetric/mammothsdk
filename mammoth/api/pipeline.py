@@ -84,6 +84,9 @@ class PipelineAPI:
     def _base_url(self, ws_id: int, proj_id: int, ds_id: int, dv_id: int) -> str:
         return f"/workspaces/{ws_id}/projects/{proj_id}/datasets/{ds_id}/dataviews/{dv_id}/pipeline"
 
+    def _dv_url(self, ws_id: int, proj_id: int, ds_id: int, dv_id: int) -> str:
+        return f"/workspaces/{ws_id}/projects/{proj_id}/datasets/{ds_id}/dataviews/{dv_id}"
+
     def get_pipeline(self, dataview_id: int, dataset_id: int | None = None) -> dict[str, Any]:
         """Get pipeline state for a dataview.
 
@@ -203,7 +206,7 @@ class PipelineAPI:
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
         return self._client._request_json(
-            "POST", f"{self._base_url(ws, proj, ds, dv)}/tasks/preview", json=task_spec
+            "POST", f"{self._base_url(ws, proj, ds, dv)}/task_preview", json=task_spec
         )
 
     def draft_mode(
@@ -221,5 +224,5 @@ class PipelineAPI:
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
         return self._client._request_json(
-            "POST", f"{self._base_url(ws, proj, ds, dv)}/draft", json={"command": command}
+            "POST", f"{self._dv_url(ws, proj, ds, dv)}/draft-mode", json={"command": command}
         )

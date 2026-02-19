@@ -15,8 +15,8 @@ class AIAPI:
 
     Access via client.ai:
         client.ai.generate_profile(dataview_id=1039)
-        client.ai.generate_sql(intent="total sales by region", dataview_ids=[1039])
-        suggestions = client.ai.get_suggestions(dataview_id=1039)
+        client.ai.generate_sql(intent="total sales by region")
+        suggestions = client.ai.get_suggestions()
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -56,7 +56,7 @@ class AIAPI:
         ds = self._find_dataset(dataview_id, dataset_id)
         return self._client._request_json(
             "POST",
-            f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/ai/profile",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/profile_generation",
         )
 
     def generate_data(
@@ -80,7 +80,7 @@ class AIAPI:
         ds = self._find_dataset(dataview_id, dataset_id)
         return self._client._request_json(
             "POST",
-            f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/ai/generate",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/data/generate",
             json=config,
         )
 
@@ -103,49 +103,44 @@ class AIAPI:
         ds = self._find_dataset(dataview_id, dataset_id)
         return self._client._request_json(
             "GET",
-            f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/ai/generate",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/data/generate",
         )
 
     def generate_sql(
         self,
         intent: str,
-        dataview_ids: list[int] | None = None,
+        sequence_number: int = 0,
     ) -> dict[str, Any]:
         """Generate SQL from natural language intent.
 
+        Uses the project-level sql_generation endpoint.
+
         Args:
             intent: Natural language description of the query.
-            dataview_ids: List of dataview IDs to use as context (optional).
+            sequence_number: Sequence number for the SQL generation request.
 
         Returns:
             Dict with generated SQL and metadata.
         """
         ws = self._ws()
-        payload: dict[str, Any] = {"intent": intent}
-        if dataview_ids:
-            payload["dataview_ids"] = dataview_ids
-        return self._client._request_json("POST", f"/workspaces/{ws}/ai/sql", json=payload)
+        proj = self._proj()
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/sql_generation",
+            json={"params": {"intent": intent, "sequence_number": sequence_number}},
+        )
 
-    def get_suggestions(
-        self,
-        dataview_id: int,
-        dataset_id: int | None = None,
-    ) -> dict[str, Any]:
-        """Get AI-powered transformation suggestions for a dataview.
-
-        Args:
-            dataview_id: ID of the dataview.
-            dataset_id: ID of the dataset (auto-detected if not provided).
+    def get_suggestions(self) -> dict[str, Any]:
+        """Get AI-powered transformation suggestions for the current project.
 
         Returns:
             Dict with suggested transformations.
         """
         ws = self._ws()
         proj = self._proj()
-        ds = self._find_dataset(dataview_id, dataset_id)
         return self._client._request_json(
-            "GET",
-            f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/ai/suggestions",
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/suggestions",
         )
 
     def query_gen(
@@ -153,6 +148,7 @@ class AIAPI:
         connector_key: str,
         connection_key: str,
         prompt: str,
+        project_id: int | None = None,
     ) -> dict[str, Any]:
         """Generate a query for a connector using AI.
 
@@ -160,13 +156,15 @@ class AIAPI:
             connector_key: Key identifying the connector type.
             connection_key: Key identifying the connection.
             prompt: Natural language prompt describing the query.
+            project_id: Project ID (uses client default if not provided).
 
         Returns:
             Dict with generated query.
         """
         ws = self._ws()
+        proj = project_id if project_id is not None else self._proj()
         return self._client._request_json(
             "POST",
-            f"/workspaces/{ws}/connectors/{connector_key}/connections/{connection_key}/query_gen",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/chat",
             json={"prompt": prompt},
         )

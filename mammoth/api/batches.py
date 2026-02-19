@@ -112,15 +112,13 @@ class BatchesAPI:
     def update(
         self,
         dataset_id: int,
-        batch_id: int,
         config: dict[str, Any],
         project_id: int | None = None,
     ) -> dict[str, Any]:
-        """Update a batch.
+        """Update batches for a dataset.
 
         Args:
             dataset_id: ID of the dataset.
-            batch_id: ID of the batch.
             config: Updated batch configuration.
             project_id: Project ID (uses client default if not provided).
 
@@ -131,7 +129,7 @@ class BatchesAPI:
         proj = self._proj(project_id)
         return self._client._request_json(
             "PATCH",
-            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches/{batch_id}",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches",
             json=config,
         )
 
@@ -156,27 +154,4 @@ class BatchesAPI:
         return self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches/{batch_id}",
-        )
-
-    def get_status(
-        self,
-        dataset_id: int,
-        batch_id: int,
-        project_id: int | None = None,
-    ) -> dict[str, Any]:
-        """Get batch processing status.
-
-        Args:
-            dataset_id: ID of the dataset.
-            batch_id: ID of the batch.
-            project_id: Project ID (uses client default if not provided).
-
-        Returns:
-            Dict with batch status info.
-        """
-        ws = self._ws()
-        proj = self._proj(project_id)
-        return self._client._request_json(
-            "GET",
-            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches/{batch_id}/status",
         )

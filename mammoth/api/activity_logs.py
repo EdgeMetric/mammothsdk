@@ -42,11 +42,11 @@ class ActivityLogsAPI:
             Dict with activity logs and pagination info.
         """
         ws = self._ws()
-        params: dict[str, Any] = {"limit": limit, "offset": offset}
+        body: dict[str, Any] = {"limit": limit, "offset": offset}
         if sort:
-            params["sort"] = sort
-        params.update(filters)
-        return self._client._request_json("GET", f"/workspaces/{ws}/activity_logs", params=params)
+            body["sort"] = sort
+        body.update(filters)
+        return self._client._request_json("POST", f"/workspaces/{ws}/activity_log", json=body)
 
     def export(self, format: str = "csv", **filters: Any) -> dict[str, Any]:
         """Export activity logs.
@@ -59,8 +59,8 @@ class ActivityLogsAPI:
             Dict with export result (may include download URL or job ID).
         """
         ws = self._ws()
-        params: dict[str, Any] = {"format": format}
-        params.update(filters)
+        body: dict[str, Any] = {"format": format}
+        body.update(filters)
         return self._client._request_json(
-            "GET", f"/workspaces/{ws}/activity_logs/export", params=params
+            "POST", f"/workspaces/{ws}/activity_log/export", json=body
         )
