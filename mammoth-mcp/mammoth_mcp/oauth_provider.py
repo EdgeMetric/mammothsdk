@@ -99,21 +99,18 @@ class MammothOAuthProvider:
         await self._store.delete_code(authorization_code.code)
 
         bearer_token = secrets.token_urlsafe(48)
-        expires_at = int(time.time()) + self._settings.access_token_ttl
         token_data = {
             "client_id": client.client_id,
             "credentials": code_data["credentials"],
             "scopes": code_data.get("scopes", []),
-            "expires_at": expires_at,
             "resource": code_data.get("resource"),
         }
         await self._store.store_token(bearer_token, token_data)
-        logger.info("Issued access token for client %s", client.client_id)
+        logger.info("Issued access token for client %s (no expiry)", client.client_id)
 
         return OAuthToken(
             access_token=bearer_token,
             token_type="Bearer",
-            expires_in=self._settings.access_token_ttl,
         )
 
     # ── Refresh tokens (not supported — long-lived access tokens) ──
@@ -143,16 +140,11 @@ class MammothOAuthProvider:
         if data is None:
             logger.error("Access token NOT FOUND in Redis: %s...", token[:8] if token else "NONE")
             return None
-        if data.get("expires_at") and data["expires_at"] < time.time():
-            logger.error("Access token EXPIRED: %s...", token[:8] if token else "NONE")
-            await self._store.delete_token(token)
-            return None
         logger.info("Access token valid for client %s", data["client_id"])
         return AccessToken(
             token=token,
             client_id=data["client_id"],
             scopes=data.get("scopes", []),
-            expires_at=data.get("expires_at"),
             resource=data.get("resource"),
         )
 
