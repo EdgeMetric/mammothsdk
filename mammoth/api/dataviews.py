@@ -208,6 +208,8 @@ class DataviewsAPI:
         dataview_id: int,
         workspace_id: int | None = None,
         project_id: int | None = None,
+        timeout: int | None = None,
+        poll_interval: int = 2,
     ) -> dict[str, Any]:
         """Get dataview data (GET method).
 
@@ -216,16 +218,19 @@ class DataviewsAPI:
             dataview_id: ID of the dataview.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
+            timeout: Max job wait time in seconds (default: client.job_timeout).
+            poll_interval: Seconds between job polls (default: 2).
 
         Returns:
             Dict with dataview data.
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
-        return self._client._request_json(
+        response = self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/data",
         )
+        return self._client._wait_if_job(response, timeout=timeout, poll_interval=poll_interval)
 
     def query_data(
         self,
@@ -266,11 +271,12 @@ class DataviewsAPI:
             payload["condition"] = condition
         if sort is not None:
             payload["sort"] = sort
-        return self._client._request_json(
+        response = self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/data",
             json=payload,
         )
+        return self._client._wait_if_job(response)
 
     def active_users(
         self,

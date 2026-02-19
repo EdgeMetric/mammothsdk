@@ -427,6 +427,55 @@ class MammothClient:
             return [result]
         return result
 
+    def _wait_if_job(
+        self,
+        response: dict[str, Any],
+        timeout: int | None = None,
+        poll_interval: int = 2,
+    ) -> dict[str, Any]:
+        """Detect job references in API responses and wait for completion.
+
+        Handles three job response schemas:
+        - ``{"job_id": N}`` (ObjectJobSchema)
+        - ``{"job": {"id": N, ...}}`` (JobResponse)
+        - ``{"id": N, "status": "processing|..."}`` (ResponseJobSchema)
+
+        Args:
+            response: Raw API response dict.
+            timeout: Max wait time in seconds (default: client.job_timeout).
+            poll_interval: Seconds between polls (default: 2).
+
+        Returns:
+            Completed job's inner response data, or the original response
+            if no job reference was detected.
+        """
+        if not isinstance(response, dict):
+            return response
+
+        job_id = None
+
+        # Pattern 1: {"job_id": N}
+        if "job_id" in response:
+            job_id = response["job_id"]
+        # Pattern 2: {"job": {"id": N}}
+        elif isinstance(response.get("job"), dict):
+            job_id = response["job"].get("id")
+        # Pattern 3: {"id": N, "status": "processing|..."}
+        elif "id" in response and response.get("status") in (
+            "processing",
+            "success",
+            "failure",
+            "error",
+        ):
+            job_id = response["id"]
+
+        if job_id:
+            t = timeout if timeout is not None else self.job_timeout
+            completed = self.jobs.wait_for_job(job_id, timeout=t, poll_interval=poll_interval)
+            return completed.get("response", completed)
+
+        return response
+
     def set_project_id(self, project_id: int) -> None:
         """Set the default project ID for the client.
 

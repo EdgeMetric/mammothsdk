@@ -108,17 +108,7 @@ class DatasetsAPI:
         response = self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/data"
         )
-
-        if isinstance(response, dict) and "job_id" in response:
-            job_id = response["job_id"]
-            completed_job = self._client.jobs.wait_for_job(
-                job_id=job_id,
-                timeout=timeout,
-                poll_interval=poll_interval,
-            )
-            return completed_job.get("response", completed_job)
-
-        return response
+        return self._client._wait_if_job(response, timeout=timeout, poll_interval=poll_interval)
 
     def create(
         self,

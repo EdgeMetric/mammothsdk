@@ -192,12 +192,6 @@ class View(
             API response dict.
         """
         result = self._client.pipeline.add_task(self.id, task_spec, self.dataset_id)
-
-        job_info = result.get("job", {})
-        job_id = job_info.get("id") if isinstance(job_info, dict) else None
-        if job_id:
-            self._client.jobs.wait_for_job(job_id)
-
         self.refresh()
         return result
 

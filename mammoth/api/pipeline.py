@@ -128,9 +128,10 @@ class PipelineAPI:
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
         payload = {"DATAVIEW_ID": dv, **task_spec}
-        return self._client._request_json(
+        response = self._client._request_json(
             "POST", f"{self._base_url(ws, proj, ds, dv)}/tasks", json=payload
         )
+        return self._client._wait_if_job(response)
 
     def get_task(
         self, dataview_id: int, task_id: int, dataset_id: int | None = None
@@ -169,9 +170,10 @@ class PipelineAPI:
             Updated task dict.
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request_json(
+        response = self._client._request_json(
             "PATCH", f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}", json=task_spec
         )
+        return self._client._wait_if_job(response)
 
     def delete_task(
         self, dataview_id: int, task_id: int, dataset_id: int | None = None
@@ -187,9 +189,10 @@ class PipelineAPI:
             Delete confirmation dict.
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request_json(
+        response = self._client._request_json(
             "DELETE", f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}"
         )
+        return self._client._wait_if_job(response)
 
     def preview_task(
         self, dataview_id: int, task_spec: dict[str, Any], dataset_id: int | None = None
@@ -205,9 +208,10 @@ class PipelineAPI:
             Preview result dict with sample data.
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request_json(
+        response = self._client._request_json(
             "POST", f"{self._base_url(ws, proj, ds, dv)}/task_preview", json=task_spec
         )
+        return self._client._wait_if_job(response)
 
     def draft_mode(
         self, dataview_id: int, command: str, dataset_id: int | None = None
@@ -223,6 +227,7 @@ class PipelineAPI:
             Draft mode state dict.
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request_json(
+        response = self._client._request_json(
             "POST", f"{self._dv_url(ws, proj, ds, dv)}/draft-mode", json={"command": command}
         )
+        return self._client._wait_if_job(response)

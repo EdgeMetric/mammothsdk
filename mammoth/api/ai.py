@@ -54,10 +54,11 @@ class AIAPI:
         ws = self._ws()
         proj = self._proj()
         ds = self._find_dataset(dataview_id, dataset_id)
-        return self._client._request_json(
+        response = self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/profile_generation",
         )
+        return self._client._wait_if_job(response)
 
     def generate_data(
         self,
@@ -78,11 +79,12 @@ class AIAPI:
         ws = self._ws()
         proj = self._proj()
         ds = self._find_dataset(dataview_id, dataset_id)
-        return self._client._request_json(
+        response = self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/data/generate",
             json=config,
         )
+        return self._client._wait_if_job(response)
 
     def get_data_gen_info(
         self,
@@ -124,11 +126,12 @@ class AIAPI:
         """
         ws = self._ws()
         proj = self._proj()
-        return self._client._request_json(
+        response = self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/sql_generation",
             json={"params": {"intent": intent, "sequence_number": sequence_number}},
         )
+        return self._client._wait_if_job(response)
 
     def get_suggestions(self) -> dict[str, Any]:
         """Get AI-powered transformation suggestions for the current project.
@@ -138,10 +141,11 @@ class AIAPI:
         """
         ws = self._ws()
         proj = self._proj()
-        return self._client._request_json(
+        response = self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/suggestions",
         )
+        return self._client._wait_if_job(response)
 
     def query_gen(
         self,
@@ -163,8 +167,9 @@ class AIAPI:
         """
         ws = self._ws()
         proj = project_id if project_id is not None else self._proj()
-        return self._client._request_json(
+        response = self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/chat",
             json={"prompt": prompt},
         )
+        return self._client._wait_if_job(response)

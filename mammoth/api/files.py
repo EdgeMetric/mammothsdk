@@ -289,6 +289,8 @@ class FilesAPI:
     def update(self, file_id: int, patch_request: FilePatchRequest) -> ObjectJobSchema:
         """Update file configuration (e.g., set password, extract sheets).
 
+        Waits for the job to complete before returning.
+
         Args:
             file_id: ID of the file to update.
             patch_request: Configuration changes to apply.
@@ -303,6 +305,7 @@ class FilesAPI:
             f"/workspaces/{ws}/projects/{proj}/files/{file_id}",
             json=patch_request.model_dump(),
         )
+        self._client._wait_if_job(response)
         return ObjectJobSchema(**response)
 
     def set_password(self, file_id: int, password: str) -> ObjectJobSchema:
