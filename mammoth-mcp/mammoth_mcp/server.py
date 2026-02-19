@@ -62,6 +62,7 @@ def _build_server() -> FastMCP:
         from mammoth_mcp.oauth_provider import MammothOAuthProvider, register_login_routes
         from mammoth_mcp.token_store import RedisTokenStore
         from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
+        from mcp.server.transport_security import TransportSecuritySettings
 
         # Single token store instance shared between OAuth provider and lifespan.
         # Created here (unconnected), connected in lifespan().
@@ -79,11 +80,20 @@ def _build_server() -> FastMCP:
             revocation_options=RevocationOptions(enabled=True),
         )
 
+        # Allow the public hostname through DNS rebinding protection
+        from urllib.parse import urlparse
+        public_host = urlparse(settings.server_url).hostname or "localhost"
+        transport_security = TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=[public_host, f"{public_host}:*"],
+        )
+
         server = FastMCP(
             "Mammoth Analytics",
             lifespan=lifespan,
             auth_server_provider=provider,
             auth=auth_settings,
+            transport_security=transport_security,
         )
 
         # Register custom login routes
