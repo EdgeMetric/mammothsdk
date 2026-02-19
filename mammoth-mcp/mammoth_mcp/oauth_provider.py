@@ -204,8 +204,9 @@ LOGIN_HTML = """\
 
 
 def _render_login(state: str, error: str = "") -> str:
-    error_html = f'<div class="error">{error}</div>' if error else ""
-    return LOGIN_HTML.replace("{state}", state).replace("{error}", error_html)
+    import html
+    error_html = f'<div class="error">{html.escape(error)}</div>' if error else ""
+    return LOGIN_HTML.replace("{state}", html.escape(state)).replace("{error}", error_html)
 
 
 async def validate_mammoth_credentials(

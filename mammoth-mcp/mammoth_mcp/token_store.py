@@ -80,7 +80,7 @@ class RedisTokenStore:
     # ── Access tokens ──────────────────────────────────────────
 
     async def store_token(self, token: str, data: dict) -> None:
-        await self._r.set(_TOKEN + token, json.dumps(data))  # No TTL — persists until revoked
+        await self._r.set(_TOKEN + token, json.dumps(data), ex=self._access_token_ttl)
 
     async def get_token(self, token: str) -> dict | None:
         raw = await self._r.get(_TOKEN + token)

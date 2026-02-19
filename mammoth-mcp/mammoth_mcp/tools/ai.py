@@ -2,20 +2,23 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from mcp.server.fastmcp import Context
 
-from mammoth.exceptions import MammothAPIError, MammothColumnError
-from mammoth_mcp.helpers import error_response, format_view_info, get_manager, log_tool_call, success_response
+from mammoth_mcp.helpers import (
+    format_view_info,
+    get_manager,
+    handle_errors,
+    log_tool_call,
+    success_response,
+)
 from mammoth_mcp.server import mcp
-
-logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def ai_transform(
     ctx: Context,
     view_id: int,
@@ -24,7 +27,7 @@ async def ai_transform(
     new_column: str = "AI Result",
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Use AI to generate a new column based on a natural language prompt and existing column data.
+    """Use AI to generate a new column based on a natural language prompt and existing column data. Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.
@@ -33,26 +36,19 @@ async def ai_transform(
         new_column: Name for the AI output column (default "AI Result").
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
-        view.gen_ai(
-            prompt=prompt,
-            context_columns=context_columns,
-            new_column=new_column,
-        )
-        return success_response(format_view_info(view), "AI transform applied")
-    except (MammothAPIError, MammothColumnError) as e:
-        return error_response(e)
-    except (ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in ai_transform")
-        return error_response(e)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
+    view.gen_ai(
+        prompt=prompt,
+        context_columns=context_columns,
+        new_column=new_column,
+    )
+    return success_response(format_view_info(view), "AI transform applied")
 
 
 @mcp.tool()
 @log_tool_call
+@handle_errors
 async def sql_query(
     ctx: Context,
     view_id: int,
@@ -60,7 +56,7 @@ async def sql_query(
     raw_sql: str | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Transform data using SQL — either natural language intent or raw SQL.
+    """Transform data using SQL — either natural language intent or raw SQL. Adds a reversible pipeline task (undo with delete_task).
 
     Provide either `intent` (natural language, auto-generates SQL) or `raw_sql` (direct SQL query).
 
@@ -70,25 +66,17 @@ async def sql_query(
         raw_sql: Raw SQL query string to apply directly.
         dataset_id: The dataset ID (auto-detected if not provided).
     """
-    try:
-        manager = await get_manager(ctx)
-        view = manager.get_view(view_id, dataset_id)
+    manager = await get_manager(ctx)
+    view = manager.get_view(view_id, dataset_id)
 
-        if intent:
-            generated_sql = view.generate_sql(intent)
-            return success_response(
-                {"generated_sql": generated_sql, "view": format_view_info(view)},
-                "SQL generated and applied",
-            )
-        elif raw_sql:
-            view.add_sql(raw_sql)
-            return success_response(format_view_info(view), "SQL query applied")
-        else:
-            return error_response(ValueError("Either intent or raw_sql must be provided"))
-    except (MammothAPIError, MammothColumnError) as e:
-        return error_response(e)
-    except (ValueError, KeyError, TypeError) as e:
-        return error_response(e)
-    except Exception as e:
-        logger.exception("Unexpected error in sql_query")
-        return error_response(e)
+    if intent:
+        generated_sql = view.generate_sql(intent)
+        return success_response(
+            {"generated_sql": generated_sql, "view": format_view_info(view)},
+            "SQL generated and applied",
+        )
+    elif raw_sql:
+        view.add_sql(raw_sql)
+        return success_response(format_view_info(view), "SQL query applied")
+    else:
+        raise ValueError("Either intent or raw_sql must be provided")

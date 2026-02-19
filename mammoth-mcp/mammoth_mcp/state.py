@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import time
+from collections import OrderedDict
 from typing import TYPE_CHECKING
 
 from mammoth import MammothClient, View
@@ -13,6 +15,27 @@ if TYPE_CHECKING:
     from mammoth_mcp.token_store import RedisTokenStore
 
 logger = logging.getLogger(__name__)
+
+# Cache limits
+_VIEW_CACHE_MAX = 50
+_VIEW_CACHE_TTL = 1800  # 30 minutes
+_MANAGER_CACHE_MAX = 100
+
+
+class _TTLEntry:
+    """A cache entry with a timestamp for TTL eviction."""
+
+    __slots__ = ("value", "accessed_at")
+
+    def __init__(self, value: View) -> None:
+        self.value = value
+        self.accessed_at = time.monotonic()
+
+    def touch(self) -> None:
+        self.accessed_at = time.monotonic()
+
+    def is_expired(self, ttl: float) -> bool:
+        return (time.monotonic() - self.accessed_at) > ttl
 
 
 class ClientManager:
@@ -30,7 +53,17 @@ class ClientManager:
         if config.project_id:
             self.client.set_project_id(config.project_id)
 
-        self._view_cache: dict[int, View] = {}
+        # LRU + TTL view cache (OrderedDict for LRU ordering)
+        self._view_cache: OrderedDict[int, _TTLEntry] = OrderedDict()
+
+    def _evict_expired_views(self) -> None:
+        """Remove entries older than TTL."""
+        expired = [
+            vid for vid, entry in self._view_cache.items()
+            if entry.is_expired(_VIEW_CACHE_TTL)
+        ]
+        for vid in expired:
+            del self._view_cache[vid]
 
     def _ensure_project_for_view(self, view_id: int) -> None:
         """Auto-discover and set the project containing a view ID.
@@ -93,18 +126,30 @@ class ClientManager:
         """Get a View, using cache if available, always refreshing metadata.
 
         Auto-discovers the project if needed (first call for a view).
+        Uses LRU eviction (max 50) and TTL (30 min).
         """
+        # Evict expired entries periodically
+        self._evict_expired_views()
+
         if view_id in self._view_cache:
-            view = self._view_cache[view_id]
-            view.refresh()
-            return view
+            entry = self._view_cache[view_id]
+            entry.touch()
+            # Move to end for LRU ordering
+            self._view_cache.move_to_end(view_id)
+            entry.value.refresh()
+            return entry.value
 
         # Auto-discover project (handles both "no project set" and
         # "wrong project set" by checking current project first)
         self._ensure_project_for_view(view_id)
 
         view = self.client.views.get(view_id, dataset_id)
-        self._view_cache[view_id] = view
+
+        # Evict oldest entry if at capacity
+        if len(self._view_cache) >= _VIEW_CACHE_MAX:
+            self._view_cache.popitem(last=False)
+
+        self._view_cache[view_id] = _TTLEntry(view)
         return view
 
     def invalidate_view(self, view_id: int) -> None:
@@ -119,15 +164,20 @@ class ClientManager:
 
 
 class UserClientRegistry:
-    """Per-user ClientManager instances, keyed by bearer token."""
+    """Per-user ClientManager instances, keyed by bearer token.
+
+    Uses LRU eviction to prevent unbounded growth.
+    """
 
     def __init__(self, token_store: RedisTokenStore, job_timeout: int = 120):
         self._token_store = token_store
         self._job_timeout = job_timeout
-        self._managers: dict[str, ClientManager] = {}
+        self._managers: OrderedDict[str, ClientManager] = OrderedDict()
 
     async def get_manager(self, bearer_token: str) -> ClientManager:
         if bearer_token in self._managers:
+            # Move to end for LRU
+            self._managers.move_to_end(bearer_token)
             return self._managers[bearer_token]
 
         token_data = await self._token_store.get_token(bearer_token)
@@ -143,6 +193,12 @@ class UserClientRegistry:
             job_timeout=self._job_timeout,
         )
         manager = ClientManager(config)
+
+        # Evict oldest manager if at capacity
+        if len(self._managers) >= _MANAGER_CACHE_MAX:
+            evicted_token, _ = self._managers.popitem(last=False)
+            logger.info("Evicted manager for token %s... (LRU)", evicted_token[:8])
+
         self._managers[bearer_token] = manager
         logger.info("Created ClientManager for token %s...", bearer_token[:8])
         return manager

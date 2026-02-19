@@ -154,7 +154,7 @@ The OAuth flow will prompt the user for their Mammoth API credentials (API key, 
 | `MAMMOTH_BASE_URL` | `https://app.mammoth.io/api/v2` | Default Mammoth API base URL |
 | `MAMMOTH_JOB_TIMEOUT` | `120` | Default job timeout (seconds) |
 
-## Available Tools (40)
+## Available Tools (45)
 
 ### Connection & Configuration
 
@@ -254,6 +254,12 @@ The OAuth flow will prompt the user for their Mammoth API credentials (API key, 
 |---|---|
 | `export_data` | Export view data to CSV, S3, email, or another dataset |
 | `export_to_database` | Export view data to an external database (Postgres, MySQL, BigQuery, Redshift, Elasticsearch) |
+
+### Help
+
+| Tool | Description |
+|---|---|
+| `get_help` | Get detailed guidance on a Mammoth topic (overview, transformations, conditions, data_cleaning) |
 
 ## Resources
 
