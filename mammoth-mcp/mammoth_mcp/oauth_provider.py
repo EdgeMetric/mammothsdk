@@ -210,9 +210,8 @@ async def validate_mammoth_credentials(
 ) -> bool:
     """Validate credentials by making a lightweight Mammoth API call."""
     headers = {
-        "Mammoth-App-Key": api_key,
-        "Mammoth-Secret-Key": api_secret,
-        "workspace": str(workspace_id),
+        "X-API-KEY": api_key,
+        "X-API-SECRET": api_secret,
     }
     try:
         async with httpx.AsyncClient(timeout=15) as client:
