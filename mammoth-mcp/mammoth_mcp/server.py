@@ -179,6 +179,7 @@ from mammoth_mcp.tools import (  # noqa: E402
     data,
     discovery,
     export,
+    help,
     pipeline,
     values,
     views,
