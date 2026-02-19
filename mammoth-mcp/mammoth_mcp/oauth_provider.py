@@ -89,8 +89,10 @@ class MammothOAuthProvider:
     async def exchange_authorization_code(
         self, client: OAuthClientInformationFull, authorization_code: AuthorizationCode
     ) -> OAuthToken:
+        logger.info("Token exchange for client %s, code=%s...", client.client_id, authorization_code.code[:8])
         code_data = await self._store.get_code(authorization_code.code)
         if code_data is None:
+            logger.error("Auth code not found in Redis (expired or already used)")
             raise TokenError(error="invalid_grant", error_description="Authorization code expired or invalid")
 
         await self._store.delete_code(authorization_code.code)
@@ -131,8 +133,10 @@ class MammothOAuthProvider:
     # ── Token verification & revocation ────────────────────────
 
     async def load_access_token(self, token: str) -> AccessToken | None:
+        logger.debug("load_access_token called, token=%s...", token[:8] if token else "NONE")
         data = await self._store.get_token(token)
         if data is None:
+            logger.warning("Access token not found in Redis: %s...", token[:8] if token else "NONE")
             return None
         if data.get("expires_at") and data["expires_at"] < time.time():
             await self._store.delete_token(token)
