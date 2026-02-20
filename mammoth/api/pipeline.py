@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING, Any
 
 from ..exceptions import MammothAPIError, MammothJobTimeoutError, MammothTransformError
 
+_list = list  # Alias to avoid shadowing by method name
+
 if TYPE_CHECKING:
     from ..client import MammothClient
 
@@ -234,9 +236,32 @@ class PipelineAPI:
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
         response = self._client._request_json(
-            "POST", f"{self._dv_url(ws, proj, ds, dv)}/draft-mode", json={"command": command}
+            "POST",
+            f"{self._dv_url(ws, proj, ds, dv)}/draft-mode",
+            json={"draft_operation": command},
         )
         return self._client._wait_if_job(response)
+
+    def edit_pipeline(
+        self,
+        dataview_id: int,
+        patches: _list[dict[str, Any]],
+        dataset_id: int | None = None,
+    ) -> dict[str, Any]:
+        """PATCH pipeline with operations (auto_run, run, reset, etc.).
+
+        Args:
+            dataview_id: ID of the dataview.
+            patches: List of patch operation dicts.
+            dataset_id: Dataset ID (auto-detected if not provided).
+
+        Returns:
+            Updated pipeline state dict.
+        """
+        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
+        return self._client._request_json(
+            "PATCH", self._base_url(ws, proj, ds, dv), json={"patches": patches}
+        )
 
     def wait_for_pipeline(
         self,

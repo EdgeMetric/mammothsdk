@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.2.4
+
+### Added
+
+- **Draft mode** — batch multiple transformations and run the pipeline once:
+    - `view.draft()` context manager (recommended): enters draft on entry, submits on clean exit, discards on exception
+    - `view.enter_draft_mode()`, `view.submit_draft()`, `view.discard_draft()` for explicit control
+    - `view.set_auto_run(enabled)` to toggle auto-run
+    - `view.is_draft_mode` property to check current state
+- **`DraftCommand` enum** — `ENTER`, `SUBMIT`, `DISCARD`, `EXIT` values for draft mode operations
+
+### Fixed
+
+- **`draft_mode()` API payload** — both `PipelineAPI.draft_mode()` and `DataviewsAPI.draft_mode()` now send `{"draft_operation": command}` instead of the incorrect `{"command": command}`
+
+---
+
 ## v0.2.3
 
 ### Fixed

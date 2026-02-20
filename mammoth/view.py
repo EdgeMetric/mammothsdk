@@ -70,6 +70,31 @@ _EXPORT_CONTROL_KEYS = frozenset(
 )
 
 
+class _DraftContext:
+    """Context manager for View.draft().
+
+    Enters draft mode on entry, submits on clean exit, discards on exception.
+    """
+
+    def __init__(self, view: View) -> None:
+        self._view = view
+
+    def __enter__(self) -> View:
+        self._view.enter_draft_mode()
+        return self._view
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any,
+    ) -> None:
+        if exc_type is not None:
+            self._view.discard_draft()
+        else:
+            self._view.submit_draft()
+
+
 class View(
     ColumnOpsMixin,
     FilterOpsMixin,
@@ -115,6 +140,9 @@ class View(
         self._internal_names: list[str] = []
 
         self._build_column_maps(dataview_data)
+
+        # Draft mode tracking
+        self._draft_mode: bool = False
 
         # Attach export helper
         self.export = ViewExport(self)
@@ -218,6 +246,9 @@ class View(
     def _add_task(self, task_spec: dict[str, Any]) -> dict[str, Any]:
         """Add a task to the pipeline, wait for completion, and refresh metadata.
 
+        In draft mode, skips waiting and metadata refresh — tasks are queued
+        and executed when ``submit_draft()`` is called.
+
         Args:
             task_spec: Task specification dict.
 
@@ -225,8 +256,9 @@ class View(
             API response dict.
         """
         result = self._client.pipeline.add_task(self.id, task_spec, self.dataset_id)
-        self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
-        self.refresh()
+        if not self._draft_mode:
+            self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+            self.refresh()
         return result
 
     # ── Data Access ─────────────────────────────────────────────
@@ -336,6 +368,94 @@ class View(
             Preview data dict.
         """
         return self._client.pipeline.preview_task(self.id, task_spec, self.dataset_id)
+
+    # ── Draft Mode ───────────────────────────────────────────────
+
+    @property
+    def is_draft_mode(self) -> bool:
+        """Whether this view is currently in draft mode."""
+        return self._draft_mode
+
+    def enter_draft_mode(self) -> dict[str, Any]:
+        """Enter draft mode — tasks are queued without pipeline execution.
+
+        Returns:
+            Draft mode state dict from the API.
+        """
+        from mammoth.models.pipeline import DraftCommand
+
+        result = self._client.pipeline.draft_mode(self.id, DraftCommand.ENTER, self.dataset_id)
+        self._draft_mode = True
+        return result
+
+    def submit_draft(self) -> dict[str, Any]:
+        """Submit queued draft tasks, run the pipeline, and exit draft mode.
+
+        Executes all queued tasks, refreshes column metadata, then
+        exits draft mode.
+
+        Returns:
+            Pipeline state dict after execution.
+        """
+        from mammoth.models.pipeline import DraftCommand
+
+        self._client.pipeline.draft_mode(self.id, DraftCommand.SUBMIT, self.dataset_id)
+        pipeline = self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+        self.refresh()
+        self._client.pipeline.draft_mode(self.id, DraftCommand.EXIT, self.dataset_id)
+        self._draft_mode = False
+        return pipeline
+
+    def discard_draft(self) -> dict[str, Any]:
+        """Discard queued draft tasks and exit draft mode.
+
+        Reverts all tasks added since ``enter_draft_mode()``, refreshes
+        metadata to the pre-draft state.
+
+        Returns:
+            Draft mode state dict from the discard call.
+        """
+        from mammoth.models.pipeline import DraftCommand
+
+        result = self._client.pipeline.draft_mode(self.id, DraftCommand.DISCARD, self.dataset_id)
+        self._client.pipeline.draft_mode(self.id, DraftCommand.EXIT, self.dataset_id)
+        self.refresh()
+        self._draft_mode = False
+        return result
+
+    def set_auto_run(self, enabled: bool) -> dict[str, Any]:
+        """Toggle auto-run on the pipeline.
+
+        When auto-run is enabled (default), each transformation triggers
+        immediate pipeline execution. When disabled, the view enters draft
+        mode and tasks are queued.
+
+        Args:
+            enabled: ``True`` to enable auto-run, ``False`` to disable.
+
+        Returns:
+            Updated pipeline state dict.
+        """
+        result = self._client.pipeline.edit_pipeline(
+            self.id,
+            [{"op": "command", "path": "auto_run", "value": enabled}],
+            self.dataset_id,
+        )
+        self._draft_mode = not enabled
+        return result
+
+    def draft(self) -> _DraftContext:
+        """Context manager for draft mode.
+
+        Enters draft mode on ``__enter__``, submits on clean exit,
+        discards on exception::
+
+            with view.draft():
+                view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+                view.math("Price * 2", new_column="Double")
+            # Pipeline runs once for both tasks
+        """
+        return _DraftContext(self)
 
     def get_column_mapping(self) -> dict[str, str]:
         """Return a mapping of display names to internal column names.

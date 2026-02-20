@@ -67,6 +67,7 @@ from mammoth.models.pipeline import (
     CrosstabSpec,
     DateComponent,
     DateDiffUnit,
+    DraftCommand,
     FillDirection,
     FilterType,
     JoinKeySpec,
@@ -120,6 +121,7 @@ __all__ = [
     "MathOperator",
     "ProviderType",
     "TaskType",
+    "DraftCommand",
     "ValueType",
     # Parameter spec dataclasses
     "SetValue",

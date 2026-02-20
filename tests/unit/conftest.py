@@ -82,6 +82,9 @@ def mock_client() -> MammothClient:
     client.pipeline = MagicMock()
     client.pipeline.add_task = MagicMock(return_value={"id": 999})
     client.pipeline.get_pipeline = MagicMock(return_value={"tasks": []})
+    client.pipeline.draft_mode = MagicMock(return_value={"state": "ok"})
+    client.pipeline.edit_pipeline = MagicMock(return_value={"state": "ready"})
+    client.pipeline.wait_for_pipeline = MagicMock(return_value={"state": "ready"})
     return client
 
 

@@ -306,6 +306,36 @@ preview = view.preview_task({"DELETE": [view.columns["Notes"]]})
 
 ---
 
+## Draft Mode (Batch Transformations)
+
+```python
+# Context manager — pipeline runs once on clean exit, discards on exception
+with view.draft():
+    view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+    view.math("Price * 2", new_column="Double")
+    view.add_column("Notes")
+# Pipeline runs once for all 3 tasks
+
+# Explicit approach
+view.enter_draft_mode()
+view.add_column("Status")
+view.set_values(
+    new_column="Flag", column_type=ColumnType.TEXT,
+    values=[SetValue("x")],
+)
+view.submit_draft()  # runs pipeline, refreshes metadata, exits draft
+
+# Discard queued tasks
+view.enter_draft_mode()
+view.add_column("Temp")
+view.discard_draft()  # reverts, "Temp" is not added
+
+# Check mode
+print(view.is_draft_mode)  # False
+```
+
+---
+
 ## Inspecting a View
 
 ```python

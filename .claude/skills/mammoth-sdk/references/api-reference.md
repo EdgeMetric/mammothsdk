@@ -133,8 +133,8 @@ dv = client.dataviews.create(dataset_id=123, name="New View")
 # Delete
 client.dataviews.delete(dataset_id=123, dataview_id=456)
 
-# Draft mode
-client.dataviews.draft_mode(dataset_id=123, dataview_id=456, command="enable")
+# Draft mode (low-level — prefer view.draft() context manager)
+client.dataviews.draft_mode(dataset_id=123, dataview_id=456, command="enter")
 ```
 
 ---
@@ -160,6 +160,9 @@ client.pipeline.delete_task(dataview_id=456, task_id=789, dataset_id=123)
 
 # Preview a task without applying
 preview = client.pipeline.preview_task(dataview_id=456, task_spec={...}, dataset_id=123)
+
+# Draft mode (low-level — prefer view.draft() context manager)
+client.pipeline.draft_mode(dataview_id=456, command=DraftCommand.ENTER, dataset_id=123)
 ```
 
 ---

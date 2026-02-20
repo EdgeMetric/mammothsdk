@@ -3,8 +3,8 @@
 All transformation methods are on the `View` class. Each method:
 1. Accepts display names (e.g. "Sales"), not internal names
 2. Sends a pipeline task to the API
-3. Waits for the async job to complete
-4. Refreshes view metadata
+3. Blocks until the operation completes (unless in draft mode)
+4. Refreshes view metadata (unless in draft mode)
 5. Returns the API response dict
 
 ---

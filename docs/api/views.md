@@ -149,16 +149,91 @@ mapping = view.get_column_mapping()
 # {"Sales": "column_1", "Region": "column_2", ...}
 ```
 
+## Draft mode
+
+By default, each transformation triggers an immediate pipeline run (auto-run mode). For large datasets or multi-step workflows, use **draft mode** to queue tasks and run the pipeline once.
+
+### draft() (context manager)
+
+The recommended approach. Enters draft mode on entry, submits and runs on clean exit, discards on exception:
+
+```python
+with view.draft():
+    view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+    view.math("Price * 2", new_column="Double")
+    view.add_column("Notes")
+# Pipeline runs once for all 3 tasks, metadata refreshed
+```
+
+If an exception occurs inside the block, all queued tasks are discarded:
+
+```python
+try:
+    with view.draft():
+        view.add_column("Temp")
+        raise ValueError("something went wrong")
+except ValueError:
+    pass  # "Temp" column was NOT added — draft was discarded
+```
+
+### enter_draft_mode()
+
+Enter draft mode explicitly. All subsequent `_add_task()` calls skip pipeline execution.
+
+```python
+view.enter_draft_mode() -> dict[str, Any]
+```
+
+### submit_draft()
+
+Submit queued tasks, run the pipeline, refresh metadata, and exit draft mode.
+
+```python
+view.submit_draft() -> dict[str, Any]
+```
+
+### discard_draft()
+
+Discard all queued tasks, exit draft mode, and refresh metadata to the pre-draft state.
+
+```python
+view.discard_draft() -> dict[str, Any]
+```
+
+### set_auto_run()
+
+Toggle auto-run on the pipeline. When disabled (``False``), the view enters draft mode and tasks are queued. When re-enabled (``True``), the view returns to auto-run mode.
+
+```python
+view.set_auto_run(enabled: bool) -> dict[str, Any]
+
+view.set_auto_run(False)   # enter draft mode
+view.set_auto_run(True)    # back to auto-run
+```
+
+### is_draft_mode (property)
+
+Check whether the view is currently in draft mode.
+
+```python
+if view.is_draft_mode:
+    print("Tasks are being queued")
+```
+
+### Explicit draft workflow
+
+```python
+view.enter_draft_mode()
+view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+view.math("Price * 2", new_column="Double")
+view.submit_draft()  # pipeline runs once, metadata refreshed
+```
+
 ---
 
 ## Transformation methods
 
-All transformation methods:
-
-1. Send a task to the Mammoth pipeline API
-2. Wait for the job to complete
-3. Refresh the view metadata
-4. Return the API response dict
+All transformation methods are synchronous — they block until the operation completes and the view metadata is refreshed (unless in draft mode, where tasks are queued). Each method returns the API response dict.
 
 ### filter_rows
 

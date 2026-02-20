@@ -305,6 +305,25 @@ class TaskType(str, Enum):
     DISCARD_DUPLICATES = "DISCARD_DUPLICATES"
 
 
+class DraftCommand(str, Enum):
+    """Draft mode commands for pipeline task batching.
+
+    Use via ``view.draft()`` context manager or explicit methods::
+
+        with view.draft():  # preferred
+            view.filter_rows(...)
+
+        view.enter_draft_mode()   # uses DraftCommand.ENTER
+        view.submit_draft()       # uses SUBMIT then EXIT
+        view.discard_draft()      # uses DISCARD then EXIT
+    """
+
+    ENTER = "enter"
+    SUBMIT = "submit"
+    DISCARD = "discard"
+    EXIT = "exit"
+
+
 @dataclass
 class SetValue:
     """A value specification for set_values().

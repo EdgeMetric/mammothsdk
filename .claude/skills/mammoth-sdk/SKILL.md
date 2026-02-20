@@ -89,6 +89,7 @@ Rich domain object for a dataview. Created via `client.views.get(id)` or `client
 **Metadata**: `view.columns`, `view.display_names`, `view.column_types`, `view.name`, `view.id`
 **Data access**: `view.data(limit=100)`
 **Pipeline management**: `view.list_tasks()`, `view.delete_task(id)`, `view.preview_task(spec)`
+**Draft mode**: `view.draft()` (context manager), `view.enter_draft_mode()`, `view.submit_draft()`, `view.discard_draft()`, `view.set_auto_run(bool)`
 **Exports**: `view.export.to_csv()`, `view.export.to_postgres()`, etc.
 
 ### Condition Builder
@@ -242,10 +243,16 @@ client = MammothClient(
 4. **Apply transformations**: Chain methods — each waits for completion before returning
 5. **Export results**: `view.export.to_csv()`, `view.export.to_postgres()`, etc.
 
+For large datasets with many transformations, use draft mode to batch tasks:
+1. Enter draft mode: `with view.draft():` (or `view.enter_draft_mode()`)
+2. Add all transformations — they queue without running the pipeline
+3. On exit the pipeline runs once, metadata refreshes, and draft mode exits
+
 ## Important Notes
 
 - **Column resolution**: All transformation methods accept display names (e.g. "Sales"), not internal names (e.g. "column_1"). The SDK resolves them automatically.
-- **Async pipeline**: Each transformation is an async pipeline task. The SDK waits for job completion and refreshes metadata after each task.
+- **Async pipeline**: Each transformation is an async pipeline task. The SDK waits for job completion and refreshes metadata after each task (unless in draft mode).
+- **Draft mode**: Use `with view.draft():` to batch multiple transformations — the pipeline runs once on exit instead of after each task. See [references/examples.md](references/examples.md) for usage.
 - **Chaining**: Transformations can be chained — the SDK handles sequencing automatically.
 - **Immutable views**: Use `client.views.create(dataset_id)` to create a working copy before applying transformations.
 - **Date columns**: CSV-uploaded date columns are TEXT type. Convert with `view.convert_type([{"column": "date_col", "to": "DATE"}])` before date operations.

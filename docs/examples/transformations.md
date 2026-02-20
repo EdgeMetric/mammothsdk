@@ -423,6 +423,58 @@ view.add_sql("SELECT region, SUM(sales) as total FROM data GROUP BY region")
 
 ---
 
+## Draft mode (batch transformations)
+
+By default each transformation runs the pipeline immediately. Use draft mode to queue multiple tasks and run the pipeline once -- much faster for large datasets.
+
+### Context manager (recommended)
+
+```python
+with view.draft():
+    view.text_transform(columns=["Name", "Email"], trim=True)
+    view.convert_type([
+        {"column": "Sales", "to": "NUMERIC"},
+        {"column": "Order Date", "to": "DATE"},
+    ])
+    view.filter_rows(Condition("Sales", Operator.IS_NOT_EMPTY))
+    view.math("Price * Quantity", new_column="Revenue")
+# Pipeline runs once for all 4 tasks
+```
+
+### Explicit enter/submit
+
+```python
+view.enter_draft_mode()
+view.add_column("Notes")
+view.set_values(
+    new_column="Flag",
+    column_type=ColumnType.TEXT,
+    values=[SetValue("Yes", condition=Condition("Sales", Operator.GTE, 10000)), SetValue("No")],
+)
+view.submit_draft()  # runs pipeline, refreshes metadata
+```
+
+### Discard on error
+
+If an exception occurs inside `with view.draft():`, queued tasks are automatically discarded. You can also discard explicitly:
+
+```python
+view.enter_draft_mode()
+view.add_column("Temp")
+view.discard_draft()  # reverts, "Temp" is not added
+```
+
+### Toggle auto-run
+
+```python
+view.set_auto_run(False)   # enters draft mode, tasks queue without running
+view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+view.math("Sales * 1.1", new_column="Adjusted")
+view.set_auto_run(True)    # re-enables auto-run
+```
+
+---
+
 ## End-to-end workflow
 
 A complete example: load data, clean it, transform it, and export.

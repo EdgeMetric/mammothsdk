@@ -460,5 +460,5 @@ class DataviewsAPI:
         return self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/draft-mode",
-            json={"command": command},
+            json={"draft_operation": command},
         )

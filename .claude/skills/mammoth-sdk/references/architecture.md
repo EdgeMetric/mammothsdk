@@ -98,10 +98,27 @@ view.method()
   → Build task payload dict
   → self._add_task(payload)
     → client.pipeline.add_task(dataset_id, view_id, params)
-    → Wait for job completion (client.jobs.wait_for_job())
-    → Refresh view metadata (self.refresh())
+    → If NOT draft mode:
+        → Wait for pipeline completion (client.pipeline.wait_for_pipeline())
+        → Refresh view metadata (self.refresh())
+    → If draft mode: return immediately (task is queued)
   → Return API response
 ```
+
+### Draft Mode
+
+Views support draft mode where tasks are queued without executing the pipeline:
+
+```python
+with view.draft():
+    view.filter_rows(...)   # queued, no pipeline run
+    view.math(...)          # queued, no pipeline run
+# Pipeline runs once here for all queued tasks
+```
+
+The `_DraftContext` class (context manager) calls `enter_draft_mode()` on entry,
+`submit_draft()` on clean exit, or `discard_draft()` on exception. The `_draft_mode`
+flag on View controls whether `_add_task()` skips waiting and metadata refresh.
 
 ### Column Resolution
 
