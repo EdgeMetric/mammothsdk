@@ -10,11 +10,13 @@ Returns rich **View** objects (not raw dicts).
 
 ```python
 view = client.views.get(view_id)                           # View object
-view = client.views.get(view_id, dataset_id=123)           # with explicit dataset
-views = client.views.list(dataset_id)                       # list of View objects
+views = client.views.list()                                 # list of View objects
 view = client.views.create(dataset_id, name="My View")      # new View
-client.views.delete(view_id, dataset_id)                    # delete
+client.views.delete(view_id)                                # delete
+client.views.bulk_delete([view_id1, view_id2])              # bulk delete
 ```
+
+Note: `views.get()`, `views.list()`, `views.delete()`, `views.bulk_delete()` no longer accept `dataset_id` — it's auto-detected. Only `views.create()` still requires it.
 
 ### View metadata attributes
 
@@ -306,8 +308,9 @@ app = client.client_apps.create(config={...})
 ```python
 # Quick access to View object
 view = client.get_view(view_id=1039)
-view = client.get_view(view_id=1039, dataset_id=123)
 
 # Branch out (export view to another dataset)
 client.branch_out(view_id=1039, dest_dataset_id=42)
 ```
+
+Note: `get_view()` and `branch_out()` no longer accept `dataset_id` — it's auto-detected from the view.

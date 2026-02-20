@@ -33,9 +33,11 @@ view.delete_columns(["Notes", "Temp Column"])
 Duplicate columns.
 
 ```python
+from mammoth import CopySpec, ColumnType
+
 view.copy_columns([
-    {"source": "Sales", "as": "Sales Backup", "type": "NUMERIC"},
-    {"source": "Name", "as": "Name Copy", "type": "TEXT"},
+    CopySpec(source="Sales", as_name="Sales Backup", type=ColumnType.NUMERIC),
+    CopySpec(source="Name", as_name="Name Copy"),
 ])
 ```
 
@@ -44,9 +46,11 @@ view.copy_columns([
 Change column data types. Required before date operations on CSV-uploaded text columns.
 
 ```python
+from mammoth import ConversionSpec, ColumnType
+
 view.convert_type([
-    {"column": "joining_date", "to": "DATE"},
-    {"column": "price", "to": "NUMERIC"},
+    ConversionSpec(column="joining_date", to=ColumnType.DATE),
+    ConversionSpec(column="price", to=ColumnType.NUMERIC),
 ])
 ```
 
@@ -75,7 +79,8 @@ view.filter_rows(
 )
 
 # Remove matching rows instead of keeping them
-view.filter_rows(Condition("Status", Operator.EQ, "Deleted"), filter_type="REMOVE")
+from mammoth import FilterType
+view.filter_rows(Condition("Status", Operator.EQ, "Deleted"), filter_type=FilterType.REMOVE)
 ```
 
 **Payload**: `{"SELECT": "ALL", "CONDITION": {..., "FILTER_TYPE": "SHOW", "PROMPT": ""}}`
@@ -89,21 +94,23 @@ view.filter_rows(Condition("Status", Operator.EQ, "Deleted"), filter_type="REMOV
 Insert values into a new or existing column, optionally with conditions.
 
 ```python
+from mammoth import SetValue, Condition, Operator, ColumnType
+
 # New column with conditional values (evaluated top-to-bottom, first match wins)
 view.set_values(
     new_column="Risk Level",
-    column_type="TEXT",
+    column_type=ColumnType.TEXT,
     values=[
-        {"value": "High", "condition": Condition("Sales", Operator.GTE, 10000)},
-        {"value": "Medium", "condition": Condition("Sales", Operator.GTE, 5000)},
-        {"value": "Low"},  # default (no condition)
+        SetValue("High", condition=Condition("Sales", Operator.GTE, 10000)),
+        SetValue("Medium", condition=Condition("Sales", Operator.GTE, 5000)),
+        SetValue("Low"),  # default (no condition)
     ],
 )
 
 # Update existing column with a fixed value
 view.set_values(
     existing_column="Status",
-    values=[{"value": "Active"}],
+    values=[SetValue("Active")],
 )
 ```
 
@@ -118,28 +125,17 @@ view.set_values(
 Arithmetic operations between columns and constants.
 
 ```python
-view.math(
-    expression=[
-        {"TYPE": "COLUMN", "VALUE": "Price"},
-        {"TYPE": "OPERATOR", "VALUE": "*"},
-        {"TYPE": "COLUMN", "VALUE": "Quantity"},
-    ],
-    new_column="Total",
-)
+# String expression — column names resolved automatically
+view.math("Price * Quantity", new_column="Total")
 
 # With a constant multiplier
-view.math(
-    expression=[
-        {"TYPE": "COLUMN", "VALUE": "base_salary"},
-        {"TYPE": "OPERATOR", "VALUE": "*"},
-        {"TYPE": "NUMBER", "VALUE": 1.1},
-    ],
-    new_column="salary_with_raise",
-)
+view.math("base_salary * 1.1", new_column="salary_with_raise")
+
+# Complex expression
+view.math("(Revenue - Cost) / Revenue * 100", new_column="Margin %")
 ```
 
-Expression part types: `COLUMN`, `NUMBER`, `OPERATOR`
-Operators: `+`, `-`, `*`, `/`
+String expression parser: column names are auto-resolved, supports `+`, `-`, `*`, `/`, `%`, and parentheses.
 
 ---
 
@@ -184,11 +180,13 @@ view.replace_values(
 Bulk find-and-replace mapping multiple search values to one replacement.
 
 ```python
+from mammoth import BulkReplaceMapping
+
 view.bulk_replace(
     columns=["Item"],
     mapping=[
-        {"search": ["6 inch CAKE", "8 inch CAKE"], "replace": "CAKE"},
-        {"search": ["small PIE", "large PIE"], "replace": "PIE"},
+        BulkReplaceMapping(search=["6 inch CAKE", "8 inch CAKE"], replace="CAKE"),
+        BulkReplaceMapping(search=["small PIE", "large PIE"], replace="PIE"),
     ],
 )
 ```
@@ -210,12 +208,14 @@ Case values: `"UPPER"`, `"LOWER"`, `"TITLE"`
 Split a column by delimiter into multiple new columns.
 
 ```python
+from mammoth import SplitColumnSpec
+
 view.split_column(
     column="Full Name",
     delimiter=" ",
     new_columns=[
-        {"name": "First Name", "type": "TEXT"},
-        {"name": "Last Name", "type": "TEXT"},
+        SplitColumnSpec(name="First Name"),
+        SplitColumnSpec(name="Last Name"),
     ],
 )
 ```
@@ -252,7 +252,8 @@ view.substring(
 
 **Important**: CSV-uploaded date columns are TEXT. Convert first:
 ```python
-view.convert_type([{"column": "date_col", "to": "DATE"}])
+from mammoth import ConversionSpec, ColumnType
+view.convert_type([ConversionSpec(column="date_col", to=ColumnType.DATE)])
 ```
 
 ### extract_date(column, component, new_column=None, existing_column=None)
@@ -283,20 +284,22 @@ Components (uppercase): `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND`
 Add or subtract from a date.
 
 ```python
+from mammoth import DateDelta
+
 view.increment_date(
     column="Order Date",
-    delta={"DAY": 30},
+    delta=DateDelta(days=30),
     new_column="Due Date",
 )
 
 view.increment_date(
     column="Start Date",
-    delta={"MONTH": -1, "DAY": 15},
+    delta=DateDelta(months=-1, days=15),
     new_column="Adjusted Date",
 )
 ```
 
-Delta keys: `DAY`, `MONTH`, `YEAR`, `HOUR`, `MINUTE`, `SECOND`
+Delta fields: `days`, `months`, `years`, `hours`, `minutes`, `seconds` (use negative values to subtract)
 
 ---
 
@@ -341,19 +344,21 @@ view.discard_duplicates(ignore_columns=["Timestamp", "Notes"])
 Group by columns and apply aggregation functions.
 
 ```python
+from mammoth import AggregationSpec, AggregateFunction
+
 view.pivot(
     group_by=["department"],
     aggregations=[
-        {"column": "base_salary", "function": "AVG", "as": "avg_salary"},
-        {"column": "base_salary", "function": "COUNT", "as": "headcount"},
+        AggregationSpec(column="base_salary", function=AggregateFunction.AVG, as_name="avg_salary"),
+        AggregationSpec(column="base_salary", function=AggregateFunction.COUNT, as_name="headcount"),
     ],
 )
 
 view.pivot(
     group_by=["Region", "Category"],
     aggregations=[
-        {"column": "Sales", "function": "SUM", "as": "Total Sales"},
-        {"column": "Profit", "function": "AVG", "as": "Avg Profit"},
+        AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total Sales"),
+        AggregationSpec(column="Profit", function=AggregateFunction.AVG, as_name="Avg Profit"),
     ],
 )
 ```
@@ -367,10 +372,12 @@ Aggregate functions: `SUM`, `AVG`, `MIN`, `MAX`, `COUNT`, `COUNT_DISTINCT`, `STD
 Pivot table: row values become columns.
 
 ```python
+from mammoth import CrosstabSpec, AggregateFunction
+
 view.crosstab(
     rows=["Region"],
     pivot_column="Quarter",
-    select={"column": "Sales", "function": "SUM"},
+    select=CrosstabSpec(function=AggregateFunction.SUM, column="Sales"),
 )
 ```
 
@@ -417,26 +424,37 @@ Window functions: `ROW_NUMBER`, `RANK`, `DENSE_RANK`, `LAG`, `LEAD`, `SUM`, `AVG
 
 ## Join
 
-### join(foreign_view_id, join_type, on, select, column_prefix=None)
+### join(foreign_view, join_type, on, select, column_prefix=None)
 
 Join with another dataview.
 
 ```python
+from mammoth import JoinType, JoinKeySpec, JoinSelectSpec
+
+# Join with View object (recommended — auto-resolves display names)
+other = client.views.get(2050)
+view.join(
+    foreign_view=other,
+    join_type=JoinType.LEFT,
+    on=[JoinKeySpec(left="Customer ID", right="Customer ID")],
+    select=["Category", "Segment"],
+)
+
+# Join with view ID and internal column names
 view.join(
     foreign_view_id=2050,
-    join_type="LEFT",
-    on=[{"left": "Customer ID", "right": "column_1"}],
+    join_type=JoinType.LEFT,
+    on=[JoinKeySpec(left="Customer ID", right="column_1")],
     select=[
-        {"column": "column_7", "alias": "Category"},
-        {"column": "column_8", "alias": "Segment"},
+        JoinSelectSpec(column="column_7", alias="Category"),
+        JoinSelectSpec(column="column_8", alias="Segment"),
     ],
 )
 ```
 
-- `on.left`: Display name in this view (resolved to internal)
-- `on.right`: Internal column name in the foreign view
-- `select.column`: Internal column name in the foreign view
-- `select.alias`: Display name for the joined column
+- `on`: list of `JoinKeySpec` -- when using `foreign_view` (View object), both sides accept display names; when using `foreign_view_id` (int), `right` must be internal names
+- `select`: list of display names (str) when using `foreign_view`, or `JoinSelectSpec` for aliasing with internal names when using `foreign_view_id`
+- `foreign_view`: View object (display names auto-resolved) or `foreign_view_id` (int, requires internal names)
 
 Join types: `"INNER"`, `"LEFT"`, `"RIGHT"`, `"OUTER"`
 
@@ -513,25 +531,27 @@ view.unnest(
 
 ## JSON
 
-### json_extract(column, json_type="object", extractions=None, keep_source=False, op_type=None)
+### json_extract(column, json_type, extractions=None, keep_source=False, op_type=None)
 
 Extract data from JSON columns.
 
 ```python
+from mammoth import JsonExtractionSpec, JsonType, JsonOpType, ColumnType
+
 # Object: extract specific keys
 view.json_extract(
     column="metadata",
-    json_type="object",
+    json_type=JsonType.OBJECT,
     extractions=[
-        {"key": "name", "as": "Name", "type": "TEXT"},
-        {"key": "age", "as": "Age", "type": "NUMERIC"},
+        JsonExtractionSpec(key="name", as_name="Name"),
+        JsonExtractionSpec(key="age", as_name="Age", type=ColumnType.NUMERIC),
     ],
 )
 
 # List: expand to rows
 view.json_extract(
     column="tags",
-    json_type="list",
+    json_type=JsonType.LIST,
 )
 ```
 
@@ -571,10 +591,12 @@ Most methods accept both `new_column` and `existing_column`:
 Many methods accept an optional `condition` parameter that limits which rows are affected:
 - `set_values`, `math`, `combine_columns`, `replace_values`, `text_transform`, `substring`, `increment_date`, `bulk_replace`
 
-### Expression Parts for Math
+### Math String Expressions
 
 ```python
-{"TYPE": "COLUMN", "VALUE": "display_name"}   # column reference
-{"TYPE": "NUMBER", "VALUE": 42}               # numeric constant
-{"TYPE": "OPERATOR", "VALUE": "+"}            # operator: +, -, *, /
+view.math("Price * Quantity", new_column="Total")
+view.math("(Revenue - Cost) / Revenue * 100", new_column="Margin")
 ```
+
+Column names are auto-resolved. Supports: `+`, `-`, `*`, `/`, `%`, and parentheses.
+

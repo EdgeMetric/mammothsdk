@@ -17,21 +17,14 @@ client.set_project_id(10)
 ds_id = client.files.upload("sales_data.csv")
 
 # 3. Get the default view
-views = client.views.list(ds_id)
+views = client.views.list()
 view = views[0]
 print(view.display_names)  # ["Product", "Region", "Sales", "Date", ...]
 
 # 4. Apply transformations
 view.filter_rows(Condition("Sales", Operator.GTE, 100))
 view.text_transform(columns=["Region"], case="UPPER")
-view.math(
-    expression=[
-        {"TYPE": "COLUMN", "VALUE": "Sales"},
-        {"TYPE": "OPERATOR", "VALUE": "*"},
-        {"TYPE": "NUMBER", "VALUE": 0.1},
-    ],
-    new_column="Tax",
-)
+view.math("Sales * 0.1", new_column="Tax")
 
 # 5. Export
 view.export.to_csv("filtered_sales.csv")
@@ -63,13 +56,15 @@ view.filter_rows(
 complex = (high_sales & west_region) | empty_email
 
 # Use in set_values for conditional labeling
+from mammoth import SetValue, ColumnType
+
 view.set_values(
     new_column="Priority",
-    column_type="TEXT",
+    column_type=ColumnType.TEXT,
     values=[
-        {"value": "Urgent", "condition": high_sales & west_region},
-        {"value": "Review", "condition": high_sales},
-        {"value": "Normal"},  # default — no condition
+        SetValue("Urgent", condition=high_sales & west_region),
+        SetValue("Review", condition=high_sales),
+        SetValue("Normal"),  # default — no condition
     ],
 )
 ```
@@ -83,29 +78,25 @@ view.set_values(
 view = client.views.create(dataset_id=ds_id, name="analysis")
 
 # Convert date columns (required for CSV uploads)
-view.convert_type([{"column": "order_date", "to": "DATE"}])
+from mammoth import ConversionSpec, ColumnType
+view.convert_type([ConversionSpec(column="order_date", to=ColumnType.DATE)])
 
 # Extract date components
 view.extract_date("order_date", component="year", new_column="Year")
 view.extract_date("order_date", component="month", new_column="Month")
 
 # Calculate derived columns
-view.math(
-    expression=[
-        {"TYPE": "COLUMN", "VALUE": "Revenue"},
-        {"TYPE": "OPERATOR", "VALUE": "-"},
-        {"TYPE": "COLUMN", "VALUE": "Cost"},
-    ],
-    new_column="Profit",
-)
+view.math("Revenue - Cost", new_column="Profit")
 
 # Group and aggregate
+from mammoth import AggregationSpec, AggregateFunction
+
 view.pivot(
     group_by=["Year", "Region"],
     aggregations=[
-        {"column": "Revenue", "function": "SUM", "as": "Total Revenue"},
-        {"column": "Profit", "function": "AVG", "as": "Avg Profit"},
-        {"column": "Order ID", "function": "COUNT", "as": "Order Count"},
+        AggregationSpec(column="Revenue", function=AggregateFunction.SUM, as_name="Total Revenue"),
+        AggregationSpec(column="Profit", function=AggregateFunction.AVG, as_name="Avg Profit"),
+        AggregationSpec(column="Order ID", function=AggregateFunction.COUNT, as_name="Order Count"),
     ],
 )
 ```
@@ -138,23 +129,18 @@ view.window(
 ## Join Two Views
 
 ```python
+from mammoth import JoinType, JoinKeySpec
+
 # Get both views
 orders = client.views.get(view_id=1001)
 customers = client.views.get(view_id=1002)
 
-# Check foreign view's internal column names
-customer_cols = customers.get_column_mapping()
-# {"Customer ID": "column_abc", "Name": "column_def", "Segment": "column_ghi"}
-
-# Join
+# Join — View object auto-resolves display names
 orders.join(
-    foreign_view_id=customers.id,
-    join_type="LEFT",
-    on=[{"left": "Customer ID", "right": customer_cols["Customer ID"]}],
-    select=[
-        {"column": customer_cols["Name"], "alias": "Customer Name"},
-        {"column": customer_cols["Segment"], "alias": "Customer Segment"},
-    ],
+    foreign_view=customers,
+    join_type=JoinType.LEFT,
+    on=[JoinKeySpec(left="Customer ID", right="Customer ID")],
+    select=["Name", "Segment"],
 )
 ```
 
@@ -164,12 +150,14 @@ orders.join(
 
 ```python
 # Split full name
+from mammoth import SplitColumnSpec
+
 view.split_column(
     column="Full Name",
     delimiter=" ",
     new_columns=[
-        {"name": "First Name", "type": "TEXT"},
-        {"name": "Last Name", "type": "TEXT"},
+        SplitColumnSpec(name="First Name"),
+        SplitColumnSpec(name="Last Name"),
     ],
 )
 
@@ -188,11 +176,13 @@ view.replace_values(
 )
 
 # Bulk replace
+from mammoth import BulkReplaceMapping
+
 view.bulk_replace(
     columns=["Category"],
     mapping=[
-        {"search": ["Cat A", "Category A"], "replace": "A"},
-        {"search": ["Cat B", "Category B"], "replace": "B"},
+        BulkReplaceMapping(search=["Cat A", "Category A"], replace="A"),
+        BulkReplaceMapping(search=["Cat B", "Category B"], replace="B"),
     ],
 )
 
@@ -219,9 +209,11 @@ view.filter_rows(Condition("Email", Operator.IS_NOT_EMPTY))
 view.text_transform(columns=["Name", "City", "Email"], trim=True)
 
 # Convert types
+from mammoth import ConversionSpec, ColumnType
+
 view.convert_type([
-    {"column": "price", "to": "NUMERIC"},
-    {"column": "date", "to": "DATE"},
+    ConversionSpec(column="price", to=ColumnType.NUMERIC),
+    ConversionSpec(column="date", to=ColumnType.DATE),
 ])
 ```
 
@@ -258,7 +250,8 @@ view.export.to_sftp(
 view.export.to_email(recipients=["team@example.com", "manager@example.com"])
 
 # S3
-view.export.to_s3(file_name="report.csv", file_type="csv")
+from mammoth import ExportFileType
+view.export.to_s3(file_name="report.csv", file_type=ExportFileType.CSV)
 
 # Branch out to another dataset
 view.branch_out(dest_dataset_id=42)
