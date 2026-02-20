@@ -100,8 +100,10 @@ view.export.to_postgres(
 The client provides sub-clients for every Mammoth API resource:
 
 ```python
-# List projects
-projects = client.projects.list()
+# List projects — returns {"projects": [...], "offset": 0, ...}
+resp = client.projects.list()
+for p in resp["projects"]:      # plain dicts: p["id"], p["name"]
+    print(p["id"], p["name"])
 
 # List datasets in a project
 datasets = client.datasets.list()

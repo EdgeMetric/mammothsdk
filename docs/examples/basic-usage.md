@@ -49,8 +49,11 @@ print(view.display_names)
 ## List resources
 
 ```python
-# List projects
-projects = client.projects.list()
+# List projects — returns envelope dict, unwrap "projects" key
+resp = client.projects.list()
+projects = resp["projects"]                 # list of plain dicts
+for p in projects:
+    print(p["id"], p["name"])               # dict access, NOT p.id / p.name
 
 # List datasets
 datasets = client.datasets.list()

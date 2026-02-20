@@ -64,12 +64,18 @@ view.refresh()
 
 ## ProjectsAPI (`client.projects`)
 
+Returns **raw dicts**, not rich objects. `list()` returns a response envelope — unwrap with `["projects"]`.
+
 ```python
-projects = client.projects.list()                           # list all projects
-project = client.projects.get(project_id=10)                # get one
-project = client.projects.create(config={...})              # create
-client.projects.update(project_id=10, config={...})         # update
-client.projects.delete(project_id=10)                       # delete
+resp = client.projects.list()                               # {"projects": [...], "offset": 0, ...}
+projects = resp["projects"]                                 # plain list of dicts
+for p in projects:
+    print(p["id"], p["name"])                               # dict access, NOT p.id / p.name
+
+project = client.projects.get(project_id=10)                # {"id": 10, "name": "..."}
+project = client.projects.create(config={...})              # raw dict response
+client.projects.update(project_id=10, config={...})
+client.projects.delete(project_id=10)
 ```
 
 ---
