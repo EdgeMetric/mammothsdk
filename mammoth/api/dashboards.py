@@ -43,9 +43,7 @@ class DashboardsAPI:
         Returns:
             Dict with created dashboard info (may include job ID for async creation).
         """
-        return self._client._request_json(
-            "POST", "/dashboards", json=config
-        )
+        return self._client._request_json("POST", "/dashboards", json=config)
 
     def get(self, dashboard_id: int) -> dict[str, Any]:
         """Get dashboard details.
@@ -56,9 +54,7 @@ class DashboardsAPI:
         Returns:
             Dict with dashboard details.
         """
-        return self._client._request_json(
-            "GET", f"/dashboards/{dashboard_id}"
-        )
+        return self._client._request_json("GET", f"/dashboards/{dashboard_id}")
 
     def update(self, dashboard_id: int, config: dict[str, Any]) -> dict[str, Any]:
         """Update a dashboard.
@@ -70,9 +66,7 @@ class DashboardsAPI:
         Returns:
             Dict with updated dashboard info.
         """
-        return self._client._request_json(
-            "PATCH", f"/dashboards/{dashboard_id}", json=config
-        )
+        return self._client._request_json("PATCH", f"/dashboards/{dashboard_id}", json=config)
 
     def delete(self, dashboard_id: int) -> dict[str, Any]:
         """Delete a dashboard.
@@ -83,9 +77,7 @@ class DashboardsAPI:
         Returns:
             Dict with deletion result.
         """
-        return self._client._request_json(
-            "DELETE", f"/dashboards/{dashboard_id}"
-        )
+        return self._client._request_json("DELETE", f"/dashboards/{dashboard_id}")
 
     def get_sources(self) -> _list[dict[str, Any]]:
         """Get available dashboard data sources.
@@ -105,9 +97,7 @@ class DashboardsAPI:
         Returns:
             Dict with analytics data.
         """
-        return self._client._request_json(
-            "GET", f"/dashboards/{dashboard_id}/analytics"
-        )
+        return self._client._request_json("GET", f"/dashboards/{dashboard_id}/analytics")
 
     def share(self, dashboard_id: int, config: dict[str, Any]) -> dict[str, Any]:
         """Share a dashboard.
@@ -119,9 +109,7 @@ class DashboardsAPI:
         Returns:
             Dict with sharing result.
         """
-        return self._client._request_json(
-            "POST", f"/dashboards/{dashboard_id}/share", json=config
-        )
+        return self._client._request_json("POST", f"/dashboards/{dashboard_id}/share", json=config)
 
     def action(self, dashboard_id: int, action_config: dict[str, Any]) -> dict[str, Any]:
         """Perform an action on a dashboard.

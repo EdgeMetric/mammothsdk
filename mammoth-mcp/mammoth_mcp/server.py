@@ -59,11 +59,16 @@ def _build_server() -> FastMCP:
     global _shared_token_store, _shared_registry
 
     if settings.mode == "remote":
+        from mcp.server.auth.settings import (
+            AuthSettings,
+            ClientRegistrationOptions,
+            RevocationOptions,
+        )
+        from mcp.server.transport_security import TransportSecuritySettings
+
         from mammoth_mcp.oauth_provider import MammothOAuthProvider, register_login_routes
         from mammoth_mcp.state import UserClientRegistry
         from mammoth_mcp.token_store import RedisTokenStore
-        from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
-        from mcp.server.transport_security import TransportSecuritySettings
 
         # Single token store instance shared between OAuth provider and lifespan.
         # Created here (unconnected), connected in lifespan().
@@ -174,20 +179,6 @@ def get_enums() -> str:
 
 # ── Register tools from submodules ───────────────────────────
 
-from mammoth_mcp.tools import (  # noqa: E402
-    advanced,
-    aggregate,
-    ai,
-    columns,
-    connection,
-    data,
-    discovery,
-    export,
-    help,
-    pipeline,
-    values,
-    views,
-)
 
 
 # ── Entry points ─────────────────────────────────────────────

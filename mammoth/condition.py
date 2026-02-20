@@ -53,14 +53,16 @@ from typing import Any
 ConditionType = "Condition | CompoundCondition | NotCondition"
 
 # Operators that take no value
-_NULL_OPERATORS = frozenset({
-    "IS_EMPTY",
-    "IS_NOT_EMPTY",
-    "IS_MAXVAL",
-    "IS_NOT_MAXVAL",
-    "IS_MINVAL",
-    "IS_NOT_MINVAL",
-})
+_NULL_OPERATORS = frozenset(
+    {
+        "IS_EMPTY",
+        "IS_NOT_EMPTY",
+        "IS_MAXVAL",
+        "IS_NOT_MAXVAL",
+        "IS_MINVAL",
+        "IS_NOT_MINVAL",
+    }
+)
 
 
 class Condition:
@@ -117,9 +119,7 @@ class Condition:
                 stacklevel=2,
             )
         elif self.operator not in _NULL_OPERATORS and value is None:
-            raise ValueError(
-                f"Operator {self.operator!r} requires a value, but none was provided."
-            )
+            raise ValueError(f"Operator {self.operator!r} requires a value, but none was provided.")
 
     def __and__(self, other: ConditionType) -> CompoundCondition:
         """Combine with AND: cond1 & cond2."""
@@ -169,11 +169,19 @@ class Condition:
 
         # Date component wrapper
         if self.component is not None:
-            return {internal_name: {operator: {"VALUE": {"COMPONENT": self.component, "VALUE": self.value}}}}
+            return {
+                internal_name: {
+                    operator: {"VALUE": {"COMPONENT": self.component, "VALUE": self.value}}
+                }
+            }
 
         # Date truncation wrapper
         if self.truncate is not None:
-            return {internal_name: {operator: {"VALUE": {"TRUNCATE": self.truncate, "VALUE": self.value}}}}
+            return {
+                internal_name: {
+                    operator: {"VALUE": {"TRUNCATE": self.truncate, "VALUE": self.value}}
+                }
+            }
 
         # All other operators (comparison, string)
         return {internal_name: {operator: {"VALUE": self.value}}}

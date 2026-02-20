@@ -267,8 +267,8 @@ class PipelineAPI:
             MammothTransformError: If pipeline reaches ``runtime_error`` or ``ref_error``.
             MammothJobTimeoutError: If timeout is exceeded.
         """
-        effective_timeout = timeout if timeout is not None else int(
-            getattr(self._client, "pipeline_timeout", 3600)
+        effective_timeout = (
+            timeout if timeout is not None else int(getattr(self._client, "pipeline_timeout", 3600))
         )
 
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
@@ -286,17 +286,11 @@ class PipelineAPI:
                         f"Pipeline failed with state '{state}': {detail}",
                         details={"pipeline_state": state, "pipeline": pipeline},
                     )
-                logger.debug(
-                    "Pipeline ready for dataview %d (state=%s)", dataview_id, state
-                )
+                logger.debug("Pipeline ready for dataview %d (state=%s)", dataview_id, state)
                 return pipeline
 
             if time.monotonic() >= deadline:
-                raise MammothJobTimeoutError(
-                    job_id=dataview_id, timeout_seconds=effective_timeout
-                )
+                raise MammothJobTimeoutError(job_id=dataview_id, timeout_seconds=effective_timeout)
 
-            logger.debug(
-                "Pipeline state for dataview %d: %s — waiting...", dataview_id, state
-            )
+            logger.debug("Pipeline state for dataview %d: %s — waiting...", dataview_id, state)
             time.sleep(poll_interval)

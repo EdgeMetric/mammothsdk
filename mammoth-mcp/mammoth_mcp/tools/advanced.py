@@ -18,7 +18,6 @@ from mammoth_mcp.helpers import (
 )
 from mammoth_mcp.server import mcp
 
-
 # ── join_views ────────────────────────────────────────────────
 
 

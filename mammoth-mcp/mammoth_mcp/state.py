@@ -8,7 +8,6 @@ from collections import OrderedDict
 from typing import TYPE_CHECKING
 
 from mammoth import MammothClient, View
-
 from mammoth_mcp.config import MammothConfig
 
 if TYPE_CHECKING:

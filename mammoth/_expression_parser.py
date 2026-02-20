@@ -172,10 +172,12 @@ def _build_tree(tokens: list[Any]) -> list[Any]:
                     flat_args.append(a[0])
                 else:
                     flat_args.append(a)
-            result.append({
-                "TYPE": "FUNCTION",
-                "VALUE": {"FUNCTION": func_name, "ARGUMENT": flat_args},
-            })
+            result.append(
+                {
+                    "TYPE": "FUNCTION",
+                    "VALUE": {"FUNCTION": func_name, "ARGUMENT": flat_args},
+                }
+            )
             i = j
         elif token == "(":
             # Find matching close paren

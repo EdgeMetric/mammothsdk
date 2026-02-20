@@ -9,8 +9,6 @@ from typing import TYPE_CHECKING, Any
 
 import requests
 
-from ..exceptions import MammothAPIError
-
 if TYPE_CHECKING:
     from ..client import MammothClient
 

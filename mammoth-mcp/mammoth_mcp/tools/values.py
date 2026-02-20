@@ -25,7 +25,6 @@ from mammoth_mcp.helpers import (
 )
 from mammoth_mcp.server import mcp
 
-
 # ── filter_rows ───────────────────────────────────────────────
 
 

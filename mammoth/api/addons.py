@@ -65,9 +65,7 @@ class AddonsAPI:
             Dict with addon result.
         """
         ws = self._ws()
-        return self._client._request_json(
-            "POST", f"/workspaces/{ws}/addons/storage", json=config
-        )
+        return self._client._request_json("POST", f"/workspaces/{ws}/addons/storage", json=config)
 
     def remove_storage(self, config: dict[str, Any]) -> dict[str, Any]:
         """Remove a storage addon from the workspace.
@@ -79,9 +77,7 @@ class AddonsAPI:
             Dict with removal result.
         """
         ws = self._ws()
-        return self._client._request_json(
-            "DELETE", f"/workspaces/{ws}/addons/storage", json=config
-        )
+        return self._client._request_json("DELETE", f"/workspaces/{ws}/addons/storage", json=config)
 
     def add_users(self, config: dict[str, Any]) -> dict[str, Any]:
         """Add a users addon to the workspace.
@@ -93,9 +89,7 @@ class AddonsAPI:
             Dict with addon result.
         """
         ws = self._ws()
-        return self._client._request_json(
-            "POST", f"/workspaces/{ws}/addons/users", json=config
-        )
+        return self._client._request_json("POST", f"/workspaces/{ws}/addons/users", json=config)
 
     def remove_users(self, config: dict[str, Any]) -> dict[str, Any]:
         """Remove a users addon from the workspace.
@@ -107,6 +101,4 @@ class AddonsAPI:
             Dict with removal result.
         """
         ws = self._ws()
-        return self._client._request_json(
-            "DELETE", f"/workspaces/{ws}/addons/users", json=config
-        )
+        return self._client._request_json("DELETE", f"/workspaces/{ws}/addons/users", json=config)

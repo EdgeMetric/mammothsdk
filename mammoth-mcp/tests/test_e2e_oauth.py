@@ -13,7 +13,6 @@ import secrets
 import urllib.parse
 
 import httpx
-import pytest
 
 
 class TestOAuthMetadata:

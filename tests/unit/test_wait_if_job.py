@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import MagicMock, call, patch
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from mammoth.client import MammothClient
 from mammoth.view import View
 
 from .conftest import SAMPLE_DATASET_ID, SAMPLE_VIEW_DATA
-
 
 # ── Helpers ──────────────────────────────────────────────────
 

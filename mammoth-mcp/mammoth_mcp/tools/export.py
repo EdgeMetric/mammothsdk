@@ -7,7 +7,6 @@ from typing import Any
 from mcp.server.fastmcp import Context
 
 from mammoth_mcp.helpers import (
-    error_response,
     get_manager,
     handle_errors,
     log_tool_call,

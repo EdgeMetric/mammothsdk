@@ -3,21 +3,18 @@
 from __future__ import annotations
 
 import time
-from collections import OrderedDict
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from mammoth_mcp.config import MammothConfig
 from mammoth_mcp.state import (
+    _MANAGER_CACHE_MAX,
+    _VIEW_CACHE_MAX,
+    _VIEW_CACHE_TTL,
     ClientManager,
     UserClientRegistry,
     _TTLEntry,
-    _VIEW_CACHE_MAX,
-    _VIEW_CACHE_TTL,
-    _MANAGER_CACHE_MAX,
 )
-
 
 # ── _TTLEntry ─────────────────────────────────────────────────
 

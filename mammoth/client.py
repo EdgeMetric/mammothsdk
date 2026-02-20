@@ -61,9 +61,11 @@ from mammoth.exceptions import MammothAPIError, MammothAuthError
 def _get_version() -> str:
     try:
         from mammoth import __version__
+
         return __version__
     except ImportError:
         return "0.2.0"
+
 
 # ── Configurable defaults ─────────────────────────────────────
 DEFAULT_TIMEOUT = 30  # seconds — max time for any single API call

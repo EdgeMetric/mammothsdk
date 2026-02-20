@@ -6,8 +6,8 @@ import json
 from unittest.mock import MagicMock
 
 import pytest
-
 from mammoth_mcp.helpers import (
+    _get_recovery_hint,
     build_condition,
     error_response,
     error_result,
@@ -15,9 +15,7 @@ from mammoth_mcp.helpers import (
     handle_errors,
     resolve_enum,
     success_response,
-    _get_recovery_hint,
 )
-
 
 # ── success_response ──────────────────────────────────────────
 
@@ -275,8 +273,9 @@ class TestHandleErrors:
 
     @pytest.mark.asyncio
     async def test_mammoth_api_error_caught(self):
-        from mammoth.exceptions import MammothAPIError
         from mcp.types import CallToolResult
+
+        from mammoth.exceptions import MammothAPIError
 
         @handle_errors
         async def my_tool():
@@ -292,7 +291,7 @@ class TestHandleErrors:
 
         @handle_errors
         async def my_tool():
-            raise IOError("disk full")
+            raise OSError("disk full")
 
         result = await my_tool()
         assert isinstance(result, CallToolResult)
