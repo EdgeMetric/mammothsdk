@@ -57,6 +57,18 @@ from mammoth.condition import CompoundCondition, Condition, NotCondition
 
 _list = list  # Alias to avoid shadowing by method name
 
+# Keys that control export behavior vs. target_properties
+_EXPORT_CONTROL_KEYS = frozenset(
+    {
+        "trigger_type",
+        "additional_properties",
+        "condition",
+        "run_immediately",
+        "validate_only",
+        "end_of_pipeline",
+    }
+)
+
 
 class View(
     ColumnOpsMixin,
@@ -581,15 +593,7 @@ class ViewExport:
         Returns:
             Export result dict.
         """
-        _export_keys = {
-            "trigger_type",
-            "additional_properties",
-            "condition",
-            "run_immediately",
-            "validate_only",
-            "end_of_pipeline",
-        }
-        target = {k: v for k, v in kwargs.items() if k not in _export_keys}
+        target = {k: v for k, v in kwargs.items() if k not in _EXPORT_CONTROL_KEYS}
         return self._create_export("BIGQUERY", target, **kwargs)
 
     def to_redshift(self, **kwargs: Any) -> dict[str, Any]:
@@ -601,15 +605,7 @@ class ViewExport:
         Returns:
             Export result dict.
         """
-        _export_keys = {
-            "trigger_type",
-            "additional_properties",
-            "condition",
-            "run_immediately",
-            "validate_only",
-            "end_of_pipeline",
-        }
-        target = {k: v for k, v in kwargs.items() if k not in _export_keys}
+        target = {k: v for k, v in kwargs.items() if k not in _EXPORT_CONTROL_KEYS}
         return self._create_export("REDSHIFT", target, **kwargs)
 
     def to_elasticsearch(self, **kwargs: Any) -> dict[str, Any]:
@@ -621,15 +617,7 @@ class ViewExport:
         Returns:
             Export result dict.
         """
-        _export_keys = {
-            "trigger_type",
-            "additional_properties",
-            "condition",
-            "run_immediately",
-            "validate_only",
-            "end_of_pipeline",
-        }
-        target = {k: v for k, v in kwargs.items() if k not in _export_keys}
+        target = {k: v for k, v in kwargs.items() if k not in _EXPORT_CONTROL_KEYS}
         return self._create_export("ELASTICSEARCH", target, **kwargs)
 
     def publish_to_db(self, **kwargs: Any) -> dict[str, Any]:
@@ -641,15 +629,7 @@ class ViewExport:
         Returns:
             Export result dict.
         """
-        _export_keys = {
-            "trigger_type",
-            "additional_properties",
-            "condition",
-            "run_immediately",
-            "validate_only",
-            "end_of_pipeline",
-        }
-        target = {k: v for k, v in kwargs.items() if k not in _export_keys}
+        target = {k: v for k, v in kwargs.items() if k not in _EXPORT_CONTROL_KEYS}
         return self._create_export("PUBLISHDB", target, **kwargs)
 
     def list(self) -> _list[dict[str, Any]]:

@@ -43,3 +43,11 @@ htmlcov/
 mammoth-mcp/.venv/
 mammoth-mcp/poetry.toml
 
+# Stale dev / scratch files
+test_debug.py
+test_live_api.py
+stress.py
+employee.csv
+Store_Transactions.csv
+openapi.json
+

@@ -41,7 +41,12 @@ Key modules:
 
 from __future__ import annotations
 
-from mammoth.client import DEFAULT_JOB_TIMEOUT, DEFAULT_PIPELINE_TIMEOUT, DEFAULT_TIMEOUT, MammothClient
+from mammoth.client import (
+    DEFAULT_JOB_TIMEOUT,
+    DEFAULT_PIPELINE_TIMEOUT,
+    DEFAULT_TIMEOUT,
+    MammothClient,
+)
 from mammoth.condition import CompoundCondition, Condition, NotCondition
 from mammoth.exceptions import (
     MammothAPIError,
@@ -55,22 +60,25 @@ from mammoth.exceptions import (
 from mammoth.helpers import parse_path
 from mammoth.models.pipeline import (
     AggregateFunction,
+    AggregationSpec,
     ColumnType,
+    ConversionSpec,
+    CopySpec,
+    CrosstabSpec,
     DateComponent,
     DateDiffUnit,
     FillDirection,
     FilterType,
+    JoinKeySpec,
+    JoinSelectSpec,
     JoinType,
+    JsonExtractionSpec,
     JsonType,
-    MathOperator,
     Operator,
-    ProviderType,
     SetValue,
     SortDirection,
     SubstringDirection,
-    TaskType,
     TextCase,
-    ValueType,
     WindowFunction,
     WindowRange,
 )
@@ -93,7 +101,6 @@ __all__ = [
     # Enums
     "Operator",
     "ColumnType",
-    "ValueType",
     "JoinType",
     "TextCase",
     "DateComponent",
@@ -102,15 +109,19 @@ __all__ = [
     "WindowRange",
     "FillDirection",
     "AggregateFunction",
-    "ProviderType",
     "FilterType",
     "SortDirection",
-    "MathOperator",
     "SubstringDirection",
     "JsonType",
-    "TaskType",
-    # Dataclasses
+    # Parameter spec dataclasses
     "SetValue",
+    "CopySpec",
+    "ConversionSpec",
+    "AggregationSpec",
+    "JoinKeySpec",
+    "JoinSelectSpec",
+    "JsonExtractionSpec",
+    "CrosstabSpec",
     # Exceptions
     "MammothError",
     "MammothAPIError",

@@ -328,6 +328,118 @@ class SetValue:
     condition: Condition | CompoundCondition | NotCondition | None = field(default=None)
 
 
+# ── Parameter spec dataclasses ─────────────────────────────────
+# These provide IDE autocomplete for dict-based method parameters.
+# Each method also accepts plain dicts for backward compatibility.
+
+
+@dataclass
+class CopySpec:
+    """Specification for a single column copy in :meth:`View.copy_columns`.
+
+    Example::
+
+        view.copy_columns([CopySpec(source="Sales", as_name="Sales Copy", type="NUMERIC")])
+    """
+
+    source: str
+    as_name: str | None = None
+    type: str = "TEXT"
+    condition: Condition | CompoundCondition | NotCondition | None = field(default=None)
+
+
+@dataclass
+class ConversionSpec:
+    """Specification for a column type conversion in :meth:`View.convert_type`.
+
+    Example::
+
+        view.convert_type([ConversionSpec(column="Sales", to="NUMERIC")])
+        view.convert_type([ConversionSpec(column="Date Col", to="DATE", format="MM/DD/YYYY")])
+    """
+
+    column: str
+    to: str
+    format: str | None = None
+
+
+@dataclass
+class AggregationSpec:
+    """Specification for an aggregation in :meth:`View.pivot`.
+
+    Example::
+
+        view.pivot(
+            group_by=["Region"],
+            aggregations=[AggregationSpec(
+                column="Sales", function=AggregateFunction.SUM, as_name="Total",
+            )],
+        )
+    """
+
+    column: str
+    function: str | AggregateFunction
+    as_name: str | None = None
+    delimiter: str | None = None
+
+
+@dataclass
+class JoinKeySpec:
+    """Specification for a join key pair in :meth:`View.join`.
+
+    Example::
+
+        view.join(..., on=[JoinKeySpec(left="Customer ID", right="Customer ID")])
+    """
+
+    left: str
+    right: str
+
+
+@dataclass
+class JoinSelectSpec:
+    """Specification for a column to bring in from a join in :meth:`View.join`.
+
+    Example::
+
+        view.join(..., select=[JoinSelectSpec(column="Category", alias="Cat")])
+    """
+
+    column: str
+    alias: str | None = None
+
+
+@dataclass
+class JsonExtractionSpec:
+    """Specification for a JSON key extraction in :meth:`View.json_extract`.
+
+    Example::
+
+        view.json_extract("data", extractions=[
+            JsonExtractionSpec(key="name", as_name="Name", type="TEXT"),
+            JsonExtractionSpec(key="age", as_name="Age", type="NUMERIC"),
+        ])
+    """
+
+    key: str
+    as_name: str | None = None
+    type: str = "TEXT"
+
+
+@dataclass
+class CrosstabSpec:
+    """Specification for the aggregation in :meth:`View.crosstab`.
+
+    Example::
+
+        view.crosstab(rows=["Region"], pivot_column="Gender",
+                      select=CrosstabSpec(function=AggregateFunction.SUM, column="Sales"))
+    """
+
+    function: str | AggregateFunction
+    column: str | None = None
+
+
 # ── Pydantic response models ──────────────────────────────────
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from mammoth.models.pipeline import ColumnType
+from mammoth.models.pipeline import ColumnType, ConversionSpec, CopySpec
 
 if TYPE_CHECKING:
     from mammoth.condition import CompoundCondition, Condition, NotCondition
@@ -46,15 +46,16 @@ class ColumnOpsMixin:
         """
         return self._add_task({"DELETE": self._resolve_columns(columns)})
 
-    def copy_columns(self, copies: list[dict[str, Any]]) -> dict[str, Any]:
+    def copy_columns(self, copies: list[CopySpec | dict[str, Any]]) -> dict[str, Any]:
         """Duplicate columns (COPY task).
 
         Args:
-            copies: List of copy specs::
+            copies: List of CopySpec objects or dicts::
 
+                [CopySpec(source="Sales", as_name="Sales Copy", type="NUMERIC")]
                 [{"source": "Sales", "as": "Sales Copy", "type": "NUMERIC"}]
 
-            Each copy dict can also include a ``condition`` key with a Condition
+            Dicts can also include a ``condition`` key with a Condition
             object to apply per-item conditions.
 
         Returns:
@@ -63,16 +64,22 @@ class ColumnOpsMixin:
         copy_items = []
         for c in copies:
             internal = self._next_internal_name()
+            if isinstance(c, CopySpec):
+                source = c.source
+                as_name = c.as_name or f"{source} Copy"
+                col_type = c.type
+                cond = c.condition
+            else:
+                source = c["source"]
+                as_name = c.get("as", f"{source} Copy")
+                col_type = c.get("type", "TEXT")
+                cond = c.get("condition")
             item: dict[str, Any] = {
-                "SOURCE": self._resolve_column(c["source"]),
-                "AS": self._build_as_column(
-                    c.get("as", f"{c['source']} Copy"),
-                    c.get("type", "TEXT"),
-                    internal,
-                ),
+                "SOURCE": self._resolve_column(source),
+                "AS": self._build_as_column(as_name, col_type, internal),
             }
-            if "condition" in c and c["condition"] is not None:
-                item["CONDITION"] = self._build_condition(c["condition"])
+            if cond is not None:
+                item["CONDITION"] = self._build_condition(cond)
             copy_items.append(item)
 
         return self._add_task({"COPY": copy_items, "VERSION": 2})
@@ -118,12 +125,13 @@ class ColumnOpsMixin:
 
         return self._add_task(spec)
 
-    def convert_type(self, conversions: list[dict[str, str]]) -> dict[str, Any]:
+    def convert_type(self, conversions: list[ConversionSpec | dict[str, str]]) -> dict[str, Any]:
         """Convert column types (CONVERT task).
 
         Args:
-            conversions: List of conversion specs::
+            conversions: List of ConversionSpec objects or dicts::
 
+                [ConversionSpec(column="Sales", to="NUMERIC")]
                 [{"column": "Sales", "to": "NUMERIC"}]
                 [{"column": "Date Col", "to": "DATE", "format": "MM/DD/YYYY"}]
 
@@ -132,12 +140,16 @@ class ColumnOpsMixin:
         """
         convert_items = []
         for c in conversions:
+            if isinstance(c, ConversionSpec):
+                col, to_type, fmt = c.column, c.to, c.format
+            else:
+                col, to_type, fmt = c["column"], c["to"], c.get("format")
             item: dict[str, Any] = {
-                "SOURCE": self._resolve_column(c["column"]),
-                "TO_TYPE": c["to"].upper(),
+                "SOURCE": self._resolve_column(col),
+                "TO_TYPE": to_type.upper(),
             }
-            if "format" in c:
-                item["FORMAT"] = c["format"]
+            if fmt is not None:
+                item["FORMAT"] = fmt
             convert_items.append(item)
 
         return self._add_task({"CONVERT": convert_items})

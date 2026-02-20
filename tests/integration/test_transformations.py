@@ -329,7 +329,7 @@ class TestTransformations:
     # ── SQL ───────────────────────────────────────────────────
 
     def test_sql(self, view):
-        result = view.sql(intent="count employees by department")
+        result = view.generate_sql(intent="count employees by department")
         assert result is not None
 
 
