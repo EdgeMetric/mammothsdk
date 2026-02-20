@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.2
+
+### Fixed
+
+- **`display_names` not updated after transforms** — `_build_column_maps` now reads column metadata from `taskwise_info[last_seq]["metadata"]` (the authoritative post-pipeline column list), so columns added by `math`, `set_values`, `add_column`, and other transforms appear immediately in `view.display_names`, `view.columns`, and `view.column_types`.
+
+### Added
+
+- **`view.get_metadata()`** — returns the current column list as `[{"display_name", "internal_name", "type"}, ...]`. Useful for inspecting all columns (including pipeline-added ones) after transforms.
+
+---
+
 ## v0.2.0
 
 Major release with rich View objects, transformation methods, and the condition builder.

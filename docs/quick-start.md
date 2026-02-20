@@ -5,7 +5,7 @@ Get up and running with the Mammoth Python SDK in five minutes.
 ## 1. Install the SDK
 
 ```bash
-pip install mammoth-io
+pip install mammoth-io==0.2.2
 ```
 
 ## 2. Get your API credentials

@@ -1,6 +1,6 @@
 # Mammoth Analytics Python SDK
 
-**Version 0.2.0** | Python 3.10+ | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mm-pysdk)
+**Version 0.2.2** | Python 3.10+ | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mm-pysdk)
 
 The official Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data pipelines, apply transformations, and export results -- all from Python.
 
@@ -11,7 +11,7 @@ The official Python SDK for the [Mammoth Analytics](https://mammoth.io) platform
 - **Condition builder** -- Pythonic filter conditions with `&` (AND), `|` (OR), and `~` (NOT) operator overloading
 - **Export helpers** -- download CSV, push to S3, PostgreSQL, BigQuery, and other destinations
 - **Type safety** -- full type hints, enums for all parameters, Pydantic models for responses
-- **MCP server** -- Model Context Protocol server for AI-assisted analytics
+- **MCP server** -- optional Model Context Protocol server for AI-assisted analytics (separate package)
 
 ## Quick example
 
@@ -61,7 +61,7 @@ view.export.to_csv("output.csv")
 
 ## Version information
 
-- **SDK version**: 0.2.0
+- **SDK version**: 0.2.2
 - **Python**: 3.10+
 - **API version**: v2
 
