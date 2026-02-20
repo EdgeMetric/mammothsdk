@@ -58,9 +58,7 @@ meta = view.get_metadata()
 view.refresh()
 ```
 
-**Implementation note:** After a transformation the API places new columns in
-`dependencies_info.dependents[str(view_id)]["METADATA"]`, not in the top-level
-`metadata` field. The SDK reads from that path so new columns are always visible.
+**Implementation note:** After a transformation the API populates `taskwise_info[last_seq]["metadata"]` with the complete post-pipeline column list. The SDK reads from there so new columns are always visible. For fresh views with no tasks yet, `taskwise_info` is null and the SDK falls back to the top-level `metadata` field.
 
 ---
 

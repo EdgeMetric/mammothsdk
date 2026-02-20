@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.3
+
+### Fixed
+
+- **`_build_column_maps` now uses `taskwise_info` exclusively** — removed incorrect use of `dependencies_info.dependents` for column metadata resolution. `taskwise_info[last_seq]["metadata"]` is the authoritative post-pipeline column list; falls back to top-level `metadata` only for fresh views with no tasks.
+
+---
+
 ## v0.2.2
 
 ### Fixed
