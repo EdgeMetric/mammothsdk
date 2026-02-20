@@ -139,6 +139,52 @@ URL: `https://mcp.mammoth.io/mcp`
 
 The OAuth flow will prompt the user for their Mammoth API credentials (API key, secret, workspace ID). Each user gets their own isolated session.
 
+## Claude UI — End User Installation Guide
+
+Once the remote server is deployed, any user with a Mammoth account can connect it to Claude in a few clicks.
+
+### Step 1: Open Integrations
+
+1. Go to [claude.ai](https://claude.ai) and sign in.
+2. Click your **profile icon** (bottom-left) → **Settings** → **Integrations**.
+
+### Step 2: Add the MCP Server
+
+1. Click **"Add more integrations"**.
+2. Select **"Add custom integration"** (bottom of the integration catalog).
+3. Enter the integration details:
+   - **Name**: `Mammoth Analytics` (or any name you prefer)
+   - **MCP Server URL**: `https://mcp.mammoth.io/mcp`
+4. Click **"Add"**.
+
+### Step 3: Authenticate
+
+1. Claude will open the Mammoth OAuth page in a new window.
+2. Enter your Mammoth credentials:
+   - **API Key**: Your Mammoth API key
+   - **API Secret**: Your Mammoth API secret
+   - **Workspace ID**: The workspace you want to connect to
+3. Click **"Authorize"** — the window will close and you'll be redirected back to Claude.
+
+### Step 4: Start Using
+
+1. Open a **new chat** in Claude.
+2. You should see the Mammoth integration icon in the chat toolbar — click it to verify the connection shows as active.
+3. Try a prompt like:
+   - *"List the projects in my Mammoth workspace"*
+   - *"Show me view 12345"* (replace with a real view ID)
+   - *"What datasets do I have?"*
+
+### Troubleshooting Connection Issues
+
+| Issue | Fix |
+|-------|-----|
+| Integration not appearing | Refresh the page. Check that the integration is listed in Settings → Integrations. |
+| OAuth page won't load | Verify the server is running at `https://mcp.mammoth.io/mcp`. Check SSL certificate. |
+| "Invalid credentials" error | Double-check your API key, secret, and workspace ID in Mammoth settings. |
+| Tools not showing in chat | Start a **new** chat after adding the integration. Existing chats may not pick up new integrations. |
+| Connection times out | Check that the server's nginx proxy has `proxy_read_timeout` set to a high value (86400 recommended). |
+
 ### Remote Mode Environment Variables
 
 | Variable | Default | Description |
@@ -259,7 +305,7 @@ The OAuth flow will prompt the user for their Mammoth API credentials (API key, 
 
 | Tool | Description |
 |---|---|
-| `get_help` | Get detailed guidance on a Mammoth topic (overview, transformations, conditions, data_cleaning) |
+| `get_help` | Get detailed guidance on a Mammoth topic (overview, transformations, conditions, data_cleaning, ai_transform, sql_query, workflows, troubleshooting) |
 
 ## Resources
 

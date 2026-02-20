@@ -153,7 +153,7 @@ async def convert_type(
     conversions: list[dict[str, str]],
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Change column types: TEXT, NUMERIC, DATE, DATETIME. Overwrites original column — copy first if needed. Adds a reversible pipeline task (undo with delete_task).
+    """Change column types: TEXT, NUMERIC, DATE, DATETIME. Overwrites original column — copy first if needed. Note: CSV date columns upload as TEXT — convert to DATE before using date operations (extract_date, date_diff, increment_date). Adds a reversible pipeline task (undo with delete_task).
 
     Args:
         view_id: The dataview ID.

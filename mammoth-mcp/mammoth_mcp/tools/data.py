@@ -31,7 +31,7 @@ async def get_data(
     sort: str | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
-    """Fetch rows from a view with optional filtering, column selection, and pagination.
+    """Fetch actual row data from a view with optional filtering, column selection, and pagination. Returns row values, not metadata — use get_view for column info and row count.
 
     Args:
         view_id: The dataview ID to fetch data from.
