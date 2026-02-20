@@ -232,7 +232,7 @@ async def bulk_replace(
     view_id: int,
     columns: list[str],
     mapping: list[dict[str, Any]],
-    match_case: bool = False,
+    match_case: bool = True,
     match_words: bool = False,
     condition: dict[str, Any] | None = None,
     dataset_id: int | None = None,
@@ -243,7 +243,7 @@ async def bulk_replace(
         view_id: The dataview ID.
         columns: List of column display names.
         mapping: List of bulk mapping specs, e.g. [{"search": ["val1", "val2"], "replace": "replacement"}].
-        match_case: Case-sensitive matching (default false).
+        match_case: Case-sensitive matching (default true).
         match_words: Whole-word matching (default false).
         condition: Optional filter condition as JSON.
         dataset_id: The dataset ID (auto-detected if not provided).

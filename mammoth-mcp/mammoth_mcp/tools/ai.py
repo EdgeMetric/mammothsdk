@@ -26,6 +26,8 @@ async def ai_transform(
     prompt: str,
     context_columns: list[str],
     new_column: str = "AI Result",
+    assistant_data: list[str] | None = None,
+    context_columns_derivation: bool | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Use an OpenAI LLM to generate a NEW column from a prompt and context columns. Adds a reversible pipeline task (undo with delete_task).
@@ -49,16 +51,22 @@ async def ai_transform(
         prompt: Natural language instruction for the AI (e.g. "Classify the sentiment of the review as Positive, Negative, or Neutral").
         context_columns: List of column display names to provide as context to the AI (max 20 — include only relevant columns).
         new_column: Name for the AI output column (default "AI Result").
+        assistant_data: Additional assistant context strings (optional).
+        context_columns_derivation: Whether to derive from context columns (optional).
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
-    await run_sync(
-        view.gen_ai,
-        prompt=prompt,
-        context_columns=context_columns,
-        new_column=new_column,
-    )
+    kwargs: dict[str, Any] = {
+        "prompt": prompt,
+        "context_columns": context_columns,
+        "new_column": new_column,
+    }
+    if assistant_data is not None:
+        kwargs["assistant_data"] = assistant_data
+    if context_columns_derivation is not None:
+        kwargs["context_columns_derivation"] = context_columns_derivation
+    await run_sync(view.gen_ai, **kwargs)
     return success_response(format_view_info(view), "AI transform applied")
 
 

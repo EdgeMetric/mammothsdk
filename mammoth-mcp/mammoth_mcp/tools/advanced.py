@@ -8,6 +8,7 @@ from mcp.server.fastmcp import Context
 
 from mammoth import DateComponent, DateDiffUnit, JoinType, JsonType
 from mammoth_mcp.helpers import (
+    build_condition,
     format_view_info,
     get_manager,
     handle_errors,
@@ -128,6 +129,7 @@ async def json_extract(
     keys: list[str] | None = None,
     extractions: list[dict[str, str]] | None = None,
     keep_source: bool = False,
+    op_type: str | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Parse JSON text into structured columns (objects) or rows (lists). Adds a reversible pipeline task (undo with delete_task).
@@ -139,6 +141,7 @@ async def json_extract(
         keys: Simple list of keys to extract as TEXT columns.
         extractions: Advanced extraction specs, e.g. [{"key": "name", "as": "Name", "type": "TEXT"}].
         keep_source: Keep the original JSON column (default false).
+        op_type: Operation type override (e.g. "JSON_OBJECT_TO_COLUMNS", "JSON_LIST_TO_ROWS").
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
@@ -151,6 +154,7 @@ async def json_extract(
         keys=keys,
         extractions=extractions,
         keep_source=keep_source,
+        op_type=op_type,
     )
     return success_response(format_view_info(view), "json_extract applied successfully")
 
@@ -247,6 +251,7 @@ async def increment_date(
     delta: dict[str, int],
     new_column: str | None = None,
     existing_column: str | None = None,
+    condition: dict[str, Any] | None = None,
     dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Add or subtract time units from a date column. Adds a reversible pipeline task (undo with delete_task).
@@ -257,15 +262,18 @@ async def increment_date(
         delta: Delta spec, e.g. {"DAYS": 30} or {"MONTHS": -1, "YEARS": 2}.
         new_column: Name for the result column.
         existing_column: Existing column to overwrite.
+        condition: Optional filter condition as JSON.
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
+    cond = build_condition(condition) if condition else None
     await run_sync(
         view.increment_date,
         column=column,
         delta=delta,
         new_column=new_column,
         existing_column=existing_column,
+        condition=cond,
     )
     return success_response(format_view_info(view), "increment_date applied successfully")
