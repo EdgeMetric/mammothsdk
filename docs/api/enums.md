@@ -327,6 +327,21 @@ from mammoth import JsonType
 
 ---
 
+## JsonOpType
+
+Operation types for `json_extract()`.
+
+```python
+from mammoth import JsonOpType
+```
+
+| Value | Description |
+|-------|-------------|
+| `JsonOpType.JSON_OBJECT_TO_COLUMNS` | Extract object keys to separate columns |
+| `JsonOpType.JSON_LIST_TO_ROWS` | Extract list items to separate rows |
+
+---
+
 ## FilterType
 
 Filter types for `filter_rows()`.
@@ -397,6 +412,22 @@ from mammoth import TaskType
 
 ---
 
+## ExportFileType
+
+File types for `to_s3()` export.
+
+```python
+from mammoth import ExportFileType
+```
+
+| Value | Description |
+|-------|-------------|
+| `ExportFileType.CSV` | CSV format |
+| `ExportFileType.JSON` | JSON format |
+| `ExportFileType.PARQUET` | Parquet format |
+
+---
+
 ## NotCondition
 
 Not an enum, but important to know about when building conditions. The `~` operator negates any condition.
@@ -436,6 +467,174 @@ values = [
     SetValue("High", condition=Condition("Sales", Operator.GTE, 10000)),
     SetValue("Low"),  # default value (no condition)
 ]
+```
+
+---
+
+## CopySpec dataclass
+
+Spec for `copy_columns()`.
+
+```python
+from mammoth import CopySpec, ColumnType
+
+CopySpec(
+    source: str,              # Source column display name
+    as_name: str,             # New column display name
+    type: ColumnType = ColumnType.TEXT,  # Column type
+)
+```
+
+---
+
+## ConversionSpec dataclass
+
+Spec for `convert_type()`.
+
+```python
+from mammoth import ConversionSpec, ColumnType
+
+ConversionSpec(
+    column: str,              # Column display name
+    to: ColumnType,           # Target type
+    format: str | None = None,  # Date format (for TEXT→DATE)
+)
+```
+
+---
+
+## AggregationSpec dataclass
+
+Spec for `pivot()` aggregations.
+
+```python
+from mammoth import AggregationSpec, AggregateFunction
+
+AggregationSpec(
+    column: str,                 # Column to aggregate
+    function: AggregateFunction, # Aggregation function
+    as_name: str | None = None,  # Output column name (auto-generated if None)
+    delimiter: str | None = None,  # Delimiter for CONCAT function
+)
+```
+
+---
+
+## CrosstabSpec dataclass
+
+Spec for `crosstab()` aggregation.
+
+```python
+from mammoth import CrosstabSpec, AggregateFunction
+
+CrosstabSpec(
+    function: AggregateFunction,  # Aggregation function
+    column: str | None = None,    # Column to aggregate (None for COUNT)
+)
+```
+
+---
+
+## JoinKeySpec dataclass
+
+Join key mapping for `join()`.
+
+```python
+from mammoth import JoinKeySpec
+
+JoinKeySpec(
+    left: str,   # Column from the left (current) view
+    right: str,  # Column from the right (foreign) view
+)
+```
+
+---
+
+## JoinSelectSpec dataclass
+
+Column selection for `join()` foreign columns.
+
+```python
+from mammoth import JoinSelectSpec
+
+JoinSelectSpec(
+    column: str,                  # Foreign column name
+    alias: str | None = None,     # Alias in the joined result
+)
+```
+
+---
+
+## SplitColumnSpec dataclass
+
+Spec for `split_column()` output columns.
+
+```python
+from mammoth import SplitColumnSpec, ColumnType
+
+SplitColumnSpec(
+    name: str,                          # New column name
+    type: ColumnType = ColumnType.TEXT,  # Column type
+)
+```
+
+---
+
+## BulkReplaceMapping dataclass
+
+Mapping for `bulk_replace()`.
+
+```python
+from mammoth import BulkReplaceMapping
+
+BulkReplaceMapping(
+    search: list[str],  # Values to search for
+    replace: str,       # Replacement value
+)
+```
+
+---
+
+## DateDelta dataclass
+
+Time delta for `increment_date()`.
+
+```python
+from mammoth import DateDelta
+
+DateDelta(
+    years: int = 0,
+    months: int = 0,
+    weeks: int = 0,
+    days: int = 0,
+    hours: int = 0,
+    minutes: int = 0,
+    seconds: int = 0,
+)
+```
+
+```python
+# Add 30 days
+view.increment_date("Due Date", delta=DateDelta(days=30), new_column="Extended")
+
+# Subtract 1 month, add 2 years
+view.increment_date("Start", delta=DateDelta(months=-1, years=2), new_column="Adjusted")
+```
+
+---
+
+## JsonExtractionSpec dataclass
+
+Spec for `json_extract()` custom extractions.
+
+```python
+from mammoth import JsonExtractionSpec, ColumnType
+
+JsonExtractionSpec(
+    key: str,                           # JSON key to extract
+    as_name: str | None = None,         # Output column name (defaults to key)
+    type: ColumnType = ColumnType.TEXT,  # Output column type
+)
 ```
 
 ## See also

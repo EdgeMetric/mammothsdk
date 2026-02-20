@@ -43,7 +43,7 @@ class FilterOpsMixin:
 
     def set_values(
         self,
-        values: list[SetValue | dict[str, Any]],
+        values: list[SetValue],
         new_column: str | None = None,
         column_type: ColumnType = ColumnType.TEXT,
         existing_column: str | None = None,
@@ -54,8 +54,7 @@ class FilterOpsMixin:
         Creates a VERSION 2 SET payload.
 
         Args:
-            values: List of SetValue objects or dicts with ``value`` and
-                optional ``condition`` keys.
+            values: List of SetValue objects.
             new_column: Name for a new column (mutually exclusive with existing_column).
             column_type: Type for new column (default ColumnType.TEXT).
             existing_column: Display name of existing column to update.
@@ -77,14 +76,9 @@ class FilterOpsMixin:
         """
         value_items: list[dict[str, Any]] = []
         for v in values:
-            if isinstance(v, SetValue):
-                item: dict[str, Any] = {"PROVIDER_TYPE": "FIXED", "PROVIDER": v.value}
-                cond = v.condition
-            else:
-                item = {"PROVIDER_TYPE": "FIXED", "PROVIDER": v["value"]}
-                cond = v.get("condition")
-            if cond is not None:
-                item["CONDITION"] = self._build_condition(cond)
+            item: dict[str, Any] = {"PROVIDER_TYPE": "FIXED", "PROVIDER": v.value}
+            if v.condition is not None:
+                item["CONDITION"] = self._build_condition(v.condition)
             value_items.append(item)
 
         set_dict: dict[str, Any] = {"VALUES": value_items}

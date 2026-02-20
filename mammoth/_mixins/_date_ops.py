@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from mammoth.models.pipeline import DateComponent, DateDiffUnit
+from mammoth.models.pipeline import DateComponent, DateDelta, DateDiffUnit
 
 if TYPE_CHECKING:
     from mammoth.condition import CompoundCondition, Condition, NotCondition
@@ -103,7 +103,7 @@ class DateOpsMixin:
     def increment_date(
         self,
         column: str,
-        delta: dict[str, int],
+        delta: DateDelta,
         new_column: str | None = None,
         existing_column: str | None = None,
         condition: Condition | CompoundCondition | NotCondition | None = None,
@@ -112,7 +112,11 @@ class DateOpsMixin:
 
         Args:
             column: Source date column display name.
-            delta: Delta spec: {"DAYS": 30} or {"MONTHS": -1, "YEARS": 2}.
+            delta: DateDelta object specifying the increment::
+
+                DateDelta(days=30)
+                DateDelta(years=1, months=-3)
+
             new_column: Name for result column.
             existing_column: Existing column to overwrite.
             condition: Condition to apply.
@@ -122,7 +126,7 @@ class DateOpsMixin:
         """
         id_spec: dict[str, Any] = {
             "SOURCE": self._resolve_column(column),
-            "DELTA": delta,
+            "DELTA": delta.to_dict(),
         }
 
         if new_column:

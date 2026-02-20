@@ -16,12 +16,12 @@ client = MammothClient(
 If a job does not complete in time, `MammothJobTimeoutError` is raised:
 
 ```python
-from mammoth import MammothJobTimeoutError
+from mammoth import MammothJobTimeoutError, AggregateFunction, AggregationSpec
 
 try:
     view.pivot(
         group_by=["Region"],
-        aggregations=[{"column": "Sales", "function": "SUM", "as": "Total"}],
+        aggregations=[AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total")],
     )
 except MammothJobTimeoutError as e:
     print(f"Job {e.details['job_id']} is still running")
@@ -49,6 +49,8 @@ preview = view.preview_task(task_spec)
 By default, each transformation triggers an immediate pipeline run. For batch operations on large datasets, use **draft mode** to queue tasks and run the pipeline once:
 
 ```python
+from mammoth import Condition, Operator, SetValue, ColumnType
+
 # Context manager approach (recommended)
 with view.draft():
     view.filter_rows(Condition("Sales", Operator.GTE, 1000))
@@ -58,7 +60,7 @@ with view.draft():
 # Explicit approach
 view.enter_draft_mode()
 view.add_column("Notes")
-view.set_values(new_column="Flag", column_type="TEXT", values=[SetValue("x")])
+view.set_values(new_column="Flag", column_type=ColumnType.TEXT, values=[SetValue("x")])
 view.submit_draft()  # runs pipeline, refreshes metadata, exits draft mode
 ```
 

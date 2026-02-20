@@ -54,6 +54,7 @@ from mammoth._mixins import (
     TextOpsMixin,
 )
 from mammoth.condition import CompoundCondition, Condition, NotCondition
+from mammoth.models.pipeline import ExportFileType
 
 _list = list  # Alias to avoid shadowing by method name
 
@@ -599,7 +600,7 @@ class ViewExport:
     def to_s3(
         self,
         file_name: str | None = None,
-        file_type: str = "csv",
+        file_type: ExportFileType = ExportFileType.CSV,
         include_hidden: bool = False,
         **kwargs: Any,
     ) -> dict[str, Any]:
@@ -607,7 +608,7 @@ class ViewExport:
 
         Args:
             file_name: Output filename (auto-generated if not provided).
-            file_type: File format (default "csv").
+            file_type: File format (default ExportFileType.CSV).
             include_hidden: Include hidden columns (default False).
 
         Returns:
@@ -621,7 +622,7 @@ class ViewExport:
             "S3",
             {
                 "file": file_name,
-                "file_type": file_type,
+                "file_type": file_type.value,
                 "include_hidden": include_hidden,
                 "is_format_set": True,
                 "use_format": True,

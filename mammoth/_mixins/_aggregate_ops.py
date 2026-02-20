@@ -33,17 +33,16 @@ class AggregateOpsMixin:
     def pivot(
         self,
         group_by: list[str],
-        aggregations: list[AggregationSpec | dict[str, Any]],
+        aggregations: list[AggregationSpec],
         condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> dict[str, Any]:
         """Group / aggregate / pivot (PIVOT task).
 
         Args:
             group_by: List of display names to group by.
-            aggregations: List of AggregationSpec objects or dicts::
+            aggregations: List of AggregationSpec objects::
 
                 [AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total")]
-                [{"column": "Sales", "function": AggregateFunction.SUM, "as": "Total Sales"}]
 
             condition: Condition to apply.
 
@@ -73,25 +72,15 @@ class AggregateOpsMixin:
         select_specs = []
         base_order = len(group_by)
         for idx, agg in enumerate(aggregations):
-            if isinstance(agg, AggregationSpec):
-                func = agg.function
-                col = agg.column
-                alias = agg.as_name
-                delim = agg.delimiter
-            else:
-                func = agg["function"]
-                col = agg["column"]
-                alias = agg.get("as")
-                delim = agg.get("delimiter")
-            func_str = func.upper() if isinstance(func, str) else str(func)
+            func_str = agg.function.value
             sel: dict[str, Any] = {
                 "ORDER": base_order + idx,
                 "FUNCTION": func_str,
-                "COLUMN": self._resolve_column(col),
-                "AS": alias or f"{func_str}_{col}",
+                "COLUMN": self._resolve_column(agg.column),
+                "AS": agg.as_name or f"{func_str}_{agg.column}",
             }
-            if delim is not None:
-                sel["DELIMITER"] = delim
+            if agg.delimiter is not None:
+                sel["DELIMITER"] = agg.delimiter
             select_specs.append(sel)
 
         pivot_spec: dict[str, Any] = {"GROUP_BY": group_specs, "SELECT": select_specs}
@@ -166,31 +155,24 @@ class AggregateOpsMixin:
         self,
         rows: list[str],
         pivot_column: str,
-        select: CrosstabSpec | dict[str, Any],
+        select: CrosstabSpec,
     ) -> dict[str, Any]:
         """Crosstab / pivot table (CROSSTAB task).
 
         Args:
             rows: List of display names for row grouping.
             pivot_column: Display name of column whose values become columns.
-            select: CrosstabSpec or aggregation dict::
+            select: CrosstabSpec object::
 
                 CrosstabSpec(function=AggregateFunction.SUM, column="Sales")
-                {"column": "Sales", "function": AggregateFunction.SUM}
 
         Returns:
             API response dict.
         """
-        if isinstance(select, CrosstabSpec):
-            func = select.function
-            col = select.column
-        else:
-            func = select["function"]
-            col = select.get("column")
-        func_str = func.upper() if isinstance(func, str) else str(func)
+        func_str = select.function.value
         select_spec: dict[str, Any] = {"FUNCTION": func_str}
-        if col is not None:
-            select_spec["COLUMN"] = self._resolve_column(col)
+        if select.column is not None:
+            select_spec["COLUMN"] = self._resolve_column(select.column)
         return self._add_task(
             {
                 "CROSSTAB": {

@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from mammoth.client import MammothClient
+import pytest
+
+from mammoth.client import MammothClient, ViewsResource
 
 
 class TestClientInit:
@@ -124,3 +126,103 @@ class TestClientContextManager:
             with MammothClient(api_key="key", api_secret="secret", workspace_id=1) as client:
                 assert client is not None
             mock_session.close.assert_called_once()
+
+
+class TestViewsResource:
+    """Test ViewsResource auto-detects dataset_id."""
+
+    @pytest.fixture
+    def client(self):
+        with patch("mammoth.client.requests.Session"):
+            c = MammothClient(api_key="key", api_secret="secret", workspace_id=1)
+        c.set_project_id(100)
+        return c
+
+    def test_get_auto_detects_dataset(self, client):
+        """views.get(view_id) auto-detects dataset_id via pipeline API."""
+        client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
+        client.dataviews.get = MagicMock(
+            return_value={
+                "id": 42,
+                "name": "Test View",
+                "properties": {
+                    "columns": [
+                        {"display_name": "col_a", "internal_name": "column_aaa", "type": "TEXT"}
+                    ]
+                },
+            }
+        )
+        view = client.views.get(42)
+        client.pipeline._find_dataset_for_dataview.assert_called_once_with(42)
+        client.dataviews.get.assert_called_once_with(dataset_id=500, dataview_id=42)
+        assert view.id == 42
+
+    def test_delete_auto_detects_dataset(self, client):
+        """views.delete(view_id) auto-detects dataset_id."""
+        client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
+        client.dataviews.delete = MagicMock(return_value={"status": "deleted"})
+        result = client.views.delete(42)
+        client.pipeline._find_dataset_for_dataview.assert_called_once_with(42)
+        client.dataviews.delete.assert_called_once_with(dataset_id=500, dataview_id=42)
+        assert result["status"] == "deleted"
+
+    def test_bulk_delete_auto_detects_dataset(self, client):
+        """views.bulk_delete(view_ids) auto-detects dataset_id from first view."""
+        client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
+        client.dataviews.bulk_delete = MagicMock(return_value={"status": "deleted"})
+        result = client.views.bulk_delete([42, 43])
+        client.pipeline._find_dataset_for_dataview.assert_called_once_with(42)
+        client.dataviews.bulk_delete.assert_called_once_with(dataset_id=500, dataview_ids=[42, 43])
+        assert result["status"] == "deleted"
+
+    def test_list_iterates_all_datasets(self, client):
+        """views.list() iterates all datasets in the project."""
+        client.datasets.list = MagicMock(return_value={"datasets": [{"id": 500}, {"id": 501}]})
+        client.dataviews.list = MagicMock(
+            side_effect=[
+                {
+                    "dataviews": [
+                        {
+                            "id": 10,
+                            "name": "V1",
+                            "properties": {
+                                "columns": [
+                                    {
+                                        "display_name": "c",
+                                        "internal_name": "column_c",
+                                        "type": "TEXT",
+                                    }
+                                ]
+                            },
+                        }
+                    ]
+                },
+                {"dataviews": []},
+            ]
+        )
+        views = client.views.list()
+        assert len(views) == 1
+        assert views[0].id == 10
+
+    def test_create_requires_dataset_id(self, client):
+        """views.create() still requires dataset_id."""
+        client.dataviews.create = MagicMock(
+            return_value={
+                "dataview_id": 99,
+                "id": 99,
+            }
+        )
+        client.dataviews.get = MagicMock(
+            return_value={
+                "id": 99,
+                "name": "New View",
+                "properties": {
+                    "columns": [{"display_name": "c", "internal_name": "column_c", "type": "TEXT"}]
+                },
+            }
+        )
+        view = client.views.create(dataset_id=500, name="New View")
+        client.dataviews.create.assert_called_once_with(
+            dataset_id=500, name="New View", clone_config_from=None
+        )
+        assert view.id == 99

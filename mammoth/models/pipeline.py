@@ -273,6 +273,21 @@ class JsonType(str, Enum):
     LIST = "LIST"
 
 
+class JsonOpType(str, Enum):
+    """JSON operation types for json_extract."""
+
+    JSON_OBJECT_TO_COLUMNS = "JSON_OBJECT_TO_COLUMNS"
+    JSON_LIST_TO_ROWS = "JSON_LIST_TO_ROWS"
+
+
+class ExportFileType(str, Enum):
+    """File types for S3 and file-based exports."""
+
+    CSV = "csv"
+    JSON = "json"
+    PARQUET = "parquet"
+
+
 class TaskType(str, Enum):
     """Pipeline task types."""
 
@@ -348,8 +363,69 @@ class SetValue:
 
 
 # ── Parameter spec dataclasses ─────────────────────────────────
-# These provide IDE autocomplete for dict-based method parameters.
-# Each method also accepts plain dicts for backward compatibility.
+# These are the required input types for transformation methods.
+# Enum-typed fields enforce valid values at construction time.
+
+
+@dataclass
+class SplitColumnSpec:
+    """Specification for a new column in :meth:`View.split_column`.
+
+    Example::
+
+        view.split_column("Name", " ", [SplitColumnSpec("First"), SplitColumnSpec("Last")])
+    """
+
+    name: str
+    type: ColumnType = ColumnType.TEXT
+
+
+@dataclass
+class BulkReplaceMapping:
+    """Specification for a bulk replace mapping in :meth:`View.bulk_replace`.
+
+    Example::
+
+        view.bulk_replace(
+            columns=["Item"],
+            mapping=[BulkReplaceMapping(search=["6 inch CAKE", "8 inch CAKE"], replace="CAKE")],
+        )
+    """
+
+    search: list[str]
+    replace: str
+
+
+@dataclass
+class DateDelta:
+    """Delta specification for :meth:`View.increment_date`.
+
+    Example::
+
+        view.increment_date("Order Date", DateDelta(days=30), new_column="Due Date")
+        view.increment_date("Start", DateDelta(years=1, months=-3), new_column="Adjusted")
+    """
+
+    years: int = 0
+    months: int = 0
+    weeks: int = 0
+    days: int = 0
+    hours: int = 0
+    minutes: int = 0
+    seconds: int = 0
+
+    def to_dict(self) -> dict[str, int]:
+        """Convert to backend DELTA format (uppercase keys, non-zero only)."""
+        mapping = {
+            "YEAR": self.years,
+            "MONTH": self.months,
+            "WEEK": self.weeks,
+            "DAY": self.days,
+            "HOUR": self.hours,
+            "MINUTE": self.minutes,
+            "SECOND": self.seconds,
+        }
+        return {k: v for k, v in mapping.items() if v != 0}
 
 
 @dataclass
@@ -358,12 +434,12 @@ class CopySpec:
 
     Example::
 
-        view.copy_columns([CopySpec(source="Sales", as_name="Sales Copy", type="NUMERIC")])
+        view.copy_columns([CopySpec(source="Sales", as_name="Sales Copy", type=ColumnType.NUMERIC)])
     """
 
     source: str
     as_name: str | None = None
-    type: str = "TEXT"
+    type: ColumnType = ColumnType.TEXT
     condition: Condition | CompoundCondition | NotCondition | None = field(default=None)
 
 
@@ -373,12 +449,14 @@ class ConversionSpec:
 
     Example::
 
-        view.convert_type([ConversionSpec(column="Sales", to="NUMERIC")])
-        view.convert_type([ConversionSpec(column="Date Col", to="DATE", format="MM/DD/YYYY")])
+        view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
+        view.convert_type([
+            ConversionSpec(column="Date Col", to=ColumnType.DATE, format="MM/DD/YYYY")
+        ])
     """
 
     column: str
-    to: str
+    to: ColumnType
     format: str | None = None
 
 
@@ -397,7 +475,7 @@ class AggregationSpec:
     """
 
     column: str
-    function: str | AggregateFunction
+    function: AggregateFunction
     as_name: str | None = None
     delimiter: str | None = None
 
@@ -442,7 +520,7 @@ class JsonExtractionSpec:
 
     key: str
     as_name: str | None = None
-    type: str = "TEXT"
+    type: ColumnType = ColumnType.TEXT
 
 
 @dataclass
@@ -455,7 +533,7 @@ class CrosstabSpec:
                       select=CrosstabSpec(function=AggregateFunction.SUM, column="Sales"))
     """
 
-    function: str | AggregateFunction
+    function: AggregateFunction
     column: str | None = None
 
 

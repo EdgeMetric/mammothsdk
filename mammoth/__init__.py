@@ -58,28 +58,34 @@ from mammoth.exceptions import (
     MammothTransformError,
 )
 from mammoth.helpers import parse_path
+from mammoth.models.exports import HandlerType, TriggerType
 from mammoth.models.pipeline import (
     AggregateFunction,
     AggregationSpec,
+    BulkReplaceMapping,
     ColumnType,
     ConversionSpec,
     CopySpec,
     CrosstabSpec,
     DateComponent,
+    DateDelta,
     DateDiffUnit,
     DraftCommand,
+    ExportFileType,
     FillDirection,
     FilterType,
     JoinKeySpec,
     JoinSelectSpec,
     JoinType,
     JsonExtractionSpec,
+    JsonOpType,
     JsonType,
     MathOperator,
     Operator,
     ProviderType,
     SetValue,
     SortDirection,
+    SplitColumnSpec,
     SubstringDirection,
     TaskType,
     TextCase,
@@ -90,7 +96,7 @@ from mammoth.models.pipeline import (
 from mammoth.models.webhooks import WebhookMode
 from mammoth.view import View, ViewExport
 
-__version__ = "0.2.4"
+__version__ = "0.3.0"
 __all__ = [
     # Client
     "MammothClient",
@@ -119,6 +125,8 @@ __all__ = [
     "SortDirection",
     "SubstringDirection",
     "JsonType",
+    "JsonOpType",
+    "ExportFileType",
     "MathOperator",
     "ProviderType",
     "TaskType",
@@ -133,6 +141,12 @@ __all__ = [
     "JoinSelectSpec",
     "JsonExtractionSpec",
     "CrosstabSpec",
+    "SplitColumnSpec",
+    "BulkReplaceMapping",
+    "DateDelta",
+    # Export enums
+    "HandlerType",
+    "TriggerType",
     # Exceptions
     "MammothError",
     "MammothAPIError",

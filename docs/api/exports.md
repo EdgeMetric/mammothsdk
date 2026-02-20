@@ -42,7 +42,7 @@ Export to S3 storage.
 ```python
 view.export.to_s3(
     file_name: str | None = None,
-    file_type: str = "csv",
+    file_type: ExportFileType = ExportFileType.CSV,
     include_hidden: bool = False,
     **kwargs,
 ) -> dict[str, Any]
@@ -51,12 +51,14 @@ view.export.to_s3(
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `file_name` | `str \| None` | `None` | Output filename (auto-generated if not provided) |
-| `file_type` | `str` | `"csv"` | File format (`"csv"`, `"json"`, etc.) |
+| `file_type` | `ExportFileType` | `ExportFileType.CSV` | File format enum |
 | `include_hidden` | `bool` | `False` | Include hidden columns |
 
 ```python
+from mammoth import ExportFileType
+
 result = view.export.to_s3(file_name="report.csv")
-result = view.export.to_s3(file_name="data.json", file_type="json", include_hidden=True)
+result = view.export.to_s3(file_name="data.json", file_type=ExportFileType.JSON, include_hidden=True)
 ```
 
 ### to_postgres

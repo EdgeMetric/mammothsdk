@@ -18,8 +18,8 @@ view = client.views.get(1039)
 You can also list, create, and delete views:
 
 ```python
-# List all views in a dataset
-views = client.views.list(dataset_id=42)
+# List all views in the project
+views = client.views.list()
 
 # Create a new view
 view = client.views.create(dataset_id=42, name="My Analysis")
@@ -277,7 +277,7 @@ Create or update a column with conditional values (SET task).
 
 ```python
 view.set_values(
-    values: list[SetValue | dict],
+    values: list[SetValue],
     new_column: str | None = None,
     column_type: ColumnType = ColumnType.TEXT,
     existing_column: str | None = None,
@@ -309,11 +309,11 @@ view.set_values(
 
 ### math
 
-Apply arithmetic operations (MATH task). Accepts a string expression that is parsed automatically, or a raw list of expression parts for advanced usage.
+Apply arithmetic operations (MATH task). Accepts a string expression that is parsed automatically.
 
 ```python
 view.math(
-    expression: str | list[dict],
+    expression: str,
     new_column: str | None = None,
     column_type: ColumnType = ColumnType.NUMERIC,
     existing_column: str | None = None,
@@ -338,8 +338,8 @@ Join with another dataview (JOIN task).
 view.join(
     foreign_view: int | View,
     join_type: JoinType,
-    on: list[JoinKeySpec | dict[str, str]],
-    select: list[str] | list[JoinSelectSpec | dict[str, str]],
+    on: list[JoinKeySpec],
+    select: list[str | JoinSelectSpec],
     column_prefix: str | None = None,
 ) -> dict[str, Any]
 ```
@@ -348,19 +348,19 @@ view.join(
 |-----------|------|-------------|
 | `foreign_view` | `int \| View` | View object or dataview ID to join with |
 | `join_type` | `JoinType` | `INNER`, `LEFT`, `RIGHT`, or `OUTER` |
-| `on` | `list[dict]` | Join keys: `[{"left": "col", "right": "col"}]` |
-| `select` | `list` | Columns to bring from the foreign view |
+| `on` | `list[JoinKeySpec]` | Join keys as JoinKeySpec objects |
+| `select` | `list[str \| JoinSelectSpec]` | Column names (str) or JoinSelectSpec objects |
 | `column_prefix` | `str \| None` | Prefix for joined columns |
 
 ```python
-from mammoth import JoinType
+from mammoth import JoinType, JoinKeySpec, JoinSelectSpec
 
 # Join with a View object (display names everywhere)
 other = client.views.get(2050)
 view.join(
     foreign_view=other,
     join_type=JoinType.LEFT,
-    on=[{"left": "Customer ID", "right": "Customer ID"}],
+    on=[JoinKeySpec(left="Customer ID", right="Customer ID")],
     select=["Category", "Name"],
 )
 
@@ -368,8 +368,8 @@ view.join(
 view.join(
     foreign_view=2050,
     join_type=JoinType.LEFT,
-    on=[{"left": "Customer ID", "right": "column_1"}],
-    select=[{"column": "column_7", "alias": "Category"}],
+    on=[JoinKeySpec(left="Customer ID", right="column_1")],
+    select=[JoinSelectSpec(column="column_7", alias="Category")],
 )
 ```
 
@@ -380,19 +380,19 @@ Group and aggregate (PIVOT task).
 ```python
 view.pivot(
     group_by: list[str],
-    aggregations: list[AggregationSpec | dict[str, Any]],
+    aggregations: list[AggregationSpec],
     condition: Condition | CompoundCondition | NotCondition | None = None,
 ) -> dict[str, Any]
 ```
 
 ```python
-from mammoth import AggregateFunction
+from mammoth import AggregateFunction, AggregationSpec
 
 view.pivot(
     group_by=["Region"],
     aggregations=[
-        {"column": "Sales", "function": AggregateFunction.SUM, "as": "Total Sales"},
-        {"column": "Sales", "function": AggregateFunction.COUNT, "as": "Order Count"},
+        AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total Sales"),
+        AggregationSpec(column="Sales", function=AggregateFunction.COUNT, as_name="Order Count"),
     ],
 )
 ```
@@ -443,15 +443,17 @@ Crosstab / pivot table (CROSSTAB task).
 view.crosstab(
     rows: list[str],
     pivot_column: str,
-    select: CrosstabSpec | dict[str, Any],
+    select: CrosstabSpec,
 ) -> dict[str, Any]
 ```
 
 ```python
+from mammoth import CrosstabSpec
+
 view.crosstab(
     rows=["Region"],
     pivot_column="Quarter",
-    select={"column": "Sales", "function": AggregateFunction.SUM},
+    select=CrosstabSpec(column="Sales", function=AggregateFunction.SUM),
 )
 ```
 
@@ -484,12 +486,14 @@ view.delete_columns(["Temp Column", "Debug"])
 Duplicate columns (COPY task).
 
 ```python
-view.copy_columns(copies: list[CopySpec | dict[str, Any]]) -> dict
+view.copy_columns(copies: list[CopySpec]) -> dict
 ```
 
 ```python
+from mammoth import CopySpec, ColumnType
+
 view.copy_columns([
-    {"source": "Sales", "as": "Sales Backup", "type": "NUMERIC"},
+    CopySpec(source="Sales", as_name="Sales Backup", type=ColumnType.NUMERIC),
 ])
 ```
 
@@ -521,13 +525,15 @@ view.combine_columns(
 Convert column data types (CONVERT task).
 
 ```python
-view.convert_type(conversions: list[ConversionSpec | dict[str, str]]) -> dict
+view.convert_type(conversions: list[ConversionSpec]) -> dict
 ```
 
 ```python
+from mammoth import ConversionSpec, ColumnType
+
 view.convert_type([
-    {"column": "Sales", "to": "NUMERIC"},
-    {"column": "Date", "to": "DATE"},
+    ConversionSpec(column="Sales", to=ColumnType.NUMERIC),
+    ConversionSpec(column="Date", to=ColumnType.DATE),
 ])
 ```
 
@@ -577,7 +583,7 @@ Bulk find-and-replace with multiple mappings (REPLACE with MAPPING).
 ```python
 view.bulk_replace(
     columns: list[str],
-    mapping: list[dict[str, Any]],
+    mapping: list[BulkReplaceMapping],
     match_case: bool = True,
     match_words: bool = False,
     condition: Condition | CompoundCondition | NotCondition | None = None,
@@ -585,11 +591,13 @@ view.bulk_replace(
 ```
 
 ```python
+from mammoth import BulkReplaceMapping
+
 view.bulk_replace(
     columns=["Item"],
     mapping=[
-        {"search": ["6 inch CAKE", "8 inch CAKE"], "replace": "CAKE"},
-        {"search": ["Small Coffee", "Large Coffee"], "replace": "Coffee"},
+        BulkReplaceMapping(search=["6 inch CAKE", "8 inch CAKE"], replace="CAKE"),
+        BulkReplaceMapping(search=["Small Coffee", "Large Coffee"], replace="Coffee"),
     ],
 )
 ```
@@ -602,17 +610,19 @@ Split a column by delimiter (SPLIT task).
 view.split_column(
     column: str,
     delimiter: str,
-    new_columns: list[dict[str, str]],
+    new_columns: list[SplitColumnSpec],
 ) -> dict[str, Any]
 ```
 
 ```python
+from mammoth import SplitColumnSpec
+
 view.split_column(
     column="Full Name",
     delimiter=" ",
     new_columns=[
-        {"name": "First Name", "type": "TEXT"},
-        {"name": "Last Name", "type": "TEXT"},
+        SplitColumnSpec(name="First Name"),
+        SplitColumnSpec(name="Last Name"),
     ],
 )
 ```
@@ -704,7 +714,7 @@ Add or subtract from a date (INCREMENT_DATE task).
 ```python
 view.increment_date(
     column: str,
-    delta: dict[str, int],
+    delta: DateDelta,
     new_column: str | None = None,
     existing_column: str | None = None,
     condition: Condition | CompoundCondition | NotCondition | None = None,
@@ -712,8 +722,10 @@ view.increment_date(
 ```
 
 ```python
-view.increment_date("Due Date", delta={"DAYS": 30}, new_column="Extended Due Date")
-view.increment_date("Start Date", delta={"MONTHS": -1, "YEARS": 2}, new_column="Adjusted")
+from mammoth import DateDelta
+
+view.increment_date("Due Date", delta=DateDelta(days=30), new_column="Extended Due Date")
+view.increment_date("Start Date", delta=DateDelta(months=-1, years=2), new_column="Adjusted")
 ```
 
 ### fill_missing
@@ -824,14 +836,14 @@ view.json_extract(
     column: str,
     json_type: JsonType = JsonType.OBJECT,
     keys: list[str] | None = None,
-    extractions: list[JsonExtractionSpec | dict[str, str]] | None = None,
+    extractions: list[JsonExtractionSpec] | None = None,
     keep_source: bool = False,
-    op_type: str | None = None,
+    op_type: JsonOpType | None = None,
 ) -> dict[str, Any]
 ```
 
 ```python
-from mammoth import JsonType
+from mammoth import JsonType, JsonExtractionSpec, ColumnType
 
 # Simple key extraction
 view.json_extract("data", keys=["name", "email", "age"])
@@ -840,8 +852,8 @@ view.json_extract("data", keys=["name", "email", "age"])
 view.json_extract(
     "data",
     extractions=[
-        {"key": "name", "as": "Name", "type": "TEXT"},
-        {"key": "age", "as": "Age", "type": "NUMERIC"},
+        JsonExtractionSpec(key="name", as_name="Name", type=ColumnType.TEXT),
+        JsonExtractionSpec(key="age", as_name="Age", type=ColumnType.NUMERIC),
     ],
 )
 

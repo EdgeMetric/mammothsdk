@@ -9,10 +9,12 @@ All examples assume the following setup:
 ```python
 from mammoth import (
     MammothClient, Condition, CompoundCondition, Operator,
-    ColumnType, SetValue, JoinType, AggregateFunction,
+    ColumnType, SetValue, JoinType, JoinKeySpec, JoinSelectSpec,
+    AggregateFunction, AggregationSpec, CrosstabSpec, CopySpec,
+    ConversionSpec, SplitColumnSpec, BulkReplaceMapping, DateDelta,
     WindowFunction, SortDirection, WindowRange, DateComponent,
     DateDiffUnit, TextCase, FillDirection, SubstringDirection,
-    FilterType, JsonType,
+    FilterType, JsonType, JsonExtractionSpec, ExportFileType,
 )
 
 client = MammothClient(
@@ -118,7 +120,7 @@ customers = client.views.get(2050)
 view.join(
     foreign_view=customers,
     join_type=JoinType.LEFT,
-    on=[{"left": "Customer ID", "right": "Customer ID"}],
+    on=[JoinKeySpec(left="Customer ID", right="Customer ID")],
     select=["Customer Name", "Email", "Segment"],
 )
 ```
@@ -131,7 +133,7 @@ products = client.views.get(2051)
 view.join(
     foreign_view=products,
     join_type=JoinType.INNER,
-    on=[{"left": "Product Code", "right": "Product Code"}],
+    on=[JoinKeySpec(left="Product Code", right="Product Code")],
     select=["Product Name", "Category"],
     column_prefix="Product_",
 )
@@ -147,9 +149,9 @@ view.join(
 view.pivot(
     group_by=["Region", "Category"],
     aggregations=[
-        {"column": "Sales", "function": AggregateFunction.SUM, "as": "Total Sales"},
-        {"column": "Sales", "function": AggregateFunction.AVG, "as": "Avg Sale"},
-        {"column": "Sales", "function": AggregateFunction.COUNT, "as": "Order Count"},
+        AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total Sales"),
+        AggregationSpec(column="Sales", function=AggregateFunction.AVG, as_name="Avg Sale"),
+        AggregationSpec(column="Sales", function=AggregateFunction.COUNT, as_name="Order Count"),
     ],
 )
 ```
@@ -160,7 +162,7 @@ view.pivot(
 view.crosstab(
     rows=["Region"],
     pivot_column="Quarter",
-    select={"column": "Sales", "function": AggregateFunction.SUM},
+    select=CrosstabSpec(column="Sales", function=AggregateFunction.SUM),
 )
 ```
 
@@ -212,7 +214,7 @@ view.window(
 The SDK does not have a direct `rename_column` task. To rename, copy the column with a new name, then delete the original:
 
 ```python
-view.copy_columns([{"source": "old_name", "as": "new_name", "type": "TEXT"}])
+view.copy_columns([CopySpec(source="old_name", as_name="new_name")])
 view.delete_columns(["old_name"])
 ```
 
@@ -233,8 +235,8 @@ view.split_column(
     column="Full Name",
     delimiter=" ",
     new_columns=[
-        {"name": "First Name", "type": "TEXT"},
-        {"name": "Last Name", "type": "TEXT"},
+        SplitColumnSpec(name="First Name"),
+        SplitColumnSpec(name="Last Name"),
     ],
 )
 ```
@@ -243,8 +245,8 @@ view.split_column(
 
 ```python
 view.convert_type([
-    {"column": "Sales", "to": "NUMERIC"},
-    {"column": "Order Date", "to": "DATE"},
+    ConversionSpec(column="Sales", to=ColumnType.NUMERIC),
+    ConversionSpec(column="Order Date", to=ColumnType.DATE),
 ])
 ```
 
@@ -277,8 +279,8 @@ view.replace_values(columns=["Status"], find="N/A", replace="Unknown")
 view.bulk_replace(
     columns=["Item"],
     mapping=[
-        {"search": ["6 inch CAKE", "8 inch CAKE", "10 inch CAKE"], "replace": "CAKE"},
-        {"search": ["Small Coffee", "Large Coffee", "Iced Coffee"], "replace": "Coffee"},
+        BulkReplaceMapping(search=["6 inch CAKE", "8 inch CAKE", "10 inch CAKE"], replace="CAKE"),
+        BulkReplaceMapping(search=["Small Coffee", "Large Coffee", "Iced Coffee"], replace="Coffee"),
     ],
 )
 ```
@@ -319,7 +321,7 @@ view.date_diff(
 ### Increment a date
 
 ```python
-view.increment_date("Due Date", delta={"DAYS": 30}, new_column="Extended Due")
+view.increment_date("Due Date", delta=DateDelta(days=30), new_column="Extended Due")
 ```
 
 ---
@@ -391,8 +393,8 @@ view.json_extract("data", keys=["name", "email", "age"])
 view.json_extract(
     "data",
     extractions=[
-        {"key": "name", "as": "Name", "type": "TEXT"},
-        {"key": "score", "as": "Score", "type": "NUMERIC"},
+        JsonExtractionSpec(key="name", as_name="Name", type=ColumnType.TEXT),
+        JsonExtractionSpec(key="score", as_name="Score", type=ColumnType.NUMERIC),
     ],
 )
 
@@ -433,8 +435,8 @@ By default each transformation runs the pipeline immediately. Use draft mode to 
 with view.draft():
     view.text_transform(columns=["Name", "Email"], trim=True)
     view.convert_type([
-        {"column": "Sales", "to": "NUMERIC"},
-        {"column": "Order Date", "to": "DATE"},
+        ConversionSpec(column="Sales", to=ColumnType.NUMERIC),
+        ConversionSpec(column="Order Date", to=ColumnType.DATE),
     ])
     view.filter_rows(Condition("Sales", Operator.IS_NOT_EMPTY))
     view.math("Price * Quantity", new_column="Revenue")
@@ -482,7 +484,8 @@ A complete example: load data, clean it, transform it, and export.
 ```python
 from mammoth import (
     MammothClient, Condition, Operator, ColumnType,
-    SetValue, AggregateFunction, SortDirection, TextCase,
+    SetValue, AggregateFunction, AggregationSpec,
+    ConversionSpec, SortDirection, TextCase,
 )
 
 client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
@@ -495,8 +498,8 @@ print(f"Starting with {len(view.display_names)} columns")
 # 2. Clean: trim whitespace, convert types
 view.text_transform(columns=["Customer Name", "Region"], trim=True)
 view.convert_type([
-    {"column": "Sales", "to": "NUMERIC"},
-    {"column": "Order Date", "to": "DATE"},
+    ConversionSpec(column="Sales", to=ColumnType.NUMERIC),
+    ConversionSpec(column="Order Date", to=ColumnType.DATE),
 ])
 
 # 3. Filter: remove empty sales
@@ -518,8 +521,8 @@ view.set_values(
 view.pivot(
     group_by=["Region", "Segment"],
     aggregations=[
-        {"column": "Revenue", "function": AggregateFunction.SUM, "as": "Total Revenue"},
-        {"column": "Revenue", "function": AggregateFunction.COUNT, "as": "Order Count"},
+        AggregationSpec(column="Revenue", function=AggregateFunction.SUM, as_name="Total Revenue"),
+        AggregationSpec(column="Revenue", function=AggregateFunction.COUNT, as_name="Order Count"),
     ],
 )
 

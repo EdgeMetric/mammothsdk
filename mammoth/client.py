@@ -81,27 +81,25 @@ class ViewsResource:
     Access via client.views::
 
         view = client.views.get(view_id)           # returns View object
-        views = client.views.list(dataset_id)       # returns list of View objects
+        views = client.views.list()                 # returns list of View objects
         view = client.views.create(dataset_id)      # returns View object
     """
 
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def get(self, view_id: int, dataset_id: int | None = None) -> View:
+    def get(self, view_id: int) -> View:
         """Get a rich View object for a dataview.
 
         Args:
             view_id: ID of the dataview.
-            dataset_id: Dataset ID (auto-detected if not provided).
 
         Returns:
             View object with transformation methods and metadata.
         """
         from mammoth.view import View
 
-        if dataset_id is None:
-            dataset_id = self._client.pipeline._find_dataset_for_dataview(view_id)
+        dataset_id = self._client.pipeline._find_dataset_for_dataview(view_id)
 
         data = self._client.dataviews.get(
             dataset_id=dataset_id,
@@ -109,21 +107,15 @@ class ViewsResource:
         )
         return View(self._client, data, dataset_id)
 
-    def list(self, dataset_id: int | None = None) -> _list[View]:
+    def list(self) -> _list[View]:
         """List all dataviews as View objects.
 
-        Args:
-            dataset_id: ID of the dataset.  When *None*, returns views
-                from **all** datasets in the current project.
+        Returns views from **all** datasets in the current project.
 
         Returns:
             List of View objects.
         """
         from mammoth.view import View
-
-        if dataset_id is not None:
-            response = self._client.dataviews.list(dataset_id=dataset_id)
-            return [View(self._client, dv, dataset_id) for dv in response.get("dataviews", [])]
 
         # Iterate every dataset in the project
         project_id = self._client.project_id
@@ -173,32 +165,28 @@ class ViewsResource:
             return View(self._client, full_data, dataset_id)
         return View(self._client, data, dataset_id)
 
-    def delete(self, view_id: int, dataset_id: int | None = None) -> dict[str, Any]:
+    def delete(self, view_id: int) -> dict[str, Any]:
         """Delete a dataview.
 
         Args:
             view_id: ID of the dataview.
-            dataset_id: Dataset ID (auto-detected if not provided).
 
         Returns:
             Dict with deletion result.
         """
-        if dataset_id is None:
-            dataset_id = self._client.pipeline._find_dataset_for_dataview(view_id)
+        dataset_id = self._client.pipeline._find_dataset_for_dataview(view_id)
         return self._client.dataviews.delete(dataset_id=dataset_id, dataview_id=view_id)
 
-    def bulk_delete(self, view_ids: _list[int], dataset_id: int | None = None) -> dict[str, Any]:
+    def bulk_delete(self, view_ids: _list[int]) -> dict[str, Any]:
         """Delete multiple dataviews.
 
         Args:
             view_ids: List of dataview IDs to delete.
-            dataset_id: Dataset ID (auto-detected from the first view if not provided).
 
         Returns:
             Dict with bulk deletion result.
         """
-        if dataset_id is None:
-            dataset_id = self._client.pipeline._find_dataset_for_dataview(view_ids[0])
+        dataset_id = self._client.pipeline._find_dataset_for_dataview(view_ids[0])
         return self._client.dataviews.bulk_delete(dataset_id=dataset_id, dataview_ids=view_ids)
 
 
@@ -511,26 +499,24 @@ class MammothClient:
 
     # ── Top-level Convenience Methods ──────────────────────────
 
-    def get_view(self, view_id: int, dataset_id: int | None = None) -> View:
+    def get_view(self, view_id: int) -> View:
         """Get a rich View object by dataview ID.
 
         Shortcut for ``client.views.get(view_id)``.
 
         Args:
             view_id: ID of the dataview.
-            dataset_id: Dataset ID (auto-detected if not provided).
 
         Returns:
             View object with transformation methods and metadata.
         """
-        return self.views.get(view_id, dataset_id)
+        return self.views.get(view_id)
 
     def branch_out(
         self,
         view_id: int,
         dest_dataset_id: int,
         column_mapping: dict[str, str] | None = None,
-        dataset_id: int | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Branch out a view to another dataset.
@@ -539,13 +525,12 @@ class MammothClient:
             view_id: Source dataview ID.
             dest_dataset_id: Target dataset ID.
             column_mapping: Column mapping dict (optional).
-            dataset_id: Source dataset ID (auto-detected if not provided).
             **kwargs: Additional export options.
 
         Returns:
             Export result dict.
         """
-        view = self.views.get(view_id, dataset_id)
+        view = self.views.get(view_id)
         return view.branch_out(dest_dataset_id, column_mapping, **kwargs)
 
     def __enter__(self) -> MammothClient:

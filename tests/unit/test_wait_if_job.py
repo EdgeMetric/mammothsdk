@@ -173,9 +173,7 @@ class TestDataviewsJobWaiting:
         self.client.jobs.wait_for_job.assert_called_once_with(55, timeout=120, poll_interval=5)
 
     def test_query_data_with_job_response(self):
-        self.client._request_json = MagicMock(
-            return_value={"id": 66, "status": "processing"}
-        )
+        self.client._request_json = MagicMock(return_value={"id": 66, "status": "processing"})
         result = self.client.dataviews.query_data(dataset_id=10, dataview_id=20)
         self.client.jobs.wait_for_job.assert_called_once()
         assert result == {"rows": [1, 2, 3]}
@@ -240,9 +238,7 @@ class TestPipelineJobWaiting:
         self.client._request_json = MagicMock(
             return_value={"job": {"id": 105, "status": "processing"}}
         )
-        result = self.client.pipeline.draft_mode(
-            dataview_id=20, command="enter", dataset_id=10
-        )
+        result = self.client.pipeline.draft_mode(dataview_id=20, command="enter", dataset_id=10)
         self.client.jobs.wait_for_job.assert_called_once()
 
     def test_add_task_no_job_passthrough(self):
@@ -314,16 +310,12 @@ class TestAIJobWaiting:
         self.client.jobs.wait_for_job.assert_called_once()
 
     def test_generate_sql_waits(self):
-        self.client._request_json = MagicMock(
-            return_value={"id": 302, "status": "processing"}
-        )
+        self.client._request_json = MagicMock(return_value={"id": 302, "status": "processing"})
         result = self.client.ai.generate_sql(intent="total sales")
         self.client.jobs.wait_for_job.assert_called_once()
 
     def test_get_suggestions_waits(self):
-        self.client._request_json = MagicMock(
-            return_value={"job_id": 303}
-        )
+        self.client._request_json = MagicMock(return_value={"job_id": 303})
         result = self.client.ai.get_suggestions()
         self.client.jobs.wait_for_job.assert_called_once()
 

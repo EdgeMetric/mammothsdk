@@ -13,6 +13,13 @@ from mammoth.exceptions import (
     MammothJobTimeoutError,
     MammothTransformError,
 )
+from mammoth.models.pipeline import (
+    AggregateFunction,
+    AggregationSpec,
+    ColumnType,
+    ConversionSpec,
+    CopySpec,
+)
 
 # ── Exception class tests ────────────────────────────────────
 
@@ -131,7 +138,7 @@ class TestResolveColumnErrors:
 class TestTransformationInputErrors:
     def test_copy_columns_bad_source(self, mock_view):
         with pytest.raises(MammothColumnError, match="no_such_col"):
-            mock_view.copy_columns([{"source": "no_such_col"}])
+            mock_view.copy_columns([CopySpec(source="no_such_col", as_name="copy")])
 
     def test_delete_columns_bad_name(self, mock_view):
         with pytest.raises(MammothColumnError, match="missing_col"):
@@ -146,7 +153,7 @@ class TestTransformationInputErrors:
 
     def test_convert_type_bad_column(self, mock_view):
         with pytest.raises(MammothColumnError, match="wrong"):
-            mock_view.convert_type([{"column": "wrong", "to": "NUMERIC"}])
+            mock_view.convert_type([ConversionSpec(column="wrong", to=ColumnType.NUMERIC)])
 
     def test_math_bad_column(self, mock_view):
         """math() expression parser raises ValueError for unrecognized tokens."""
@@ -157,7 +164,11 @@ class TestTransformationInputErrors:
         with pytest.raises(MammothColumnError, match="nope"):
             mock_view.pivot(
                 group_by=["nope"],
-                aggregations=[{"column": "base_salary", "function": "SUM", "as": "t"}],
+                aggregations=[
+                    AggregationSpec(
+                        column="base_salary", function=AggregateFunction.SUM, as_name="t"
+                    )
+                ],
             )
 
     def test_window_bad_partition_by(self, mock_view):

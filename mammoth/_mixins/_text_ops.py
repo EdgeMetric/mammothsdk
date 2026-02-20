@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from mammoth.models.pipeline import SubstringDirection, TextCase
+from mammoth.models.pipeline import (
+    BulkReplaceMapping,
+    SplitColumnSpec,
+    SubstringDirection,
+    TextCase,
+)
 
 if TYPE_CHECKING:
     from mammoth.condition import CompoundCondition, Condition, NotCondition
@@ -82,7 +87,7 @@ class TextOpsMixin:
     def bulk_replace(
         self,
         columns: list[str],
-        mapping: list[dict[str, Any]],
+        mapping: list[BulkReplaceMapping],
         match_case: bool = True,
         match_words: bool = False,
         condition: Condition | CompoundCondition | NotCondition | None = None,
@@ -93,9 +98,9 @@ class TextOpsMixin:
 
         Args:
             columns: Display names of columns to search in.
-            mapping: List of bulk mapping dicts::
+            mapping: List of BulkReplaceMapping objects::
 
-                [{"search": ["val1", "val2"], "replace": "replacement"}]
+                [BulkReplaceMapping(search=["val1", "val2"], replace="replacement")]
 
             match_case: Case-sensitive matching (default True).
             match_words: Whole-word matching (default False).
@@ -109,13 +114,11 @@ class TextOpsMixin:
             view.bulk_replace(
                 columns=["Item"],
                 mapping=[
-                    {"search": ["6 inch CAKE", "8 inch CAKE"], "replace": "CAKE"},
+                    BulkReplaceMapping(search=["6 inch CAKE", "8 inch CAKE"], replace="CAKE"),
                 ],
             )
         """
-        mapping_specs = [
-            {"SEARCH_VALUE": m["search"], "REPLACE_VALUE": m["replace"]} for m in mapping
-        ]
+        mapping_specs = [{"SEARCH_VALUE": m.search, "REPLACE_VALUE": m.replace} for m in mapping]
 
         replace_spec: dict[str, Any] = {
             "SOURCE": self._resolve_columns(columns),
@@ -134,23 +137,21 @@ class TextOpsMixin:
         self,
         column: str,
         delimiter: str,
-        new_columns: list[dict[str, str]],
+        new_columns: list[SplitColumnSpec],
     ) -> dict[str, Any]:
         """Split a column by delimiter (SPLIT task).
 
         Args:
             column: Display name of column to split.
             delimiter: Delimiter string.
-            new_columns: List of new column specs::
+            new_columns: List of SplitColumnSpec objects::
 
-                [{"name": "First", "type": "TEXT"}, {"name": "Last", "type": "TEXT"}]
+                [SplitColumnSpec("First"), SplitColumnSpec("Last")]
 
         Returns:
             API response dict.
         """
-        as_columns = [
-            self._build_as_column(nc["name"], nc.get("type", "TEXT")) for nc in new_columns
-        ]
+        as_columns = [self._build_as_column(nc.name, nc.type) for nc in new_columns]
 
         return self._add_task(
             {

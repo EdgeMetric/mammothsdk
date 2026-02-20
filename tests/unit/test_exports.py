@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from mammoth.models.pipeline import ExportFileType
 from mammoth.view import View
 
 # ── Fixtures ──────────────────────────────────────────────────
@@ -90,9 +91,19 @@ class TestToS3:
         assert target["file"].startswith("view_1001_export_")
 
     def test_custom_filename(self, export_view):
-        export_view.export.to_s3(file_name="data.csv", file_type="csv")
+        export_view.export.to_s3(file_name="data.csv", file_type=ExportFileType.CSV)
         _, target, _ = export_view.export._captured[-1]
         assert target["file"] == "data.csv"
+
+    def test_json_file_type(self, export_view):
+        export_view.export.to_s3(file_type=ExportFileType.JSON)
+        _, target, _ = export_view.export._captured[-1]
+        assert target["file_type"] == "json"
+
+    def test_parquet_file_type(self, export_view):
+        export_view.export.to_s3(file_type=ExportFileType.PARQUET)
+        _, target, _ = export_view.export._captured[-1]
+        assert target["file_type"] == "parquet"
 
 
 class TestToFtp:

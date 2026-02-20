@@ -469,7 +469,9 @@ class TestDateComponentCondition:
         c = Condition("Date", Operator.EQ, "October", component="month_text")
         col_map = {"Date": "column_d"}
         result = c.build(col_map)
-        assert result["column_d"]["EQ"] == {"VALUE": {"COMPONENT": "month_text", "VALUE": "October"}}
+        assert result["column_d"]["EQ"] == {
+            "VALUE": {"COMPONENT": "month_text", "VALUE": "October"}
+        }
 
     def test_component_year(self):
         c = Condition("Date", Operator.GTE, 2020, component="year")

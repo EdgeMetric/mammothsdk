@@ -10,16 +10,26 @@ import json
 from mammoth.condition import Condition
 from mammoth.models.pipeline import (
     AggregateFunction,
+    AggregationSpec,
+    BulkReplaceMapping,
     ColumnType,
+    ConversionSpec,
+    CopySpec,
+    CrosstabSpec,
     DateComponent,
+    DateDelta,
     DateDiffUnit,
     FillDirection,
     FilterType,
+    JoinKeySpec,
+    JoinSelectSpec,
     JoinType,
+    JsonExtractionSpec,
     JsonType,
     Operator,
     SetValue,
     SortDirection,
+    SplitColumnSpec,
     SubstringDirection,
     TextCase,
     WindowFunction,
@@ -50,11 +60,6 @@ class TestAddColumn:
         # Verify serializable
         json.dumps(p)
 
-    def test_with_string(self, mock_view):
-        mock_view.add_column("Amount", column_type="NUMERIC")
-        p = last_payload(mock_view)
-        assert p["ADD_COLUMN"][0]["TYPE"] == "NUMERIC"
-
 
 class TestDeleteColumns:
     def test_basic(self, mock_view):
@@ -71,11 +76,7 @@ class TestDeleteColumns:
 
 class TestCopyColumns:
     def test_basic(self, mock_view):
-        mock_view.copy_columns(
-            [
-                {"source": "emp_id", "as": "emp_id_copy", "type": "TEXT"},
-            ]
-        )
+        mock_view.copy_columns([CopySpec(source="emp_id", as_name="emp_id_copy")])
         p = last_payload(mock_view)
         assert "COPY" in p
         assert p["VERSION"] == 2
@@ -83,10 +84,12 @@ class TestCopyColumns:
         assert p["COPY"][0]["AS"]["COLUMN"] == "emp_id_copy"
 
     def test_multiple_copies(self, mock_view):
-        mock_view.copy_columns([
-            {"source": "emp_id", "as": "id_copy", "type": "TEXT"},
-            {"source": "base_salary", "as": "salary_copy", "type": "NUMERIC"},
-        ])
+        mock_view.copy_columns(
+            [
+                CopySpec(source="emp_id", as_name="id_copy"),
+                CopySpec(source="base_salary", as_name="salary_copy", type=ColumnType.NUMERIC),
+            ]
+        )
         p = last_payload(mock_view)
         assert len(p["COPY"]) == 2
         assert p["COPY"][0]["SOURCE"] == "column_abc1234567"
@@ -94,9 +97,11 @@ class TestCopyColumns:
 
     def test_with_condition_per_item(self, mock_view):
         cond = Condition("department", Operator.EQ, "Engineering")
-        mock_view.copy_columns([
-            {"source": "emp_id", "as": "id_copy", "type": "TEXT", "condition": cond},
-        ])
+        mock_view.copy_columns(
+            [
+                CopySpec(source="emp_id", as_name="id_copy", condition=cond),
+            ]
+        )
         p = last_payload(mock_view)
         assert "CONDITION" in p["COPY"][0]
         assert "column_ghi1234567" in p["COPY"][0]["CONDITION"]
@@ -152,25 +157,29 @@ class TestCombineColumns:
 
 class TestConvertType:
     def test_basic(self, mock_view):
-        mock_view.convert_type([{"column": "emp_id", "to": "NUMERIC"}])
+        mock_view.convert_type([ConversionSpec(column="emp_id", to=ColumnType.NUMERIC)])
         p = last_payload(mock_view)
         assert "CONVERT" in p
         assert p["CONVERT"][0]["SOURCE"] == "column_abc1234567"
         assert p["CONVERT"][0]["TO_TYPE"] == "NUMERIC"
 
     def test_multiple_conversions(self, mock_view):
-        mock_view.convert_type([
-            {"column": "emp_id", "to": "NUMERIC"},
-            {"column": "joining_date", "to": "DATE"},
-        ])
+        mock_view.convert_type(
+            [
+                ConversionSpec(column="emp_id", to=ColumnType.NUMERIC),
+                ConversionSpec(column="joining_date", to=ColumnType.DATE),
+            ]
+        )
         p = last_payload(mock_view)
         assert len(p["CONVERT"]) == 2
         assert p["CONVERT"][1]["TO_TYPE"] == "DATE"
 
     def test_with_date_format(self, mock_view):
-        mock_view.convert_type([
-            {"column": "joining_date", "to": "DATE", "format": "MM/DD/YYYY"},
-        ])
+        mock_view.convert_type(
+            [
+                ConversionSpec(column="joining_date", to=ColumnType.DATE, format="MM/DD/YYYY"),
+            ]
+        )
         p = last_payload(mock_view)
         assert p["CONVERT"][0]["FORMAT"] == "MM/DD/YYYY"
 
@@ -193,21 +202,19 @@ class TestFilterRows:
         p = last_payload(mock_view)
         assert p["CONDITION"]["FILTER_TYPE"] == FilterType.REMOVE
 
-    def test_string_filter_type(self, mock_view):
-        cond = Condition("department", Operator.EQ, "Engineering")
-        mock_view.filter_rows(cond, filter_type="SHOW")
-        p = last_payload(mock_view)
-        assert p["CONDITION"]["FILTER_TYPE"] == "SHOW"
-
     def test_compound_and(self, mock_view):
-        cond = Condition("department", Operator.EQ, "Eng") & Condition("base_salary", Operator.GTE, 100000)
+        cond = Condition("department", Operator.EQ, "Eng") & Condition(
+            "base_salary", Operator.GTE, 100000
+        )
         mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         assert "AND" in p["CONDITION"]
         assert len(p["CONDITION"]["AND"]) == 2
 
     def test_compound_or(self, mock_view):
-        cond = Condition("department", Operator.EQ, "Eng") | Condition("department", Operator.EQ, "Sales")
+        cond = Condition("department", Operator.EQ, "Eng") | Condition(
+            "department", Operator.EQ, "Sales"
+        )
         mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         assert "OR" in p["CONDITION"]
@@ -220,7 +227,10 @@ class TestFilterRows:
         assert "NOT" in p["CONDITION"]
 
     def test_nested(self, mock_view):
-        cond = (Condition("department", Operator.EQ, "Eng") & Condition("base_salary", Operator.GTE, 100000)) | Condition("gender", Operator.EQ, "F")
+        cond = (
+            Condition("department", Operator.EQ, "Eng")
+            & Condition("base_salary", Operator.GTE, 100000)
+        ) | Condition("gender", Operator.EQ, "F")
         mock_view.filter_rows(cond)
         p = last_payload(mock_view)
         assert "OR" in p["CONDITION"]
@@ -278,17 +288,6 @@ class TestSetValues:
         assert vals[1]["PROVIDER"] == "Low"
         assert "CONDITION" not in vals[1]
 
-    def test_with_dicts(self, mock_view):
-        mock_view.set_values(
-            new_column="status",
-            column_type="TEXT",
-            values=[
-                {"value": "Active"},
-            ],
-        )
-        p = last_payload(mock_view)
-        assert p["SET"]["VALUES"][0]["PROVIDER"] == "Active"
-
     def test_existing_column(self, mock_view):
         mock_view.set_values(
             existing_column="department",
@@ -315,7 +314,9 @@ class TestSetValues:
         assert "CONDITION" not in vals[2]
 
     def test_compound_condition_in_value(self, mock_view):
-        cond = Condition("base_salary", Operator.GTE, 100000) & Condition("department", Operator.EQ, "Eng")
+        cond = Condition("base_salary", Operator.GTE, 100000) & Condition(
+            "department", Operator.EQ, "Eng"
+        )
         mock_view.set_values(
             new_column="tier",
             values=[
@@ -342,20 +343,6 @@ class TestMath:
         assert expr[1] == {"TYPE": "OPERATOR", "VALUE": "*"}
         assert expr[2] == {"TYPE": "COLUMN", "VALUE": "column_vwx1234567"}
 
-    def test_raw_list_expression(self, mock_view):
-        mock_view.math(
-            expression=[
-                {"TYPE": "COLUMN", "VALUE": "base_salary"},
-                {"TYPE": "OPERATOR", "VALUE": "*"},
-                {"TYPE": "NUMBER", "VALUE": 1.1},
-            ],
-            new_column="raise",
-        )
-        p = last_payload(mock_view)
-        expr = p["MATH"]["EXPRESSION"]
-        assert expr[0]["VALUE"] == "column_jkl1234567"
-        assert expr[2]["VALUE"] == 1.1
-
 
 # ── Text operations ──────────────────────────────────────────
 
@@ -366,11 +353,6 @@ class TestTextTransform:
         p = last_payload(mock_view)
         assert "TEXT_TRANSFORM" in p
         assert p["TEXT_TRANSFORM"]["CASE"] == TextCase.UPPER
-
-    def test_string_case(self, mock_view):
-        mock_view.text_transform(["department"], case="UPPER")
-        p = last_payload(mock_view)
-        assert p["TEXT_TRANSFORM"]["CASE"] == "UPPER"
 
     def test_trim(self, mock_view):
         mock_view.text_transform(["full_name"], trim=True)
@@ -393,14 +375,19 @@ class TestReplaceValues:
 
     def test_with_condition(self, mock_view):
         cond = Condition("gender", Operator.EQ, "F")
-        mock_view.replace_values(columns=["department"], find="Eng", replace="Engineering", condition=cond)
+        mock_view.replace_values(
+            columns=["department"], find="Eng", replace="Engineering", condition=cond
+        )
         p = last_payload(mock_view)
         assert "CONDITION" in p
 
     def test_match_options(self, mock_view):
         mock_view.replace_values(
-            columns=["department"], find="eng", replace="Engineering",
-            match_case=True, match_words=True,
+            columns=["department"],
+            find="eng",
+            replace="Engineering",
+            match_case=True,
+            match_words=True,
         )
         p = last_payload(mock_view)
         assert p["REPLACE"]["MATCH_CASE"] is True
@@ -411,7 +398,7 @@ class TestBulkReplace:
     def test_basic(self, mock_view):
         mock_view.bulk_replace(
             columns=["department"],
-            mapping=[{"search": ["Eng", "Engineering"], "replace": "ENGINEERING"}],
+            mapping=[BulkReplaceMapping(search=["Eng", "Engineering"], replace="ENGINEERING")],
         )
         p = last_payload(mock_view)
         assert "REPLACE" in p
@@ -423,7 +410,7 @@ class TestBulkReplace:
         cond = Condition("gender", Operator.EQ, "M")
         mock_view.bulk_replace(
             columns=["department"],
-            mapping=[{"search": ["Eng"], "replace": "Engineering"}],
+            mapping=[BulkReplaceMapping(search=["Eng"], replace="Engineering")],
             condition=cond,
         )
         p = last_payload(mock_view)
@@ -433,8 +420,8 @@ class TestBulkReplace:
         mock_view.bulk_replace(
             columns=["department"],
             mapping=[
-                {"search": ["Eng"], "replace": "Engineering"},
-                {"search": ["Mkt"], "replace": "Marketing"},
+                BulkReplaceMapping(search=["Eng"], replace="Engineering"),
+                BulkReplaceMapping(search=["Mkt"], replace="Marketing"),
             ],
         )
         p = last_payload(mock_view)
@@ -447,8 +434,8 @@ class TestSplitColumn:
             column="full_name",
             delimiter=" ",
             new_columns=[
-                {"name": "First", "type": "TEXT"},
-                {"name": "Last", "type": "TEXT"},
+                SplitColumnSpec("First"),
+                SplitColumnSpec("Last"),
             ],
         )
         p = last_payload(mock_view)
@@ -462,9 +449,9 @@ class TestSplitColumn:
             column="full_name",
             delimiter=" ",
             new_columns=[
-                {"name": "First", "type": "TEXT"},
-                {"name": "Middle", "type": "TEXT"},
-                {"name": "Last", "type": "TEXT"},
+                SplitColumnSpec("First"),
+                SplitColumnSpec("Middle"),
+                SplitColumnSpec("Last"),
             ],
         )
         p = last_payload(mock_view)
@@ -475,13 +462,13 @@ class TestSubstring:
     def test_direction_start(self, mock_view):
         mock_view.substring(
             column="full_name",
-            direction="START",
+            direction=SubstringDirection.START,
             num_char=5,
             new_column="prefix",
         )
         p = last_payload(mock_view)
         assert "SUBSTRING" in p
-        assert p["SUBSTRING"]["DIRECTION"] == "START"
+        assert p["SUBSTRING"]["DIRECTION"] == SubstringDirection.START
         assert p["SUBSTRING"]["NUM_CHAR"] == 5
 
     def test_direction_left(self, mock_view):
@@ -498,7 +485,7 @@ class TestSubstring:
     def test_existing_column(self, mock_view):
         mock_view.substring(
             column="full_name",
-            direction="START",
+            direction=SubstringDirection.START,
             num_char=5,
             existing_column="full_name",
         )
@@ -510,7 +497,7 @@ class TestSubstring:
         cond = Condition("department", Operator.EQ, "Eng")
         mock_view.substring(
             column="full_name",
-            direction="START",
+            direction=SubstringDirection.START,
             num_char=3,
             new_column="prefix",
             condition=cond,
@@ -554,11 +541,6 @@ class TestExtractDate:
         assert p["EXTRACT_DATE"]["COMPONENT"] == "year"
         assert p["EXTRACT_DATE"]["AS"]["TYPE"] == "NUMERIC"
 
-    def test_string_component(self, mock_view):
-        mock_view.extract_date(column="joining_date", component="month", new_column="m")
-        p = last_payload(mock_view)
-        assert p["EXTRACT_DATE"]["COMPONENT"] == "month"
-
     def test_text_component(self, mock_view):
         mock_view.extract_date(
             column="joining_date",
@@ -588,8 +570,14 @@ class TestExtractDate:
         assert "AS" not in p["EXTRACT_DATE"]
 
     def test_all_numeric_components(self, mock_view):
-        for comp in [DateComponent.YEAR, DateComponent.MONTH, DateComponent.DAY,
-                     DateComponent.HOUR, DateComponent.QUARTER, DateComponent.WEEK]:
+        for comp in [
+            DateComponent.YEAR,
+            DateComponent.MONTH,
+            DateComponent.DAY,
+            DateComponent.HOUR,
+            DateComponent.QUARTER,
+            DateComponent.WEEK,
+        ]:
             mock_view.extract_date(column="joining_date", component=comp, new_column="x")
             p = last_payload(mock_view)
             assert p["EXTRACT_DATE"]["AS"]["TYPE"] == "NUMERIC"
@@ -609,16 +597,6 @@ class TestDateDiff:
         assert p["DATE_DIFF"]["MINUEND"]["VALUE"] == "column_pqr1234567"
         assert p["DATE_DIFF"]["SUBTRAHEND"]["VALUE"] == "column_mno1234567"
 
-    def test_string_component(self, mock_view):
-        mock_view.date_diff(
-            component="MONTH",
-            start="joining_date",
-            end="exit_date",
-            new_column="months",
-        )
-        p = last_payload(mock_view)
-        assert p["DATE_DIFF"]["COMPONENT"] == "MONTH"
-
     def test_existing_column(self, mock_view):
         mock_view.date_diff(
             component=DateDiffUnit.DAY,
@@ -635,7 +613,7 @@ class TestIncrementDate:
     def test_basic(self, mock_view):
         mock_view.increment_date(
             column="joining_date",
-            delta={"DAY": 30},
+            delta=DateDelta(days=30),
             new_column="plus_30",
         )
         p = last_payload(mock_view)
@@ -645,7 +623,7 @@ class TestIncrementDate:
     def test_multiple_deltas(self, mock_view):
         mock_view.increment_date(
             column="joining_date",
-            delta={"YEAR": 1, "MONTH": -3, "DAY": 15},
+            delta=DateDelta(years=1, months=-3, days=15),
             new_column="adjusted",
         )
         p = last_payload(mock_view)
@@ -654,7 +632,7 @@ class TestIncrementDate:
     def test_negative_deltas(self, mock_view):
         mock_view.increment_date(
             column="joining_date",
-            delta={"MONTH": -6},
+            delta=DateDelta(months=-6),
             new_column="six_months_ago",
         )
         p = last_payload(mock_view)
@@ -664,7 +642,7 @@ class TestIncrementDate:
         cond = Condition("department", Operator.EQ, "Eng")
         mock_view.increment_date(
             column="joining_date",
-            delta={"DAY": 30},
+            delta=DateDelta(days=30),
             new_column="plus_30",
             condition=cond,
         )
@@ -674,7 +652,7 @@ class TestIncrementDate:
     def test_existing_column(self, mock_view):
         mock_view.increment_date(
             column="joining_date",
-            delta={"DAY": 1},
+            delta=DateDelta(days=1),
             existing_column="exit_date",
         )
         p = last_payload(mock_view)
@@ -692,11 +670,6 @@ class TestFillMissing:
         assert "FILL" in p
         assert p["FILL"]["WITH"] == FillDirection.LAST_VALUE
 
-    def test_string_direction(self, mock_view):
-        mock_view.fill_missing(column="exit_date", direction="LAST_VALUE")
-        p = last_payload(mock_view)
-        assert p["FILL"]["WITH"] == "LAST_VALUE"
-
     def test_with_partition_and_order(self, mock_view):
         mock_view.fill_missing(
             column="exit_date",
@@ -712,7 +685,7 @@ class TestFillMissing:
         mock_view.fill_missing(
             column="exit_date",
             direction=FillDirection.FIRST_VALUE,
-            order_by=[["emp_id", "ASC"]],
+            order_by=[["emp_id", SortDirection.ASC]],
         )
         p = last_payload(mock_view)
         assert "ORDER_BY" in p["FILL"]
@@ -728,7 +701,7 @@ class TestLimitRows:
         assert p["LIMIT"]["BOTTOM"] is False
 
     def test_with_order(self, mock_view):
-        mock_view.limit_rows(n=5, order_by=[["base_salary", "DESC"]])
+        mock_view.limit_rows(n=5, order_by=[["base_salary", SortDirection.DESC]])
         p = last_payload(mock_view)
         assert "ORDER_BY" in p
 
@@ -799,11 +772,11 @@ class TestPivot:
         mock_view.pivot(
             group_by=["department"],
             aggregations=[
-                {
-                    "column": "base_salary",
-                    "function": AggregateFunction.AVG,
-                    "as": "avg_salary",
-                }
+                AggregationSpec(
+                    column="base_salary",
+                    function=AggregateFunction.AVG,
+                    as_name="avg_salary",
+                )
             ],
         )
         p = last_payload(mock_view)
@@ -814,25 +787,13 @@ class TestPivot:
         assert sel["FUNCTION"] == "AVG"
         assert sel["AS"] == "avg_salary"
 
-    def test_string_function(self, mock_view):
-        mock_view.pivot(
-            group_by=["department"],
-            aggregations=[
-                {
-                    "column": "base_salary",
-                    "function": "SUM",
-                    "as": "total",
-                }
-            ],
-        )
-        p = last_payload(mock_view)
-        assert p["PIVOT"]["SELECT"][0]["FUNCTION"] == "SUM"
-
     def test_multiple_group_by(self, mock_view):
         mock_view.pivot(
             group_by=["department", "gender"],
             aggregations=[
-                {"column": "base_salary", "function": AggregateFunction.SUM, "as": "total"},
+                AggregationSpec(
+                    column="base_salary", function=AggregateFunction.SUM, as_name="total"
+                ),
             ],
         )
         p = last_payload(mock_view)
@@ -844,8 +805,12 @@ class TestPivot:
         mock_view.pivot(
             group_by=["department"],
             aggregations=[
-                {"column": "base_salary", "function": AggregateFunction.SUM, "as": "total"},
-                {"column": "base_salary", "function": AggregateFunction.AVG, "as": "average"},
+                AggregationSpec(
+                    column="base_salary", function=AggregateFunction.SUM, as_name="total"
+                ),
+                AggregationSpec(
+                    column="base_salary", function=AggregateFunction.AVG, as_name="average"
+                ),
             ],
         )
         p = last_payload(mock_view)
@@ -862,7 +827,9 @@ class TestPivot:
         mock_view.pivot(
             group_by=["department"],
             aggregations=[
-                {"column": "base_salary", "function": AggregateFunction.AVG, "as": "avg"},
+                AggregationSpec(
+                    column="base_salary", function=AggregateFunction.AVG, as_name="avg"
+                ),
             ],
             condition=cond,
         )
@@ -873,12 +840,12 @@ class TestPivot:
         mock_view.pivot(
             group_by=["department"],
             aggregations=[
-                {
-                    "column": "full_name",
-                    "function": AggregateFunction.CONCAT,
-                    "as": "names",
-                    "delimiter": ",",
-                },
+                AggregationSpec(
+                    column="full_name",
+                    function=AggregateFunction.CONCAT,
+                    as_name="names",
+                    delimiter=",",
+                ),
             ],
         )
         p = last_payload(mock_view)
@@ -900,16 +867,6 @@ class TestWindow:
         assert p["WINDOW"]["EVALUATE"]["FUNCTION"] == WindowFunction.ROW_NUMBER
         assert p["WINDOW"]["RANGE"] == WindowRange.UNBOUNDED
         assert len(p["WINDOW"]["GROUP_BY"]) == 1
-
-    def test_string_function(self, mock_view):
-        mock_view.window(
-            function="SUM",
-            column="base_salary",
-            new_column="running",
-            order_by=[["base_salary", "ASC"]],
-        )
-        p = last_payload(mock_view)
-        assert p["WINDOW"]["EVALUATE"]["FUNCTION"] == "SUM"
 
     def test_running_range(self, mock_view):
         mock_view.window(
@@ -960,7 +917,7 @@ class TestCrosstab:
         mock_view.crosstab(
             rows=["department"],
             pivot_column="gender",
-            select={"function": AggregateFunction.COUNT},
+            select=CrosstabSpec(function=AggregateFunction.COUNT),
         )
         p = last_payload(mock_view)
         assert "CROSSTAB" in p
@@ -971,7 +928,7 @@ class TestCrosstab:
         mock_view.crosstab(
             rows=["department"],
             pivot_column="gender",
-            select={"column": "base_salary", "function": AggregateFunction.SUM},
+            select=CrosstabSpec(column="base_salary", function=AggregateFunction.SUM),
         )
         p = last_payload(mock_view)
         assert p["CROSSTAB"]["SELECT"]["FUNCTION"] == "SUM"
@@ -981,19 +938,10 @@ class TestCrosstab:
         mock_view.crosstab(
             rows=["department", "full_name"],
             pivot_column="gender",
-            select={"function": AggregateFunction.COUNT},
+            select=CrosstabSpec(function=AggregateFunction.COUNT),
         )
         p = last_payload(mock_view)
         assert len(p["CROSSTAB"]["ROWS"]) == 2
-
-    def test_string_function(self, mock_view):
-        mock_view.crosstab(
-            rows=["department"],
-            pivot_column="gender",
-            select={"column": "base_salary", "function": "AVG"},
-        )
-        p = last_payload(mock_view)
-        assert p["CROSSTAB"]["SELECT"]["FUNCTION"] == "AVG"
 
 
 # ── Advanced operations ──────────────────────────────────────
@@ -1004,8 +952,8 @@ class TestJoin:
         mock_view.join(
             foreign_view=2000,
             join_type=JoinType.LEFT,
-            on=[{"left": "emp_id", "right": "column_xxx"}],
-            select=[{"column": "column_yyy", "alias": "Category"}],
+            on=[JoinKeySpec(left="emp_id", right="column_xxx")],
+            select=[JoinSelectSpec(column="column_yyy", alias="Category")],
         )
         p = last_payload(mock_view)
         assert "JOIN" in p
@@ -1014,21 +962,11 @@ class TestJoin:
         assert p["JOIN"]["ON"][0]["LEFT"] == "column_abc1234567"
         assert p["JOIN"]["ON"][0]["RIGHT"] == "column_xxx"
 
-    def test_string_join_type(self, mock_view):
-        mock_view.join(
-            foreign_view=2000,
-            join_type="INNER",
-            on=[{"left": "emp_id", "right": "col_x"}],
-            select=[{"column": "col_y", "alias": "Y"}],
-        )
-        p = last_payload(mock_view)
-        assert p["JOIN"]["TYPE"] == "INNER"
-
     def test_with_view_object(self, mock_view, mock_foreign_view):
         mock_view.join(
             foreign_view=mock_foreign_view,
             join_type=JoinType.LEFT,
-            on=[{"left": "emp_id", "right": "cust_id"}],
+            on=[JoinKeySpec(left="emp_id", right="cust_id")],
             select=["category", "region"],
         )
         p = last_payload(mock_view)
@@ -1044,10 +982,10 @@ class TestJoin:
             foreign_view=2000,
             join_type=JoinType.INNER,
             on=[
-                {"left": "emp_id", "right": "col_a"},
-                {"left": "department", "right": "col_b"},
+                JoinKeySpec(left="emp_id", right="col_a"),
+                JoinKeySpec(left="department", right="col_b"),
             ],
-            select=[{"column": "col_x", "alias": "X"}],
+            select=[JoinSelectSpec(column="col_x", alias="X")],
         )
         p = last_payload(mock_view)
         assert len(p["JOIN"]["ON"]) == 2
@@ -1057,8 +995,8 @@ class TestJoin:
         mock_view.join(
             foreign_view=2000,
             join_type=JoinType.LEFT,
-            on=[{"left": "emp_id", "right": "col_x"}],
-            select=[{"column": "col_y", "alias": "Y"}],
+            on=[JoinKeySpec(left="emp_id", right="col_x")],
+            select=[JoinSelectSpec(column="col_y", alias="Y")],
             column_prefix="fk_",
         )
         p = last_payload(mock_view)
@@ -1068,8 +1006,8 @@ class TestJoin:
         mock_view.join(
             foreign_view=2000,
             join_type=JoinType.OUTER,
-            on=[{"left": "emp_id", "right": "col_x"}],
-            select=[{"column": "col_y", "alias": "Y"}],
+            on=[JoinKeySpec(left="emp_id", right="col_x")],
+            select=[JoinSelectSpec(column="col_y", alias="Y")],
         )
         p = last_payload(mock_view)
         assert p["JOIN"]["TYPE"] == JoinType.OUTER
@@ -1134,8 +1072,8 @@ class TestJsonExtract:
         mock_view.json_extract(
             column="department",
             extractions=[
-                {"key": "name", "as": "Name", "type": "TEXT"},
-                {"key": "age", "as": "Age", "type": "NUMERIC"},
+                JsonExtractionSpec(key="name", as_name="Name"),
+                JsonExtractionSpec(key="age", as_name="Age", type=ColumnType.NUMERIC),
             ],
         )
         p = last_payload(mock_view)
@@ -1241,11 +1179,11 @@ class TestPayloadSerialization:
         mock_view.pivot(
             group_by=["department"],
             aggregations=[
-                {
-                    "column": "base_salary",
-                    "function": AggregateFunction.SUM,
-                    "as": "total",
-                }
+                AggregationSpec(
+                    column="base_salary",
+                    function=AggregateFunction.SUM,
+                    as_name="total",
+                )
             ],
         )
         json.dumps(last_payload(mock_view))
@@ -1258,8 +1196,8 @@ class TestPayloadSerialization:
         mock_view.join(
             foreign_view=2000,
             join_type=JoinType.LEFT,
-            on=[{"left": "emp_id", "right": "col_x"}],
-            select=[{"column": "col_y", "alias": "Y"}],
+            on=[JoinKeySpec(left="emp_id", right="col_x")],
+            select=[JoinSelectSpec(column="col_y", alias="Y")],
         )
         json.dumps(last_payload(mock_view))
 
@@ -1272,11 +1210,15 @@ class TestPayloadSerialization:
         json.dumps(last_payload(mock_view))
 
     def test_date_diff_unit_serializes(self, mock_view):
-        mock_view.date_diff(component=DateDiffUnit.DAY, start="joining_date", end="exit_date", new_column="d")
+        mock_view.date_diff(
+            component=DateDiffUnit.DAY, start="joining_date", end="exit_date", new_column="d"
+        )
         json.dumps(last_payload(mock_view))
 
     def test_substring_direction_serializes(self, mock_view):
-        mock_view.substring(column="full_name", direction=SubstringDirection.START, num_char=3, new_column="s")
+        mock_view.substring(
+            column="full_name", direction=SubstringDirection.START, num_char=3, new_column="s"
+        )
         json.dumps(last_payload(mock_view))
 
     def test_sort_direction_serializes(self, mock_view):
@@ -1290,7 +1232,9 @@ class TestPayloadSerialization:
     def test_aggregate_function_serializes(self, mock_view):
         mock_view.pivot(
             group_by=["department"],
-            aggregations=[{"column": "base_salary", "function": AggregateFunction.COUNT, "as": "c"}],
+            aggregations=[
+                AggregationSpec(column="base_salary", function=AggregateFunction.COUNT, as_name="c")
+            ],
         )
         json.dumps(last_payload(mock_view))
 
@@ -1358,7 +1302,7 @@ class TestGoldenReference:
             column="exit_date",
             direction=FillDirection.LAST_VALUE,
             partition_by="department",
-            order_by=[["joining_date", "ASC"]],
+            order_by=[["joining_date", SortDirection.ASC]],
         )
         p = last_payload(mock_view)
         fill = p["FILL"]
@@ -1386,7 +1330,7 @@ class TestGoldenReference:
     def test_golden_bulk_replace(self, mock_view):
         mock_view.bulk_replace(
             columns=["department"],
-            mapping=[{"search": ["Eng", "Engineering"], "replace": "ENGINEERING"}],
+            mapping=[BulkReplaceMapping(search=["Eng", "Engineering"], replace="ENGINEERING")],
         )
         p = last_payload(mock_view)
         m = p["REPLACE"]["MAPPING"][0]
@@ -1396,7 +1340,7 @@ class TestGoldenReference:
     def test_golden_increment_date(self, mock_view):
         mock_view.increment_date(
             column="joining_date",
-            delta={"YEAR": 1, "MONTH": -3},
+            delta=DateDelta(years=1, months=-3),
             new_column="adjusted",
         )
         p = last_payload(mock_view)
@@ -1448,7 +1392,7 @@ class TestGoldenReference:
             column="base_salary",
             new_column="running",
             partition_by=["department"],
-            order_by=[["base_salary", "ASC"]],
+            order_by=[["base_salary", SortDirection.ASC]],
         )
         p = last_payload(mock_view)
         w = p["WINDOW"]
@@ -1472,7 +1416,9 @@ class TestGoldenReference:
         mock_view.pivot(
             group_by=["department"],
             aggregations=[
-                {"column": "base_salary", "function": AggregateFunction.SUM, "as": "total"},
+                AggregationSpec(
+                    column="base_salary", function=AggregateFunction.SUM, as_name="total"
+                ),
             ],
         )
         p = last_payload(mock_view)
@@ -1492,9 +1438,11 @@ class TestGoldenReference:
         assert "INTERNAL_NAME" in col
 
     def test_golden_copy(self, mock_view):
-        mock_view.copy_columns([
-            {"source": "emp_id", "as": "emp_copy", "type": "TEXT"},
-        ])
+        mock_view.copy_columns(
+            [
+                CopySpec(source="emp_id", as_name="emp_copy"),
+            ]
+        )
         p = last_payload(mock_view)
         assert p["VERSION"] == 2
         assert p["COPY"][0]["SOURCE"] == "column_abc1234567"
@@ -1514,7 +1462,7 @@ class TestGoldenReference:
         assert "AS" in p["COMBINE"]
 
     def test_golden_convert(self, mock_view):
-        mock_view.convert_type([{"column": "emp_id", "to": "NUMERIC"}])
+        mock_view.convert_type([ConversionSpec(column="emp_id", to=ColumnType.NUMERIC)])
         p = last_payload(mock_view)
         assert p["CONVERT"][0]["SOURCE"] == "column_abc1234567"
         assert p["CONVERT"][0]["TO_TYPE"] == "NUMERIC"
@@ -1531,8 +1479,8 @@ class TestGoldenReference:
             column="full_name",
             delimiter=" ",
             new_columns=[
-                {"name": "First", "type": "TEXT"},
-                {"name": "Last", "type": "TEXT"},
+                SplitColumnSpec("First"),
+                SplitColumnSpec("Last"),
             ],
         )
         p = last_payload(mock_view)
@@ -1582,7 +1530,7 @@ class TestGoldenReference:
         mock_view.join(
             foreign_view=mock_foreign_view,
             join_type=JoinType.LEFT,
-            on=[{"left": "emp_id", "right": "cust_id"}],
+            on=[JoinKeySpec(left="emp_id", right="cust_id")],
             select=["category"],
         )
         p = last_payload(mock_view)
@@ -1628,7 +1576,7 @@ class TestGoldenReference:
         assert p["IGNORE_COLUMNS"] == ["column_abc1234567"]
 
     def test_golden_limit(self, mock_view):
-        mock_view.limit_rows(n=10, bottom=True, order_by=[["base_salary", "DESC"]])
+        mock_view.limit_rows(n=10, bottom=True, order_by=[["base_salary", SortDirection.DESC]])
         p = last_payload(mock_view)
         assert p["LIMIT"]["LIMIT"] == 10
         assert p["LIMIT"]["BOTTOM"] is True
@@ -1651,7 +1599,7 @@ class TestGoldenReference:
         mock_view.crosstab(
             rows=["department"],
             pivot_column="gender",
-            select={"column": "base_salary", "function": AggregateFunction.SUM},
+            select=CrosstabSpec(column="base_salary", function=AggregateFunction.SUM),
         )
         p = last_payload(mock_view)
         ct = p["CROSSTAB"]
@@ -1742,30 +1690,69 @@ class TestParamTemplates:
 
         payloads = [
             pt.add_column_params([{"COLUMN": "X", "TYPE": "TEXT"}]),
-            pt.combine_params([{"COLUMN": "c1"}, {"STRING": " "}, {"COLUMN": "c2"}], as_column={"COLUMN": "C", "TYPE": "TEXT"}),
+            pt.combine_params(
+                [{"COLUMN": "c1"}, {"STRING": " "}, {"COLUMN": "c2"}],
+                as_column={"COLUMN": "C", "TYPE": "TEXT"},
+            ),
             pt.convert_params([{"SOURCE": "c1", "TO_TYPE": "NUMERIC"}]),
             pt.copy_params([{"SOURCE": "c1", "AS": {"COLUMN": "C", "TYPE": "TEXT"}}]),
             pt.crosstab_params([{"COLUMN": "c1"}], [{"COLUMN": "c2"}], {"FUNCTION": "COUNT"}),
-            pt.date_diff_params("DAY", {"TYPE": "COLUMN", "VALUE": "c1"}, {"TYPE": "COLUMN", "VALUE": "c2"}, as_column={"COLUMN": "D", "TYPE": "NUMERIC"}),
+            pt.date_diff_params(
+                "DAY",
+                {"TYPE": "COLUMN", "VALUE": "c1"},
+                {"TYPE": "COLUMN", "VALUE": "c2"},
+                as_column={"COLUMN": "D", "TYPE": "NUMERIC"},
+            ),
             pt.delete_params(["c1"]),
             pt.extract_date_params("c1", "year", as_column={"COLUMN": "Y", "TYPE": "NUMERIC"}),
             pt.fill_params("c1", "LAST_VALUE"),
             pt.gen_ai_params({"COLUMN": "AI", "TYPE": "TEXT"}, ["data"], "prompt", ["c1"]),
             pt.increment_date_params("c1", {"DAY": 1}, as_column={"COLUMN": "D", "TYPE": "DATE"}),
-            pt.join_params("j1", 100, "LEFT", [{"LEFT": "c1", "RIGHT": "c2"}], [{"COLUMN": "c3", "ALIAS": "A"}]),
-            pt.json_handle_params("c1", "JSON_OBJECT", [{"KEY": "k"}], json_object_op_type="JSON_OBJECT_TO_COLUMNS"),
+            pt.join_params(
+                "j1", 100, "LEFT", [{"LEFT": "c1", "RIGHT": "c2"}], [{"COLUMN": "c3", "ALIAS": "A"}]
+            ),
+            pt.json_handle_params(
+                "c1", "JSON_OBJECT", [{"KEY": "k"}], json_object_op_type="JSON_OBJECT_TO_COLUMNS"
+            ),
             pt.limit_params(10),
-            pt.lookup_params("c1", as_column={"COLUMN": "L", "TYPE": "TEXT"}, lookup_dataview_id=200, key="k", value="v"),
-            pt.math_params([{"TYPE": "COLUMN", "VALUE": "c1"}, {"TYPE": "OPERATOR", "VALUE": "+"}, {"TYPE": "NUMBER", "VALUE": 1}], as_column={"COLUMN": "M", "TYPE": "NUMERIC"}),
-            pt.pivot_params([{"COLUMN": "c1", "ORDER": 0}], [{"FUNCTION": "SUM", "COLUMN": "c2", "AS": "T", "ORDER": 1}]),
+            pt.lookup_params(
+                "c1",
+                as_column={"COLUMN": "L", "TYPE": "TEXT"},
+                lookup_dataview_id=200,
+                key="k",
+                value="v",
+            ),
+            pt.math_params(
+                [
+                    {"TYPE": "COLUMN", "VALUE": "c1"},
+                    {"TYPE": "OPERATOR", "VALUE": "+"},
+                    {"TYPE": "NUMBER", "VALUE": 1},
+                ],
+                as_column={"COLUMN": "M", "TYPE": "NUMERIC"},
+            ),
+            pt.pivot_params(
+                [{"COLUMN": "c1", "ORDER": 0}],
+                [{"FUNCTION": "SUM", "COLUMN": "c2", "AS": "T", "ORDER": 1}],
+            ),
             pt.replace_params(["c1"], value_pairs=[{"SEARCH_VALUE": "a", "REPLACE_VALUE": "b"}]),
             pt.select_params("ALL", condition={"c1": {"EQ": {"VALUE": 1}}, "FILTER_TYPE": "SHOW"}),
             pt.set_params({"AS": {"COLUMN": "S", "TYPE": "TEXT"}, "VALUES": []}, version=2),
             pt.split_params("c1", ",", [{"COLUMN": "A", "TYPE": "TEXT"}]),
-            pt.substring_params("c1", regex={"EXPRESSION": ".*", "INVERT": False}, as_column={"COLUMN": "S", "TYPE": "TEXT"}),
+            pt.substring_params(
+                "c1",
+                regex={"EXPRESSION": ".*", "INVERT": False},
+                as_column={"COLUMN": "S", "TYPE": "TEXT"},
+            ),
             pt.text_transform_params(["c1"], trim=True, case="UPPER"),
-            pt.unnest_params([{"COLUMN": "c1", "LABEL": "L"}], {"COLUMN": "Label", "TYPE": "TEXT"}, {"COLUMN": "Value", "TYPE": "TEXT"}),
-            pt.window_params({"FUNCTION": "SUM", "SOURCES": "c1", "ARGUMENTS": ["c1"]}, as_column={"COLUMN": "W", "TYPE": "NUMERIC"}),
+            pt.unnest_params(
+                [{"COLUMN": "c1", "LABEL": "L"}],
+                {"COLUMN": "Label", "TYPE": "TEXT"},
+                {"COLUMN": "Value", "TYPE": "TEXT"},
+            ),
+            pt.window_params(
+                {"FUNCTION": "SUM", "SOURCES": "c1", "ARGUMENTS": ["c1"]},
+                as_column={"COLUMN": "W", "TYPE": "NUMERIC"},
+            ),
             pt.discard_duplicates_params(ignore_columns=["c1"]),
         ]
         for payload in payloads:

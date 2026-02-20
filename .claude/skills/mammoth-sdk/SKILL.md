@@ -3,7 +3,7 @@ name: mammoth-sdk
 description: Comprehensive knowledge base for the Mammoth Analytics Python SDK — client setup, View transformations, condition building, exports, and API sub-clients. Use this skill when the user asks to "use the SDK", "write SDK code", "apply a transformation", "build a condition", "export data", mentions "MammothClient", "View", "Condition", "Operator", "filter_rows", "set_values", "pivot", "window", "join", "export", or needs to understand or write code using the Mammoth Python SDK. Covers the full SDK surface from authentication through transformations to exports.
 ---
 
-# Mammoth Python SDK Knowledge Base (v0.2.0)
+# Mammoth Python SDK Knowledge Base (v0.3.0)
 
 The Mammoth Python SDK (`mammoth` package) provides programmatic access to the Mammoth Analytics platform. It wraps the REST API with Pythonic classes, rich View objects, a condition builder with operator overloading, and export helpers.
 
@@ -79,7 +79,7 @@ Rich domain object for a dataview. Created via `client.views.get(id)` or `client
 
 - `ColumnOpsMixin`: add_column, delete_columns, copy_columns, combine_columns, convert_type
 - `FilterOpsMixin`: filter_rows, set_values
-- `MathOpsMixin`: math (string expression or raw format)
+- `MathOpsMixin`: math (string expression parser)
 - `TextOpsMixin`: text_transform, replace_values, bulk_replace, split_column, substring
 - `DateOpsMixin`: extract_date, date_diff, increment_date
 - `AggregateOpsMixin`: pivot, window, crosstab
@@ -131,17 +131,9 @@ view.set_values(
 The `math()` method accepts human-readable string expressions:
 
 ```python
-# String expression (recommended) — column names resolved automatically
+# String expression — column names resolved automatically
 view.math("Price * Quantity", new_column="Total")
 view.math("(Price + Tax) * 1.1", new_column="Grand Total")
-
-# Raw backend format (power users)
-view.math(
-    [{"TYPE": "COLUMN", "VALUE": "Price"},
-     {"TYPE": "OPERATOR", "VALUE": "*"},
-     {"TYPE": "COLUMN", "VALUE": "Quantity"}],
-    new_column="Total",
-)
 ```
 
 ### Join with View Objects
@@ -149,11 +141,13 @@ view.math(
 The `join()` method accepts View objects for automatic display name resolution:
 
 ```python
+from mammoth import JoinType, JoinKeySpec
+
 other = client.views.get(2050)
 view.join(
     foreign_view=other,          # View object — display names auto-resolved
     join_type=JoinType.LEFT,
-    on=[{"left": "Customer ID", "right": "Customer ID"}],
+    on=[JoinKeySpec(left="Customer ID", right="Customer ID")],
     select=["Category", "Name"],  # Simple list of display names
 )
 ```
@@ -198,6 +192,8 @@ All enums extend `str, Enum` — they work as both enum values AND plain strings
 | `MathOperator` | +, -, *, /, % | math expression parser |
 | `SubstringDirection` | START, END, LEFT, RIGHT | substring() |
 | `JsonType` | OBJECT, LIST | json_extract() |
+| `JsonOpType` | JSON_OBJECT_TO_COLUMNS, JSON_LIST_TO_ROWS | json_extract() |
+| `ExportFileType` | CSV, JSON, PARQUET | to_s3() |
 | `TaskType` | SET, SELECT, MATH, JOIN, ... (27 values) | Pipeline task identification |
 | `ProviderType` | FIXED, EXPRESSION | set_values() |
 
@@ -206,6 +202,16 @@ All enums extend `str, Enum` — they work as both enum values AND plain strings
 | Class | Fields | Used By |
 |-------|--------|---------|
 | `SetValue` | `value: Any`, `condition: Condition \| CompoundCondition \| None` | set_values() |
+| `CopySpec` | `source: str`, `as_name: str`, `type: ColumnType = TEXT` | copy_columns() |
+| `ConversionSpec` | `column: str`, `to: ColumnType`, `format: str \| None` | convert_type() |
+| `AggregationSpec` | `column: str`, `function: AggregateFunction`, `as_name: str \| None`, `delimiter: str \| None` | pivot() |
+| `CrosstabSpec` | `function: AggregateFunction`, `column: str \| None` | crosstab() |
+| `JoinKeySpec` | `left: str`, `right: str` | join() on |
+| `JoinSelectSpec` | `column: str`, `alias: str \| None` | join() select |
+| `SplitColumnSpec` | `name: str`, `type: ColumnType = TEXT` | split_column() |
+| `BulkReplaceMapping` | `search: list[str]`, `replace: str` | bulk_replace() |
+| `DateDelta` | `years`, `months`, `weeks`, `days`, `hours`, `minutes`, `seconds` (all `int = 0`) | increment_date() |
+| `JsonExtractionSpec` | `key: str`, `as_name: str \| None`, `type: ColumnType = TEXT` | json_extract() |
 
 ## Exceptions
 
@@ -255,8 +261,8 @@ For large datasets with many transformations, use draft mode to batch tasks:
 - **Draft mode**: Use `with view.draft():` to batch multiple transformations — the pipeline runs once on exit instead of after each task. See [references/examples.md](references/examples.md) for usage.
 - **Chaining**: Transformations can be chained — the SDK handles sequencing automatically.
 - **Immutable views**: Use `client.views.create(dataset_id)` to create a working copy before applying transformations.
-- **Date columns**: CSV-uploaded date columns are TEXT type. Convert with `view.convert_type([{"column": "date_col", "to": "DATE"}])` before date operations.
-- **String compatibility**: All enum parameters also accept plain strings (e.g. `"TEXT"` works where `ColumnType.TEXT` is expected) since enums extend `str`.
+- **Date columns**: CSV-uploaded date columns are TEXT type. Convert with `view.convert_type([ConversionSpec(column="date_col", to=ColumnType.DATE)])` before date operations.
+- **Strict types (v0.3.0)**: All transformation methods require typed dataclasses (not raw dicts). Enum fields require enum values (not strings).
 
 ## Key File Paths
 
@@ -267,7 +273,7 @@ For large datasets with many transformations, use draft mode to batch tasks:
 | `mammoth/_mixins/*.py` | 8 mixin classes for View transformation methods |
 | `mammoth/_expression_parser.py` | Math string expression parser |
 | `mammoth/condition.py` | Condition, CompoundCondition — filter builder |
-| `mammoth/models/pipeline.py` | Enums, SetValue dataclass |
+| `mammoth/models/pipeline.py` | Enums and dataclasses (SetValue, CopySpec, ConversionSpec, etc.) |
 | `mammoth/_param_templates.py` | Internal task payload builders |
 | `mammoth/exceptions.py` | Exception hierarchy |
 | `mammoth/helpers.py` | parse_path() URL parser |
