@@ -122,25 +122,30 @@ class View(
     def _build_column_maps(self, data: dict[str, Any]) -> None:
         """Extract column name mappings from dataview metadata.
 
-        Pipeline-computed columns (added by math, set_values, add_column, etc.)
-        appear in ``dependencies_info.dependents[str(view_id)]["METADATA"]`` but
-        not in the top-level ``metadata`` field. This method prefers that source
-        when available so display_names stays complete after every transformation.
+        Reads column metadata from the last task in ``taskwise_info``, which
+        always reflects the final post-pipeline column list including any columns
+        added by transforms (math, set_values, add_column, etc.).  Falls back to
+        the top-level ``metadata`` field for views that have no pipeline tasks yet.
         """
         self.columns = {}
         self.display_names = []
         self.column_types = {}
         self._internal_names = []
 
-        # dependents[str(id)]["METADATA"] is the authoritative post-pipeline column
-        # list — it includes both original and pipeline-added columns.
+        # taskwise_info keys are task sequence numbers (str in JSON).
+        # The entry with the highest sequence holds the final column list.
         columns_list: list[dict[str, Any]] = []
-        view_id = data.get("id")
-        if view_id is not None:
-            dependents = (data.get("dependencies_info") or {}).get("dependents") or {}
-            dep_entry = dependents.get(str(view_id)) or {}
-            columns_list = dep_entry.get("METADATA") or []
+        taskwise_info = data.get("taskwise_info") or {}
+        if taskwise_info:
+            try:
+                last_seq = max(int(k) for k in taskwise_info)
+                task_info = taskwise_info.get(last_seq) or taskwise_info.get(str(last_seq)) or {}
+                columns_list = task_info.get("metadata") or []
+            except (ValueError, TypeError):
+                pass
 
+        # Fresh view with no tasks yet — taskwise_info is null, fall back to
+        # the top-level metadata field which has the original dataset columns.
         if not columns_list:
             columns_list = data.get("metadata") or []
         if not columns_list:

@@ -37,7 +37,7 @@ for col in view.get_metadata():
 # {"display_name": "adj_price", "internal_name": "column_xyzabc1234", "type": "NUMERIC"}
 ```
 
-> **How it works:** column metadata is sourced from `taskwise_info` in the API response — specifically the last task's `metadata` field, which always reflects the final column state including any pipeline-computed columns. Falls back to top-level `metadata` when no tasks exist.
+> **How it works:** column metadata is read from `taskwise_info[last_seq]["metadata"]` in the API response — the highest sequence number is the last task, and its `metadata` list is the complete post-pipeline column list. For fresh views with no tasks yet, `taskwise_info` is null so the top-level `metadata` field is used instead.
 
 ### View attributes & metadata
 
