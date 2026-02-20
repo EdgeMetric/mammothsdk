@@ -93,6 +93,9 @@ class Condition:
         operator: str | Any,
         value: Any = None,
         case_sensitive: bool | None = None,
+        value_is_column: bool = False,
+        component: str | None = None,
+        truncate: str | None = None,
     ) -> None:
         if not column or not isinstance(column, str):
             raise ValueError(f"column must be a non-empty string, got {column!r}")
@@ -101,6 +104,9 @@ class Condition:
         self.operator: str = operator.value if hasattr(operator, "value") else str(operator)
         self.value = value
         self.case_sensitive = case_sensitive
+        self.value_is_column = value_is_column
+        self.component = component
+        self.truncate = truncate
 
         # Validation: null operators with a value, non-null without
         if self.operator in _NULL_OPERATORS and value is not None:
@@ -143,6 +149,19 @@ class Condition:
         if self.operator in ("IN_LIST", "NOT_IN_LIST", "CONTAINS", "NOT_CONTAINS"):
             val = self.value if isinstance(self.value, list) else [self.value]
             return {internal_name: {self.operator: {"VALUE": val}}}
+
+        # Column-to-column comparison
+        if self.value_is_column:
+            resolved_val = column_map.get(self.value, self.value) if column_map else self.value
+            return {internal_name: {self.operator: {"COLUMN": resolved_val}}}
+
+        # Date component wrapper
+        if self.component is not None:
+            return {internal_name: {self.operator: {"VALUE": {"COMPONENT": self.component, "VALUE": self.value}}}}
+
+        # Date truncation wrapper
+        if self.truncate is not None:
+            return {internal_name: {self.operator: {"VALUE": {"TRUNCATE": self.truncate, "VALUE": self.value}}}}
 
         # All other operators (comparison, string)
         return {internal_name: {self.operator: {"VALUE": self.value}}}

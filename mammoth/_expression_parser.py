@@ -19,12 +19,16 @@ Supports:
     - Operators: +, -, *, /, %
     - Parentheses (produce nested lists per backend convention)
     - Multi-word column names (matched longest-first)
+    - Function calls: ABS(), INT(), SMALL(), LARGE()
 """
 
 from __future__ import annotations
 
 import re
 from typing import Any
+
+# Supported math functions
+_FUNCTIONS = frozenset({"ABS", "INT", "SMALL", "LARGE"})
 
 
 def parse_expression(
@@ -51,7 +55,7 @@ def parse_expression(
 def _tokenize(expression: str, column_map: dict[str, str]) -> list[dict[str, Any] | str]:
     """Tokenize an expression string into typed tokens.
 
-    Returns a flat list of dicts (COLUMN/NUMBER/OPERATOR) and
+    Returns a flat list of dicts (COLUMN/NUMBER/OPERATOR/FUNCTION_START) and
     paren strings "(" and ")".
     """
     # Sort column names by length (longest first) for greedy matching
@@ -70,7 +74,16 @@ def _tokenize(expression: str, column_map: dict[str, str]) -> list[dict[str, Any
 
         matched = False
 
-        # Try column names first (longest match)
+        # Try function names before column names (e.g. ABS(...))
+        func_match = re.match(r"([A-Z]+)\s*\(", text[pos:])
+        if func_match and func_match.group(1) in _FUNCTIONS:
+            func_name = func_match.group(1)
+            tokens.append({"TYPE": "FUNCTION_START", "VALUE": func_name})
+            tokens.append("(")
+            pos += func_match.end()
+            continue
+
+        # Try column names (longest match)
         for name in sorted_names:
             if text[pos : pos + len(name)] == name:
                 # Check boundary: next char should not be alphanumeric/underscore
@@ -86,6 +99,12 @@ def _tokenize(expression: str, column_map: dict[str, str]) -> list[dict[str, Any
             continue
 
         char = text[pos]
+
+        # Commas (argument separator in functions)
+        if char == ",":
+            tokens.append(",")
+            pos += 1
+            continue
 
         # Parentheses
         if char in ("(", ")"):
@@ -114,14 +133,51 @@ def _tokenize(expression: str, column_map: dict[str, str]) -> list[dict[str, Any
 
 
 def _build_tree(tokens: list[Any]) -> list[Any]:
-    """Convert flat token list with parens into nested lists."""
+    """Convert flat token list with parens into nested lists.
+
+    Also handles FUNCTION_START tokens by collecting arguments and
+    producing {"TYPE": "FUNCTION", "VALUE": {"FUNCTION": name, "ARGUMENT": [...]}}
+    """
     result: list[Any] = []
     i = 0
 
     while i < len(tokens):
         token = tokens[i]
 
-        if token == "(":
+        if isinstance(token, dict) and token.get("TYPE") == "FUNCTION_START":
+            func_name = token["VALUE"]
+            # Next token should be "("
+            if i + 1 >= len(tokens) or tokens[i + 1] != "(":
+                raise ValueError(f"Expected '(' after function {func_name}")
+            # Find matching close paren
+            depth = 1
+            start = i + 2
+            j = start
+            while j < len(tokens) and depth > 0:
+                if tokens[j] == "(":
+                    depth += 1
+                elif tokens[j] == ")":
+                    depth -= 1
+                j += 1
+            if depth != 0:
+                raise ValueError(f"Unmatched parenthesis in function {func_name}")
+            # Split inner tokens by commas to get arguments
+            inner_tokens = tokens[start : j - 1]
+            args = _split_by_comma(inner_tokens)
+            parsed_args = [_build_tree(arg) for arg in args]
+            # Flatten single-element argument lists
+            flat_args = []
+            for a in parsed_args:
+                if len(a) == 1:
+                    flat_args.append(a[0])
+                else:
+                    flat_args.append(a)
+            result.append({
+                "TYPE": "FUNCTION",
+                "VALUE": {"FUNCTION": func_name, "ARGUMENT": flat_args},
+            })
+            i = j
+        elif token == "(":
             # Find matching close paren
             depth = 1
             start = i + 1
@@ -145,3 +201,25 @@ def _build_tree(tokens: list[Any]) -> list[Any]:
             i += 1
 
     return result
+
+
+def _split_by_comma(tokens: list[Any]) -> list[list[Any]]:
+    """Split a flat token list by top-level commas."""
+    args: list[list[Any]] = []
+    current: list[Any] = []
+    depth = 0
+    for token in tokens:
+        if token == "(":
+            depth += 1
+            current.append(token)
+        elif token == ")":
+            depth -= 1
+            current.append(token)
+        elif token == "," and depth == 0:
+            args.append(current)
+            current = []
+        else:
+            current.append(token)
+    if current:
+        args.append(current)
+    return args

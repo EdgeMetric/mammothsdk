@@ -100,3 +100,38 @@ def mock_view(mock_client: MammothClient) -> View:
     view._add_task = fake_add_task  # type: ignore[assignment]
     view._captured_payloads = captured_payloads  # type: ignore[attr-defined]
     return view
+
+
+# ── Foreign view for JOIN tests ──────────────────────────────
+
+FOREIGN_COLUMNS = [
+    {
+        "display_name": "cust_id",
+        "internal_name": "column_f_abc12345",
+        "type": "TEXT",
+    },
+    {
+        "display_name": "category",
+        "internal_name": "column_f_def12345",
+        "type": "TEXT",
+    },
+    {
+        "display_name": "region",
+        "internal_name": "column_f_ghi12345",
+        "type": "TEXT",
+    },
+]
+
+FOREIGN_VIEW_DATA = {
+    "id": 2050,
+    "name": "Foreign View",
+    "properties": {
+        "columns": FOREIGN_COLUMNS,
+    },
+}
+
+
+@pytest.fixture
+def mock_foreign_view(mock_client: MammothClient) -> View:
+    """Foreign View for JOIN tests — has its own columns."""
+    return View(mock_client, FOREIGN_VIEW_DATA, 600)

@@ -54,22 +54,26 @@ class ColumnOpsMixin:
 
                 [{"source": "Sales", "as": "Sales Copy", "type": "NUMERIC"}]
 
+            Each copy dict can also include a ``condition`` key with a Condition
+            object to apply per-item conditions.
+
         Returns:
             API response dict.
         """
         copy_items = []
         for c in copies:
             internal = self._next_internal_name()
-            copy_items.append(
-                {
-                    "SOURCE": self._resolve_column(c["source"]),
-                    "AS": self._build_as_column(
-                        c.get("as", f"{c['source']} Copy"),
-                        c.get("type", "TEXT"),
-                        internal,
-                    ),
-                }
-            )
+            item: dict[str, Any] = {
+                "SOURCE": self._resolve_column(c["source"]),
+                "AS": self._build_as_column(
+                    c.get("as", f"{c['source']} Copy"),
+                    c.get("type", "TEXT"),
+                    internal,
+                ),
+            }
+            if "condition" in c and c["condition"] is not None:
+                item["CONDITION"] = self._build_condition(c["condition"])
+            copy_items.append(item)
 
         return self._add_task({"COPY": copy_items, "VERSION": 2})
 
@@ -121,17 +125,19 @@ class ColumnOpsMixin:
             conversions: List of conversion specs::
 
                 [{"column": "Sales", "to": "NUMERIC"}]
+                [{"column": "Date Col", "to": "DATE", "format": "MM/DD/YYYY"}]
 
         Returns:
             API response dict.
         """
         convert_items = []
         for c in conversions:
-            convert_items.append(
-                {
-                    "SOURCE": self._resolve_column(c["column"]),
-                    "TO_TYPE": c["to"].upper(),
-                }
-            )
+            item: dict[str, Any] = {
+                "SOURCE": self._resolve_column(c["column"]),
+                "TO_TYPE": c["to"].upper(),
+            }
+            if "format" in c:
+                item["FORMAT"] = c["format"]
+            convert_items.append(item)
 
         return self._add_task({"CONVERT": convert_items})

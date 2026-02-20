@@ -72,14 +72,15 @@ class AggregateOpsMixin:
         for idx, agg in enumerate(aggregations):
             func = agg["function"]
             func_str = func.upper() if isinstance(func, str) else str(func)
-            select_specs.append(
-                {
-                    "ORDER": base_order + idx,
-                    "FUNCTION": func_str,
-                    "COLUMN": self._resolve_column(agg["column"]),
-                    "AS": agg.get("as", f"{func_str}_{agg['column']}"),
-                }
-            )
+            sel: dict[str, Any] = {
+                "ORDER": base_order + idx,
+                "FUNCTION": func_str,
+                "COLUMN": self._resolve_column(agg["column"]),
+                "AS": agg.get("as", f"{func_str}_{agg['column']}"),
+            }
+            if "delimiter" in agg:
+                sel["DELIMITER"] = agg["delimiter"]
+            select_specs.append(sel)
 
         pivot_spec: dict[str, Any] = {"GROUP_BY": group_specs, "SELECT": select_specs}
         if condition:
@@ -169,6 +170,9 @@ class AggregateOpsMixin:
         """
         func = select["function"]
         func_str = func.upper() if isinstance(func, str) else str(func)
+        select_spec: dict[str, Any] = {"FUNCTION": func_str}
+        if "column" in select:
+            select_spec["COLUMN"] = self._resolve_column(select["column"])
         return self._add_task(
             {
                 "CROSSTAB": {
@@ -185,7 +189,7 @@ class AggregateOpsMixin:
                             "TYPE": self.column_types.get(pivot_column, "TEXT"),
                         }
                     ],
-                    "SELECT": {"FUNCTION": func_str},
+                    "SELECT": select_spec,
                 },
             }
         )

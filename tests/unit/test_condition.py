@@ -442,3 +442,80 @@ class TestPrecedence:
         assert isinstance(result.conditions[0], CompoundCondition)
         assert result.conditions[0].logic == "OR"
         assert isinstance(result.conditions[1], Condition)
+
+
+# ── New features: value_is_column, component, truncate ─────────
+
+
+class TestValueIsColumn:
+    """Test column-to-column comparison."""
+
+    def test_value_is_column(self):
+        c = Condition("Sales", Operator.GT, "Cost", value_is_column=True)
+        col_map = {"Sales": "column_1", "Cost": "column_2"}
+        result = c.build(col_map)
+        assert result["column_1"]["GT"] == {"COLUMN": "column_2"}
+
+    def test_value_is_column_without_map(self):
+        c = Condition("Sales", Operator.GT, "Cost", value_is_column=True)
+        result = c.build()
+        assert result["Sales"]["GT"] == {"COLUMN": "Cost"}
+
+
+class TestDateComponentCondition:
+    """Test date component wrapped values."""
+
+    def test_component_month_text(self):
+        c = Condition("Date", Operator.EQ, "October", component="month_text")
+        col_map = {"Date": "column_d"}
+        result = c.build(col_map)
+        assert result["column_d"]["EQ"] == {"VALUE": {"COMPONENT": "month_text", "VALUE": "October"}}
+
+    def test_component_year(self):
+        c = Condition("Date", Operator.GTE, 2020, component="year")
+        result = c.build({"Date": "col_d"})
+        assert result["col_d"]["GTE"] == {"VALUE": {"COMPONENT": "year", "VALUE": 2020}}
+
+
+class TestDateTruncateCondition:
+    """Test date truncation wrapped values."""
+
+    def test_truncate_day(self):
+        c = Condition("Date", Operator.GT, "2021-02-28", truncate="DAY")
+        col_map = {"Date": "column_d"}
+        result = c.build(col_map)
+        assert result["column_d"]["GT"] == {"VALUE": {"TRUNCATE": "DAY", "VALUE": "2021-02-28"}}
+
+    def test_truncate_month(self):
+        c = Condition("Date", Operator.LTE, "2021-06-30", truncate="MONTH")
+        result = c.build({"Date": "col_d"})
+        assert result["col_d"]["LTE"] == {"VALUE": {"TRUNCATE": "MONTH", "VALUE": "2021-06-30"}}
+
+
+class TestAdditionalOperators:
+    """Test additional operator types."""
+
+    def test_contains_operator(self):
+        c = Condition("Name", Operator.CONTAINS, "Smith")
+        result = c.build({"Name": "col_n"})
+        assert result["col_n"]["CONTAINS"] == {"VALUE": ["Smith"]}
+
+    def test_starts_with(self):
+        c = Condition("Name", Operator.STARTS_WITH, "A")
+        result = c.build({"Name": "col_n"})
+        assert result["col_n"]["STARTS_WITH"] == {"VALUE": "A"}
+
+    def test_ends_with(self):
+        c = Condition("Name", Operator.ENDS_WITH, "son")
+        result = c.build({"Name": "col_n"})
+        assert result["col_n"]["ENDS_WITH"] == {"VALUE": "son"}
+
+    def test_is_maxval(self):
+        c = Condition("Sales", Operator.IS_MAXVAL)
+        result = c.build({"Sales": "col_s"})
+        assert result["col_s"]["IS_MAXVAL"] is True
+
+    def test_is_minval(self):
+        c = Condition("Sales", Operator.IS_MINVAL)
+        result = c.build({"Sales": "col_s"})
+        assert result["col_s"]["IS_MINVAL"] is True
