@@ -104,3 +104,28 @@ def adv_view(adv_client, adv_uploaded_dataset_id):
     yield v
     with contextlib.suppress(Exception):
         adv_client.views.delete(v.id, adv_uploaded_dataset_id)
+
+
+# ── Shared second-dataset fixtures (for JOIN/LOOKUP) ──────────
+
+EMPLOYEE_CSV_PATH = Path(__file__).resolve().parent.parent.parent / "employee.csv"
+
+
+@pytest.fixture(scope="session")
+def adv_second_dataset_id(adv_client):
+    """Upload employee.csv as a second dataset for JOIN/LOOKUP tests."""
+    assert EMPLOYEE_CSV_PATH.exists(), f"Test CSV not found: {EMPLOYEE_CSV_PATH}"
+    ds_id = adv_client.files.upload(str(EMPLOYEE_CSV_PATH))
+    assert ds_id is not None
+    yield ds_id
+    with contextlib.suppress(Exception):
+        adv_client.datasets.delete(ds_id)
+
+
+@pytest.fixture
+def adv_second_view(adv_client, adv_second_dataset_id):
+    """Create a fresh view on the second (employee) dataset."""
+    v = adv_client.views.create(dataset_id=adv_second_dataset_id, name="pytest_adv_second")
+    yield v
+    with contextlib.suppress(Exception):
+        adv_client.views.delete(v.id, adv_second_dataset_id)
