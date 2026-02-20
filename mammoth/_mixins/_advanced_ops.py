@@ -238,6 +238,7 @@ class AdvancedOpsMixin:
         context_columns: list[str],
         new_column: str = "AI Result",
         assistant_data: list[str] | None = None,
+        context_columns_derivation: bool | None = None,
     ) -> dict[str, Any]:
         """AI-powered transformation (GEN_AI task).
 
@@ -246,6 +247,7 @@ class AdvancedOpsMixin:
             context_columns: Display names of columns to use as context.
             new_column: Name for the AI output column (default "AI Result").
             assistant_data: Additional assistant context strings.
+            context_columns_derivation: Whether to derive from context columns.
 
         Returns:
             API response dict.
@@ -258,16 +260,16 @@ class AdvancedOpsMixin:
                 new_column="Sentiment",
             )
         """
-        return self._add_task(
-            {
-                "GEN_AI": {
-                    "AS": self._build_as_column(new_column, "TEXT"),
-                    "ASSISTANT_DATA": assistant_data or [],
-                    "query": prompt,
-                    "context_columns": self._resolve_columns(context_columns),
-                },
-            }
-        )
+        gen_ai_spec: dict[str, Any] = {
+            "AS": self._build_as_column(new_column, "TEXT"),
+            "ASSISTANT_DATA": assistant_data or [],
+            "query": prompt,
+            "context_columns": self._resolve_columns(context_columns),
+        }
+        if context_columns_derivation is not None:
+            gen_ai_spec["context_columns_derivation"] = context_columns_derivation
+
+        return self._add_task({"GEN_AI": gen_ai_spec})
 
     def _next_sequence_number(self) -> int:
         """Return the next pipeline sequence number for this view."""

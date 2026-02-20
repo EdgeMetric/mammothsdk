@@ -129,7 +129,7 @@ def copy_params(
     Example:
         copy_params([{"SOURCE": "column_1", "AS": {"COLUMN": "Sales Copy", "TYPE": "NUMERIC"}}])
     """
-    params: dict[str, Any] = {"COPY": copies}
+    params: dict[str, Any] = {"COPY": copies, "VERSION": 2}
     return _attach_metadata(params, dataview_id, sequence_number)
 
 
@@ -418,7 +418,7 @@ def lookup_params(
     source: str,
     as_column: dict[str, Any] | None = None,
     destination: str | None = None,
-    lookup_table: str | None = None,
+    lookup_dataview_id: str | int | None = None,
     key: str | None = None,
     value: str | None = None,
     mapping: dict[str, Any] | None = None,
@@ -431,7 +431,7 @@ def lookup_params(
         source: Internal column name in the source view.
         as_column: New column spec.
         destination: Existing column internal name.
-        lookup_table: Dataview ID (as string or int) to look up from.
+        lookup_dataview_id: Dataview ID (as string or int) to look up from.
         key: Key column internal name in the lookup view.
         value: Value column internal name in the lookup view.
         mapping: Optional mapping dict.
@@ -441,8 +441,8 @@ def lookup_params(
         lookup["AS"] = as_column
     if destination is not None:
         lookup["DESTINATION"] = destination
-    if lookup_table is not None:
-        lookup["TABLE"] = lookup_table
+    if lookup_dataview_id is not None:
+        lookup["DATAVIEW_ID"] = lookup_dataview_id
     if key is not None:
         lookup["KEY"] = key
     if value is not None:
@@ -608,8 +608,7 @@ def set_params(
             version=2,
         )
     """
-    values = set_values if isinstance(set_values, list) else [set_values]
-    params: dict[str, Any] = {"SET": values}
+    params: dict[str, Any] = {"SET": set_values}
     if task_namespace is not None:
         params["TASK_NAMESPACE"] = task_namespace
     if version is not None:

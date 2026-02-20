@@ -68,3 +68,83 @@ class TestParseExpression:
         result = parse_expression("base_salary * bonus_pct", COLUMN_MAP)
         assert result[0] == {"TYPE": "COLUMN", "VALUE": "column_salary123"}
         assert result[2] == {"TYPE": "COLUMN", "VALUE": "column_bonus123"}
+
+    def test_three_operands(self):
+        result = parse_expression("Price + Tax + Quantity", COLUMN_MAP)
+        assert len(result) == 5
+        assert result[0]["TYPE"] == "COLUMN"
+        assert result[1]["VALUE"] == "+"
+        assert result[2]["TYPE"] == "COLUMN"
+        assert result[3]["VALUE"] == "+"
+        assert result[4]["TYPE"] == "COLUMN"
+
+    def test_nested_parens(self):
+        result = parse_expression("((Price + Tax) * Quantity)", COLUMN_MAP)
+        # Outer parens create one nested list
+        assert isinstance(result[0], list)
+        inner = result[0]
+        # Inner: [sub_expr, *, Quantity]
+        assert isinstance(inner[0], list)  # (Price + Tax)
+        assert inner[1] == {"TYPE": "OPERATOR", "VALUE": "*"}
+
+    def test_modulo(self):
+        result = parse_expression("Quantity % 2", COLUMN_MAP)
+        assert result[1] == {"TYPE": "OPERATOR", "VALUE": "%"}
+        assert result[2] == {"TYPE": "NUMBER", "VALUE": 2}
+
+    def test_float_literal(self):
+        result = parse_expression("Price * 0.15", COLUMN_MAP)
+        assert result[2] == {"TYPE": "NUMBER", "VALUE": 0.15}
+
+    def test_column_name_substring_of_another(self):
+        """Longer column name should match first (Tax vs Total Sales contains no overlap, but test boundary)."""
+        col_map = {"Tax Rate": "col_tr", "Tax": "col_t"}
+        result = parse_expression("Tax Rate + Tax", col_map)
+        assert result[0] == {"TYPE": "COLUMN", "VALUE": "col_tr"}
+        assert result[2] == {"TYPE": "COLUMN", "VALUE": "col_t"}
+
+
+class TestFunctionParsing:
+    """Test function call parsing (ABS, INT, SMALL, LARGE)."""
+
+    def test_abs_function(self):
+        result = parse_expression("ABS(Price - Tax)", COLUMN_MAP)
+        assert len(result) == 1
+        func = result[0]
+        assert func["TYPE"] == "FUNCTION"
+        assert func["VALUE"]["FUNCTION"] == "ABS"
+        # Argument should be the parsed inner expression
+        arg = func["VALUE"]["ARGUMENT"][0]
+        # It's a list: [COLUMN, OPERATOR, COLUMN]
+        assert isinstance(arg, list)
+        assert len(arg) == 3
+
+    def test_int_function(self):
+        result = parse_expression("INT(Price)", COLUMN_MAP)
+        assert result[0]["TYPE"] == "FUNCTION"
+        assert result[0]["VALUE"]["FUNCTION"] == "INT"
+        assert result[0]["VALUE"]["ARGUMENT"][0] == {"TYPE": "COLUMN", "VALUE": "column_price123"}
+
+    def test_nested_function(self):
+        result = parse_expression("ABS(Price) + ABS(Tax)", COLUMN_MAP)
+        assert len(result) == 3
+        assert result[0]["TYPE"] == "FUNCTION"
+        assert result[0]["VALUE"]["FUNCTION"] == "ABS"
+        assert result[1] == {"TYPE": "OPERATOR", "VALUE": "+"}
+        assert result[2]["TYPE"] == "FUNCTION"
+
+    def test_function_with_multiple_args(self):
+        result = parse_expression("SMALL(Price, 2)", COLUMN_MAP)
+        assert result[0]["TYPE"] == "FUNCTION"
+        assert result[0]["VALUE"]["FUNCTION"] == "SMALL"
+        args = result[0]["VALUE"]["ARGUMENT"]
+        assert len(args) == 2
+        assert args[0] == {"TYPE": "COLUMN", "VALUE": "column_price123"}
+        assert args[1] == {"TYPE": "NUMBER", "VALUE": 2}
+
+    def test_function_in_expression(self):
+        result = parse_expression("ABS(Price) * Quantity", COLUMN_MAP)
+        assert len(result) == 3
+        assert result[0]["TYPE"] == "FUNCTION"
+        assert result[1] == {"TYPE": "OPERATOR", "VALUE": "*"}
+        assert result[2] == {"TYPE": "COLUMN", "VALUE": "column_qty123"}
