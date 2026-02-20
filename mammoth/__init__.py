@@ -88,7 +88,7 @@ from mammoth.models.pipeline import (
 )
 from mammoth.view import View, ViewExport
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __all__ = [
     # Client
     "MammothClient",
