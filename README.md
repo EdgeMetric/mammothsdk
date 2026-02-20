@@ -97,10 +97,18 @@ view.math("(Price + Tax) * 1.1", new_column="Grand Total")
 ### Join
 
 ```python
-from mammoth import JoinType
+from mammoth import JoinType, JoinKeySpec
 
 other_view = client.views.get(2050)
 
+view.join(
+    foreign_view=other_view,
+    join_type=JoinType.LEFT,
+    on=[JoinKeySpec(left="Customer ID", right="Customer ID")],
+    select=["Category", "Tier"],
+)
+
+# Plain dicts also work
 view.join(
     foreign_view=other_view,
     join_type=JoinType.LEFT,
@@ -112,13 +120,21 @@ view.join(
 ### Pivot (Group By / Aggregate)
 
 ```python
-from mammoth import AggregateFunction
+from mammoth import AggregateFunction, AggregationSpec
 
 view.pivot(
     group_by=["Region"],
     aggregations=[
+        AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total Sales"),
+        AggregationSpec(column="Sales", function=AggregateFunction.AVG, as_name="Avg Sales"),
+    ],
+)
+
+# Plain dicts also work
+view.pivot(
+    group_by=["Region"],
+    aggregations=[
         {"column": "Sales", "function": AggregateFunction.SUM, "as": "Total Sales"},
-        {"column": "Sales", "function": AggregateFunction.AVG, "as": "Avg Sales"},
     ],
 )
 ```
@@ -173,6 +189,8 @@ view.increment_date("Ship Date", delta={"DAYS": 30}, new_column="Expected Arriva
 ### Column Operations
 
 ```python
+from mammoth import CopySpec, ConversionSpec
+
 # Add an empty column
 view.add_column("Notes", ColumnType.TEXT)
 
@@ -180,13 +198,14 @@ view.add_column("Notes", ColumnType.TEXT)
 view.delete_columns(["Temp1", "Temp2"])
 
 # Copy a column
-view.copy_columns([{"source": "Sales", "as": "Sales Backup", "type": "NUMERIC"}])
+view.copy_columns([CopySpec(source="Sales", as_name="Sales Backup", type="NUMERIC")])
 
 # Combine (concatenate) columns
 view.combine_columns(["First Name", "Last Name"], new_column="Full Name", separator=" ")
 
 # Convert column type
-view.convert_type([{"column": "ZipCode", "to": "TEXT"}])
+view.convert_type([ConversionSpec(column="ZipCode", to="TEXT")])
+view.convert_type([ConversionSpec(column="Order Date", to="DATE", format="MM/DD/YYYY")])
 ```
 
 ### Row Operations
@@ -217,11 +236,11 @@ view.gen_ai(
     new_column="Sentiment",
 )
 
-# Generate SQL from natural language
+# Generate SQL from natural language (also adds pipeline task)
 sql_query = view.generate_sql("count customers by region")
 
-# Or generate and apply in one step
-view.sql("show the top 10 customers by total sales")
+# Add a raw SQL query as a pipeline task
+view.add_sql("SELECT region, COUNT(*) as cnt FROM data GROUP BY region")
 ```
 
 ### Pipeline Management
@@ -270,7 +289,36 @@ preview = view.preview_task({"MATH": {"EXPRESSION": [...]}})
 | `gen_ai()` | AI-powered transformation |
 | `generate_sql()` | Generate SQL from natural language |
 | `add_sql()` | Add raw SQL as pipeline task |
-| `sql()` | Generate SQL and apply in one step |
+
+### Parameter Spec Dataclasses
+
+Methods that accept dict parameters also accept typed dataclasses for IDE autocomplete and documentation. Both forms are interchangeable:
+
+| Dataclass | Used by | Dict keys |
+|-----------|---------|-----------|
+| `CopySpec` | `copy_columns()` | `source`, `as`, `type`, `condition` |
+| `ConversionSpec` | `convert_type()` | `column`, `to`, `format` |
+| `AggregationSpec` | `pivot()` | `column`, `function`, `as`, `delimiter` |
+| `CrosstabSpec` | `crosstab()` | `column`, `function` |
+| `JoinKeySpec` | `join()` on | `left`, `right` |
+| `JoinSelectSpec` | `join()` select | `column`, `alias` |
+| `JsonExtractionSpec` | `json_extract()` | `key`, `as`, `type` |
+
+```python
+from mammoth import AggregationSpec, AggregateFunction
+
+# With dataclass (IDE autocomplete)
+view.pivot(
+    group_by=["Region"],
+    aggregations=[AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total")],
+)
+
+# With dict (also works)
+view.pivot(
+    group_by=["Region"],
+    aggregations=[{"column": "Sales", "function": "SUM", "as": "Total"}],
+)
+```
 
 ## Conditions
 
