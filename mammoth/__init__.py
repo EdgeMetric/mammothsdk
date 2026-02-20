@@ -87,9 +87,10 @@ from mammoth.models.pipeline import (
     WindowFunction,
     WindowRange,
 )
+from mammoth.models.webhooks import WebhookMode
 from mammoth.view import View, ViewExport
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 __all__ = [
     # Client
     "MammothClient",
@@ -140,6 +141,8 @@ __all__ = [
     "MammothColumnError",
     "MammothJobTimeoutError",
     "MammothJobFailedError",
+    # Webhooks
+    "WebhookMode",
     # Helpers
     "parse_path",
 ]

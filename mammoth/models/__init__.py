@@ -122,6 +122,7 @@ from .projects import (
 from .webhooks import (
     WebhookCreate,
     WebhookInfo,
+    WebhookMode,
 )
 from .workspaces import (
     WorkspaceSchema,
@@ -235,6 +236,7 @@ __all__ = [
     # Webhooks models
     "WebhookInfo",
     "WebhookCreate",
+    "WebhookMode",
     # Automations models
     "AutomationInfo",
     "ScheduleInfo",
