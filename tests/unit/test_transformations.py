@@ -1660,6 +1660,47 @@ class TestGoldenReference:
         assert ct["SELECT"]["FUNCTION"] == "SUM"
         assert ct["SELECT"]["COLUMN"] == "column_jkl1234567"
 
+    def test_golden_text_eq_remaps_to_in_list(self, mock_view):
+        """TEXT column + EQ condition emits IN_LIST (backend workaround)."""
+        cond = Condition("department", Operator.EQ, "Engineering")
+        mock_view.filter_rows(cond)
+        p = last_payload(mock_view)
+        inner = p["CONDITION"]["column_ghi1234567"]
+        assert "IN_LIST" in inner, "TEXT + EQ should be remapped to IN_LIST"
+        assert inner["IN_LIST"]["VALUE"] == ["Engineering"]
+
+    def test_golden_text_ne_remaps_to_not_in_list(self, mock_view):
+        """TEXT column + NE condition emits NOT_IN_LIST (backend workaround)."""
+        cond = Condition("gender", Operator.NE, "M")
+        mock_view.filter_rows(cond)
+        p = last_payload(mock_view)
+        inner = p["CONDITION"]["column_stu1234567"]
+        assert "NOT_IN_LIST" in inner, "TEXT + NE should be remapped to NOT_IN_LIST"
+        assert inner["NOT_IN_LIST"]["VALUE"] == ["M"]
+
+    def test_golden_set_with_text_eq_condition(self, mock_view):
+        """SET VALUES with TEXT EQ condition uses IN_LIST workaround."""
+        mock_view.set_values(
+            new_column="label",
+            values=[
+                SetValue("Eng", condition=Condition("department", Operator.EQ, "Engineering")),
+                SetValue("Other"),
+            ],
+        )
+        p = last_payload(mock_view)
+        cond = p["SET"]["VALUES"][0]["CONDITION"]
+        assert "IN_LIST" in cond["column_ghi1234567"]
+        assert cond["column_ghi1234567"]["IN_LIST"]["VALUE"] == ["Engineering"]
+
+    def test_golden_numeric_eq_unchanged(self, mock_view):
+        """NUMERIC column + EQ stays EQ (remap only for TEXT)."""
+        cond = Condition("base_salary", Operator.EQ, 50000)
+        mock_view.filter_rows(cond)
+        p = last_payload(mock_view)
+        inner = p["CONDITION"]["column_jkl1234567"]
+        assert "EQ" in inner
+        assert inner["EQ"]["VALUE"] == 50000
+
 
 # ── Param templates unit tests ───────────────────────────────
 

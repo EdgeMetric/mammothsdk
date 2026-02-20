@@ -11,6 +11,7 @@ from mammoth_mcp.helpers import (
     get_manager,
     handle_errors,
     log_tool_call,
+    run_sync,
     success_response,
 )
 from mammoth_mcp.server import mcp
@@ -52,7 +53,8 @@ async def ai_transform(
     """
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
-    view.gen_ai(
+    await run_sync(
+        view.gen_ai,
         prompt=prompt,
         context_columns=context_columns,
         new_column=new_column,
@@ -93,13 +95,13 @@ async def sql_query(
     view = manager.get_view(view_id, dataset_id)
 
     if intent:
-        generated_sql = view.generate_sql(intent)
+        generated_sql = await run_sync(view.generate_sql, intent)
         return success_response(
             {"generated_sql": generated_sql, "view": format_view_info(view)},
             "SQL generated and applied",
         )
     elif raw_sql:
-        view.add_sql(raw_sql)
+        await run_sync(view.add_sql, raw_sql)
         return success_response(format_view_info(view), "SQL query applied")
     else:
         raise ValueError("Either intent or raw_sql must be provided")

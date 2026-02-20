@@ -20,6 +20,7 @@ from mammoth_mcp.helpers import (
     handle_errors,
     log_tool_call,
     resolve_enum,
+    run_sync,
     success_response,
 )
 from mammoth_mcp.server import mcp
@@ -52,7 +53,7 @@ async def filter_rows(
     view = manager.get_view(view_id, dataset_id)
     cond = build_condition(condition)
     ft = resolve_enum(FilterType, filter_type)
-    view.filter_rows(cond, filter_type=ft, prompt=prompt)
+    await run_sync(view.filter_rows, cond, filter_type=ft, prompt=prompt)
     return success_response(format_view_info(view), "filter_rows applied successfully")
 
 
@@ -91,7 +92,8 @@ async def set_values(
         sv_list.append(SetValue(value=v["value"], condition=cond))
     ct = resolve_enum(ColumnType, column_type)
     global_cond = build_condition(condition) if condition else None
-    view.set_values(
+    await run_sync(
+        view.set_values,
         values=sv_list,
         new_column=new_column,
         column_type=ct,
@@ -132,7 +134,8 @@ async def math_transform(
     view = manager.get_view(view_id, dataset_id)
     ct = resolve_enum(ColumnType, column_type)
     cond = build_condition(condition) if condition else None
-    view.math(
+    await run_sync(
+        view.math,
         expression=expression,
         new_column=new_column,
         column_type=ct,
@@ -171,7 +174,7 @@ async def text_transform(
     view = manager.get_view(view_id, dataset_id)
     tc = resolve_enum(TextCase, case) if case else None
     cond = build_condition(condition) if condition else None
-    view.text_transform(columns=columns, case=tc, trim=trim, condition=cond)
+    await run_sync(view.text_transform, columns=columns, case=tc, trim=trim, condition=cond)
     return success_response(format_view_info(view), "text_transform applied successfully")
 
 
@@ -207,7 +210,8 @@ async def replace_values(
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
     cond = build_condition(condition) if condition else None
-    view.replace_values(
+    await run_sync(
+        view.replace_values,
         columns=columns,
         find=find,
         replace=replace,
@@ -248,7 +252,8 @@ async def bulk_replace(
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
     cond = build_condition(condition) if condition else None
-    view.bulk_replace(
+    await run_sync(
+        view.bulk_replace,
         columns=columns,
         mapping=mapping,
         match_case=match_case,
@@ -283,7 +288,7 @@ async def split_column(
     """
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
-    view.split_column(column=column, delimiter=delimiter, new_columns=new_columns)
+    await run_sync(view.split_column, column=column, delimiter=delimiter, new_columns=new_columns)
     return success_response(format_view_info(view), "split_column applied successfully")
 
 
@@ -326,7 +331,8 @@ async def substring(
     view = manager.get_view(view_id, dataset_id)
     dir_enum = resolve_enum(SubstringDirection, direction) if direction else None
     cond = build_condition(condition) if condition else None
-    view.substring(
+    await run_sync(
+        view.substring,
         column=column,
         direction=dir_enum,
         num_char=num_char,

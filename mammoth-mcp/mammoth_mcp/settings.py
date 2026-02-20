@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     # Mammoth defaults
     mammoth_base_url: str = "https://app.mammoth.io/api/v2"
     mammoth_job_timeout: int = 120
+    mammoth_pipeline_timeout: int = 3600
 
     # Stdio mode only (ignored in remote mode)
     mammoth_api_key: str = ""

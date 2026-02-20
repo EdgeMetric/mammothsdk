@@ -180,7 +180,7 @@ class View(
             return None
         if isinstance(condition, dict):
             return condition
-        return condition.build(self.columns)
+        return condition.build(self.columns, self.column_types)
 
     def _add_task(self, task_spec: dict[str, Any]) -> dict[str, Any]:
         """Add a task to the pipeline, wait for completion, and refresh metadata.
@@ -192,6 +192,7 @@ class View(
             API response dict.
         """
         result = self._client.pipeline.add_task(self.id, task_spec, self.dataset_id)
+        self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
         self.refresh()
         return result
 
@@ -270,6 +271,7 @@ class View(
             Deletion confirmation dict.
         """
         result = self._client.pipeline.delete_task(self.id, task_id, self.dataset_id)
+        self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
         self.refresh()
         return result
 

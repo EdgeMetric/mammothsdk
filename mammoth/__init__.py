@@ -41,7 +41,7 @@ Key modules:
 
 from __future__ import annotations
 
-from mammoth.client import DEFAULT_JOB_TIMEOUT, DEFAULT_TIMEOUT, MammothClient
+from mammoth.client import DEFAULT_JOB_TIMEOUT, DEFAULT_PIPELINE_TIMEOUT, DEFAULT_TIMEOUT, MammothClient
 from mammoth.condition import CompoundCondition, Condition, NotCondition
 from mammoth.exceptions import (
     MammothAPIError,
@@ -82,6 +82,7 @@ __all__ = [
     "MammothClient",
     "DEFAULT_TIMEOUT",
     "DEFAULT_JOB_TIMEOUT",
+    "DEFAULT_PIPELINE_TIMEOUT",
     # Condition builder
     "Condition",
     "CompoundCondition",

@@ -519,3 +519,85 @@ class TestAdditionalOperators:
         c = Condition("Sales", Operator.IS_MINVAL)
         result = c.build({"Sales": "col_s"})
         assert result["col_s"]["IS_MINVAL"] is True
+
+
+# ── TEXT EQ/NE → IN_LIST/NOT_IN_LIST remap workaround ─────────
+
+
+class TestTextEqNeRemap:
+    """Backend falsely rejects TEXT + EQ/NE as 'type mismatch'.
+
+    The workaround remaps EQ → IN_LIST and NE → NOT_IN_LIST (single-element)
+    when column_types indicates a TEXT column.
+    """
+
+    def test_eq_text_remaps_to_in_list(self):
+        c = Condition("Name", Operator.EQ, "Alice")
+        col_map = {"Name": "col_n"}
+        col_types = {"Name": "TEXT"}
+        result = c.build(col_map, col_types)
+        assert result == {"col_n": {"IN_LIST": {"VALUE": ["Alice"]}}}
+
+    def test_ne_text_remaps_to_not_in_list(self):
+        c = Condition("Name", Operator.NE, "Bob")
+        col_map = {"Name": "col_n"}
+        col_types = {"Name": "TEXT"}
+        result = c.build(col_map, col_types)
+        assert result == {"col_n": {"NOT_IN_LIST": {"VALUE": ["Bob"]}}}
+
+    def test_eq_numeric_unchanged(self):
+        c = Condition("Sales", Operator.EQ, 100)
+        col_map = {"Sales": "col_s"}
+        col_types = {"Sales": "NUMERIC"}
+        result = c.build(col_map, col_types)
+        assert result == {"col_s": {"EQ": {"VALUE": 100}}}
+
+    def test_eq_no_column_types_unchanged(self):
+        """Without column_types, EQ stays EQ (backward compat)."""
+        c = Condition("Name", Operator.EQ, "Alice")
+        col_map = {"Name": "col_n"}
+        result = c.build(col_map)
+        assert result == {"col_n": {"EQ": {"VALUE": "Alice"}}}
+
+    def test_eq_column_types_none_unchanged(self):
+        """Explicit None column_types, EQ stays EQ."""
+        c = Condition("Name", Operator.EQ, "Alice")
+        result = c.build({"Name": "col_n"}, None)
+        assert result == {"col_n": {"EQ": {"VALUE": "Alice"}}}
+
+    def test_value_is_column_no_remap(self):
+        """Column-to-column EQ should NOT be remapped."""
+        c = Condition("Name", Operator.EQ, "Other", value_is_column=True)
+        col_map = {"Name": "col_n", "Other": "col_o"}
+        col_types = {"Name": "TEXT", "Other": "TEXT"}
+        result = c.build(col_map, col_types)
+        assert result == {"col_n": {"EQ": {"COLUMN": "col_o"}}}
+
+    def test_compound_with_text_eq(self):
+        """AND/OR propagates remap to children."""
+        c1 = Condition("Name", Operator.EQ, "Alice")
+        c2 = Condition("Sales", Operator.GTE, 100)
+        compound = c1 & c2
+        col_map = {"Name": "col_n", "Sales": "col_s"}
+        col_types = {"Name": "TEXT", "Sales": "NUMERIC"}
+        result = compound.build(col_map, col_types)
+        assert "AND" in result
+        assert result["AND"][0] == {"col_n": {"IN_LIST": {"VALUE": ["Alice"]}}}
+        assert result["AND"][1] == {"col_s": {"GTE": {"VALUE": 100}}}
+
+    def test_not_with_text_eq(self):
+        """NOT wrapping a TEXT EQ should remap the inner condition."""
+        c = Condition("Name", Operator.EQ, "Alice")
+        negated = ~c
+        col_map = {"Name": "col_n"}
+        col_types = {"Name": "TEXT"}
+        result = negated.build(col_map, col_types)
+        assert result == {"NOT": {"col_n": {"IN_LIST": {"VALUE": ["Alice"]}}}}
+
+    def test_date_column_eq_unchanged(self):
+        """DATE column + EQ should not be remapped."""
+        c = Condition("Date", Operator.EQ, "2021-01-01")
+        col_map = {"Date": "col_d"}
+        col_types = {"Date": "DATE"}
+        result = c.build(col_map, col_types)
+        assert result == {"col_d": {"EQ": {"VALUE": "2021-01-01"}}}

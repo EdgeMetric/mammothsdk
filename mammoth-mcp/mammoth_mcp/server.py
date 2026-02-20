@@ -72,7 +72,11 @@ def _build_server() -> FastMCP:
             auth_code_ttl=settings.auth_code_ttl,
             access_token_ttl=settings.access_token_ttl,
         )
-        _shared_registry = UserClientRegistry(_shared_token_store, job_timeout=settings.mammoth_job_timeout)
+        _shared_registry = UserClientRegistry(
+            _shared_token_store,
+            job_timeout=settings.mammoth_job_timeout,
+            pipeline_timeout=settings.mammoth_pipeline_timeout,
+        )
         provider = MammothOAuthProvider(settings, _shared_token_store)
 
         auth_settings = AuthSettings(

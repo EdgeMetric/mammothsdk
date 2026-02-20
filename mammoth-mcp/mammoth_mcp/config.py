@@ -16,6 +16,7 @@ class MammothConfig:
     base_url: str = "https://app.mammoth.io/api/v2"
     project_id: int | None = None
     job_timeout: int = 120
+    pipeline_timeout: int = 3600
 
     @classmethod
     def from_env(cls) -> MammothConfig:
@@ -25,7 +26,8 @@ class MammothConfig:
             MAMMOTH_API_KEY, MAMMOTH_API_SECRET, MAMMOTH_WORKSPACE_ID
 
         Optional:
-            MAMMOTH_BASE_URL, MAMMOTH_PROJECT_ID, MAMMOTH_JOB_TIMEOUT
+            MAMMOTH_BASE_URL, MAMMOTH_PROJECT_ID, MAMMOTH_JOB_TIMEOUT,
+            MAMMOTH_PIPELINE_TIMEOUT
         """
         api_key = os.environ.get("MAMMOTH_API_KEY", "")
         api_secret = os.environ.get("MAMMOTH_API_SECRET", "")
@@ -47,6 +49,7 @@ class MammothConfig:
             base_url=os.environ.get("MAMMOTH_BASE_URL", cls.base_url),
             project_id=project_id,
             job_timeout=int(os.environ.get("MAMMOTH_JOB_TIMEOUT", str(cls.job_timeout))),
+            pipeline_timeout=int(os.environ.get("MAMMOTH_PIPELINE_TIMEOUT", str(cls.pipeline_timeout))),
         )
 
     def summary(self) -> dict:
@@ -56,6 +59,7 @@ class MammothConfig:
             "project_id": self.project_id,
             "base_url": self.base_url,
             "job_timeout": self.job_timeout,
+            "pipeline_timeout": self.pipeline_timeout,
             "api_key_set": bool(self.api_key),
             "api_secret_set": bool(self.api_secret),
         }

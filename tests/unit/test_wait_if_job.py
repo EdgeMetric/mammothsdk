@@ -276,12 +276,13 @@ class TestViewAddTaskSimplified:
         self.client.dataviews = DataviewsAPI(self.client)
 
     def test_add_task_waits_once(self):
-        """pipeline.add_task waits; view._add_task does NOT wait again."""
-        call_count = {"n": 0}
+        """pipeline.add_task waits for job; then wait_for_pipeline waits for readiness."""
 
         def counting_request_json(method, url, **kwargs):
             if "/pipeline/tasks" in url and method == "POST":
                 return {"job": {"id": 200, "status": "processing"}}
+            if url.endswith("/pipeline") and method == "GET":
+                return {"state": "ready"}
             # refresh GET requests
             return SAMPLE_VIEW_DATA
 
@@ -290,7 +291,7 @@ class TestViewAddTaskSimplified:
         view = View(self.client, SAMPLE_VIEW_DATA, SAMPLE_DATASET_ID)
         view._add_task({"TYPE": "SET"})
 
-        # wait_for_job called exactly once (by pipeline.add_task), not twice
+        # wait_for_job called exactly once (by pipeline.add_task)
         self.client.jobs.wait_for_job.assert_called_once_with(200, timeout=60, poll_interval=2)
 
 

@@ -137,49 +137,66 @@ class Condition:
         """Negate: ~condition."""
         return NotCondition(self)
 
-    def _build_inner(self, column_map: dict[str, str] | None = None) -> dict[str, Any]:
+    def _build_inner(
+        self,
+        column_map: dict[str, str] | None = None,
+        column_types: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """Build the pure condition structure (no STRING_PROP)."""
         internal_name = column_map.get(self.column, self.column) if column_map else self.column
 
-        # Boolean operators (no value needed)
-        if self.operator in _NULL_OPERATORS:
-            return {internal_name: {self.operator: True}}
+        # Workaround: backend falsely rejects TEXT + EQ/NE as "type mismatch".
+        # Use IN_LIST/NOT_IN_LIST (single-element) which bypasses the broken validation.
+        operator = self.operator
+        if column_types and operator in ("EQ", "NE") and not self.value_is_column:
+            col_type = column_types.get(self.column) or column_types.get(internal_name)
+            if col_type == "TEXT":
+                operator = "IN_LIST" if operator == "EQ" else "NOT_IN_LIST"
 
-        # List operators
-        if self.operator in ("IN_LIST", "NOT_IN_LIST", "CONTAINS", "NOT_CONTAINS"):
+        # Boolean operators (no value needed)
+        if operator in _NULL_OPERATORS:
+            return {internal_name: {operator: True}}
+
+        # List operators — also catches remapped EQ/NE
+        if operator in ("IN_LIST", "NOT_IN_LIST", "CONTAINS", "NOT_CONTAINS"):
             val = self.value if isinstance(self.value, list) else [self.value]
-            return {internal_name: {self.operator: {"VALUE": val}}}
+            return {internal_name: {operator: {"VALUE": val}}}
 
         # Column-to-column comparison
         if self.value_is_column:
             resolved_val = column_map.get(self.value, self.value) if column_map else self.value
-            return {internal_name: {self.operator: {"COLUMN": resolved_val}}}
+            return {internal_name: {operator: {"COLUMN": resolved_val}}}
 
         # Date component wrapper
         if self.component is not None:
-            return {internal_name: {self.operator: {"VALUE": {"COMPONENT": self.component, "VALUE": self.value}}}}
+            return {internal_name: {operator: {"VALUE": {"COMPONENT": self.component, "VALUE": self.value}}}}
 
         # Date truncation wrapper
         if self.truncate is not None:
-            return {internal_name: {self.operator: {"VALUE": {"TRUNCATE": self.truncate, "VALUE": self.value}}}}
+            return {internal_name: {operator: {"VALUE": {"TRUNCATE": self.truncate, "VALUE": self.value}}}}
 
         # All other operators (comparison, string)
-        return {internal_name: {self.operator: {"VALUE": self.value}}}
+        return {internal_name: {operator: {"VALUE": self.value}}}
 
     def _collect_case_sensitive(self) -> bool | None:
         """Return this leaf's case_sensitive setting."""
         return self.case_sensitive
 
-    def build(self, column_map: dict[str, str] | None = None) -> dict[str, Any]:
+    def build(
+        self,
+        column_map: dict[str, str] | None = None,
+        column_types: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """Build API-format condition dict.
 
         Args:
             column_map: Mapping of display names to internal names.
+            column_types: Mapping of display names to column types (e.g. TEXT, NUMERIC).
 
         Returns:
             dict in Mammoth API condition format.
         """
-        result = self._build_inner(column_map)
+        result = self._build_inner(column_map, column_types)
         cs = self._collect_case_sensitive()
         if cs is not None:
             case_str = "CASE-SENSITIVE" if cs else "CASE-INSENSITIVE"
@@ -226,25 +243,34 @@ class NotCondition:
         """Double negation cancels: ~~cond returns original."""
         return self.condition
 
-    def _build_inner(self, column_map: dict[str, str] | None = None) -> dict[str, Any]:
+    def _build_inner(
+        self,
+        column_map: dict[str, str] | None = None,
+        column_types: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """Build the NOT structure (no STRING_PROP)."""
-        inner = self.condition._build_inner(column_map)
+        inner = self.condition._build_inner(column_map, column_types)
         return {"NOT": inner}
 
     def _collect_case_sensitive(self) -> bool | None:
         """Delegate to inner condition."""
         return self.condition._collect_case_sensitive()
 
-    def build(self, column_map: dict[str, str] | None = None) -> dict[str, Any]:
+    def build(
+        self,
+        column_map: dict[str, str] | None = None,
+        column_types: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """Build API-format condition dict.
 
         Args:
             column_map: Mapping of display names to internal names.
+            column_types: Mapping of display names to column types (e.g. TEXT, NUMERIC).
 
         Returns:
             dict with NOT key wrapping the inner condition.
         """
-        result = self._build_inner(column_map)
+        result = self._build_inner(column_map, column_types)
         cs = self._collect_case_sensitive()
         if cs is not None:
             case_str = "CASE-SENSITIVE" if cs else "CASE-INSENSITIVE"
@@ -308,9 +334,13 @@ class CompoundCondition:
         """Negate: ~(cond1 & cond2)."""
         return NotCondition(self)
 
-    def _build_inner(self, column_map: dict[str, str] | None = None) -> dict[str, Any]:
+    def _build_inner(
+        self,
+        column_map: dict[str, str] | None = None,
+        column_types: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """Build the AND/OR structure (no STRING_PROP)."""
-        built = [cond._build_inner(column_map) for cond in self.conditions]
+        built = [cond._build_inner(column_map, column_types) for cond in self.conditions]
         return {self.logic: built}
 
     def _collect_case_sensitive(self) -> bool | None:
@@ -321,16 +351,21 @@ class CompoundCondition:
                 return cs
         return None
 
-    def build(self, column_map: dict[str, str] | None = None) -> dict[str, Any]:
+    def build(
+        self,
+        column_map: dict[str, str] | None = None,
+        column_types: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """Build API-format condition dict.
 
         Args:
             column_map: Mapping of display names to internal names.
+            column_types: Mapping of display names to column types (e.g. TEXT, NUMERIC).
 
         Returns:
             dict in Mammoth API condition format with AND/OR keys.
         """
-        result = self._build_inner(column_map)
+        result = self._build_inner(column_map, column_types)
         cs = self._collect_case_sensitive()
         if cs is not None:
             case_str = "CASE-SENSITIVE" if cs else "CASE-INSENSITIVE"

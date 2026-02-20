@@ -68,6 +68,7 @@ def _get_version() -> str:
 # ── Configurable defaults ─────────────────────────────────────
 DEFAULT_TIMEOUT = 30  # seconds — max time for any single API call
 DEFAULT_JOB_TIMEOUT = 60  # seconds — max time to poll a job to completion
+DEFAULT_PIPELINE_TIMEOUT = 3600  # seconds — max time to wait for pipeline readiness
 
 _list = list  # Alias to avoid shadowing by method name
 
@@ -231,6 +232,7 @@ class MammothClient:
         base_url: str = "https://app.mammoth.io/api/v2",
         timeout: int = DEFAULT_TIMEOUT,
         job_timeout: int = DEFAULT_JOB_TIMEOUT,
+        pipeline_timeout: int = DEFAULT_PIPELINE_TIMEOUT,
     ) -> None:
         """Initialize the Mammoth client.
 
@@ -241,6 +243,7 @@ class MammothClient:
             base_url: Base URL for the Mammoth API.
             timeout: Request timeout in seconds.
             job_timeout: Job polling timeout in seconds.
+            pipeline_timeout: Pipeline readiness polling timeout in seconds.
         """
         self.api_key = api_key
         self.api_secret = api_secret
@@ -248,6 +251,7 @@ class MammothClient:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.job_timeout = job_timeout
+        self.pipeline_timeout = pipeline_timeout
 
         self.project_id: int | None = None
 
@@ -468,6 +472,9 @@ class MammothClient:
             "error",
         ):
             job_id = response["id"]
+        # Pattern 4: PipelineModificationResp — {"future_id": N, ...}
+        elif "future_id" in response and response.get("future_id") is not None:
+            job_id = response["future_id"]
 
         if job_id:
             t = timeout if timeout is not None else self.job_timeout

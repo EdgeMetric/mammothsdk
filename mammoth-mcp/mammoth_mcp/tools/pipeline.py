@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import Context
 
-from mammoth_mcp.helpers import get_manager, handle_errors, log_tool_call, success_response
+from mammoth_mcp.helpers import get_manager, handle_errors, log_tool_call, run_sync, success_response
 from mammoth_mcp.server import mcp
 
 
@@ -53,5 +53,5 @@ async def delete_task(
     """
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
-    view.delete_task(task_id)
+    await run_sync(view.delete_task, task_id)
     return success_response(message=f"Deleted task {task_id} from view {view_id}")

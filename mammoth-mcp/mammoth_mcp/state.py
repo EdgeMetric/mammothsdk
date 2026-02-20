@@ -49,6 +49,7 @@ class ClientManager:
             workspace_id=config.workspace_id,
             base_url=config.base_url,
             job_timeout=config.job_timeout,
+            pipeline_timeout=config.pipeline_timeout,
         )
         if config.project_id:
             self.client.set_project_id(config.project_id)
@@ -169,9 +170,10 @@ class UserClientRegistry:
     Uses LRU eviction to prevent unbounded growth.
     """
 
-    def __init__(self, token_store: RedisTokenStore, job_timeout: int = 120):
+    def __init__(self, token_store: RedisTokenStore, job_timeout: int = 120, pipeline_timeout: int = 3600):
         self._token_store = token_store
         self._job_timeout = job_timeout
+        self._pipeline_timeout = pipeline_timeout
         self._managers: OrderedDict[str, ClientManager] = OrderedDict()
 
     async def get_manager(self, bearer_token: str) -> ClientManager:
@@ -191,6 +193,7 @@ class UserClientRegistry:
             workspace_id=creds["workspace_id"],
             base_url=creds.get("base_url", "https://app.mammoth.io/api/v2"),
             job_timeout=self._job_timeout,
+            pipeline_timeout=self._pipeline_timeout,
         )
         manager = ClientManager(config)
 

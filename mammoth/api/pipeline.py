@@ -7,12 +7,18 @@ Not intended for direct use — use client.views.get(id) to get a View object in
 
 from __future__ import annotations
 
+import logging
+import time
 from typing import TYPE_CHECKING, Any
 
-from ..exceptions import MammothAPIError
+from ..exceptions import MammothAPIError, MammothJobTimeoutError, MammothTransformError
 
 if TYPE_CHECKING:
     from ..client import MammothClient
+
+logger = logging.getLogger(__name__)
+
+PIPELINE_TERMINAL_STATES = frozenset({"ready", "runtime_error", "ref_error"})
 
 
 class PipelineAPI:
@@ -231,3 +237,66 @@ class PipelineAPI:
             "POST", f"{self._dv_url(ws, proj, ds, dv)}/draft-mode", json={"command": command}
         )
         return self._client._wait_if_job(response)
+
+    def wait_for_pipeline(
+        self,
+        dataview_id: int,
+        dataset_id: int | None = None,
+        timeout: int | None = None,
+        poll_interval: int = 3,
+    ) -> dict[str, Any]:
+        """Poll pipeline state until it reaches a terminal state.
+
+        After any pipeline mutation (add_task, delete_task, sql_generation),
+        the pipeline transitions through transient states before data is ready:
+        ``modifying → modified → running → ready``.
+
+        This method blocks until the pipeline reaches a terminal state
+        (``ready``, ``runtime_error``, ``ref_error``).
+
+        Args:
+            dataview_id: ID of the dataview.
+            dataset_id: Dataset ID (auto-detected if not provided).
+            timeout: Max wait time in seconds (default: client.pipeline_timeout).
+            poll_interval: Seconds between polls (default: 3).
+
+        Returns:
+            Final pipeline state dict.
+
+        Raises:
+            MammothTransformError: If pipeline reaches ``runtime_error`` or ``ref_error``.
+            MammothJobTimeoutError: If timeout is exceeded.
+        """
+        effective_timeout = timeout if timeout is not None else int(
+            getattr(self._client, "pipeline_timeout", 3600)
+        )
+
+        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
+        url = self._base_url(ws, proj, ds, dv)
+        deadline = time.monotonic() + effective_timeout
+
+        while True:
+            pipeline = self._client._request_json("GET", url)
+            state = pipeline.get("state", "").lower()
+
+            if state in PIPELINE_TERMINAL_STATES:
+                if state in ("runtime_error", "ref_error"):
+                    detail = pipeline.get("error", state)
+                    raise MammothTransformError(
+                        f"Pipeline failed with state '{state}': {detail}",
+                        details={"pipeline_state": state, "pipeline": pipeline},
+                    )
+                logger.debug(
+                    "Pipeline ready for dataview %d (state=%s)", dataview_id, state
+                )
+                return pipeline
+
+            if time.monotonic() >= deadline:
+                raise MammothJobTimeoutError(
+                    job_id=dataview_id, timeout_seconds=effective_timeout
+                )
+
+            logger.debug(
+                "Pipeline state for dataview %d: %s — waiting...", dataview_id, state
+            )
+            time.sleep(poll_interval)

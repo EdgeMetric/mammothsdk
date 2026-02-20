@@ -19,6 +19,7 @@ from mammoth_mcp.helpers import (
     handle_errors,
     log_tool_call,
     resolve_enum,
+    run_sync,
     success_response,
 )
 from mammoth_mcp.server import mcp
@@ -50,7 +51,7 @@ async def pivot(
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
     cond = build_condition(condition) if condition else None
-    view.pivot(group_by=group_by, aggregations=aggregations, condition=cond)
+    await run_sync(view.pivot, group_by=group_by, aggregations=aggregations, condition=cond)
     return success_response(format_view_info(view), "pivot applied successfully")
 
 
@@ -92,7 +93,8 @@ async def window(
     wf = resolve_enum(WindowFunction, function)
     ct = resolve_enum(ColumnType, column_type)
     wr = resolve_enum(WindowRange, range_type)
-    view.window(
+    await run_sync(
+        view.window,
         function=wf,
         column=column,
         new_column=new_column,
@@ -130,7 +132,7 @@ async def crosstab(
     """
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
-    view.crosstab(rows=rows, pivot_column=pivot_column, select=select)
+    await run_sync(view.crosstab, rows=rows, pivot_column=pivot_column, select=select)
     return success_response(format_view_info(view), "crosstab applied successfully")
 
 
@@ -159,7 +161,7 @@ async def unnest(
     """
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
-    view.unnest(columns=columns, label_column=label_column, value_column=value_column)
+    await run_sync(view.unnest, columns=columns, label_column=label_column, value_column=value_column)
     return success_response(format_view_info(view), "unnest applied successfully")
 
 
@@ -191,7 +193,7 @@ async def fill_missing(
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
     fd = resolve_enum(FillDirection, direction)
-    view.fill_missing(column=column, direction=fd, partition_by=partition_by, order_by=order_by)
+    await run_sync(view.fill_missing, column=column, direction=fd, partition_by=partition_by, order_by=order_by)
     return success_response(format_view_info(view), "fill_missing applied successfully")
 
 
@@ -220,7 +222,7 @@ async def limit_rows(
     """
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
-    view.limit_rows(n=n, bottom=bottom, order_by=order_by)
+    await run_sync(view.limit_rows, n=n, bottom=bottom, order_by=order_by)
     return success_response(format_view_info(view), "limit_rows applied successfully")
 
 
@@ -245,5 +247,5 @@ async def discard_duplicates(
     """
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
-    view.discard_duplicates(ignore_columns=ignore_columns)
+    await run_sync(view.discard_duplicates, ignore_columns=ignore_columns)
     return success_response(format_view_info(view), "discard_duplicates applied successfully")

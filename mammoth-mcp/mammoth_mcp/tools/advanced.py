@@ -13,6 +13,7 @@ from mammoth_mcp.helpers import (
     handle_errors,
     log_tool_call,
     resolve_enum,
+    run_sync,
     success_response,
 )
 from mammoth_mcp.server import mcp
@@ -51,7 +52,8 @@ async def join_views(
     # Try to get the foreign view for display-name resolution
     try:
         foreign_view = manager.get_view(foreign_view_id)
-        view.join(
+        await run_sync(
+            view.join,
             foreign_view=foreign_view,
             join_type=jt,
             on=on,
@@ -59,7 +61,8 @@ async def join_views(
             column_prefix=column_prefix,
         )
     except Exception:
-        view.join(
+        await run_sync(
+            view.join,
             foreign_view=foreign_view_id,
             join_type=jt,
             on=on,
@@ -100,7 +103,8 @@ async def lookup(
     """
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
-    view.lookup(
+    await run_sync(
+        view.lookup,
         source=source,
         lookup_view_id=lookup_view_id,
         key=key,
@@ -141,7 +145,8 @@ async def json_extract(
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
     jt_enum = resolve_enum(JsonType, json_type)
-    view.json_extract(
+    await run_sync(
+        view.json_extract,
         column=column,
         json_type=jt_enum,
         keys=keys,
@@ -179,7 +184,8 @@ async def extract_date(
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
     dc = resolve_enum(DateComponent, component)
-    view.extract_date(
+    await run_sync(
+        view.extract_date,
         column=column,
         component=dc,
         new_column=new_column,
@@ -218,7 +224,8 @@ async def date_diff(
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
     ddu = resolve_enum(DateDiffUnit, component)
-    view.date_diff(
+    await run_sync(
+        view.date_diff,
         component=ddu,
         start=start,
         end=end,
@@ -255,7 +262,8 @@ async def increment_date(
     """
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
-    view.increment_date(
+    await run_sync(
+        view.increment_date,
         column=column,
         delta=delta,
         new_column=new_column,

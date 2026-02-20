@@ -14,6 +14,7 @@ from mammoth_mcp.helpers import (
     handle_errors,
     log_tool_call,
     resolve_enum,
+    run_sync,
     success_response,
 )
 from mammoth_mcp.server import mcp
@@ -43,7 +44,7 @@ async def add_column(
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
     ct = resolve_enum(ColumnType, column_type)
-    view.add_column(column_name, ct)
+    await run_sync(view.add_column, column_name, ct)
     return success_response(format_view_info(view), "add_column applied successfully")
 
 
@@ -68,7 +69,7 @@ async def delete_columns(
     """
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
-    view.delete_columns(columns)
+    await run_sync(view.delete_columns, columns)
     return success_response(format_view_info(view), "delete_columns applied successfully")
 
 
@@ -93,7 +94,7 @@ async def copy_columns(
     """
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
-    view.copy_columns(copies)
+    await run_sync(view.copy_columns, copies)
     return success_response(format_view_info(view), "copy_columns applied successfully")
 
 
@@ -130,7 +131,8 @@ async def combine_columns(
     view = manager.get_view(view_id, dataset_id)
     ct = resolve_enum(ColumnType, column_type)
     cond = build_condition(condition) if condition else None
-    view.combine_columns(
+    await run_sync(
+        view.combine_columns,
         sources=sources,
         new_column=new_column,
         column_type=ct,
@@ -162,5 +164,5 @@ async def convert_type(
     """
     manager = await get_manager(ctx)
     view = manager.get_view(view_id, dataset_id)
-    view.convert_type(conversions)
+    await run_sync(view.convert_type, conversions)
     return success_response(format_view_info(view), "convert_type applied successfully")

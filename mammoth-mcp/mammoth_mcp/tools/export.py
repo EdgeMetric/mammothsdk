@@ -11,6 +11,7 @@ from mammoth_mcp.helpers import (
     get_manager,
     handle_errors,
     log_tool_call,
+    run_sync,
     success_response,
 )
 from mammoth_mcp.server import mcp
@@ -50,23 +51,23 @@ async def export_data(
     fmt = format.lower()
 
     if fmt == "csv":
-        path = view.export.to_csv()
+        path = await run_sync(view.export.to_csv)
         return success_response({"file_path": str(path)}, f"Exported to {path}")
 
     elif fmt == "s3":
-        result = view.export.to_s3(file_name=file_name, file_type=file_type)
+        result = await run_sync(view.export.to_s3, file_name=file_name, file_type=file_type)
         return success_response(result, "Exported to S3")
 
     elif fmt == "email":
         if not recipients:
             raise ValueError("recipients is required for email export")
-        result = view.export.to_email(recipients=recipients)
+        result = await run_sync(view.export.to_email, recipients=recipients)
         return success_response(result, f"Emailed to {', '.join(recipients)}")
 
     elif fmt == "dataset":
         if not dest_dataset_id:
             raise ValueError("dest_dataset_id is required for dataset export")
-        result = view.export.to_dataset(dest_dataset_id, column_mapping)
+        result = await run_sync(view.export.to_dataset, dest_dataset_id, column_mapping)
         return success_response(result, f"Branched out to dataset {dest_dataset_id}")
 
     else:
@@ -124,7 +125,8 @@ async def export_to_database(
     if db == "postgres":
         if not all([host, port, database, table, username, password]):
             raise ValueError("host, port, database, table, username, password are all required for postgres")
-        result = view.export.to_postgres(
+        result = await run_sync(
+            view.export.to_postgres,
             host=host, port=port, database=database,
             table=table, username=username, password=password,
         )
@@ -132,7 +134,8 @@ async def export_to_database(
     elif db == "mysql":
         if not all([host, port, database, table, username, password]):
             raise ValueError("host, port, database, table, username, password are all required for mysql")
-        result = view.export.to_mysql(
+        result = await run_sync(
+            view.export.to_mysql,
             host=host, port=port, database=database,
             table=table, username=username, password=password,
         )
@@ -147,12 +150,13 @@ async def export_to_database(
             config["table"] = table
         if service_account_json:
             config["service_account_json"] = service_account_json
-        result = view.export.to_bigquery(**config)
+        result = await run_sync(view.export.to_bigquery, **config)
 
     elif db == "redshift":
         if not all([host, port, database, table, username, password]):
             raise ValueError("host, port, database, table, username, password are all required for redshift")
-        result = view.export.to_redshift(
+        result = await run_sync(
+            view.export.to_redshift,
             host=host, port=port, database=database,
             table=table, username=username, password=password,
         )
@@ -169,7 +173,7 @@ async def export_to_database(
             config["username"] = username
         if password:
             config["password"] = password
-        result = view.export.to_elasticsearch(**config)
+        result = await run_sync(view.export.to_elasticsearch, **config)
 
     else:
         raise ValueError(f"Unknown db_type '{db_type}'. Use: postgres, mysql, bigquery, redshift, elasticsearch")

@@ -311,6 +311,7 @@ class AdvancedOpsMixin:
             job = self._client.jobs.wait_for_job(job_id)
         else:
             job = result
+        self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
         self.refresh()
 
         resp = job.get("response", {})
@@ -361,5 +362,6 @@ class AdvancedOpsMixin:
             job = self._client.jobs.wait_for_job(job_id)
         else:
             job = result
+        self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
         self.refresh()
         return job

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import functools
 import inspect
 import json
@@ -21,6 +22,19 @@ from mcp.types import CallToolResult, TextContent
 from mammoth_mcp.state import ClientManager
 
 logger = logging.getLogger("mammoth_mcp.tools")
+
+
+# ── Async helper for sync SDK calls ─────────────────────────
+
+
+async def run_sync(fn, *args, **kwargs):
+    """Run a synchronous SDK function in a thread to avoid blocking the event loop.
+
+    Sync SDK calls use ``time.sleep()`` for polling, which blocks the asyncio
+    event loop and causes SSE keepalive failures in MCP remote mode. This
+    helper offloads them to a thread pool via ``asyncio.to_thread()``.
+    """
+    return await asyncio.to_thread(fn, *args, **kwargs)
 
 
 # ── Recovery hints by error type ─────────────────────────────
