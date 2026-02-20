@@ -11,18 +11,24 @@ from mammoth import Condition, Operator
 
 Condition(
     column: str,
-    operator: Operator,
+    operator: Operator | str,
     value: Any = None,
-    case_sensitive: bool = False,
+    case_sensitive: bool | None = None,
+    value_is_column: bool = False,
+    component: str | None = None,
+    truncate: str | None = None,
 )
 ```
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `column` | `str` | *required* | Display name of the column |
-| `operator` | `Operator` | *required* | Comparison operator |
+| `operator` | `Operator \| str` | *required* | Comparison operator (enum or raw string) |
 | `value` | `Any` | `None` | Comparison value (omit for `IS_EMPTY` / `IS_NOT_EMPTY`) |
-| `case_sensitive` | `bool` | `False` | Case-sensitive string comparison |
+| `case_sensitive` | `bool \| None` | `None` | `None` = backend default (case-sensitive), `True` = case-sensitive, `False` = case-insensitive |
+| `value_is_column` | `bool` | `False` | If `True`, `value` is treated as a column name for column-to-column comparison |
+| `component` | `str \| None` | `None` | Date component for date-aware comparisons |
+| `truncate` | `str \| None` | `None` | Date truncation level for date comparisons |
 
 ### Examples
 
@@ -62,7 +68,7 @@ from mammoth import CompoundCondition
 
 CompoundCondition(
     logic: str,          # "AND" or "OR"
-    conditions: list,    # list of Condition or CompoundCondition
+    conditions: list[Condition | CompoundCondition | NotCondition],
 )
 ```
 

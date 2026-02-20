@@ -62,7 +62,7 @@ view.data(
     limit: int = 400,
     offset: int = 1,
     columns: list[str] | None = None,
-    condition: Condition | CompoundCondition | None = None,
+    condition: Condition | CompoundCondition | NotCondition | None = None,
     sort: str | None = None,
 ) -> dict[str, Any]
 ```
@@ -147,7 +147,7 @@ Filter rows by condition (SELECT task).
 
 ```python
 view.filter_rows(
-    condition: Condition | CompoundCondition,
+    condition: Condition | CompoundCondition | NotCondition,
     filter_type: FilterType = FilterType.SHOW,
     prompt: str = "",
 ) -> dict[str, Any]
@@ -155,7 +155,7 @@ view.filter_rows(
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `condition` | `Condition \| CompoundCondition` | *required* | Filter condition |
+| `condition` | `Condition \| CompoundCondition \| NotCondition` | *required* | Filter condition |
 | `filter_type` | `FilterType` | `SHOW` | `SHOW` to keep matching rows, `REMOVE` to discard |
 | `prompt` | `str` | `""` | Natural-language description of the filter intent |
 
@@ -187,7 +187,7 @@ view.set_values(
     new_column: str | None = None,
     column_type: ColumnType = ColumnType.TEXT,
     existing_column: str | None = None,
-    condition: Condition | CompoundCondition | None = None,
+    condition: Condition | CompoundCondition | NotCondition | None = None,
 ) -> dict[str, Any]
 ```
 
@@ -197,7 +197,7 @@ view.set_values(
 | `new_column` | `str \| None` | `None` | Name for a new column |
 | `column_type` | `ColumnType` | `TEXT` | Type for the new column |
 | `existing_column` | `str \| None` | `None` | Display name of existing column to update |
-| `condition` | `Condition \| None` | `None` | Global condition applied to the whole task |
+| `condition` | `Condition \| CompoundCondition \| NotCondition \| None` | `None` | Global condition applied to the whole task |
 
 ```python
 from mammoth import SetValue, Condition, Operator, ColumnType
@@ -223,7 +223,7 @@ view.math(
     new_column: str | None = None,
     column_type: ColumnType = ColumnType.NUMERIC,
     existing_column: str | None = None,
-    condition: Condition | CompoundCondition | None = None,
+    condition: Condition | CompoundCondition | NotCondition | None = None,
 ) -> dict[str, Any]
 ```
 
@@ -244,8 +244,8 @@ Join with another dataview (JOIN task).
 view.join(
     foreign_view: int | View,
     join_type: JoinType,
-    on: list[dict[str, str]],
-    select: list[str] | list[dict[str, str]],
+    on: list[JoinKeySpec | dict[str, str]],
+    select: list[str] | list[JoinSelectSpec | dict[str, str]],
     column_prefix: str | None = None,
 ) -> dict[str, Any]
 ```
@@ -286,8 +286,8 @@ Group and aggregate (PIVOT task).
 ```python
 view.pivot(
     group_by: list[str],
-    aggregations: list[dict[str, Any]],
-    condition: Condition | CompoundCondition | None = None,
+    aggregations: list[AggregationSpec | dict[str, Any]],
+    condition: Condition | CompoundCondition | NotCondition | None = None,
 ) -> dict[str, Any]
 ```
 
@@ -349,7 +349,7 @@ Crosstab / pivot table (CROSSTAB task).
 view.crosstab(
     rows: list[str],
     pivot_column: str,
-    select: dict[str, Any],
+    select: CrosstabSpec | dict[str, Any],
 ) -> dict[str, Any]
 ```
 
@@ -390,7 +390,7 @@ view.delete_columns(["Temp Column", "Debug"])
 Duplicate columns (COPY task).
 
 ```python
-view.copy_columns(copies: list[dict[str, Any]]) -> dict
+view.copy_columns(copies: list[CopySpec | dict[str, Any]]) -> dict
 ```
 
 ```python
@@ -410,7 +410,7 @@ view.combine_columns(
     column_type: ColumnType = ColumnType.TEXT,
     existing_column: str | None = None,
     separator: str = " ",
-    condition: Condition | CompoundCondition | None = None,
+    condition: Condition | CompoundCondition | NotCondition | None = None,
 ) -> dict[str, Any]
 ```
 
@@ -427,7 +427,7 @@ view.combine_columns(
 Convert column data types (CONVERT task).
 
 ```python
-view.convert_type(conversions: list[dict[str, str]]) -> dict
+view.convert_type(conversions: list[ConversionSpec | dict[str, str]]) -> dict
 ```
 
 ```python
@@ -446,7 +446,7 @@ view.text_transform(
     columns: list[str],
     case: TextCase | None = None,
     trim: bool = False,
-    condition: Condition | CompoundCondition | None = None,
+    condition: Condition | CompoundCondition | NotCondition | None = None,
 ) -> dict[str, Any]
 ```
 
@@ -468,7 +468,7 @@ view.replace_values(
     replace: str,
     match_case: bool = False,
     match_words: bool = False,
-    condition: Condition | CompoundCondition | None = None,
+    condition: Condition | CompoundCondition | NotCondition | None = None,
 ) -> dict[str, Any]
 ```
 
@@ -486,7 +486,7 @@ view.bulk_replace(
     mapping: list[dict[str, Any]],
     match_case: bool = True,
     match_words: bool = False,
-    condition: Condition | CompoundCondition | None = None,
+    condition: Condition | CompoundCondition | NotCondition | None = None,
 ) -> dict[str, Any]
 ```
 
@@ -537,7 +537,7 @@ view.substring(
     regex_invert: bool = False,
     new_column: str | None = None,
     existing_column: str | None = None,
-    condition: Condition | CompoundCondition | None = None,
+    condition: Condition | CompoundCondition | NotCondition | None = None,
 ) -> dict[str, Any]
 ```
 
@@ -613,7 +613,7 @@ view.increment_date(
     delta: dict[str, int],
     new_column: str | None = None,
     existing_column: str | None = None,
-    condition: Condition | CompoundCondition | None = None,
+    condition: Condition | CompoundCondition | NotCondition | None = None,
 ) -> dict[str, Any]
 ```
 
@@ -730,7 +730,7 @@ view.json_extract(
     column: str,
     json_type: JsonType = JsonType.OBJECT,
     keys: list[str] | None = None,
-    extractions: list[dict[str, str]] | None = None,
+    extractions: list[JsonExtractionSpec | dict[str, str]] | None = None,
     keep_source: bool = False,
     op_type: str | None = None,
 ) -> dict[str, Any]
@@ -765,6 +765,7 @@ view.gen_ai(
     context_columns: list[str],
     new_column: str = "AI Result",
     assistant_data: list[str] | None = None,
+    context_columns_derivation: bool | None = None,
 ) -> dict[str, Any]
 ```
 
@@ -799,18 +800,6 @@ view.add_sql(query: str) -> dict[str, Any]
 
 ```python
 view.add_sql("SELECT department, COUNT(*) as cnt FROM data GROUP BY department")
-```
-
-### sql
-
-Generate SQL from intent and add as a pipeline task in one call. Combines `generate_sql()` with pipeline task addition.
-
-```python
-view.sql(intent: str) -> dict[str, Any]
-```
-
-```python
-result = view.sql("show top 10 customers by total sales")
 ```
 
 ---

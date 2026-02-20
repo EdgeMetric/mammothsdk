@@ -419,9 +419,6 @@ print(sql)
 
 # Add raw SQL
 view.add_sql("SELECT region, SUM(sales) as total FROM data GROUP BY region")
-
-# One-step: generate + add
-view.sql("show the top 10 customers by total revenue")
 ```
 
 ---

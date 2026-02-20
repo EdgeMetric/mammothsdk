@@ -425,7 +425,7 @@ from mammoth import SetValue
 
 SetValue(
     value: Any,
-    condition: Condition | CompoundCondition | None = None,
+    condition: Condition | CompoundCondition | NotCondition | None = None,
 )
 ```
 

@@ -119,6 +119,8 @@ client.files.list(
 | `file_ids` | `list[int]` | `None` | Filter by specific file IDs |
 | `names` | `list[str]` | `None` | Filter by file names |
 | `statuses` | `list[str]` | `None` | Filter by file statuses |
+| `created_at` | `str` | `None` | Date range filter for creation date |
+| `updated_at` | `str` | `None` | Date range filter for update date |
 | `limit` | `int` | `50` | Maximum results (0-100) |
 | `offset` | `int` | `0` | Number of results to skip |
 | `sort` | `str` | `None` | Sort spec (e.g., `"(id:asc)"`, `"(name:desc)"`) |
@@ -154,6 +156,21 @@ file_info = client.files.get(file_id=123)
 print(f"Name: {file_info.name}")
 print(f"Status: {file_info.status}")
 ```
+
+---
+
+## update()
+
+Update file configuration (e.g., set password, extract sheets). Waits for the job to complete.
+
+```python
+client.files.update(
+    file_id: int,
+    patch_request: FilePatchRequest,
+) -> ObjectJobSchema
+```
+
+This is the low-level method used internally by `set_password()` and `extract_sheets()`. You rarely need to call it directly.
 
 ---
 

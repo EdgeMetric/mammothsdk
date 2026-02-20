@@ -14,6 +14,7 @@ client = MammothClient(
     base_url: str = "https://app.mammoth.io/api/v2",
     timeout: int = 30,
     job_timeout: int = 60,
+    pipeline_timeout: int = 3600,
 )
 ```
 
@@ -27,6 +28,7 @@ client = MammothClient(
 | `base_url` | `str` | `"https://app.mammoth.io/api/v2"` | Base URL for the Mammoth API |
 | `timeout` | `int` | `30` | Request timeout in seconds for individual HTTP calls |
 | `job_timeout` | `int` | `60` | Maximum time in seconds to poll a job to completion |
+| `pipeline_timeout` | `int` | `3600` | Maximum time in seconds to wait for pipeline tasks |
 
 !!! note "No retries"
     The SDK does **not** implement automatic retries. If an API call fails, the error is raised immediately. Implement retry logic in your application if needed.
@@ -176,6 +178,9 @@ view = client.views.get(view_id=1039)
 # List all views in a dataset
 views = client.views.list(dataset_id=42)
 
+# List all views across all datasets in the project
+views = client.views.list()
+
 # Create a new view
 view = client.views.create(dataset_id=42, name="My Analysis")
 
@@ -186,7 +191,7 @@ view = client.views.create(dataset_id=42, name="Copy", clone_from=1039)
 client.views.delete(view_id=1039)
 
 # Bulk delete
-client.views.bulk_delete(dataset_id=42, view_ids=[1039, 1040])
+client.views.bulk_delete(view_ids=[1039, 1040], dataset_id=42)
 ```
 
 ## Request handling
