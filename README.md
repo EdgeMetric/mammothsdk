@@ -30,6 +30,13 @@ view = client.views.get(1039)
 print(view.display_names)   # ["Customer", "Region", "Sales", "Date"]
 print(view.column_types)    # {"Customer": "TEXT", "Region": "TEXT", "Sales": "NUMERIC", ...}
 
+# After any transformation, display_names is automatically refreshed
+# (including pipeline-added columns like those created by math/set_values/add_column).
+# Use get_metadata() to inspect the full list:
+view.math("Sales * 1.1", new_column="Revenue")
+print(view.display_names)   # now includes "Revenue"
+meta = view.get_metadata()  # [{"display_name": "Revenue", "internal_name": "column_x1y2", "type": "NUMERIC"}, ...]
+
 # Fetch data — returns {"data": [rows...], "paging": {...}}
 result = view.data(limit=100)
 rows = result["data"]
@@ -54,7 +61,16 @@ view = client.views.get(ids["dataview_id"])
 
 ## Views & Transformations
 
-The `View` object is the central interface. It wraps a single dataview and exposes 25+ transformation methods. Each method sends a pipeline task to the API and automatically refreshes the view metadata.
+The `View` object is the central interface. It wraps a single dataview and exposes 25+ transformation methods. Each method sends a pipeline task to the API and automatically refreshes the view metadata — including any new columns added by the transformation.
+
+```python
+view.math(expression="Price * Quantity", new_column="Revenue")
+print("Revenue" in view.display_names)   # True — refreshed automatically
+
+# Inspect full column list (display_name, internal_name, type)
+for col in view.get_metadata():
+    print(col)
+```
 
 ### Filter Rows
 

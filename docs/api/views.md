@@ -41,6 +41,8 @@ view = client.views.create(dataset_id=42, name="Copy", clone_from=1039)
 | `raw` | `dict` | Full raw API response dict |
 | `export` | `ViewExport` | Export helper (see [Exports](exports.md)) |
 
+After every transformation, `display_names`, `columns`, and `column_types` are automatically refreshed — including columns added by pipeline tasks (`math`, `set_values`, `add_column`, etc.).
+
 ```python
 view = client.views.get(1039)
 
@@ -49,6 +51,10 @@ print(view.name)           # "Sales Data"
 print(view.display_names)  # ["Sales", "Region", "Date"]
 print(view.columns)        # {"Sales": "column_1", "Region": "column_2", ...}
 print(view.column_types)   # {"Sales": "NUMERIC", "Region": "TEXT", "Date": "DATE"}
+
+# After a transform, new columns appear immediately:
+view.math("Sales * 1.1", new_column="Revenue")
+print("Revenue" in view.display_names)   # True
 ```
 
 ## Data access
@@ -83,6 +89,19 @@ result = view.data(columns=["Sales", "Region"])
 
 # Fetch with a filter
 result = view.data(condition=Condition("Sales", Operator.GTE, 1000))
+```
+
+### get_metadata()
+
+Return the current column list as a list of dicts. Useful for inspecting the full column state after transformations.
+
+```python
+meta = view.get_metadata()
+# [
+#   {"display_name": "Sales", "internal_name": "column_1", "type": "NUMERIC"},
+#   {"display_name": "Revenue", "internal_name": "column_xyzabc", "type": "NUMERIC"},
+#   ...
+# ]
 ```
 
 ### refresh()

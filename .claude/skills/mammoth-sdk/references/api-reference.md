@@ -16,6 +16,52 @@ view = client.views.create(dataset_id, name="My View")      # new View
 client.views.delete(view_id, dataset_id)                    # delete
 ```
 
+### View metadata attributes
+
+After any transformation, `view.display_names`, `view.columns`, and `view.column_types` are automatically refreshed and include pipeline-added columns:
+
+```python
+view.math(expression="Price * 1.1", new_column="adj_price")
+print("adj_price" in view.display_names)    # True
+print(view.columns["adj_price"])            # "column_xyzabc1234" (internal name)
+print(view.column_types["adj_price"])       # "NUMERIC"
+```
+
+### `view.get_metadata()`
+
+Returns the full column list as a list of dicts — useful for debugging column resolution after transforms:
+
+```python
+for col in view.get_metadata():
+    print(col)
+# {"display_name": "adj_price", "internal_name": "column_xyzabc1234", "type": "NUMERIC"}
+```
+
+> **How it works:** column metadata is sourced from `taskwise_info` in the API response — specifically the last task's `metadata` field, which always reflects the final column state including any pipeline-computed columns. Falls back to top-level `metadata` when no tasks exist.
+
+### View attributes & metadata
+
+`view.display_names`, `view.columns`, and `view.column_types` are automatically
+refreshed after **every** transformation — including columns added by pipeline
+tasks (`math`, `set_values`, `add_column`, etc.).
+
+```python
+view.display_names   # ["Sales", "Region", "Revenue"]  — updated after each transform
+view.columns         # {"Sales": "column_1", ...}
+view.column_types    # {"Sales": "NUMERIC", ...}
+
+# Inspect full column list with types (useful after transforms):
+meta = view.get_metadata()
+# [{"display_name": "Revenue", "internal_name": "column_x1y2z3", "type": "NUMERIC"}, ...]
+
+# Force re-fetch from API:
+view.refresh()
+```
+
+**Implementation note:** After a transformation the API places new columns in
+`dependencies_info.dependents[str(view_id)]["METADATA"]`, not in the top-level
+`metadata` field. The SDK reads from that path so new columns are always visible.
+
 ---
 
 ## ProjectsAPI (`client.projects`)

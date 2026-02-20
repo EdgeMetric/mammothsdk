@@ -120,13 +120,29 @@ class View(
         self.export = ViewExport(self)
 
     def _build_column_maps(self, data: dict[str, Any]) -> None:
-        """Extract column name mappings from dataview metadata."""
+        """Extract column name mappings from dataview metadata.
+
+        Pipeline-computed columns (added by math, set_values, add_column, etc.)
+        appear in ``dependencies_info.dependents[str(view_id)]["METADATA"]`` but
+        not in the top-level ``metadata`` field. This method prefers that source
+        when available so display_names stays complete after every transformation.
+        """
         self.columns = {}
         self.display_names = []
         self.column_types = {}
         self._internal_names = []
 
-        columns_list = data.get("metadata", [])
+        # dependents[str(id)]["METADATA"] is the authoritative post-pipeline column
+        # list — it includes both original and pipeline-added columns.
+        columns_list: list[dict[str, Any]] = []
+        view_id = data.get("id")
+        if view_id is not None:
+            dependents = (data.get("dependencies_info") or {}).get("dependents") or {}
+            dep_entry = dependents.get(str(view_id)) or {}
+            columns_list = dep_entry.get("METADATA") or []
+
+        if not columns_list:
+            columns_list = data.get("metadata") or []
         if not columns_list:
             properties = data.get("properties", {})
             columns_list = properties.get("columns", []) if isinstance(properties, dict) else []
@@ -261,6 +277,24 @@ class View(
         self.name = data.get("name", "")
         self._build_column_maps(data)
         return self
+
+    def get_metadata(self) -> list[dict[str, Any]]:
+        """Return current column metadata as a list of dicts.
+
+        Each dict has keys: ``display_name``, ``internal_name``, ``type``.
+        Reflects all columns including those added by pipeline transformations.
+
+        Returns:
+            List of column metadata dicts.
+        """
+        return [
+            {
+                "display_name": name,
+                "internal_name": self.columns[name],
+                "type": self.column_types[name],
+            }
+            for name in self.display_names
+        ]
 
     # ── Pipeline Management ─────────────────────────────────────
 
