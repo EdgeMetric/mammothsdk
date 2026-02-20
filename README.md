@@ -30,8 +30,9 @@ view = client.views.get(1039)
 print(view.display_names)   # ["Customer", "Region", "Sales", "Date"]
 print(view.column_types)    # {"Customer": "TEXT", "Region": "TEXT", "Sales": "NUMERIC", ...}
 
-# Fetch data
-data = view.data(limit=100)
+# Fetch data — returns {"data": [rows...], "paging": {...}}
+result = view.data(limit=100)
+rows = result["data"]
 ```
 
 You can also extract IDs directly from a Mammoth URL:

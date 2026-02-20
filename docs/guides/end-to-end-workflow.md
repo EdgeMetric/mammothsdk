@@ -71,8 +71,9 @@ print(f"Columns: {view.display_names}")
 print(f"Types: {view.column_types}")
 # e.g., {"Customer": "TEXT", "Region": "TEXT", "Sales": "NUMERIC", "Order Date": "TEXT"}
 
-# Preview the data
-data = view.data(limit=5)
+# Preview the data — returns {"data": [rows...], "paging": {...}}
+result = view.data(limit=5)
+rows = result["data"]
 ```
 
 !!! note "CSV dates upload as TEXT"

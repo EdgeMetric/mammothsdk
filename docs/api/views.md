@@ -67,9 +67,16 @@ view.data(
 ) -> dict[str, Any]
 ```
 
+Returns a dict with two keys:
+
+- `"data"` — list of row dicts (keys are internal column names like `"column_1"`)
+- `"paging"` — pagination info
+
 ```python
 # Fetch first 100 rows
 result = view.data(limit=100)
+rows = result["data"]       # list of row dicts
+print(len(rows))            # number of rows returned
 
 # Fetch specific columns
 result = view.data(columns=["Sales", "Region"])
