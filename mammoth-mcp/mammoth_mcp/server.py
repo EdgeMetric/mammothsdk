@@ -190,7 +190,18 @@ from mammoth_mcp.tools import (  # noqa: E402
 
 def create_app():
     """ASGI app factory for uvicorn (remote mode)."""
-    return mcp.streamable_http_app()
+    from starlette.middleware.cors import CORSMiddleware
+
+    app = mcp.streamable_http_app()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "Mcp-Session-Id"],
+        expose_headers=["Mcp-Session-Id"],
+        allow_credentials=False,
+    )
+    return app
 
 
 def _configure_logging() -> None:
