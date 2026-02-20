@@ -107,14 +107,6 @@ view.join(
     on=[JoinKeySpec(left="Customer ID", right="Customer ID")],
     select=["Category", "Tier"],
 )
-
-# Plain dicts also work
-view.join(
-    foreign_view=other_view,
-    join_type=JoinType.LEFT,
-    on=[{"left": "Customer ID", "right": "Customer ID"}],
-    select=["Category", "Tier"],
-)
 ```
 
 ### Pivot (Group By / Aggregate)
@@ -127,14 +119,6 @@ view.pivot(
     aggregations=[
         AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total Sales"),
         AggregationSpec(column="Sales", function=AggregateFunction.AVG, as_name="Avg Sales"),
-    ],
-)
-
-# Plain dicts also work
-view.pivot(
-    group_by=["Region"],
-    aggregations=[
-        {"column": "Sales", "function": AggregateFunction.SUM, "as": "Total Sales"},
     ],
 )
 ```
@@ -292,33 +276,17 @@ preview = view.preview_task({"MATH": {"EXPRESSION": [...]}})
 
 ### Parameter Spec Dataclasses
 
-Methods that accept dict parameters also accept typed dataclasses for IDE autocomplete and documentation. Both forms are interchangeable:
+Methods that accept structured parameters use typed dataclasses for IDE autocomplete:
 
-| Dataclass | Used by | Dict keys |
-|-----------|---------|-----------|
-| `CopySpec` | `copy_columns()` | `source`, `as`, `type`, `condition` |
-| `ConversionSpec` | `convert_type()` | `column`, `to`, `format` |
-| `AggregationSpec` | `pivot()` | `column`, `function`, `as`, `delimiter` |
-| `CrosstabSpec` | `crosstab()` | `column`, `function` |
-| `JoinKeySpec` | `join()` on | `left`, `right` |
-| `JoinSelectSpec` | `join()` select | `column`, `alias` |
-| `JsonExtractionSpec` | `json_extract()` | `key`, `as`, `type` |
-
-```python
-from mammoth import AggregationSpec, AggregateFunction
-
-# With dataclass (IDE autocomplete)
-view.pivot(
-    group_by=["Region"],
-    aggregations=[AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total")],
-)
-
-# With dict (also works)
-view.pivot(
-    group_by=["Region"],
-    aggregations=[{"column": "Sales", "function": "SUM", "as": "Total"}],
-)
-```
+| Dataclass | Used by |
+|-----------|---------|
+| `CopySpec` | `copy_columns()` |
+| `ConversionSpec` | `convert_type()` |
+| `AggregationSpec` | `pivot()` |
+| `CrosstabSpec` | `crosstab()` |
+| `JoinKeySpec` | `join()` on |
+| `JoinSelectSpec` | `join()` select |
+| `JsonExtractionSpec` | `json_extract()` |
 
 ## Conditions
 
