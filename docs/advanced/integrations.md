@@ -63,7 +63,7 @@ df = pd.read_sql("SELECT * FROM customers WHERE status = 'active'", connection)
 df.to_csv("customers.csv", index=False)
 
 # 2. Upload to Mammoth
-client.files.upload_files(files="customers.csv")
+client.files.upload("customers.csv")
 ```
 
 ## Branch out to another dataset

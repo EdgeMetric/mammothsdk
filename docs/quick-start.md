@@ -107,7 +107,7 @@ projects = client.projects.list()
 datasets = client.datasets.list()
 
 # Upload a file
-client.files.upload_files(files="data.csv")
+client.files.upload("data.csv")
 ```
 
 ## Complete example

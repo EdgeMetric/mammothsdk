@@ -64,10 +64,13 @@ nav:
   - API Reference:
       - Client: api/client.md
       - Views: api/views.md
+      - Files: api/files.md
       - Conditions: api/conditions.md
       - Enums: api/enums.md
       - Exports: api/exports.md
       - Exceptions: api/exceptions.md
+  - Guides:
+      - End-to-End Workflow: guides/end-to-end-workflow.md
   - Examples:
       - Transformations: examples/transformations.md
       - Basic Usage: examples/basic-usage.md

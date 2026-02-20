@@ -74,17 +74,21 @@ from mammoth.models.pipeline import (
     JoinType,
     JsonExtractionSpec,
     JsonType,
+    MathOperator,
     Operator,
+    ProviderType,
     SetValue,
     SortDirection,
     SubstringDirection,
+    TaskType,
     TextCase,
+    ValueType,
     WindowFunction,
     WindowRange,
 )
 from mammoth.view import View, ViewExport
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __all__ = [
     # Client
     "MammothClient",
@@ -113,6 +117,10 @@ __all__ = [
     "SortDirection",
     "SubstringDirection",
     "JsonType",
+    "MathOperator",
+    "ProviderType",
+    "TaskType",
+    "ValueType",
     # Parameter spec dataclasses
     "SetValue",
     "CopySpec",

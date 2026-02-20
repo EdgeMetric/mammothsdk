@@ -397,6 +397,25 @@ from mammoth import TaskType
 
 ---
 
+## NotCondition
+
+Not an enum, but important to know about when building conditions. The `~` operator negates any condition.
+
+```python
+from mammoth import Condition, Operator
+
+# Negate with ~
+not_closed = ~Condition("Status", Operator.EQ, "Closed")
+not_compound = ~(Condition("Sales", Operator.GTE, 10000) & Condition("Region", Operator.EQ, "West"))
+
+# Double negation cancels: ~~cond returns original
+original = ~~not_closed
+```
+
+See [Conditions reference](conditions.md#notcondition) for full documentation and examples.
+
+---
+
 ## SetValue dataclass
 
 Not an enum, but frequently used alongside enums. A dataclass for `set_values()` value specs.

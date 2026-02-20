@@ -1,6 +1,6 @@
 # Conditions Reference
 
-The condition module provides a Pythonic filter builder with operator overloading. Build conditions using `Condition` objects, combine them with `&` (AND) and `|` (OR), and pass them to View transformation methods.
+The condition module provides a Pythonic filter builder with operator overloading. Build conditions using `Condition` objects, combine them with `&` (AND), `|` (OR), and `~` (NOT), and pass them to View transformation methods.
 
 ## Condition
 
@@ -66,9 +66,50 @@ CompoundCondition(
 )
 ```
 
+## NotCondition
+
+Negation of a condition. Created via the `~` (NOT) operator -- you rarely need to construct one directly.
+
+```python
+from mammoth import Condition, Operator
+
+# Negate a single condition
+not_closed = ~Condition("Status", Operator.EQ, "Closed")
+
+# Negate a compound condition
+not_priority = ~(Condition("Sales", Operator.GTE, 10000) & Condition("Region", Operator.EQ, "West"))
+
+# Double negation cancels out: ~~cond returns the original condition
+original = ~~not_closed  # same as Condition("Status", Operator.EQ, "Closed")
+
+# Combine negated conditions with & and |
+active = Condition("Status", Operator.EQ, "Active")
+not_closed_and_active = ~Condition("Status", Operator.EQ, "Closed") & active
+```
+
+### Using NotCondition with View methods
+
+```python
+# Filter: keep rows where Status is NOT "Closed"
+view.filter_rows(~Condition("Status", Operator.EQ, "Closed"))
+
+# Set values with negated condition
+view.set_values(
+    new_column="Flag",
+    column_type=ColumnType.TEXT,
+    values=[
+        SetValue("Open", condition=~Condition("Status", Operator.EQ, "Closed")),
+        SetValue("Closed"),
+    ],
+)
+
+# Math with negated condition
+view.math("Sales * 1.1", new_column="Adjusted", condition=~Condition("Region", Operator.EQ, "East"))
+```
+
 ## Operator overloading
 
-Combine conditions with `&` (AND) and `|` (OR). Use parentheses for grouping.
+Combine conditions with `&` (AND), `|` (OR), and `~` (NOT). Use parentheses for grouping.
 
 ```python
 from mammoth import Condition, Operator

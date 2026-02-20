@@ -290,7 +290,7 @@ Methods that accept structured parameters use typed dataclasses for IDE autocomp
 
 ## Conditions
 
-The `Condition` class supports Python's `&` (AND) and `|` (OR) operators for composing filter logic.
+The `Condition` class supports Python's `&` (AND), `|` (OR), and `~` (NOT) operators for composing filter logic.
 
 ```python
 from mammoth import Condition, Operator
@@ -301,10 +301,11 @@ west_region = Condition("Region", Operator.EQ, "West")
 active = Condition("Status", Operator.IN_LIST, ["Active", "Pending"])
 has_email = Condition("Email", Operator.IS_NOT_EMPTY)
 
-# Combine with & (AND) and | (OR)
+# Combine with & (AND), | (OR), and ~ (NOT)
 priority = high_sales & west_region          # Both must be true
 either = high_sales | west_region            # At least one true
-complex_filter = (high_sales & west_region) | active  # Nested logic
+not_active = ~active                         # Negate a condition
+complex_filter = (high_sales & west_region) | ~active  # Nested logic
 
 # Use anywhere conditions are accepted
 view.filter_rows(priority)
@@ -337,13 +338,13 @@ view.math("Sales * 1.1", new_column="Adjusted", condition=west_region)
 
 ```python
 # Upload a single file (returns dataset ID)
-dataset_id = client.files.upload_files(files="sales_data.csv")
+dataset_id = client.files.upload("sales_data.csv")
 
 # Upload multiple files
-dataset_ids = client.files.upload_files(files=["sales.csv", "customers.xlsx"])
+dataset_ids = client.files.upload(["sales.csv", "customers.xlsx"])
 
 # Upload an entire folder
-dataset_ids = client.files.upload_folder(folder_path="./data/")
+dataset_ids = client.files.upload_folder("./data/")
 ```
 
 Supported formats: CSV, TSV, PSV, XLS, XLSX, ZIP, BZ2, GZ, TAR, 7Z, PDF, TIFF, JPEG, PNG, HEIC, WEBP. Maximum file size: 50 MB.
@@ -351,7 +352,7 @@ Supported formats: CSV, TSV, PSV, XLS, XLSX, ZIP, BZ2, GZ, TAR, 7Z, PDF, TIFF, J
 After upload, get a view for the new dataset:
 
 ```python
-dataset_id = client.files.upload_files(files="sales_data.csv")
+dataset_id = client.files.upload("sales_data.csv")
 views = client.views.list(dataset_id)
 view = views[0]  # Default view created on upload
 print(view.display_names)

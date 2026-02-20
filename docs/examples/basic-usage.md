@@ -28,6 +28,24 @@ print(ids)
 # {"workspace_id": 11, "project_id": 10, "dataview_id": 1039}
 ```
 
+## Upload files
+
+```python
+# Upload a single CSV file (returns dataset ID)
+dataset_id = client.files.upload("sales_data.csv")
+
+# Upload multiple files at once
+dataset_ids = client.files.upload(["sales.csv", "customers.xlsx"])
+
+# Upload all files in a folder
+dataset_ids = client.files.upload_folder("./data/")
+
+# After upload, get the view for the new dataset
+views = client.views.list(dataset_id)
+view = views[0]
+print(view.display_names)
+```
+
 ## List resources
 
 ```python

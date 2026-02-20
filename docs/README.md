@@ -8,7 +8,7 @@ The official Python SDK for the [Mammoth Analytics](https://mammoth.io) platform
 
 - **MammothClient** -- single entry point with organized sub-clients for every API resource
 - **View objects** -- rich domain objects with 25+ transformation methods (filter, set, join, pivot, window, math, and more)
-- **Condition builder** -- Pythonic filter conditions with `&` (AND) and `|` (OR) operator overloading
+- **Condition builder** -- Pythonic filter conditions with `&` (AND), `|` (OR), and `~` (NOT) operator overloading
 - **Export helpers** -- download CSV, push to S3, PostgreSQL, BigQuery, and other destinations
 - **Type safety** -- full type hints, enums for all parameters, Pydantic models for responses
 - **MCP server** -- Model Context Protocol server for AI-assisted analytics
@@ -50,10 +50,12 @@ view.export.to_csv("output.csv")
 | [Authentication](authentication.md) | API credentials and authentication |
 | [Client API](api/client.md) | `MammothClient` constructor, sub-clients, and methods |
 | [Views](api/views.md) | `View` class -- properties, transformations, data access |
-| [Conditions](api/conditions.md) | `Condition` and `CompoundCondition` filter builder |
+| [Files](api/files.md) | `FilesAPI` -- upload, list, and manage files |
+| [Conditions](api/conditions.md) | `Condition`, `CompoundCondition`, and `NotCondition` filter builder |
 | [Enums](api/enums.md) | All enums: `Operator`, `ColumnType`, `JoinType`, and more |
 | [Exports](api/exports.md) | `ViewExport` and `ExportsAPI` -- CSV, S3, databases |
 | [Exceptions](api/exceptions.md) | Error classes and handling |
+| [End-to-End Workflow](guides/end-to-end-workflow.md) | Complete journey: upload, transform, export |
 | [Transformations](examples/transformations.md) | Practical transformation workflow examples |
 | [Changelog](changelog.md) | Release history |
 
