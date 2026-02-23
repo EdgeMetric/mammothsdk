@@ -1,18 +1,11 @@
 #!/usr/bin/env bash
-# Start all three MCP server profiles using the current Python/venv.
-#
-# Port assignment uses environment variables:
-#   TRANSFORMATIONS_PORT (default: PORT+0, e.g. 9000)
-#   IMPORT_PORT          (default: PORT+1, e.g. 9001)
-#   ADMIN_PORT           (default: PORT+2, e.g. 9002)
-#
-# Falls back to PORT from .env (default 8000) as the base.
+# Start the Mammoth MCP server (single unified server).
 #
 # Usage:
-#   ./start.sh              # start all 3 profiles
-#   ./start.sh stop         # stop all 3 profiles
-#   ./start.sh status       # check which profiles are running
-#   ./start.sh restart      # restart all 3 profiles
+#   ./start.sh              # start
+#   ./start.sh stop         # stop
+#   ./start.sh status       # check
+#   ./start.sh restart      # restart
 #
 # Logs go to LOG_FILE directory or ./logs/
 
@@ -36,19 +29,8 @@ HOST="${HOST:-$(_read_env HOST)}"
 LOG_FILE="${LOG_FILE:-$(_read_env LOG_FILE)}"
 SERVER_URL="${SERVER_URL:-$(_read_env SERVER_URL)}"
 
-# Base port from PORT env var (same as settings.py default)
-BASE_PORT="${PORT:-8000}"
-
-# Per-profile ports: explicit env var or base + offset
-TRANSFORMATIONS_PORT="${TRANSFORMATIONS_PORT:-$BASE_PORT}"
-IMPORT_PORT="${IMPORT_PORT:-$((BASE_PORT + 1))}"
-ADMIN_PORT="${ADMIN_PORT:-$((BASE_PORT + 2))}"
-
-declare -A PORTS=(
-    [transformations]="$TRANSFORMATIONS_PORT"
-    [import]="$IMPORT_PORT"
-    [admin]="$ADMIN_PORT"
-)
+PORT="${PORT:-8000}"
+HOST="${HOST:-0.0.0.0}"
 
 # Log directory — use LOG_FILE dir if set, else try /var/log, else ./logs
 if [ -n "${LOG_FILE:-}" ]; then
@@ -61,121 +43,88 @@ fi
 mkdir -p "$LOGDIR"
 mkdir -p "$PIDDIR"
 
-HOST="${HOST:-0.0.0.0}"
+PIDFILE="${PIDDIR}/mammoth-mcp.pid"
+LOGFILE="${LOGDIR}/mammoth-mcp.log"
 
 _start() {
-    local profile="$1"
-    local port="${PORTS[$profile]}"
-    local pidfile="${PIDDIR}/${profile}.pid"
-    local logfile="${LOGDIR}/${profile}.log"
-
-    if [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null; then
-        echo "  ${profile} already running (pid $(cat "$pidfile"), port ${port})"
+    if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+        echo "  Already running (pid $(cat "$PIDFILE"), port ${PORT})"
         return 0
     fi
 
-    # Each profile needs its own SERVER_URL so OAuth endpoints route correctly
-    # behind the nginx path-based proxy (e.g. /transformations/, /import/, /admin/).
-    local profile_url="${SERVER_URL:+${SERVER_URL}/${profile}}"
-
-    echo "  Starting ${profile} on ${HOST}:${port}..."
-    MCP_PROFILE="$profile" \
-    PORT="$port" \
+    echo "  Starting Mammoth MCP on ${HOST}:${PORT}..."
+    PORT="$PORT" \
     MODE=remote \
-    ${profile_url:+SERVER_URL="$profile_url"} \
+    ${SERVER_URL:+SERVER_URL="$SERVER_URL"} \
         poetry run uvicorn mammoth_mcp.server:create_app \
             --factory \
             --host "$HOST" \
-            --port "$port" \
-            >> "$logfile" 2>&1 &
+            --port "$PORT" \
+            >> "$LOGFILE" 2>&1 &
 
     local pid=$!
-    echo "$pid" > "$pidfile"
-    echo "  ${profile} started (pid ${pid}, port ${port}, log ${logfile})"
+    echo "$pid" > "$PIDFILE"
+    echo "  Started (pid ${pid}, port ${PORT}, log ${LOGFILE})"
 }
 
 _stop() {
-    local profile="$1"
-    local pidfile="${PIDDIR}/${profile}.pid"
-
-    if [ ! -f "$pidfile" ]; then
-        echo "  ${profile}: not running (no pidfile)"
+    if [ ! -f "$PIDFILE" ]; then
+        echo "  Not running (no pidfile)"
         return 0
     fi
 
     local pid
-    pid=$(cat "$pidfile")
+    pid=$(cat "$PIDFILE")
     if kill -0 "$pid" 2>/dev/null; then
-        echo "  Stopping ${profile} (pid ${pid})..."
+        echo "  Stopping (pid ${pid})..."
         kill "$pid"
         for _ in $(seq 1 20); do
             kill -0 "$pid" 2>/dev/null || break
             sleep 0.5
         done
         if kill -0 "$pid" 2>/dev/null; then
-            echo "  Force-killing ${profile} (pid ${pid})..."
+            echo "  Force-killing (pid ${pid})..."
             kill -9 "$pid" 2>/dev/null || true
         fi
-        echo "  ${profile} stopped"
+        echo "  Stopped"
     else
-        echo "  ${profile}: process ${pid} already dead"
+        echo "  Process ${pid} already dead"
     fi
-    rm -f "$pidfile"
+    rm -f "$PIDFILE"
 }
 
 _status() {
-    local profile="$1"
-    local port="${PORTS[$profile]}"
-    local pidfile="${PIDDIR}/${profile}.pid"
-
-    if [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null; then
-        echo "  ${profile}: RUNNING (pid $(cat "$pidfile"), port ${port})"
+    if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+        echo "  RUNNING (pid $(cat "$PIDFILE"), port ${PORT})"
     else
-        echo "  ${profile}: STOPPED"
-        rm -f "$pidfile" 2>/dev/null
+        echo "  STOPPED"
+        rm -f "$PIDFILE" 2>/dev/null
     fi
 }
 
 case "${1:-start}" in
     start)
-        echo "Starting Mammoth MCP servers..."
-        for profile in transformations import admin; do
-            _start "$profile"
-        done
+        echo "Starting Mammoth MCP server..."
+        _start
         echo ""
-        echo "Upstream targets:"
-        echo "  transformations → http://${HOST}:${TRANSFORMATIONS_PORT}"
-        echo "  import          → http://${HOST}:${IMPORT_PORT}"
-        echo "  admin           → http://${HOST}:${ADMIN_PORT}"
+        echo "  Upstream: http://${HOST}:${PORT}"
         if [ -n "${SERVER_URL:-}" ]; then
-            echo ""
-            echo "Public MCP endpoints:"
-            echo "  transformations → ${SERVER_URL}/transformations/mcp"
-            echo "  import          → ${SERVER_URL}/import/mcp"
-            echo "  admin           → ${SERVER_URL}/admin/mcp"
+            echo "  Public:   ${SERVER_URL}/mcp"
         fi
         ;;
     stop)
-        echo "Stopping Mammoth MCP servers..."
-        for profile in transformations import admin; do
-            _stop "$profile"
-        done
+        echo "Stopping Mammoth MCP server..."
+        _stop
         ;;
     restart)
-        echo "Restarting Mammoth MCP servers..."
-        for profile in transformations import admin; do
-            _stop "$profile"
-        done
+        echo "Restarting Mammoth MCP server..."
+        _stop
         sleep 1
-        for profile in transformations import admin; do
-            _start "$profile"
-        done
+        _start
         ;;
     status)
         echo "Mammoth MCP server status:"
-        for profile in transformations import admin; do
-            _status "$profile"
-        done
+        _status
         ;;
     *)
         echo "Usage: $0 {start|stop|restart|status}"

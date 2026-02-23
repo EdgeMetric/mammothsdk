@@ -4,17 +4,28 @@ MCP server for [Mammoth Analytics](https://mammoth.io) -- expose data exploratio
 
 Built on top of the [mammoth-io](https://pypi.org/project/mammoth-io/) Python SDK.
 
-## Architecture: 3 Server Profiles
+## Architecture: Progressive Disclosure
 
-To avoid overwhelming the LLM with 130+ tools, the server is split into three focused profiles. Each profile loads a different subset of tools with tailored instructions. Users connect only the servers they need.
+The server starts with **~15 core tools** for connection, discovery, views, data, pipeline, and help. Additional capabilities (~138 tools) are organized into **4 tool groups** that Claude can enable on demand via meta-tools — no user configuration needed.
 
-| Profile | Port | Tools | Purpose |
-|---------|------|-------|---------|
-| `transformations` | 8001 | ~57 | Data exploration, transformation, export, draft mode |
-| `import` | 8002 | ~43 | Webhooks, cloud connectors, file management, batches |
-| `admin` | 8003 | ~85 | Organization, dashboards, automations, users, API keys |
+| Core Tools (always loaded) | Purpose |
+|---|---|
+| `test_connection`, `set_project`, `parse_mammoth_url` | Auth & navigation |
+| `list_projects`, `list_datasets`, `get_dataset`, `upload_file` | Browse workspace + bring data in |
+| `list_views`, `get_view` | Discover views |
+| `get_data`, `export_data` | Peek at data + take data out |
+| `list_tasks` | Discover pipeline state |
+| `get_help` | Guidance |
+| `list_tool_groups`, `enable_tool_group` | Progressive disclosure meta-tools |
 
-All three share the same codebase, Redis, and OAuth tokens. Only the tool modules and LLM instructions differ.
+| Discoverable Group | ~Tools | What's in it |
+|---|---|---|
+| `transformations` | ~37 | Create/delete views, filter, set values, math, text, dates, joins, pivot, window, AI, SQL, draft mode, undo tasks |
+| `import` | ~30 | Webhooks, cloud connectors, file management, batch imports |
+| `exports` | ~6 | Database, FTP/SFTP exports, export management, publish |
+| `admin` | ~65 | Workspace/user management, dashboards, automations, API keys, AI profiling |
+
+**Total: ~15 core + ~138 group = ~153 tools.** All SDK functions exposed.
 
 ### Deployment modes
 
@@ -38,33 +49,14 @@ poetry install
 
 ### Claude Desktop Configuration
 
-Add one or more profiles to your Claude Desktop config file (`claude_desktop_config.json`):
+Add the server to your Claude Desktop config file (`claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
-    "mammoth-transformations": {
+    "mammoth": {
       "command": "mammoth-mcp",
       "env": {
-        "MCP_PROFILE": "transformations",
-        "MAMMOTH_API_KEY": "your-api-key",
-        "MAMMOTH_API_SECRET": "your-api-secret",
-        "MAMMOTH_WORKSPACE_ID": "2"
-      }
-    },
-    "mammoth-import": {
-      "command": "mammoth-mcp",
-      "env": {
-        "MCP_PROFILE": "import",
-        "MAMMOTH_API_KEY": "your-api-key",
-        "MAMMOTH_API_SECRET": "your-api-secret",
-        "MAMMOTH_WORKSPACE_ID": "2"
-      }
-    },
-    "mammoth-admin": {
-      "command": "mammoth-mcp",
-      "env": {
-        "MCP_PROFILE": "admin",
         "MAMMOTH_API_KEY": "your-api-key",
         "MAMMOTH_API_SECRET": "your-api-secret",
         "MAMMOTH_WORKSPACE_ID": "2"
@@ -74,7 +66,7 @@ Add one or more profiles to your Claude Desktop config file (`claude_desktop_con
 }
 ```
 
-Most users only need `mammoth-transformations`. Add `import` or `admin` only when needed.
+That's it — one server, all capabilities. Claude will enable tool groups as needed.
 
 ### Environment Variables (Stdio Mode)
 
@@ -90,19 +82,18 @@ Most users only need `mammoth-transformations`. Add `import` or `admin` only whe
 
 | Variable | Default | Description |
 |---|---|---|
-| `MCP_PROFILE` | `transformations` | Server profile: `transformations`, `import`, or `admin` |
 | `MAMMOTH_PROJECT_ID` | *(none)* | Default project ID |
 | `MAMMOTH_BASE_URL` | `https://app.mammoth.io/api/v2` | API base URL |
 | `MAMMOTH_JOB_TIMEOUT` | `120` | Timeout in seconds for async jobs |
 
 ## Remote Deployment (OAuth 2.0)
 
-Deploy as remote MCP servers with OAuth 2.0 authentication for multi-user access via Claude UI.
+Deploy as a remote MCP server with OAuth 2.0 authentication for multi-user access via Claude UI.
 
 ### Prerequisites
 
 - Python 3.10+, Poetry
-- Redis server (shared across all 3 profiles)
+- Redis server
 - Domain with DNS (e.g. mcp.mammoth.io)
 - SSL certificate (Let's Encrypt)
 
@@ -130,47 +121,37 @@ ENCRYPTION_KEY=<generate-with-fernet>
 LOG_LEVEL=INFO
 ```
 
-Note: `MCP_PROFILE` is set per-instance (by `start.sh` or env var), not in `.env`.
-
-### 3. Start All 3 Profiles
+### 3. Start the Server
 
 ```bash
-# Start all three profiles (ports 8001, 8002, 8003)
+# Start (single process)
 ./start.sh
 
 # Check status
 ./start.sh status
 
-# Stop all
+# Stop
 ./start.sh stop
 
-# Restart all
+# Restart
 ./start.sh restart
 ```
 
-Or start a single profile manually:
+Or start manually:
 
 ```bash
-MCP_PROFILE=transformations PORT=8001 \
+MODE=remote PORT=8000 \
   poetry run uvicorn mammoth_mcp.server:create_app --factory \
-    --host 0.0.0.0 --port 8001
+    --host 0.0.0.0 --port 8000
 ```
 
 ### 4. Nginx Reverse Proxy
 
-Route each profile to a separate URL path. Replace `10.0.3.207` with your MCP server's private IP.
+Route traffic to the MCP server. Replace `10.0.3.207` with your server's private IP.
 
 ```nginx
-upstream mcp_transformations {
-    server 10.0.3.207:9000;
-    keepalive 32;
-}
-upstream mcp_import {
-    server 10.0.3.207:9001;
-    keepalive 32;
-}
-upstream mcp_admin {
-    server 10.0.3.207:9002;
+upstream mammoth_mcp {
+    server 10.0.3.207:8000;
     keepalive 32;
 }
 
@@ -185,63 +166,8 @@ server {
 
     ssl_protocols TLSv1.2 TLSv1.3;
 
-    # Transformations (default — also serves root /)
-    location /transformations/ {
-        proxy_pass http://mcp_transformations/;
-
-        proxy_http_version 1.1;
-        proxy_set_header Host              $host;
-        proxy_set_header X-Real-IP         $remote_addr;
-        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Connection        "";
-
-        proxy_connect_timeout 75s;
-        proxy_read_timeout    86400s;
-        proxy_send_timeout    300s;
-
-        proxy_buffering off;
-    }
-
-    # Import
-    location /import/ {
-        proxy_pass http://mcp_import/;
-
-        proxy_http_version 1.1;
-        proxy_set_header Host              $host;
-        proxy_set_header X-Real-IP         $remote_addr;
-        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Connection        "";
-
-        proxy_connect_timeout 75s;
-        proxy_read_timeout    86400s;
-        proxy_send_timeout    300s;
-
-        proxy_buffering off;
-    }
-
-    # Admin
-    location /admin/ {
-        proxy_pass http://mcp_admin/;
-
-        proxy_http_version 1.1;
-        proxy_set_header Host              $host;
-        proxy_set_header X-Real-IP         $remote_addr;
-        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Connection        "";
-
-        proxy_connect_timeout 75s;
-        proxy_read_timeout    86400s;
-        proxy_send_timeout    300s;
-
-        proxy_buffering off;
-    }
-
-    # Root → transformations (backward compatibility)
     location / {
-        proxy_pass http://mcp_transformations;
+        proxy_pass http://mammoth_mcp;
 
         proxy_http_version 1.1;
         proxy_set_header Host              $host;
@@ -265,15 +191,13 @@ Create an A record: `mcp.mammoth.io` -> `<EC2 Elastic IP>`
 
 ### 6. Add to Claude UI
 
-Register each profile as a separate integration:
+Register a single integration:
 
 | Integration Name | MCP Server URL |
 |---|---|
-| Mammoth Transformations | `https://mcp.mammoth.io/transformations/mcp` |
-| Mammoth Import | `https://mcp.mammoth.io/import/mcp` |
-| Mammoth Admin | `https://mcp.mammoth.io/admin/mcp` |
+| Mammoth Analytics | `https://mcp.mammoth.io/mcp` |
 
-The OAuth flow will prompt the user for their Mammoth API credentials. All three profiles share the same Redis token store, so a user only needs to authenticate once per profile (tokens are interchangeable since they use the same `encryption_key`).
+The OAuth flow will prompt the user for their Mammoth API credentials.
 
 ## Claude UI — End User Installation Guide
 
@@ -289,10 +213,9 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 1. Click **"Add more integrations"**.
 2. Select **"Add custom integration"** (bottom of the integration catalog).
 3. Enter the integration details:
-   - **Name**: `Mammoth Transformations` (or `Import` / `Admin`)
-   - **MCP Server URL**: `https://mcp.mammoth.io/transformations/mcp`
+   - **Name**: `Mammoth Analytics`
+   - **MCP Server URL**: `https://mcp.mammoth.io/mcp`
 4. Click **"Add"**.
-5. Repeat for other profiles as needed.
 
 ### Step 3: Authenticate
 
@@ -306,11 +229,13 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 ### Step 4: Start Using
 
 1. Open a **new chat** in Claude.
-2. You should see the Mammoth integration icon(s) in the chat toolbar — click to verify the connection shows as active.
+2. You should see the Mammoth integration icon in the chat toolbar — click to verify the connection shows as active.
 3. Try a prompt like:
    - *"List the projects in my Mammoth workspace"*
    - *"Show me view 12345"* (replace with a real view ID)
    - *"What datasets do I have?"*
+
+Claude will automatically enable tool groups (transformations, import, exports, admin) as needed for your requests.
 
 ### Troubleshooting Connection Issues
 
@@ -327,7 +252,6 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 | Variable | Default | Description |
 |---|---|---|
 | `MODE` | `stdio` | Set to `remote` for OAuth mode |
-| `MCP_PROFILE` | `transformations` | Profile: `transformations`, `import`, or `admin` |
 | `SERVER_URL` | `https://mcp.mammoth.io` | Public URL for OAuth redirects |
 | `REDIS_URL` | `redis://localhost:6379/0` | Redis connection string |
 | `ENCRYPTION_KEY` | *(required)* | Fernet key for credential encryption |
@@ -341,9 +265,7 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 
 ## Available Tools
 
-### Transformations Profile (~57 tools)
-
-Data exploration, transformation, export, and draft mode.
+### Core Tools (~15, always loaded)
 
 #### Connection & Configuration
 
@@ -368,21 +290,43 @@ Data exploration, transformation, export, and draft mode.
 |---|---|
 | `list_views` | List all views in a dataset |
 | `get_view` | Get detailed metadata for a view, including columns and types |
-| `create_view` | Create a new view in a dataset |
-| `delete_view` | Delete a view |
 
 #### Data
 
 | Tool | Description |
 |---|---|
 | `get_data` | Fetch rows from a view (max 400 rows per call) |
+| `export_data` | Export view data to CSV, S3, email, or another dataset |
 
 #### Pipeline
 
 | Tool | Description |
 |---|---|
 | `list_tasks` | List all pipeline transformation steps applied to a view |
-| `delete_task` | Delete (undo) a pipeline transformation step from a view |
+
+#### Meta
+
+| Tool | Description |
+|---|---|
+| `list_tool_groups` | List available tool groups and their enabled/disabled status |
+| `enable_tool_group` | Enable a tool group to make its tools available |
+
+#### Help
+
+| Tool | Description |
+|---|---|
+| `get_help` | Get detailed guidance on a Mammoth topic |
+
+### Transformations Group (~37 tools)
+
+Enabled via `enable_tool_group("transformations")`. Data transformation, view management, and pipeline control.
+
+#### View Management
+
+| Tool | Description |
+|---|---|
+| `create_view` | Create a new view in a dataset |
+| `delete_view` | Delete a view |
 
 #### Column Transformations
 
@@ -437,22 +381,11 @@ Data exploration, transformation, export, and draft mode.
 | `ai_transform` | Use AI to generate a new column based on a natural language prompt |
 | `sql_query` | Transform data using natural language intent or raw SQL |
 
-#### Export
+#### Draft Mode & Pipeline
 
 | Tool | Description |
 |---|---|
-| `export_data` | Export view data to CSV, S3, email, or another dataset |
-| `export_to_database` | Export to Postgres, MySQL, BigQuery, Redshift, Elasticsearch |
-| `export_to_ftp` | Export view data to an FTP server |
-| `export_to_sftp` | Export view data to an SFTP server |
-| `list_exports` | List all exports configured on a view |
-| `delete_export` | Delete an export from a view's pipeline |
-| `publish_to_db` | Publish view data to internal database for dashboards |
-
-#### Draft Mode
-
-| Tool | Description |
-|---|---|
+| `delete_task` | Delete (undo) a pipeline transformation step from a view |
 | `enter_draft_mode` | Enter draft mode — transformations queue without executing |
 | `submit_draft` | Execute all queued draft transformations |
 | `discard_draft` | Cancel all queued draft transformations |
@@ -461,15 +394,9 @@ Data exploration, transformation, export, and draft mode.
 | `get_pipeline` | Get the full pipeline definition for a view |
 | `get_task` | Get the full specification of a single pipeline task |
 
-#### Help
+### Import Group (~30 tools)
 
-| Tool | Description |
-|---|---|
-| `get_help` | Get detailed guidance on a Mammoth topic |
-
-### Import Profile (~43 tools)
-
-Data ingestion from webhooks, cloud connectors, files, and batches. Includes shared base tools (connection, discovery, views, data, help).
+Enabled via `enable_tool_group("import")`. Data ingestion from external sources.
 
 #### Webhooks
 
@@ -521,9 +448,22 @@ Data ingestion from webhooks, cloud connectors, files, and batches. Includes sha
 | `update_batch` | Update a batch configuration |
 | `delete_batch` | Delete a batch |
 
-### Admin Profile (~85 tools)
+### Exports Group (~6 tools)
 
-Organization, dashboards, automations, user management, and system admin. Includes shared base tools plus export tools.
+Enabled via `enable_tool_group("exports")`. Database and file server exports.
+
+| Tool | Description |
+|---|---|
+| `export_to_database` | Export to Postgres, MySQL, BigQuery, Redshift, Elasticsearch |
+| `export_to_ftp` | Export view data to an FTP server |
+| `export_to_sftp` | Export view data to an SFTP server |
+| `list_exports` | List all exports configured on a view |
+| `delete_export` | Delete an export from a view's pipeline |
+| `publish_to_db` | Publish view data to internal database for dashboards |
+
+### Admin Group (~65 tools)
+
+Enabled via `enable_tool_group("admin")`. Workspace administration and management.
 
 #### Organization
 

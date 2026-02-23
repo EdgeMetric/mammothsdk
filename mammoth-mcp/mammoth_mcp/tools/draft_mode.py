@@ -19,6 +19,26 @@ from mammoth_mcp.server import mcp
 @mcp.tool()
 @log_tool_call
 @handle_errors
+async def delete_task(
+    ctx: Context,
+    view_id: int,
+    task_id: int,
+) -> dict[str, Any]:
+    """Delete (undo) a pipeline transformation step from a view.
+
+    Args:
+        view_id: The dataview ID.
+        task_id: The pipeline task ID to remove.
+    """
+    manager = await get_manager(ctx)
+    view = await run_sync(manager.get_view, view_id)
+    await run_sync(view.delete_task, task_id)
+    return success_response(message=f"Deleted task {task_id} from view {view_id}")
+
+
+@mcp.tool()
+@log_tool_call
+@handle_errors
 async def enter_draft_mode(ctx: Context, view_id: int) -> dict[str, Any]:
     """Enter draft mode on a view — transformations won't execute until submitted.
 

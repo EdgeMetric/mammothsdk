@@ -8,14 +8,14 @@ MCP server for Mammoth Analytics. Exposes SDK functionality as MCP tools for Cla
 # Install
 cd mammoth-mcp && poetry install
 
-# Run single profile (stdio mode — local dev)
-MCP_PROFILE=transformations poetry run mammoth-mcp
+# Run (stdio mode — local dev)
+poetry run mammoth-mcp
 
-# Run single profile (remote mode — server)
-MCP_PROFILE=transformations MODE=remote PORT=9000 \
-  poetry run uvicorn mammoth_mcp.server:create_app --factory --host 0.0.0.0 --port 9000
+# Run (remote mode — server)
+MODE=remote PORT=8000 \
+  poetry run uvicorn mammoth_mcp.server:create_app --factory --host 0.0.0.0 --port 8000
 
-# Run all 3 profiles (remote mode — production)
+# Run (remote mode — production)
 ./start.sh              # start
 ./start.sh status       # check
 ./start.sh stop         # stop
@@ -30,36 +30,38 @@ pytest tests/ -q
 
 ## Architecture
 
-### 3 Server Profiles
+### Progressive Disclosure
 
-Split into 3 profiles to keep tool counts manageable (~50 each instead of 135 combined):
+Single server with ~15 core tools always loaded. Additional tools (~138) organized into 4 groups enabled on demand via meta-tools:
 
-| Profile | Tools | Purpose |
-|---------|-------|---------|
-| `transformations` | ~57 | Data exploration, transformation, export, draft mode |
-| `import` | ~43 | Webhooks, cloud connectors, file management, batches |
-| `admin` | ~85 | Organization, dashboards, automations, users, API keys |
+| Group | ~Tools | What's in it |
+|-------|--------|--------------|
+| `transformations` | ~37 | create/delete views, filter, set values, math, text, dates, joins, pivot, window, AI, SQL, draft mode |
+| `import` | ~30 | Webhooks, cloud connectors, file management, batch imports |
+| `exports` | ~6 | Database, FTP/SFTP exports, export management, publish |
+| `admin` | ~65 | Workspace/user management, dashboards, automations, API keys, AI profiling |
 
-Profile is set via `MCP_PROFILE` env var. `start.sh` launches all 3 with separate ports.
+Claude calls `list_tool_groups` / `enable_tool_group("name")` to activate groups as needed.
 
 ### Key Files
 
 | File | Purpose |
 |------|---------|
-| `server.py` | FastMCP server, lifespan, ASGI app factory, profile-driven tool loading |
+| `server.py` | FastMCP server, lifespan, ASGI app factory, core tool loading |
+| `tool_groups.py` | Progressive disclosure — group registry + `list_tool_groups` / `enable_tool_group` meta-tools |
 | `settings.py` | Pydantic settings from `.env` / environment |
-| `instructions.py` | Per-profile LLM instructions (injected into every MCP session) |
+| `instructions.py` | Unified LLM instructions (injected into every MCP session) |
 | `helpers.py` | `get_manager`, `handle_errors`, `log_tool_call`, `run_sync`, `success_response` |
 | `state.py` | `ClientManager` (wraps SDK client), `UserClientRegistry` (remote mode) |
 | `oauth_provider.py` | OAuth 2.0 provider + login page (remote mode only) |
 | `token_store.py` | Redis token storage with Fernet encryption (remote mode only) |
 | `rate_limit.py` | Per-user rate limiting middleware (remote mode only) |
 | `config.py` | `MammothConfig` dataclass for stdio credentials |
-| `tools/` | One file per tool module (23 files), loaded by profile |
+| `tools/` | One file per tool module (24 files), loaded by core or group |
 
 ### Tool Loading
 
-`server.py` has a `TOOL_PROFILES` dict mapping profile names to lists of tool module names. At import time, it loads the modules for the active profile via `importlib.import_module()`.
+`server.py` loads 6 core modules at import time via `importlib.import_module()`. `tool_groups.py` defines 4 groups; when `enable_tool_group` is called, it imports the group's modules and sends a `ToolListChanged` notification to the client.
 
 ### Modes
 
@@ -68,19 +70,12 @@ Profile is set via `MCP_PROFILE` env var. `start.sh` launches all 3 with separat
 
 ### Deployment (Remote Mode)
 
-3 uvicorn instances behind nginx path-based proxy:
+Single uvicorn instance behind nginx:
 ```
-mcp.mammoth.io/transformations/ → localhost:9000
-mcp.mammoth.io/import/          → localhost:9001
-mcp.mammoth.io/admin/           → localhost:9002
+mcp.mammoth.io/ → localhost:8000
 ```
 
-Each profile gets its own `SERVER_URL` (base + `/profile`) for correct OAuth routing. See `nginx.example.conf` and `start.sh`.
-
-Claude UI integration URLs:
-- `https://mcp.mammoth.io/transformations/mcp`
-- `https://mcp.mammoth.io/import/mcp`
-- `https://mcp.mammoth.io/admin/mcp`
+Claude UI integration URL: `https://mcp.mammoth.io/mcp`
 
 ## Adding a New Tool
 
@@ -99,7 +94,7 @@ Claude UI integration URLs:
        result = await run_sync(manager.client.sub_client.method, param)
        return success_response(result, "message")
    ```
-3. If new file: add module name to the appropriate profile(s) in `TOOL_PROFILES` in `server.py`
+3. If new file: add the module name to the appropriate group in `TOOL_GROUPS` in `tool_groups.py`, or to `_CORE_MODULES` in `server.py` if it's a core tool
 4. Update `instructions.py` if the tool needs special LLM guidance
 5. Update `tools/help.py` if adding a new help topic
 

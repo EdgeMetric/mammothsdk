@@ -1,4 +1,4 @@
-"""Export tools — CSV, S3, email, database exports."""
+"""Export tools — database, FTP/SFTP exports, export management."""
 
 from __future__ import annotations
 
@@ -14,61 +14,6 @@ from mammoth_mcp.helpers import (
     success_response,
 )
 from mammoth_mcp.server import mcp
-
-
-@mcp.tool()
-@log_tool_call
-@handle_errors
-async def export_data(
-    ctx: Context,
-    view_id: int,
-    format: str,
-    # S3 options
-    file_name: str | None = None,
-    file_type: str = "csv",
-    # email options
-    recipients: list[str] | None = None,
-    # dataset (branch out) options
-    dest_dataset_id: int | None = None,
-    column_mapping: dict[str, str] | None = None,
-) -> dict[str, Any]:
-    """Export view data to CSV file, S3, email, or another dataset.
-
-    Args:
-        view_id: The dataview ID to export from.
-        format: Export format — one of: csv, s3, email, dataset.
-        file_name: (s3) Output filename (auto-generated if not provided).
-        file_type: (s3) File format (default "csv").
-        recipients: (email) List of email addresses.
-        dest_dataset_id: (dataset) Target dataset ID for branch-out.
-        column_mapping: (dataset) Column mapping dict (optional).
-    """
-    manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id)
-    fmt = format.lower()
-
-    if fmt == "csv":
-        path = await run_sync(view.export.to_csv)
-        return success_response({"file_path": str(path)}, f"Exported to {path}")
-
-    elif fmt == "s3":
-        result = await run_sync(view.export.to_s3, file_name=file_name, file_type=file_type)
-        return success_response(result, "Exported to S3")
-
-    elif fmt == "email":
-        if not recipients:
-            raise ValueError("recipients is required for email export")
-        result = await run_sync(view.export.to_email, recipients=recipients)
-        return success_response(result, f"Emailed to {', '.join(recipients)}")
-
-    elif fmt == "dataset":
-        if not dest_dataset_id:
-            raise ValueError("dest_dataset_id is required for dataset export")
-        result = await run_sync(view.export.to_dataset, dest_dataset_id, column_mapping)
-        return success_response(result, f"Branched out to dataset {dest_dataset_id}")
-
-    else:
-        raise ValueError(f"Unknown format '{format}'. Use: csv, s3, email, dataset")
 
 
 @mcp.tool()

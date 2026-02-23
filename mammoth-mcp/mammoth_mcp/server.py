@@ -14,7 +14,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from mammoth_mcp.config import MammothConfig
-from mammoth_mcp.instructions import PROFILE_INSTRUCTIONS
+from mammoth_mcp.instructions import UNIFIED_INSTRUCTIONS
 from mammoth_mcp.settings import Settings
 from mammoth_mcp.state import ClientManager
 
@@ -62,9 +62,7 @@ def _build_server() -> FastMCP:
     """Build the FastMCP server with appropriate auth settings for the mode."""
     global _shared_token_store, _shared_registry
 
-    instructions = PROFILE_INSTRUCTIONS.get(
-        settings.mcp_profile, PROFILE_INSTRUCTIONS["transformations"]
-    )
+    instructions = UNIFIED_INSTRUCTIONS
 
     if settings.mode == "remote":
         from mcp.server.auth.settings import (
@@ -188,57 +186,16 @@ def get_enums() -> str:
     return json.dumps(enums, indent=2)
 
 
-# ── Profile-driven tool registration ─────────────────────────
+# ── Core tool registration + progressive disclosure ──────────
 
-TOOL_PROFILES: dict[str, list[str]] = {
-    "transformations": [
-        "connection",
-        "discovery",
-        "views",
-        "data",
-        "columns",
-        "values",
-        "advanced",
-        "aggregate",
-        "pipeline",
-        "ai",
-        "export",
-        "help",
-        "draft_mode",
-    ],
-    "import": [
-        "connection",
-        "discovery",
-        "views",
-        "data",
-        "help",
-        "webhooks",
-        "connectors",
-        "files_extended",
-        "batches",
-    ],
-    "admin": [
-        "connection",
-        "discovery",
-        "views",
-        "data",
-        "help",
-        "export",
-        "organization",
-        "dashboards",
-        "automations",
-        "admin",
-        "client_apps",
-        "ai_extended",
-    ],
-}
+_CORE_MODULES = ["connection", "discovery", "views", "data", "pipeline", "help"]
 
-_profile = settings.mcp_profile
-if _profile not in TOOL_PROFILES:
-    raise ValueError(f"Unknown MCP profile '{_profile}'. Valid: {list(TOOL_PROFILES)}")
-
-for _module_name in TOOL_PROFILES[_profile]:
+for _module_name in _CORE_MODULES:
     importlib.import_module(f"mammoth_mcp.tools.{_module_name}")
+
+from mammoth_mcp.tool_groups import register_meta_tools  # noqa: E402
+
+register_meta_tools(mcp)
 
 
 # ── Entry points ─────────────────────────────────────────────

@@ -292,10 +292,11 @@ Is the logic deterministic (rules, conditions, arithmetic)?
 
 ## MCP Architecture
 
-The Mammoth MCP server uses a **3-tier progressive disclosure model** to manage LLM context efficiently:
+The Mammoth MCP server uses **progressive disclosure** to manage LLM context efficiently:
 
-1. **System instructions** (`instructions.py`): ~60 lines loaded into every session. Contains workflow patterns, key rules, and navigation guidance.
-2. **Tool docstrings**: Each of the 26 tools has a focused description with parameters. Loaded only when the LLM considers using that tool.
-3. **On-demand help** (`get_help`): 6 deep-dive topics (overview, transformations, conditions, data_cleaning, ai_transform, sql_query) loaded only when explicitly requested. Contains detailed examples, best practices, and reference material.
+1. **Core tools** (~15): Always loaded — connection, discovery, views, data, pipeline, help, and two meta-tools (`list_tool_groups`, `enable_tool_group`).
+2. **Tool groups** (4 groups, ~138 tools): Loaded on demand when Claude calls `enable_tool_group("name")`. Groups: `transformations` (~37), `import` (~30), `exports` (~6), `admin` (~65).
+3. **System instructions** (`instructions.py`): Unified instructions loaded into every session with progressive disclosure guidance, pipeline planning tips, and help topic list.
+4. **On-demand help** (`get_help`): 16 deep-dive topics loaded only when explicitly requested.
 
-This design keeps the base context small (~2K tokens) while providing access to comprehensive documentation (~15K+ tokens) on demand.
+This design starts with ~15 tools and expands to ~153 as needed, keeping the initial context small while providing access to the full SDK surface.
