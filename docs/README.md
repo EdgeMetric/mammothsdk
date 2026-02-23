@@ -1,6 +1,6 @@
 # Mammoth Analytics Python SDK
 
-**Version 0.2.3** | Python 3.10+ | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mm-pysdk)
+**Version 0.3.0** | Python 3.10+ | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mm-pysdk)
 
 The official Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data pipelines, apply transformations, and export results -- all from Python.
 
@@ -48,20 +48,37 @@ view.export.to_csv("output.csv")
 | [Installation](installation.md) | Install the SDK and set up your environment |
 | [Quick Start](quick-start.md) | Get up and running in five minutes |
 | [Authentication](authentication.md) | API credentials and authentication |
+| **Core** | |
 | [Client API](api/client.md) | `MammothClient` constructor, sub-clients, and methods |
 | [Views](api/views.md) | `View` class -- properties, transformations, data access |
-| [Files](api/files.md) | `FilesAPI` -- upload, list, and manage files |
 | [Conditions](api/conditions.md) | `Condition`, `CompoundCondition`, and `NotCondition` filter builder |
 | [Enums](api/enums.md) | All enums: `Operator`, `ColumnType`, `JoinType`, and more |
-| [Exports](api/exports.md) | `ViewExport` and `ExportsAPI` -- CSV, S3, databases |
 | [Exceptions](api/exceptions.md) | Error classes and handling |
-| [End-to-End Workflow](guides/end-to-end-workflow.md) | Complete journey: upload, transform, export |
+| **Import** | |
+| [Files](api/files.md) | `FilesAPI` -- upload, list, and manage files |
+| [Connectors](api/connectors.md) | `ConnectorsAPI` -- database and cloud connectors |
+| **Transform** | |
 | [Transformations](examples/transformations.md) | Practical transformation workflow examples |
+| **Export** | |
+| [Exports](api/exports.md) | `ViewExport` and `ExportsAPI` -- CSV, S3, databases |
+| **Manage** | |
+| [Projects](api/projects.md) | `ProjectsAPI` -- project CRUD and user management |
+| [Datasets](api/datasets.md) | `DatasetsAPI` -- dataset CRUD and data access |
+| [Dataviews](api/dataviews.md) | `DataviewsAPI` -- low-level dataview operations |
+| [Pipeline](api/pipeline.md) | `PipelineAPI` -- transformation pipeline management |
+| [Jobs](api/jobs.md) | `JobsAPI` -- async job tracking |
+| [Dashboards](api/dashboards.md) | `DashboardsAPI` -- dashboard management |
+| [Webhooks](api/webhooks.md) | `WebhooksAPI` -- webhook datasets |
+| [Automations](api/automations.md) | `AutomationsAPI` and `SchedulesAPI` |
+| [Workspace](api/workspace.md) | `WorkspaceAPI` and `UserProfileAPI` |
+| [Other APIs](api/other-apis.md) | Folders, batches, browse, client apps, addons, and more |
+| **Guides** | |
+| [End-to-End Workflow](guides/end-to-end-workflow.md) | Complete journey: upload, transform, export |
 | [Changelog](changelog.md) | Release history |
 
 ## Version information
 
-- **SDK version**: 0.2.3
+- **SDK version**: 0.3.0
 - **Python**: 3.10+
 - **API version**: v2
 

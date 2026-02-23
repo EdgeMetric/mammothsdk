@@ -138,34 +138,34 @@ All API resources are accessible as attributes on the client. Each sub-client ha
 | Attribute | Type | Description |
 |-----------|------|-------------|
 | `client.views` | `ViewsResource` | Rich View objects with transformations (see [Views](views.md)) |
-| `client.datasets` | `DatasetsAPI` | Dataset CRUD operations |
-| `client.dataviews` | `DataviewsAPI` | Low-level dataview operations |
-| `client.pipeline` | `PipelineAPI` | Pipeline task management |
-| `client.files` | `FilesAPI` | File upload and management |
+| `client.datasets` | `DatasetsAPI` | Dataset CRUD operations (see [Datasets](datasets.md)) |
+| `client.dataviews` | `DataviewsAPI` | Low-level dataview operations (see [Dataviews](dataviews.md)) |
+| `client.pipeline` | `PipelineAPI` | Pipeline task management (see [Pipeline](pipeline.md)) |
+| `client.files` | `FilesAPI` | File upload and management (see [Files](files.md)) |
 | `client.exports` | `ExportsAPI` | Export operations (see [Exports](exports.md)) |
-| `client.jobs` | `JobsAPI` | Asynchronous job tracking |
-| `client.projects` | `ProjectsAPI` | Project CRUD |
+| `client.jobs` | `JobsAPI` | Asynchronous job tracking (see [Jobs](jobs.md)) |
+| `client.projects` | `ProjectsAPI` | Project CRUD (see [Projects](projects.md)) |
 
 ### Additional sub-clients
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `client.ai` | `AIAPI` | AI/LLM operations |
-| `client.connectors` | `ConnectorsAPI` | Data source connectors |
-| `client.dashboards` | `DashboardsAPI` | Dashboard management |
-| `client.webhooks` | `WebhooksAPI` | Webhook configuration |
-| `client.automations` | `AutomationsAPI` | Automation workflows |
-| `client.schedules` | `SchedulesAPI` | Scheduled operations |
-| `client.batches` | `BatchesAPI` | Batch operations |
-| `client.folders` | `FoldersAPI` | Folder management |
-| `client.workspaces` | `WorkspaceAPI` | Workspace operations |
-| `client.user_profile` | `UserProfileAPI` | User profile |
-| `client.activity_logs` | `ActivityLogsAPI` | Activity logs |
-| `client.browse` | `BrowseAPI` | Browse/search API |
-| `client.external_keys` | `ExternalKeysAPI` | External key management |
-| `client.client_apps` | `ClientAppsAPI` | Client app management |
-| `client.addons` | `AddonsAPI` | Addons |
-| `client.reports` | `ReportsAPI` | Reports |
+| `client.ai` | `AIAPI` | AI/LLM operations (see [Other APIs](other-apis.md)) |
+| `client.connectors` | `ConnectorsAPI` | Data source connectors (see [Connectors](connectors.md)) |
+| `client.dashboards` | `DashboardsAPI` | Dashboard management (see [Dashboards](dashboards.md)) |
+| `client.webhooks` | `WebhooksAPI` | Webhook configuration (see [Webhooks](webhooks.md)) |
+| `client.automations` | `AutomationsAPI` | Automation workflows (see [Automations](automations.md)) |
+| `client.schedules` | `SchedulesAPI` | Scheduled operations (see [Automations](automations.md)) |
+| `client.batches` | `BatchesAPI` | Batch operations (see [Other APIs](other-apis.md)) |
+| `client.folders` | `FoldersAPI` | Folder management (see [Other APIs](other-apis.md)) |
+| `client.workspaces` | `WorkspaceAPI` | Workspace operations (see [Workspace](workspace.md)) |
+| `client.user_profile` | `UserProfileAPI` | User profile (see [Workspace](workspace.md)) |
+| `client.activity_logs` | `ActivityLogsAPI` | Activity logs (see [Other APIs](other-apis.md)) |
+| `client.browse` | `BrowseAPI` | Browse/search API (see [Other APIs](other-apis.md)) |
+| `client.external_keys` | `ExternalKeysAPI` | External key management (see [Other APIs](other-apis.md)) |
+| `client.client_apps` | `ClientAppsAPI` | Client app management (see [Other APIs](other-apis.md)) |
+| `client.addons` | `AddonsAPI` | Addons (see [Other APIs](other-apis.md)) |
+| `client.reports` | `ReportsAPI` | Reports (see [Other APIs](other-apis.md)) |
 
 ### ViewsResource
 

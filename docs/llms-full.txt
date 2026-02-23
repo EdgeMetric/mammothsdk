@@ -113,26 +113,6 @@
     - [add_sql](#add_sql)
   - [Exports](#exports)
   - [See also](#see-also)
-- [Files](#files)
-  - [upload()](#upload)
-    - [Examples](#examples)
-    - [After upload: get a View](#after-upload-get-a-view)
-  - [upload_folder()](#upload_folder)
-    - [Example](#example)
-  - [list()](#list)
-    - [Example](#example)
-  - [get()](#get)
-    - [Example](#example)
-  - [update()](#update)
-  - [delete()](#delete)
-    - [Example](#example)
-  - [bulk_delete()](#bulk_delete)
-    - [Example](#example)
-  - [set_password()](#set_password)
-  - [extract_sheets()](#extract_sheets)
-    - [Example](#example)
-  - [Supported file formats](#supported-file-formats)
-  - [See also](#see-also)
 - [Conditions](#conditions)
   - [Condition](#condition)
     - [Examples](#examples)
@@ -147,7 +127,7 @@
   - [build()](#build)
   - [All operators](#all-operators)
   - [See also](#see-also)
-- [Enums](#enums)
+- [Enums & Data Classes](#enums-data-classes)
   - [Operator](#operator)
   - [ColumnType](#columntype)
   - [ValueType](#valuetype)
@@ -184,31 +164,6 @@
   - [DateDelta dataclass](#datedelta-dataclass)
   - [JsonExtractionSpec dataclass](#jsonextractionspec-dataclass)
   - [See also](#see-also)
-- [Exports](#exports)
-  - [ViewExport](#viewexport)
-    - [to_csv](#to_csv)
-    - [to_s3](#to_s3)
-    - [to_postgres](#to_postgres)
-    - [to_mysql](#to_mysql)
-    - [to_bigquery](#to_bigquery)
-    - [to_redshift](#to_redshift)
-    - [to_elasticsearch](#to_elasticsearch)
-    - [to_ftp](#to_ftp)
-    - [to_sftp](#to_sftp)
-    - [to_email](#to_email)
-    - [to_dataset](#to_dataset)
-    - [publish_to_db](#publish_to_db)
-    - [list](#list)
-    - [delete](#delete)
-  - [branch_out (View method)](#branch_out-view-method)
-  - [ExportsAPI](#exportsapi)
-    - [client.exports.to_csv](#clientexportsto_csv)
-    - [client.exports.to_s3](#clientexportsto_s3)
-    - [client.exports.to_dataset](#clientexportsto_dataset)
-    - [client.exports.list](#clientexportslist)
-    - [client.exports.create](#clientexportscreate)
-  - [Export workflow example](#export-workflow-example)
-  - [See also](#see-also)
 - [Exceptions](#exceptions)
   - [Exception hierarchy](#exception-hierarchy)
   - [MammothError](#mammotherror)
@@ -222,24 +177,44 @@
     - [Catch specific exceptions](#catch-specific-exceptions)
     - [Use the base class as a catch-all](#use-the-base-class-as-a-catch-all)
   - [See also](#see-also)
-- [End-to-End Workflow](#end-to-end-workflow)
-  - [1. Install the SDK](#1-install-the-sdk)
-  - [2. Authenticate](#2-authenticate)
-  - [3. Upload a file](#3-upload-a-file)
-  - [4. Inspect the View](#4-inspect-the-view)
-  - [5. Apply transformations](#5-apply-transformations)
-    - [Filter rows](#filter-rows)
-    - [Add computed columns](#add-computed-columns)
-    - [Aggregate with pivot](#aggregate-with-pivot)
-    - [Other common transformations](#other-common-transformations)
-  - [6. Export results](#6-export-results)
-    - [Download as CSV](#download-as-csv)
-    - [Export to S3](#export-to-s3)
-    - [Export to a database](#export-to-a-database)
-    - [Other export targets](#other-export-targets)
-  - [Complete script](#complete-script)
+- [Files](#files)
+  - [upload()](#upload)
+    - [Examples](#examples)
+    - [After upload: get a View](#after-upload-get-a-view)
+  - [upload_folder()](#upload_folder)
+    - [Example](#example)
+  - [list()](#list)
+    - [Example](#example)
+  - [get()](#get)
+    - [Example](#example)
+  - [update()](#update)
+  - [delete()](#delete)
+    - [Example](#example)
+  - [bulk_delete()](#bulk_delete)
+    - [Example](#example)
+  - [set_password()](#set_password)
+  - [extract_sheets()](#extract_sheets)
+    - [Example](#example)
+  - [Supported file formats](#supported-file-formats)
   - [See also](#see-also)
-- [Transformations](#transformations)
+- [Connectors](#connectors)
+  - [Concepts](#concepts)
+  - [Methods](#methods)
+    - [list](#list)
+    - [get](#get)
+    - [active_connectors](#active_connectors)
+    - [list_connections](#list_connections)
+    - [create_connection](#create_connection)
+    - [get_connection](#get_connection)
+    - [update_connection](#update_connection)
+    - [delete_connection](#delete_connection)
+    - [list_ds_configs](#list_ds_configs)
+    - [create_ds_config](#create_ds_config)
+    - [get_ds_config](#get_ds_config)
+    - [update_ds_config](#update_ds_config)
+    - [delete_ds_config](#delete_ds_config)
+  - [See also](#see-also)
+- [Transformation Reference](#transformation-reference)
   - [Setup](#setup)
   - [Filtering and labeling](#filtering-and-labeling)
     - [Filter to high-value rows](#filter-to-high-value-rows)
@@ -291,6 +266,214 @@
     - [Discard on error](#discard-on-error)
     - [Toggle auto-run](#toggle-auto-run)
   - [End-to-end workflow](#end-to-end-workflow)
+  - [See also](#see-also)
+- [Exports](#exports)
+  - [ViewExport](#viewexport)
+    - [to_csv](#to_csv)
+    - [to_s3](#to_s3)
+    - [to_postgres](#to_postgres)
+    - [to_mysql](#to_mysql)
+    - [to_bigquery](#to_bigquery)
+    - [to_redshift](#to_redshift)
+    - [to_elasticsearch](#to_elasticsearch)
+    - [to_ftp](#to_ftp)
+    - [to_sftp](#to_sftp)
+    - [to_email](#to_email)
+    - [to_dataset](#to_dataset)
+    - [publish_to_db](#publish_to_db)
+    - [list](#list)
+    - [delete](#delete)
+  - [branch_out (View method)](#branch_out-view-method)
+  - [ExportsAPI](#exportsapi)
+    - [client.exports.to_csv](#clientexportsto_csv)
+    - [client.exports.to_s3](#clientexportsto_s3)
+    - [client.exports.to_dataset](#clientexportsto_dataset)
+    - [client.exports.list](#clientexportslist)
+    - [client.exports.create](#clientexportscreate)
+  - [Export workflow example](#export-workflow-example)
+  - [See also](#see-also)
+- [Projects](#projects)
+  - [Methods](#methods)
+    - [list](#list)
+    - [get](#get)
+    - [create](#create)
+    - [update](#update)
+    - [delete](#delete)
+    - [bulk_update](#bulk_update)
+    - [bulk_delete](#bulk_delete)
+    - [add_users](#add_users)
+    - [remove_users](#remove_users)
+    - [browse](#browse)
+  - [See also](#see-also)
+- [Datasets](#datasets)
+  - [Methods](#methods)
+    - [list](#list)
+    - [get](#get)
+    - [get_data](#get_data)
+    - [create](#create)
+    - [update](#update)
+    - [delete](#delete)
+    - [bulk_update](#bulk_update)
+    - [bulk_delete](#bulk_delete)
+    - [browse](#browse)
+    - [list_batches](#list_batches)
+    - [get_batch](#get_batch)
+    - [get_file_settings](#get_file_settings)
+  - [See also](#see-also)
+- [Dataviews](#dataviews)
+  - [Methods](#methods)
+    - [list](#list)
+    - [get](#get)
+    - [create](#create)
+    - [update](#update)
+    - [delete](#delete)
+    - [bulk_delete](#bulk_delete)
+    - [get_data](#get_data)
+    - [query_data](#query_data)
+    - [active_users](#active_users)
+    - [mark_active](#mark_active)
+    - [conditional_format_list](#conditional_format_list)
+    - [conditional_format_create](#conditional_format_create)
+    - [conditional_format_update](#conditional_format_update)
+    - [conditional_format_delete](#conditional_format_delete)
+    - [draft_mode](#draft_mode)
+  - [See also](#see-also)
+- [Pipeline](#pipeline)
+  - [Methods](#methods)
+    - [get_pipeline](#get_pipeline)
+    - [list_tasks](#list_tasks)
+    - [add_task](#add_task)
+    - [get_task](#get_task)
+    - [update_task](#update_task)
+    - [delete_task](#delete_task)
+    - [preview_task](#preview_task)
+    - [draft_mode](#draft_mode)
+    - [edit_pipeline](#edit_pipeline)
+    - [wait_for_pipeline](#wait_for_pipeline)
+  - [Pipeline states](#pipeline-states)
+  - [See also](#see-also)
+- [Jobs](#jobs)
+  - [Methods](#methods)
+    - [get_job](#get_job)
+    - [get_jobs](#get_jobs)
+    - [wait_for_job](#wait_for_job)
+    - [wait_for_jobs](#wait_for_jobs)
+  - [Job statuses](#job-statuses)
+  - [See also](#see-also)
+- [Dashboards](#dashboards)
+  - [Methods](#methods)
+    - [list](#list)
+    - [create](#create)
+    - [get](#get)
+    - [update](#update)
+    - [delete](#delete)
+    - [get_sources](#get_sources)
+    - [get_analytics](#get_analytics)
+    - [share](#share)
+    - [action](#action)
+    - [get_by_url](#get_by_url)
+    - [get_draft_data](#get_draft_data)
+    - [get_publish_data](#get_publish_data)
+  - [See also](#see-also)
+- [Webhooks](#webhooks)
+  - [Methods](#methods)
+    - [list](#list)
+    - [create](#create)
+    - [get](#get)
+    - [update](#update)
+    - [delete](#delete)
+    - [send_data](#send_data)
+    - [send_data_get](#send_data_get)
+  - [See also](#see-also)
+- [Automations & Schedules](#automations-schedules)
+  - [AutomationsAPI](#automationsapi)
+    - [Automation methods](#automation-methods)
+    - [Schedule methods (via AutomationsAPI)](#schedule-methods-via-automationsapi)
+  - [SchedulesAPI](#schedulesapi)
+    - [list](#list)
+    - [get](#get)
+    - [create](#create)
+    - [update](#update)
+    - [delete](#delete)
+  - [See also](#see-also)
+- [Workspace & Users](#workspace-users)
+  - [WorkspaceAPI](#workspaceapi)
+    - [list](#list)
+    - [get](#get)
+    - [update](#update)
+    - [delete](#delete)
+    - [reactivate](#reactivate)
+    - [list_users](#list_users)
+    - [get_user](#get_user)
+    - [update_user](#update_user)
+  - [UserProfileAPI](#userprofileapi)
+    - [get](#get)
+    - [update](#update)
+    - [change_password](#change_password)
+    - [get_preferences](#get_preferences)
+    - [update_preferences](#update_preferences)
+  - [See also](#see-also)
+- [Other APIs](#other-apis)
+  - [FoldersAPI](#foldersapi)
+    - [list](#list)
+    - [create](#create)
+    - [delete](#delete)
+    - [move](#move)
+  - [BatchesAPI](#batchesapi)
+    - [list](#list)
+    - [get](#get)
+    - [create](#create)
+    - [update](#update)
+    - [delete](#delete)
+  - [BrowseAPI](#browseapi)
+    - [workspaces](#workspaces)
+    - [projects](#projects)
+    - [datasets](#datasets)
+    - [dataviews](#dataviews)
+  - [ClientAppsAPI](#clientappsapi)
+    - [list](#list)
+    - [create](#create)
+    - [get](#get)
+    - [update](#update)
+    - [delete](#delete)
+  - [ExternalKeysAPI](#externalkeysapi)
+    - [list](#list)
+    - [get](#get)
+    - [create](#create)
+    - [delete](#delete)
+  - [ActivityLogsAPI](#activitylogsapi)
+    - [list](#list)
+    - [export](#export)
+  - [AddonsAPI](#addonsapi)
+    - [add_connector / remove_connector](#add_connector-remove_connector)
+    - [add_storage / remove_storage](#add_storage-remove_storage)
+    - [add_users / remove_users](#add_users-remove_users)
+  - [ReportsAPI](#reportsapi)
+    - [list](#list)
+  - [AIAPI](#aiapi)
+    - [generate_profile](#generate_profile)
+    - [generate_data](#generate_data)
+    - [get_data_gen_info](#get_data_gen_info)
+    - [generate_sql](#generate_sql)
+    - [get_suggestions](#get_suggestions)
+    - [query_gen](#query_gen)
+  - [See also](#see-also)
+- [End-to-End Workflow](#end-to-end-workflow)
+  - [1. Install the SDK](#1-install-the-sdk)
+  - [2. Authenticate](#2-authenticate)
+  - [3. Upload a file](#3-upload-a-file)
+  - [4. Inspect the View](#4-inspect-the-view)
+  - [5. Apply transformations](#5-apply-transformations)
+    - [Filter rows](#filter-rows)
+    - [Add computed columns](#add-computed-columns)
+    - [Aggregate with pivot](#aggregate-with-pivot)
+    - [Other common transformations](#other-common-transformations)
+  - [6. Export results](#6-export-results)
+    - [Download as CSV](#download-as-csv)
+    - [Export to S3](#export-to-s3)
+    - [Export to a database](#export-to-a-database)
+    - [Other export targets](#other-export-targets)
+  - [Complete script](#complete-script)
   - [See also](#see-also)
 - [Basic Usage](#basic-usage)
   - [Client setup](#client-setup)
@@ -379,7 +562,7 @@
 
 # Mammoth Analytics Python SDK
 
-**Version 0.2.3** | Python 3.10+ | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mm-pysdk)
+**Version 0.3.0** | Python 3.10+ | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mm-pysdk)
 
 The official Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data pipelines, apply transformations, and export results -- all from Python.
 
@@ -427,20 +610,37 @@ view.export.to_csv("output.csv")
 | [Installation](installation.md) | Install the SDK and set up your environment |
 | [Quick Start](quick-start.md) | Get up and running in five minutes |
 | [Authentication](authentication.md) | API credentials and authentication |
+| **Core** | |
 | [Client API](api/client.md) | `MammothClient` constructor, sub-clients, and methods |
 | [Views](api/views.md) | `View` class -- properties, transformations, data access |
-| [Files](api/files.md) | `FilesAPI` -- upload, list, and manage files |
 | [Conditions](api/conditions.md) | `Condition`, `CompoundCondition`, and `NotCondition` filter builder |
 | [Enums](api/enums.md) | All enums: `Operator`, `ColumnType`, `JoinType`, and more |
-| [Exports](api/exports.md) | `ViewExport` and `ExportsAPI` -- CSV, S3, databases |
 | [Exceptions](api/exceptions.md) | Error classes and handling |
-| [End-to-End Workflow](guides/end-to-end-workflow.md) | Complete journey: upload, transform, export |
+| **Import** | |
+| [Files](api/files.md) | `FilesAPI` -- upload, list, and manage files |
+| [Connectors](api/connectors.md) | `ConnectorsAPI` -- database and cloud connectors |
+| **Transform** | |
 | [Transformations](examples/transformations.md) | Practical transformation workflow examples |
+| **Export** | |
+| [Exports](api/exports.md) | `ViewExport` and `ExportsAPI` -- CSV, S3, databases |
+| **Manage** | |
+| [Projects](api/projects.md) | `ProjectsAPI` -- project CRUD and user management |
+| [Datasets](api/datasets.md) | `DatasetsAPI` -- dataset CRUD and data access |
+| [Dataviews](api/dataviews.md) | `DataviewsAPI` -- low-level dataview operations |
+| [Pipeline](api/pipeline.md) | `PipelineAPI` -- transformation pipeline management |
+| [Jobs](api/jobs.md) | `JobsAPI` -- async job tracking |
+| [Dashboards](api/dashboards.md) | `DashboardsAPI` -- dashboard management |
+| [Webhooks](api/webhooks.md) | `WebhooksAPI` -- webhook datasets |
+| [Automations](api/automations.md) | `AutomationsAPI` and `SchedulesAPI` |
+| [Workspace](api/workspace.md) | `WorkspaceAPI` and `UserProfileAPI` |
+| [Other APIs](api/other-apis.md) | Folders, batches, browse, client apps, addons, and more |
+| **Guides** | |
+| [End-to-End Workflow](guides/end-to-end-workflow.md) | Complete journey: upload, transform, export |
 | [Changelog](changelog.md) | Release history |
 
 ## Version information
 
-- **SDK version**: 0.2.3
+- **SDK version**: 0.3.0
 - **Python**: 3.10+
 - **API version**: v2
 
@@ -464,13 +664,13 @@ view.export.to_csv("output.csv")
 ## Install from PyPI
 
 ```bash
-pip install mammoth-io==0.2.3
+pip install mammoth-io==0.3.0
 ```
 
 Or with Poetry:
 
 ```bash
-poetry add mammoth-io==0.2.3
+poetry add mammoth-io==0.3.0
 ```
 
 ## Dependencies
@@ -552,7 +752,7 @@ Get up and running with the Mammoth Python SDK in five minutes.
 ## 1. Install the SDK
 
 ```bash
-pip install mammoth-io==0.2.3
+pip install mammoth-io==0.3.0
 ```
 
 ## 2. Get your API credentials
@@ -801,7 +1001,7 @@ The client adds these headers to every request automatically:
 | `X-API-KEY` | Your API key |
 | `X-API-SECRET` | Your API secret |
 | `X-WORKSPACE-ID` | Your workspace ID |
-| `User-Agent` | `mammoth-io/0.2.3` |
+| `User-Agent` | `mammoth-io/0.3.0` |
 
 ## Error handling
 
@@ -988,34 +1188,34 @@ All API resources are accessible as attributes on the client. Each sub-client ha
 | Attribute | Type | Description |
 |-----------|------|-------------|
 | `client.views` | `ViewsResource` | Rich View objects with transformations (see [Views](views.md)) |
-| `client.datasets` | `DatasetsAPI` | Dataset CRUD operations |
-| `client.dataviews` | `DataviewsAPI` | Low-level dataview operations |
-| `client.pipeline` | `PipelineAPI` | Pipeline task management |
-| `client.files` | `FilesAPI` | File upload and management |
+| `client.datasets` | `DatasetsAPI` | Dataset CRUD operations (see [Datasets](datasets.md)) |
+| `client.dataviews` | `DataviewsAPI` | Low-level dataview operations (see [Dataviews](dataviews.md)) |
+| `client.pipeline` | `PipelineAPI` | Pipeline task management (see [Pipeline](pipeline.md)) |
+| `client.files` | `FilesAPI` | File upload and management (see [Files](files.md)) |
 | `client.exports` | `ExportsAPI` | Export operations (see [Exports](exports.md)) |
-| `client.jobs` | `JobsAPI` | Asynchronous job tracking |
-| `client.projects` | `ProjectsAPI` | Project CRUD |
+| `client.jobs` | `JobsAPI` | Asynchronous job tracking (see [Jobs](jobs.md)) |
+| `client.projects` | `ProjectsAPI` | Project CRUD (see [Projects](projects.md)) |
 
 ### Additional sub-clients
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `client.ai` | `AIAPI` | AI/LLM operations |
-| `client.connectors` | `ConnectorsAPI` | Data source connectors |
-| `client.dashboards` | `DashboardsAPI` | Dashboard management |
-| `client.webhooks` | `WebhooksAPI` | Webhook configuration |
-| `client.automations` | `AutomationsAPI` | Automation workflows |
-| `client.schedules` | `SchedulesAPI` | Scheduled operations |
-| `client.batches` | `BatchesAPI` | Batch operations |
-| `client.folders` | `FoldersAPI` | Folder management |
-| `client.workspaces` | `WorkspaceAPI` | Workspace operations |
-| `client.user_profile` | `UserProfileAPI` | User profile |
-| `client.activity_logs` | `ActivityLogsAPI` | Activity logs |
-| `client.browse` | `BrowseAPI` | Browse/search API |
-| `client.external_keys` | `ExternalKeysAPI` | External key management |
-| `client.client_apps` | `ClientAppsAPI` | Client app management |
-| `client.addons` | `AddonsAPI` | Addons |
-| `client.reports` | `ReportsAPI` | Reports |
+| `client.ai` | `AIAPI` | AI/LLM operations (see [Other APIs](other-apis.md)) |
+| `client.connectors` | `ConnectorsAPI` | Data source connectors (see [Connectors](connectors.md)) |
+| `client.dashboards` | `DashboardsAPI` | Dashboard management (see [Dashboards](dashboards.md)) |
+| `client.webhooks` | `WebhooksAPI` | Webhook configuration (see [Webhooks](webhooks.md)) |
+| `client.automations` | `AutomationsAPI` | Automation workflows (see [Automations](automations.md)) |
+| `client.schedules` | `SchedulesAPI` | Scheduled operations (see [Automations](automations.md)) |
+| `client.batches` | `BatchesAPI` | Batch operations (see [Other APIs](other-apis.md)) |
+| `client.folders` | `FoldersAPI` | Folder management (see [Other APIs](other-apis.md)) |
+| `client.workspaces` | `WorkspaceAPI` | Workspace operations (see [Workspace](workspace.md)) |
+| `client.user_profile` | `UserProfileAPI` | User profile (see [Workspace](workspace.md)) |
+| `client.activity_logs` | `ActivityLogsAPI` | Activity logs (see [Other APIs](other-apis.md)) |
+| `client.browse` | `BrowseAPI` | Browse/search API (see [Other APIs](other-apis.md)) |
+| `client.external_keys` | `ExternalKeysAPI` | External key management (see [Other APIs](other-apis.md)) |
+| `client.client_apps` | `ClientAppsAPI` | Client app management (see [Other APIs](other-apis.md)) |
+| `client.addons` | `AddonsAPI` | Addons (see [Other APIs](other-apis.md)) |
+| `client.reports` | `ReportsAPI` | Reports (see [Other APIs](other-apis.md)) |
 
 ### ViewsResource
 
@@ -2024,272 +2224,6 @@ view.branch_out(dest_dataset_id=42)
 ---
 
 
-# Files API Reference
-
-The `FilesAPI` manages file uploads, listing, and deletion. Access it via `client.files`.
-
-## upload()
-
-Upload one or more files to create datasets. Each file becomes a separate dataset.
-
-```python
-client.files.upload(
-    files: list[str | Path | BinaryIO] | str | Path | BinaryIO,
-    folder_resource_id: str | None = None,
-    append_to_ds_id: int | None = None,
-    override_target_schema: bool | None = None,
-    wait_for_completion: bool = True,
-    timeout: int = 300,
-) -> list[int] | int | None
-```
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `files` | `str`, `Path`, `BinaryIO`, or list | *required* | File path(s), Path objects, or file-like objects to upload |
-| `folder_resource_id` | `str` | `None` | Resource ID of target folder in Mammoth |
-| `append_to_ds_id` | `int` | `None` | Dataset ID to append data to (instead of creating new) |
-| `override_target_schema` | `bool` | `None` | Override target schema when appending |
-| `wait_for_completion` | `bool` | `True` | Wait for upload processing to finish |
-| `timeout` | `int` | `300` | Timeout in seconds when waiting |
-
-**Returns:**
-
-- Single file: `int` (the dataset ID)
-- Multiple files: `list[int]` (list of dataset IDs)
-- On failure or `wait_for_completion=False`: `None` or initial job ID
-
-### Examples
-
-```python
-# Single file upload
-dataset_id = client.files.upload("sales_data.csv")
-
-# Multiple files
-dataset_ids = client.files.upload(["sales.csv", "customers.xlsx", "products.tsv"])
-
-# Using Path objects
-from pathlib import Path
-dataset_id = client.files.upload(Path("data/report.csv"))
-
-# Append to existing dataset
-client.files.upload("new_rows.csv", append_to_ds_id=42)
-
-# Upload to a specific folder
-client.files.upload("data.csv", folder_resource_id="folder-abc-123")
-
-# Non-blocking upload (returns job ID immediately)
-job_id = client.files.upload("large_file.csv", wait_for_completion=False)
-```
-
-### After upload: get a View
-
-```python
-dataset_id = client.files.upload("sales_data.csv")
-views = client.views.list(dataset_id)
-view = views[0]  # Default view created on upload
-print(view.display_names)  # ["Column1", "Column2", ...]
-```
-
----
-
-## upload_folder()
-
-Upload all files in a folder. Calls `upload()` under the hood.
-
-```python
-client.files.upload_folder(
-    folder_path: str | Path,
-    folder_resource_id: str | None = None,
-    wait_for_completion: bool = True,
-    timeout: int = 300,
-) -> list[int] | int | None
-```
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `folder_path` | `str` or `Path` | *required* | Path to the folder containing files |
-| `folder_resource_id` | `str` | `None` | Resource ID of target folder in Mammoth |
-| `wait_for_completion` | `bool` | `True` | Wait for upload processing to finish |
-| `timeout` | `int` | `300` | Timeout in seconds when waiting |
-
-### Example
-
-```python
-# Upload everything in a folder
-dataset_ids = client.files.upload_folder("./data/monthly_reports/")
-```
-
----
-
-## list()
-
-List files in the current project with optional filtering and pagination.
-
-```python
-client.files.list(
-    fields: str | None = None,
-    file_ids: list[int] | None = None,
-    names: list[str] | None = None,
-    statuses: list[str] | None = None,
-    created_at: str | None = None,
-    updated_at: str | None = None,
-    limit: int = 50,
-    offset: int = 0,
-    sort: str | None = None,
-) -> FilesList
-```
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `fields` | `str` | `None` | Fields to return (`"__standard"`, `"__full"`, `"__min"`) |
-| `file_ids` | `list[int]` | `None` | Filter by specific file IDs |
-| `names` | `list[str]` | `None` | Filter by file names |
-| `statuses` | `list[str]` | `None` | Filter by file statuses |
-| `created_at` | `str` | `None` | Date range filter for creation date |
-| `updated_at` | `str` | `None` | Date range filter for update date |
-| `limit` | `int` | `50` | Maximum results (0-100) |
-| `offset` | `int` | `0` | Number of results to skip |
-| `sort` | `str` | `None` | Sort spec (e.g., `"(id:asc)"`, `"(name:desc)"`) |
-
-### Example
-
-```python
-files = client.files.list()
-for f in files.files:
-    print(f"{f.id}: {f.name} ({f.status})")
-
-# Filter by name
-files = client.files.list(names=["sales_data.csv"])
-```
-
----
-
-## get()
-
-Get detailed information about a specific file.
-
-```python
-client.files.get(
-    file_id: int,
-    fields: str | None = None,
-) -> FileSchema
-```
-
-### Example
-
-```python
-file_info = client.files.get(file_id=123)
-print(f"Name: {file_info.name}")
-print(f"Status: {file_info.status}")
-```
-
----
-
-## update()
-
-Update file configuration (e.g., set password, extract sheets). Waits for the job to complete.
-
-```python
-client.files.update(
-    file_id: int,
-    patch_request: FilePatchRequest,
-) -> ObjectJobSchema
-```
-
-This is the low-level method used internally by `set_password()` and `extract_sheets()`. You rarely need to call it directly.
-
----
-
-## delete()
-
-Delete a specific file.
-
-```python
-client.files.delete(file_id: int) -> None
-```
-
-### Example
-
-```python
-client.files.delete(file_id=123)
-```
-
----
-
-## bulk_delete()
-
-Delete multiple files at once.
-
-```python
-client.files.bulk_delete(file_ids: list[int]) -> None
-```
-
-### Example
-
-```python
-client.files.bulk_delete([101, 102, 103])
-```
-
----
-
-## set_password()
-
-Set a password for a password-protected file (e.g., encrypted Excel).
-
-```python
-client.files.set_password(file_id: int, password: str) -> ObjectJobSchema
-```
-
----
-
-## extract_sheets()
-
-Extract specific sheets from an Excel file into separate datasets.
-
-```python
-client.files.extract_sheets(
-    file_id: int,
-    sheets: list[str],
-    delete_file_after_extract: bool = True,
-    combine_after_extract: bool = False,
-) -> ObjectJobSchema
-```
-
-### Example
-
-```python
-client.files.extract_sheets(
-    file_id=123,
-    sheets=["Sheet1", "Revenue"],
-    delete_file_after_extract=True,
-)
-```
-
----
-
-## Supported file formats
-
-| Category | Formats |
-|----------|---------|
-| Tabular | CSV, TSV, PSV, XLS, XLSX |
-| Compressed | ZIP, BZ2, GZ, TAR, 7Z |
-| Document | PDF |
-| Image | TIFF, JPEG, PNG, HEIC, WEBP |
-
-**Maximum file size:** 50 MB
-
----
-
-## See also
-
-- [End-to-End Workflow](../guides/end-to-end-workflow.md) -- upload, transform, and export
-- [Client API](client.md) -- `MammothClient` and all sub-clients
-- [Views](views.md) -- work with uploaded data
-
-
----
-
-
 # Conditions Reference
 
 The condition module provides a Pythonic filter builder with operator overloading. Build conditions using `Condition` objects, combine them with `&` (AND), `|` (OR), and `~` (NOT), and pass them to View transformation methods.
@@ -3178,403 +3112,6 @@ JsonExtractionSpec(
 ---
 
 
-# Exports Reference
-
-The SDK provides two ways to export data:
-
-1. **ViewExport** (`view.export`) -- export methods attached to a View object
-2. **ExportsAPI** (`client.exports`) -- lower-level export operations
-
-## ViewExport
-
-Access via `view.export`. This is the recommended way to export data from a View.
-
-### to_csv
-
-Download the view data as a local CSV file.
-
-```python
-view.export.to_csv(
-    output_path: str | None = None,
-    timeout: int = 300,
-) -> Path
-```
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `output_path` | `str \| None` | `None` | Output file path (auto-generated if not provided) |
-| `timeout` | `int` | `300` | Timeout in seconds for the export job |
-
-Returns a `pathlib.Path` to the downloaded file.
-
-```python
-path = view.export.to_csv("output.csv")
-print(f"Downloaded to {path}")
-
-# Auto-generated filename
-path = view.export.to_csv()
-```
-
-### to_s3
-
-Export to S3 storage.
-
-```python
-view.export.to_s3(
-    file_name: str | None = None,
-    file_type: ExportFileType = ExportFileType.CSV,
-    include_hidden: bool = False,
-    **kwargs,
-) -> dict[str, Any]
-```
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `file_name` | `str \| None` | `None` | Output filename (auto-generated if not provided) |
-| `file_type` | `ExportFileType` | `ExportFileType.CSV` | File format enum |
-| `include_hidden` | `bool` | `False` | Include hidden columns |
-
-```python
-from mammoth import ExportFileType
-
-result = view.export.to_s3(file_name="report.csv")
-result = view.export.to_s3(file_name="data.json", file_type=ExportFileType.JSON, include_hidden=True)
-```
-
-### to_postgres
-
-Export to a PostgreSQL database.
-
-```python
-view.export.to_postgres(
-    host: str,
-    port: int,
-    database: str,
-    table: str,
-    username: str,
-    password: str,
-    **kwargs,
-) -> dict[str, Any]
-```
-
-```python
-view.export.to_postgres(
-    host="db.example.com",
-    port=5432,
-    database="analytics",
-    table="sales_data",
-    username="user",
-    password="pass",
-)
-```
-
-### to_mysql
-
-Export to a MySQL database.
-
-```python
-view.export.to_mysql(
-    host: str,
-    port: int,
-    database: str,
-    table: str,
-    username: str,
-    password: str,
-    **kwargs,
-) -> dict[str, Any]
-```
-
-```python
-view.export.to_mysql(
-    host="mysql.example.com",
-    port=3306,
-    database="analytics",
-    table="sales_data",
-    username="user",
-    password="pass",
-)
-```
-
-### to_bigquery
-
-Export to Google BigQuery.
-
-```python
-view.export.to_bigquery(**kwargs) -> dict[str, Any]
-```
-
-Pass BigQuery connection and table configuration as keyword arguments.
-
-### to_redshift
-
-Export to Amazon Redshift.
-
-```python
-view.export.to_redshift(**kwargs) -> dict[str, Any]
-```
-
-### to_elasticsearch
-
-Export to Elasticsearch.
-
-```python
-view.export.to_elasticsearch(**kwargs) -> dict[str, Any]
-```
-
-### to_ftp
-
-Export to an FTP server.
-
-```python
-view.export.to_ftp(
-    host: str,
-    path: str,
-    username: str,
-    password: str,
-    port: int = 21,
-    **kwargs,
-) -> dict[str, Any]
-```
-
-### to_sftp
-
-Export to an SFTP server.
-
-```python
-view.export.to_sftp(
-    host: str,
-    path: str,
-    username: str,
-    password: str,
-    port: int = 22,
-    **kwargs,
-) -> dict[str, Any]
-```
-
-### to_email
-
-Export via email.
-
-```python
-view.export.to_email(recipients: list[str], **kwargs) -> dict[str, Any]
-```
-
-```python
-view.export.to_email(recipients=["analyst@example.com", "team@example.com"])
-```
-
-### to_dataset
-
-Export to another Mammoth dataset (branch out).
-
-```python
-view.export.to_dataset(
-    dest_dataset_id: int,
-    column_mapping: dict[str, str] | None = None,
-    **kwargs,
-) -> dict[str, Any]
-```
-
-```python
-view.export.to_dataset(dest_dataset_id=42)
-view.export.to_dataset(
-    dest_dataset_id=42,
-    column_mapping={"Sales": "revenue", "Region": "area"},
-)
-```
-
-### publish_to_db
-
-Publish the dataview to a database.
-
-```python
-view.export.publish_to_db(**kwargs) -> dict[str, Any]
-```
-
-### list
-
-List all exports for this dataview.
-
-```python
-exports = view.export.list()
-for exp in exports:
-    print(exp["id"], exp["handler_type"])
-```
-
-### delete
-
-Delete an export by ID.
-
-```python
-view.export.delete(export_id=123)
-```
-
-## branch_out (View method)
-
-Convenience method on the View itself. Equivalent to `view.export.to_dataset()`.
-
-```python
-view.branch_out(
-    dest_dataset_id: int,
-    column_mapping: dict[str, str] | None = None,
-    **kwargs,
-) -> dict[str, Any]
-```
-
-```python
-view.branch_out(dest_dataset_id=42)
-```
-
----
-
-## ExportsAPI
-
-Lower-level export operations available via `client.exports`. These methods require explicit IDs rather than working through a View object.
-
-### client.exports.to_csv
-
-Download dataview data as CSV.
-
-```python
-client.exports.to_csv(
-    dataview_id: int,
-    output_path: str | Path | None = None,
-    timeout: int = 300,
-    dataset_id: int | None = None,
-) -> Path
-```
-
-```python
-path = client.exports.to_csv(dataview_id=1039, output_path="export.csv")
-```
-
-### client.exports.to_s3
-
-Create an S3 export. Waits for job completion and returns the download URL.
-
-```python
-client.exports.to_s3(
-    dataview_id: int,
-    file: str | None = None,
-    file_type: str = "csv",
-    include_hidden: bool = False,
-    dataset_id: int | None = None,
-    ...,
-) -> dict[str, Any]
-```
-
-```python
-result = client.exports.to_s3(dataview_id=1039, file="report.csv")
-print(result["url"])  # download URL
-```
-
-### client.exports.to_dataset
-
-Create an internal dataset export (branch out).
-
-```python
-client.exports.to_dataset(
-    dataview_id: int,
-    dataset_name: str,
-    column_mapping: dict[str, Any] | None = None,
-    ...,
-) -> PipelineExportsModificationResp | JobResponse
-```
-
-```python
-client.exports.to_dataset(dataview_id=1039, dataset_name="processed_data")
-```
-
-### client.exports.list
-
-List exports for a dataview with filtering and pagination.
-
-```python
-client.exports.list(
-    dataview_id: int,
-    fields: str | None = None,
-    limit: int = 50,
-    offset: int = 0,
-    sort: str | None = None,
-    status: ExportStatus | None = None,
-    handler_type: HandlerType | None = None,
-    ...,
-) -> PipelineExportsPaginated
-```
-
-### client.exports.create
-
-Create a new export with full control over the export specification.
-
-```python
-from mammoth.models.exports import AddExportSpec, HandlerType, TriggerType
-
-spec = AddExportSpec(
-    DATAVIEW_ID=1039,
-    handler_type=HandlerType.S3,
-    trigger_type=TriggerType.PIPELINE,
-    target_properties={
-        "file": "report.csv",
-        "file_type": "csv",
-        "include_hidden": False,
-        "is_format_set": True,
-        "use_format": True,
-    },
-    additional_properties={},
-    condition={},
-    run_immediately=True,
-    validate_only=False,
-)
-
-result = client.exports.create(
-    dataview_id=1039,
-    export_spec=spec,
-    dataset_id=42,
-)
-```
-
-## Export workflow example
-
-```python
-from mammoth import MammothClient, Condition, Operator
-
-client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
-client.set_project_id(10)
-
-# Get a view and transform it
-view = client.views.get(1039)
-view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-
-# Export to CSV locally
-csv_path = view.export.to_csv("filtered_sales.csv")
-print(f"CSV saved to {csv_path}")
-
-# Export to S3
-s3_result = view.export.to_s3(file_name="filtered_sales.csv")
-
-# Export to PostgreSQL
-view.export.to_postgres(
-    host="db.example.com",
-    port=5432,
-    database="analytics",
-    table="filtered_sales",
-    username="user",
-    password="pass",
-)
-
-# Branch out to another dataset
-view.branch_out(dest_dataset_id=42)
-```
-
-## See also
-
-- [Views](views.md) -- View object and transformation methods
-- [Client](client.md) -- MammothClient and sub-clients
-
-
----
-
-
 # Exceptions Reference
 
 The SDK provides a hierarchy of exception classes for precise error handling.
@@ -3816,288 +3353,483 @@ except MammothError as e:
 ---
 
 
-# End-to-End Workflow
+# Files API Reference
 
-This guide walks through a complete Mammoth SDK workflow: install, authenticate, upload data, apply transformations, and export results.
+The `FilesAPI` manages file uploads, listing, and deletion. Access it via `client.files`.
 
-## 1. Install the SDK
+## upload()
 
-```bash
-pip install mammoth-io
-```
-
-Requires Python 3.10+.
-
-## 2. Authenticate
+Upload one or more files to create datasets. Each file becomes a separate dataset.
 
 ```python
-import os
-from mammoth import MammothClient
-
-client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
-    workspace_id=11,  # your workspace ID
-)
-
-# Set the project to work in
-client.set_project_id(42)
+client.files.upload(
+    files: list[str | Path | BinaryIO] | str | Path | BinaryIO,
+    folder_resource_id: str | None = None,
+    append_to_ds_id: int | None = None,
+    override_target_schema: bool | None = None,
+    wait_for_completion: bool = True,
+    timeout: int = 300,
+) -> list[int] | int | None
 ```
 
-!!! tip "Extract IDs from a Mammoth URL"
-    ```python
-    from mammoth import parse_path
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `files` | `str`, `Path`, `BinaryIO`, or list | *required* | File path(s), Path objects, or file-like objects to upload |
+| `folder_resource_id` | `str` | `None` | Resource ID of target folder in Mammoth |
+| `append_to_ds_id` | `int` | `None` | Dataset ID to append data to (instead of creating new) |
+| `override_target_schema` | `bool` | `None` | Override target schema when appending |
+| `wait_for_completion` | `bool` | `True` | Wait for upload processing to finish |
+| `timeout` | `int` | `300` | Timeout in seconds when waiting |
 
-    ids = parse_path("https://app.mammoth.io/#/workspaces/11/projects/42/views/1039")
-    # {"workspace_id": 11, "project_id": 42, "dataview_id": 1039}
-    ```
+**Returns:**
 
-## 3. Upload a file
+- Single file: `int` (the dataset ID)
+- Multiple files: `list[int]` (list of dataset IDs)
+- On failure or `wait_for_completion=False`: `None` or initial job ID
+
+### Examples
 
 ```python
-# Upload a CSV file -- returns the new dataset ID
+# Single file upload
 dataset_id = client.files.upload("sales_data.csv")
-print(f"Created dataset: {dataset_id}")
 
-# Get the default View for the uploaded dataset
+# Multiple files
+dataset_ids = client.files.upload(["sales.csv", "customers.xlsx", "products.tsv"])
+
+# Using Path objects
+from pathlib import Path
+dataset_id = client.files.upload(Path("data/report.csv"))
+
+# Append to existing dataset
+client.files.upload("new_rows.csv", append_to_ds_id=42)
+
+# Upload to a specific folder
+client.files.upload("data.csv", folder_resource_id="folder-abc-123")
+
+# Non-blocking upload (returns job ID immediately)
+job_id = client.files.upload("large_file.csv", wait_for_completion=False)
+```
+
+### After upload: get a View
+
+```python
+dataset_id = client.files.upload("sales_data.csv")
 views = client.views.list(dataset_id)
-view = views[0]
+view = views[0]  # Default view created on upload
+print(view.display_names)  # ["Column1", "Column2", ...]
 ```
 
-Other upload options:
+---
+
+## upload_folder()
+
+Upload all files in a folder. Calls `upload()` under the hood.
 
 ```python
-# Multiple files at once
-dataset_ids = client.files.upload(["sales.csv", "customers.xlsx"])
-
-# Upload an entire folder
-dataset_ids = client.files.upload_folder("./data/")
-
-# Append to an existing dataset
-client.files.upload("new_rows.csv", append_to_ds_id=dataset_id)
+client.files.upload_folder(
+    folder_path: str | Path,
+    folder_resource_id: str | None = None,
+    wait_for_completion: bool = True,
+    timeout: int = 300,
+) -> list[int] | int | None
 ```
 
-See the [Files API reference](../api/files.md) for the full `upload()` signature.
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `folder_path` | `str` or `Path` | *required* | Path to the folder containing files |
+| `folder_resource_id` | `str` | `None` | Resource ID of target folder in Mammoth |
+| `wait_for_completion` | `bool` | `True` | Wait for upload processing to finish |
+| `timeout` | `int` | `300` | Timeout in seconds when waiting |
 
-## 4. Inspect the View
+### Example
 
 ```python
-print(f"View: {view.name}")
-print(f"Columns: {view.display_names}")
-# e.g., ["Customer", "Region", "Sales", "Order Date"]
-
-print(f"Types: {view.column_types}")
-# e.g., {"Customer": "TEXT", "Region": "TEXT", "Sales": "NUMERIC", "Order Date": "TEXT"}
-
-# Preview the data — returns {"data": [rows...], "paging": {...}}
-result = view.data(limit=5)
-rows = result["data"]
+# Upload everything in a folder
+dataset_ids = client.files.upload_folder("./data/monthly_reports/")
 ```
 
-!!! note "CSV dates upload as TEXT"
-    Date columns in CSV files are uploaded as TEXT type. Use `convert_type()` to convert them before applying date operations:
+---
 
-    ```python
-    from mammoth import ConversionSpec
+## list()
 
-    view.convert_type([ConversionSpec(column="Order Date", to="DATE", format="MM/DD/YYYY")])
-    ```
-
-## 5. Apply transformations
-
-### Filter rows
+List files in the current project with optional filtering and pagination.
 
 ```python
-from mammoth import Condition, Operator, FilterType
+client.files.list(
+    fields: str | None = None,
+    file_ids: list[int] | None = None,
+    names: list[str] | None = None,
+    statuses: list[str] | None = None,
+    created_at: str | None = None,
+    updated_at: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    sort: str | None = None,
+) -> FilesList
+```
 
-# Keep rows where Sales >= 1000
-view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `fields` | `str` | `None` | Fields to return (`"__standard"`, `"__full"`, `"__min"`) |
+| `file_ids` | `list[int]` | `None` | Filter by specific file IDs |
+| `names` | `list[str]` | `None` | Filter by file names |
+| `statuses` | `list[str]` | `None` | Filter by file statuses |
+| `created_at` | `str` | `None` | Date range filter for creation date |
+| `updated_at` | `str` | `None` | Date range filter for update date |
+| `limit` | `int` | `50` | Maximum results (0-100) |
+| `offset` | `int` | `0` | Number of results to skip |
+| `sort` | `str` | `None` | Sort spec (e.g., `"(id:asc)"`, `"(name:desc)"`) |
 
-# Remove rows where Region is empty
-view.filter_rows(
-    Condition("Region", Operator.IS_EMPTY),
-    filter_type=FilterType.REMOVE,
+### Example
+
+```python
+files = client.files.list()
+for f in files.files:
+    print(f"{f.id}: {f.name} ({f.status})")
+
+# Filter by name
+files = client.files.list(names=["sales_data.csv"])
+```
+
+---
+
+## get()
+
+Get detailed information about a specific file.
+
+```python
+client.files.get(
+    file_id: int,
+    fields: str | None = None,
+) -> FileSchema
+```
+
+### Example
+
+```python
+file_info = client.files.get(file_id=123)
+print(f"Name: {file_info.name}")
+print(f"Status: {file_info.status}")
+```
+
+---
+
+## update()
+
+Update file configuration (e.g., set password, extract sheets). Waits for the job to complete.
+
+```python
+client.files.update(
+    file_id: int,
+    patch_request: FilePatchRequest,
+) -> ObjectJobSchema
+```
+
+This is the low-level method used internally by `set_password()` and `extract_sheets()`. You rarely need to call it directly.
+
+---
+
+## delete()
+
+Delete a specific file.
+
+```python
+client.files.delete(file_id: int) -> None
+```
+
+### Example
+
+```python
+client.files.delete(file_id=123)
+```
+
+---
+
+## bulk_delete()
+
+Delete multiple files at once.
+
+```python
+client.files.bulk_delete(file_ids: list[int]) -> None
+```
+
+### Example
+
+```python
+client.files.bulk_delete([101, 102, 103])
+```
+
+---
+
+## set_password()
+
+Set a password for a password-protected file (e.g., encrypted Excel).
+
+```python
+client.files.set_password(file_id: int, password: str) -> ObjectJobSchema
+```
+
+---
+
+## extract_sheets()
+
+Extract specific sheets from an Excel file into separate datasets.
+
+```python
+client.files.extract_sheets(
+    file_id: int,
+    sheets: list[str],
+    delete_file_after_extract: bool = True,
+    combine_after_extract: bool = False,
+) -> ObjectJobSchema
+```
+
+### Example
+
+```python
+client.files.extract_sheets(
+    file_id=123,
+    sheets=["Sheet1", "Revenue"],
+    delete_file_after_extract=True,
 )
-
-# Negate a condition with ~
-view.filter_rows(~Condition("Status", Operator.EQ, "Cancelled"))
 ```
 
-### Add computed columns
+---
 
-```python
-from mammoth import ColumnType, SetValue
+## Supported file formats
 
-# Conditional labeling
-view.set_values(
-    new_column="Tier",
-    column_type=ColumnType.TEXT,
-    values=[
-        SetValue("Premium", condition=Condition("Sales", Operator.GTE, 10000)),
-        SetValue("Standard", condition=Condition("Sales", Operator.GTE, 1000)),
-        SetValue("Basic"),
-    ],
-)
+| Category | Formats |
+|----------|---------|
+| Tabular | CSV, TSV, PSV, XLS, XLSX |
+| Compressed | ZIP, BZ2, GZ, TAR, 7Z |
+| Document | PDF |
+| Image | TIFF, JPEG, PNG, HEIC, WEBP |
 
-# Math expression
-view.math("Price * Quantity", new_column="Revenue")
-```
+**Maximum file size:** 50 MB
 
-### Aggregate with pivot
-
-```python
-from mammoth import AggregateFunction, AggregationSpec
-
-view.pivot(
-    group_by=["Region"],
-    aggregations=[
-        AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total Sales"),
-        AggregationSpec(column="Sales", function=AggregateFunction.AVG, as_name="Avg Sales"),
-        AggregationSpec(column="Sales", function=AggregateFunction.COUNT, as_name="Order Count"),
-    ],
-)
-```
-
-### Other common transformations
-
-```python
-from mammoth import TextCase, DateComponent, WindowFunction, SortDirection
-
-# Text: change case
-view.text_transform(["Customer"], case=TextCase.UPPER)
-
-# Date: extract year
-view.extract_date("Order Date", DateComponent.YEAR, new_column="Year")
-
-# Window: rank within groups
-view.window(
-    function=WindowFunction.ROW_NUMBER,
-    new_column="Rank",
-    partition_by=["Region"],
-    order_by=[["Sales", SortDirection.DESC]],
-)
-```
-
-See the [Views reference](../api/views.md) for all 25+ transformation methods.
-
-## 6. Export results
-
-### Download as CSV
-
-```python
-path = view.export.to_csv("output.csv")
-print(f"Saved to {path}")
-```
-
-### Export to S3
-
-```python
-result = view.export.to_s3(file_name="monthly_report.csv")
-```
-
-### Export to a database
-
-```python
-# PostgreSQL
-view.export.to_postgres(
-    host="db.example.com",
-    port=5432,
-    database="analytics",
-    table="sales_summary",
-    username="user",
-    password="pass",
-)
-
-# MySQL
-view.export.to_mysql(
-    host="db.example.com",
-    port=3306,
-    database="analytics",
-    table="sales_summary",
-    username="user",
-    password="pass",
-)
-```
-
-### Other export targets
-
-```python
-view.export.to_bigquery(...)
-view.export.to_redshift(...)
-view.export.to_sftp(host="sftp.example.com", path="/exports/data.csv", username="user", password="pass")
-view.export.to_email(recipients=["team@example.com"])
-```
-
-See the [Exports reference](../api/exports.md) for all destinations.
-
-## Complete script
-
-Here's a full, copy-paste-ready script:
-
-```python
-import os
-from mammoth import (
-    MammothClient,
-    Condition,
-    Operator,
-    ColumnType,
-    SetValue,
-    AggregateFunction,
-    AggregationSpec,
-    FilterType,
-    MammothAPIError,
-)
-
-# 1. Authenticate
-client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
-    workspace_id=11,
-)
-client.set_project_id(42)
-
-try:
-    # 2. Upload data
-    dataset_id = client.files.upload("sales_data.csv")
-    views = client.views.list(dataset_id)
-    view = views[0]
-    print(f"Uploaded: {view.name} ({len(view.display_names)} columns)")
-
-    # 3. Clean data
-    view.filter_rows(
-        Condition("Region", Operator.IS_EMPTY),
-        filter_type=FilterType.REMOVE,
-    )
-    view.filter_rows(Condition("Sales", Operator.GTE, 0))
-
-    # 4. Transform
-    view.set_values(
-        new_column="Tier",
-        column_type=ColumnType.TEXT,
-        values=[
-            SetValue("Premium", condition=Condition("Sales", Operator.GTE, 10000)),
-            SetValue("Standard", condition=Condition("Sales", Operator.GTE, 1000)),
-            SetValue("Basic"),
-        ],
-    )
-    view.math("Price * Quantity", new_column="Revenue")
-
-    # 5. Export
-    path = view.export.to_csv("output.csv")
-    print(f"Exported to {path}")
-
-except MammothAPIError as e:
-    print(f"API error: {e.message} (HTTP {e.status_code})")
-```
+---
 
 ## See also
 
-- [Quick Start](../quick-start.md) -- shorter getting-started guide
-- [Files API](../api/files.md) -- full upload/file management reference
-- [Views API](../api/views.md) -- all transformation methods
-- [Conditions](../api/conditions.md) -- filter builder with `&`, `|`, `~`
-- [Exports](../api/exports.md) -- all export destinations
-- [Transformation examples](../examples/transformations.md) -- more transformation workflows
+- [End-to-End Workflow](../guides/end-to-end-workflow.md) -- upload, transform, and export
+- [Client API](client.md) -- `MammothClient` and all sub-clients
+- [Views](views.md) -- work with uploaded data
+
+
+---
+
+
+# Connectors API Reference
+
+The `ConnectorsAPI` manages cloud data source connectors and their connections. Use connectors to import data from databases (PostgreSQL, MySQL, BigQuery, etc.), cloud storage, and other external sources.
+
+**Access**: `client.connectors`
+
+## Concepts
+
+- **Connector**: A type of data source (e.g. `"postgres"`, `"mysql"`, `"bigquery"`)
+- **Connection**: A configured instance of a connector (host, credentials, etc.)
+- **Data source config**: A specific table/query within a connection to import
+
+## Methods
+
+### list
+
+```python
+client.connectors.list() -> list[dict[str, Any]]
+```
+
+List all available connector types.
+
+**Returns**: List of connector dicts with keys like `key`, `name`, `type`.
+
+```python
+connectors = client.connectors.list()
+for c in connectors:
+    print(c["key"], c["name"])
+```
+
+### get
+
+```python
+client.connectors.get(
+    connector_key: str,
+) -> dict[str, Any]
+```
+
+Get details of a specific connector type.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `connector_key` | `str` | *required* | Connector type key (e.g. `"postgres"`, `"mysql"`) |
+
+### active_connectors
+
+```python
+client.connectors.active_connectors() -> list[dict[str, Any]]
+```
+
+List connectors that have at least one established connection.
+
+### list_connections
+
+```python
+client.connectors.list_connections(
+    connector_key: str,
+    project_id: int | None = None,
+) -> list[dict[str, Any]]
+```
+
+List connections for a connector type.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `connector_key` | `str` | *required* | Connector type key |
+| `project_id` | `int \| None` | `None` | Project ID (uses client default) |
+
+**Returns**: List of connection dicts.
+
+```python
+connections = client.connectors.list_connections("postgres")
+for conn in connections:
+    print(conn["key"], conn.get("name"))
+```
+
+### create_connection
+
+```python
+client.connectors.create_connection(
+    connector_key: str,
+    config: dict[str, Any],
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Create a new connection for a connector.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `connector_key` | `str` | *required* | Connector type key |
+| `config` | `dict` | *required* | Connection configuration (host, port, database, credentials, etc.) |
+
+```python
+conn = client.connectors.create_connection("postgres", {
+    "host": "db.example.com",
+    "port": 5432,
+    "database": "analytics",
+    "username": "user",
+    "password": "pass",
+    "name": "Prod DB",
+})
+```
+
+### get_connection
+
+```python
+client.connectors.get_connection(
+    connector_key: str,
+    connection_key: str,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get details of a specific connection.
+
+### update_connection
+
+```python
+client.connectors.update_connection(
+    connector_key: str,
+    connection_key: str,
+    config: dict[str, Any],
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Update a connection's configuration.
+
+### delete_connection
+
+```python
+client.connectors.delete_connection(
+    connector_key: str,
+    connection_key: str,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Delete a connection.
+
+### list_ds_configs
+
+```python
+client.connectors.list_ds_configs(
+    connector_key: str,
+    connection_key: str,
+    project_id: int | None = None,
+) -> list[dict[str, Any]]
+```
+
+List data source configurations for a connection. Each config represents a table, query, or file to import.
+
+### create_ds_config
+
+```python
+client.connectors.create_ds_config(
+    connector_key: str,
+    connection_key: str,
+    config: dict[str, Any],
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Create a data source configuration to import data from a connection.
+
+### get_ds_config
+
+```python
+client.connectors.get_ds_config(
+    connector_key: str,
+    connection_key: str,
+    ds_config_key: str,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get a specific data source configuration.
+
+### update_ds_config
+
+```python
+client.connectors.update_ds_config(
+    connector_key: str,
+    connection_key: str,
+    ds_config_key: str,
+    config: dict[str, Any],
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Update a data source configuration.
+
+### delete_ds_config
+
+```python
+client.connectors.delete_ds_config(
+    connector_key: str,
+    connection_key: str,
+    ds_config_key: str,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Delete a data source configuration.
+
+## See also
+
+- [Files](files.md) -- File-based data import
+- [Exports](exports.md) -- Export data to external destinations
+- [Client](client.md) -- MammothClient overview
 
 
 ---
@@ -4648,6 +4380,3007 @@ print("Done!")
 - [Conditions reference](../api/conditions.md) -- filter builder
 - [Enums reference](../api/enums.md) -- all parameter values
 - [Exports reference](../api/exports.md) -- all export destinations
+
+
+---
+
+
+# Exports Reference
+
+The SDK provides two ways to export data:
+
+1. **ViewExport** (`view.export`) -- export methods attached to a View object
+2. **ExportsAPI** (`client.exports`) -- lower-level export operations
+
+## ViewExport
+
+Access via `view.export`. This is the recommended way to export data from a View.
+
+### to_csv
+
+Download the view data as a local CSV file.
+
+```python
+view.export.to_csv(
+    output_path: str | None = None,
+    timeout: int = 300,
+) -> Path
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `output_path` | `str \| None` | `None` | Output file path (auto-generated if not provided) |
+| `timeout` | `int` | `300` | Timeout in seconds for the export job |
+
+Returns a `pathlib.Path` to the downloaded file.
+
+```python
+path = view.export.to_csv("output.csv")
+print(f"Downloaded to {path}")
+
+# Auto-generated filename
+path = view.export.to_csv()
+```
+
+### to_s3
+
+Export to S3 storage.
+
+```python
+view.export.to_s3(
+    file_name: str | None = None,
+    file_type: ExportFileType = ExportFileType.CSV,
+    include_hidden: bool = False,
+    **kwargs,
+) -> dict[str, Any]
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `file_name` | `str \| None` | `None` | Output filename (auto-generated if not provided) |
+| `file_type` | `ExportFileType` | `ExportFileType.CSV` | File format enum |
+| `include_hidden` | `bool` | `False` | Include hidden columns |
+
+```python
+from mammoth import ExportFileType
+
+result = view.export.to_s3(file_name="report.csv")
+result = view.export.to_s3(file_name="data.json", file_type=ExportFileType.JSON, include_hidden=True)
+```
+
+### to_postgres
+
+Export to a PostgreSQL database.
+
+```python
+view.export.to_postgres(
+    host: str,
+    port: int,
+    database: str,
+    table: str,
+    username: str,
+    password: str,
+    **kwargs,
+) -> dict[str, Any]
+```
+
+```python
+view.export.to_postgres(
+    host="db.example.com",
+    port=5432,
+    database="analytics",
+    table="sales_data",
+    username="user",
+    password="pass",
+)
+```
+
+### to_mysql
+
+Export to a MySQL database.
+
+```python
+view.export.to_mysql(
+    host: str,
+    port: int,
+    database: str,
+    table: str,
+    username: str,
+    password: str,
+    **kwargs,
+) -> dict[str, Any]
+```
+
+```python
+view.export.to_mysql(
+    host="mysql.example.com",
+    port=3306,
+    database="analytics",
+    table="sales_data",
+    username="user",
+    password="pass",
+)
+```
+
+### to_bigquery
+
+Export to Google BigQuery.
+
+```python
+view.export.to_bigquery(**kwargs) -> dict[str, Any]
+```
+
+Pass BigQuery connection and table configuration as keyword arguments.
+
+### to_redshift
+
+Export to Amazon Redshift.
+
+```python
+view.export.to_redshift(**kwargs) -> dict[str, Any]
+```
+
+### to_elasticsearch
+
+Export to Elasticsearch.
+
+```python
+view.export.to_elasticsearch(**kwargs) -> dict[str, Any]
+```
+
+### to_ftp
+
+Export to an FTP server.
+
+```python
+view.export.to_ftp(
+    host: str,
+    path: str,
+    username: str,
+    password: str,
+    port: int = 21,
+    **kwargs,
+) -> dict[str, Any]
+```
+
+### to_sftp
+
+Export to an SFTP server.
+
+```python
+view.export.to_sftp(
+    host: str,
+    path: str,
+    username: str,
+    password: str,
+    port: int = 22,
+    **kwargs,
+) -> dict[str, Any]
+```
+
+### to_email
+
+Export via email.
+
+```python
+view.export.to_email(recipients: list[str], **kwargs) -> dict[str, Any]
+```
+
+```python
+view.export.to_email(recipients=["analyst@example.com", "team@example.com"])
+```
+
+### to_dataset
+
+Export to another Mammoth dataset (branch out).
+
+```python
+view.export.to_dataset(
+    dest_dataset_id: int,
+    column_mapping: dict[str, str] | None = None,
+    **kwargs,
+) -> dict[str, Any]
+```
+
+```python
+view.export.to_dataset(dest_dataset_id=42)
+view.export.to_dataset(
+    dest_dataset_id=42,
+    column_mapping={"Sales": "revenue", "Region": "area"},
+)
+```
+
+### publish_to_db
+
+Publish the dataview to a database.
+
+```python
+view.export.publish_to_db(**kwargs) -> dict[str, Any]
+```
+
+### list
+
+List all exports for this dataview.
+
+```python
+exports = view.export.list()
+for exp in exports:
+    print(exp["id"], exp["handler_type"])
+```
+
+### delete
+
+Delete an export by ID.
+
+```python
+view.export.delete(export_id=123)
+```
+
+## branch_out (View method)
+
+Convenience method on the View itself. Equivalent to `view.export.to_dataset()`.
+
+```python
+view.branch_out(
+    dest_dataset_id: int,
+    column_mapping: dict[str, str] | None = None,
+    **kwargs,
+) -> dict[str, Any]
+```
+
+```python
+view.branch_out(dest_dataset_id=42)
+```
+
+---
+
+## ExportsAPI
+
+Lower-level export operations available via `client.exports`. These methods require explicit IDs rather than working through a View object.
+
+### client.exports.to_csv
+
+Download dataview data as CSV.
+
+```python
+client.exports.to_csv(
+    dataview_id: int,
+    output_path: str | Path | None = None,
+    timeout: int = 300,
+    dataset_id: int | None = None,
+) -> Path
+```
+
+```python
+path = client.exports.to_csv(dataview_id=1039, output_path="export.csv")
+```
+
+### client.exports.to_s3
+
+Create an S3 export. Waits for job completion and returns the download URL.
+
+```python
+client.exports.to_s3(
+    dataview_id: int,
+    file: str | None = None,
+    file_type: str = "csv",
+    include_hidden: bool = False,
+    dataset_id: int | None = None,
+    ...,
+) -> dict[str, Any]
+```
+
+```python
+result = client.exports.to_s3(dataview_id=1039, file="report.csv")
+print(result["url"])  # download URL
+```
+
+### client.exports.to_dataset
+
+Create an internal dataset export (branch out).
+
+```python
+client.exports.to_dataset(
+    dataview_id: int,
+    dataset_name: str,
+    column_mapping: dict[str, Any] | None = None,
+    ...,
+) -> PipelineExportsModificationResp | JobResponse
+```
+
+```python
+client.exports.to_dataset(dataview_id=1039, dataset_name="processed_data")
+```
+
+### client.exports.list
+
+List exports for a dataview with filtering and pagination.
+
+```python
+client.exports.list(
+    dataview_id: int,
+    fields: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    sort: str | None = None,
+    status: ExportStatus | None = None,
+    handler_type: HandlerType | None = None,
+    ...,
+) -> PipelineExportsPaginated
+```
+
+### client.exports.create
+
+Create a new export with full control over the export specification.
+
+```python
+from mammoth.models.exports import AddExportSpec, HandlerType, TriggerType
+
+spec = AddExportSpec(
+    DATAVIEW_ID=1039,
+    handler_type=HandlerType.S3,
+    trigger_type=TriggerType.PIPELINE,
+    target_properties={
+        "file": "report.csv",
+        "file_type": "csv",
+        "include_hidden": False,
+        "is_format_set": True,
+        "use_format": True,
+    },
+    additional_properties={},
+    condition={},
+    run_immediately=True,
+    validate_only=False,
+)
+
+result = client.exports.create(
+    dataview_id=1039,
+    export_spec=spec,
+    dataset_id=42,
+)
+```
+
+## Export workflow example
+
+```python
+from mammoth import MammothClient, Condition, Operator
+
+client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
+client.set_project_id(10)
+
+# Get a view and transform it
+view = client.views.get(1039)
+view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+
+# Export to CSV locally
+csv_path = view.export.to_csv("filtered_sales.csv")
+print(f"CSV saved to {csv_path}")
+
+# Export to S3
+s3_result = view.export.to_s3(file_name="filtered_sales.csv")
+
+# Export to PostgreSQL
+view.export.to_postgres(
+    host="db.example.com",
+    port=5432,
+    database="analytics",
+    table="filtered_sales",
+    username="user",
+    password="pass",
+)
+
+# Branch out to another dataset
+view.branch_out(dest_dataset_id=42)
+```
+
+## See also
+
+- [Views](views.md) -- View object and transformation methods
+- [Client](client.md) -- MammothClient and sub-clients
+
+
+---
+
+
+# Projects API Reference
+
+The `ProjectsAPI` manages projects within a workspace. Projects are siloed areas for organizing datasets, views, and pipelines.
+
+**Access**: `client.projects`
+
+## Methods
+
+### list
+
+```python
+client.projects.list(
+    workspace_id: int | None = None,
+    limit: int = 100,
+) -> dict[str, Any]
+```
+
+List all projects in a workspace.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `workspace_id` | `int \| None` | `None` | Workspace ID (uses client default if not provided) |
+| `limit` | `int` | `100` | Maximum number of results |
+
+**Returns**: Dict containing `projects` list with `id` and `name` fields.
+
+```python
+resp = client.projects.list()
+for p in resp["projects"]:
+    print(p["id"], p["name"])
+```
+
+### get
+
+```python
+client.projects.get(
+    project: int | str | None = None,
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get a single project by ID, name, or auto-selection.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `project` | `int \| str \| None` | `None` | Project ID (int), name (str), or None for auto-selection |
+| `workspace_id` | `int \| None` | `None` | Workspace ID (uses client default if not provided) |
+
+**Behavior**:
+
+- `project=None` -- auto-selects if only one project exists
+- `project=123` -- finds project by ID
+- `project="My Project"` -- finds project by name
+
+**Returns**: Dict with `id` and `name`.
+
+**Raises**: `ValueError` if project not found or ambiguous.
+
+```python
+# By ID
+project = client.projects.get(123)
+
+# By name
+project = client.projects.get("Analytics")
+
+# Auto-select (only works if workspace has exactly one project)
+project = client.projects.get()
+```
+
+### create
+
+```python
+client.projects.create(
+    name: str,
+    color: str | None = None,
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Create a new project.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | `str` | *required* | Name for the new project |
+| `color` | `str \| None` | `None` | Color code for the project |
+| `workspace_id` | `int \| None` | `None` | Workspace ID (uses client default if not provided) |
+
+```python
+project = client.projects.create(name="Q4 Analytics", color="#3498db")
+print(project["id"])
+```
+
+### update
+
+```python
+client.projects.update(
+    project_id: int,
+    name: str | None = None,
+    color: str | None = None,
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Update a project's name or color.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `project_id` | `int` | *required* | ID of the project to update |
+| `name` | `str \| None` | `None` | New name |
+| `color` | `str \| None` | `None` | New color code |
+| `workspace_id` | `int \| None` | `None` | Workspace ID |
+
+```python
+client.projects.update(123, name="Q4 Analytics v2")
+```
+
+### delete
+
+```python
+client.projects.delete(
+    project_id: int,
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Delete a project.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `project_id` | `int` | *required* | ID of the project to delete |
+| `workspace_id` | `int \| None` | `None` | Workspace ID |
+
+### bulk_update
+
+```python
+client.projects.bulk_update(
+    patch_data: dict[str, Any],
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Bulk update multiple projects using JSON Patch operations.
+
+### bulk_delete
+
+```python
+client.projects.bulk_delete(
+    project_ids: list[int],
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Bulk delete multiple projects.
+
+```python
+client.projects.bulk_delete([101, 102, 103])
+```
+
+### add_users
+
+```python
+client.projects.add_users(
+    project_id: int,
+    user_ids: list[str],
+    role: str | None = None,
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Add users to a project.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `project_id` | `int` | *required* | ID of the project |
+| `user_ids` | `list[str]` | *required* | User email addresses or IDs |
+| `role` | `str \| None` | `None` | Role to assign |
+
+```python
+client.projects.add_users(123, ["user@example.com"], role="editor")
+```
+
+### remove_users
+
+```python
+client.projects.remove_users(
+    project_id: int,
+    user_ids: list[str],
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Remove users from a project.
+
+### browse
+
+```python
+client.projects.browse(
+    project_id: int,
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Browse project contents (datasets, folders).
+
+```python
+contents = client.projects.browse(123)
+```
+
+## See also
+
+- [Client](client.md) -- MammothClient and sub-clients overview
+- [Datasets](datasets.md) -- Dataset management within projects
+
+
+---
+
+
+# Datasets API Reference
+
+The `DatasetsAPI` manages datasets within a project. A dataset is a data table stored in Mammoth, created from file uploads, connectors, or cloning.
+
+**Access**: `client.datasets`
+
+!!! note "Requires project_id"
+    Most methods require a project ID. Set it on the client with `client.set_project_id(10)` or pass `project_id` explicitly.
+
+## Methods
+
+### list
+
+```python
+client.datasets.list(
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+    limit: int = 100,
+    sort: str = "(created_at:desc)",
+) -> dict[str, Any]
+```
+
+List datasets in a project.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `workspace_id` | `int \| None` | `None` | Workspace ID (uses client default) |
+| `project_id` | `int \| None` | `None` | Project ID (uses client default) |
+| `limit` | `int` | `100` | Maximum number of results |
+| `sort` | `str` | `"(created_at:desc)"` | Sort order |
+
+**Returns**: Dict containing `datasets` list with `id` and `name` fields.
+
+```python
+resp = client.datasets.list()
+for ds in resp["datasets"]:
+    print(ds["id"], ds["name"])
+```
+
+### get
+
+```python
+client.datasets.get(
+    dataset_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get dataset details by ID.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataset_id` | `int` | *required* | ID of the dataset |
+
+**Returns**: Dict with complete dataset information including metadata, column info, and settings.
+
+```python
+ds = client.datasets.get(42)
+print(ds["name"], ds.get("row_count"))
+```
+
+### get_data
+
+```python
+client.datasets.get_data(
+    dataset_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+    timeout: int = 300,
+    poll_interval: int = 2,
+) -> dict[str, Any]
+```
+
+Get the actual data rows from a dataset. This triggers a job and polls until completion.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataset_id` | `int` | *required* | ID of the dataset |
+| `timeout` | `int` | `300` | Maximum wait time in seconds |
+| `poll_interval` | `int` | `2` | Polling interval in seconds |
+
+**Returns**: Dict with dataset data rows.
+
+```python
+data = client.datasets.get_data(42)
+```
+
+### create
+
+```python
+client.datasets.create(
+    dataset_spec: dict[str, Any],
+    ds_creation_type: str,
+    folder_resource_id: str | None = None,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Create a new dataset.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataset_spec` | `dict` | *required* | Dataset specification (varies by creation type) |
+| `ds_creation_type` | `str` | *required* | Type: `"clone"`, `"cloud"`, `"sketch"`, or `"weburl"` |
+| `folder_resource_id` | `str \| None` | `None` | Folder to place the dataset in |
+
+```python
+# Clone an existing dataset
+ds = client.datasets.create(
+    dataset_spec={"source_dataset_id": 42},
+    ds_creation_type="clone",
+)
+```
+
+### update
+
+```python
+client.datasets.update(
+    dataset_id: int,
+    patch_data: dict[str, Any],
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Update a dataset using JSON Patch operations.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataset_id` | `int` | *required* | ID of the dataset |
+| `patch_data` | `dict` | *required* | Patch operation data |
+
+### delete
+
+```python
+client.datasets.delete(
+    dataset_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> None
+```
+
+Delete a dataset.
+
+### bulk_update
+
+```python
+client.datasets.bulk_update(
+    patch_data: dict[str, Any],
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Update multiple datasets (bulk operation).
+
+### bulk_delete
+
+```python
+client.datasets.bulk_delete(
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> None
+```
+
+Delete multiple datasets (bulk operation).
+
+### browse
+
+```python
+client.datasets.browse(
+    dataset_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Browse dataset contents (dataviews, metadata).
+
+```python
+contents = client.datasets.browse(42)
+```
+
+### list_batches
+
+```python
+client.datasets.list_batches(
+    dataset_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> list[dict[str, Any]]
+```
+
+List batches for a dataset. A batch represents a data upload or refresh event.
+
+**Returns**: List of batch dicts.
+
+### get_batch
+
+```python
+client.datasets.get_batch(
+    dataset_id: int,
+    batch_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get details of a specific batch.
+
+### get_file_settings
+
+```python
+client.datasets.get_file_settings(
+    dataset_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get file settings for a dataset (delimiter, encoding, etc.).
+
+## See also
+
+- [Client](client.md) -- MammothClient and sub-clients overview
+- [Dataviews](dataviews.md) -- Dataview management within datasets
+- [Views](views.md) -- Rich View objects for transformations
+
+
+---
+
+
+# Dataviews API Reference
+
+The `DataviewsAPI` provides low-level CRUD operations on dataviews. For rich transformation methods, use `client.views` instead (see [Views](views.md)).
+
+**Access**: `client.dataviews`
+
+!!! tip "client.views vs client.dataviews"
+    `client.views.get(id)` returns a rich `View` object with transformation methods, data access, and export helpers. `client.dataviews` is the lower-level API returning raw dicts.
+
+## Methods
+
+### list
+
+```python
+client.dataviews.list(
+    dataset_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+    limit: int = 100,
+    sort: str = "(created_at:desc)",
+) -> dict[str, Any]
+```
+
+List dataviews in a dataset.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataset_id` | `int` | *required* | ID of the dataset |
+| `limit` | `int` | `100` | Maximum number of results |
+| `sort` | `str` | `"(created_at:desc)"` | Sort order |
+
+**Returns**: Dict containing `dataviews` list.
+
+```python
+resp = client.dataviews.list(dataset_id=42)
+for dv in resp["dataviews"]:
+    print(dv["id"], dv["name"])
+```
+
+### get
+
+```python
+client.dataviews.get(
+    dataset_id: int,
+    dataview_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get dataview information (raw dict).
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataset_id` | `int` | *required* | ID of the dataset |
+| `dataview_id` | `int` | *required* | ID of the dataview |
+
+### create
+
+```python
+client.dataviews.create(
+    dataset_id: int,
+    name: str | None = "View",
+    clone_config_from: int | None = None,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Create or duplicate a dataview.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataset_id` | `int` | *required* | ID of the dataset |
+| `name` | `str \| None` | `"View"` | Name of the dataview |
+| `clone_config_from` | `int \| None` | `None` | ID of dataview to clone pipeline from |
+
+```python
+# Create a blank view
+dv = client.dataviews.create(dataset_id=42, name="Analysis")
+
+# Clone an existing view's pipeline
+dv = client.dataviews.create(dataset_id=42, name="Copy", clone_config_from=1039)
+```
+
+### update
+
+```python
+client.dataviews.update(
+    dataset_id: int,
+    dataview_id: int,
+    patch_data: list[dict[str, Any]],
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Update dataview properties using JSON Patch operations.
+
+### delete
+
+```python
+client.dataviews.delete(
+    dataset_id: int,
+    dataview_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Delete a dataview.
+
+### bulk_delete
+
+```python
+client.dataviews.bulk_delete(
+    dataset_id: int,
+    dataview_ids: list[int] | str,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Delete multiple dataviews.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataset_id` | `int` | *required* | ID of the dataset |
+| `dataview_ids` | `list[int] \| str` | *required* | List of dataview IDs or comma-separated string |
+
+### get_data
+
+```python
+client.dataviews.get_data(
+    dataset_id: int,
+    dataview_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+    timeout: int | None = None,
+    poll_interval: int = 2,
+) -> dict[str, Any]
+```
+
+Get dataview data using GET method. Automatically polls the job until completion.
+
+### query_data
+
+```python
+client.dataviews.query_data(
+    dataset_id: int,
+    dataview_id: int,
+    sequence: int = 0,
+    offset: int = 1,
+    limit: int = 400,
+    columns: list[str] | None = None,
+    condition: dict[str, Any] | None = None,
+    sort: str | None = None,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get dataview data with filtering options (POST method).
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataset_id` | `int` | *required* | ID of the dataset |
+| `dataview_id` | `int` | *required* | ID of the dataview |
+| `sequence` | `int` | `0` | Pipeline step to fetch data at |
+| `offset` | `int` | `1` | One-indexed starting row |
+| `limit` | `int` | `400` | Number of rows to fetch |
+| `columns` | `list[str] \| None` | `None` | Column names to fetch |
+| `condition` | `dict \| None` | `None` | Filter condition dict |
+| `sort` | `str \| None` | `None` | Sort specification |
+
+### active_users
+
+```python
+client.dataviews.active_users(
+    dataset_id: int,
+    dataview_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get list of users currently active on this dataview.
+
+### mark_active
+
+```python
+client.dataviews.mark_active(
+    dataset_id: int,
+    dataview_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Mark the current user as active on this dataview.
+
+### conditional_format_list
+
+```python
+client.dataviews.conditional_format_list(
+    dataset_id: int,
+    dataview_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> list[dict[str, Any]]
+```
+
+List conditional formatting rules for a dataview.
+
+### conditional_format_create
+
+```python
+client.dataviews.conditional_format_create(
+    dataset_id: int,
+    dataview_id: int,
+    rule: dict[str, Any],
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Create a conditional formatting rule.
+
+### conditional_format_update
+
+```python
+client.dataviews.conditional_format_update(
+    dataset_id: int,
+    dataview_id: int,
+    rule: dict[str, Any],
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Update a conditional formatting rule.
+
+### conditional_format_delete
+
+```python
+client.dataviews.conditional_format_delete(
+    dataset_id: int,
+    dataview_id: int,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Delete all conditional formatting rules for a dataview.
+
+### draft_mode
+
+```python
+client.dataviews.draft_mode(
+    dataset_id: int,
+    dataview_id: int,
+    command: str,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Manage draft mode for the dataview pipeline.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataset_id` | `int` | *required* | ID of the dataset |
+| `dataview_id` | `int` | *required* | ID of the dataview |
+| `command` | `str` | *required* | `"enter"`, `"commit"`, or `"discard"` |
+
+## See also
+
+- [Views](views.md) -- Rich View objects with transformation methods
+- [Pipeline](pipeline.md) -- Pipeline task management
+- [Datasets](datasets.md) -- Dataset management
+
+
+---
+
+
+# Pipeline API Reference
+
+The `PipelineAPI` manages the transformation pipeline on dataviews. Each dataview has an ordered list of pipeline tasks (filter, join, pivot, etc.) that transform the data.
+
+**Access**: `client.pipeline`
+
+!!! note "Internal use"
+    The `PipelineAPI` is primarily used internally by `View` objects. For most use cases, use `view.filter_rows()`, `view.math()`, etc. instead of calling `client.pipeline` directly.
+
+## Methods
+
+### get_pipeline
+
+```python
+client.pipeline.get_pipeline(
+    dataview_id: int,
+    dataset_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get the current pipeline state for a dataview.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataview_id` | `int` | *required* | ID of the dataview |
+| `dataset_id` | `int \| None` | `None` | Dataset ID (auto-detected if not provided) |
+
+**Returns**: Pipeline state dict including `state` (e.g. `"ready"`, `"running"`), task list, and metadata.
+
+```python
+pipeline = client.pipeline.get_pipeline(dataview_id=1039)
+print(pipeline["state"])  # "ready"
+```
+
+### list_tasks
+
+```python
+client.pipeline.list_tasks(
+    dataview_id: int,
+    dataset_id: int | None = None,
+) -> dict[str, Any]
+```
+
+List all pipeline tasks for a dataview.
+
+**Returns**: Dict with `tasks` list, each containing task type, parameters, and sequence number.
+
+```python
+resp = client.pipeline.list_tasks(dataview_id=1039)
+for task in resp.get("tasks", []):
+    print(task["id"], task.get("params", {}).get("TYPE"))
+```
+
+### add_task
+
+```python
+client.pipeline.add_task(
+    dataview_id: int,
+    task_spec: dict[str, Any],
+    dataset_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Add a new transformation task to the pipeline. Waits for the async job to complete.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataview_id` | `int` | *required* | ID of the dataview |
+| `task_spec` | `dict` | *required* | Task specification (varies by task type) |
+| `dataset_id` | `int \| None` | `None` | Dataset ID (auto-detected if not provided) |
+
+**Returns**: Dict with created task info.
+
+### get_task
+
+```python
+client.pipeline.get_task(
+    dataview_id: int,
+    task_id: int,
+    dataset_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get a specific pipeline task by ID.
+
+### update_task
+
+```python
+client.pipeline.update_task(
+    dataview_id: int,
+    task_id: int,
+    task_spec: dict[str, Any],
+    dataset_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Update an existing pipeline task. Waits for the async job to complete.
+
+### delete_task
+
+```python
+client.pipeline.delete_task(
+    dataview_id: int,
+    task_id: int,
+    dataset_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Delete a pipeline task. This is how transformations are "undone" -- each task removal is reversible.
+
+```python
+client.pipeline.delete_task(dataview_id=1039, task_id=5678)
+```
+
+### preview_task
+
+```python
+client.pipeline.preview_task(
+    dataview_id: int,
+    task_spec: dict[str, Any],
+    dataset_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Preview task results without adding to the pipeline. Useful for testing transformations before committing.
+
+### draft_mode
+
+```python
+client.pipeline.draft_mode(
+    dataview_id: int,
+    command: str,
+    dataset_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Manage draft mode for a dataview pipeline. Draft mode lets you add multiple tasks before committing them all at once.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataview_id` | `int` | *required* | ID of the dataview |
+| `command` | `str` | *required* | `"enter"`, `"commit"`, or `"discard"` |
+
+### edit_pipeline
+
+```python
+client.pipeline.edit_pipeline(
+    dataview_id: int,
+    patches: list[dict[str, Any]],
+    dataset_id: int | None = None,
+) -> dict[str, Any]
+```
+
+PATCH pipeline with operations (auto_run, run, reset, etc.).
+
+### wait_for_pipeline
+
+```python
+client.pipeline.wait_for_pipeline(
+    dataview_id: int,
+    dataset_id: int | None = None,
+    timeout: int | None = None,
+    poll_interval: int = 3,
+) -> dict[str, Any]
+```
+
+Poll pipeline state until it reaches a terminal state (`ready`, `runtime_error`, `ref_error`).
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataview_id` | `int` | *required* | ID of the dataview |
+| `dataset_id` | `int \| None` | `None` | Dataset ID (auto-detected) |
+| `timeout` | `int \| None` | `None` | Max wait time in seconds (default: `client.pipeline_timeout`) |
+| `poll_interval` | `int` | `3` | Seconds between polls |
+
+**Raises**:
+
+- `MammothTransformError` -- if pipeline reaches `runtime_error` or `ref_error`
+- `MammothJobTimeoutError` -- if timeout is exceeded
+
+```python
+# Wait for pipeline after an external change
+pipeline = client.pipeline.wait_for_pipeline(dataview_id=1039, timeout=120)
+print(pipeline["state"])  # "ready"
+```
+
+## Pipeline states
+
+| State | Description |
+|-------|-------------|
+| `ready` | Pipeline complete, data is available |
+| `running` | Pipeline is executing tasks |
+| `modifying` | Pipeline is being modified |
+| `modified` | Changes pending execution |
+| `runtime_error` | A task failed during execution |
+| `ref_error` | A dependency reference is broken |
+
+## See also
+
+- [Views](views.md) -- Rich View objects that wrap pipeline operations
+- [Jobs](jobs.md) -- Job tracking for async operations
+- [Dataviews](dataviews.md) -- Low-level dataview CRUD
+
+
+---
+
+
+# Jobs API Reference
+
+The `JobsAPI` tracks asynchronous job status. Many Mammoth operations (data fetches, pipeline tasks, exports) create background jobs. The SDK polls these jobs automatically in most cases, but the Jobs API is available for manual control.
+
+**Access**: `client.jobs`
+
+## Methods
+
+### get_job
+
+```python
+client.jobs.get_job(
+    job_id: int,
+    timeout: int = 300,
+) -> dict[str, Any]
+```
+
+Get job status by ID.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `job_id` | `int` | *required* | ID of the job |
+| `timeout` | `int` | `300` | Request timeout (compatibility parameter) |
+
+**Returns**: Dict with job information including `status`, `response`, and timestamps.
+
+```python
+job = client.jobs.get_job(12345)
+print(job["status"])  # "success", "processing", "failure", "error"
+```
+
+### get_jobs
+
+```python
+client.jobs.get_jobs(
+    job_ids: list[int] | str,
+) -> dict[str, Any]
+```
+
+Track multiple jobs at once.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `job_ids` | `list[int] \| str` | *required* | List of job IDs or comma-separated string |
+
+**Returns**: Dict containing `jobs` list with status information.
+
+```python
+result = client.jobs.get_jobs([12345, 12346])
+for job in result.get("jobs", []):
+    print(job["id"], job["status"])
+```
+
+### wait_for_job
+
+```python
+client.jobs.wait_for_job(
+    job_id: int,
+    timeout: int | None = None,
+    poll_interval: int = 2,
+) -> dict[str, Any]
+```
+
+Wait for a job to complete by polling until it reaches a terminal state.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `job_id` | `int` | *required* | ID of the job |
+| `timeout` | `int \| None` | `None` | Maximum wait time in seconds (default: `client.job_timeout`) |
+| `poll_interval` | `int` | `2` | Seconds between polling attempts |
+
+**Returns**: Dict with completed job information.
+
+**Raises**:
+
+- `MammothJobFailedError` -- if the job fails
+- `MammothJobTimeoutError` -- if timeout is exceeded
+
+```python
+job = client.jobs.wait_for_job(12345, timeout=120)
+print(job["response"])
+```
+
+### wait_for_jobs
+
+```python
+client.jobs.wait_for_jobs(
+    job_ids: list[int] | str,
+    timeout: int | None = None,
+    poll_interval: int = 2,
+) -> dict[str, Any]
+```
+
+Wait for multiple jobs to complete.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `job_ids` | `list[int] \| str` | *required* | List of job IDs or comma-separated string |
+| `timeout` | `int \| None` | `None` | Maximum wait time in seconds (default: `client.job_timeout`) |
+| `poll_interval` | `int` | `2` | Seconds between polling attempts |
+
+**Returns**: Dict containing `jobs` list with all completed jobs.
+
+**Raises**:
+
+- `MammothJobFailedError` -- if any job fails
+- `MammothJobTimeoutError` -- if timeout is exceeded
+
+## Job statuses
+
+| Status | Description |
+|--------|-------------|
+| `processing` | Job is still running |
+| `success` | Job completed successfully |
+| `failure` | Job failed (check `response.error` for details) |
+| `error` | Job encountered an error |
+
+## See also
+
+- [Pipeline](pipeline.md) -- Pipeline tasks create jobs
+- [Exceptions](exceptions.md) -- `MammothJobFailedError`, `MammothJobTimeoutError`
+- [Job Lifecycle](../advanced/async-operations.md) -- Detailed async operations guide
+
+
+---
+
+
+# Dashboards API Reference
+
+The `DashboardsAPI` manages interactive dashboards in Mammoth. Dashboards visualize data from dataviews and can be shared with team members or embedded externally.
+
+**Access**: `client.dashboards`
+
+## Methods
+
+### list
+
+```python
+client.dashboards.list() -> list[dict[str, Any]]
+```
+
+List all dashboards accessible to the current user.
+
+**Returns**: List of dashboard dicts.
+
+```python
+dashboards = client.dashboards.list()
+for d in dashboards:
+    print(d["id"], d.get("name"))
+```
+
+### create
+
+```python
+client.dashboards.create(
+    config: dict[str, Any],
+) -> dict[str, Any]
+```
+
+Create a new dashboard.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `config` | `dict` | *required* | Dashboard configuration (name, sources, layout, etc.) |
+
+**Returns**: Dict with created dashboard info (may include job ID for async creation).
+
+### get
+
+```python
+client.dashboards.get(
+    dashboard_id: int,
+) -> dict[str, Any]
+```
+
+Get dashboard details.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dashboard_id` | `int` | *required* | ID of the dashboard |
+
+### update
+
+```python
+client.dashboards.update(
+    dashboard_id: int,
+    config: dict[str, Any],
+) -> dict[str, Any]
+```
+
+Update a dashboard configuration.
+
+### delete
+
+```python
+client.dashboards.delete(
+    dashboard_id: int,
+) -> dict[str, Any]
+```
+
+Delete a dashboard.
+
+### get_sources
+
+```python
+client.dashboards.get_sources() -> list[dict[str, Any]]
+```
+
+Get available data sources for dashboard creation.
+
+**Returns**: List of source dicts (dataviews available for charting).
+
+### get_analytics
+
+```python
+client.dashboards.get_analytics(
+    dashboard_id: int,
+) -> dict[str, Any]
+```
+
+Get dashboard analytics including view counts and active users.
+
+### share
+
+```python
+client.dashboards.share(
+    dashboard_id: int,
+    config: dict[str, Any],
+) -> dict[str, Any]
+```
+
+Share a dashboard with users or generate a public link.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dashboard_id` | `int` | *required* | ID of the dashboard |
+| `config` | `dict` | *required* | Sharing configuration (users, permissions, etc.) |
+
+### action
+
+```python
+client.dashboards.action(
+    dashboard_id: int,
+    action_config: dict[str, Any],
+) -> dict[str, Any]
+```
+
+Perform an action on a dashboard (e.g. publish, refresh).
+
+### get_by_url
+
+```python
+client.dashboards.get_by_url(
+    url: str,
+) -> dict[str, Any]
+```
+
+Get a dashboard by its URL slug.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `url` | `str` | *required* | Dashboard URL slug |
+
+### get_draft_data
+
+```python
+client.dashboards.get_draft_data(
+    dashboard_id: int,
+    sql: str,
+) -> dict[str, Any]
+```
+
+Query draft dashboard data using SQL.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dashboard_id` | `int` | *required* | ID of the dashboard |
+| `sql` | `str` | *required* | SQL query to execute against draft data |
+
+### get_publish_data
+
+```python
+client.dashboards.get_publish_data(
+    dashboard_id: int,
+    sql: str,
+) -> dict[str, Any]
+```
+
+Query published dashboard data using SQL.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dashboard_id` | `int` | *required* | ID of the dashboard |
+| `sql` | `str` | *required* | SQL query to execute against published data |
+
+## See also
+
+- [Views](views.md) -- Data sources for dashboards
+- [Exports](exports.md) -- Export data to files and databases
+
+
+---
+
+
+# Webhooks API Reference
+
+The `WebhooksAPI` manages webhook datasets -- HTTP endpoints that receive data into the Mammoth platform. Webhooks allow external systems to push data directly into Mammoth.
+
+**Access**: `client.webhooks`
+
+## Methods
+
+### list
+
+```python
+client.webhooks.list(
+    limit: int = 50,
+    offset: int = 0,
+) -> list[dict[str, Any]]
+```
+
+List webhook datasets in the current project.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | `int` | `50` | Maximum number of results |
+| `offset` | `int` | `0` | Number of results to skip |
+
+**Returns**: List of webhook dicts.
+
+```python
+webhooks = client.webhooks.list()
+for wh in webhooks:
+    print(wh["id"], wh.get("name"), wh.get("uri"))
+```
+
+### create
+
+```python
+client.webhooks.create(
+    name: str = "Generic Webhook",
+    mode: str | WebhookMode = "replace",
+    folder_resource_id: str | None = None,
+    origins: str = "*",
+    is_secure: bool = False,
+) -> dict[str, Any]
+```
+
+Create a webhook dataset.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | `str` | `"Generic Webhook"` | Name of the webhook |
+| `mode` | `str \| WebhookMode` | `"replace"` | `"replace"` (overwrite on each push) or `"combine"` (append) |
+| `folder_resource_id` | `str \| None` | `None` | Folder to place the webhook in |
+| `origins` | `str` | `"*"` | Allowed CORS origins |
+| `is_secure` | `bool` | `False` | Generate a secret for authentication |
+
+**Returns**: Dict with created webhook info including the `uri` for sending data.
+
+```python
+from mammoth.models.webhooks import WebhookMode
+
+wh = client.webhooks.create(
+    name="Sales Events",
+    mode=WebhookMode.COMBINE,
+    is_secure=True,
+)
+print(wh["uri"])  # Use this URI to send data
+```
+
+### get
+
+```python
+client.webhooks.get(
+    webhook_id: int,
+) -> dict[str, Any]
+```
+
+Get webhook details.
+
+### update
+
+```python
+client.webhooks.update(
+    webhook_id: int,
+    mode: str | WebhookMode | None = None,
+    origins: str | None = None,
+    is_secure: bool | None = None,
+) -> dict[str, Any]
+```
+
+Update a webhook using JSON Patch format.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `webhook_id` | `int` | *required* | ID of the webhook |
+| `mode` | `str \| WebhookMode \| None` | `None` | New data ingestion mode |
+| `origins` | `str \| None` | `None` | New allowed CORS origins |
+| `is_secure` | `bool \| None` | `None` | Whether the webhook requires a secret |
+
+### delete
+
+```python
+client.webhooks.delete(
+    webhook_id: int,
+) -> dict[str, Any]
+```
+
+Delete a webhook.
+
+### send_data
+
+```python
+client.webhooks.send_data(
+    webhook_uri: str,
+    data: dict[str, Any],
+) -> dict[str, Any]
+```
+
+Send data to a webhook via POST.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `webhook_uri` | `str` | *required* | Webhook URI path (e.g. `"nHC1zIl97JzgDMopgcfpOgLV"`) |
+| `data` | `dict` | *required* | Data payload to send |
+
+```python
+client.webhooks.send_data("nHC1zIl97JzgDMopgcfpOgLV", {
+    "sale_id": 1001,
+    "amount": 250.00,
+    "region": "West",
+})
+```
+
+### send_data_get
+
+```python
+client.webhooks.send_data_get(
+    webhook_uri: str,
+    params: dict[str, Any] | None = None,
+) -> dict[str, Any]
+```
+
+Send data to a webhook via GET query parameters.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `webhook_uri` | `str` | *required* | Webhook URI path |
+| `params` | `dict \| None` | `None` | Data as query parameters |
+
+## See also
+
+- [Files](files.md) -- File-based data import
+- [Connectors](connectors.md) -- Database connector import
+
+
+---
+
+
+# Automations & Schedules API Reference
+
+The SDK provides two sub-clients for automation workflows:
+
+- **`client.automations`** (`AutomationsAPI`) -- manages automations and their associated schedules in a unified interface
+- **`client.schedules`** (`SchedulesAPI`) -- manages schedules as a standalone resource
+
+## AutomationsAPI
+
+**Access**: `client.automations`
+
+### Automation methods
+
+#### list
+
+```python
+client.automations.list() -> list[dict[str, Any]]
+```
+
+List all automations in the current project.
+
+```python
+automations = client.automations.list()
+for a in automations:
+    print(a["id"], a.get("name"))
+```
+
+#### create
+
+```python
+client.automations.create(
+    config: dict[str, Any],
+) -> dict[str, Any]
+```
+
+Create a new automation.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `config` | `dict` | *required* | Automation configuration (name, triggers, actions, etc.) |
+
+#### get
+
+```python
+client.automations.get(
+    automation_id: int,
+) -> dict[str, Any]
+```
+
+Get automation details.
+
+#### update
+
+```python
+client.automations.update(
+    automation_id: int,
+    config: dict[str, Any],
+) -> dict[str, Any]
+```
+
+Update an automation.
+
+#### delete
+
+```python
+client.automations.delete(
+    automation_id: int,
+) -> dict[str, Any]
+```
+
+Delete an automation.
+
+### Schedule methods (via AutomationsAPI)
+
+#### list_schedules
+
+```python
+client.automations.list_schedules() -> list[dict[str, Any]]
+```
+
+List all schedules in the current project.
+
+#### create_schedule
+
+```python
+client.automations.create_schedule(
+    config: dict[str, Any],
+) -> dict[str, Any]
+```
+
+Create a new schedule.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `config` | `dict` | *required* | Schedule configuration (cron, timezone, actions, etc.) |
+
+#### update_schedule
+
+```python
+client.automations.update_schedule(
+    schedule_id: int,
+    config: dict[str, Any],
+) -> dict[str, Any]
+```
+
+Update a schedule.
+
+#### delete_schedule
+
+```python
+client.automations.delete_schedule(
+    schedule_id: int,
+) -> dict[str, Any]
+```
+
+Delete a schedule.
+
+---
+
+## SchedulesAPI
+
+**Access**: `client.schedules`
+
+A standalone sub-client for schedule management with explicit project_id support.
+
+### list
+
+```python
+client.schedules.list(
+    project_id: int | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> dict[str, Any]
+```
+
+List schedules in a project.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `project_id` | `int \| None` | `None` | Project ID (uses client default) |
+| `limit` | `int` | `50` | Maximum number of results |
+| `offset` | `int` | `0` | Number of results to skip |
+
+**Returns**: Dict with `schedules` list and pagination info.
+
+### get
+
+```python
+client.schedules.get(
+    schedule_id: int,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get schedule details.
+
+### create
+
+```python
+client.schedules.create(
+    config: dict[str, Any],
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Create a new schedule.
+
+### update
+
+```python
+client.schedules.update(
+    schedule_id: int,
+    config: dict[str, Any],
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Update a schedule.
+
+### delete
+
+```python
+client.schedules.delete(
+    schedule_id: int,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Delete a schedule.
+
+## See also
+
+- [Pipeline](pipeline.md) -- Transformation tasks triggered by automations
+- [Webhooks](webhooks.md) -- Event-driven data ingestion
+
+
+---
+
+
+# Workspace & Users API Reference
+
+The SDK provides two sub-clients for workspace and user management:
+
+- **`client.workspaces`** (`WorkspaceAPI`) -- workspace CRUD and user management
+- **`client.user_profile`** (`UserProfileAPI`) -- current user profile and preferences
+
+## WorkspaceAPI
+
+**Access**: `client.workspaces`
+
+### list
+
+```python
+client.workspaces.list(
+    limit: int = 100,
+) -> dict[str, Any]
+```
+
+List all accessible workspaces.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | `int` | `100` | Maximum number of results |
+
+**Returns**: Dict containing `workspaces` list with `id` and `name`.
+
+```python
+resp = client.workspaces.list()
+for ws in resp.get("workspaces", []):
+    print(ws["id"], ws["name"])
+```
+
+### get
+
+```python
+client.workspaces.get(
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get details of a specific workspace.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `workspace_id` | `int \| None` | `None` | Workspace ID (uses client default if not provided) |
+
+### update
+
+```python
+client.workspaces.update(
+    config: dict[str, Any],
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Update workspace settings.
+
+### delete
+
+```python
+client.workspaces.delete(
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Delete a workspace.
+
+### reactivate
+
+```python
+client.workspaces.reactivate(
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Reactivate a deactivated workspace.
+
+### list_users
+
+```python
+client.workspaces.list_users(
+    workspace_id: int | None = None,
+) -> list[dict[str, Any]]
+```
+
+List all users in a workspace.
+
+**Returns**: List of user dicts.
+
+```python
+users = client.workspaces.list_users()
+for u in users:
+    print(u.get("email"), u.get("role"))
+```
+
+### get_user
+
+```python
+client.workspaces.get_user(
+    user_id: str,
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get details of a specific user.
+
+### update_user
+
+```python
+client.workspaces.update_user(
+    user_id: str,
+    config: dict[str, Any],
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Update a user's settings in the workspace.
+
+---
+
+## UserProfileAPI
+
+**Access**: `client.user_profile`
+
+Manages the current authenticated user's profile and preferences.
+
+### get
+
+```python
+client.user_profile.get() -> dict[str, Any]
+```
+
+Get the current user's profile information.
+
+```python
+profile = client.user_profile.get()
+print(profile.get("name"), profile.get("email"))
+```
+
+### update
+
+```python
+client.user_profile.update(**fields: Any) -> dict[str, Any]
+```
+
+Update the current user's profile.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `**fields` | `Any` | Profile fields to update (name, email, etc.) |
+
+```python
+client.user_profile.update(name="Jane Doe")
+```
+
+### change_password
+
+```python
+client.user_profile.change_password(
+    current_password: str,
+    new_password: str,
+) -> dict[str, Any]
+```
+
+Change the current user's password.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `current_password` | `str` | Current password |
+| `new_password` | `str` | New password |
+
+### get_preferences
+
+```python
+client.user_profile.get_preferences() -> dict[str, Any]
+```
+
+Get user preferences (UI settings, notifications, etc.).
+
+### update_preferences
+
+```python
+client.user_profile.update_preferences(**prefs: Any) -> dict[str, Any]
+```
+
+Update user preferences.
+
+## See also
+
+- [Projects](projects.md) -- Project management within workspaces
+- [Authentication](../authentication.md) -- API credentials setup
+- [Client](client.md) -- MammothClient overview
+
+
+---
+
+
+# Other APIs Reference
+
+This page covers smaller utility sub-clients that provide access to folders, batches, browse, client apps, external keys, activity logs, addons, reports, and AI features.
+
+---
+
+## FoldersAPI
+
+**Access**: `client.folders`
+
+Manage folders within projects for organizing datasets and resources.
+
+### list
+
+```python
+client.folders.list(
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+    fields: str | None = None,
+    folder_ids: list[int] | None = None,
+    names: list[str] | None = None,
+    statuses: list[str] | None = None,
+    created_at: str | None = None,
+    updated_at: str | None = None,
+    created_by: list[str] | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    sort: str | None = None,
+) -> FoldersList
+```
+
+List folders with filtering and pagination. Returns a `FoldersList` Pydantic model.
+
+```python
+folders = client.folders.list()
+```
+
+### create
+
+```python
+client.folders.create(
+    name: str,
+    parent_resource_id: str | None = None,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> FolderDetails
+```
+
+Create a new folder. Returns a `FolderDetails` Pydantic model.
+
+```python
+folder = client.folders.create(name="Reports")
+```
+
+### delete
+
+```python
+client.folders.delete(
+    folder_ids: list[int],
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+    check_dependency: bool = True,
+    remove_contents: bool = True,
+) -> None
+```
+
+Delete folders.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `folder_ids` | `list[int]` | *required* | List of folder IDs to delete |
+| `check_dependency` | `bool` | `True` | Check for dependencies before deleting |
+| `remove_contents` | `bool` | `True` | Remove folder contents before deleting |
+
+### move
+
+```python
+client.folders.move(
+    resource_ids: list[str],
+    target_folder_resource_id: str | None = None,
+    source_folder_resource_id: str | None = None,
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> ObjectJobSchema
+```
+
+Move resources between folders. Returns an `ObjectJobSchema` with job information.
+
+---
+
+## BatchesAPI
+
+**Access**: `client.batches`
+
+Manage dataset batches (data upload/refresh events).
+
+### list
+
+```python
+client.batches.list(
+    dataset_id: int,
+    project_id: int | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> dict[str, Any]
+```
+
+List batches for a dataset.
+
+### get
+
+```python
+client.batches.get(
+    dataset_id: int,
+    batch_id: int,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get batch details.
+
+### create
+
+```python
+client.batches.create(
+    dataset_id: int,
+    config: dict[str, Any],
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Create a new batch for a dataset.
+
+### update
+
+```python
+client.batches.update(
+    dataset_id: int,
+    config: dict[str, Any],
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Update batches for a dataset.
+
+### delete
+
+```python
+client.batches.delete(
+    dataset_id: int,
+    batch_id: int,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Delete a batch.
+
+---
+
+## BrowseAPI
+
+**Access**: `client.browse`
+
+Quick resource discovery and navigation through the hierarchy.
+
+### workspaces
+
+```python
+client.browse.workspaces() -> dict[str, Any]
+```
+
+Browse available workspaces.
+
+### projects
+
+```python
+client.browse.projects(
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Browse projects in a workspace.
+
+### datasets
+
+```python
+client.browse.datasets(
+    project_id: int | None = None,
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Browse datasets in a project.
+
+### dataviews
+
+```python
+client.browse.dataviews(
+    dataset_id: int,
+    project_id: int | None = None,
+    workspace_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Browse dataviews in a dataset.
+
+```python
+# Walk the hierarchy
+projects = client.browse.projects()
+datasets = client.browse.datasets(project_id=10)
+dataviews = client.browse.dataviews(dataset_id=42)
+```
+
+---
+
+## ClientAppsAPI
+
+**Access**: `client.client_apps`
+
+Manage API tokens and client applications. Client apps generate API key/secret pairs for programmatic access.
+
+### list
+
+```python
+client.client_apps.list(
+    workspace_id: int | None = None,
+    limit: int = 10,
+    offset: int = 0,
+    fields: str | None = None,
+    sort: str | None = None,
+) -> ClientAppsListResponse
+```
+
+List client apps. Returns a `ClientAppsListResponse` Pydantic model.
+
+### create
+
+```python
+client.client_apps.create(
+    app_name: str,
+    description: str | None = None,
+    workspace_id: int | None = None,
+) -> ClientAppPostResponse
+```
+
+Create a new client app to generate API tokens. Returns a `ClientAppPostResponse` with the app details and tokens.
+
+```python
+app = client.client_apps.create(app_name="My Integration")
+print(app.api_key, app.api_secret)
+```
+
+### get
+
+```python
+client.client_apps.get(
+    client_key: str,
+    workspace_id: int | None = None,
+    fields: str | None = None,
+) -> ClientAppSchema
+```
+
+Get details of a specific client app.
+
+### update
+
+```python
+client.client_apps.update(
+    client_key: str,
+    patch_request: PatchRequest,
+    workspace_id: int | None = None,
+) -> ClientAppSchema
+```
+
+Update client app details.
+
+### delete
+
+```python
+client.client_apps.delete(
+    client_key: str,
+    workspace_id: int | None = None,
+) -> None
+```
+
+Delete a client app.
+
+---
+
+## ExternalKeysAPI
+
+**Access**: `client.external_keys`
+
+Manage external API keys for workspace integrations.
+
+### list
+
+```python
+client.external_keys.list() -> dict[str, Any]
+```
+
+List all external API keys.
+
+### get
+
+```python
+client.external_keys.get(key_id: int) -> dict[str, Any]
+```
+
+Get external key details.
+
+### create
+
+```python
+client.external_keys.create(config: dict[str, Any]) -> dict[str, Any]
+```
+
+Create a new external API key.
+
+### delete
+
+```python
+client.external_keys.delete(key_id: int) -> dict[str, Any]
+```
+
+Delete an external API key.
+
+---
+
+## ActivityLogsAPI
+
+**Access**: `client.activity_logs`
+
+Query and export activity logs for audit purposes.
+
+### list
+
+```python
+client.activity_logs.list(
+    limit: int = 50,
+    offset: int = 0,
+    sort: str | None = None,
+    **filters: Any,
+) -> dict[str, Any]
+```
+
+List activity logs with pagination and filtering.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | `int` | `50` | Maximum number of results |
+| `offset` | `int` | `0` | Number of results to skip |
+| `sort` | `str \| None` | `None` | Sort specification |
+| `**filters` | `Any` | | Additional filters (user, action, resource, etc.) |
+
+```python
+logs = client.activity_logs.list(limit=20)
+```
+
+### export
+
+```python
+client.activity_logs.export(
+    format: str = "csv",
+    **filters: Any,
+) -> dict[str, Any]
+```
+
+Export activity logs to a file.
+
+---
+
+## AddonsAPI
+
+**Access**: `client.addons`
+
+Manage workspace addons for connectors, storage, and user capacity.
+
+### add_connector / remove_connector
+
+```python
+client.addons.add_connector(config: dict[str, Any]) -> dict[str, Any]
+client.addons.remove_connector(config: dict[str, Any]) -> dict[str, Any]
+```
+
+### add_storage / remove_storage
+
+```python
+client.addons.add_storage(config: dict[str, Any]) -> dict[str, Any]
+client.addons.remove_storage(config: dict[str, Any]) -> dict[str, Any]
+```
+
+### add_users / remove_users
+
+```python
+client.addons.add_users(config: dict[str, Any]) -> dict[str, Any]
+client.addons.remove_users(config: dict[str, Any]) -> dict[str, Any]
+```
+
+---
+
+## ReportsAPI
+
+**Access**: `client.reports`
+
+List workspace reports.
+
+### list
+
+```python
+client.reports.list(
+    limit: int = 50,
+    offset: int = 0,
+) -> dict[str, Any]
+```
+
+List all reports.
+
+---
+
+## AIAPI
+
+**Access**: `client.ai`
+
+AI-powered features including profiling, data generation, SQL generation, and suggestions.
+
+### generate_profile
+
+```python
+client.ai.generate_profile(
+    dataview_id: int,
+    dataset_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Generate an AI profile/summary of the dataview data. Waits for the async job.
+
+### generate_data
+
+```python
+client.ai.generate_data(
+    dataview_id: int,
+    config: dict[str, Any],
+    dataset_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Generate synthetic data for a dataview.
+
+### get_data_gen_info
+
+```python
+client.ai.get_data_gen_info(
+    dataview_id: int,
+    dataset_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Get data generation information for a dataview.
+
+### generate_sql
+
+```python
+client.ai.generate_sql(
+    intent: str,
+    sequence_number: int = 0,
+) -> dict[str, Any]
+```
+
+Generate SQL from natural language intent.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `intent` | `str` | *required* | Natural language description of the query |
+| `sequence_number` | `int` | `0` | Sequence number for the request |
+
+```python
+result = client.ai.generate_sql("total sales by region for Q4")
+```
+
+### get_suggestions
+
+```python
+client.ai.get_suggestions() -> dict[str, Any]
+```
+
+Get AI-powered transformation suggestions for the current project.
+
+### query_gen
+
+```python
+client.ai.query_gen(
+    connector_key: str,
+    connection_key: str,
+    prompt: str,
+    project_id: int | None = None,
+) -> dict[str, Any]
+```
+
+Generate a query for a connector using AI.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `connector_key` | `str` | *required* | Connector type key |
+| `connection_key` | `str` | *required* | Connection key |
+| `prompt` | `str` | *required* | Natural language prompt describing the query |
+
+## See also
+
+- [Client](client.md) -- Full list of sub-clients
+- [Projects](projects.md) -- Project management
+- [Datasets](datasets.md) -- Dataset management
+
+
+---
+
+
+# End-to-End Workflow
+
+This guide walks through a complete Mammoth SDK workflow: install, authenticate, upload data, apply transformations, and export results.
+
+## 1. Install the SDK
+
+```bash
+pip install mammoth-io
+```
+
+Requires Python 3.10+.
+
+## 2. Authenticate
+
+```python
+import os
+from mammoth import MammothClient
+
+client = MammothClient(
+    api_key=os.getenv("MAMMOTH_API_KEY"),
+    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    workspace_id=11,  # your workspace ID
+)
+
+# Set the project to work in
+client.set_project_id(42)
+```
+
+!!! tip "Extract IDs from a Mammoth URL"
+    ```python
+    from mammoth import parse_path
+
+    ids = parse_path("https://app.mammoth.io/#/workspaces/11/projects/42/views/1039")
+    # {"workspace_id": 11, "project_id": 42, "dataview_id": 1039}
+    ```
+
+## 3. Upload a file
+
+```python
+# Upload a CSV file -- returns the new dataset ID
+dataset_id = client.files.upload("sales_data.csv")
+print(f"Created dataset: {dataset_id}")
+
+# Get the default View for the uploaded dataset
+views = client.views.list(dataset_id)
+view = views[0]
+```
+
+Other upload options:
+
+```python
+# Multiple files at once
+dataset_ids = client.files.upload(["sales.csv", "customers.xlsx"])
+
+# Upload an entire folder
+dataset_ids = client.files.upload_folder("./data/")
+
+# Append to an existing dataset
+client.files.upload("new_rows.csv", append_to_ds_id=dataset_id)
+```
+
+See the [Files API reference](../api/files.md) for the full `upload()` signature.
+
+## 4. Inspect the View
+
+```python
+print(f"View: {view.name}")
+print(f"Columns: {view.display_names}")
+# e.g., ["Customer", "Region", "Sales", "Order Date"]
+
+print(f"Types: {view.column_types}")
+# e.g., {"Customer": "TEXT", "Region": "TEXT", "Sales": "NUMERIC", "Order Date": "TEXT"}
+
+# Preview the data — returns {"data": [rows...], "paging": {...}}
+result = view.data(limit=5)
+rows = result["data"]
+```
+
+!!! note "CSV dates upload as TEXT"
+    Date columns in CSV files are uploaded as TEXT type. Use `convert_type()` to convert them before applying date operations:
+
+    ```python
+    from mammoth import ConversionSpec
+
+    view.convert_type([ConversionSpec(column="Order Date", to="DATE", format="MM/DD/YYYY")])
+    ```
+
+## 5. Apply transformations
+
+### Filter rows
+
+```python
+from mammoth import Condition, Operator, FilterType
+
+# Keep rows where Sales >= 1000
+view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+
+# Remove rows where Region is empty
+view.filter_rows(
+    Condition("Region", Operator.IS_EMPTY),
+    filter_type=FilterType.REMOVE,
+)
+
+# Negate a condition with ~
+view.filter_rows(~Condition("Status", Operator.EQ, "Cancelled"))
+```
+
+### Add computed columns
+
+```python
+from mammoth import ColumnType, SetValue
+
+# Conditional labeling
+view.set_values(
+    new_column="Tier",
+    column_type=ColumnType.TEXT,
+    values=[
+        SetValue("Premium", condition=Condition("Sales", Operator.GTE, 10000)),
+        SetValue("Standard", condition=Condition("Sales", Operator.GTE, 1000)),
+        SetValue("Basic"),
+    ],
+)
+
+# Math expression
+view.math("Price * Quantity", new_column="Revenue")
+```
+
+### Aggregate with pivot
+
+```python
+from mammoth import AggregateFunction, AggregationSpec
+
+view.pivot(
+    group_by=["Region"],
+    aggregations=[
+        AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total Sales"),
+        AggregationSpec(column="Sales", function=AggregateFunction.AVG, as_name="Avg Sales"),
+        AggregationSpec(column="Sales", function=AggregateFunction.COUNT, as_name="Order Count"),
+    ],
+)
+```
+
+### Other common transformations
+
+```python
+from mammoth import TextCase, DateComponent, WindowFunction, SortDirection
+
+# Text: change case
+view.text_transform(["Customer"], case=TextCase.UPPER)
+
+# Date: extract year
+view.extract_date("Order Date", DateComponent.YEAR, new_column="Year")
+
+# Window: rank within groups
+view.window(
+    function=WindowFunction.ROW_NUMBER,
+    new_column="Rank",
+    partition_by=["Region"],
+    order_by=[["Sales", SortDirection.DESC]],
+)
+```
+
+See the [Views reference](../api/views.md) for all 25+ transformation methods.
+
+## 6. Export results
+
+### Download as CSV
+
+```python
+path = view.export.to_csv("output.csv")
+print(f"Saved to {path}")
+```
+
+### Export to S3
+
+```python
+result = view.export.to_s3(file_name="monthly_report.csv")
+```
+
+### Export to a database
+
+```python
+# PostgreSQL
+view.export.to_postgres(
+    host="db.example.com",
+    port=5432,
+    database="analytics",
+    table="sales_summary",
+    username="user",
+    password="pass",
+)
+
+# MySQL
+view.export.to_mysql(
+    host="db.example.com",
+    port=3306,
+    database="analytics",
+    table="sales_summary",
+    username="user",
+    password="pass",
+)
+```
+
+### Other export targets
+
+```python
+view.export.to_bigquery(...)
+view.export.to_redshift(...)
+view.export.to_sftp(host="sftp.example.com", path="/exports/data.csv", username="user", password="pass")
+view.export.to_email(recipients=["team@example.com"])
+```
+
+See the [Exports reference](../api/exports.md) for all destinations.
+
+## Complete script
+
+Here's a full, copy-paste-ready script:
+
+```python
+import os
+from mammoth import (
+    MammothClient,
+    Condition,
+    Operator,
+    ColumnType,
+    SetValue,
+    AggregateFunction,
+    AggregationSpec,
+    FilterType,
+    MammothAPIError,
+)
+
+# 1. Authenticate
+client = MammothClient(
+    api_key=os.getenv("MAMMOTH_API_KEY"),
+    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    workspace_id=11,
+)
+client.set_project_id(42)
+
+try:
+    # 2. Upload data
+    dataset_id = client.files.upload("sales_data.csv")
+    views = client.views.list(dataset_id)
+    view = views[0]
+    print(f"Uploaded: {view.name} ({len(view.display_names)} columns)")
+
+    # 3. Clean data
+    view.filter_rows(
+        Condition("Region", Operator.IS_EMPTY),
+        filter_type=FilterType.REMOVE,
+    )
+    view.filter_rows(Condition("Sales", Operator.GTE, 0))
+
+    # 4. Transform
+    view.set_values(
+        new_column="Tier",
+        column_type=ColumnType.TEXT,
+        values=[
+            SetValue("Premium", condition=Condition("Sales", Operator.GTE, 10000)),
+            SetValue("Standard", condition=Condition("Sales", Operator.GTE, 1000)),
+            SetValue("Basic"),
+        ],
+    )
+    view.math("Price * Quantity", new_column="Revenue")
+
+    # 5. Export
+    path = view.export.to_csv("output.csv")
+    print(f"Exported to {path}")
+
+except MammothAPIError as e:
+    print(f"API error: {e.message} (HTTP {e.status_code})")
+```
+
+## See also
+
+- [Quick Start](../quick-start.md) -- shorter getting-started guide
+- [Files API](../api/files.md) -- full upload/file management reference
+- [Views API](../api/views.md) -- all transformation methods
+- [Conditions](../api/conditions.md) -- filter builder with `&`, `|`, `~`
+- [Exports](../api/exports.md) -- all export destinations
+- [Transformation examples](../examples/transformations.md) -- more transformation workflows
 
 
 ---
