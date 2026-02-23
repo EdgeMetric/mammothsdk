@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
-import sys
+import logging.config
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
@@ -200,7 +201,14 @@ from mammoth_mcp.tools import (  # noqa: E402
 # ── Entry points ─────────────────────────────────────────────
 
 def create_app():
-    """ASGI app factory for uvicorn (remote mode)."""
+    """ASGI app factory for uvicorn (remote mode).
+
+    Configures logging here so it works both when called from main()
+    (log_config passed to uvicorn) and when run directly via
+    ``uvicorn mammoth_mcp.server:create_app --factory``.
+    """
+    _configure_logging()
+
     from starlette.middleware.cors import CORSMiddleware
     from starlette.requests import Request
     from starlette.responses import JSONResponse
@@ -242,6 +250,57 @@ def create_app():
     return app
 
 
+def _build_log_config() -> dict:
+    """Build a logging dictConfig that uvicorn and stdlib both understand.
+
+    Creates the log file's parent directory if it doesn't exist.
+    """
+    level = settings.log_level.upper()
+
+    formatters: dict = {
+        "default": {
+            "format": "%(asctime)s %(levelname)s %(name)s: %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    }
+    if settings.log_format == "json":
+        formatters["default"] = {
+            "()": f"{__name__}._JsonFormatter",
+        }
+
+    handlers: dict = {
+        "stderr": {
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stderr",
+            "formatter": "default",
+        },
+    }
+    handler_names = ["stderr"]
+
+    if settings.log_file:
+        os.makedirs(os.path.dirname(settings.log_file), exist_ok=True)
+        handlers["file"] = {
+            "class": "logging.FileHandler",
+            "filename": settings.log_file,
+            "formatter": "default",
+        }
+        handler_names.append("file")
+
+    return {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": formatters,
+        "handlers": handlers,
+        "root": {"level": level, "handlers": handler_names},
+        # Keep uvicorn's own loggers using the same config
+        "loggers": {
+            "uvicorn": {"level": level, "handlers": handler_names, "propagate": False},
+            "uvicorn.error": {"level": level},
+            "uvicorn.access": {"level": level},
+        },
+    }
+
+
 class _JsonFormatter(logging.Formatter):
     """Structured JSON log formatter for log aggregators."""
 
@@ -257,29 +316,16 @@ class _JsonFormatter(logging.Formatter):
 
 
 def _configure_logging() -> None:
-    """Set up logging to stderr and optionally to a file."""
-    level = getattr(logging, settings.log_level.upper(), logging.INFO)
-    fmt = "%(asctime)s %(levelname)s %(name)s: %(message)s"
-    datefmt = "%Y-%m-%d %H:%M:%S"
-
-    handlers: list[logging.Handler] = [logging.StreamHandler(sys.stderr)]
-    if settings.log_file:
-        handlers.append(logging.FileHandler(settings.log_file))
-
-    if settings.log_format == "json":
-        for h in handlers:
-            h.setFormatter(_JsonFormatter())
-        logging.basicConfig(level=level, handlers=handlers)
-    else:
-        logging.basicConfig(level=level, handlers=handlers, format=fmt, datefmt=datefmt)
+    """Apply log config via dictConfig. Works for both main() and create_app()."""
+    logging.config.dictConfig(_build_log_config())
 
 
 def main() -> None:
     """Run the MCP server."""
-    _configure_logging()
     if settings.mode == "remote":
         import uvicorn
 
+        log_config = _build_log_config()
         logger.info("Starting remote MCP server on %s:%s", settings.host, settings.port)
         uvicorn.run(
             "mammoth_mcp.server:create_app",
@@ -287,10 +333,11 @@ def main() -> None:
             host=settings.host,
             port=settings.port,
             log_level=settings.log_level.lower(),
-            log_config=None,  # preserve our logging config (FileHandler etc.)
+            log_config=log_config,
             timeout_graceful_shutdown=30,
         )
     else:
+        _configure_logging()
         mcp.run(transport="stdio")
 
 
