@@ -36,7 +36,9 @@ async def lifespan(server: FastMCP) -> AsyncIterator[dict[str, Any]]:
         try:
             yield {"registry": _shared_registry}
         finally:
-            pass  # Redis stays open across sessions
+            if _shared_token_store:
+                await _shared_token_store.close()
+            logger.info("Mammoth MCP server shut down")
     else:
         config = MammothConfig.from_env()
         logger.info(
@@ -76,6 +78,7 @@ def _build_server() -> FastMCP:
             redis_url=settings.redis_url,
             auth_code_ttl=settings.auth_code_ttl,
             access_token_ttl=settings.access_token_ttl,
+            encryption_key=settings.encryption_key,
         )
         _shared_registry = UserClientRegistry(
             _shared_token_store,
@@ -186,16 +189,58 @@ def get_enums() -> str:
 def create_app():
     """ASGI app factory for uvicorn (remote mode)."""
     from starlette.middleware.cors import CORSMiddleware
+    from starlette.requests import Request
+    from starlette.responses import JSONResponse
+    from starlette.routing import Route
+
+    from mammoth_mcp.rate_limit import RateLimitMiddleware
 
     app = mcp.streamable_http_app()
+
+    # ── Health check endpoint ────────────────────────────────
+    async def health_check(request: Request) -> JSONResponse:
+        try:
+            if _shared_token_store:
+                await _shared_token_store._r.ping()
+            return JSONResponse({"status": "healthy", "redis": "connected"})
+        except Exception as e:
+            return JSONResponse(
+                {"status": "unhealthy", "redis": str(e)}, status_code=503
+            )
+
+    app.routes.insert(0, Route("/health", health_check, methods=["GET"]))
+
+    # ── Rate limiting ────────────────────────────────────────
+    app.add_middleware(
+        RateLimitMiddleware,
+        redis_url=settings.redis_url,
+        rpm=settings.rate_limit_rpm,
+        burst=settings.rate_limit_burst,
+    )
+
+    # ── CORS ─────────────────────────────────────────────────
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=settings.cors_origins,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "Mcp-Session-Id"],
         expose_headers=["Mcp-Session-Id", "WWW-Authenticate"],
     )
     return app
+
+
+class _JsonFormatter(logging.Formatter):
+    """Structured JSON log formatter for log aggregators."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        import json as _json
+
+        return _json.dumps({
+            "ts": self.formatTime(record, "%Y-%m-%dT%H:%M:%S"),
+            "level": record.levelname,
+            "logger": record.name,
+            "msg": record.getMessage(),
+        })
 
 
 def _configure_logging() -> None:
@@ -208,7 +253,12 @@ def _configure_logging() -> None:
     if settings.log_file:
         handlers.append(logging.FileHandler(settings.log_file))
 
-    logging.basicConfig(level=level, handlers=handlers, format=fmt, datefmt=datefmt)
+    if settings.log_format == "json":
+        for h in handlers:
+            h.setFormatter(_JsonFormatter())
+        logging.basicConfig(level=level, handlers=handlers)
+    else:
+        logging.basicConfig(level=level, handlers=handlers, format=fmt, datefmt=datefmt)
 
 
 def main() -> None:
@@ -224,6 +274,7 @@ def main() -> None:
             host=settings.host,
             port=settings.port,
             log_level=settings.log_level.lower(),
+            timeout_graceful_shutdown=30,
         )
     else:
         mcp.run(transport="stdio")

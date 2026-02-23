@@ -26,6 +26,7 @@ redis = {version = "^5.0", extras = ["hiredis"]}
 httpx = "^0.28"
 pydantic-settings = "^2.0"
 uvicorn = {version = "^0.34", extras = ["standard"]}
+cryptography = "^44.0"
 
 [tool.poetry.scripts]
 mammoth-mcp = "mammoth_mcp.server:main"

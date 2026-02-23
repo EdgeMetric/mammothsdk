@@ -1,0 +1,65 @@
+# Mammoth Analytics Python SDK
+
+> Official Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data pipelines, apply 25+ transformations, and export results — all from Python.
+
+## Installation
+
+```
+pip install mammoth-io
+```
+
+## Quick Start
+
+```python
+from mammoth import MammothClient, Condition, Operator
+
+client = MammothClient(
+    api_key="your-api-key",
+    api_secret="your-api-secret",
+    workspace_id=11,
+)
+client.set_project_id(10)
+
+view = client.views.get(1039)
+view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+```
+
+## Documentation
+
+- [Installation](https://docs.mammoth.io/installation/): Requirements, pip/Poetry setup, dev tools
+- [Quick Start](https://docs.mammoth.io/quick-start/): 7-step guide from install to export
+- [Authentication](https://docs.mammoth.io/authentication/): API keys, environment variables, security
+- [Client](https://docs.mammoth.io/api/client/): MammothClient entry point and sub-clients
+- [Views](https://docs.mammoth.io/api/views/): View objects with 25+ transformation methods
+- [Files](https://docs.mammoth.io/api/files/): Upload CSV/Excel, create datasets
+- [Conditions](https://docs.mammoth.io/api/conditions/): Filter builder with & | ~ operators
+- [Enums](https://docs.mammoth.io/api/enums/): All parameter enums (Operator, ColumnType, JoinType, etc.)
+- [Exports](https://docs.mammoth.io/api/exports/): CSV download, S3, PostgreSQL, BigQuery
+- [Exceptions](https://docs.mammoth.io/api/exceptions/): Error types and handling
+- [End-to-End Workflow](https://docs.mammoth.io/guides/end-to-end-workflow/): Complete pipeline guide
+- [Transformations](https://docs.mammoth.io/examples/transformations/): All transformation examples
+- [Basic Usage](https://docs.mammoth.io/examples/basic-usage/): Common patterns
+- [Error Handling](https://docs.mammoth.io/examples/error-handling/): Error recovery patterns
+- [Configuration](https://docs.mammoth.io/advanced/configuration/): Timeouts, base URL, environment
+- [Job Lifecycle](https://docs.mammoth.io/advanced/async-operations/): Pipeline jobs, polling, timeouts
+- [Integrations](https://docs.mammoth.io/advanced/integrations/): Third-party integrations
+- [Troubleshooting](https://docs.mammoth.io/advanced/troubleshooting/): Common issues and fixes
+- [Changelog](https://docs.mammoth.io/changelog/): Version history
+
+## Complete Reference
+
+For the full SDK documentation in a single file, see [llms-full.txt](https://docs.mammoth.io/llms-full.txt).
+
+## Key Concepts
+
+- **Workspace** → **Project** → **Dataset** → **View** (data hierarchy)
+- All transformation methods use **display column names** (auto-resolved to internal IDs)
+- Transformations are pipeline tasks: applied server-side, reversible, auditable
+- Conditions use operator overloading: `Condition("A", op, val) & Condition("B", op, val)`
+- All enums extend `str, Enum` for JSON serialization and IDE autocomplete
+
+## Links
+
+- PyPI: https://pypi.org/project/mammoth-io/
+- GitHub: https://github.com/EdgeMetric/mm-pysdk
+- Platform: https://mammoth.io
