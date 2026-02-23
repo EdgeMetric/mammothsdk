@@ -2,25 +2,11 @@
 
 from __future__ import annotations
 
-from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
-
-    @field_validator("cors_origins", mode="before")
-    @classmethod
-    def _parse_cors_origins(cls, v: object) -> object:
-        """Accept comma-separated string or JSON list from env vars."""
-        if isinstance(v, str):
-            v = v.strip()
-            if v.startswith("["):
-                import json
-
-                return json.loads(v)
-            return [s.strip().strip("\"'") for s in v.split(",") if s.strip()]
-        return v
 
     # Server
     host: str = "0.0.0.0"
