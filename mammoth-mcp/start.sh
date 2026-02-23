@@ -34,6 +34,7 @@ _read_env() {
 PORT="${PORT:-$(_read_env PORT)}"
 HOST="${HOST:-$(_read_env HOST)}"
 LOG_FILE="${LOG_FILE:-$(_read_env LOG_FILE)}"
+SERVER_URL="${SERVER_URL:-$(_read_env SERVER_URL)}"
 
 # Base port from PORT env var (same as settings.py default)
 BASE_PORT="${PORT:-8000}"
@@ -73,10 +74,15 @@ _start() {
         return 0
     fi
 
+    # Each profile needs its own SERVER_URL so OAuth endpoints route correctly
+    # behind the nginx path-based proxy (e.g. /transformations/, /import/, /admin/).
+    local profile_url="${SERVER_URL:+${SERVER_URL}/${profile}}"
+
     echo "  Starting ${profile} on ${HOST}:${port}..."
     MCP_PROFILE="$profile" \
     PORT="$port" \
     MODE=remote \
+    ${profile_url:+SERVER_URL="$profile_url"} \
         poetry run uvicorn mammoth_mcp.server:create_app \
             --factory \
             --host "$HOST" \
@@ -141,6 +147,13 @@ case "${1:-start}" in
         echo "  transformations → http://${HOST}:${TRANSFORMATIONS_PORT}"
         echo "  import          → http://${HOST}:${IMPORT_PORT}"
         echo "  admin           → http://${HOST}:${ADMIN_PORT}"
+        if [ -n "${SERVER_URL:-}" ]; then
+            echo ""
+            echo "Public MCP endpoints:"
+            echo "  transformations → ${SERVER_URL}/transformations/mcp"
+            echo "  import          → ${SERVER_URL}/import/mcp"
+            echo "  admin           → ${SERVER_URL}/admin/mcp"
+        fi
         ;;
     stop)
         echo "Stopping Mammoth MCP servers..."
