@@ -71,7 +71,7 @@ _start() {
     MCP_PROFILE="$profile" \
     PORT="$port" \
     MODE=remote \
-        python -m uvicorn mammoth_mcp.server:create_app \
+        poetry run uvicorn mammoth_mcp.server:create_app \
             --factory \
             --host "$HOST" \
             --port "$port" \
