@@ -287,6 +287,7 @@ def main() -> None:
             host=settings.host,
             port=settings.port,
             log_level=settings.log_level.lower(),
+            log_config=None,  # preserve our logging config (FileHandler etc.)
             timeout_graceful_shutdown=30,
         )
     else:
