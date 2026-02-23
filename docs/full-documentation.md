@@ -607,36 +607,36 @@ view.export.to_csv("output.csv")
 
 | Section | Description |
 |---------|-------------|
-| [Installation](installation.md) | Install the SDK and set up your environment |
-| [Quick Start](quick-start.md) | Get up and running in five minutes |
-| [Authentication](authentication.md) | API credentials and authentication |
+| [Installation](#installation) | Install the SDK and set up your environment |
+| [Quick Start](#quick-start-guide) | Get up and running in five minutes |
+| [Authentication](#authentication) | API credentials and authentication |
 | **Core** | |
-| [Client API](api/client.md) | `MammothClient` constructor, sub-clients, and methods |
-| [Views](api/views.md) | `View` class -- properties, transformations, data access |
-| [Conditions](api/conditions.md) | `Condition`, `CompoundCondition`, and `NotCondition` filter builder |
-| [Enums](api/enums.md) | All enums: `Operator`, `ColumnType`, `JoinType`, and more |
-| [Exceptions](api/exceptions.md) | Error classes and handling |
+| [Client API](#client-api-reference) | `MammothClient` constructor, sub-clients, and methods |
+| [Views](#views-reference) | `View` class -- properties, transformations, data access |
+| [Conditions](#conditions-reference) | `Condition`, `CompoundCondition`, and `NotCondition` filter builder |
+| [Enums](#enums-reference) | All enums: `Operator`, `ColumnType`, `JoinType`, and more |
+| [Exceptions](#exceptions-reference) | Error classes and handling |
 | **Import** | |
-| [Files](api/files.md) | `FilesAPI` -- upload, list, and manage files |
-| [Connectors](api/connectors.md) | `ConnectorsAPI` -- database and cloud connectors |
+| [Files](#files-api-reference) | `FilesAPI` -- upload, list, and manage files |
+| [Connectors](#connectors-api-reference) | `ConnectorsAPI` -- database and cloud connectors |
 | **Transform** | |
-| [Transformations](examples/transformations.md) | Practical transformation workflow examples |
+| [Transformations](#transformation-examples) | Practical transformation workflow examples |
 | **Export** | |
-| [Exports](api/exports.md) | `ViewExport` and `ExportsAPI` -- CSV, S3, databases |
+| [Exports](#exports-reference) | `ViewExport` and `ExportsAPI` -- CSV, S3, databases |
 | **Manage** | |
-| [Projects](api/projects.md) | `ProjectsAPI` -- project CRUD and user management |
-| [Datasets](api/datasets.md) | `DatasetsAPI` -- dataset CRUD and data access |
-| [Dataviews](api/dataviews.md) | `DataviewsAPI` -- low-level dataview operations |
-| [Pipeline](api/pipeline.md) | `PipelineAPI` -- transformation pipeline management |
-| [Jobs](api/jobs.md) | `JobsAPI` -- async job tracking |
-| [Dashboards](api/dashboards.md) | `DashboardsAPI` -- dashboard management |
-| [Webhooks](api/webhooks.md) | `WebhooksAPI` -- webhook datasets |
-| [Automations](api/automations.md) | `AutomationsAPI` and `SchedulesAPI` |
-| [Workspace](api/workspace.md) | `WorkspaceAPI` and `UserProfileAPI` |
-| [Other APIs](api/other-apis.md) | Folders, batches, browse, client apps, addons, and more |
+| [Projects](#projects-api-reference) | `ProjectsAPI` -- project CRUD and user management |
+| [Datasets](#datasets-api-reference) | `DatasetsAPI` -- dataset CRUD and data access |
+| [Dataviews](#dataviews-api-reference) | `DataviewsAPI` -- low-level dataview operations |
+| [Pipeline](#pipeline-api-reference) | `PipelineAPI` -- transformation pipeline management |
+| [Jobs](#jobs-api-reference) | `JobsAPI` -- async job tracking |
+| [Dashboards](#dashboards-api-reference) | `DashboardsAPI` -- dashboard management |
+| [Webhooks](#webhooks-api-reference) | `WebhooksAPI` -- webhook datasets |
+| [Automations](#automations-schedules-api-reference) | `AutomationsAPI` and `SchedulesAPI` |
+| [Workspace](#workspace-users-api-reference) | `WorkspaceAPI` and `UserProfileAPI` |
+| [Other APIs](#other-apis-reference) | Folders, batches, browse, client apps, addons, and more |
 | **Guides** | |
-| [End-to-End Workflow](guides/end-to-end-workflow.md) | Complete journey: upload, transform, export |
-| [Changelog](changelog.md) | Release history |
+| [End-to-End Workflow](#end-to-end-workflow) | Complete journey: upload, transform, export |
+| [Changelog](#changelog) | Release history |
 
 ## Version information
 
@@ -738,8 +738,8 @@ print("Mammoth SDK installed successfully!")
 
 ## Next steps
 
-- [Quick Start Guide](quick-start.md) -- create your first client and apply transformations
-- [Authentication](authentication.md) -- set up API credentials
+- [Quick Start Guide](#quick-start-guide) -- create your first client and apply transformations
+- [Authentication](#authentication) -- set up API credentials
 
 
 ---
@@ -776,15 +776,17 @@ client.set_project_id(10)
 
 The `workspace_id` is required at client creation. The `project_id` must be set before performing most operations.
 
-!!! tip "Extract IDs from a Mammoth URL"
-    Use `parse_path()` to extract IDs from a browser URL:
-
-    ```python
-    from mammoth import parse_path
-
-    ids = parse_path("https://app.mammoth.io/#/workspaces/11/projects/10/views/1039")
-    # {"workspace_id": 11, "project_id": 10, "dataview_id": 1039}
-    ```
+> **Tip:** Extract IDs from a Mammoth URL
+>
+> Use `parse_path()` to extract IDs from a browser URL:
+>
+> ```python
+> from mammoth import parse_path
+>
+> ids = parse_path("https://app.mammoth.io/#/workspaces/11/projects/10/views/1039")
+> # {"workspace_id": 11, "project_id": 10, "dataview_id": 1039}
+> ```
+>
 
 ## 4. Get a View
 
@@ -914,10 +916,10 @@ except MammothAPIError as e:
 
 ## Next steps
 
-- [Views reference](api/views.md) -- all transformation methods with signatures and examples
-- [Conditions reference](api/conditions.md) -- filter builder with operator overloading
-- [Exports reference](api/exports.md) -- all export destinations
-- [Transformation examples](examples/transformations.md) -- practical workflow examples
+- [Views reference](#views-reference) -- all transformation methods with signatures and examples
+- [Conditions reference](#conditions-reference) -- filter builder with operator overloading
+- [Exports reference](#exports-reference) -- all export destinations
+- [Transformation examples](#transformation-examples) -- practical workflow examples
 
 
 ---
@@ -1041,8 +1043,8 @@ client = MammothClient(api_key=os.getenv("MAMMOTH_API_KEY"), ...)
 
 ## Next steps
 
-- [Quick Start Guide](quick-start.md)
-- [Client API Reference](api/client.md)
+- [Quick Start Guide](#quick-start-guide)
+- [Client API Reference](#client-api-reference)
 
 
 ---
@@ -1080,8 +1082,10 @@ client = MammothClient(
 | `job_timeout` | `int` | `60` | Maximum time in seconds to poll a job to completion |
 | `pipeline_timeout` | `int` | `3600` | Maximum time in seconds to wait for pipeline tasks |
 
-!!! note "No retries"
-    The SDK does **not** implement automatic retries. If an API call fails, the error is raised immediately. Implement retry logic in your application if needed.
+> **Note:** No retries
+>
+> The SDK does **not** implement automatic retries. If an API call fails, the error is raised immediately. Implement retry logic in your application if needed.
+>
 
 ### Example
 
@@ -1119,7 +1123,7 @@ client.set_project_id(10)
 client.get_view(view_id: int, dataset_id: int | None = None) -> View
 ```
 
-Shortcut for `client.views.get(view_id)`. Returns a rich [View](views.md) object.
+Shortcut for `client.views.get(view_id)`. Returns a rich [View](#views-reference) object.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -1187,39 +1191,39 @@ All API resources are accessible as attributes on the client. Each sub-client ha
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `client.views` | `ViewsResource` | Rich View objects with transformations (see [Views](views.md)) |
-| `client.datasets` | `DatasetsAPI` | Dataset CRUD operations (see [Datasets](datasets.md)) |
-| `client.dataviews` | `DataviewsAPI` | Low-level dataview operations (see [Dataviews](dataviews.md)) |
-| `client.pipeline` | `PipelineAPI` | Pipeline task management (see [Pipeline](pipeline.md)) |
-| `client.files` | `FilesAPI` | File upload and management (see [Files](files.md)) |
-| `client.exports` | `ExportsAPI` | Export operations (see [Exports](exports.md)) |
-| `client.jobs` | `JobsAPI` | Asynchronous job tracking (see [Jobs](jobs.md)) |
-| `client.projects` | `ProjectsAPI` | Project CRUD (see [Projects](projects.md)) |
+| `client.views` | `ViewsResource` | Rich View objects with transformations (see [Views](#views-reference)) |
+| `client.datasets` | `DatasetsAPI` | Dataset CRUD operations (see [Datasets](#datasets-api-reference)) |
+| `client.dataviews` | `DataviewsAPI` | Low-level dataview operations (see [Dataviews](#dataviews-api-reference)) |
+| `client.pipeline` | `PipelineAPI` | Pipeline task management (see [Pipeline](#pipeline-api-reference)) |
+| `client.files` | `FilesAPI` | File upload and management (see [Files](#files-api-reference)) |
+| `client.exports` | `ExportsAPI` | Export operations (see [Exports](#exports-reference)) |
+| `client.jobs` | `JobsAPI` | Asynchronous job tracking (see [Jobs](#jobs-api-reference)) |
+| `client.projects` | `ProjectsAPI` | Project CRUD (see [Projects](#projects-api-reference)) |
 
 ### Additional sub-clients
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `client.ai` | `AIAPI` | AI/LLM operations (see [Other APIs](other-apis.md)) |
-| `client.connectors` | `ConnectorsAPI` | Data source connectors (see [Connectors](connectors.md)) |
-| `client.dashboards` | `DashboardsAPI` | Dashboard management (see [Dashboards](dashboards.md)) |
-| `client.webhooks` | `WebhooksAPI` | Webhook configuration (see [Webhooks](webhooks.md)) |
-| `client.automations` | `AutomationsAPI` | Automation workflows (see [Automations](automations.md)) |
-| `client.schedules` | `SchedulesAPI` | Scheduled operations (see [Automations](automations.md)) |
-| `client.batches` | `BatchesAPI` | Batch operations (see [Other APIs](other-apis.md)) |
-| `client.folders` | `FoldersAPI` | Folder management (see [Other APIs](other-apis.md)) |
-| `client.workspaces` | `WorkspaceAPI` | Workspace operations (see [Workspace](workspace.md)) |
-| `client.user_profile` | `UserProfileAPI` | User profile (see [Workspace](workspace.md)) |
-| `client.activity_logs` | `ActivityLogsAPI` | Activity logs (see [Other APIs](other-apis.md)) |
-| `client.browse` | `BrowseAPI` | Browse/search API (see [Other APIs](other-apis.md)) |
-| `client.external_keys` | `ExternalKeysAPI` | External key management (see [Other APIs](other-apis.md)) |
-| `client.client_apps` | `ClientAppsAPI` | Client app management (see [Other APIs](other-apis.md)) |
-| `client.addons` | `AddonsAPI` | Addons (see [Other APIs](other-apis.md)) |
-| `client.reports` | `ReportsAPI` | Reports (see [Other APIs](other-apis.md)) |
+| `client.ai` | `AIAPI` | AI/LLM operations (see [Other APIs](#other-apis-reference)) |
+| `client.connectors` | `ConnectorsAPI` | Data source connectors (see [Connectors](#connectors-api-reference)) |
+| `client.dashboards` | `DashboardsAPI` | Dashboard management (see [Dashboards](#dashboards-api-reference)) |
+| `client.webhooks` | `WebhooksAPI` | Webhook configuration (see [Webhooks](#webhooks-api-reference)) |
+| `client.automations` | `AutomationsAPI` | Automation workflows (see [Automations](#automations-schedules-api-reference)) |
+| `client.schedules` | `SchedulesAPI` | Scheduled operations (see [Automations](#automations-schedules-api-reference)) |
+| `client.batches` | `BatchesAPI` | Batch operations (see [Other APIs](#other-apis-reference)) |
+| `client.folders` | `FoldersAPI` | Folder management (see [Other APIs](#other-apis-reference)) |
+| `client.workspaces` | `WorkspaceAPI` | Workspace operations (see [Workspace](#workspace-users-api-reference)) |
+| `client.user_profile` | `UserProfileAPI` | User profile (see [Workspace](#workspace-users-api-reference)) |
+| `client.activity_logs` | `ActivityLogsAPI` | Activity logs (see [Other APIs](#other-apis-reference)) |
+| `client.browse` | `BrowseAPI` | Browse/search API (see [Other APIs](#other-apis-reference)) |
+| `client.external_keys` | `ExternalKeysAPI` | External key management (see [Other APIs](#other-apis-reference)) |
+| `client.client_apps` | `ClientAppsAPI` | Client app management (see [Other APIs](#other-apis-reference)) |
+| `client.addons` | `AddonsAPI` | Addons (see [Other APIs](#other-apis-reference)) |
+| `client.reports` | `ReportsAPI` | Reports (see [Other APIs](#other-apis-reference)) |
 
 ### ViewsResource
 
-The `client.views` sub-client returns rich [View](views.md) objects (not raw dicts):
+The `client.views` sub-client returns rich [View](#views-reference) objects (not raw dicts):
 
 ```python
 # Get a single view
@@ -1264,7 +1268,7 @@ The client raises specific exceptions for different error types:
 | `MammothAuthError` | HTTP 401 (invalid credentials) |
 | `MammothAPIError` | HTTP 4xx/5xx responses, network errors, timeouts |
 
-See [Exceptions](exceptions.md) for the full error hierarchy.
+See [Exceptions](#exceptions-reference) for the full error hierarchy.
 
 ```python
 from mammoth import MammothClient, MammothAPIError, MammothAuthError
@@ -1281,10 +1285,10 @@ except MammothAPIError as e:
 
 ## See also
 
-- [Views](views.md) -- View object and transformation methods
-- [Exports](exports.md) -- Export operations
-- [Exceptions](exceptions.md) -- Error handling
-- [Quick Start](../quick-start.md) -- Getting started
+- [Views](#views-reference) -- View object and transformation methods
+- [Exports](#exports-reference) -- Export operations
+- [Exceptions](#exceptions-reference) -- Error handling
+- [Quick Start](#quick-start-guide) -- Getting started
 
 
 ---
@@ -1331,7 +1335,7 @@ view = client.views.create(dataset_id=42, name="Copy", clone_from=1039)
 | `display_names` | `list[str]` | Ordered list of column display names |
 | `column_types` | `dict[str, str]` | Mapping of display names to types (`TEXT`, `NUMERIC`, `DATE`) |
 | `raw` | `dict` | Full raw API response dict |
-| `export` | `ViewExport` | Export helper (see [Exports](exports.md)) |
+| `export` | `ViewExport` | Export helper (see [Exports](#exports-reference)) |
 
 After every transformation, `display_names`, `columns`, and `column_types` are automatically refreshed — including columns added by pipeline tasks (`math`, `set_values`, `add_column`, etc.).
 
@@ -2204,7 +2208,7 @@ view.add_sql("SELECT department, COUNT(*) as cnt FROM data GROUP BY department")
 
 ## Exports
 
-Export operations are accessed via `view.export`. See the [Exports reference](exports.md) for full documentation.
+Export operations are accessed via `view.export`. See the [Exports reference](#exports-reference) for full documentation.
 
 ```python
 view.export.to_csv("output.csv")
@@ -2215,10 +2219,10 @@ view.branch_out(dest_dataset_id=42)
 
 ## See also
 
-- [Conditions](conditions.md) -- filter builder
-- [Enums](enums.md) -- all parameter enums
-- [Exports](exports.md) -- export destinations
-- [Transformation examples](../examples/transformations.md) -- practical workflows
+- [Conditions](#conditions-reference) -- filter builder
+- [Enums](#enums-reference) -- all parameter enums
+- [Exports](#exports-reference) -- export destinations
+- [Transformation examples](#transformation-examples) -- practical workflows
 
 
 ---
@@ -2444,7 +2448,7 @@ payload = compound.build({"Sales": "column_1", "Region": "column_2"})
 
 ## All operators
 
-See the [Operator enum](enums.md#operator) for the complete list. Summary:
+See the [Operator enum](#operator) for the complete list. Summary:
 
 | Category | Operators |
 |----------|-----------|
@@ -2456,9 +2460,9 @@ See the [Operator enum](enums.md#operator) for the complete list. Summary:
 
 ## See also
 
-- [Enums](enums.md) -- all enum values
-- [Views](views.md) -- transformation methods that use conditions
-- [Transformation examples](../examples/transformations.md) -- practical workflows
+- [Enums](#enums-reference) -- all enum values
+- [Views](#views-reference) -- transformation methods that use conditions
+- [Transformation examples](#transformation-examples) -- practical workflows
 
 
 ---
@@ -2909,7 +2913,7 @@ not_compound = ~(Condition("Sales", Operator.GTE, 10000) & Condition("Region", O
 original = ~~not_closed
 ```
 
-See [Conditions reference](conditions.md#notcondition) for full documentation and examples.
+See [Conditions reference](#notcondition) for full documentation and examples.
 
 ---
 
@@ -3105,8 +3109,8 @@ JsonExtractionSpec(
 
 ## See also
 
-- [Conditions](conditions.md) -- using `Operator` with `Condition`
-- [Views](views.md) -- transformation methods that use these enums
+- [Conditions](#conditions-reference) -- using `Operator` with `Condition`
+- [Views](#views-reference) -- transformation methods that use these enums
 
 
 ---
@@ -3346,8 +3350,8 @@ except MammothError as e:
 
 ## See also
 
-- [Client](client.md) -- how the client raises exceptions
-- [Views](views.md) -- transformation methods that can raise errors
+- [Client](#client-api-reference) -- how the client raises exceptions
+- [Views](#views-reference) -- transformation methods that can raise errors
 
 
 ---
@@ -3611,9 +3615,9 @@ client.files.extract_sheets(
 
 ## See also
 
-- [End-to-End Workflow](../guides/end-to-end-workflow.md) -- upload, transform, and export
-- [Client API](client.md) -- `MammothClient` and all sub-clients
-- [Views](views.md) -- work with uploaded data
+- [End-to-End Workflow](#end-to-end-workflow) -- upload, transform, and export
+- [Client API](#client-api-reference) -- `MammothClient` and all sub-clients
+- [Views](#views-reference) -- work with uploaded data
 
 
 ---
@@ -3827,9 +3831,9 @@ Delete a data source configuration.
 
 ## See also
 
-- [Files](files.md) -- File-based data import
-- [Exports](exports.md) -- Export data to external destinations
-- [Client](client.md) -- MammothClient overview
+- [Files](#files-api-reference) -- File-based data import
+- [Exports](#exports-reference) -- Export data to external destinations
+- [Client](#client-api-reference) -- MammothClient overview
 
 
 ---
@@ -4376,10 +4380,10 @@ print("Done!")
 
 ## See also
 
-- [Views reference](../api/views.md) -- all method signatures
-- [Conditions reference](../api/conditions.md) -- filter builder
-- [Enums reference](../api/enums.md) -- all parameter values
-- [Exports reference](../api/exports.md) -- all export destinations
+- [Views reference](#views-reference) -- all method signatures
+- [Conditions reference](#conditions-reference) -- filter builder
+- [Enums reference](#enums-reference) -- all parameter values
+- [Exports reference](#exports-reference) -- all export destinations
 
 
 ---
@@ -4775,8 +4779,8 @@ view.branch_out(dest_dataset_id=42)
 
 ## See also
 
-- [Views](views.md) -- View object and transformation methods
-- [Client](client.md) -- MammothClient and sub-clients
+- [Views](#views-reference) -- View object and transformation methods
+- [Client](#client-api-reference) -- MammothClient and sub-clients
 
 
 ---
@@ -4992,8 +4996,8 @@ contents = client.projects.browse(123)
 
 ## See also
 
-- [Client](client.md) -- MammothClient and sub-clients overview
-- [Datasets](datasets.md) -- Dataset management within projects
+- [Client](#client-api-reference) -- MammothClient and sub-clients overview
+- [Datasets](#datasets-api-reference) -- Dataset management within projects
 
 
 ---
@@ -5005,8 +5009,10 @@ The `DatasetsAPI` manages datasets within a project. A dataset is a data table s
 
 **Access**: `client.datasets`
 
-!!! note "Requires project_id"
-    Most methods require a project ID. Set it on the client with `client.set_project_id(10)` or pass `project_id` explicitly.
+> **Note:** Requires project_id
+>
+> Most methods require a project ID. Set it on the client with `client.set_project_id(10)` or pass `project_id` explicitly.
+>
 
 ## Methods
 
@@ -5225,9 +5231,9 @@ Get file settings for a dataset (delimiter, encoding, etc.).
 
 ## See also
 
-- [Client](client.md) -- MammothClient and sub-clients overview
-- [Dataviews](dataviews.md) -- Dataview management within datasets
-- [Views](views.md) -- Rich View objects for transformations
+- [Client](#client-api-reference) -- MammothClient and sub-clients overview
+- [Dataviews](#dataviews-api-reference) -- Dataview management within datasets
+- [Views](#views-reference) -- Rich View objects for transformations
 
 
 ---
@@ -5235,12 +5241,14 @@ Get file settings for a dataset (delimiter, encoding, etc.).
 
 # Dataviews API Reference
 
-The `DataviewsAPI` provides low-level CRUD operations on dataviews. For rich transformation methods, use `client.views` instead (see [Views](views.md)).
+The `DataviewsAPI` provides low-level CRUD operations on dataviews. For rich transformation methods, use `client.views` instead (see [Views](#views-reference)).
 
 **Access**: `client.dataviews`
 
-!!! tip "client.views vs client.dataviews"
-    `client.views.get(id)` returns a rich `View` object with transformation methods, data access, and export helpers. `client.dataviews` is the lower-level API returning raw dicts.
+> **Tip:** client.views vs client.dataviews
+>
+> `client.views.get(id)` returns a rich `View` object with transformation methods, data access, and export helpers. `client.dataviews` is the lower-level API returning raw dicts.
+>
 
 ## Methods
 
@@ -5510,9 +5518,9 @@ Manage draft mode for the dataview pipeline.
 
 ## See also
 
-- [Views](views.md) -- Rich View objects with transformation methods
-- [Pipeline](pipeline.md) -- Pipeline task management
-- [Datasets](datasets.md) -- Dataset management
+- [Views](#views-reference) -- Rich View objects with transformation methods
+- [Pipeline](#pipeline-api-reference) -- Pipeline task management
+- [Datasets](#datasets-api-reference) -- Dataset management
 
 
 ---
@@ -5524,8 +5532,10 @@ The `PipelineAPI` manages the transformation pipeline on dataviews. Each datavie
 
 **Access**: `client.pipeline`
 
-!!! note "Internal use"
-    The `PipelineAPI` is primarily used internally by `View` objects. For most use cases, use `view.filter_rows()`, `view.math()`, etc. instead of calling `client.pipeline` directly.
+> **Note:** Internal use
+>
+> The `PipelineAPI` is primarily used internally by `View` objects. For most use cases, use `view.filter_rows()`, `view.math()`, etc. instead of calling `client.pipeline` directly.
+>
 
 ## Methods
 
@@ -5717,9 +5727,9 @@ print(pipeline["state"])  # "ready"
 
 ## See also
 
-- [Views](views.md) -- Rich View objects that wrap pipeline operations
-- [Jobs](jobs.md) -- Job tracking for async operations
-- [Dataviews](dataviews.md) -- Low-level dataview CRUD
+- [Views](#views-reference) -- Rich View objects that wrap pipeline operations
+- [Jobs](#jobs-api-reference) -- Job tracking for async operations
+- [Dataviews](#dataviews-api-reference) -- Low-level dataview CRUD
 
 
 ---
@@ -5844,9 +5854,9 @@ Wait for multiple jobs to complete.
 
 ## See also
 
-- [Pipeline](pipeline.md) -- Pipeline tasks create jobs
-- [Exceptions](exceptions.md) -- `MammothJobFailedError`, `MammothJobTimeoutError`
-- [Job Lifecycle](../advanced/async-operations.md) -- Detailed async operations guide
+- [Pipeline](#pipeline-api-reference) -- Pipeline tasks create jobs
+- [Exceptions](#exceptions-reference) -- `MammothJobFailedError`, `MammothJobTimeoutError`
+- [Job Lifecycle](#async-operations-timeouts) -- Detailed async operations guide
 
 
 ---
@@ -6022,8 +6032,8 @@ Query published dashboard data using SQL.
 
 ## See also
 
-- [Views](views.md) -- Data sources for dashboards
-- [Exports](exports.md) -- Export data to files and databases
+- [Views](#views-reference) -- Data sources for dashboards
+- [Exports](#exports-reference) -- Export data to files and databases
 
 
 ---
@@ -6178,8 +6188,8 @@ Send data to a webhook via GET query parameters.
 
 ## See also
 
-- [Files](files.md) -- File-based data import
-- [Connectors](connectors.md) -- Database connector import
+- [Files](#files-api-reference) -- File-based data import
+- [Connectors](#connectors-api-reference) -- Database connector import
 
 
 ---
@@ -6377,8 +6387,8 @@ Delete a schedule.
 
 ## See also
 
-- [Pipeline](pipeline.md) -- Transformation tasks triggered by automations
-- [Webhooks](webhooks.md) -- Event-driven data ingestion
+- [Pipeline](#pipeline-api-reference) -- Transformation tasks triggered by automations
+- [Webhooks](#webhooks-api-reference) -- Event-driven data ingestion
 
 
 ---
@@ -6574,9 +6584,9 @@ Update user preferences.
 
 ## See also
 
-- [Projects](projects.md) -- Project management within workspaces
-- [Authentication](../authentication.md) -- API credentials setup
-- [Client](client.md) -- MammothClient overview
+- [Projects](#projects-api-reference) -- Project management within workspaces
+- [Authentication](#authentication) -- API credentials setup
+- [Client](#client-api-reference) -- MammothClient overview
 
 
 ---
@@ -7091,9 +7101,9 @@ Generate a query for a connector using AI.
 
 ## See also
 
-- [Client](client.md) -- Full list of sub-clients
-- [Projects](projects.md) -- Project management
-- [Datasets](datasets.md) -- Dataset management
+- [Client](#client-api-reference) -- Full list of sub-clients
+- [Projects](#projects-api-reference) -- Project management
+- [Datasets](#datasets-api-reference) -- Dataset management
 
 
 ---
@@ -7127,13 +7137,15 @@ client = MammothClient(
 client.set_project_id(42)
 ```
 
-!!! tip "Extract IDs from a Mammoth URL"
-    ```python
-    from mammoth import parse_path
-
-    ids = parse_path("https://app.mammoth.io/#/workspaces/11/projects/42/views/1039")
-    # {"workspace_id": 11, "project_id": 42, "dataview_id": 1039}
-    ```
+> **Tip:** Extract IDs from a Mammoth URL
+>
+> ```python
+> from mammoth import parse_path
+>
+> ids = parse_path("https://app.mammoth.io/#/workspaces/11/projects/42/views/1039")
+> # {"workspace_id": 11, "project_id": 42, "dataview_id": 1039}
+> ```
+>
 
 ## 3. Upload a file
 
@@ -7160,7 +7172,7 @@ dataset_ids = client.files.upload_folder("./data/")
 client.files.upload("new_rows.csv", append_to_ds_id=dataset_id)
 ```
 
-See the [Files API reference](../api/files.md) for the full `upload()` signature.
+See the [Files API reference](#files-api-reference) for the full `upload()` signature.
 
 ## 4. Inspect the View
 
@@ -7177,14 +7189,16 @@ result = view.data(limit=5)
 rows = result["data"]
 ```
 
-!!! note "CSV dates upload as TEXT"
-    Date columns in CSV files are uploaded as TEXT type. Use `convert_type()` to convert them before applying date operations:
-
-    ```python
-    from mammoth import ConversionSpec
-
-    view.convert_type([ConversionSpec(column="Order Date", to="DATE", format="MM/DD/YYYY")])
-    ```
+> **Note:** CSV dates upload as TEXT
+>
+> Date columns in CSV files are uploaded as TEXT type. Use `convert_type()` to convert them before applying date operations:
+>
+> ```python
+> from mammoth import ConversionSpec
+>
+> view.convert_type([ConversionSpec(column="Order Date", to="DATE", format="MM/DD/YYYY")])
+> ```
+>
 
 ## 5. Apply transformations
 
@@ -7261,7 +7275,7 @@ view.window(
 )
 ```
 
-See the [Views reference](../api/views.md) for all 25+ transformation methods.
+See the [Views reference](#views-reference) for all 25+ transformation methods.
 
 ## 6. Export results
 
@@ -7311,7 +7325,7 @@ view.export.to_sftp(host="sftp.example.com", path="/exports/data.csv", username=
 view.export.to_email(recipients=["team@example.com"])
 ```
 
-See the [Exports reference](../api/exports.md) for all destinations.
+See the [Exports reference](#exports-reference) for all destinations.
 
 ## Complete script
 
@@ -7375,12 +7389,12 @@ except MammothAPIError as e:
 
 ## See also
 
-- [Quick Start](../quick-start.md) -- shorter getting-started guide
-- [Files API](../api/files.md) -- full upload/file management reference
-- [Views API](../api/views.md) -- all transformation methods
-- [Conditions](../api/conditions.md) -- filter builder with `&`, `|`, `~`
-- [Exports](../api/exports.md) -- all export destinations
-- [Transformation examples](../examples/transformations.md) -- more transformation workflows
+- [Quick Start](#quick-start-guide) -- shorter getting-started guide
+- [Files API](#files-api-reference) -- full upload/file management reference
+- [Views API](#views-reference) -- all transformation methods
+- [Conditions](#conditions-reference) -- filter builder with `&`, `|`, `~`
+- [Exports](#exports-reference) -- all export destinations
+- [Transformation examples](#transformation-examples) -- more transformation workflows
 
 
 ---
@@ -7585,9 +7599,9 @@ if __name__ == "__main__":
 
 ## See also
 
-- [Transformation examples](transformations.md) -- 25+ transformation workflows
-- [Error handling](error-handling.md) -- handling errors gracefully
-- [Views reference](../api/views.md) -- complete View API
+- [Transformation examples](#transformation-examples) -- 25+ transformation workflows
+- [Error handling](#error-handling-guide) -- handling errors gracefully
+- [Views reference](#views-reference) -- complete View API
 
 
 ---
@@ -7781,8 +7795,8 @@ view.export.to_csv("output.csv", timeout=600)  # 10 minutes
 
 ## See also
 
-- [Exceptions reference](../api/exceptions.md) -- full exception class documentation
-- [Client API](../api/client.md) -- timeout configuration
+- [Exceptions reference](#exceptions-reference) -- full exception class documentation
+- [Client API](#client-api-reference) -- timeout configuration
 
 
 ---
@@ -7891,8 +7905,8 @@ client = MammothClient(**config)
 
 ## See also
 
-- [Client API](../api/client.md) -- full client reference
-- [Authentication](../authentication.md) -- credential management
+- [Client API](#client-api-reference) -- full client reference
+- [Authentication](#authentication) -- credential management
 
 
 ---
@@ -7966,13 +7980,13 @@ view.submit_draft()  # runs pipeline, refreshes metadata, exits draft mode
 
 If an exception occurs inside the `with view.draft():` block, all queued tasks are discarded automatically. You can also discard explicitly with `view.discard_draft()`.
 
-See [Views reference](../api/views.md#draft-mode) for the full API.
+See [Views reference](#draft-mode) for the full API.
 
 ## See also
 
-- [Views](../api/views.md) -- transformation methods
-- [Exceptions](../api/exceptions.md) -- job-related exceptions
-- [Configuration](configuration.md) -- timeout settings
+- [Views](#views-reference) -- transformation methods
+- [Exceptions](#exceptions-reference) -- job-related exceptions
+- [Configuration](#configuration) -- timeout settings
 
 
 ---
@@ -8079,8 +8093,8 @@ automations = client.automations.list()
 
 ## See also
 
-- [Exports reference](../api/exports.md) -- all export destinations
-- [Client API](../api/client.md) -- sub-clients for webhooks, automations, schedules
+- [Exports reference](#exports-reference) -- all export destinations
+- [Client API](#client-api-reference) -- sub-clients for webhooks, automations, schedules
 
 
 ---
@@ -8213,9 +8227,9 @@ client = MammothClient(..., timeout=120)  # 2 minutes per request
 
 ## See also
 
-- [Exceptions reference](../api/exceptions.md) -- error class documentation
-- [Configuration](configuration.md) -- timeout and URL settings
-- [Error handling guide](../examples/error-handling.md) -- handling patterns
+- [Exceptions reference](#exceptions-reference) -- error class documentation
+- [Configuration](#configuration) -- timeout and URL settings
+- [Error handling guide](#error-handling-guide) -- handling patterns
 
 
 ---
