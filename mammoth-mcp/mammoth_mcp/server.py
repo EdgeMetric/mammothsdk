@@ -36,9 +36,8 @@ async def lifespan(server: FastMCP) -> AsyncIterator[dict[str, Any]]:
         try:
             yield {"registry": _shared_registry}
         finally:
-            if _shared_token_store:
-                await _shared_token_store.close()
-            logger.info("Mammoth MCP server shut down")
+            logger.info("MCP session ended")
+            pass  # Redis stays open across sessions
     else:
         config = MammothConfig.from_env()
         logger.info(
@@ -182,6 +181,20 @@ def get_enums() -> str:
 
 # ── Register tools from submodules ───────────────────────────
 
+from mammoth_mcp.tools import (  # noqa: E402
+    advanced,
+    aggregate,
+    ai,
+    columns,
+    connection,
+    data,
+    discovery,
+    export,
+    help,
+    pipeline,
+    values,
+    views,
+)
 
 
 # ── Entry points ─────────────────────────────────────────────
