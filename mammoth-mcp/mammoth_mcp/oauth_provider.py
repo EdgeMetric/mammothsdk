@@ -63,7 +63,12 @@ class MammothOAuthProvider:
         state_key = secrets.token_urlsafe(32)
         await self._store.store_state(state_key, state_data)
         login_url = f"{self._settings.server_url}/login?state={state_key}"
-        logger.info("Authorization started: our_state=%s, claude_state=%s, redirect_uri=%s", state_key[:8], params.state[:16] if params.state else "NONE", params.redirect_uri)
+        logger.info(
+            "Authorization started: our_state=%s, claude_state=%s, redirect_uri=%s",
+            state_key[:8],
+            params.state[:16] if params.state else "NONE",
+            params.redirect_uri,
+        )
         return login_url
 
     # ── Authorization code exchange ────────────────────────────
@@ -90,11 +95,17 @@ class MammothOAuthProvider:
     async def exchange_authorization_code(
         self, client: OAuthClientInformationFull, authorization_code: AuthorizationCode
     ) -> OAuthToken:
-        logger.info("Token exchange for client %s, code=%s...", client.client_id, authorization_code.code[:8])
+        logger.info(
+            "Token exchange for client %s, code=%s...",
+            client.client_id,
+            authorization_code.code[:8],
+        )
         code_data = await self._store.get_code(authorization_code.code)
         if code_data is None:
             logger.error("Auth code not found in Redis (expired or already used)")
-            raise TokenError(error="invalid_grant", error_description="Authorization code expired or invalid")
+            raise TokenError(
+                error="invalid_grant", error_description="Authorization code expired or invalid"
+            )
 
         await self._store.delete_code(authorization_code.code)
 
@@ -126,7 +137,9 @@ class MammothOAuthProvider:
         refresh_token: RefreshToken,
         scopes: list[str],
     ) -> OAuthToken:
-        raise TokenError(error="unsupported_grant_type", error_description="Refresh tokens are not supported")
+        raise TokenError(
+            error="unsupported_grant_type", error_description="Refresh tokens are not supported"
+        )
 
     # ── Token verification & revocation ────────────────────────
 
@@ -205,12 +218,16 @@ LOGIN_HTML = """\
 
 def _render_login(state: str, error: str = "") -> str:
     import html
+
     error_html = f'<div class="error">{html.escape(error)}</div>' if error else ""
     return LOGIN_HTML.replace("{state}", html.escape(state)).replace("{error}", error_html)
 
 
 async def validate_mammoth_credentials(
-    api_key: str, api_secret: str, workspace_id: int, base_url: str,
+    api_key: str,
+    api_secret: str,
+    workspace_id: int,
+    base_url: str,
 ) -> bool:
     """Validate credentials by making a lightweight Mammoth API call."""
     headers = {
@@ -220,14 +237,18 @@ async def validate_mammoth_credentials(
     }
     try:
         async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.get(f"{base_url}/workspaces/{workspace_id}/projects", headers=headers)
+            resp = await client.get(
+                f"{base_url}/workspaces/{workspace_id}/projects", headers=headers
+            )
             return resp.status_code == 200
     except httpx.HTTPError:
         logger.exception("Credential validation failed")
         return False
 
 
-def register_login_routes(mcp_server: Any, settings: Settings, token_store: RedisTokenStore) -> None:
+def register_login_routes(
+    mcp_server: Any, settings: Settings, token_store: RedisTokenStore
+) -> None:
     """Register /login and /login/callback custom routes on the FastMCP server."""
     from starlette.requests import Request
     from starlette.responses import HTMLResponse, RedirectResponse
@@ -236,7 +257,9 @@ def register_login_routes(mcp_server: Any, settings: Settings, token_store: Redi
     async def login_page(request: Request) -> HTMLResponse:
         state = request.query_params.get("state", "")
         if not state:
-            return HTMLResponse(_render_login("", error="Missing state parameter."), status_code=400)
+            return HTMLResponse(
+                _render_login("", error="Missing state parameter."), status_code=400
+            )
         return HTMLResponse(_render_login(state))
 
     @mcp_server.custom_route("/login/callback", methods=["POST"])
@@ -259,7 +282,10 @@ def register_login_routes(mcp_server: Any, settings: Settings, token_store: Redi
         valid = await validate_mammoth_credentials(api_key, api_secret, workspace_id, base_url)
         if not valid:
             return HTMLResponse(
-                _render_login(state, error="Invalid credentials — check your API key, secret, and workspace ID."),
+                _render_login(
+                    state,
+                    error="Invalid credentials — check your API key, secret, and workspace ID.",
+                ),
                 status_code=400,
             )
 
@@ -277,7 +303,9 @@ def register_login_routes(mcp_server: Any, settings: Settings, token_store: Redi
             "client_id": state_data["client_id"],
             "code_challenge": state_data["code_challenge"],
             "redirect_uri": state_data["redirect_uri"],
-            "redirect_uri_provided_explicitly": state_data.get("redirect_uri_provided_explicitly", True),
+            "redirect_uri_provided_explicitly": state_data.get(
+                "redirect_uri_provided_explicitly", True
+            ),
             "scopes": state_data.get("scopes", []),
             "resource": state_data.get("resource"),
             "credentials": {
@@ -296,6 +324,11 @@ def register_login_routes(mcp_server: Any, settings: Settings, token_store: Redi
         redirect_params = urllib.parse.urlencode({"code": auth_code, "state": oauth_state})
         sep = "&" if "?" in redirect_uri else "?"
         redirect_url = f"{redirect_uri}{sep}{redirect_params}"
-        logger.info("Login callback: redirect_uri=%s, oauth_state=%s, our_state=%s", redirect_uri, oauth_state[:16] if oauth_state else "NONE", state[:16])
+        logger.info(
+            "Login callback: redirect_uri=%s, oauth_state=%s, our_state=%s",
+            redirect_uri,
+            oauth_state[:16] if oauth_state else "NONE",
+            state[:16],
+        )
         logger.info("Login callback: full redirect URL=%s", redirect_url)
         return RedirectResponse(url=redirect_url, status_code=302)

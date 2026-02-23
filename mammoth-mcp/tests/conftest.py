@@ -27,6 +27,7 @@ import pytest
 # Env helpers
 # ---------------------------------------------------------------------------
 
+
 def _env(name: str, default: str | None = None) -> str:
     val = os.environ.get(name, default or "")
     if not val:
@@ -37,6 +38,7 @@ def _env(name: str, default: str | None = None) -> str:
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="session")
 def server_url() -> str:
@@ -73,6 +75,7 @@ def http_client() -> httpx.Client:
 # ---------------------------------------------------------------------------
 # OAuth helpers
 # ---------------------------------------------------------------------------
+
 
 def _parse_sse(text: str) -> list[dict]:
     """Parse SSE response body into JSON-RPC messages."""

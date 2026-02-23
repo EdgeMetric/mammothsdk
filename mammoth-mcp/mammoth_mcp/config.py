@@ -49,7 +49,9 @@ class MammothConfig:
             base_url=os.environ.get("MAMMOTH_BASE_URL", cls.base_url),
             project_id=project_id,
             job_timeout=int(os.environ.get("MAMMOTH_JOB_TIMEOUT", str(cls.job_timeout))),
-            pipeline_timeout=int(os.environ.get("MAMMOTH_PIPELINE_TIMEOUT", str(cls.pipeline_timeout))),
+            pipeline_timeout=int(
+                os.environ.get("MAMMOTH_PIPELINE_TIMEOUT", str(cls.pipeline_timeout))
+            ),
         )
 
     def summary(self) -> dict:

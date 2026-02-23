@@ -30,13 +30,15 @@ async def list_tasks(ctx: Context, view_id: int) -> dict[str, Any]:
     tasks = await run_sync(view.list_tasks)
     result = []
     for t in tasks:
-        result.append({
-            "id": t.get("id"),
-            "sequence": t.get("sequence"),
-            "task_key": t.get("task_key"),
-            "status": t.get("status"),
-            "params": t.get("params"),
-        })
+        result.append(
+            {
+                "id": t.get("id"),
+                "sequence": t.get("sequence"),
+                "task_key": t.get("task_key"),
+                "status": t.get("status"),
+                "params": t.get("params"),
+            }
+        )
     return success_response(result, f"View has {len(result)} pipeline tasks")
 
 

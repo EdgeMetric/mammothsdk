@@ -59,8 +59,7 @@ class ClientManager:
     def _evict_expired_views(self) -> None:
         """Remove entries older than TTL."""
         expired = [
-            vid for vid, entry in self._view_cache.items()
-            if entry.is_expired(_VIEW_CACHE_TTL)
+            vid for vid, entry in self._view_cache.items() if entry.is_expired(_VIEW_CACHE_TTL)
         ]
         for vid in expired:
             del self._view_cache[vid]
@@ -79,7 +78,8 @@ class ClientManager:
             except Exception:
                 logger.info(
                     "View %d not in current project %s, searching others...",
-                    view_id, self.client.project_id,
+                    view_id,
+                    self.client.project_id,
                 )
 
         # Search all projects
@@ -98,7 +98,9 @@ class ClientManager:
                 self._view_cache.clear()
                 logger.info(
                     "Auto-discovered view %d in project %d (%s)",
-                    view_id, pid, pname,
+                    view_id,
+                    pid,
+                    pname,
                 )
                 return
             except ValueError:
@@ -109,7 +111,10 @@ class ClientManager:
                 # API error (500, network, etc.) — log and continue
                 logger.warning(
                     "Error searching project %d (%s) for view %d",
-                    pid, pname, view_id, exc_info=True,
+                    pid,
+                    pname,
+                    view_id,
+                    exc_info=True,
                 )
                 continue
 
@@ -118,8 +123,7 @@ class ClientManager:
             self.client.set_project_id(original_project_id)
 
         raise ValueError(
-            f"View {view_id} not found in any project in workspace "
-            f"{self.client.workspace_id}"
+            f"View {view_id} not found in any project in workspace " f"{self.client.workspace_id}"
         )
 
     def get_view(self, view_id: int) -> View:
@@ -169,7 +173,9 @@ class UserClientRegistry:
     Uses LRU eviction to prevent unbounded growth.
     """
 
-    def __init__(self, token_store: RedisTokenStore, job_timeout: int = 120, pipeline_timeout: int = 3600):
+    def __init__(
+        self, token_store: RedisTokenStore, job_timeout: int = 120, pipeline_timeout: int = 3600
+    ):
         self._token_store = token_store
         self._job_timeout = job_timeout
         self._pipeline_timeout = pipeline_timeout

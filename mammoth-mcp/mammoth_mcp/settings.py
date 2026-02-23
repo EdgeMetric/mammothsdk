@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     port: int = 8000
     server_url: str = "https://mcp.mammoth.io"
     mode: str = "stdio"  # "stdio" or "remote"
+    mcp_profile: str = "transformations"  # "transformations", "import", or "admin"
     log_level: str = "INFO"
     log_file: str = ""  # Path to log file (empty = stderr only)
     log_format: str = "text"  # "text" or "json"

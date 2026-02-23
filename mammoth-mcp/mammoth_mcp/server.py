@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import json
 import logging
 import logging.config
@@ -13,7 +14,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from mammoth_mcp.config import MammothConfig
-from mammoth_mcp.instructions import MAMMOTH_INSTRUCTIONS
+from mammoth_mcp.instructions import PROFILE_INSTRUCTIONS
 from mammoth_mcp.settings import Settings
 from mammoth_mcp.state import ClientManager
 
@@ -23,6 +24,7 @@ settings = Settings()
 
 
 # ── Lifespan ─────────────────────────────────────────────────
+
 
 @asynccontextmanager
 async def lifespan(server: FastMCP) -> AsyncIterator[dict[str, Any]]:
@@ -60,6 +62,10 @@ def _build_server() -> FastMCP:
     """Build the FastMCP server with appropriate auth settings for the mode."""
     global _shared_token_store, _shared_registry
 
+    instructions = PROFILE_INSTRUCTIONS.get(
+        settings.mcp_profile, PROFILE_INSTRUCTIONS["transformations"]
+    )
+
     if settings.mode == "remote":
         from mcp.server.auth.settings import (
             AuthSettings,
@@ -96,6 +102,7 @@ def _build_server() -> FastMCP:
 
         # Allow the public hostname through DNS rebinding protection
         from urllib.parse import urlparse
+
         public_host = urlparse(settings.server_url).hostname or "localhost"
         transport_security = TransportSecuritySettings(
             enable_dns_rebinding_protection=True,
@@ -104,7 +111,7 @@ def _build_server() -> FastMCP:
 
         server = FastMCP(
             "Mammoth Analytics",
-            instructions=MAMMOTH_INSTRUCTIONS,
+            instructions=instructions,
             lifespan=lifespan,
             auth_server_provider=provider,
             auth=auth_settings,
@@ -115,13 +122,14 @@ def _build_server() -> FastMCP:
         register_login_routes(server, settings, _shared_token_store)
         return server
     else:
-        return FastMCP("Mammoth Analytics", instructions=MAMMOTH_INSTRUCTIONS, lifespan=lifespan)
+        return FastMCP("Mammoth Analytics", instructions=instructions, lifespan=lifespan)
 
 
 mcp = _build_server()
 
 
 # ── Resources ────────────────────────────────────────────────
+
 
 @mcp.resource("mammoth://config")
 def get_config() -> str:
@@ -180,25 +188,61 @@ def get_enums() -> str:
     return json.dumps(enums, indent=2)
 
 
-# ── Register tools from submodules ───────────────────────────
+# ── Profile-driven tool registration ─────────────────────────
 
-from mammoth_mcp.tools import (  # noqa: E402
-    advanced,
-    aggregate,
-    ai,
-    columns,
-    connection,
-    data,
-    discovery,
-    export,
-    help,
-    pipeline,
-    values,
-    views,
-)
+TOOL_PROFILES: dict[str, list[str]] = {
+    "transformations": [
+        "connection",
+        "discovery",
+        "views",
+        "data",
+        "columns",
+        "values",
+        "advanced",
+        "aggregate",
+        "pipeline",
+        "ai",
+        "export",
+        "help",
+        "draft_mode",
+    ],
+    "import": [
+        "connection",
+        "discovery",
+        "views",
+        "data",
+        "help",
+        "webhooks",
+        "connectors",
+        "files_extended",
+        "batches",
+    ],
+    "admin": [
+        "connection",
+        "discovery",
+        "views",
+        "data",
+        "help",
+        "export",
+        "organization",
+        "dashboards",
+        "automations",
+        "admin",
+        "client_apps",
+        "ai_extended",
+    ],
+}
+
+_profile = settings.mcp_profile
+if _profile not in TOOL_PROFILES:
+    raise ValueError(f"Unknown MCP profile '{_profile}'. Valid: {list(TOOL_PROFILES)}")
+
+for _module_name in TOOL_PROFILES[_profile]:
+    importlib.import_module(f"mammoth_mcp.tools.{_module_name}")
 
 
 # ── Entry points ─────────────────────────────────────────────
+
 
 def create_app():
     """ASGI app factory for uvicorn (remote mode).
@@ -225,9 +269,7 @@ def create_app():
                 await _shared_token_store._r.ping()
             return JSONResponse({"status": "healthy", "redis": "connected"})
         except Exception as e:
-            return JSONResponse(
-                {"status": "unhealthy", "redis": str(e)}, status_code=503
-            )
+            return JSONResponse({"status": "unhealthy", "redis": str(e)}, status_code=503)
 
     app.routes.insert(0, Route("/health", health_check, methods=["GET"]))
 
@@ -307,12 +349,14 @@ class _JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         import json as _json
 
-        return _json.dumps({
-            "ts": self.formatTime(record, "%Y-%m-%dT%H:%M:%S"),
-            "level": record.levelname,
-            "logger": record.name,
-            "msg": record.getMessage(),
-        })
+        return _json.dumps(
+            {
+                "ts": self.formatTime(record, "%Y-%m-%dT%H:%M:%S"),
+                "level": record.levelname,
+                "logger": record.name,
+                "msg": record.getMessage(),
+            }
+        )
 
 
 def _configure_logging() -> None:

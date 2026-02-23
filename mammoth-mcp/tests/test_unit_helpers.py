@@ -152,25 +152,29 @@ class TestBuildCondition:
     def test_compound_and(self):
         from mammoth import CompoundCondition
 
-        cond = build_condition({
-            "logic": "AND",
-            "conditions": [
-                {"column": "A", "operator": "EQ", "value": 1},
-                {"column": "B", "operator": "GT", "value": 2},
-            ],
-        })
+        cond = build_condition(
+            {
+                "logic": "AND",
+                "conditions": [
+                    {"column": "A", "operator": "EQ", "value": 1},
+                    {"column": "B", "operator": "GT", "value": 2},
+                ],
+            }
+        )
         assert isinstance(cond, CompoundCondition)
 
     def test_compound_or(self):
         from mammoth import CompoundCondition
 
-        cond = build_condition({
-            "logic": "OR",
-            "conditions": [
-                {"column": "A", "operator": "EQ", "value": 1},
-                {"column": "B", "operator": "EQ", "value": 2},
-            ],
-        })
+        cond = build_condition(
+            {
+                "logic": "OR",
+                "conditions": [
+                    {"column": "A", "operator": "EQ", "value": 1},
+                    {"column": "B", "operator": "EQ", "value": 2},
+                ],
+            }
+        )
         assert isinstance(cond, CompoundCondition)
 
     def test_invalid_operator(self):

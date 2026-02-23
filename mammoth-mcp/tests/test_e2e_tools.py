@@ -67,7 +67,12 @@ class TestViewTools:
         test_view_id: int,
     ):
         data = mcp_tool_call(
-            http_client, server_url, oauth_token, mcp_session, "get_data", {"view_id": test_view_id, "limit": 5}
+            http_client,
+            server_url,
+            oauth_token,
+            mcp_session,
+            "get_data",
+            {"view_id": test_view_id, "limit": 5},
         )
         assert data["success"] is True, f"get_data failed: {data.get('error')}"
         assert "data" in data
@@ -100,9 +105,7 @@ class TestDiscoveryTools:
         mcp_tool_call(
             http_client, server_url, oauth_token, mcp_session, "get_view", {"view_id": test_view_id}
         )
-        data = mcp_tool_call(
-            http_client, server_url, oauth_token, mcp_session, "list_datasets", {}
-        )
+        data = mcp_tool_call(http_client, server_url, oauth_token, mcp_session, "list_datasets", {})
         assert data["success"] is True, f"list_datasets failed: {data.get('error')}"
 
     def test_get_help(
@@ -113,7 +116,12 @@ class TestDiscoveryTools:
         mcp_session: dict,
     ):
         data = mcp_tool_call(
-            http_client, server_url, oauth_token, mcp_session, "get_help", {"topic": "transformations"},
+            http_client,
+            server_url,
+            oauth_token,
+            mcp_session,
+            "get_help",
+            {"topic": "transformations"},
             expect_json=False,
         )
         # get_help returns plain markdown text, not JSON
@@ -133,6 +141,11 @@ class TestPipelineTools:
         test_view_id: int,
     ):
         data = mcp_tool_call(
-            http_client, server_url, oauth_token, mcp_session, "list_tasks", {"view_id": test_view_id}
+            http_client,
+            server_url,
+            oauth_token,
+            mcp_session,
+            "list_tasks",
+            {"view_id": test_view_id},
         )
         assert data["success"] is True, f"list_tasks failed: {data.get('error')}"

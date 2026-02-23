@@ -35,9 +35,7 @@ class RedisTokenStore:
         self._access_token_ttl = access_token_ttl
         # Create the Redis client eagerly so OAuth handlers can use it
         # before the lifespan context is entered.
-        self._redis: aioredis.Redis | None = aioredis.from_url(
-            redis_url, decode_responses=True
-        )
+        self._redis: aioredis.Redis | None = aioredis.from_url(redis_url, decode_responses=True)
         # Optional Fernet encryption for credential-bearing keys
         if encryption_key:
             from cryptography.fernet import Fernet

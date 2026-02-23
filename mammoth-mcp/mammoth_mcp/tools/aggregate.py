@@ -152,7 +152,9 @@ async def unnest(
     """
     manager = await get_manager(ctx)
     view = await run_sync(manager.get_view, view_id)
-    await run_sync(view.unnest, columns=columns, label_column=label_column, value_column=value_column)
+    await run_sync(
+        view.unnest, columns=columns, label_column=label_column, value_column=value_column
+    )
     return success_response(format_view_info(view), "unnest applied successfully")
 
 
@@ -182,7 +184,9 @@ async def fill_missing(
     manager = await get_manager(ctx)
     view = await run_sync(manager.get_view, view_id)
     fd = resolve_enum(FillDirection, direction)
-    await run_sync(view.fill_missing, column=column, direction=fd, partition_by=partition_by, order_by=order_by)
+    await run_sync(
+        view.fill_missing, column=column, direction=fd, partition_by=partition_by, order_by=order_by
+    )
     return success_response(format_view_info(view), "fill_missing applied successfully")
 
 

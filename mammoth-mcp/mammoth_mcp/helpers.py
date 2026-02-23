@@ -165,7 +165,10 @@ def log_tool_call(fn):
                 success = True
             logger.info(
                 "TOOL_RESULT %s%s success=%s elapsed=%.2fs",
-                fn.__name__, extra, success, elapsed,
+                fn.__name__,
+                extra,
+                success,
+                elapsed,
             )
             return result
         except Exception:
@@ -262,7 +265,11 @@ def format_view_info(view: Any) -> dict[str, Any]:
         "name": view.name,
         "dataset_id": view.dataset_id,
         "columns": [
-            {"name": name, "internal_name": view.columns[name], "type": view.column_types.get(name, "TEXT")}
+            {
+                "name": name,
+                "internal_name": view.columns[name],
+                "type": view.column_types.get(name, "TEXT"),
+            }
             for name in view.display_names
         ],
         "column_count": len(view.display_names),

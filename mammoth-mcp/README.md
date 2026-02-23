@@ -4,7 +4,20 @@ MCP server for [Mammoth Analytics](https://mammoth.io) -- expose data exploratio
 
 Built on top of the [mammoth-io](https://pypi.org/project/mammoth-io/) Python SDK.
 
-Supports two modes:
+## Architecture: 3 Server Profiles
+
+To avoid overwhelming the LLM with 130+ tools, the server is split into three focused profiles. Each profile loads a different subset of tools with tailored instructions. Users connect only the servers they need.
+
+| Profile | Port | Tools | Purpose |
+|---------|------|-------|---------|
+| `transformations` | 8001 | ~57 | Data exploration, transformation, export, draft mode |
+| `import` | 8002 | ~43 | Webhooks, cloud connectors, file management, batches |
+| `admin` | 8003 | ~85 | Organization, dashboards, automations, users, API keys |
+
+All three share the same codebase, Redis, and OAuth tokens. Only the tool modules and LLM instructions differ.
+
+### Deployment modes
+
 - **stdio** -- local single-user mode for Claude Desktop / Claude Code (env var credentials)
 - **remote** -- deployed multi-user mode with OAuth 2.0 for Claude UI (each user authenticates with their own Mammoth credentials)
 
@@ -25,23 +38,43 @@ poetry install
 
 ### Claude Desktop Configuration
 
-Add the following to your Claude Desktop config file (`claude_desktop_config.json`):
+Add one or more profiles to your Claude Desktop config file (`claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
-    "mammoth": {
+    "mammoth-transformations": {
       "command": "mammoth-mcp",
       "env": {
+        "MCP_PROFILE": "transformations",
         "MAMMOTH_API_KEY": "your-api-key",
         "MAMMOTH_API_SECRET": "your-api-secret",
-        "MAMMOTH_WORKSPACE_ID": "2",
-        "MAMMOTH_PROJECT_ID": "697"
+        "MAMMOTH_WORKSPACE_ID": "2"
+      }
+    },
+    "mammoth-import": {
+      "command": "mammoth-mcp",
+      "env": {
+        "MCP_PROFILE": "import",
+        "MAMMOTH_API_KEY": "your-api-key",
+        "MAMMOTH_API_SECRET": "your-api-secret",
+        "MAMMOTH_WORKSPACE_ID": "2"
+      }
+    },
+    "mammoth-admin": {
+      "command": "mammoth-mcp",
+      "env": {
+        "MCP_PROFILE": "admin",
+        "MAMMOTH_API_KEY": "your-api-key",
+        "MAMMOTH_API_SECRET": "your-api-secret",
+        "MAMMOTH_WORKSPACE_ID": "2"
       }
     }
   }
 }
 ```
+
+Most users only need `mammoth-transformations`. Add `import` or `admin` only when needed.
 
 ### Environment Variables (Stdio Mode)
 
@@ -52,23 +85,24 @@ Add the following to your Claude Desktop config file (`claude_desktop_config.jso
 | `MAMMOTH_API_KEY` | API key for Mammoth Analytics |
 | `MAMMOTH_API_SECRET` | API secret for Mammoth Analytics |
 | `MAMMOTH_WORKSPACE_ID` | Workspace ID to connect to |
-| `MAMMOTH_PROJECT_ID` | Default project ID |
 
 #### Optional
 
 | Variable | Default | Description |
 |---|---|---|
+| `MCP_PROFILE` | `transformations` | Server profile: `transformations`, `import`, or `admin` |
+| `MAMMOTH_PROJECT_ID` | *(none)* | Default project ID |
 | `MAMMOTH_BASE_URL` | `https://app.mammoth.io/api/v2` | API base URL |
 | `MAMMOTH_JOB_TIMEOUT` | `120` | Timeout in seconds for async jobs |
 
 ## Remote Deployment (OAuth 2.0)
 
-Deploy as a remote MCP server with OAuth 2.0 authentication for multi-user access via Claude UI.
+Deploy as remote MCP servers with OAuth 2.0 authentication for multi-user access via Claude UI.
 
 ### Prerequisites
 
 - Python 3.10+, Poetry
-- Redis server
+- Redis server (shared across all 3 profiles)
 - Domain with DNS (e.g. mcp.mammoth.io)
 - SSL certificate (Let's Encrypt)
 
@@ -92,38 +126,134 @@ Edit `.env`:
 MODE=remote
 SERVER_URL=https://mcp.mammoth.io
 REDIS_URL=redis://localhost:6379/0
+ENCRYPTION_KEY=<generate-with-fernet>
 LOG_LEVEL=INFO
 ```
 
-### 3. Start Server
+Note: `MCP_PROFILE` is set per-instance (by `start.sh` or env var), not in `.env`.
+
+### 3. Start All 3 Profiles
 
 ```bash
-# Using the CLI entry point
-poetry run mammoth-mcp
+# Start all three profiles (ports 8001, 8002, 8003)
+./start.sh
 
-# Or using uvicorn directly (recommended for production)
-poetry run uvicorn mammoth_mcp.server:create_app --factory \
-    --host 0.0.0.0 --port 8000
+# Check status
+./start.sh status
+
+# Stop all
+./start.sh stop
+
+# Restart all
+./start.sh restart
+```
+
+Or start a single profile manually:
+
+```bash
+MCP_PROFILE=transformations PORT=8001 \
+  poetry run uvicorn mammoth_mcp.server:create_app --factory \
+    --host 0.0.0.0 --port 8001
 ```
 
 ### 4. Nginx Reverse Proxy
 
+Route each profile to a separate URL path. Replace `10.0.3.207` with your MCP server's private IP.
+
 ```nginx
+upstream mcp_transformations {
+    server 10.0.3.207:9000;
+    keepalive 32;
+}
+upstream mcp_import {
+    server 10.0.3.207:9001;
+    keepalive 32;
+}
+upstream mcp_admin {
+    server 10.0.3.207:9002;
+    keepalive 32;
+}
+
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
+    http2 on;
+
     server_name mcp.mammoth.io;
 
-    ssl_certificate /etc/letsencrypt/live/mcp.mammoth.io/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/mcp.mammoth.io/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/mammoth.io/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/mammoth.io/privkey.pem;
 
-    location / {
-        proxy_pass http://127.0.0.1:8000;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    # Transformations (default — also serves root /)
+    location /transformations/ {
+        proxy_pass http://mcp_transformations/;
+
         proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 86400;
+        proxy_set_header Connection        "";
+
+        proxy_connect_timeout 75s;
+        proxy_read_timeout    86400s;
+        proxy_send_timeout    300s;
+
+        proxy_buffering off;
+    }
+
+    # Import
+    location /import/ {
+        proxy_pass http://mcp_import/;
+
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection        "";
+
+        proxy_connect_timeout 75s;
+        proxy_read_timeout    86400s;
+        proxy_send_timeout    300s;
+
+        proxy_buffering off;
+    }
+
+    # Admin
+    location /admin/ {
+        proxy_pass http://mcp_admin/;
+
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection        "";
+
+        proxy_connect_timeout 75s;
+        proxy_read_timeout    86400s;
+        proxy_send_timeout    300s;
+
+        proxy_buffering off;
+    }
+
+    # Root → transformations (backward compatibility)
+    location / {
+        proxy_pass http://mcp_transformations;
+
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection        "";
+
+        proxy_connect_timeout 75s;
+        proxy_read_timeout    86400s;
+        proxy_send_timeout    300s;
+
         proxy_buffering off;
     }
 }
@@ -135,9 +265,15 @@ Create an A record: `mcp.mammoth.io` -> `<EC2 Elastic IP>`
 
 ### 6. Add to Claude UI
 
-URL: `https://mcp.mammoth.io/mcp`
+Register each profile as a separate integration:
 
-The OAuth flow will prompt the user for their Mammoth API credentials (API key, secret, workspace ID). Each user gets their own isolated session.
+| Integration Name | MCP Server URL |
+|---|---|
+| Mammoth Transformations | `https://mcp.mammoth.io/transformations/mcp` |
+| Mammoth Import | `https://mcp.mammoth.io/import/mcp` |
+| Mammoth Admin | `https://mcp.mammoth.io/admin/mcp` |
+
+The OAuth flow will prompt the user for their Mammoth API credentials. All three profiles share the same Redis token store, so a user only needs to authenticate once per profile (tokens are interchangeable since they use the same `encryption_key`).
 
 ## Claude UI — End User Installation Guide
 
@@ -153,9 +289,10 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 1. Click **"Add more integrations"**.
 2. Select **"Add custom integration"** (bottom of the integration catalog).
 3. Enter the integration details:
-   - **Name**: `Mammoth Analytics` (or any name you prefer)
-   - **MCP Server URL**: `https://mcp.mammoth.io/mcp`
+   - **Name**: `Mammoth Transformations` (or `Import` / `Admin`)
+   - **MCP Server URL**: `https://mcp.mammoth.io/transformations/mcp`
 4. Click **"Add"**.
+5. Repeat for other profiles as needed.
 
 ### Step 3: Authenticate
 
@@ -169,7 +306,7 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 ### Step 4: Start Using
 
 1. Open a **new chat** in Claude.
-2. You should see the Mammoth integration icon in the chat toolbar — click it to verify the connection shows as active.
+2. You should see the Mammoth integration icon(s) in the chat toolbar — click to verify the connection shows as active.
 3. Try a prompt like:
    - *"List the projects in my Mammoth workspace"*
    - *"Show me view 12345"* (replace with a real view ID)
@@ -180,18 +317,20 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 | Issue | Fix |
 |-------|-----|
 | Integration not appearing | Refresh the page. Check that the integration is listed in Settings → Integrations. |
-| OAuth page won't load | Verify the server is running at `https://mcp.mammoth.io/mcp`. Check SSL certificate. |
+| OAuth page won't load | Verify the server is running: `./start.sh status`. Check SSL certificate. |
 | "Invalid credentials" error | Double-check your API key, secret, and workspace ID in Mammoth settings. |
 | Tools not showing in chat | Start a **new** chat after adding the integration. Existing chats may not pick up new integrations. |
-| Connection times out | Check that the server's nginx proxy has `proxy_read_timeout` set to a high value (86400 recommended). |
+| Connection times out | Check that nginx has `proxy_read_timeout 86400`. |
 
 ### Remote Mode Environment Variables
 
 | Variable | Default | Description |
 |---|---|---|
 | `MODE` | `stdio` | Set to `remote` for OAuth mode |
+| `MCP_PROFILE` | `transformations` | Profile: `transformations`, `import`, or `admin` |
 | `SERVER_URL` | `https://mcp.mammoth.io` | Public URL for OAuth redirects |
 | `REDIS_URL` | `redis://localhost:6379/0` | Redis connection string |
+| `ENCRYPTION_KEY` | *(required)* | Fernet key for credential encryption |
 | `AUTH_CODE_TTL` | `300` | Auth code lifetime (seconds) |
 | `ACCESS_TOKEN_TTL` | `2592000` | Access token lifetime (30 days) |
 | `HOST` | `0.0.0.0` | Server bind address |
@@ -200,9 +339,13 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 | `MAMMOTH_BASE_URL` | `https://app.mammoth.io/api/v2` | Default Mammoth API base URL |
 | `MAMMOTH_JOB_TIMEOUT` | `120` | Default job timeout (seconds) |
 
-## Available Tools (45)
+## Available Tools
 
-### Connection & Configuration
+### Transformations Profile (~57 tools)
+
+Data exploration, transformation, export, and draft mode.
+
+#### Connection & Configuration
 
 | Tool | Description |
 |---|---|
@@ -210,7 +353,7 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 | `set_project` | Set the active project ID for subsequent API calls |
 | `parse_mammoth_url` | Extract workspace, project, and view IDs from a Mammoth URL |
 
-### Discovery
+#### Discovery
 
 | Tool | Description |
 |---|---|
@@ -219,7 +362,7 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 | `get_dataset` | Get detailed info about a dataset, including its views |
 | `upload_file` | Upload a CSV or Excel file to create a new dataset |
 
-### Views
+#### Views
 
 | Tool | Description |
 |---|---|
@@ -228,20 +371,20 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 | `create_view` | Create a new view in a dataset |
 | `delete_view` | Delete a view |
 
-### Data
+#### Data
 
 | Tool | Description |
 |---|---|
-| `get_data` | Fetch rows from a view with optional filtering, column selection, and pagination (max 400 rows) |
+| `get_data` | Fetch rows from a view (max 400 rows per call) |
 
-### Pipeline
+#### Pipeline
 
 | Tool | Description |
 |---|---|
 | `list_tasks` | List all pipeline transformation steps applied to a view |
 | `delete_task` | Delete (undo) a pipeline transformation step from a view |
 
-### Column Transformations
+#### Column Transformations
 
 | Tool | Description |
 |---|---|
@@ -251,7 +394,7 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 | `combine_columns` | Merge multiple column values into a single column with a separator |
 | `convert_type` | Change column types: TEXT, NUMERIC, DATE, DATETIME |
 
-### Value Transformations
+#### Value Transformations
 
 | Tool | Description |
 |---|---|
@@ -264,7 +407,7 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 | `split_column` | Split a text column by delimiter into multiple new columns |
 | `substring` | Extract substrings using position-based slicing, delimiters, or regex |
 
-### Aggregate Transformations
+#### Aggregate Transformations
 
 | Tool | Description |
 |---|---|
@@ -276,7 +419,7 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 | `limit_rows` | Keep only the top or bottom N rows, optionally sorted |
 | `discard_duplicates` | Remove rows with identical values across all columns |
 
-### Advanced Transformations
+#### Advanced Transformations
 
 | Tool | Description |
 |---|---|
@@ -287,29 +430,204 @@ Once the remote server is deployed, any user with a Mammoth account can connect 
 | `date_diff` | Calculate time difference between two date columns |
 | `increment_date` | Add or subtract time units from a date column |
 
-### AI & SQL
+#### AI & SQL
 
 | Tool | Description |
 |---|---|
-| `ai_transform` | Use AI to generate a new column based on a natural language prompt and existing column data |
+| `ai_transform` | Use AI to generate a new column based on a natural language prompt |
 | `sql_query` | Transform data using natural language intent or raw SQL |
 
-### Export
+#### Export
 
 | Tool | Description |
 |---|---|
 | `export_data` | Export view data to CSV, S3, email, or another dataset |
-| `export_to_database` | Export view data to an external database (Postgres, MySQL, BigQuery, Redshift, Elasticsearch) |
+| `export_to_database` | Export to Postgres, MySQL, BigQuery, Redshift, Elasticsearch |
+| `export_to_ftp` | Export view data to an FTP server |
+| `export_to_sftp` | Export view data to an SFTP server |
+| `list_exports` | List all exports configured on a view |
+| `delete_export` | Delete an export from a view's pipeline |
+| `publish_to_db` | Publish view data to internal database for dashboards |
 
-### Help
+#### Draft Mode
 
 | Tool | Description |
 |---|---|
-| `get_help` | Get detailed guidance on a Mammoth topic (overview, transformations, conditions, data_cleaning, ai_transform, sql_query, workflows, troubleshooting) |
+| `enter_draft_mode` | Enter draft mode — transformations queue without executing |
+| `submit_draft` | Execute all queued draft transformations |
+| `discard_draft` | Cancel all queued draft transformations |
+| `set_auto_run` | Enable or disable auto-run on a view's pipeline |
+| `preview_task` | Preview a transformation's output without applying it |
+| `get_pipeline` | Get the full pipeline definition for a view |
+| `get_task` | Get the full specification of a single pipeline task |
+
+#### Help
+
+| Tool | Description |
+|---|---|
+| `get_help` | Get detailed guidance on a Mammoth topic |
+
+### Import Profile (~43 tools)
+
+Data ingestion from webhooks, cloud connectors, files, and batches. Includes shared base tools (connection, discovery, views, data, help).
+
+#### Webhooks
+
+| Tool | Description |
+|---|---|
+| `list_webhooks` | List all webhooks in the workspace |
+| `create_webhook` | Create a new webhook dataset for receiving data via HTTP |
+| `get_webhook` | Get details of a specific webhook |
+| `update_webhook` | Update a webhook's settings |
+| `delete_webhook` | Delete a webhook |
+| `send_webhook_data` | Send data to a webhook endpoint (POST or GET) |
+
+#### Connectors
+
+| Tool | Description |
+|---|---|
+| `list_connectors` | List available connector types (Salesforce, Snowflake, etc.) |
+| `get_connector` | Get details of a connector type |
+| `list_active_connectors` | List connectors with active connections |
+| `list_connections` | List all connections for a connector type |
+| `create_connection` | Create a new connection to a cloud data source |
+| `get_connection` | Get details of a connection |
+| `update_connection` | Update a connection's configuration |
+| `delete_connection` | Delete a connection |
+| `list_connector_datasets` | List dataset configurations for a connection |
+| `create_connector_dataset` | Create a dataset import from a connection |
+| `get_connector_dataset` | Get dataset configuration details |
+| `update_connector_dataset` | Update a dataset configuration |
+| `delete_connector_dataset` | Delete a dataset configuration |
+
+#### File Management
+
+| Tool | Description |
+|---|---|
+| `list_files` | List uploaded files in the workspace |
+| `get_file` | Get details of an uploaded file |
+| `delete_file` | Delete an uploaded file |
+| `extract_sheets` | Extract specific sheets from an Excel file into separate datasets |
+| `set_file_password` | Unlock a password-protected file |
+| `upload_folder` | Upload all files in a local folder |
+
+#### Batches
+
+| Tool | Description |
+|---|---|
+| `list_batches` | List all batches for a dataset |
+| `get_batch` | Get batch details |
+| `create_batch` | Create a new batch import for a dataset |
+| `update_batch` | Update a batch configuration |
+| `delete_batch` | Delete a batch |
+
+### Admin Profile (~85 tools)
+
+Organization, dashboards, automations, user management, and system admin. Includes shared base tools plus export tools.
+
+#### Organization
+
+| Tool | Description |
+|---|---|
+| `list_folders` | List all folders in the workspace |
+| `create_folder` | Create a new folder |
+| `delete_folder` | Delete folders |
+| `move_to_folder` | Move resources into a folder |
+| `get_project` | Get project details |
+| `create_project` | Create a new project |
+| `update_project` | Update a project's name or color |
+| `delete_project` | Delete a project and all contents |
+| `add_project_users` | Add users to a project |
+| `remove_project_users` | Remove users from a project |
+| `browse_project` | Browse a project's contents |
+| `create_dataset` | Create a new dataset programmatically |
+| `update_dataset` | Update a dataset's metadata |
+| `delete_dataset` | Delete a dataset and all its views |
+| `browse_dataset` | Browse a dataset's contents |
+| `get_file_settings` | Get file-level settings for a dataset |
+| `bulk_delete_views` | Delete multiple views at once |
+
+#### Dashboards
+
+| Tool | Description |
+|---|---|
+| `list_dashboards` | List all dashboards |
+| `create_dashboard` | Create a new dashboard |
+| `get_dashboard` | Get dashboard details |
+| `update_dashboard` | Update a dashboard |
+| `delete_dashboard` | Delete a dashboard |
+| `share_dashboard` | Share a dashboard with users or publish |
+| `list_dashboard_sources` | List available data sources for dashboards |
+| `query_dashboard` | Query dashboard draft data using SQL |
+| `get_dashboard_analytics` | Get dashboard usage analytics |
+| `get_dashboard_by_url` | Look up a dashboard by its public URL |
+| `query_published_dashboard` | Query published dashboard data |
+
+#### Automations & Schedules
+
+| Tool | Description |
+|---|---|
+| `list_automations` | List all automations |
+| `create_automation` | Create a new automation |
+| `get_automation` | Get automation details |
+| `update_automation` | Update an automation |
+| `delete_automation` | Delete an automation |
+| `list_schedules` | List all schedules |
+| `create_schedule` | Create a new schedule |
+| `get_schedule` | Get schedule details |
+| `update_schedule` | Update a schedule |
+| `delete_schedule` | Delete a schedule |
+
+#### Workspace & Users
+
+| Tool | Description |
+|---|---|
+| `list_workspaces` | List all accessible workspaces |
+| `get_workspace` | Get workspace details |
+| `update_workspace` | Update workspace settings |
+| `list_workspace_users` | List workspace users |
+| `get_workspace_user` | Get user details |
+| `update_workspace_user` | Update a user's role or settings |
+| `get_user_profile` | Get current user's profile |
+| `update_user_profile` | Update current user's profile |
+| `get_user_preferences` | Get current user's preferences |
+| `update_user_preferences` | Update current user's preferences |
+
+#### API Keys & Client Apps
+
+| Tool | Description |
+|---|---|
+| `list_external_keys` | List external API keys (OpenAI, etc.) |
+| `get_external_key` | Get an external key's details |
+| `create_external_key` | Create a new external API key |
+| `delete_external_key` | Delete an external API key |
+| `list_client_apps` | List API tokens / client applications |
+| `create_client_app` | Create a new API token pair |
+| `get_client_app` | Get client app details |
+| `update_client_app` | Update a client app |
+| `delete_client_app` | Delete a client app and revoke tokens |
+
+#### AI Features
+
+| Tool | Description |
+|---|---|
+| `generate_profile` | AI-powered data profiling for a view |
+| `get_suggestions` | AI transformation suggestions |
+| `generate_data` | Generate synthetic data using AI |
+| `get_data_gen_info` | Get data generation metadata |
+| `ai_query_gen` | Generate SQL from natural language for connected databases |
+
+#### Monitoring
+
+| Tool | Description |
+|---|---|
+| `list_activity_logs` | List workspace activity logs (audit trail) |
+| `export_activity_logs` | Export activity logs to file |
+| `list_reports` | List workspace usage reports |
 
 ## Resources
 
-The server also exposes two MCP resources:
+The server exposes two MCP resources:
 
 - `mammoth://config` -- Current connection configuration (no secrets)
 - `mammoth://enums` -- All valid enum values for SDK operations

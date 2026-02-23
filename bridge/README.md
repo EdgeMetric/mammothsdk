@@ -13,7 +13,7 @@ pip install -e ".[bridge]"
 
 ## Configuration
 
-Create `bridge/.env`:
+Create `bridge/.env` (copy from `bridge/.env.example`):
 
 ```env
 MAMMOTH_API_KEY=your-api-key
@@ -71,6 +71,15 @@ python bridge/main.py
 {"or": [...]}
 {"not": {"column": "Status", "operator": "EQ", "value": "Closed"}}
 ```
+
+## Using with Claude artifacts
+
+The bridge dynamically dispatches any SDK method — there is no hardcoded list. Claude can call `views.get`, `client.projects.list`, `view.filter_rows`, or any other SDK function through the same `POST /rpc` interface.
+
+Claude needs two docs to use the bridge effectively:
+
+1. **This README** — bridge request/response format.
+2. **`docs/full-documentation.md`** — complete SDK reference (all methods, enums, conditions, exports, examples).
 
 ## Usage from a browser artifact
 

@@ -1093,6 +1093,329 @@ column names
 - **Too many columns** → `delete_columns` early to reduce memory
 - **AI transform slow** → reduce `context_columns` to only necessary ones
 """,
+    # ── Import profile topics ────────────────────────────────
+    "webhooks": """\
+# Webhooks — Push Data into Mammoth via HTTP
+
+## What Are Webhooks?
+Webhooks allow external systems to push data into Mammoth datasets via HTTP \
+requests. Each webhook has a unique URI that accepts POST or GET requests \
+containing JSON data.
+
+## Setup Workflow
+
+### 1. Create a Webhook
+```
+create_webhook(name="Sales Data Feed", mode="replace")
+```
+- **mode="replace"**: Each push replaces all existing data (good for snapshots)
+- **mode="combine"**: Each push appends to existing data (good for event streams)
+
+### 2. Get the Webhook URI
+```
+get_webhook(webhook_id=123)
+```
+The response includes a `uri` field — this is the endpoint external systems POST to.
+
+### 3. Test with Sample Data
+```
+send_webhook_data(webhook_uri="/webhooks/abc123", data={"name": "Test", "value": 42})
+```
+
+### 4. Configure External System
+Share the full webhook URL (`{base_url}{uri}`) with the external system.
+
+## Security Options
+- **is_secure=True**: Requires authentication token in headers
+- **origins**: CORS allowlist (default "*" allows all)
+
+## Common Patterns
+
+### Event Streaming (append mode)
+```
+create_webhook(name="Events", mode="combine")
+```
+Each POST appends rows. Use `filter_rows` on the resulting dataset to work \
+with specific time ranges.
+
+### Periodic Snapshots (replace mode)
+```
+create_webhook(name="Daily Inventory", mode="replace")
+```
+Each POST replaces all data with the latest snapshot.
+
+## Troubleshooting
+- **Empty dataset after POST**: Check that the JSON structure matches expected \
+columns. Flat JSON objects map to columns automatically.
+- **Authentication errors**: If `is_secure=True`, ensure the token is included \
+in the Authorization header.
+- **CORS errors**: Update `origins` to include the calling domain.
+""",
+    "connectors": """\
+# Cloud Connectors — Pull Data from External Systems
+
+## Overview
+Connectors let Mammoth pull data from cloud services (Salesforce, Snowflake, \
+Google Sheets, databases, etc.) on-demand or on a schedule.
+
+## Hierarchy
+```
+Connector Type → Connection → Dataset Config
+  (e.g. Snowflake)  (credentials)  (which tables/queries to import)
+```
+
+## Setup Workflow
+
+### 1. Discover Available Connectors
+```
+list_connectors()          # all available types
+list_active_connectors()   # types with existing connections
+```
+
+### 2. Create a Connection
+```
+create_connection(
+    connector_key="snowflake",
+    config={"account": "...", "username": "...", "password": "...", "warehouse": "..."}
+)
+```
+Each connector type has its own config schema — use `get_connector` to see \
+required fields.
+
+### 3. Configure Dataset Imports
+```
+create_connector_dataset(
+    connector_key="snowflake",
+    connection_key="conn_abc123",
+    config={"table": "orders", "schema": "public", "schedule": "daily"}
+)
+```
+
+### 4. Monitor & Manage
+- `list_connections` — see all connections for a connector type
+- `list_connector_datasets` — see all import configs for a connection
+- `update_connection` / `update_connector_dataset` — modify settings
+- `delete_connection` / `delete_connector_dataset` — remove
+
+## Common Connector Types
+- **Databases**: Snowflake, PostgreSQL, MySQL, BigQuery, Redshift
+- **Cloud Services**: Salesforce, Google Sheets, Google Analytics
+- **File Storage**: S3, Azure Blob, Google Cloud Storage
+- **APIs**: REST APIs, custom connectors
+
+## Troubleshooting
+- **Connection failed**: Verify credentials and network access (IP allowlisting)
+- **Import stuck**: Check the dataset's batch status for error details
+- **Schema changed**: Update the dataset config after source schema changes
+""",
+    "files": """\
+# File Management
+
+## File Lifecycle
+1. **Upload** → `upload_file` (from discovery tools) or `upload_folder`
+2. **Process** → Mammoth auto-detects format, creates dataset
+3. **Manage** → list, inspect, delete files
+
+## Tools
+
+### Listing & Inspection
+- `list_files(limit=50)` — paginated file listing
+- `get_file(file_id)` — detailed file info (size, status, dataset)
+
+### Upload
+- `upload_file` (from discovery tools) — single file upload
+- `upload_folder(folder_path)` — upload all files in a directory
+
+### Excel Sheet Extraction
+```
+extract_sheets(file_id=123, sheets=["Sheet1", "Sheet3"])
+```
+- Splits an Excel file into separate datasets per sheet
+- `delete_file_after_extract=True` (default) removes the original
+- `combine_after_extract=True` merges sheets into one dataset
+
+### Password-Protected Files
+```
+set_file_password(file_id=123, password="secret")
+```
+Unlocks a protected file so Mammoth can process it.
+
+### Cleanup
+- `delete_file(file_id)` — remove a single file
+
+## Tips
+- CSV files upload dates as TEXT — use `convert_type` after upload
+- Large Excel files may take time to process — check file status
+- Folder upload preserves the folder structure in Mammoth
+""",
+    "batches": """\
+# Batch Imports
+
+## Overview
+Batches define recurring data import configurations for a dataset. They \
+control how new data is appended, replaced, or merged into an existing dataset.
+
+## Tools
+- `list_batches(dataset_id)` — all batch configs for a dataset
+- `get_batch(dataset_id, batch_id)` — batch details
+- `create_batch(dataset_id, config)` — new batch configuration
+- `update_batch(dataset_id, config)` — modify batch settings
+- `delete_batch(dataset_id, batch_id)` — remove a batch
+
+## Common Patterns
+
+### Append New Records
+Configure a batch to append rows from new file uploads to an existing dataset.
+
+### Replace Dataset
+Configure a batch to completely replace the dataset contents on each import.
+
+### Merge by Key
+Configure a batch to merge/upsert based on a key column — new records are \
+added, existing records are updated.
+""",
+    # ── Admin profile topics ─────────────────────────────────
+    "dashboards": """\
+# Dashboards
+
+## Overview
+Dashboards combine views into interactive visualizations. Each dashboard \
+consists of widgets backed by view data sources.
+
+## Workflow
+
+### 1. Find Data Sources
+```
+list_dashboard_sources()
+```
+Returns views that can be used as dashboard widgets.
+
+### 2. Create a Dashboard
+```
+create_dashboard(config={
+    "name": "Sales Overview",
+    "widgets": [...]
+})
+```
+
+### 3. Query Dashboard Data
+```
+query_dashboard(dashboard_id=123, sql="SELECT region, SUM(revenue) FROM ...")
+```
+Run SQL against the dashboard's data sources for custom analysis.
+
+### 4. Share
+```
+share_dashboard(dashboard_id=123, config={"public": True})
+```
+
+### 5. Monitor Usage
+```
+get_dashboard_analytics(dashboard_id=123)
+```
+
+## Published Dashboards
+- `get_dashboard_by_url(url)` — look up by public URL
+- `query_published_dashboard(dashboard_id, sql)` — query published data
+""",
+    "automations": """\
+# Automations & Schedules
+
+## Automations
+Automations define event-driven workflows: when X happens, do Y.
+
+### Management
+- `list_automations()` — all automations
+- `create_automation(config)` — new automation
+- `get_automation(id)` — details
+- `update_automation(id, config)` — modify
+- `delete_automation(id)` — remove
+
+## Schedules
+Schedules define time-based triggers for data processing.
+
+### Management
+- `list_schedules()` — all schedules
+- `create_schedule(config)` — new schedule
+- `get_schedule(id)` — details
+- `update_schedule(id, config)` — modify
+- `delete_schedule(id)` — remove
+
+## Common Patterns
+
+### Daily Data Refresh
+Create a schedule that triggers a connector import + pipeline execution daily.
+
+### Event-Driven Export
+Create an automation that exports data when a pipeline completes.
+
+### Chained Workflows
+Automation triggers can reference other automations for multi-step workflows.
+""",
+    "organization": """\
+# Organization — Folders, Projects, Datasets
+
+## Folder Hierarchy
+Organize datasets and files in folders for clean workspace structure.
+
+- `list_folders()` — browse folder tree
+- `create_folder(name, parent_resource_id)` — create nested folder
+- `move_to_folder(resource_ids, target_folder_resource_id)` — move items
+- `delete_folder(folder_ids)` — remove folders and contents
+
+## Projects
+Projects group related datasets and provide access control.
+
+- `get_project(id)` / `create_project(name)` / `update_project(id)` / \
+`delete_project(id)`
+- `add_project_users(id, user_ids, role)` — grant access
+- `remove_project_users(id, user_ids)` — revoke access
+- `browse_project(id)` — see all datasets and views
+
+## Datasets
+- `create_dataset(spec, type)` — programmatic dataset creation
+- `update_dataset(id, patch)` — modify metadata
+- `delete_dataset(id)` — remove dataset and views
+- `browse_dataset(id)` — inspect dataset contents
+- `get_file_settings(id)` — file-level settings (delimiter, encoding)
+
+## Views (bulk operations)
+- `bulk_delete_views(view_ids)` — clean up multiple views at once
+""",
+    "admin": """\
+# Workspace Administration
+
+## Workspace Management
+- `list_workspaces()` — all accessible workspaces
+- `get_workspace()` — current workspace details
+- `update_workspace(config)` — update settings
+
+## User Management
+- `list_workspace_users()` — all users in workspace
+- `get_workspace_user(user_id)` — user details
+- `update_workspace_user(user_id, config)` — update role/permissions
+
+## User Profile
+- `get_user_profile()` / `update_user_profile(fields)` — manage own profile
+- `get_user_preferences()` / `update_user_preferences(prefs)` — UI preferences
+
+## API Keys
+### External Keys (third-party integrations)
+- `list_external_keys()` — see configured keys (OpenAI, etc.)
+- `create_external_key(config)` — add a new key
+- `delete_external_key(id)` — remove a key
+
+### Client Apps (API access tokens)
+- `list_client_apps()` — see API tokens
+- `create_client_app(name)` — generate new API key pair
+- `update_client_app(key, patch)` — modify app settings
+- `delete_client_app(key)` — revoke API access
+
+## Monitoring
+- `list_activity_logs()` — audit trail of workspace actions
+- `export_activity_logs(format)` — download logs as CSV
+- `list_reports()` — workspace usage reports
+""",
 }
 
 TOPIC_LIST = ", ".join(f"`{t}`" for t in HELP_TOPICS)
@@ -1104,13 +1427,12 @@ def get_help(topic: str) -> str:
 transformations or analyzing data quality.
 
     Args:
-        topic: One of: overview, transformations, conditions, data_cleaning, \
-ai_transform, sql_query, workflows, troubleshooting.
+        topic: Help topic. Common topics: overview, transformations, conditions, \
+data_cleaning, ai_transform, sql_query, workflows, troubleshooting. \
+Import topics: webhooks, connectors, files, batches. \
+Admin topics: dashboards, automations, organization, admin.
     """
     doc = HELP_TOPICS.get(topic)
     if doc:
         return doc
-    return (
-        f"Unknown topic '{topic}'. "
-        f"Available topics: {TOPIC_LIST}."
-    )
+    return f"Unknown topic '{topic}'. " f"Available topics: {TOPIC_LIST}."

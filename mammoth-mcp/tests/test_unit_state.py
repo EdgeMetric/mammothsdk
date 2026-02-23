@@ -149,13 +149,15 @@ class TestUserClientRegistry:
     @pytest.mark.asyncio
     async def test_creates_manager_on_first_access(self):
         store = MagicMock()
-        store.get_token = AsyncMock(return_value={
-            "credentials": {
-                "api_key": "k",
-                "api_secret": "s",
-                "workspace_id": 1,
-            },
-        })
+        store.get_token = AsyncMock(
+            return_value={
+                "credentials": {
+                    "api_key": "k",
+                    "api_secret": "s",
+                    "workspace_id": 1,
+                },
+            }
+        )
 
         with patch("mammoth_mcp.state.MammothClient"):
             registry = UserClientRegistry(store, job_timeout=30)
@@ -167,13 +169,15 @@ class TestUserClientRegistry:
     @pytest.mark.asyncio
     async def test_returns_cached_manager(self):
         store = MagicMock()
-        store.get_token = AsyncMock(return_value={
-            "credentials": {
-                "api_key": "k",
-                "api_secret": "s",
-                "workspace_id": 1,
-            },
-        })
+        store.get_token = AsyncMock(
+            return_value={
+                "credentials": {
+                    "api_key": "k",
+                    "api_secret": "s",
+                    "workspace_id": 1,
+                },
+            }
+        )
 
         with patch("mammoth_mcp.state.MammothClient"):
             registry = UserClientRegistry(store, job_timeout=30)
@@ -193,13 +197,15 @@ class TestUserClientRegistry:
     @pytest.mark.asyncio
     async def test_lru_eviction(self):
         store = MagicMock()
-        store.get_token = AsyncMock(return_value={
-            "credentials": {
-                "api_key": "k",
-                "api_secret": "s",
-                "workspace_id": 1,
-            },
-        })
+        store.get_token = AsyncMock(
+            return_value={
+                "credentials": {
+                    "api_key": "k",
+                    "api_secret": "s",
+                    "workspace_id": 1,
+                },
+            }
+        )
 
         with patch("mammoth_mcp.state.MammothClient"):
             registry = UserClientRegistry(store, job_timeout=30)

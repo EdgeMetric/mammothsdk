@@ -59,6 +59,8 @@ async def get_data(
 
     message = None
     if truncated:
-        message = f"(Note: results limited to {_MAX_ROWS} rows. Request fewer rows for faster responses.)"
+        message = (
+            f"(Note: results limited to {_MAX_ROWS} rows. Request fewer rows for faster responses.)"
+        )
 
     return success_response(result, message)
