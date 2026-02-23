@@ -21,13 +21,19 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PIDDIR="${SCRIPT_DIR}/.pids"
 
-# Load .env if it exists (for PORT, LOG_LEVEL, etc.)
-if [ -f "${SCRIPT_DIR}/.env" ]; then
-    set -a
-    # shellcheck source=/dev/null
-    source "${SCRIPT_DIR}/.env"
-    set +a
-fi
+# Read only the scalar vars this script needs from .env.
+# Do NOT `source .env` — bash mangles JSON values like CORS_ORIGINS
+# by stripping inner quotes.  pydantic-settings reads .env itself.
+_read_env() {
+    local key="$1"
+    [ -f "${SCRIPT_DIR}/.env" ] || return 0
+    local line
+    line=$(grep -m1 "^${key}=" "${SCRIPT_DIR}/.env" 2>/dev/null) || return 0
+    echo "${line#*=}"
+}
+PORT="${PORT:-$(_read_env PORT)}"
+HOST="${HOST:-$(_read_env HOST)}"
+LOG_FILE="${LOG_FILE:-$(_read_env LOG_FILE)}"
 
 # Base port from PORT env var (same as settings.py default)
 BASE_PORT="${PORT:-8000}"
