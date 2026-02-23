@@ -19,11 +19,12 @@ Create `bridge/.env`:
 MAMMOTH_API_KEY=your-api-key
 MAMMOTH_API_SECRET=your-api-secret
 MAMMOTH_WORKSPACE_ID=304
-MAMMOTH_PROJECT_ID=1134
 MAMMOTH_BASE_URL=https://app.mammoth.io/api/v2
 ```
 
 All values can also be passed as CLI args (run `python bridge/main.py --help`).
+
+Set the project at runtime via RPC: `{"method": "client.set_project_id", "args": {"project_id": 1134}}`.
 
 ## Running
 

@@ -61,7 +61,6 @@ def _init_dispatcher(
     api_key: str,
     api_secret: str,
     workspace_id: int,
-    project_id: int | None = None,
     base_url: str = "https://app.mammoth.io/api/v2",
 ) -> Dispatcher:
     client = MammothClient(
@@ -70,8 +69,6 @@ def _init_dispatcher(
         workspace_id=workspace_id,
         base_url=base_url,
     )
-    if project_id:
-        client.set_project_id(project_id)
     return Dispatcher(client)
 
 
@@ -152,7 +149,6 @@ def main() -> None:
     parser.add_argument("--api-key", default=os.getenv("MAMMOTH_API_KEY"))
     parser.add_argument("--api-secret", default=os.getenv("MAMMOTH_API_SECRET"))
     parser.add_argument("--workspace-id", type=int, default=None)
-    parser.add_argument("--project-id", type=int, default=None)
     parser.add_argument("--base-url", default=os.getenv("MAMMOTH_BASE_URL",
                                                          "https://app.mammoth.io/api/v2"))
     cli_args = parser.parse_args()
@@ -161,9 +157,6 @@ def main() -> None:
     api_secret = cli_args.api_secret
     workspace_id = cli_args.workspace_id or (
         int(os.getenv("MAMMOTH_WORKSPACE_ID", "0")) or None
-    )
-    project_id = cli_args.project_id or (
-        int(os.getenv("MAMMOTH_PROJECT_ID", "0")) or None
     )
 
     if not api_key or not api_secret or not workspace_id:
@@ -177,12 +170,11 @@ def main() -> None:
         api_key=api_key,
         api_secret=api_secret,
         workspace_id=workspace_id,
-        project_id=project_id,
         base_url=cli_args.base_url,
     )
 
     print(f"Mammoth bridge listening on http://{cli_args.host}:{cli_args.port}")
-    print(f"  Workspace: {workspace_id}  Project: {project_id or '(not set)'}")
+    print(f"  Workspace: {workspace_id}")
     print(f"  Base URL:  {cli_args.base_url}")
     app.run(host=cli_args.host, port=cli_args.port, debug=False)
 
