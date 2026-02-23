@@ -56,7 +56,7 @@ async def ai_transform(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     kwargs: dict[str, Any] = {
         "prompt": prompt,
         "context_columns": context_columns,
@@ -100,7 +100,7 @@ async def sql_query(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
 
     if intent:
         generated_sql = await run_sync(view.generate_sql, intent)

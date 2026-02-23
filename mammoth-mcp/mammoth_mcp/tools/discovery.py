@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import Context
 
-from mammoth_mcp.helpers import get_manager, handle_errors, log_tool_call, success_response
+from mammoth_mcp.helpers import get_manager, handle_errors, log_tool_call, run_sync, success_response
 from mammoth_mcp.server import mcp
 
 
@@ -16,7 +16,7 @@ from mammoth_mcp.server import mcp
 async def list_projects(ctx: Context) -> dict[str, Any]:
     """List all projects in the current workspace."""
     manager = await get_manager(ctx)
-    projects = manager.client.projects.list()
+    projects = await run_sync(manager.client.projects.list)
     items = projects if isinstance(projects, list) else projects.get("projects", [])
     result = [
         {
@@ -35,7 +35,7 @@ async def list_projects(ctx: Context) -> dict[str, Any]:
 async def list_datasets(ctx: Context) -> dict[str, Any]:
     """List all datasets in the current project."""
     manager = await get_manager(ctx)
-    datasets = manager.client.datasets.list()
+    datasets = await run_sync(manager.client.datasets.list)
     items = datasets if isinstance(datasets, list) else datasets.get("datasets", [])
     result = [
         {
@@ -59,7 +59,7 @@ async def get_dataset(ctx: Context, dataset_id: int) -> dict[str, Any]:
         dataset_id: The dataset ID.
     """
     manager = await get_manager(ctx)
-    ds = manager.client.datasets.get(dataset_id)
+    ds = await run_sync(manager.client.datasets.get, dataset_id)
     return success_response(ds)
 
 
@@ -73,7 +73,7 @@ async def upload_file(ctx: Context, file_path: str) -> dict[str, Any]:
         file_path: Absolute path to the file on the local filesystem.
     """
     manager = await get_manager(ctx)
-    result = manager.client.files.upload(file_path)
+    result = await run_sync(manager.client.files.upload, file_path)
     return success_response(
         {"dataset_ids": result if isinstance(result, list) else [result]},
         "File uploaded successfully",

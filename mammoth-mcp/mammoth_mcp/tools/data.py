@@ -11,6 +11,7 @@ from mammoth_mcp.helpers import (
     get_manager,
     handle_errors,
     log_tool_call,
+    run_sync,
     success_response,
 )
 from mammoth_mcp.server import mcp
@@ -43,13 +44,14 @@ async def get_data(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
 
     truncated = limit > _MAX_ROWS
     actual_limit = min(limit, _MAX_ROWS)
 
     cond_obj = build_condition(condition) if condition else None
-    result = view.data(
+    result = await run_sync(
+        view.data,
         limit=actual_limit,
         offset=offset,
         columns=columns,

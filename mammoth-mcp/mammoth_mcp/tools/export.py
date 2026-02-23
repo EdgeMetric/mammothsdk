@@ -46,7 +46,7 @@ async def export_data(
         column_mapping: (dataset) Column mapping dict (optional).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     fmt = format.lower()
 
     if fmt == "csv":
@@ -118,7 +118,7 @@ async def export_to_database(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     db = db_type.lower()
 
     if db == "postgres":

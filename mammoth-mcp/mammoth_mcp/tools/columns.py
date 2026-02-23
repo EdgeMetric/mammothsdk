@@ -41,7 +41,7 @@ async def add_column(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     ct = resolve_enum(ColumnType, column_type)
     await run_sync(view.add_column, column_name, ct)
     return success_response(format_view_info(view), "add_column applied successfully")
@@ -67,7 +67,7 @@ async def delete_columns(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     await run_sync(view.delete_columns, columns)
     return success_response(format_view_info(view), "delete_columns applied successfully")
 
@@ -92,7 +92,7 @@ async def copy_columns(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     await run_sync(view.copy_columns, copies)
     return success_response(format_view_info(view), "copy_columns applied successfully")
 
@@ -127,7 +127,7 @@ async def combine_columns(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     ct = resolve_enum(ColumnType, column_type)
     cond = build_condition(condition) if condition else None
     await run_sync(
@@ -162,6 +162,6 @@ async def convert_type(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     await run_sync(view.convert_type, conversions)
     return success_response(format_view_info(view), "convert_type applied successfully")

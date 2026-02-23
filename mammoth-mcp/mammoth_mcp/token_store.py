@@ -53,9 +53,17 @@ class RedisTokenStore:
         return data
 
     def _decrypt(self, data: str) -> str:
-        """Decrypt a string value if an encryption key is configured."""
+        """Decrypt a string value if an encryption key is configured.
+
+        Falls back to returning raw data if decryption fails (e.g. pre-existing
+        unencrypted values from before encryption was enabled).
+        """
         if self._cipher:
-            return self._cipher.decrypt(data.encode()).decode()
+            try:
+                return self._cipher.decrypt(data.encode()).decode()
+            except Exception:
+                # Pre-existing unencrypted data — return as-is
+                return data
         return data
 
     async def connect(self) -> None:
@@ -110,8 +118,8 @@ class RedisTokenStore:
 
     async def store_token(self, token: str, data: dict) -> None:
         await self._r.set(
-            _TOKEN + token, self._encrypt(json.dumps(data)), ex=self._access_token_ttl
-        )
+            _TOKEN + token, self._encrypt(json.dumps(data))
+        )  # No TTL — persists until explicitly revoked
 
     async def get_token(self, token: str) -> dict | None:
         raw = await self._r.get(_TOKEN + token)

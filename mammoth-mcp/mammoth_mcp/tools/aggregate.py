@@ -48,7 +48,7 @@ async def pivot(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     cond = build_condition(condition) if condition else None
     await run_sync(view.pivot, group_by=group_by, aggregations=aggregations, condition=cond)
     return success_response(format_view_info(view), "pivot applied successfully")
@@ -88,7 +88,7 @@ async def window(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     wf = resolve_enum(WindowFunction, function)
     ct = resolve_enum(ColumnType, column_type)
     wr = resolve_enum(WindowRange, range_type)
@@ -130,7 +130,7 @@ async def crosstab(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     await run_sync(view.crosstab, rows=rows, pivot_column=pivot_column, select=select)
     return success_response(format_view_info(view), "crosstab applied successfully")
 
@@ -159,7 +159,7 @@ async def unnest(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     await run_sync(view.unnest, columns=columns, label_column=label_column, value_column=value_column)
     return success_response(format_view_info(view), "unnest applied successfully")
 
@@ -190,7 +190,7 @@ async def fill_missing(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     fd = resolve_enum(FillDirection, direction)
     await run_sync(view.fill_missing, column=column, direction=fd, partition_by=partition_by, order_by=order_by)
     return success_response(format_view_info(view), "fill_missing applied successfully")
@@ -220,7 +220,7 @@ async def limit_rows(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     await run_sync(view.limit_rows, n=n, bottom=bottom, order_by=order_by)
     return success_response(format_view_info(view), "limit_rows applied successfully")
 
@@ -245,6 +245,6 @@ async def discard_duplicates(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     await run_sync(view.discard_duplicates, ignore_columns=ignore_columns)
     return success_response(format_view_info(view), "discard_duplicates applied successfully")

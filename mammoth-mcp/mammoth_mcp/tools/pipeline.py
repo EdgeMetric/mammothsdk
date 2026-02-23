@@ -27,8 +27,8 @@ async def list_tasks(ctx: Context, view_id: int, dataset_id: int | None = None) 
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
-    tasks = view.list_tasks()
+    view = await run_sync(manager.get_view, view_id, dataset_id)
+    tasks = await run_sync(view.list_tasks)
     result = []
     for t in tasks:
         result.append({
@@ -58,6 +58,6 @@ async def delete_task(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     await run_sync(view.delete_task, task_id)
     return success_response(message=f"Deleted task {task_id} from view {view_id}")

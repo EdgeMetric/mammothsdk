@@ -12,6 +12,7 @@ from mammoth_mcp.helpers import (
     get_manager,
     handle_errors,
     log_tool_call,
+    run_sync,
     success_response,
 )
 from mammoth_mcp.server import mcp
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 async def test_connection(ctx: Context) -> dict[str, Any]:
     """Test that the Mammoth API credentials are valid and the connection works."""
     manager = await get_manager(ctx)
-    ok = manager.client.test_connection()
+    ok = await run_sync(manager.client.test_connection)
     if ok:
         return success_response(manager.config.summary(), "Connection successful")
     raise RuntimeError("Connection failed — check API key/secret")

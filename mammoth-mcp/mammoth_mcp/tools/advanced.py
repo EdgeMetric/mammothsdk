@@ -47,11 +47,11 @@ async def join_views(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     jt = resolve_enum(JoinType, join_type)
     # Try to get the foreign view for display-name resolution
     try:
-        foreign_view = manager.get_view(foreign_view_id)
+        foreign_view = await run_sync(manager.get_view, foreign_view_id)
         await run_sync(
             view.join,
             foreign_view=foreign_view,
@@ -102,7 +102,7 @@ async def lookup(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     await run_sync(
         view.lookup,
         source=source,
@@ -145,7 +145,7 @@ async def json_extract(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     jt_enum = resolve_enum(JsonType, json_type)
     await run_sync(
         view.json_extract,
@@ -185,7 +185,7 @@ async def extract_date(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     dc = resolve_enum(DateComponent, component)
     await run_sync(
         view.extract_date,
@@ -225,7 +225,7 @@ async def date_diff(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     ddu = resolve_enum(DateDiffUnit, component)
     await run_sync(
         view.date_diff,
@@ -266,7 +266,7 @@ async def increment_date(
         dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id, dataset_id)
     cond = build_condition(condition) if condition else None
     await run_sync(
         view.increment_date,
