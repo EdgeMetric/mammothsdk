@@ -23,7 +23,6 @@ async def export_data(
     ctx: Context,
     view_id: int,
     format: str,
-    dataset_id: int | None = None,
     # S3 options
     file_name: str | None = None,
     file_type: str = "csv",
@@ -38,7 +37,6 @@ async def export_data(
     Args:
         view_id: The dataview ID to export from.
         format: Export format — one of: csv, s3, email, dataset.
-        dataset_id: The dataset ID (auto-detected if not provided).
         file_name: (s3) Output filename (auto-generated if not provided).
         file_type: (s3) File format (default "csv").
         recipients: (email) List of email addresses.
@@ -46,7 +44,7 @@ async def export_data(
         column_mapping: (dataset) Column mapping dict (optional).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     fmt = format.lower()
 
     if fmt == "csv":
@@ -93,8 +91,6 @@ async def export_to_database(
     service_account_json: str | None = None,
     # Elasticsearch params
     index: str | None = None,
-    # General
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Export view data to an external database.
 
@@ -115,10 +111,9 @@ async def export_to_database(
         dataset_name: BigQuery dataset name (bigquery).
         service_account_json: GCP service account JSON string (bigquery). Sensitive — may appear in logs.
         index: Elasticsearch index name (elasticsearch).
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     db = db_type.lower()
 
     if db == "postgres":

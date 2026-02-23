@@ -30,7 +30,6 @@ async def get_data(
     columns: list[str] | None = None,
     condition: dict[str, Any] | None = None,
     sort: str | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Fetch actual row data from a view with optional filtering, column selection, and pagination. Returns row values, not metadata — use get_view for column info and row count.
 
@@ -41,10 +40,9 @@ async def get_data(
         columns: List of column display names to include (default all).
         condition: Filter condition as a JSON object. Simple: {"column": "Sales", "operator": "GTE", "value": 1000}. Compound: {"logic": "AND", "conditions": [...]}.
         sort: Sort specification string (e.g. "column_name:asc").
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
 
     truncated = limit > _MAX_ROWS
     actual_limit = min(limit, _MAX_ROWS)

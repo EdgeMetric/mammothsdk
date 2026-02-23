@@ -8,11 +8,12 @@ transformation pipelines through views. Every step can be undone.
 
 Data hierarchy: Workspace → Project → Dataset → View.
 
-## Ergonomics — you usually only need a view ID
+## Ergonomics — you only need a view ID
 
-Most tools only need `view_id`. The `dataset_id` parameter is always optional \
-and auto-detected. Do NOT look up or ask for a dataset ID — just pass the \
-view ID.
+Most tools only need `view_id`. The project and dataset are auto-discovered \
+from the view ID. Do NOT look up or ask for a dataset ID — just pass the \
+view ID. The only exception is `create_view`, which requires a `dataset_id` \
+to specify where to create the new view.
 
 ## When the user gives a view ID (e.g. "view 276668")
 

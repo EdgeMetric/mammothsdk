@@ -37,7 +37,6 @@ async def filter_rows(
     condition: dict[str, Any],
     filter_type: str = "SHOW",
     prompt: str = "",
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Keep or remove rows matching a condition. Adds a reversible pipeline task (undo with delete_task).
 
@@ -46,10 +45,9 @@ async def filter_rows(
         condition: Filter condition as JSON. Simple: {"column": "Sales", "operator": "GTE", "value": 1000}. Compound: {"logic": "AND", "conditions": [...]}.
         filter_type: SHOW to keep matching rows, REMOVE to discard them (default SHOW).
         prompt: Natural-language description of the filter (optional).
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     cond = build_condition(condition)
     ft = resolve_enum(FilterType, filter_type)
     await run_sync(view.filter_rows, cond, filter_type=ft, prompt=prompt)
@@ -70,7 +68,6 @@ async def set_values(
     column_type: str = "TEXT",
     existing_column: str | None = None,
     condition: dict[str, Any] | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Populate or annotate columns with conditional values. Adds a reversible pipeline task (undo with delete_task).
 
@@ -81,10 +78,9 @@ async def set_values(
         column_type: Column type for new column — TEXT, NUMERIC, or DATE (default TEXT).
         existing_column: Existing column to overwrite.
         condition: Optional global filter condition as JSON.
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     sv_list = []
     for v in values:
         cond = build_condition(v["condition"]) if v.get("condition") else None
@@ -116,7 +112,6 @@ async def math_transform(
     column_type: str = "NUMERIC",
     existing_column: str | None = None,
     condition: dict[str, Any] | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Perform arithmetic using column values, constants, and functions (SUM, AVG, MIN, MAX, COUNT, INT, ABS). Adds a reversible pipeline task (undo with delete_task).
 
@@ -127,10 +122,9 @@ async def math_transform(
         column_type: Column type for new column (default NUMERIC).
         existing_column: Existing column to overwrite.
         condition: Optional filter condition as JSON.
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     ct = resolve_enum(ColumnType, column_type)
     cond = build_condition(condition) if condition else None
     await run_sync(
@@ -157,7 +151,6 @@ async def text_transform(
     case: str | None = None,
     trim: bool = False,
     condition: dict[str, Any] | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Standardize text — change case (UPPER, LOWER, TITLE) and/or trim whitespace. Adds a reversible pipeline task (undo with delete_task).
 
@@ -167,10 +160,9 @@ async def text_transform(
         case: Case transformation — UPPER, LOWER, or TITLE.
         trim: Whether to trim whitespace (default false).
         condition: Optional filter condition as JSON.
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     tc = resolve_enum(TextCase, case) if case else None
     cond = build_condition(condition) if condition else None
     await run_sync(view.text_transform, columns=columns, case=tc, trim=trim, condition=cond)
@@ -192,7 +184,6 @@ async def replace_values(
     match_case: bool = False,
     match_words: bool = False,
     condition: dict[str, Any] | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Find and replace text in one or more columns. Adds a reversible pipeline task (undo with delete_task).
 
@@ -204,10 +195,9 @@ async def replace_values(
         match_case: Case-sensitive matching (default false).
         match_words: Whole-word matching (default false).
         condition: Optional filter condition as JSON.
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     cond = build_condition(condition) if condition else None
     await run_sync(
         view.replace_values,
@@ -235,7 +225,6 @@ async def bulk_replace(
     match_case: bool = True,
     match_words: bool = False,
     condition: dict[str, Any] | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Replace multiple value variations with standardized values. Adds a reversible pipeline task (undo with delete_task).
 
@@ -246,10 +235,9 @@ async def bulk_replace(
         match_case: Case-sensitive matching (default true).
         match_words: Whole-word matching (default false).
         condition: Optional filter condition as JSON.
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     cond = build_condition(condition) if condition else None
     await run_sync(
         view.bulk_replace,
@@ -274,7 +262,6 @@ async def split_column(
     column: str,
     delimiter: str,
     new_columns: list[dict[str, str]],
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Split a text column by delimiter into multiple new columns. Adds a reversible pipeline task (undo with delete_task).
 
@@ -283,10 +270,9 @@ async def split_column(
         column: Source column display name.
         delimiter: Delimiter to split on.
         new_columns: List of new column specs, e.g. [{"name": "First", "type": "TEXT"}].
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     await run_sync(view.split_column, column=column, delimiter=delimiter, new_columns=new_columns)
     return success_response(format_view_info(view), "split_column applied successfully")
 
@@ -309,7 +295,6 @@ async def substring(
     new_column: str | None = None,
     existing_column: str | None = None,
     condition: dict[str, Any] | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Extract substrings using position-based slicing, delimiters, or regex. Adds a reversible pipeline task (undo with delete_task).
 
@@ -324,10 +309,9 @@ async def substring(
         new_column: Name for a new result column.
         existing_column: Existing column to overwrite.
         condition: Optional filter condition as JSON.
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     dir_enum = resolve_enum(SubstringDirection, direction) if direction else None
     cond = build_condition(condition) if condition else None
     await run_sync(

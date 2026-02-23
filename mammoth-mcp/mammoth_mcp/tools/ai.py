@@ -28,7 +28,6 @@ async def ai_transform(
     new_column: str = "AI Result",
     assistant_data: list[str] | None = None,
     context_columns_derivation: bool | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Use an OpenAI LLM to generate a NEW column from a prompt and context columns. Adds a reversible pipeline task (undo with delete_task).
 
@@ -53,10 +52,9 @@ async def ai_transform(
         new_column: Name for the AI output column (default "AI Result").
         assistant_data: Additional assistant context strings (optional).
         context_columns_derivation: Whether to derive from context columns (optional).
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     kwargs: dict[str, Any] = {
         "prompt": prompt,
         "context_columns": context_columns,
@@ -78,7 +76,6 @@ async def sql_query(
     view_id: int,
     intent: str | None = None,
     raw_sql: str | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Transform data using DuckDB SQL — either natural language intent or direct SQL. Adds a reversible pipeline task (undo with delete_task).
 
@@ -97,10 +94,9 @@ async def sql_query(
         view_id: The dataview ID.
         intent: Natural language description of the query (e.g. "show top 10 customers by total revenue with order count").
         raw_sql: Raw DuckDB SQL query string (e.g. "SELECT \"Name\", SUM(\"Sales\") as total FROM dataview GROUP BY \"Name\"").
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
 
     if intent:
         generated_sql = await run_sync(view.generate_sql, intent)

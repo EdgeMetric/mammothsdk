@@ -33,7 +33,6 @@ async def join_views(
     on: list[dict[str, str]],
     select: list[str] | list[dict[str, str]],
     column_prefix: str | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Combine with another view using LEFT, RIGHT, INNER, or OUTER join. Adds a reversible pipeline task (undo with delete_task).
 
@@ -44,10 +43,9 @@ async def join_views(
         on: Join keys, e.g. [{"left": "Customer ID", "right": "Customer ID"}].
         select: Columns to bring from foreign view — list of names or [{"column": "Name", "alias": "Customer Name"}].
         column_prefix: Prefix for joined columns (optional).
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     jt = resolve_enum(JoinType, join_type)
     # Try to get the foreign view for display-name resolution
     try:
@@ -87,7 +85,6 @@ async def lookup(
     value: str,
     new_column: str | None = None,
     existing_column: str | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """VLOOKUP-style: fetch a single column from a reference view by matching a shared key. Adds a reversible pipeline task (undo with delete_task).
 
@@ -99,10 +96,9 @@ async def lookup(
         value: Value column name in the lookup view.
         new_column: Name for the result column.
         existing_column: Existing column to overwrite.
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     await run_sync(
         view.lookup,
         source=source,
@@ -130,7 +126,6 @@ async def json_extract(
     extractions: list[dict[str, str]] | None = None,
     keep_source: bool = False,
     op_type: str | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Parse JSON text into structured columns (objects) or rows (lists). Adds a reversible pipeline task (undo with delete_task).
 
@@ -142,10 +137,9 @@ async def json_extract(
         extractions: Advanced extraction specs, e.g. [{"key": "name", "as": "Name", "type": "TEXT"}].
         keep_source: Keep the original JSON column (default false).
         op_type: Operation type override (e.g. "JSON_OBJECT_TO_COLUMNS", "JSON_LIST_TO_ROWS").
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     jt_enum = resolve_enum(JsonType, json_type)
     await run_sync(
         view.json_extract,
@@ -172,7 +166,6 @@ async def extract_date(
     component: str,
     new_column: str | None = None,
     existing_column: str | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Extract a component from a date column (year, month, day, hour, weekday, quarter, etc.). Adds a reversible pipeline task (undo with delete_task).
 
@@ -182,10 +175,9 @@ async def extract_date(
         component: Date component — year, month, day, hour, minute, second, week, quarter, weekday_text, month_text, etc.
         new_column: Name for the result column.
         existing_column: Existing column to overwrite.
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     dc = resolve_enum(DateComponent, component)
     await run_sync(
         view.extract_date,
@@ -211,7 +203,6 @@ async def date_diff(
     end: str,
     new_column: str | None = None,
     existing_column: str | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Calculate time difference between two date columns. Adds a reversible pipeline task (undo with delete_task).
 
@@ -222,10 +213,9 @@ async def date_diff(
         end: End date column display name.
         new_column: Name for the result column.
         existing_column: Existing column to overwrite.
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     ddu = resolve_enum(DateDiffUnit, component)
     await run_sync(
         view.date_diff,
@@ -252,7 +242,6 @@ async def increment_date(
     new_column: str | None = None,
     existing_column: str | None = None,
     condition: dict[str, Any] | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Add or subtract time units from a date column. Adds a reversible pipeline task (undo with delete_task).
 
@@ -263,10 +252,9 @@ async def increment_date(
         new_column: Name for the result column.
         existing_column: Existing column to overwrite.
         condition: Optional filter condition as JSON.
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     cond = build_condition(condition) if condition else None
     await run_sync(
         view.increment_date,

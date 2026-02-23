@@ -19,15 +19,14 @@ from mammoth_mcp.server import mcp
 @mcp.tool()
 @log_tool_call
 @handle_errors
-async def list_tasks(ctx: Context, view_id: int, dataset_id: int | None = None) -> dict[str, Any]:
+async def list_tasks(ctx: Context, view_id: int) -> dict[str, Any]:
     """List all pipeline transformation steps applied to a view.
 
     Args:
         view_id: The dataview ID.
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     tasks = await run_sync(view.list_tasks)
     result = []
     for t in tasks:
@@ -48,16 +47,14 @@ async def delete_task(
     ctx: Context,
     view_id: int,
     task_id: int,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Delete (undo) a pipeline transformation step from a view.
 
     Args:
         view_id: The dataview ID.
         task_id: The pipeline task ID to remove.
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = await run_sync(manager.get_view, view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     await run_sync(view.delete_task, task_id)
     return success_response(message=f"Deleted task {task_id} from view {view_id}")

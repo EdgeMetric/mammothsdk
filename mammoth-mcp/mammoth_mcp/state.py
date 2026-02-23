@@ -122,7 +122,7 @@ class ClientManager:
             f"{self.client.workspace_id}"
         )
 
-    def get_view(self, view_id: int, dataset_id: int | None = None) -> View:
+    def get_view(self, view_id: int) -> View:
         """Get a View, using cache if available, always refreshing metadata.
 
         Auto-discovers the project if needed (first call for a view).
@@ -143,7 +143,7 @@ class ClientManager:
         # "wrong project set" by checking current project first)
         self._ensure_project_for_view(view_id)
 
-        view = self.client.views.get(view_id, dataset_id)
+        view = self.client.views.get(view_id)
 
         # Evict oldest entry if at capacity
         if len(self._view_cache) >= _VIEW_CACHE_MAX:
