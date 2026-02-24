@@ -31,6 +31,16 @@ cryptography = "^44.0"
 [tool.poetry.scripts]
 mammoth-mcp = "mammoth_mcp.server:main"
 
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+ignore = ["UP007", "SIM108"]
+
+[tool.ruff.lint.per-file-ignores]
+"mammoth_mcp/tools/help.py" = ["E501"]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

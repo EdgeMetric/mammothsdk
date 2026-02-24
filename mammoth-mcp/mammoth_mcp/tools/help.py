@@ -590,6 +590,132 @@ resolve apparent duplicates
 - NULLs don't match in joins — null keys on either side won't join
 - `fill_missing` only fills from adjacent rows — isolated NULLs may persist
 """,
+    "schema_awareness": """\
+# Schema Awareness Protocol
+
+Before choosing tools, inspect the data with `get_view` (types, row count) and \
+`get_data` (sample values). Use the patterns below to guide tool selection.
+
+## Column Type → Function Eligibility
+
+| Column Type | Can Use | Cannot Use (convert first) |
+|---|---|---|
+| TEXT | `text_transform`, `replace_values`, `bulk_replace`, `split_column`, `substring` | `math_transform`, `extract_date`, `date_diff`, `increment_date` |
+| NUMERIC | `math_transform`, `window` (with numeric functions), numeric conditions | `text_transform`, `split_column` |
+| DATE / DATETIME | `extract_date`, `date_diff`, `increment_date`, date conditions | `math_transform` (use `date_diff` instead) |
+
+**Critical**: CSV dates ALWAYS upload as TEXT. You must `convert_type` before \
+any date operation.
+
+## Unique Value Count → Tool Selection
+
+| Unique Values | Interpretation | Best Tool |
+|---|---|---|
+| 2-10 | Categorical / boolean | `set_values` (label), `pivot` (aggregate by) |
+| 10-100 | Standardization target | `bulk_replace` (merge variants), `text_transform` first |
+| 100-1000 | High cardinality | `sql_query` for grouping, avoid `crosstab` (too many columns) |
+| 1000+ | Continuous / unique-ish | `math_transform`, `window`, don't pivot on this column |
+
+## Null Handling Implications
+
+| Operation | Null Behavior | Mitigation |
+|---|---|---|
+| `AVG`, `MEDIAN` | NULLs excluded (changes denominator) | Warn user; `fill_missing` or `set_values` with 0 first if needed |
+| `COUNT` | `COUNT(col)` excludes NULLs, `COUNT(*)` includes | Clarify which behavior is intended |
+| Joins | NULL keys never match (even NULL = NULL is false) | Filter nulls or `fill_missing` before join |
+| `pivot` group-by | NULL becomes a group | May want to filter nulls first |
+| `math_transform` | Any NULL input → NULL result | `fill_missing` or `COALESCE` via SQL first |
+| `convert_type` | Failed conversions → NULL | Clean formatting first; check results after |
+
+## Sample Value Pattern Recognition
+
+When you see these patterns in `get_data` samples, apply the corresponding fix:
+
+| Pattern | Example | Fix |
+|---|---|---|
+| Currency formatting | "$1,234.56" | `replace_values` (strip $, ,) → `convert_type` NUMERIC |
+| Date-like text | "12/31/2024", "Jan 15, 2025" | `convert_type` DATE (auto-detects common formats) |
+| Inconsistent casing | "New York", "NEW YORK", "new york" | `text_transform` (TITLE or UPPER) |
+| Mixed nulls + values | "N/A", "null", "", actual nulls | `replace_values` to convert text nulls → empty → `set_values` or `fill_missing` |
+| Accounting negatives | "(1,234)" meaning -1234 | `replace_values` (→ "-") → strip ")" → `convert_type` NUMERIC |
+| Leading/trailing spaces | " Boston " | `text_transform(trim=true)` |
+| Numeric as text | "42", "100.5" (TEXT type) | `convert_type` NUMERIC directly (no cleanup needed) |
+
+## Cross-Dataset Join Key Assessment
+
+Before any join, compare the two views:
+
+1. **Type match**: Both join keys must be the same type (or convert one)
+2. **Value match**: Sample values should overlap — check with `get_data` on both
+3. **Uniqueness**: At least one side should have unique keys. If neither side is \
+unique, expect row multiplication (many-to-many)
+4. **Standardize first**: If keys are text, apply `text_transform` (case, trim) \
+on both views before joining
+5. **Choose join type**: LEFT (keep all primary rows), INNER (only matches), \
+FULL OUTER (keep everything)
+""",
+    "disambiguation": """\
+# Disambiguation Protocol
+
+## When to Default vs When to Ask
+
+**Default** (don't ask) when:
+- The schema makes the choice obvious (e.g., only one column could be the target)
+- The standard pattern applies (e.g., "clean this data" → standard cleaning pipeline)
+- The parameter has a safe default (e.g., LEFT join preserves all rows)
+
+**Ask with 2-3 structured options** when:
+- Fundamentally different approaches exist and schema doesn't resolve it
+- A critical parameter changes the outcome and can't be inferred
+- The user's intent maps to multiple valid interpretations
+
+**Never ask open-ended questions.** Always present structured options.
+
+## Decision Trees for Common Ambiguous Intents
+
+### "Clean up my data" / "Clean this"
+- **Default**: Run standard cleaning pipeline (trim → normalize case → \
+convert types → remove duplicates)
+- **Ask if**: Data has specific quality issues visible in samples that suggest \
+a different approach
+
+### "Combine these" / "Merge these"
+- **Ask**: "Do you want to:
+  A) **Join** — match rows by a key column (enrich with new columns)
+  B) **Append** — stack rows vertically (same columns, more rows)"
+
+### "Remove bad data" / "Clean up outliers"
+- **Ask**: "Do you want to:
+  A) **Filter out** — remove rows matching criteria (permanent exclusion)
+  B) **Flag** — add a column marking rows as good/bad (keep for review)
+  C) **Replace** — substitute bad values with defaults/nulls"
+
+### "Summarize" / "Aggregate"
+- **Default if grouping column is obvious**: `pivot` with most common aggregation \
+(SUM for numeric, COUNT for text)
+- **Ask if**: Multiple possible grouping columns, or unclear whether user wants \
+pivot (reshapes data) vs. window (keeps row-level detail)
+
+### "Calculate" / "Add a metric"
+- **Default**: `math_transform` if the formula is clear from context
+- **Ask if**: Multiple valid formulas exist (e.g., "calculate growth" could be \
+absolute difference, percentage change, or CAGR)
+
+### "Deduplicate" / "Remove duplicates"
+- **Ask**: "Do you want to:
+  A) **Exact duplicates** — remove rows identical across ALL columns \
+(`discard_duplicates`)
+  B) **Keep latest per key** — deduplicate by a specific column, keeping the \
+most recent (`sql_query` with ROW_NUMBER)"
+
+## After Disambiguation
+
+1. **State your interpretation**: "I'll interpret 'combine' as a LEFT JOIN on \
+Customer ID."
+2. **Present the plan** if 5+ steps: "Here's my plan: [numbered steps]. \
+Shall I proceed?"
+3. **Execute** — don't re-ask the same question.
+""",
     "ai_transform": """\
 # ai_transform — AI-Powered Column Generation
 
@@ -689,6 +815,42 @@ name and features. Keep it under 20 words."
 your prompt.
 - If the task fails, check that the OpenAI API key is configured and the view \
 has ≤50K rows.
+
+## GenAI as Capability Extender
+
+`ai_transform` is not just a fallback — it enables capabilities that simply \
+don't exist in structured tools or SQL.
+
+### When GenAI is the RIGHT choice
+
+| Capability | Example | Why only GenAI works |
+|---|---|---|
+| Sentiment / emotion analysis | "Classify review as Positive/Negative/Neutral" | Requires language understanding |
+| Fuzzy categorization | "Map job title to department" | Too many variations for `bulk_replace` |
+| Entity extraction from prose | "Extract company names from news articles" | Unstructured text, no delimiter |
+| Content generation | "Write product description from specs" | Creative generation |
+| Translation | "Translate product name to English" | Language model required |
+| Knowledge-based enrichment | "Is this a Fortune 500 company?" | Requires world knowledge |
+| Intent classification | "Classify support ticket as Bug/Feature/Question" | Semantic understanding |
+
+### GenAI + structured tools combo patterns
+
+The most powerful pipelines combine GenAI with structured tools:
+
+1. `filter_rows` (reduce to <50K) → `ai_transform` (classify/extract) → \
+use generated column in subsequent `filter_rows`, `pivot`, `set_values`
+2. GenAI for categorization → `pivot` by AI-generated category → dashboard
+3. GenAI for sentiment → `filter_rows` on negative sentiment → escalation workflow
+
+### Cost-performance optimization
+
+If the result is cacheable (e.g., product categorization where many rows share \
+the same product):
+1. `sql_query` to deduplicate: `SELECT DISTINCT "Product" FROM dataview`
+2. `ai_transform` on the small unique-values view
+3. `lookup` or `join_views` to map results back to the full dataset
+
+This saves tokens dramatically when many rows share the same input values.
 """,
     "sql_query": """\
 # sql_query — SQL-Powered Transformations
@@ -824,6 +986,45 @@ SELECT * FROM ranked WHERE rn <= 3
 - Raw SQL mode applies immediately.
 - Both create a pipeline task that can be undone with `delete_task`.
 - SQL operates on the full dataset — no row limit like `ai_transform`.
+
+## SQL as Pipeline Compressor
+
+SQL is not a fallback — it's often the RIGHT first choice. Proactively reach for \
+`sql_query` in these situations:
+
+### When to use SQL instead of chaining structured tools
+
+- **4+ structured tools for one logical goal** → collapse into one SQL statement
+- **Complex conditional logic** → CASE WHEN is cleaner than multiple `set_values`
+- **Regex needed** → structured tools don't support regex; SQL has `regexp_extract`, \
+`regexp_replace`, `regexp_matches`
+- **CTEs / subqueries** → deduplicate-and-keep-most-recent, top-N-per-group, \
+running totals with resets
+- **Conditional aggregation** → CASE WHEN inside SUM/COUNT
+- **Set operations** → UNION, INTERSECT, EXCEPT
+
+### SQL replaces these multi-tool patterns
+
+| Instead of... | Use SQL |
+|---|---|
+| `set_values` x5 for multi-branch labeling | One CASE WHEN statement |
+| `window` + `filter_rows` + `delete_columns` for dedup | ROW_NUMBER() CTE |
+| `pivot` + `filter_rows` + `limit_rows` for top-N summary | GROUP BY + HAVING + ORDER BY + LIMIT |
+| `replace_values` x3 + `convert_type` for format cleanup | CAST(REPLACE(REPLACE(col, '$', ''), ',', '') AS DOUBLE) |
+| `substring` with complex patterns | regexp_extract / split_part |
+| `extract_date` + `pivot` for time-based rollup | date_trunc() + GROUP BY |
+
+### SQL for capabilities Mammoth lacks natively
+
+- **Regex splitting**: `regexp_extract("col", 'pattern', 1)`
+- **Percentiles**: `PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY "col")`
+- **String aggregation**: `STRING_AGG("col", ', ' ORDER BY "col")`
+- **Set operations**: `EXCEPT` / `INTERSECT` between subqueries
+- **Complex COALESCE chains**: `COALESCE("col1", "col2", "col3", 'default')`
+- **Date scaffolding**: `GENERATE_SERIES` for filling date gaps
+
+SQL creates a single pipeline task (undo with `delete_task`), has no row limit, \
+and works on the full dataset.
 """,
     "workflows": """\
 # Multi-Step Workflow Patterns
@@ -990,6 +1191,97 @@ on flag → `pivot`
 - **Running average over N periods**: `window` with RUNNING range_type
 - **Preserve originals**: `copy_columns` before destructive ops, \
 `delete_columns` at end to clean up helper columns
+
+---
+
+## Pattern 7: Data Standardization Pipeline
+
+**Scenario**: Inconsistent text values → clean categories for analysis
+
+1. `text_transform(columns=["Company","City"], case="TITLE", trim=true)` — \
+normalize casing + strip whitespace
+2. `bulk_replace(columns=["Company"], mapping=[{"search":["Msft","Microsoft Corp"],\
+"replace":"Microsoft"}, ...])` — merge known variations
+3. `replace_values(columns=["Company"], find=" Inc.", replace="")` — strip \
+suffixes that `bulk_replace` missed
+4. `get_data` → verify: check for remaining variations
+5. `pivot(group_by=["Company"], ...)` — now groups cleanly
+
+**Key insight**: `text_transform` (normalize) → `bulk_replace` (merge groups) → \
+`replace_values` (edge cases) is the canonical standardization sequence.
+
+## Pattern 8: SQL-Powered Complex Analysis
+
+**Scenario**: Monthly cohort analysis with retention rates
+
+Instead of chaining 6+ structured tools (extract_date + window + filter + pivot + \
+math + set_values), use one SQL statement:
+
+```
+sql_query(view_id=V, raw_sql=\"\"\"
+WITH first_purchase AS (
+  SELECT "Customer ID", MIN(date_trunc('month', "Date")) as cohort_month
+  FROM dataview GROUP BY 1
+),
+monthly_activity AS (
+  SELECT d."Customer ID", f.cohort_month,
+         date_trunc('month', d."Date") as activity_month,
+         date_diff('month', f.cohort_month, date_trunc('month', d."Date")) as month_offset
+  FROM dataview d JOIN first_purchase f ON d."Customer ID" = f."Customer ID"
+)
+SELECT cohort_month, month_offset,
+       COUNT(DISTINCT "Customer ID") as active_customers
+FROM monthly_activity
+GROUP BY 1, 2
+ORDER BY 1, 2
+\"\"\")
+```
+
+**When to reach for SQL**: Whenever you're about to chain 4+ tools for one \
+analytical question, or when the logic involves CTEs, conditional aggregation, \
+or regex.
+
+## Pattern 9: GenAI-Enriched Pipeline
+
+**Scenario**: Transaction data → AI categorization → monthly summary
+
+1. `filter_rows` — reduce to target date range (cuts data, ensures <50K for AI)
+2. `ai_transform(prompt="Classify the transaction into: Groceries, Dining, \
+Transport, Entertainment, Utilities, Healthcare, Other", \
+context_columns=["Description","Merchant"])` — AI categorization
+3. `get_data` → verify AI results look correct
+4. `convert_type(conversions=[{"column":"Date","to":"DATE"}])`
+5. `extract_date(column="Date", component="month", new_column="Month")`
+6. `pivot(group_by=["Month","AI Category"], \
+aggregations=[{"column":"Amount","function":"SUM","as":"Total Spend"}])`
+
+**Key insight**: AI adds capabilities (categorization) that enable structured \
+analysis (pivot by category). Use AI early, then structured tools for the rest.
+
+## Creative Composition Guidelines
+
+- **Pre-processing enables accuracy**: The right prep steps (type conversion, \
+standardization) before the main operation dramatically improve results.
+- **Use intermediate columns**: Create helper columns with `add_column` + \
+`set_values` or `math_transform`, use them in subsequent steps, then \
+`delete_columns` at the end to clean up.
+- **Think in pipelines**: Production pipelines average 22.6 steps. Don't try to \
+do everything in one step — break into clear phases.
+- **SQL as escape hatch**: When structured tools can't express the logic, SQL \
+almost always can.
+
+## Workarounds for Missing Native Functions
+
+| Need | Workaround |
+|---|---|
+| Keep most recent record per key | `sql_query` with ROW_NUMBER() CTE |
+| Business days between dates | `date_diff` (calendar) → `math_transform` (× 5/7) → optionally join holiday calendar |
+| Conditional aggregation | `set_values` (create flag) → `filter_rows` → `pivot` — or one `sql_query` with CASE WHEN in SUM |
+| Percentile bucketing | `sql_query` with NTILE(n) window function |
+| Transpose rows↔columns | `pivot` with creative group-by, or `crosstab` |
+| Running average with reset | `window` with partition_by on the reset group |
+| Complex multi-branch labeling | `sql_query` with CASE WHEN (cleaner than 5+ `set_values`) |
+| Regex-based extraction | `sql_query` with regexp_extract() |
 """,
     "troubleshooting": """\
 # Troubleshooting & Common Mistakes
@@ -1092,6 +1384,35 @@ column names
 - **Join very slow** → aggregate the larger view first, then join
 - **Too many columns** → `delete_columns` early to reduce memory
 - **AI transform slow** → reduce `context_columns` to only necessary ones
+
+## Known Accuracy Risks
+
+Be especially careful with these — they have known edge cases:
+
+- **Business days / network days**: No native function. The `date_diff` × 5/7 \
+approximation is rough. For accuracy, join a holiday calendar and subtract.
+- **Complex conditional logic**: Multiple nested `set_values` can have subtle \
+ordering issues — conditions are evaluated top-to-bottom, first match wins. \
+Consider `sql_query` with CASE WHEN for complex branching.
+- **Type conversion edge cases**: `convert_type` TEXT→NUMERIC silently converts \
+failures to NULL. Always check with `get_data` after conversion. If many NULLs \
+appear, the text likely has formatting characters.
+- **Join type selection**: LEFT vs INNER has major consequences. LEFT preserves \
+all rows (with NULLs for non-matches), INNER drops non-matching rows. Default \
+to LEFT unless the user explicitly wants to exclude non-matches.
+
+## Graceful Degradation
+
+When you can't fully solve a request:
+
+- **Offer partial solutions + explanation**: "I can do X and Y, but Z requires \
+[manual step / feature not available]. Here's what I recommend..."
+- **Multiple options with trade-offs**: "Option A: `sql_query` (exact but complex). \
+Option B: `set_values` (simpler but approximate). Which do you prefer?"
+- **Defer to manual**: Some operations (column renaming, display formatting) are \
+Display Changes, not pipeline tasks — explain where to find them in the UI.
+- **Never hallucinate functions**: If Mammoth doesn't support an operation, say so \
+clearly rather than inventing a tool or parameter that doesn't exist.
 """,
     # ── Import profile topics ────────────────────────────────
     "webhooks": """\
@@ -1416,6 +1737,65 @@ Projects group related datasets and provide access control.
 - `export_activity_logs(format)` — download logs as CSV
 - `list_reports()` — workspace usage reports
 """,
+    "orchestration": """\
+# Orchestration — Automation & Scheduling
+
+## When to Bridge from Pipeline to Orchestration
+
+If the user mentions any of these, complete the pipeline first, then discuss \
+orchestration options:
+
+| Signal Phrase | Orchestration Type |
+|---|---|
+| "automate", "run automatically" | Dataset Refresh or Automation |
+| "schedule", "run daily/weekly" | Schedule (cron-based) |
+| "email results", "send report" | Messaging / Export automation |
+| "when data updates", "on refresh" | Automation trigger |
+| "consolidate", "append daily" | Data Consolidation |
+
+## Orchestration Types
+
+### 1. Dataset Refresh
+- **Trigger**: Manual, scheduled, or API-triggered
+- **What it does**: Re-pulls data from the source (connector, webhook, file)
+- **Constraint**: Only works on connector/webhook datasets, not uploaded CSVs
+- **Use case**: Keep Salesforce/Snowflake data current
+
+### 2. Data Consolidation (Append)
+- **Trigger**: Scheduled
+- **What it does**: Appends new data to an existing dataset on a schedule
+- **Constraint**: Schema must match between source and target
+- **Use case**: Daily transaction log accumulation
+
+### 3. Automations
+- **Trigger**: Dataset refresh completion, schedule, or manual
+- **What it does**: Chains multiple actions — refresh → pipeline → export → notify
+- **Constraint**: Max one level of dependency (no chaining automations to automations)
+- **Use case**: "When Salesforce data refreshes, run the pipeline and email the report"
+
+### 4. Schedules
+- **Trigger**: Cron-based (daily, weekly, monthly, custom)
+- **What it does**: Triggers a dataset refresh or automation at set times
+- **Constraint**: Timezone-aware, minimum interval depends on plan
+- **Use case**: "Run every Monday at 8 AM EST"
+
+### 5. Messaging / Export
+- **Trigger**: Part of an automation chain or manual
+- **What it does**: Sends view data via email, Slack, or exports to database/S3
+- **Constraint**: Email exports limited to 100K rows
+- **Use case**: "Email the weekly summary to the team"
+
+## AI Behavior Rules
+
+1. **Complete the pipeline first** — don't discuss scheduling until transformations \
+are done and verified
+2. **Then mention orchestration**: "Your pipeline is ready. Would you like to \
+automate this? Mammoth supports scheduled refreshes, automated pipelines, and \
+email delivery."
+3. **Direct to admin tools**: Orchestration features require the `admin` tool group. \
+Call `enable_tool_group("admin")` to access automation and schedule tools.
+4. **No cross-project orchestration**: Automations work within a single project
+""",
 }
 
 TOPIC_LIST = ", ".join(f"`{t}`" for t in HELP_TOPICS)
@@ -1428,9 +1808,10 @@ transformations or analyzing data quality.
 
     Args:
         topic: Help topic. Common topics: overview, transformations, conditions, \
-data_cleaning, ai_transform, sql_query, workflows, troubleshooting. \
+data_cleaning, ai_transform, sql_query, workflows, schema_awareness, \
+disambiguation, troubleshooting. \
 Import topics: webhooks, connectors, files, batches. \
-Admin topics: dashboards, automations, organization, admin.
+Admin topics: dashboards, automations, organization, admin, orchestration.
     """
     doc = HELP_TOPICS.get(topic)
     if doc:
