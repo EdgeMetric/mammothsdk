@@ -47,10 +47,14 @@ Supported operators (from ``mammoth.Operator`` enum):
 from __future__ import annotations
 
 import warnings
-from typing import Any
+from typing import TYPE_CHECKING, Any, Union
 
-# Type alias for any condition type
-ConditionType = "Condition | CompoundCondition | NotCondition"
+if TYPE_CHECKING:
+    from typing import TypeAlias
+
+    ConditionType: TypeAlias = Union["Condition", "CompoundCondition", "NotCondition"]
+else:
+    ConditionType = Union["Condition", "CompoundCondition", "NotCondition"]
 
 # Operators that take no value
 _NULL_OPERATORS = frozenset(
