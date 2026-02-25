@@ -53,11 +53,12 @@ Get dataset details by ID.
 |-----------|------|---------|-------------|
 | `dataset_id` | `int` | *required* | ID of the dataset |
 
-**Returns**: Dict with complete dataset information including metadata, column info, and settings.
+**Returns**: Dict with a `"dataset"` key containing the full dataset information including metadata, column info, and settings.
 
 ```python
-ds = client.datasets.get(42)
-print(ds["name"], ds.get("row_count"))
+resp = client.datasets.get(42)
+ds = resp["dataset"]
+print(ds["name"], ds.get("stats", {}).get("row_count"))
 ```
 
 ### get_data

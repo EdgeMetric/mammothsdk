@@ -23,7 +23,9 @@ print(view.display_names)  # ["Product", "Region", "Sales", "Date", ...]
 
 # 4. Apply transformations
 view.filter_rows(Condition("Sales", Operator.GTE, 100))
-view.text_transform(columns=["Region"], case="UPPER")
+from mammoth import TextCase
+
+view.text_transform(columns=["Region"], case=TextCase.UPPER)
 view.math("Sales * 0.1", new_column="Tax")
 
 # 5. Export
@@ -82,8 +84,10 @@ from mammoth import ConversionSpec, ColumnType
 view.convert_type([ConversionSpec(column="order_date", to=ColumnType.DATE)])
 
 # Extract date components
-view.extract_date("order_date", component="year", new_column="Year")
-view.extract_date("order_date", component="month", new_column="Month")
+from mammoth import DateComponent
+
+view.extract_date("order_date", component=DateComponent.YEAR, new_column="Year")
+view.extract_date("order_date", component=DateComponent.MONTH, new_column="Month")
 
 # Calculate derived columns
 view.math("Revenue - Cost", new_column="Profit")
@@ -106,21 +110,23 @@ view.pivot(
 ## Window Functions
 
 ```python
+from mammoth import WindowFunction, SortDirection
+
 # Rank employees by salary within each department
 view.window(
-    function="ROW_NUMBER",
+    function=WindowFunction.ROW_NUMBER,
     new_column="Salary Rank",
     partition_by=["department"],
-    order_by=[["base_salary", "DESC"]],
+    order_by=[["base_salary", SortDirection.DESC]],
 )
 
 # Running total of sales by region
 view.window(
-    function="SUM",
+    function=WindowFunction.SUM,
     column="Sales",
     new_column="Running Total",
     partition_by=["Region"],
-    order_by=[["Order Date", "ASC"]],
+    order_by=[["Order Date", SortDirection.ASC]],
 )
 ```
 
@@ -187,7 +193,9 @@ view.bulk_replace(
 )
 
 # Extract substring
-view.substring(column="Phone", direction="START", num_char=3, new_column="Area Code")
+from mammoth import SubstringDirection
+
+view.substring(column="Phone", direction=SubstringDirection.START, num_char=3, new_column="Area Code")
 ```
 
 ---
@@ -200,7 +208,9 @@ view.discard_duplicates()
 view.discard_duplicates(ignore_columns=["Timestamp"])
 
 # Fill missing values
-view.fill_missing(column="Price", direction="LAST_VALUE")
+from mammoth import FillDirection
+
+view.fill_missing(column="Price", direction=FillDirection.LAST_VALUE)
 
 # Remove rows with missing values
 view.filter_rows(Condition("Email", Operator.IS_NOT_EMPTY))
@@ -262,10 +272,11 @@ view.branch_out(dest_dataset_id=42)
 ## AI Features
 
 ```python
-# SQL from natural language
-result = view.sql("count employees by department")
+# Generate SQL from natural language (also adds pipeline task automatically)
+sql = view.generate_sql("count employees by department")
+print(sql)  # "SELECT department, COUNT(*) FROM ..."
 
-# Just generate the SQL without applying
+# Generate SQL for a different intent
 sql = view.generate_sql("show top 10 products by revenue")
 print(sql)  # "SELECT product, SUM(revenue) FROM ... GROUP BY product ORDER BY ..."
 
@@ -388,7 +399,7 @@ except MammothColumnError as e:
     print(f"Available columns: {view.display_names}")
 
 try:
-    view.sql("complex query that might fail")
+    view.add_sql("SELECT * FROM __THIS__ WHERE sales > 1000")
 except MammothAPIError as e:
     print(f"API error: {e}")
 

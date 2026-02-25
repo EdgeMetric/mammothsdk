@@ -41,8 +41,8 @@ dataset_ids = client.files.upload(["sales.csv", "customers.xlsx"])
 dataset_ids = client.files.upload_folder("./data/")
 
 # After upload, get the view for the new dataset
-views = client.views.list(dataset_id)
-view = views[0]
+views = client.views.list()
+view = next(v for v in views if v.dataset_id == dataset_id)
 print(view.display_names)
 ```
 
@@ -58,8 +58,8 @@ for p in projects:
 # List datasets
 datasets = client.datasets.list()
 
-# List views in a dataset
-views = client.views.list(dataset_id=42)
+# List all views in the project (returns list of View objects)
+views = client.views.list()
 for v in views:
     print(f"{v.id}: {v.name} ({len(v.display_names)} columns)")
 ```

@@ -1120,15 +1120,14 @@ client.set_project_id(10)
 ### get_view
 
 ```python
-client.get_view(view_id: int, dataset_id: int | None = None) -> View
+client.get_view(view_id: int) -> View
 ```
 
-Shortcut for `client.views.get(view_id)`. Returns a rich [View](#views-reference) object.
+Shortcut for `client.views.get(view_id)`. Returns a rich [View](#views-reference) object. The dataset is auto-detected.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `view_id` | `int` | *required* | ID of the dataview |
-| `dataset_id` | `int \| None` | `None` | Dataset ID (auto-detected if not provided) |
 
 ```python
 view = client.get_view(1039)
@@ -1154,7 +1153,6 @@ client.branch_out(
     view_id: int,
     dest_dataset_id: int,
     column_mapping: dict[str, str] | None = None,
-    dataset_id: int | None = None,
     **kwargs,
 ) -> dict[str, Any]
 ```
@@ -1229,9 +1227,6 @@ The `client.views` sub-client returns rich [View](#views-reference) objects (not
 # Get a single view
 view = client.views.get(view_id=1039)
 
-# List all views in a dataset
-views = client.views.list(dataset_id=42)
-
 # List all views across all datasets in the project
 views = client.views.list()
 
@@ -1245,7 +1240,7 @@ view = client.views.create(dataset_id=42, name="Copy", clone_from=1039)
 client.views.delete(view_id=1039)
 
 # Bulk delete
-client.views.bulk_delete(view_ids=[1039, 1040], dataset_id=42)
+client.views.bulk_delete(view_ids=[1039, 1040])
 ```
 
 ## Request handling
@@ -1364,7 +1359,7 @@ view.data(
     limit: int = 400,
     offset: int = 1,
     columns: list[str] | None = None,
-    condition: Condition | CompoundCondition | NotCondition | None = None,
+    condition: Condition | CompoundCondition | None = None,
     sort: str | None = None,
 ) -> dict[str, Any]
 ```
@@ -3418,8 +3413,9 @@ job_id = client.files.upload("large_file.csv", wait_for_completion=False)
 
 ```python
 dataset_id = client.files.upload("sales_data.csv")
-views = client.views.list(dataset_id)
-view = views[0]  # Default view created on upload
+views = client.views.list()
+# Find the view for the uploaded dataset
+view = next(v for v in views if v.dataset_id == dataset_id)
 print(view.display_names)  # ["Column1", "Column2", ...]
 ```
 
@@ -5060,11 +5056,12 @@ Get dataset details by ID.
 |-----------|------|---------|-------------|
 | `dataset_id` | `int` | *required* | ID of the dataset |
 
-**Returns**: Dict with complete dataset information including metadata, column info, and settings.
+**Returns**: Dict with a `"dataset"` key containing the full dataset information including metadata, column info, and settings.
 
 ```python
-ds = client.datasets.get(42)
-print(ds["name"], ds.get("row_count"))
+resp = client.datasets.get(42)
+ds = resp["dataset"]
+print(ds["name"], ds.get("stats", {}).get("row_count"))
 ```
 
 ### get_data
@@ -7155,8 +7152,8 @@ dataset_id = client.files.upload("sales_data.csv")
 print(f"Created dataset: {dataset_id}")
 
 # Get the default View for the uploaded dataset
-views = client.views.list(dataset_id)
-view = views[0]
+views = client.views.list()
+view = next(v for v in views if v.dataset_id == dataset_id)
 ```
 
 Other upload options:
@@ -7196,7 +7193,8 @@ rows = result["data"]
 > ```python
 > from mammoth import ConversionSpec
 >
-> view.convert_type([ConversionSpec(column="Order Date", to="DATE", format="MM/DD/YYYY")])
+> from mammoth import ColumnType
+> view.convert_type([ConversionSpec(column="Order Date", to=ColumnType.DATE, format="MM/DD/YYYY")])
 > ```
 >
 
@@ -7356,8 +7354,8 @@ client.set_project_id(42)
 try:
     # 2. Upload data
     dataset_id = client.files.upload("sales_data.csv")
-    views = client.views.list(dataset_id)
-    view = views[0]
+    views = client.views.list()
+    view = next(v for v in views if v.dataset_id == dataset_id)
     print(f"Uploaded: {view.name} ({len(view.display_names)} columns)")
 
     # 3. Clean data
@@ -7443,8 +7441,8 @@ dataset_ids = client.files.upload(["sales.csv", "customers.xlsx"])
 dataset_ids = client.files.upload_folder("./data/")
 
 # After upload, get the view for the new dataset
-views = client.views.list(dataset_id)
-view = views[0]
+views = client.views.list()
+view = next(v for v in views if v.dataset_id == dataset_id)
 print(view.display_names)
 ```
 
@@ -7460,8 +7458,8 @@ for p in projects:
 # List datasets
 datasets = client.datasets.list()
 
-# List views in a dataset
-views = client.views.list(dataset_id=42)
+# List all views in the project (returns list of View objects)
+views = client.views.list()
 for v in views:
     print(f"{v.id}: {v.name} ({len(v.display_names)} columns)")
 ```

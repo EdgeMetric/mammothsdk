@@ -42,8 +42,8 @@ dataset_id = client.files.upload("sales_data.csv")
 print(f"Created dataset: {dataset_id}")
 
 # Get the default View for the uploaded dataset
-views = client.views.list(dataset_id)
-view = views[0]
+views = client.views.list()
+view = next(v for v in views if v.dataset_id == dataset_id)
 ```
 
 Other upload options:
@@ -82,7 +82,8 @@ rows = result["data"]
     ```python
     from mammoth import ConversionSpec
 
-    view.convert_type([ConversionSpec(column="Order Date", to="DATE", format="MM/DD/YYYY")])
+    from mammoth import ColumnType
+    view.convert_type([ConversionSpec(column="Order Date", to=ColumnType.DATE, format="MM/DD/YYYY")])
     ```
 
 ## 5. Apply transformations
@@ -241,8 +242,8 @@ client.set_project_id(42)
 try:
     # 2. Upload data
     dataset_id = client.files.upload("sales_data.csv")
-    views = client.views.list(dataset_id)
-    view = views[0]
+    views = client.views.list()
+    view = next(v for v in views if v.dataset_id == dataset_id)
     print(f"Uploaded: {view.name} ({len(view.display_names)} columns)")
 
     # 3. Clean data

@@ -59,8 +59,9 @@ job_id = client.files.upload("large_file.csv", wait_for_completion=False)
 
 ```python
 dataset_id = client.files.upload("sales_data.csv")
-views = client.views.list(dataset_id)
-view = views[0]  # Default view created on upload
+views = client.views.list()
+# Find the view for the uploaded dataset
+view = next(v for v in views if v.dataset_id == dataset_id)
 print(view.display_names)  # ["Column1", "Column2", ...]
 ```
 

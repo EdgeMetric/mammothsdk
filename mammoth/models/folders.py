@@ -19,7 +19,7 @@ class FolderSchema(BaseModel):
     updated_at: datetime | None = Field(
         None, description="Timestamp when the folder was last updated"
     )
-    resource_id: str | None = Field(None, description="Resource ID of the folder")
+    resource_id: str | int | None = Field(None, description="Resource ID of the folder")
     created_by: str | None = Field(None, description="User who created the folder")
     parent_id: int | None = Field(None, description="Parent folder ID")
     resource_path: str | None = Field(None, description="Resource path of the folder")

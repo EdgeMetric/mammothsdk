@@ -11,13 +11,15 @@ All transformation methods are on the `View` class. Each method:
 
 ## Column Operations
 
-### add_column(name, column_type="TEXT")
+### add_column(name, column_type=ColumnType.TEXT)
 
 Add an empty column.
 
 ```python
-view.add_column("Status", column_type="TEXT")
-view.add_column("Score", column_type="NUMERIC")
+from mammoth import ColumnType
+
+view.add_column("Status", column_type=ColumnType.TEXT)
+view.add_column("Score", column_type=ColumnType.NUMERIC)
 ```
 
 ### delete_columns(columns)
@@ -89,7 +91,7 @@ view.filter_rows(Condition("Status", Operator.EQ, "Deleted"), filter_type=Filter
 
 ## SET (Label / Insert Values)
 
-### set_values(values, new_column=None, column_type="TEXT", existing_column=None, condition=None)
+### set_values(values, new_column=None, column_type=ColumnType.TEXT, existing_column=None, condition=None)
 
 Insert values into a new or existing column, optionally with conditions.
 
@@ -120,7 +122,7 @@ view.set_values(
 
 ## Math
 
-### math(expression, new_column=None, column_type="NUMERIC", existing_column=None, condition=None)
+### math(expression, new_column=None, column_type=ColumnType.NUMERIC, existing_column=None, condition=None)
 
 Arithmetic operations between columns and constants.
 
@@ -196,12 +198,14 @@ view.bulk_replace(
 Change text case or trim whitespace.
 
 ```python
-view.text_transform(columns=["department"], case="UPPER")
+from mammoth import TextCase
+
+view.text_transform(columns=["department"], case=TextCase.UPPER)
 view.text_transform(columns=["name"], trim=True)
-view.text_transform(columns=["city"], case="TITLE", trim=True)
+view.text_transform(columns=["city"], case=TextCase.TITLE, trim=True)
 ```
 
-Case values: `"UPPER"`, `"LOWER"`, `"TITLE"`
+Case values: `TextCase.UPPER`, `TextCase.LOWER`, `TextCase.TITLE`
 
 ### split_column(column, delimiter, new_columns)
 
@@ -225,14 +229,16 @@ view.split_column(
 Extract text from a column.
 
 ```python
+from mammoth import SubstringDirection
+
 # First 5 characters
-view.substring(column="Name", direction="START", num_char=5, new_column="Prefix")
+view.substring(column="Name", direction=SubstringDirection.START, num_char=5, new_column="Prefix")
 
 # Last 3 characters
-view.substring(column="Code", direction="END", num_char=3, new_column="Suffix")
+view.substring(column="Code", direction=SubstringDirection.END, num_char=3, new_column="Suffix")
 
 # Characters left of position 5
-view.substring(column="Name", direction="LEFT", char_position=5, new_column="Left Part")
+view.substring(column="Name", direction=SubstringDirection.LEFT, char_position=5, new_column="Left Part")
 
 # Regex extraction
 view.substring(
@@ -261,9 +267,11 @@ view.convert_type([ConversionSpec(column="date_col", to=ColumnType.DATE)])
 Extract a date component.
 
 ```python
-view.extract_date("Order Date", component="year", new_column="Order Year")
-view.extract_date("Order Date", component="month", new_column="Order Month")
-view.extract_date("Order Date", component="weekday_text", new_column="Day Name")
+from mammoth import DateComponent
+
+view.extract_date("Order Date", component=DateComponent.YEAR, new_column="Order Year")
+view.extract_date("Order Date", component=DateComponent.MONTH, new_column="Order Month")
+view.extract_date("Order Date", component=DateComponent.WEEKDAY_TEXT, new_column="Day Name")
 ```
 
 Components (always lowercase): `year`, `month`, `day`, `hour`, `minute`, `second`, `week`, `quarter`, `day_of_week`, `day_of_year`, `weekday_text`, `month_text`, `year_month`, `year_week`, `year_quarter`, `month_day`, `hour_minute`, `date_only`
@@ -310,11 +318,13 @@ Delta fields: `days`, `months`, `years`, `hours`, `minutes`, `seconds` (use nega
 Fill missing values forward or backward.
 
 ```python
-view.fill_missing(column="Price", direction="LAST_VALUE")
-view.fill_missing(column="Category", direction="FIRST_VALUE")
+from mammoth import FillDirection
+
+view.fill_missing(column="Price", direction=FillDirection.LAST_VALUE)
+view.fill_missing(column="Category", direction=FillDirection.FIRST_VALUE)
 ```
 
-Directions: `"FIRST_VALUE"` (forward fill), `"LAST_VALUE"` (backward fill)
+Directions: `FillDirection.FIRST_VALUE` (forward fill), `FillDirection.LAST_VALUE` (backward fill)
 
 ### limit_rows(n, bottom=False, order_by=None)
 
@@ -322,7 +332,7 @@ Keep only the top or bottom N rows.
 
 ```python
 view.limit_rows(n=10)
-view.limit_rows(n=5, order_by=[["Sales", "DESC"]])
+view.limit_rows(n=5, order_by=[["Sales", SortDirection.DESC]])
 view.limit_rows(n=5, bottom=True)
 ```
 
@@ -385,34 +395,36 @@ view.crosstab(
 
 ## Window Functions
 
-### window(function, column=None, new_column=None, column_type="NUMERIC", existing_column=None, partition_by=None, order_by=None, range_type="UNBOUNDED")
+### window(function, column=None, new_column=None, column_type=ColumnType.NUMERIC, existing_column=None, partition_by=None, order_by=None, range_type=WindowRange.UNBOUNDED)
 
 Apply window functions.
 
 ```python
+from mammoth import WindowFunction, SortDirection
+
 # Row number within partitions
 view.window(
-    function="ROW_NUMBER",
+    function=WindowFunction.ROW_NUMBER,
     new_column="Row #",
     partition_by=["department"],
-    order_by=[["base_salary", "DESC"]],
+    order_by=[["base_salary", SortDirection.DESC]],
 )
 
 # Running sum
 view.window(
-    function="SUM",
+    function=WindowFunction.SUM,
     column="Sales",
     new_column="Running Total",
     partition_by=["Region"],
-    order_by=[["Order Date", "ASC"]],
+    order_by=[["Order Date", SortDirection.ASC]],
 )
 
 # Rank
 view.window(
-    function="RANK",
+    function=WindowFunction.RANK,
     new_column="Sales Rank",
     partition_by=["Region"],
-    order_by=[["Sales", "DESC"]],
+    order_by=[["Sales", SortDirection.DESC]],
 )
 ```
 
@@ -456,7 +468,7 @@ view.join(
 - `select`: list of display names (str) when using `foreign_view`, or `JoinSelectSpec` for aliasing with internal names when using `foreign_view_id`
 - `foreign_view`: View object (display names auto-resolved) or `foreign_view_id` (int, requires internal names)
 
-Join types: `"INNER"`, `"LEFT"`, `"RIGHT"`, `"OUTER"`
+Join types: `JoinType.INNER`, `JoinType.LEFT`, `JoinType.RIGHT`, `JoinType.OUTER`
 
 **Payload**: ON uses `LEFT`/`RIGHT` keys. SELECT uses `COLUMN`/`ALIAS` keys.
 
@@ -499,14 +511,6 @@ Add a raw SQL query as a pipeline task.
 
 ```python
 view.add_sql("SELECT department, AVG(base_salary) FROM __THIS__ GROUP BY department")
-```
-
-### sql(intent) -> dict
-
-Combined convenience method: generates SQL from intent and adds pipeline task.
-
-```python
-result = view.sql("count employees by department")
 ```
 
 ---

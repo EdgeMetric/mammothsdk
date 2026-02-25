@@ -66,15 +66,14 @@ client.set_project_id(10)
 ### get_view
 
 ```python
-client.get_view(view_id: int, dataset_id: int | None = None) -> View
+client.get_view(view_id: int) -> View
 ```
 
-Shortcut for `client.views.get(view_id)`. Returns a rich [View](views.md) object.
+Shortcut for `client.views.get(view_id)`. Returns a rich [View](views.md) object. The dataset is auto-detected.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `view_id` | `int` | *required* | ID of the dataview |
-| `dataset_id` | `int \| None` | `None` | Dataset ID (auto-detected if not provided) |
 
 ```python
 view = client.get_view(1039)
@@ -100,7 +99,6 @@ client.branch_out(
     view_id: int,
     dest_dataset_id: int,
     column_mapping: dict[str, str] | None = None,
-    dataset_id: int | None = None,
     **kwargs,
 ) -> dict[str, Any]
 ```
@@ -175,9 +173,6 @@ The `client.views` sub-client returns rich [View](views.md) objects (not raw dic
 # Get a single view
 view = client.views.get(view_id=1039)
 
-# List all views in a dataset
-views = client.views.list(dataset_id=42)
-
 # List all views across all datasets in the project
 views = client.views.list()
 
@@ -191,7 +186,7 @@ view = client.views.create(dataset_id=42, name="Copy", clone_from=1039)
 client.views.delete(view_id=1039)
 
 # Bulk delete
-client.views.bulk_delete(view_ids=[1039, 1040], dataset_id=42)
+client.views.bulk_delete(view_ids=[1039, 1040])
 ```
 
 ## Request handling

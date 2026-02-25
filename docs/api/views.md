@@ -68,7 +68,7 @@ view.data(
     limit: int = 400,
     offset: int = 1,
     columns: list[str] | None = None,
-    condition: Condition | CompoundCondition | NotCondition | None = None,
+    condition: Condition | CompoundCondition | None = None,
     sort: str | None = None,
 ) -> dict[str, Any]
 ```

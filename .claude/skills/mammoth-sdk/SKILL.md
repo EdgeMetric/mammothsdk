@@ -84,7 +84,7 @@ Rich domain object for a dataview. Created via `client.views.get(id)` or `client
 - `DateOpsMixin`: extract_date, date_diff, increment_date
 - `AggregateOpsMixin`: pivot, window, crosstab
 - `RowOpsMixin`: fill_missing, limit_rows, discard_duplicates, unnest
-- `AdvancedOpsMixin`: join, lookup, json_extract, gen_ai, sql, generate_sql, add_sql
+- `AdvancedOpsMixin`: join, lookup, json_extract, gen_ai, generate_sql, add_sql
 
 **Metadata**: `view.columns`, `view.display_names`, `view.column_types`, `view.name`, `view.id`
 **Data access**: `view.data(limit=100)`

@@ -165,10 +165,12 @@ view.text_transform(["Customer Name"], case=TextCase.UPPER)
 view.replace_values(columns=["Status"], find="Pending", replace="In Progress")
 
 # Split column
+from mammoth import SplitColumnSpec
+
 view.split_column(
     "Full Name",
     delimiter=" ",
-    new_columns=[{"name": "First", "type": "TEXT"}, {"name": "Last", "type": "TEXT"}],
+    new_columns=[SplitColumnSpec(name="First"), SplitColumnSpec(name="Last")],
 )
 ```
 
@@ -184,7 +186,9 @@ view.extract_date("Order Date", DateComponent.YEAR, new_column="Order Year")
 view.date_diff(DateDiffUnit.DAY, start="Start Date", end="End Date", new_column="Duration")
 
 # Add 30 days to a date
-view.increment_date("Ship Date", delta={"DAYS": 30}, new_column="Expected Arrival")
+from mammoth import DateDelta
+
+view.increment_date("Ship Date", delta=DateDelta(days=30), new_column="Expected Arrival")
 ```
 
 ### Column Operations
@@ -199,14 +203,14 @@ view.add_column("Notes", ColumnType.TEXT)
 view.delete_columns(["Temp1", "Temp2"])
 
 # Copy a column
-view.copy_columns([CopySpec(source="Sales", as_name="Sales Backup", type="NUMERIC")])
+view.copy_columns([CopySpec(source="Sales", as_name="Sales Backup", type=ColumnType.NUMERIC)])
 
 # Combine (concatenate) columns
 view.combine_columns(["First Name", "Last Name"], new_column="Full Name", separator=" ")
 
 # Convert column type
-view.convert_type([ConversionSpec(column="ZipCode", to="TEXT")])
-view.convert_type([ConversionSpec(column="Order Date", to="DATE", format="MM/DD/YYYY")])
+view.convert_type([ConversionSpec(column="ZipCode", to=ColumnType.TEXT)])
+view.convert_type([ConversionSpec(column="Order Date", to=ColumnType.DATE, format="MM/DD/YYYY")])
 ```
 
 ### Row Operations
@@ -370,8 +374,8 @@ After upload, get a view for the new dataset:
 
 ```python
 dataset_id = client.files.upload("sales_data.csv")
-views = client.views.list(dataset_id)
-view = views[0]  # Default view created on upload
+views = client.views.list()
+view = next(v for v in views if v.dataset_id == dataset_id)
 print(view.display_names)
 ```
 

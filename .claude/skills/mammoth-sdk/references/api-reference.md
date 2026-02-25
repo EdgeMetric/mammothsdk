@@ -74,9 +74,9 @@ projects = resp["projects"]                                 # plain list of dict
 for p in projects:
     print(p["id"], p["name"])                               # dict access, NOT p.id / p.name
 
-project = client.projects.get(project_id=10)                # {"id": 10, "name": "..."}
-project = client.projects.create(config={...})              # raw dict response
-client.projects.update(project_id=10, config={...})
+project = client.projects.get(10)                           # {"id": 10, "name": "..."}
+project = client.projects.create(name="My Project")         # raw dict response
+client.projects.update(project_id=10, name="New Name")
 client.projects.delete(project_id=10)
 ```
 
@@ -100,7 +100,7 @@ batches = client.datasets.list_batches(dataset_id=123)       # list data batches
 ds_id = client.files.upload("path/to/data.csv")
 
 # Upload with folder
-ds_id = client.files.upload("data.csv", folder_id=5)
+ds_id = client.files.upload("data.csv", folder_resource_id="folder-abc-123")
 
 # List files
 files = client.files.list()
@@ -193,7 +193,7 @@ Job statuses: `processing`, `success`, `failure`, `error`
 
 ```python
 # List exports for a dataview
-exports = client.exports.list(dataview_id=456, dataset_id=123)
+exports = client.exports.list(dataview_id=456)
 
 # Create export
 result = client.exports.create(
@@ -215,7 +215,7 @@ Prefer using `view.export.to_csv()`, `view.export.to_postgres()`, etc. on View o
 ```python
 folders = client.folders.list()
 folder = client.folders.create(name="Reports")
-client.folders.delete(folder_id=5)
+client.folders.delete(folder_ids=[5])
 ```
 
 ---
@@ -249,7 +249,7 @@ data = client.dashboards.get_publish_data(dashboard_id=1, sql="SELECT ...")
 
 ```python
 webhooks = client.webhooks.list()
-webhook = client.webhooks.create(config={...})
+webhook = client.webhooks.create(name="My Webhook", mode="replace")
 client.webhooks.delete(webhook_id=1)
 ```
 
@@ -276,10 +276,10 @@ AI features.
 profile = client.ai.generate_profile(dataview_id=456)
 
 # Generate synthetic data
-data = client.ai.generate_data(dataview_id=456, columns=["Name", "Age"], num_rows=100)
+data = client.ai.generate_data(dataview_id=456, config={"columns": ["Name", "Age"], "num_rows": 100})
 
-# Get AI suggestions for a view
-suggestions = client.ai.get_suggestions(dataview_id=456)
+# Get AI suggestions for the current project
+suggestions = client.ai.get_suggestions()
 ```
 
 ---
@@ -298,7 +298,7 @@ users = client.workspaces.list_users()
 
 ```python
 apps = client.client_apps.list()
-app = client.client_apps.create(config={...})
+app = client.client_apps.create(app_name="My Integration")
 ```
 
 ---
