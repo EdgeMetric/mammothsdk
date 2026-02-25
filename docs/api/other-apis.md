@@ -43,13 +43,14 @@ client.folders.create(
     parent_resource_id: str | None = None,
     workspace_id: int | None = None,
     project_id: int | None = None,
-) -> FolderDetails
+) -> FolderSchema
 ```
 
-Create a new folder. Returns a `FolderDetails` Pydantic model.
+Create a new folder. Returns a `FolderSchema` Pydantic model with `id`, `name`, `resource_id`, etc.
 
 ```python
 folder = client.folders.create(name="Reports")
+print(folder.id, folder.resource_id)
 ```
 
 ### delete
