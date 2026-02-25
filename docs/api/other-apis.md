@@ -10,6 +10,23 @@ This page covers smaller utility sub-clients that provide access to folders, bat
 
 Manage folders within projects for organizing datasets and resources.
 
+### get_project_root
+
+```python
+client.folders.get_project_root(
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> FolderSchema
+```
+
+Get a `FolderSchema` representing the project root folder. The project root is not a physical folder — files uploaded without a `folder_resource_id` land here. The returned object has `resource_id=None`.
+
+```python
+root = client.folders.get_project_root()
+# root.resource_id is None — uploads go to project root
+ds_id = client.files.upload("data.csv", folder_resource_id=root.resource_id)
+```
+
 ### list
 
 ```python

@@ -96,7 +96,7 @@ from mammoth.models.pipeline import (
 from mammoth.models.webhooks import WebhookMode
 from mammoth.view import View, ViewExport
 
-__version__ = "0.3.3"
+__version__ = "0.3.4"
 __all__ = [
     # Client
     "MammothClient",

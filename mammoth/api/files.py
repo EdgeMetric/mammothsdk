@@ -130,7 +130,7 @@ class FilesAPI:
     def upload(
         self,
         files: _list[str | Path | BinaryIO] | str | Path | BinaryIO | None = None,
-        folder_resource_id: str | None = None,
+        folder_resource_id: str | int | None = None,
         append_to_ds_id: int | None = None,
         override_target_schema: bool | None = None,
         wait_for_completion: bool = True,

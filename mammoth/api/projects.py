@@ -110,22 +110,28 @@ class ProjectsAPI:
         self,
         name: str,
         color: str | None = None,
+        project_access: str | None = None,
         workspace_id: int | None = None,
     ) -> dict[str, Any]:
         """Create a new project.
 
         Args:
             name: Name for the new project.
-            color: Color code for the project (optional).
+            color: Color hex code (e.g., "#337FBD"). Defaults to server-assigned color.
+            project_access: Access level — "only_me", "some_members_of_workspace",
+                or "all_members_of_workspace". Defaults to "only_me".
             workspace_id: ID of the workspace (uses client default if not provided).
 
         Returns:
-            Dict with created project info.
+            Dict with created project info including id, name, properties, etc.
         """
         ws = workspace_id or self._ws()
-        payload: dict[str, Any] = {"name": name}
+        properties: dict[str, Any] = {}
         if color:
-            payload["color"] = color
+            properties["color"] = color
+        if project_access:
+            properties["project_access"] = project_access
+        payload: dict[str, Any] = {"name": name, "properties": properties}
         return self._client._request_json("POST", f"/workspaces/{ws}/projects", json=payload)
 
     def update(
@@ -172,7 +178,9 @@ class ProjectsAPI:
             Dict with deletion result.
         """
         ws = workspace_id or self._ws()
-        return self._client._request_json("DELETE", f"/workspaces/{ws}/projects/{project_id}")
+        return self._client._request_json(
+            "DELETE", f"/workspaces/{ws}/projects", params={"ids": str(project_id)}
+        )
 
     def bulk_update(
         self,

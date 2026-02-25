@@ -50,10 +50,21 @@ print("\n=== FoldersAPI ===", flush=True)
 folders_list = test("folders.list()", lambda: client.folders.list())
 if folders_list:
     print(f"         count={len(folders_list.folders)}", flush=True)
+root = test("folders.get_project_root()", lambda: client.folders.get_project_root())
+if root:
+    print(f"         .name={root.name}  .resource_id={root.resource_id}", flush=True)
 folder = test("folders.create()", lambda: client.folders.create(name="__test_validate__"))
 if folder and folder.id:
     print(f"         .id={folder.id}  .resource_id={folder.resource_id} ({type(folder.resource_id).__name__})", flush=True)
     test("folders.delete()", lambda: client.folders.delete(folder_ids=[folder.id]))
+
+# ── Projects ──
+print("\n=== ProjectsAPI ===", flush=True)
+proj = test("projects.create()", lambda: client.projects.create(name="__test_validate__"))
+if proj and proj.get("id"):
+    proj_id = proj["id"]
+    print(f"         .id={proj_id}  .name={proj['name']}", flush=True)
+    test("projects.delete()", lambda: client.projects.delete(proj_id))
 
 # ── Exports ──
 print("\n=== ExportsAPI ===", flush=True)

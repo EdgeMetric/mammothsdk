@@ -415,6 +415,7 @@
   - [See also](#see-also)
 - [Other APIs](#other-apis)
   - [FoldersAPI](#foldersapi)
+    - [get_project_root](#get_project_root)
     - [list](#list)
     - [create](#create)
     - [delete](#delete)
@@ -4857,6 +4858,7 @@ project = client.projects.get()
 client.projects.create(
     name: str,
     color: str | None = None,
+    project_access: str | None = None,
     workspace_id: int | None = None,
 ) -> dict[str, Any]
 ```
@@ -4866,7 +4868,8 @@ Create a new project.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `name` | `str` | *required* | Name for the new project |
-| `color` | `str \| None` | `None` | Color code for the project |
+| `color` | `str \| None` | `None` | Color hex code (e.g., `"#337FBD"`) |
+| `project_access` | `str \| None` | `None` | `"only_me"`, `"some_members_of_workspace"`, or `"all_members_of_workspace"` |
 | `workspace_id` | `int \| None` | `None` | Workspace ID (uses client default if not provided) |
 
 ```python
@@ -6600,6 +6603,23 @@ This page covers smaller utility sub-clients that provide access to folders, bat
 **Access**: `client.folders`
 
 Manage folders within projects for organizing datasets and resources.
+
+### get_project_root
+
+```python
+client.folders.get_project_root(
+    workspace_id: int | None = None,
+    project_id: int | None = None,
+) -> FolderSchema
+```
+
+Get a `FolderSchema` representing the project root folder. The project root is not a physical folder — files uploaded without a `folder_resource_id` land here. The returned object has `resource_id=None`.
+
+```python
+root = client.folders.get_project_root()
+# root.resource_id is None — uploads go to project root
+ds_id = client.files.upload("data.csv", folder_resource_id=root.resource_id)
+```
 
 ### list
 

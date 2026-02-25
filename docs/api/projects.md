@@ -73,6 +73,7 @@ project = client.projects.get()
 client.projects.create(
     name: str,
     color: str | None = None,
+    project_access: str | None = None,
     workspace_id: int | None = None,
 ) -> dict[str, Any]
 ```
@@ -82,7 +83,8 @@ Create a new project.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `name` | `str` | *required* | Name for the new project |
-| `color` | `str \| None` | `None` | Color code for the project |
+| `color` | `str \| None` | `None` | Color hex code (e.g., `"#337FBD"`) |
+| `project_access` | `str \| None` | `None` | `"only_me"`, `"some_members_of_workspace"`, or `"all_members_of_workspace"` |
 | `workspace_id` | `int \| None` | `None` | Workspace ID (uses client default if not provided) |
 
 ```python
