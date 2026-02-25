@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from ..client import MammothClient
 
-from ..models.folders import BulkFolderPatchRequest, CreateFolder, FolderDetails, FoldersList
+from ..models.folders import BulkFolderPatchRequest, CreateFolder, FolderSchema, FoldersList
 from ..models.jobs import ObjectJobSchema
 
 _list = list  # Alias to avoid shadowing by method name
@@ -109,7 +109,7 @@ class FoldersAPI:
         parent_resource_id: str | None = None,
         workspace_id: int | None = None,
         project_id: int | None = None,
-    ) -> FolderDetails:
+    ) -> FolderSchema:
         """Create a new folder.
 
         Args:
@@ -119,7 +119,7 @@ class FoldersAPI:
             project_id: ID of the project (uses client default if not provided).
 
         Returns:
-            FolderDetails with created folder info.
+            FolderSchema with created folder info (id, name, resource_id, etc.).
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
@@ -129,7 +129,7 @@ class FoldersAPI:
             f"/workspaces/{ws}/projects/{proj}/folders",
             json=folder_data.model_dump(exclude_none=True),
         )
-        return FolderDetails(**response)
+        return FolderSchema(**response.get("folder", response))
 
     def delete(
         self,
