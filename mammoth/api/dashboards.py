@@ -82,6 +82,10 @@ class DashboardsAPI:
     def get_sources(self) -> _list[dict[str, Any]]:
         """Get available dashboard data sources.
 
+        .. note::
+
+            This endpoint may return HTTP 500 on some server configurations.
+
         Returns:
             List of source dicts.
         """

@@ -57,19 +57,22 @@ class ColumnOpsMixin:
         """
         return self._add_task({"DELETE": self._resolve_columns(columns)})
 
-    def copy_columns(self, copies: list[CopySpec]) -> dict[str, Any]:
+    def copy_columns(self, copies: list[CopySpec | dict[str, Any]]) -> dict[str, Any]:
         """Duplicate columns (COPY task).
 
         Args:
-            copies: List of CopySpec objects::
+            copies: List of :class:`CopySpec` objects or dicts with
+                matching keys (``source``, ``as_name``, ``type``)::
 
-                [CopySpec(source="Sales", as_name="Sales Copy", type=ColumnType.NUMERIC)]
+                    [CopySpec(source="Sales", as_name="Sales Copy")]
+                    [{"source": "Sales", "as_name": "Sales Copy"}]
 
         Returns:
             API response dict.
         """
+        resolved_copies = [CopySpec(**c) if isinstance(c, dict) else c for c in copies]
         copy_items = []
-        for c in copies:
+        for c in resolved_copies:
             internal = self._next_internal_name()
             as_name = c.as_name or f"{c.source} Copy"
             item: dict[str, Any] = {
@@ -140,13 +143,15 @@ class ColumnOpsMixin:
 
         return self._add_task(spec)
 
-    def convert_type(self, conversions: list[ConversionSpec]) -> dict[str, Any]:
+    def convert_type(self, conversions: list[ConversionSpec | dict[str, Any]]) -> dict[str, Any]:
         """Convert column data types (CONVERT task).
 
         Args:
-            conversions: List of :class:`ConversionSpec` objects. For date
-                conversions, provide the ``format`` that describes the
-                *current* string format of the data.
+            conversions: List of :class:`ConversionSpec` objects or dicts with
+                matching keys (``column``, ``to``, ``format``)::
+
+                    [ConversionSpec(column="Sales", to=ColumnType.NUMERIC)]
+                    [{"column": "Sales", "to": "NUMERIC"}]
 
         Returns:
             API response dict.
@@ -158,20 +163,18 @@ class ColumnOpsMixin:
             # Text to numeric
             view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
 
+            # Using plain dicts
+            view.convert_type([{"column": "Sales", "to": "NUMERIC"}])
+
             # Text to date (specify the source format)
             view.convert_type([
                 ConversionSpec(column="Order Date", to=ColumnType.DATE,
                                format="MM/DD/YYYY"),
             ])
-
-            # Multiple conversions at once
-            view.convert_type([
-                ConversionSpec(column="Price", to=ColumnType.NUMERIC),
-                ConversionSpec(column="Qty", to=ColumnType.NUMERIC),
-            ])
         """
+        resolved = [ConversionSpec(**c) if isinstance(c, dict) else c for c in conversions]
         convert_items = []
-        for c in conversions:
+        for c in resolved:
             item: dict[str, Any] = {
                 "SOURCE": self._resolve_column(c.column),
                 "TO_TYPE": c.to.value,

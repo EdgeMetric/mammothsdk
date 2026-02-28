@@ -107,30 +107,21 @@ class ViewsResource:
         )
         return View(self._client, data, dataset_id)
 
-    def list(self) -> _list[View]:
-        """List all dataviews as View objects.
+    def list(self, dataset_id: int) -> _list[View]:
+        """List all dataviews in a dataset as View objects.
 
-        Returns views from **all** datasets in the current project.
+        Args:
+            dataset_id: ID of the dataset to list views from.
 
         Returns:
             List of View objects.
         """
         from mammoth.view import View
 
-        # Iterate every dataset in the project
-        project_id = self._client.project_id
-        if project_id is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
-        datasets_resp = self._client.datasets.list(
-            workspace_id=self._client.workspace_id,
-            project_id=project_id,
-        )
+        dv_resp = self._client.dataviews.list(dataset_id=dataset_id)
         views: _list[View] = []
-        for ds in datasets_resp.get("datasets", []):
-            ds_id = ds["id"]
-            dv_resp = self._client.dataviews.list(dataset_id=ds_id)
-            for dv in dv_resp.get("dataviews", []):
-                views.append(View(self._client, dv, ds_id))
+        for dv in dv_resp.get("dataviews", []):
+            views.append(View(self._client, dv, dataset_id))
         return views
 
     def create(

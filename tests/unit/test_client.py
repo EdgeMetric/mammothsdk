@@ -175,34 +175,31 @@ class TestViewsResource:
         client.dataviews.bulk_delete.assert_called_once_with(dataset_id=500, dataview_ids=[42, 43])
         assert result["status"] == "deleted"
 
-    def test_list_iterates_all_datasets(self, client):
-        """views.list() iterates all datasets in the project."""
-        client.datasets.list = MagicMock(return_value={"datasets": [{"id": 500}, {"id": 501}]})
+    def test_list_with_dataset_id(self, client):
+        """views.list(dataset_id) lists views from a specific dataset."""
         client.dataviews.list = MagicMock(
-            side_effect=[
-                {
-                    "dataviews": [
-                        {
-                            "id": 10,
-                            "name": "V1",
-                            "properties": {
-                                "columns": [
-                                    {
-                                        "display_name": "c",
-                                        "internal_name": "column_c",
-                                        "type": "TEXT",
-                                    }
-                                ]
-                            },
-                        }
-                    ]
-                },
-                {"dataviews": []},
-            ]
+            return_value={
+                "dataviews": [
+                    {
+                        "id": 10,
+                        "name": "V1",
+                        "properties": {
+                            "columns": [
+                                {
+                                    "display_name": "c",
+                                    "internal_name": "column_c",
+                                    "type": "TEXT",
+                                }
+                            ]
+                        },
+                    }
+                ]
+            }
         )
-        views = client.views.list()
+        views = client.views.list(dataset_id=500)
         assert len(views) == 1
         assert views[0].id == 10
+        client.dataviews.list.assert_called_once_with(dataset_id=500)
 
     def test_create_requires_dataset_id(self, client):
         """views.create() still requires dataset_id."""

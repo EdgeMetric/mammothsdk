@@ -42,6 +42,10 @@ class ClientAppsAPI:
     ) -> ClientAppsListResponse:
         """List client apps for a workspace.
 
+        .. note::
+
+            Requires admin role — non-admin users receive HTTP 401.
+
         Args:
             workspace_id: ID of the workspace (uses client default if not provided).
             limit: Maximum number of results (0-100, default 10).

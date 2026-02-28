@@ -313,6 +313,14 @@ class View(
         Updates ``columns``, ``display_names``, ``column_types``, and ``raw``
         to reflect any changes (e.g. columns added by pipeline tasks).
 
+        .. note::
+
+            Pipeline-derived columns (from add_column, math, etc.) are
+            included only when the server response contains ``taskwise_info``.
+            If a column is missing after refresh, call ``view.data(limit=1)``
+            to verify the column exists in the output, or re-get the view
+            with ``client.views.get(view.id)``.
+
         Returns:
             self (for chaining).
 
@@ -424,9 +432,15 @@ class View(
     def enter_draft_mode(self) -> dict[str, Any]:
         """Enter draft mode — tasks are queued without pipeline execution.
 
+        If already in draft mode, returns immediately without making an API call.
+
         Returns:
-            Draft mode state dict from the API.
+            Draft mode state dict from the API, or a status dict if already in
+            draft mode.
         """
+        if self._draft_mode:
+            return {"status": "already_in_draft_mode"}
+
         from mammoth.models.pipeline import DraftCommand
 
         result = self._client.pipeline.draft_mode(self.id, DraftCommand.ENTER, self.dataset_id)

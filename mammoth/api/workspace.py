@@ -104,6 +104,11 @@ class WorkspaceAPI:
     def get_user(self, user_id: str, workspace_id: int | None = None) -> dict[str, Any]:
         """Get details of a specific user.
 
+        .. note::
+
+            Requires workspace admin permissions. Non-admin users may
+            receive HTTP 405.
+
         Args:
             user_id: ID of the user.
             workspace_id: ID of the workspace (uses client default if not provided).

@@ -17,7 +17,6 @@ from mammoth.client import MammothClient, ViewsResource
 from mammoth.condition import CompoundCondition, Condition, NotCondition
 from mammoth.view import View, ViewExport
 
-
 # ── Helpers ──────────────────────────────────────────────────────
 
 
@@ -60,8 +59,13 @@ def _parse_docstring_args(docstring: str) -> set[str]:
             continue
         if in_args:
             if stripped in (
-                "Returns:", "Raises:", "Example::", "Examples::",
-                "Note:", "Yields:", "Attributes:",
+                "Returns:",
+                "Raises:",
+                "Example::",
+                "Examples::",
+                "Note:",
+                "Yields:",
+                "Attributes:",
             ):
                 break
             # Also break on single-word section headers
@@ -82,8 +86,13 @@ def _parse_docstring_args(docstring: str) -> set[str]:
 
 
 CORE_CLASSES = [
-    MammothClient, ViewsResource, View, ViewExport,
-    Condition, CompoundCondition, NotCondition,
+    MammothClient,
+    ViewsResource,
+    View,
+    ViewExport,
+    Condition,
+    CompoundCondition,
+    NotCondition,
 ]
 
 
@@ -122,8 +131,14 @@ from mammoth._mixins import (
 )
 
 for _mixin in [
-    ColumnOpsMixin, FilterOpsMixin, MathOpsMixin, TextOpsMixin,
-    DateOpsMixin, AggregateOpsMixin, RowOpsMixin, AdvancedOpsMixin,
+    ColumnOpsMixin,
+    FilterOpsMixin,
+    MathOpsMixin,
+    TextOpsMixin,
+    DateOpsMixin,
+    AggregateOpsMixin,
+    RowOpsMixin,
+    AdvancedOpsMixin,
 ]:
     MIXIN_CLASSES.append(_mixin)
     MIXIN_IDS.append(_mixin.__name__)
@@ -157,9 +172,7 @@ for _cls in [View, ViewExport, *MIXIN_CLASSES]:
 class TestDocstringArgsMatchSignature:
     """Documented Args must match actual function params for transform methods."""
 
-    def test_no_stale_documented_params(
-        self, cls_name: str, method_name: str, method: Any
-    ):
+    def test_no_stale_documented_params(self, cls_name: str, method_name: str, method: Any):
         """No documented param should be absent from the actual signature."""
         doc = inspect.getdoc(method)
         if not doc or "Args:" not in doc:
@@ -172,9 +185,7 @@ class TestDocstringArgsMatchSignature:
                 f"but signature only has: {sorted(sig_params)}"
             )
 
-    def test_required_params_documented(
-        self, cls_name: str, method_name: str, method: Any
-    ):
+    def test_required_params_documented(self, cls_name: str, method_name: str, method: Any):
         """Every required param (no default) should appear in the Args section."""
         doc = inspect.getdoc(method)
         if not doc or "Args:" not in doc:
@@ -224,11 +235,27 @@ from mammoth.models.pipeline import (
 )
 
 ALL_ENUMS = [
-    Operator, ColumnType, ValueType, JoinType, TextCase,
-    DateComponent, DateDiffUnit, WindowFunction, WindowRange,
-    FillDirection, AggregateFunction, ProviderType, FilterType,
-    SortDirection, MathOperator, SubstringDirection, JsonType,
-    JsonOpType, ExportFileType, TaskType, DraftCommand,
+    Operator,
+    ColumnType,
+    ValueType,
+    JoinType,
+    TextCase,
+    DateComponent,
+    DateDiffUnit,
+    WindowFunction,
+    WindowRange,
+    FillDirection,
+    AggregateFunction,
+    ProviderType,
+    FilterType,
+    SortDirection,
+    MathOperator,
+    SubstringDirection,
+    JsonType,
+    JsonOpType,
+    ExportFileType,
+    TaskType,
+    DraftCommand,
 ]
 
 
@@ -256,15 +283,21 @@ from mammoth.models.pipeline import (
 )
 
 ALL_DATACLASSES = [
-    SetValue, SplitColumnSpec, BulkReplaceMapping, DateDelta,
-    CopySpec, ConversionSpec, AggregationSpec, JoinKeySpec,
-    JoinSelectSpec, JsonExtractionSpec, CrosstabSpec,
+    SetValue,
+    SplitColumnSpec,
+    BulkReplaceMapping,
+    DateDelta,
+    CopySpec,
+    ConversionSpec,
+    AggregationSpec,
+    JoinKeySpec,
+    JoinSelectSpec,
+    JsonExtractionSpec,
+    CrosstabSpec,
 ]
 
 
-@pytest.mark.parametrize(
-    "dc_cls", ALL_DATACLASSES, ids=[d.__name__ for d in ALL_DATACLASSES]
-)
+@pytest.mark.parametrize("dc_cls", ALL_DATACLASSES, ids=[d.__name__ for d in ALL_DATACLASSES])
 def test_dataclass_has_docstring(dc_cls: type):
     """Every public dataclass must have a docstring."""
     assert inspect.getdoc(dc_cls), f"{dc_cls.__name__} missing docstring"
@@ -284,15 +317,17 @@ from mammoth.exceptions import (
 )
 
 ALL_EXCEPTIONS = [
-    MammothError, MammothAPIError, MammothAuthError,
-    MammothJobTimeoutError, MammothJobFailedError,
-    MammothTransformError, MammothColumnError,
+    MammothError,
+    MammothAPIError,
+    MammothAuthError,
+    MammothJobTimeoutError,
+    MammothJobFailedError,
+    MammothTransformError,
+    MammothColumnError,
 ]
 
 
-@pytest.mark.parametrize(
-    "exc_cls", ALL_EXCEPTIONS, ids=[e.__name__ for e in ALL_EXCEPTIONS]
-)
+@pytest.mark.parametrize("exc_cls", ALL_EXCEPTIONS, ids=[e.__name__ for e in ALL_EXCEPTIONS])
 def test_exception_has_docstring(exc_cls: type):
     """Every exception class must have a docstring."""
     assert inspect.getdoc(exc_cls), f"{exc_cls.__name__} missing docstring"
@@ -302,14 +337,29 @@ def test_exception_has_docstring(exc_cls: type):
 
 
 _API_MODULES = [
-    "mammoth.api.activity_logs", "mammoth.api.addons", "mammoth.api.ai",
-    "mammoth.api.automations", "mammoth.api.batches", "mammoth.api.browse",
-    "mammoth.api.clientapps", "mammoth.api.connectors", "mammoth.api.dashboards",
-    "mammoth.api.datasets", "mammoth.api.dataviews", "mammoth.api.exports",
-    "mammoth.api.external_keys", "mammoth.api.files", "mammoth.api.folders",
-    "mammoth.api.jobs", "mammoth.api.pipeline", "mammoth.api.projects",
-    "mammoth.api.reports", "mammoth.api.schedules", "mammoth.api.user_profile",
-    "mammoth.api.webhooks", "mammoth.api.workspace",
+    "mammoth.api.activity_logs",
+    "mammoth.api.addons",
+    "mammoth.api.ai",
+    "mammoth.api.automations",
+    "mammoth.api.batches",
+    "mammoth.api.browse",
+    "mammoth.api.clientapps",
+    "mammoth.api.connectors",
+    "mammoth.api.dashboards",
+    "mammoth.api.datasets",
+    "mammoth.api.dataviews",
+    "mammoth.api.exports",
+    "mammoth.api.external_keys",
+    "mammoth.api.files",
+    "mammoth.api.folders",
+    "mammoth.api.jobs",
+    "mammoth.api.pipeline",
+    "mammoth.api.projects",
+    "mammoth.api.reports",
+    "mammoth.api.schedules",
+    "mammoth.api.user_profile",
+    "mammoth.api.webhooks",
+    "mammoth.api.workspace",
 ]
 
 _API_CLASSES: list[tuple[str, type]] = []
@@ -321,9 +371,7 @@ for _mod_name in _API_MODULES:
             _API_CLASSES.append((_attr_name, _obj))
 
 
-@pytest.mark.parametrize(
-    "cls_name, cls", _API_CLASSES, ids=[name for name, _ in _API_CLASSES]
-)
+@pytest.mark.parametrize("cls_name, cls", _API_CLASSES, ids=[name for name, _ in _API_CLASSES])
 class TestAPISubClientDocstrings:
     """Every public method on every API sub-client must have a docstring."""
 

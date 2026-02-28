@@ -3,7 +3,7 @@ name: mammoth-sdk
 description: Comprehensive knowledge base for the Mammoth Analytics Python SDK — client setup, View transformations, condition building, exports, and API sub-clients. Use this skill when the user asks to "use the SDK", "write SDK code", "apply a transformation", "build a condition", "export data", mentions "MammothClient", "View", "Condition", "Operator", "filter_rows", "set_values", "pivot", "window", "join", "export", or needs to understand or write code using the Mammoth Python SDK. Covers the full SDK surface from authentication through transformations to exports.
 ---
 
-# Mammoth Python SDK Knowledge Base (v0.3.5)
+# Mammoth Python SDK Knowledge Base (v0.3.6)
 
 The Mammoth Python SDK (`mammoth` package) provides programmatic access to the Mammoth Analytics platform. It wraps the REST API with Pythonic classes, rich View objects, a condition builder with operator overloading, and export helpers.
 

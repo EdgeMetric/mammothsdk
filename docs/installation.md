@@ -8,13 +8,13 @@
 ## Install from PyPI
 
 ```bash
-pip install mammoth-io==0.3.5
+pip install mammoth-io==0.3.6
 ```
 
 Or with Poetry:
 
 ```bash
-poetry add mammoth-io==0.3.5
+poetry add mammoth-io==0.3.6
 ```
 
 ## Dependencies

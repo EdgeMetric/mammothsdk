@@ -347,6 +347,10 @@ class AdvancedOpsMixin:
         The query runs against the dataview's underlying data. Column
         references should use internal names (e.g. ``column_abc123``).
 
+        .. note::
+
+            Requires the SQL addon to be enabled on the workspace.
+
         Args:
             query: SQL query string.
 

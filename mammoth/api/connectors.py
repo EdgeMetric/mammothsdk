@@ -41,8 +41,10 @@ class ConnectorsAPI:
         Returns:
             List of connector dicts.
         """
-        response = self._client._request_json("GET", f"/workspaces/{self._ws()}/connectors")
-        return response.get("connectors", response if isinstance(response, _list) else [])
+        response = self._client._request("GET", f"/workspaces/{self._ws()}/connectors")
+        if isinstance(response, _list):
+            return response
+        return response.get("connectors", [])
 
     def get(self, connector_key: str) -> dict[str, Any]:
         """Get details of a specific connector.
@@ -71,11 +73,13 @@ class ConnectorsAPI:
         """
         ws = self._ws()
         proj = self._proj(project_id)
-        response = self._client._request_json(
+        response = self._client._request(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections",
         )
-        return response.get("connections", response if isinstance(response, _list) else [])
+        if isinstance(response, _list):
+            return response
+        return response.get("connections", [])
 
     def create_connection(
         self, connector_key: str, config: dict[str, Any], project_id: int | None = None
@@ -179,11 +183,13 @@ class ConnectorsAPI:
         """
         ws = self._ws()
         proj = self._proj(project_id)
-        response = self._client._request_json(
+        response = self._client._request(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/ds_configs",
         )
-        return response.get("ds_configs", response if isinstance(response, _list) else [])
+        if isinstance(response, _list):
+            return response
+        return response.get("ds_configs", [])
 
     def create_ds_config(
         self,
@@ -295,5 +301,7 @@ class ConnectorsAPI:
         Returns:
             List of active connector dicts.
         """
-        response = self._client._request_json("GET", f"/workspaces/{self._ws()}/active_connectors")
-        return response.get("connectors", response if isinstance(response, _list) else [])
+        response = self._client._request("GET", f"/workspaces/{self._ws()}/active_connectors")
+        if isinstance(response, _list):
+            return response
+        return response.get("connectors", [])

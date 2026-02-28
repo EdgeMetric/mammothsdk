@@ -27,6 +27,15 @@ class AddonsAPI:
     def _ws(self) -> int:
         return self._client.workspace_id
 
+    def list(self) -> dict[str, Any]:
+        """List active addons for the workspace.
+
+        Returns:
+            Dict with addon information.
+        """
+        ws = self._ws()
+        return self._client._request_json("GET", f"/workspaces/{ws}/addons")
+
     def add_connector(self, config: dict[str, Any]) -> dict[str, Any]:
         """Add a connector addon to the workspace.
 

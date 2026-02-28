@@ -33,16 +33,21 @@ class AggregateOpsMixin:
     def pivot(
         self,
         group_by: list[str],
-        aggregations: list[AggregationSpec],
+        aggregations: list[AggregationSpec | dict[str, Any]],
         condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> dict[str, Any]:
         """Group / aggregate / pivot (PIVOT task).
 
         Args:
             group_by: List of display names to group by.
-            aggregations: List of AggregationSpec objects::
+            aggregations: List of :class:`AggregationSpec` objects or dicts
+                with matching keys (``column``, ``function``, ``as_name``)::
 
-                [AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total")]
+                    [AggregationSpec(
+                        column="Sales", function=AggregateFunction.SUM,
+                        as_name="Total",
+                    )]
+                    [{"column": "Sales", "function": "SUM", "as_name": "Total"}]
 
             condition: Condition to apply.
 
@@ -60,6 +65,7 @@ class AggregateOpsMixin:
                 )],
             )
         """
+        resolved_aggs = [AggregationSpec(**a) if isinstance(a, dict) else a for a in aggregations]
         group_specs = []
         for idx, g in enumerate(group_by):
             group_specs.append(
@@ -71,7 +77,7 @@ class AggregateOpsMixin:
 
         select_specs = []
         base_order = len(group_by)
-        for idx, agg in enumerate(aggregations):
+        for idx, agg in enumerate(resolved_aggs):
             func_str = agg.function.value
             sel: dict[str, Any] = {
                 "ORDER": base_order + idx,

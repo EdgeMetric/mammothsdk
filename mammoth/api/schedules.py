@@ -40,6 +40,11 @@ class SchedulesAPI:
     ) -> dict[str, Any]:
         """List schedules in a project.
 
+        .. note::
+
+            The server may not support listing all schedules (HTTP 405).
+            Use :meth:`get` to retrieve individual schedules by ID.
+
         Args:
             project_id: Project ID (uses client default if not provided).
             limit: Maximum number of results (default 50).

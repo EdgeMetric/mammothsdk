@@ -143,6 +143,10 @@ class ProjectsAPI:
     ) -> dict[str, Any]:
         """Update a project.
 
+        .. note::
+
+            Requires admin role — non-admin users receive HTTP 401.
+
         Args:
             project_id: ID of the project to update.
             name: New name (optional).
@@ -271,15 +275,48 @@ class ProjectsAPI:
         self,
         project_id: int,
         workspace_id: int | None = None,
+        fields: str | None = None,
+        name: str | None = None,
+        browse_type: str | None = None,
+        sort: str | None = None,
+        offset: int | None = None,
+        limit: int | None = None,
     ) -> dict[str, Any]:
         """Browse project contents (datasets, folders).
+
+        .. note::
+
+            This endpoint may return HTTP 500 on some server versions.
 
         Args:
             project_id: ID of the project.
             workspace_id: ID of the workspace (uses client default if not provided).
+            fields: Comma-separated list of fields to return.
+            name: Filter by name.
+            browse_type: Filter by resource type.
+            sort: Sort specification.
+            offset: Number of results to skip.
+            limit: Maximum number of results.
 
         Returns:
             Dict with project contents.
         """
         ws = workspace_id or self._ws()
-        return self._client._request_json("GET", f"/workspaces/{ws}/projects/{project_id}/browse")
+        params: dict[str, Any] = {}
+        if fields is not None:
+            params["fields"] = fields
+        if name is not None:
+            params["name"] = name
+        if browse_type is not None:
+            params["browse_type"] = browse_type
+        if sort is not None:
+            params["sort"] = sort
+        if offset is not None:
+            params["offset"] = offset
+        if limit is not None:
+            params["limit"] = limit
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{project_id}/browse",
+            params=params or None,
+        )

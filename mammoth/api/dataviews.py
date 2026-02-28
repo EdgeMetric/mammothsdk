@@ -106,7 +106,7 @@ class DataviewsAPI:
             project_id: ID of the project (uses client default if not provided).
 
         Returns:
-            Dict with created dataview information.
+            Dict with ``"dataview_id"`` key containing the new dataview's ID.
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
@@ -127,7 +127,10 @@ class DataviewsAPI:
         workspace_id: int | None = None,
         project_id: int | None = None,
     ) -> dict[str, Any]:
-        """Update dataview properties.
+        """Update dataview properties using JSON Patch operations.
+
+        Each operation in ``patch_data`` should have ``op``, ``path``, and
+        ``value`` keys following JSON Patch conventions.
 
         Args:
             dataset_id: ID of the dataset.
@@ -138,6 +141,13 @@ class DataviewsAPI:
 
         Returns:
             Dict with update result.
+
+        Example::
+
+            client.dataviews.update(
+                dataset_id=123, dataview_id=456,
+                patch_data=[{"op": "replace", "path": "/name", "value": "Renamed"}],
+            )
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
