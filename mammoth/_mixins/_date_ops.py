@@ -112,17 +112,37 @@ class DateOpsMixin:
 
         Args:
             column: Source date column display name.
-            delta: DateDelta object specifying the increment::
+            delta: :class:`DateDelta` specifying the increment. Use negative
+                values to subtract::
 
-                DateDelta(days=30)
-                DateDelta(years=1, months=-3)
+                    DateDelta(days=30)
+                    DateDelta(years=1, months=-3)
 
-            new_column: Name for result column.
-            existing_column: Existing column to overwrite.
-            condition: Condition to apply.
+            new_column: Name for a new result column.
+            existing_column: Display name of existing column to overwrite.
+            condition: Only apply to rows matching this condition.
 
         Returns:
             API response dict.
+
+        Examples::
+
+            from mammoth import DateDelta
+
+            # Add 30 days
+            view.increment_date("Order Date", DateDelta(days=30),
+                                new_column="Due Date")
+
+            # Subtract 1 year, add 6 months
+            view.increment_date("Start Date", DateDelta(years=-1, months=6),
+                                new_column="Adjusted Date")
+
+            # Conditional increment
+            view.increment_date(
+                "Ship Date", DateDelta(days=7),
+                existing_column="Ship Date",
+                condition=Condition("Priority", Operator.EQ, "Low"),
+            )
         """
         id_spec: dict[str, Any] = {
             "SOURCE": self._resolve_column(column),

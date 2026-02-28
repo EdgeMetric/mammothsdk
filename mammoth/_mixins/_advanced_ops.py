@@ -134,18 +134,31 @@ class AdvancedOpsMixin:
         new_column: str | None = None,
         existing_column: str | None = None,
     ) -> dict[str, Any]:
-        """Lookup values from another dataview (LOOKUP task).
+        """VLOOKUP-style value lookup from another dataview (LOOKUP task).
+
+        For each row, matches ``source`` against ``key`` in the lookup view
+        and returns the corresponding ``value``.
 
         Args:
-            source: Source column display name (the key in this view).
+            source: Display name of the key column in *this* view.
             lookup_view_id: ID of the dataview to look up from.
-            key: Key column name in the lookup view.
-            value: Value column name in the lookup view.
-            new_column: Name for result column.
-            existing_column: Existing column to overwrite.
+            key: Internal column name of the key in the lookup view.
+            value: Internal column name of the value in the lookup view.
+            new_column: Name for a new result column.
+            existing_column: Display name of existing column to overwrite.
 
         Returns:
             API response dict.
+
+        Example::
+
+            view.lookup(
+                source="Product ID",
+                lookup_view_id=2055,
+                key="column_abc123",
+                value="column_xyz789",
+                new_column="Product Name",
+            )
         """
         lookup_spec: dict[str, Any] = {
             "DATAVIEW_ID": lookup_view_id,
@@ -282,16 +295,23 @@ class AdvancedOpsMixin:
         return max(t.get("sequence", 0) for t in tasks) + 1
 
     def generate_sql(self, intent: str) -> str:
-        """Generate SQL from a natural language intent using Mammoth LLM.
+        """Generate SQL from natural language using the Mammoth LLM.
 
-        Calls the ``/sql_generation`` endpoint which converts the intent to SQL
-        and adds the resulting task to the pipeline.
+        Calls the ``/sql_generation`` endpoint which converts the intent
+        into SQL, adds the resulting task to the pipeline, waits for
+        completion, and returns the generated query.
 
         Args:
-            intent: Natural language description (e.g. "count employees by department").
+            intent: Natural language description of the desired query
+                (e.g. ``"count employees by department"``).
 
         Returns:
             The generated SQL query string.
+
+        Example::
+
+            sql = view.generate_sql("show total sales by region")
+            print(sql)  # "SELECT region, SUM(sales) FROM ... GROUP BY region"
         """
         ws = self._client.workspace_id
         proj = getattr(self._client, "project_id", None)
@@ -322,12 +342,19 @@ class AdvancedOpsMixin:
         return inner.get("result", "")
 
     def add_sql(self, query: str) -> dict[str, Any]:
-        """Add a raw SQL query as a pipeline task.
+        """Add a raw SQL query as a pipeline task (SQL task).
+
+        The query runs against the dataview's underlying data. Column
+        references should use internal names (e.g. ``column_abc123``).
 
         Args:
             query: SQL query string.
 
         Returns:
             API response dict.
+
+        Example::
+
+            view.add_sql("SELECT *, column_abc * 2 AS doubled FROM __TABLE__")
         """
         return self._add_task({"SQL": {"USER_QUERY": query}})

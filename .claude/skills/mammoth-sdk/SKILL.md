@@ -3,7 +3,7 @@ name: mammoth-sdk
 description: Comprehensive knowledge base for the Mammoth Analytics Python SDK — client setup, View transformations, condition building, exports, and API sub-clients. Use this skill when the user asks to "use the SDK", "write SDK code", "apply a transformation", "build a condition", "export data", mentions "MammothClient", "View", "Condition", "Operator", "filter_rows", "set_values", "pivot", "window", "join", "export", or needs to understand or write code using the Mammoth Python SDK. Covers the full SDK surface from authentication through transformations to exports.
 ---
 
-# Mammoth Python SDK Knowledge Base (v0.3.0)
+# Mammoth Python SDK Knowledge Base (v0.3.4)
 
 The Mammoth Python SDK (`mammoth` package) provides programmatic access to the Mammoth Analytics platform. It wraps the REST API with Pythonic classes, rich View objects, a condition builder with operator overloading, and export helpers.
 
@@ -202,7 +202,7 @@ All enums extend `str, Enum` — they work as both enum values AND plain strings
 | Class | Fields | Used By |
 |-------|--------|---------|
 | `SetValue` | `value: Any`, `condition: Condition \| CompoundCondition \| None` | set_values() |
-| `CopySpec` | `source: str`, `as_name: str`, `type: ColumnType = TEXT` | copy_columns() |
+| `CopySpec` | `source: str`, `as_name: str \| None`, `type: ColumnType = TEXT`, `condition: Condition \| None` | copy_columns() |
 | `ConversionSpec` | `column: str`, `to: ColumnType`, `format: str \| None` | convert_type() |
 | `AggregationSpec` | `column: str`, `function: AggregateFunction`, `as_name: str \| None`, `delimiter: str \| None` | pivot() |
 | `CrosstabSpec` | `function: AggregateFunction`, `column: str \| None` | crosstab() |
@@ -262,7 +262,7 @@ For large datasets with many transformations, use draft mode to batch tasks:
 - **Chaining**: Transformations can be chained — the SDK handles sequencing automatically.
 - **Immutable views**: Use `client.views.create(dataset_id)` to create a working copy before applying transformations.
 - **Date columns**: CSV-uploaded date columns are TEXT type. Convert with `view.convert_type([ConversionSpec(column="date_col", to=ColumnType.DATE)])` before date operations.
-- **Strict types (v0.3.0)**: All transformation methods require typed dataclasses (not raw dicts). Enum fields require enum values (not strings).
+- **Typed dataclasses**: Transformation methods accept typed dataclasses (e.g. `CopySpec`, `ConversionSpec`, `DateDelta`). Raw dicts also work as a fallback.
 
 ## Key File Paths
 

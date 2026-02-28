@@ -159,15 +159,37 @@ class AggregateOpsMixin:
     ) -> dict[str, Any]:
         """Crosstab / pivot table (CROSSTAB task).
 
+        Creates a matrix where row grouping columns define the rows, the
+        ``pivot_column``'s distinct values become new columns, and cells
+        contain the aggregated result.
+
+        .. note::
+
+            Crosstab uses the exports endpoint internally rather than
+            standard pipeline tasks. Some post-crosstab operations may
+            behave differently from standard pipeline views.
+
         Args:
             rows: List of display names for row grouping.
-            pivot_column: Display name of column whose values become columns.
-            select: CrosstabSpec object::
-
-                CrosstabSpec(function=AggregateFunction.SUM, column="Sales")
+            pivot_column: Display name of column whose distinct values
+                become the output columns.
+            select: :class:`CrosstabSpec` defining the aggregation function
+                and (optionally) the value column.
 
         Returns:
             API response dict.
+
+        Example::
+
+            from mammoth import CrosstabSpec, AggregateFunction
+
+            view.crosstab(
+                rows=["Region"],
+                pivot_column="Product",
+                select=CrosstabSpec(
+                    function=AggregateFunction.SUM, column="Sales",
+                ),
+            )
         """
         func_str = select.function.value
         select_spec: dict[str, Any] = {"FUNCTION": func_str}

@@ -83,11 +83,26 @@ class Condition:
 
     Examples::
 
+        # Basic comparisons
         Condition("Sales", Operator.GTE, 1000)
         Condition("Region", Operator.IN_LIST, ["West", "East"])
         Condition("Name", Operator.IS_NOT_EMPTY)
+
+        # Combine with & (AND), | (OR), ~ (NOT)
         Condition("Sales", Operator.GTE, 1000) & Condition("Region", Operator.EQ, "West")
         ~Condition("Status", Operator.EQ, "Closed")
+
+        # Column-to-column comparison
+        Condition("Revenue", Operator.GT, "Cost", value_is_column=True)
+
+        # Date component filter (e.g. year of a date column)
+        Condition("Order Date", Operator.EQ, 2024, component="year")
+
+        # Date truncation filter (compare truncated dates)
+        Condition("Timestamp", Operator.GTE, "2024-01-01", truncate="day")
+
+        # Case-insensitive string matching
+        Condition("City", Operator.EQ, "new york", case_sensitive=False)
 
     Raises:
         ValueError: If column is empty or a non-null operator is used without a value.

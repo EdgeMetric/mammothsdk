@@ -285,10 +285,10 @@ class MammothClient:
         self.reports = ReportsAPI(self)
 
     def find_dataset_for_dataview(self, dataview_id: int) -> int:
-        """Find the dataset ID for a given dataview.
+        """Find the parent dataset ID for a given dataview.
 
-        Searches all datasets in the current project to find
-        which dataset contains the specified dataview.
+        Searches all datasets in the current project to locate which
+        dataset contains the specified dataview.
 
         Args:
             dataview_id: ID of the dataview.
@@ -297,7 +297,11 @@ class MammothClient:
             Dataset ID that contains the dataview.
 
         Raises:
-            MammothAPIError: If the dataview cannot be found.
+            MammothAPIError: If the dataview cannot be found in any dataset.
+
+        Example::
+
+            dataset_id = client.find_dataset_for_dataview(1039)
         """
         return self.pipeline._find_dataset_for_dataview(dataview_id)
 
@@ -474,18 +478,34 @@ class MammothClient:
         return response
 
     def set_project_id(self, project_id: int) -> None:
-        """Set the default project ID for the client.
+        """Set the active project for subsequent API calls.
+
+        Most operations (datasets, views, pipeline) require a project context.
+        Call this once after creating the client.
 
         Args:
-            project_id: ID of the project to use as default.
+            project_id: ID of the project to use.
+
+        Example::
+
+            client.set_project_id(1134)
         """
         self.project_id = project_id
 
     def test_connection(self) -> bool:
-        """Test the connection to Mammoth API.
+        """Test the connection to the Mammoth API.
+
+        Makes a lightweight API call to verify credentials and network
+        connectivity.
 
         Returns:
-            True if connection is successful, False otherwise.
+            ``True`` if credentials are valid and API is reachable,
+            ``False`` otherwise.
+
+        Example::
+
+            if client.test_connection():
+                print("Connected!")
         """
         try:
             self._request("GET", "/jobs", params={"job_ids": ""})
@@ -502,13 +522,20 @@ class MammothClient:
     def get_view(self, view_id: int) -> View:
         """Get a rich View object by dataview ID.
 
-        Shortcut for ``client.views.get(view_id)``.
+        Shortcut for ``client.views.get(view_id)``. Automatically finds
+        the parent dataset.
 
         Args:
             view_id: ID of the dataview.
 
         Returns:
-            View object with transformation methods and metadata.
+            :class:`~mammoth.view.View` with transformation methods and
+            metadata.
+
+        Example::
+
+            view = client.get_view(1039)
+            print(view.display_names)
         """
         return self.views.get(view_id)
 

@@ -34,13 +34,27 @@ theme:
 plugins:
   - search
   - mkdocstrings:
+      default_handler: python
       handlers:
         python:
+          paths:
+            - .
           options:
             show_source: false
             show_root_heading: true
+            show_root_full_path: false
             heading_level: 3
             docstring_style: google
+            docstring_section_style: spacy
+            merge_init_into_class: true
+            show_if_no_docstring: false
+            show_signature_annotations: true
+            separate_signature: true
+            signature_crossrefs: true
+            members_order: source
+            filters:
+              - "!^_"
+              - "^__init__$"
 
 markdown_extensions:
   - admonition

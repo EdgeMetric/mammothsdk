@@ -17,16 +17,35 @@ class RowOpsMixin:
         partition_by: str | None = None,
         order_by: list[list[str | SortDirection]] | None = None,
     ) -> dict[str, Any]:
-        """Fill missing values forward or backward (FILL task).
+        """Fill missing (null/empty) values using adjacent rows (FILL task).
 
         Args:
             column: Display name of column to fill.
-            direction: Fill direction.
-            partition_by: Column to partition by (optional).
-            order_by: Sort order for fill direction (optional).
+            direction: Fill direction — ``FillDirection.LAST_VALUE``
+                fills downward (forward-fill), ``FillDirection.FIRST_VALUE``
+                fills upward (back-fill).
+            partition_by: Display name of column to partition by (optional).
+                Fill restarts at each partition boundary.
+            order_by: Sort order applied before filling (optional)::
+
+                    [["Date", SortDirection.ASC]]
 
         Returns:
             API response dict.
+
+        Examples::
+
+            from mammoth import FillDirection, SortDirection
+
+            # Forward-fill missing values
+            view.fill_missing("Price", FillDirection.LAST_VALUE)
+
+            # Fill within partitions, ordered by date
+            view.fill_missing(
+                "Metric", FillDirection.LAST_VALUE,
+                partition_by="Region",
+                order_by=[["Date", SortDirection.ASC]],
+            )
         """
         fill_spec: dict[str, Any] = {
             "COLUMN": self._resolve_column(column),
@@ -49,11 +68,22 @@ class RowOpsMixin:
 
         Args:
             n: Number of rows to keep.
-            bottom: If True, keep bottom N instead of top N (default False).
-            order_by: Sort order before limiting (optional).
+            bottom: If True, keep bottom N rows instead of top N
+                (default False).
+            order_by: Sort order applied *before* limiting (optional)::
+
+                    [["Sales", SortDirection.DESC]]
 
         Returns:
             API response dict.
+
+        Examples::
+
+            from mammoth import SortDirection
+
+            view.limit_rows(100)
+            view.limit_rows(10, order_by=[["Sales", SortDirection.DESC]])
+            view.limit_rows(5, bottom=True)
         """
         spec: dict[str, Any] = {"LIMIT": {"LIMIT": n, "BOTTOM": bottom}}
         if order_by:
@@ -93,15 +123,26 @@ class RowOpsMixin:
         label_column: str = "Label",
         value_column: str = "Value",
     ) -> dict[str, Any]:
-        """Unpivot columns to rows (UNNEST task).
+        """Unpivot (melt) columns to rows (UNNEST task).
+
+        Converts multiple columns into rows. Each original column becomes a
+        label/value pair, multiplying the row count accordingly.
 
         Args:
             columns: Display names of columns to unnest.
-            label_column: Name for the label column (default "Label").
-            value_column: Name for the value column (default "Value").
+            label_column: Name for the new label column that holds the
+                original column names (default ``"Label"``).
+            value_column: Name for the new value column that holds the
+                original cell values (default ``"Value"``).
 
         Returns:
             API response dict.
+
+        Example::
+
+            # Columns "Q1", "Q2", "Q3", "Q4" → rows with Label/Value
+            view.unnest(["Q1", "Q2", "Q3", "Q4"],
+                        label_column="Quarter", value_column="Revenue")
         """
         col_specs = []
         for c in columns:

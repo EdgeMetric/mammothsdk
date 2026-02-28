@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Test all API methods returning Pydantic models against live API."""
+
 from __future__ import annotations
 
 import sys
@@ -55,7 +56,10 @@ if root:
     print(f"         .name={root.name}  .resource_id={root.resource_id}", flush=True)
 folder = test("folders.create()", lambda: client.folders.create(name="__test_validate__"))
 if folder and folder.id:
-    print(f"         .id={folder.id}  .resource_id={folder.resource_id} ({type(folder.resource_id).__name__})", flush=True)
+    print(
+        f"         .id={folder.id}  .resource_id={folder.resource_id} ({type(folder.resource_id).__name__})",
+        flush=True,
+    )
     test("folders.delete()", lambda: client.folders.delete(folder_ids=[folder.id]))
 
 # ── Projects ──

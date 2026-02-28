@@ -18,10 +18,16 @@ class ColumnOpsMixin:
 
         Args:
             name: Display name for the new column.
-            column_type: Column type (default ColumnType.TEXT).
+            column_type: Column type (default ``ColumnType.TEXT``).
 
         Returns:
             API response dict.
+
+        Examples::
+
+            view.add_column("Notes")
+            view.add_column("Score", column_type=ColumnType.NUMERIC)
+            view.add_column("Created", column_type=ColumnType.DATE)
         """
         return self._add_task(
             {
@@ -36,13 +42,18 @@ class ColumnOpsMixin:
         )
 
     def delete_columns(self, columns: list[str]) -> dict[str, Any]:
-        """Remove columns (DELETE task).
+        """Remove one or more columns (DELETE task).
 
         Args:
             columns: List of display names to delete.
 
         Returns:
             API response dict.
+
+        Examples::
+
+            view.delete_columns(["Temp"])
+            view.delete_columns(["Notes", "Internal ID", "Debug"])
         """
         return self._add_task({"DELETE": self._resolve_columns(columns)})
 
@@ -80,18 +91,35 @@ class ColumnOpsMixin:
         separator: str = " ",
         condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> dict[str, Any]:
-        """Concatenate columns (COMBINE task).
+        """Concatenate multiple columns into one (COMBINE task).
 
         Args:
-            sources: List of display names to combine.
-            new_column: Name for result column.
-            column_type: Type for new column (default ColumnType.TEXT).
-            existing_column: Existing column to overwrite.
-            separator: Separator between values (default space).
-            condition: Condition to apply.
+            sources: List of display names to combine (in order).
+            new_column: Name for a new result column. Mutually exclusive with
+                ``existing_column``.
+            column_type: Type for the new column (default ``ColumnType.TEXT``).
+            existing_column: Display name of an existing column to overwrite
+                with the combined values.
+            separator: String inserted between each column's value
+                (default ``" "``).
+            condition: Only combine in rows matching this condition.
 
         Returns:
             API response dict.
+
+        Examples::
+
+            # Combine first + last name into a new column
+            view.combine_columns(
+                ["First Name", "Last Name"],
+                new_column="Full Name", separator=" ",
+            )
+
+            # Combine with custom separator, overwrite existing column
+            view.combine_columns(
+                ["City", "State", "Zip"],
+                existing_column="Address", separator=", ",
+            )
         """
         source_specs: list[dict[str, str]] = []
         for i, s in enumerate(sources):
@@ -113,16 +141,34 @@ class ColumnOpsMixin:
         return self._add_task(spec)
 
     def convert_type(self, conversions: list[ConversionSpec]) -> dict[str, Any]:
-        """Convert column types (CONVERT task).
+        """Convert column data types (CONVERT task).
 
         Args:
-            conversions: List of ConversionSpec objects::
-
-                [ConversionSpec(column="Sales", to=ColumnType.NUMERIC)]
-                [ConversionSpec(column="Date Col", to=ColumnType.DATE, format="MM/DD/YYYY")]
+            conversions: List of :class:`ConversionSpec` objects. For date
+                conversions, provide the ``format`` that describes the
+                *current* string format of the data.
 
         Returns:
             API response dict.
+
+        Examples::
+
+            from mammoth import ConversionSpec, ColumnType
+
+            # Text to numeric
+            view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
+
+            # Text to date (specify the source format)
+            view.convert_type([
+                ConversionSpec(column="Order Date", to=ColumnType.DATE,
+                               format="MM/DD/YYYY"),
+            ])
+
+            # Multiple conversions at once
+            view.convert_type([
+                ConversionSpec(column="Price", to=ColumnType.NUMERIC),
+                ConversionSpec(column="Qty", to=ColumnType.NUMERIC),
+            ])
         """
         convert_items = []
         for c in conversions:

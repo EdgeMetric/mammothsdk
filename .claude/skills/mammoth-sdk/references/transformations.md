@@ -60,7 +60,7 @@ view.convert_type([
 
 ## Filter & Select
 
-### filter_rows(condition, filter_type="SHOW", prompt="")
+### filter_rows(condition, filter_type=FilterType.SHOW, prompt="")
 
 Filter rows by condition.
 
@@ -143,7 +143,7 @@ String expression parser: column names are auto-resolved, supports `+`, `-`, `*`
 
 ## Text Operations
 
-### combine_columns(sources, new_column=None, separator=" ", existing_column=None, condition=None)
+### combine_columns(sources, new_column=None, column_type=ColumnType.TEXT, existing_column=None, separator=" ", condition=None)
 
 Concatenate multiple columns with a separator.
 
@@ -224,7 +224,7 @@ view.split_column(
 )
 ```
 
-### substring(column, regex=None, direction=None, num_char=None, char_position=None, new_column=None, existing_column=None, condition=None)
+### substring(column, direction=None, num_char=None, char_position=None, regex_pattern=None, regex_invert=False, new_column=None, existing_column=None, condition=None)
 
 Extract text from a column.
 
@@ -232,19 +232,27 @@ Extract text from a column.
 from mammoth import SubstringDirection
 
 # First 5 characters
-view.substring(column="Name", direction=SubstringDirection.START, num_char=5, new_column="Prefix")
+view.substring("Name", direction=SubstringDirection.START, num_char=5, new_column="Prefix")
 
 # Last 3 characters
-view.substring(column="Code", direction=SubstringDirection.END, num_char=3, new_column="Suffix")
+view.substring("Code", direction=SubstringDirection.END, num_char=3, new_column="Suffix")
 
 # Characters left of position 5
-view.substring(column="Name", direction=SubstringDirection.LEFT, char_position=5, new_column="Left Part")
+view.substring("Name", direction=SubstringDirection.LEFT, char_position=5, new_column="Left Part")
 
-# Regex extraction
+# Regex extraction (use regex_pattern string, NOT a dict)
 view.substring(
-    column="Email",
-    regex={"EXPRESSION": "@(.+)", "INVERT": False},
+    "Email",
+    regex_pattern=r"@(.+)",
     new_column="Domain",
+)
+
+# Inverted regex (return the non-matching part)
+view.substring(
+    "Phone",
+    regex_pattern=r"\d{3}-",
+    regex_invert=True,
+    new_column="Without Area Code",
 )
 ```
 
@@ -281,8 +289,10 @@ Components (always lowercase): `year`, `month`, `day`, `hour`, `minute`, `second
 Calculate difference between two date columns.
 
 ```python
-view.date_diff("DAY", start="Start Date", end="End Date", new_column="Duration")
-view.date_diff("MONTH", start="Hire Date", end="Exit Date", new_column="Tenure Months")
+from mammoth import DateDiffUnit
+
+view.date_diff(DateDiffUnit.DAY, start="Start Date", end="End Date", new_column="Duration")
+view.date_diff(DateDiffUnit.MONTH, start="Hire Date", end="Exit Date", new_column="Tenure Months")
 ```
 
 Components (uppercase): `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND`
@@ -452,9 +462,9 @@ view.join(
     select=["Category", "Segment"],
 )
 
-# Join with view ID and internal column names
+# Join with view ID (use internal column names for the foreign view)
 view.join(
-    foreign_view_id=2050,
+    foreign_view=2050,
     join_type=JoinType.LEFT,
     on=[JoinKeySpec(left="Customer ID", right="column_1")],
     select=[
@@ -464,9 +474,9 @@ view.join(
 )
 ```
 
-- `on`: list of `JoinKeySpec` -- when using `foreign_view` (View object), both sides accept display names; when using `foreign_view_id` (int), `right` must be internal names
-- `select`: list of display names (str) when using `foreign_view`, or `JoinSelectSpec` for aliasing with internal names when using `foreign_view_id`
-- `foreign_view`: View object (display names auto-resolved) or `foreign_view_id` (int, requires internal names)
+- `foreign_view`: View object (display names auto-resolved) or int view ID (requires internal names for right-side keys and select columns)
+- `on`: list of `JoinKeySpec` -- when using a View object, both sides accept display names; when using an int ID, `right` must be internal names
+- `select`: list of display names (str) when using a View object, or `JoinSelectSpec` for aliasing with internal names when using an int ID
 
 Join types: `JoinType.INNER`, `JoinType.LEFT`, `JoinType.RIGHT`, `JoinType.OUTER`
 
@@ -535,16 +545,19 @@ view.unnest(
 
 ## JSON
 
-### json_extract(column, json_type, extractions=None, keep_source=False, op_type=None)
+### json_extract(column, json_type=JsonType.OBJECT, keys=None, extractions=None, keep_source=False, op_type=None)
 
 Extract data from JSON columns.
 
 ```python
 from mammoth import JsonExtractionSpec, JsonType, JsonOpType, ColumnType
 
-# Object: extract specific keys
+# Simple shorthand: extract keys by name (all as TEXT)
+view.json_extract("metadata", keys=["name", "email", "age"])
+
+# Advanced: extract with custom types and aliases
 view.json_extract(
-    column="metadata",
+    "metadata",
     json_type=JsonType.OBJECT,
     extractions=[
         JsonExtractionSpec(key="name", as_name="Name"),
@@ -553,10 +566,7 @@ view.json_extract(
 )
 
 # List: expand to rows
-view.json_extract(
-    column="tags",
-    json_type=JsonType.LIST,
-)
+view.json_extract("tags", json_type=JsonType.LIST)
 ```
 
 **Payload**: TYPE is `"JSON_OBJECT"`/`"JSON_LIST"`. Requires `JSON_OBJECT_OP_TYPE` or `JSON_LIST_OP_TYPE`.
@@ -565,7 +575,7 @@ view.json_extract(
 
 ## AI
 
-### gen_ai(prompt, context_columns, new_column="AI Result", assistant_data=None)
+### gen_ai(prompt, context_columns, new_column="AI Result", assistant_data=None, context_columns_derivation=None)
 
 AI-powered transformation using LLM.
 
@@ -574,6 +584,14 @@ view.gen_ai(
     prompt="Classify the sentiment of the review",
     context_columns=["Review Text"],
     new_column="Sentiment",
+)
+
+# With derivation context
+view.gen_ai(
+    prompt="Summarize the order details",
+    context_columns=["Product", "Quantity", "Price"],
+    new_column="Summary",
+    context_columns_derivation=True,
 )
 ```
 

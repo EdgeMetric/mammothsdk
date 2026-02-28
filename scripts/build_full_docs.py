@@ -29,6 +29,7 @@ OUTPUT_TXT = DOCS_DIR / "llms-full.txt"
 # Nav helpers
 # ---------------------------------------------------------------------------
 
+
 def load_nav(mkdocs_path: Path) -> list:
     """Load the nav list from mkdocs.yml."""
     with open(mkdocs_path) as f:
@@ -54,6 +55,7 @@ def extract_pages(nav: list) -> list[tuple[str, str]]:
 # ---------------------------------------------------------------------------
 # Markdown helpers
 # ---------------------------------------------------------------------------
+
 
 def slugify(text: str) -> str:
     """Convert heading text to GitHub-compatible anchor slug."""
@@ -91,6 +93,7 @@ def first_heading_slug(content: str) -> str | None:
 # Anchor map: filepath -> first-heading anchor
 # ---------------------------------------------------------------------------
 
+
 def build_anchor_map(pages: list[tuple[str, str]]) -> dict[str, str]:
     """Build mapping of docs-relative filepath -> first-heading anchor slug.
 
@@ -108,6 +111,7 @@ def build_anchor_map(pages: list[tuple[str, str]]) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 # Build heading anchor inventory (all headings in combined doc)
 # ---------------------------------------------------------------------------
+
 
 def build_all_anchors(sections: list[tuple[str, str, str]]) -> set[str]:
     """Collect every heading anchor that will exist in the combined doc."""
@@ -209,20 +213,167 @@ def rewrite_links(
 # MkDocs extensions → portable markdown
 # ---------------------------------------------------------------------------
 
-def strip_mkdocstrings_blocks(content: str) -> str:
-    """Remove ::: mkdocstrings directives (not renderable outside MkDocs)."""
+
+def _format_docstring(doc: str, indent: str = "") -> str:
+    """Clean up a docstring for markdown output."""
+    import textwrap
+
+    doc = textwrap.dedent(doc).strip()
+    lines: list[str] = []
+    for line in doc.splitlines():
+        lines.append(f"{indent}{line}" if line.strip() else "")
+    return "\n".join(lines)
+
+
+def _resolve_object(dotted_path: str) -> object | None:
+    """Import and return the object at *dotted_path* (e.g. 'mammoth.view.View')."""
+    import importlib
+
+    parts = dotted_path.split(".")
+    # Try progressively shorter module paths
+    for i in range(len(parts), 0, -1):
+        module_path = ".".join(parts[:i])
+        try:
+            module = importlib.import_module(module_path)
+            obj = module
+            for attr in parts[i:]:
+                obj = getattr(obj, attr)
+            return obj
+        except (ImportError, AttributeError):
+            continue
+    return None
+
+
+def _expand_directive(dotted_path: str, options: dict[str, object]) -> str:
+    """Expand a single ::: directive into markdown documentation."""
+    import inspect
+
+    obj = _resolve_object(dotted_path)
+    if obj is None:
+        return f"*See API reference for `{dotted_path}`*\n"
+
+    lines: list[str] = []
+    name = dotted_path.rsplit(".", 1)[-1]
+
+    # Heading level from options
+    heading_level = int(options.get("heading_level", 3))
+    show_heading = options.get("show_root_heading", True)
+    prefix = "#" * heading_level
+
+    if show_heading:
+        lines.append(f"{prefix} `{name}`\n")
+
+    # Class or function docstring
+    doc = inspect.getdoc(obj) or ""
+    if doc:
+        lines.append(_format_docstring(doc))
+        lines.append("")
+
+    # If it's a class, document its public methods
+    if inspect.isclass(obj):
+        members_filter = options.get("members")
+        filters = options.get("filters", ["!^_", "^__init__$"])
+
+        # Collect members to document
+        method_names: list[str] = []
+        if isinstance(members_filter, list) and members_filter:
+            method_names = members_filter
+        else:
+            for attr_name in dir(obj):
+                # Apply filters
+                include = True
+                for f in filters:
+                    if f.startswith("!"):
+                        pattern = f[1:]
+                        if re.match(pattern, attr_name):
+                            include = False
+                    else:
+                        if re.match(f, attr_name):
+                            include = True
+                if include:
+                    method_names.append(attr_name)
+
+        for method_name in method_names:
+            method = getattr(obj, method_name, None)
+            if method is None:
+                continue
+
+            method_doc = inspect.getdoc(method) or ""
+            if not method_doc:
+                continue
+
+            # Get signature
+            sig = ""
+            try:
+                sig_obj = inspect.signature(method)
+                sig = str(sig_obj)
+            except (ValueError, TypeError):
+                pass
+
+            sub_prefix = "#" * (heading_level + 1)
+            if isinstance(method, property):
+                lines.append(f"{sub_prefix} `{method_name}` *property*\n")
+            elif sig:
+                lines.append(f"{sub_prefix} `{method_name}{sig}`\n")
+            else:
+                lines.append(f"{sub_prefix} `{method_name}`\n")
+
+            lines.append(_format_docstring(method_doc))
+            lines.append("")
+
+    return "\n".join(lines)
+
+
+def expand_mkdocstrings_blocks(content: str) -> str:
+    """Expand ::: mkdocstrings directives by extracting real docstrings."""
     lines = content.splitlines()
     result: list[str] = []
-    skip = False
-    for line in lines:
-        if line.strip().startswith("::: "):
-            skip = True
-            result.append(f"*See API reference for `{line.strip()[4:]}`*\n")
-            continue
-        if skip and (line.strip() == "" or line.startswith("    ")):
-            continue
-        skip = False
-        result.append(line)
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+        if stripped.startswith("::: "):
+            dotted_path = stripped[4:].strip()
+            options: dict[str, object] = {}
+            i += 1
+            # Parse options block (indented YAML under the directive)
+            if i < len(lines) and lines[i].strip() == "options:":
+                i += 1
+                while i < len(lines) and (
+                    lines[i].startswith("      ") or lines[i].startswith("        ")
+                ):
+                    opt_line = lines[i].strip()
+                    if ":" in opt_line:
+                        key, _, val = opt_line.partition(":")
+                        key = key.strip()
+                        val = val.strip()
+                        if val.lower() == "true":
+                            options[key] = True
+                        elif val.lower() == "false":
+                            options[key] = False
+                        elif val.isdigit():
+                            options[key] = int(val)
+                        else:
+                            options[key] = val
+                    elif opt_line.startswith("- "):
+                        # List item — add to last key
+                        if key and key in options:
+                            if not isinstance(options[key], list):
+                                options[key] = []
+                            options[key].append(opt_line[2:].strip().strip('"').strip("'"))
+                        elif key:
+                            options[key] = [opt_line[2:].strip().strip('"').strip("'")]
+                    i += 1
+            # Skip blank lines and any remaining indented options
+            while i < len(lines) and lines[i].strip() == "":
+                i += 1
+                break
+
+            expanded = _expand_directive(dotted_path, options)
+            result.append(expanded)
+        else:
+            result.append(line)
+            i += 1
     return "\n".join(result)
 
 
@@ -278,6 +429,7 @@ def convert_admonitions(content: str) -> str:
 # TOC builder
 # ---------------------------------------------------------------------------
 
+
 def build_toc(sections: list[tuple[str, str, str]]) -> str:
     """Build a table of contents from section titles and their headings."""
     toc_lines = ["# Table of Contents\n"]
@@ -297,6 +449,7 @@ def build_toc(sections: list[tuple[str, str, str]]) -> str:
 # Main build
 # ---------------------------------------------------------------------------
 
+
 def build_full_docs() -> str:
     """Build the complete documentation markdown."""
     nav = load_nav(MKDOCS_YML)
@@ -309,7 +462,7 @@ def build_full_docs() -> str:
     sections: list[tuple[str, str, str]] = []  # (title, filepath, content)
     for title, filepath in pages:
         content = read_doc_file(filepath)
-        content = strip_mkdocstrings_blocks(content)
+        content = expand_mkdocstrings_blocks(content)
         content = convert_admonitions(content)
         sections.append((title, filepath, content))
 

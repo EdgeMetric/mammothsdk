@@ -272,17 +272,27 @@ class View(
         condition: Condition | CompoundCondition | None = None,
         sort: str | None = None,
     ) -> dict[str, Any]:
-        """Fetch data from the dataview.
+        """Fetch data rows from the dataview.
 
         Args:
-            limit: Number of rows to fetch (default 400).
+            limit: Maximum number of rows to return (default 400).
             offset: One-indexed starting row (default 1).
-            columns: List of display names to fetch (default all).
-            condition: Condition object for filtering.
+            columns: List of display names to fetch. ``None`` fetches all.
+            condition: Filter condition — only matching rows are returned.
             sort: Sort specification string.
 
         Returns:
-            Dict with data rows, columns, and pagination info.
+            Dict with ``data`` (list of row dicts), ``columns``, and
+            pagination info (``total``, ``limit``, ``offset``).
+
+        Examples::
+
+            rows = view.data(limit=10)
+            rows = view.data(columns=["Name", "Sales"], limit=50)
+            rows = view.data(
+                condition=Condition("Sales", Operator.GTE, 1000),
+                limit=100,
+            )
         """
         resolved_cols = self._resolve_columns(columns) if columns else None
         built_condition = self._build_condition(condition)
@@ -300,8 +310,16 @@ class View(
     def refresh(self) -> View:
         """Re-fetch metadata from the API and update local state.
 
+        Updates ``columns``, ``display_names``, ``column_types``, and ``raw``
+        to reflect any changes (e.g. columns added by pipeline tasks).
+
         Returns:
             self (for chaining).
+
+        Example::
+
+            view.refresh()
+            print(view.display_names)  # updated column list
         """
         proj = getattr(self._client, "project_id", None)
         if proj is None:
@@ -319,11 +337,17 @@ class View(
     def get_metadata(self) -> list[dict[str, Any]]:
         """Return current column metadata as a list of dicts.
 
-        Each dict has keys: ``display_name``, ``internal_name``, ``type``.
+        Each dict has keys ``display_name``, ``internal_name``, and ``type``.
         Reflects all columns including those added by pipeline transformations.
 
         Returns:
             List of column metadata dicts.
+
+        Example::
+
+            meta = view.get_metadata()
+            for col in meta:
+                print(f"{col['display_name']} ({col['type']})")
         """
         return [
             {
@@ -340,19 +364,34 @@ class View(
         """List all pipeline tasks on this dataview.
 
         Returns:
-            List of task dicts.
+            List of task dicts, each with ``id``, ``sequence``,
+            ``task_key``, ``params``, etc.
+
+        Example::
+
+            tasks = view.list_tasks()
+            for t in tasks:
+                print(f"#{t['sequence']} {t['task_key']}")
         """
         result = self._client.pipeline.list_tasks(self.id, self.dataset_id)
         return result.get("tasks", result if isinstance(result, list) else [])
 
     def delete_task(self, task_id: int) -> dict[str, Any]:
-        """Delete a pipeline task.
+        """Delete a pipeline task and re-run the pipeline.
+
+        Removes the task, waits for the pipeline to settle, then refreshes
+        column metadata.
 
         Args:
-            task_id: ID of the task to remove.
+            task_id: ID of the task to remove (from ``list_tasks()``).
 
         Returns:
             Deletion confirmation dict.
+
+        Example::
+
+            tasks = view.list_tasks()
+            view.delete_task(tasks[-1]["id"])  # remove last task
         """
         result = self._client.pipeline.delete_task(self.id, task_id, self.dataset_id)
         self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
@@ -360,13 +399,18 @@ class View(
         return result
 
     def preview_task(self, task_spec: dict[str, Any]) -> dict[str, Any]:
-        """Preview a task without applying it.
+        """Preview the result of a task without applying it to the pipeline.
 
         Args:
-            task_spec: Task specification dict.
+            task_spec: Task specification dict (same format as ``_add_task``
+                payloads).
 
         Returns:
-            Preview data dict.
+            Preview data dict showing what the data would look like.
+
+        Example::
+
+            preview = view.preview_task({"DELETE": ["column_abc123"]})
         """
         return self._client.pipeline.preview_task(self.id, task_spec, self.dataset_id)
 
@@ -459,10 +503,16 @@ class View(
         return _DraftContext(self)
 
     def get_column_mapping(self) -> dict[str, str]:
-        """Return a mapping of display names to internal column names.
+        """Return a copy of the display-name-to-internal-name mapping.
 
         Returns:
-            Dict mapping display names to internal names.
+            Dict mapping display names to internal names (e.g.
+            ``{"Sales": "column_abc123", ...}``).
+
+        Example::
+
+            mapping = view.get_column_mapping()
+            print(mapping)  # {"Sales": "column_abc123", "Region": "column_xyz"}
         """
         return dict(self.columns)
 
@@ -472,15 +522,21 @@ class View(
         column_mapping: dict[str, str] | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        """Branch out (export) this view to another dataset.
+        """Branch out (export) this view's data to another dataset.
+
+        Shortcut for ``view.export.to_dataset(dest_dataset_id)``.
 
         Args:
-            dest_dataset_id: Target dataset ID.
+            dest_dataset_id: Target dataset ID to receive the data.
             column_mapping: Column mapping dict (optional).
             **kwargs: Additional export options.
 
         Returns:
             Export result dict.
+
+        Example::
+
+            view.branch_out(dest_dataset_id=42)
         """
         return self.export.to_dataset(dest_dataset_id, column_mapping, **kwargs)
 
@@ -535,7 +591,10 @@ class ViewExport:
         password: str,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        """Export to PostgreSQL database.
+        """Export to a PostgreSQL database.
+
+        Requires a pre-configured PostgreSQL instance accessible from
+        the Mammoth platform.
 
         Args:
             host: Database host.
@@ -544,9 +603,19 @@ class ViewExport:
             table: Target table name.
             username: Database username.
             password: Database password.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, etc.).
 
         Returns:
             Export result dict.
+
+        Example::
+
+            view.export.to_postgres(
+                host="db.example.com", port=5432,
+                database="analytics", table="sales_export",
+                username="user", password="pass",
+            )
         """
         return self._create_export(
             "POSTGRES",
@@ -604,15 +673,23 @@ class ViewExport:
         include_hidden: bool = False,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        """Export to S3.
+        """Export to S3 (Mammoth-managed bucket).
 
         Args:
-            file_name: Output filename (auto-generated if not provided).
-            file_type: File format (default ExportFileType.CSV).
+            file_name: Output filename. Auto-generated with timestamp if
+                not provided.
+            file_type: File format (default ``ExportFileType.CSV``).
+                Supported formats: CSV, JSON, PARQUET.
             include_hidden: Include hidden columns (default False).
+            **kwargs: Additional export options.
 
         Returns:
             Export result dict with download URL.
+
+        Example::
+
+            result = view.export.to_s3(file_name="report.csv")
+            view.export.to_s3(file_type=ExportFileType.PARQUET)
         """
         if file_name is None:
             ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -636,14 +713,19 @@ class ViewExport:
         column_mapping: dict[str, str] | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        """Export to another Mammoth dataset (branch out).
+        """Export (branch out) to another Mammoth dataset.
 
         Args:
-            dest_dataset_id: Target dataset ID.
-            column_mapping: Column mapping dict (optional).
+            dest_dataset_id: Target dataset ID to receive the data.
+            column_mapping: Optional column mapping dict.
+            **kwargs: Additional export options.
 
         Returns:
             Export result dict.
+
+        Example::
+
+            view.export.to_dataset(dest_dataset_id=42)
         """
         target: dict[str, Any] = {"dataset_name": str(dest_dataset_id)}
         if column_mapping:
@@ -651,14 +733,20 @@ class ViewExport:
         return self._create_export("INTERNAL_DATASET", target, **kwargs)
 
     def to_csv(self, output_path: str | None = None, timeout: int = 300) -> Path:
-        """Download dataview data as CSV file.
+        """Download dataview data as a local CSV file.
 
         Args:
-            output_path: Path for the output file.
+            output_path: Local path for the output file. Auto-generated
+                if not provided.
             timeout: Timeout in seconds (default 300).
 
         Returns:
-            Path to the downloaded CSV file.
+            :class:`~pathlib.Path` to the downloaded CSV file.
+
+        Example::
+
+            path = view.export.to_csv("output.csv")
+            print(f"Downloaded to {path}")
         """
         return self._client.exports.to_csv(
             dataview_id=self._view.id,
@@ -793,10 +881,17 @@ class ViewExport:
         return self._create_export("PUBLISHDB", target, **kwargs)
 
     def list(self) -> _list[dict[str, Any]]:
-        """List all exports for this dataview.
+        """List all exports configured for this dataview.
 
         Returns:
-            List of export dicts.
+            List of export dicts, each with ``id``, ``handler_type``,
+            ``target_properties``, etc.
+
+        Example::
+
+            exports = view.export.list()
+            for exp in exports:
+                print(f"{exp['id']}: {exp['handler_type']}")
         """
         result = self._client.exports.list(dataview_id=self._view.id)
         if hasattr(result, "exports"):
@@ -804,13 +899,18 @@ class ViewExport:
         return result.get("exports", []) if isinstance(result, dict) else []
 
     def delete(self, export_id: int) -> dict[str, Any]:
-        """Delete an export.
+        """Delete an export configuration.
 
         Args:
-            export_id: ID of the export to delete.
+            export_id: ID of the export to delete (from ``list()``).
 
         Returns:
             Deletion confirmation dict.
+
+        Example::
+
+            exports = view.export.list()
+            view.export.delete(exports[0]["id"])
         """
         ws = self._client.workspace_id
         proj = getattr(self._client, "project_id", None)
