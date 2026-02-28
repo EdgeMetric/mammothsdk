@@ -75,7 +75,6 @@
   - [Full API Reference](#full-api-reference)
     - [`Condition`](#condition)
     - [`CompoundCondition`](#compoundcondition)
-    - [`NotCondition`](#notcondition)
   - [See also](#see-also)
 - [Enums & Data Classes](#enums-data-classes)
   - [Enums](#enums)
@@ -94,23 +93,10 @@
     - [`MathOperator`](#mathoperator)
     - [`SubstringDirection`](#substringdirection)
     - [`JsonType`](#jsontype)
-    - [`JsonOpType`](#jsonoptype)
-    - [`ExportFileType`](#exportfiletype)
     - [`ProviderType`](#providertype)
     - [`TaskType`](#tasktype)
-    - [`DraftCommand`](#draftcommand)
   - [Data Classes](#data-classes)
     - [`SetValue`](#setvalue)
-    - [`CopySpec`](#copyspec)
-    - [`ConversionSpec`](#conversionspec)
-    - [`SplitColumnSpec`](#splitcolumnspec)
-    - [`BulkReplaceMapping`](#bulkreplacemapping)
-    - [`DateDelta`](#datedelta)
-    - [`AggregationSpec`](#aggregationspec)
-    - [`JoinKeySpec`](#joinkeyspec)
-    - [`JoinSelectSpec`](#joinselectspec)
-    - [`JsonExtractionSpec`](#jsonextractionspec)
-    - [`CrosstabSpec`](#crosstabspec)
   - [See also](#see-also)
 - [Exceptions](#exceptions)
   - [Hierarchy](#hierarchy)
@@ -134,24 +120,24 @@
     - [`list(self, fields: 'str | None' = None, file_ids: '_list[int] | None' = None, names: '_list[str] | None' = None, statuses: '_list[str] | None' = None, created_at: 'str | None' = None, updated_at: 'str | None' = None, limit: 'int' = 50, offset: 'int' = 0, sort: 'str | None' = None) -> 'FilesList'`](#listself-fields-str-none-none-file_ids-_listint-none-none-names-_liststr-none-none-statuses-_liststr-none-none-created_at-str-none-none-updated_at-str-none-none-limit-int-50-offset-int-0-sort-str-none-none---fileslist)
     - [`set_password(self, file_id: 'int', password: 'str') -> 'ObjectJobSchema'`](#set_passwordself-file_id-int-password-str---objectjobschema)
     - [`update(self, file_id: 'int', patch_request: 'FilePatchRequest') -> 'ObjectJobSchema'`](#updateself-file_id-int-patch_request-filepatchrequest---objectjobschema)
-    - [`upload(self, files: '_list[str | Path | BinaryIO] | str | Path | BinaryIO | None' = None, folder_resource_id: 'str | int | None' = None, append_to_ds_id: 'int | None' = None, override_target_schema: 'bool | None' = None, wait_for_completion: 'bool' = True, timeout: 'int' = 300) -> '_list[int] | int | None'`](#uploadself-files-_liststr-path-binaryio-str-path-binaryio-none-none-folder_resource_id-str-int-none-none-append_to_ds_id-int-none-none-override_target_schema-bool-none-none-wait_for_completion-bool-true-timeout-int-300---_listint-int-none)
+    - [`upload(self, files: '_list[str | Path | BinaryIO] | str | Path | BinaryIO | None' = None, folder_resource_id: 'str | None' = None, append_to_ds_id: 'int | None' = None, override_target_schema: 'bool | None' = None, wait_for_completion: 'bool' = True, timeout: 'int' = 300) -> '_list[int] | int | None'`](#uploadself-files-_liststr-path-binaryio-str-path-binaryio-none-none-folder_resource_id-str-none-none-append_to_ds_id-int-none-none-override_target_schema-bool-none-none-wait_for_completion-bool-true-timeout-int-300---_listint-int-none)
     - [`upload_folder(self, folder_path: 'str | Path', folder_resource_id: 'str | None' = None, wait_for_completion: 'bool' = True, timeout: 'int' = 300) -> '_list[int] | int | None'`](#upload_folderself-folder_path-str-path-folder_resource_id-str-none-none-wait_for_completion-bool-true-timeout-int-300---_listint-int-none)
 - [Connectors](#connectors)
   - [`ConnectorsAPI`](#connectorsapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
     - [`active_connectors(self) -> '_list[dict[str, Any]]'`](#active_connectorsself---_listdictstr-any)
-    - [`create_connection(self, connector_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#create_connectionself-connector_key-str-config-dictstr-any-project_id-int-none-none---dictstr-any)
-    - [`create_ds_config(self, connector_key: 'str', connection_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#create_ds_configself-connector_key-str-connection_key-str-config-dictstr-any-project_id-int-none-none---dictstr-any)
-    - [`delete_connection(self, connector_key: 'str', connection_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#delete_connectionself-connector_key-str-connection_key-str-project_id-int-none-none---dictstr-any)
-    - [`delete_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#delete_ds_configself-connector_key-str-connection_key-str-ds_config_key-str-project_id-int-none-none---dictstr-any)
+    - [`create_connection(self, connector_key: 'str', config: 'dict[str, Any]') -> 'dict[str, Any]'`](#create_connectionself-connector_key-str-config-dictstr-any---dictstr-any)
+    - [`create_ds_config(self, connector_key: 'str', connection_key: 'str', config: 'dict[str, Any]') -> 'dict[str, Any]'`](#create_ds_configself-connector_key-str-connection_key-str-config-dictstr-any---dictstr-any)
+    - [`delete_connection(self, connector_key: 'str', connection_key: 'str') -> 'dict[str, Any]'`](#delete_connectionself-connector_key-str-connection_key-str---dictstr-any)
+    - [`delete_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str') -> 'dict[str, Any]'`](#delete_ds_configself-connector_key-str-connection_key-str-ds_config_key-str---dictstr-any)
     - [`get(self, connector_key: 'str') -> 'dict[str, Any]'`](#getself-connector_key-str---dictstr-any)
-    - [`get_connection(self, connector_key: 'str', connection_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_connectionself-connector_key-str-connection_key-str-project_id-int-none-none---dictstr-any)
-    - [`get_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_ds_configself-connector_key-str-connection_key-str-ds_config_key-str-project_id-int-none-none---dictstr-any)
+    - [`get_connection(self, connector_key: 'str', connection_key: 'str') -> 'dict[str, Any]'`](#get_connectionself-connector_key-str-connection_key-str---dictstr-any)
+    - [`get_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str') -> 'dict[str, Any]'`](#get_ds_configself-connector_key-str-connection_key-str-ds_config_key-str---dictstr-any)
     - [`list(self) -> '_list[dict[str, Any]]'`](#listself---_listdictstr-any)
-    - [`list_connections(self, connector_key: 'str', project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`](#list_connectionsself-connector_key-str-project_id-int-none-none---_listdictstr-any)
-    - [`list_ds_configs(self, connector_key: 'str', connection_key: 'str', project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`](#list_ds_configsself-connector_key-str-connection_key-str-project_id-int-none-none---_listdictstr-any)
-    - [`update_connection(self, connector_key: 'str', connection_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#update_connectionself-connector_key-str-connection_key-str-config-dictstr-any-project_id-int-none-none---dictstr-any)
-    - [`update_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#update_ds_configself-connector_key-str-connection_key-str-ds_config_key-str-config-dictstr-any-project_id-int-none-none---dictstr-any)
+    - [`list_connections(self, connector_key: 'str') -> '_list[dict[str, Any]]'`](#list_connectionsself-connector_key-str---_listdictstr-any)
+    - [`list_ds_configs(self, connector_key: 'str', connection_key: 'str') -> '_list[dict[str, Any]]'`](#list_ds_configsself-connector_key-str-connection_key-str---_listdictstr-any)
+    - [`update_connection(self, connector_key: 'str', connection_key: 'str', config: 'dict[str, Any]') -> 'dict[str, Any]'`](#update_connectionself-connector_key-str-connection_key-str-config-dictstr-any---dictstr-any)
+    - [`update_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str', config: 'dict[str, Any]') -> 'dict[str, Any]'`](#update_ds_configself-connector_key-str-connection_key-str-ds_config_key-str-config-dictstr-any---dictstr-any)
 - [Transformation Reference](#transformation-reference)
   - [Setup](#setup)
   - [Filtering and labeling](#filtering-and-labeling)
@@ -219,7 +205,7 @@
     - [`browse(self, project_id: 'int', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#browseself-project_id-int-workspace_id-int-none-none---dictstr-any)
     - [`bulk_delete(self, project_ids: '_list[int]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#bulk_deleteself-project_ids-_listint-workspace_id-int-none-none---dictstr-any)
     - [`bulk_update(self, patch_data: 'dict[str, Any]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#bulk_updateself-patch_data-dictstr-any-workspace_id-int-none-none---dictstr-any)
-    - [`create(self, name: 'str', color: 'str | None' = None, project_access: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#createself-name-str-color-str-none-none-project_access-str-none-none-workspace_id-int-none-none---dictstr-any)
+    - [`create(self, name: 'str', color: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#createself-name-str-color-str-none-none-workspace_id-int-none-none---dictstr-any)
     - [`delete(self, project_id: 'int', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#deleteself-project_id-int-workspace_id-int-none-none---dictstr-any)
     - [`get(self, project: 'int | str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#getself-project-int-str-none-none-workspace_id-int-none-none---dictstr-any)
     - [`list(self, workspace_id: 'int | None' = None, limit: 'int' = 100) -> 'dict[str, Any]'`](#listself-workspace_id-int-none-none-limit-int-100---dictstr-any)
@@ -253,7 +239,7 @@
     - [`delete(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#deleteself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`draft_mode(self, dataset_id: 'int', dataview_id: 'int', command: 'str', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#draft_modeself-dataset_id-int-dataview_id-int-command-str-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`get(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#getself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
-    - [`get_data(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 2) -> 'dict[str, Any]'`](#get_dataself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none-timeout-int-none-none-poll_interval-int-2---dictstr-any)
+    - [`get_data(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_dataself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`list(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, limit: 'int' = 100, sort: 'str' = '(created_at:desc)') -> 'dict[str, Any]'`](#listself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none-limit-int-100-sort-str-created_atdesc---dictstr-any)
     - [`mark_active(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#mark_activeself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`query_data(self, dataset_id: 'int', dataview_id: 'int', sequence: 'int' = 0, offset: 'int' = 1, limit: 'int' = 400, columns: '_list[str] | None' = None, condition: 'dict[str, Any] | None' = None, sort: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#query_dataself-dataset_id-int-dataview_id-int-sequence-int-0-offset-int-1-limit-int-400-columns-_liststr-none-none-condition-dictstr-any-none-none-sort-str-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
@@ -264,13 +250,11 @@
     - [`add_task(self, dataview_id: 'int', task_spec: 'dict[str, Any]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#add_taskself-dataview_id-int-task_spec-dictstr-any-dataset_id-int-none-none---dictstr-any)
     - [`delete_task(self, dataview_id: 'int', task_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#delete_taskself-dataview_id-int-task_id-int-dataset_id-int-none-none---dictstr-any)
     - [`draft_mode(self, dataview_id: 'int', command: 'str', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#draft_modeself-dataview_id-int-command-str-dataset_id-int-none-none---dictstr-any)
-    - [`edit_pipeline(self, dataview_id: 'int', patches: '_list[dict[str, Any]]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#edit_pipelineself-dataview_id-int-patches-_listdictstr-any-dataset_id-int-none-none---dictstr-any)
     - [`get_pipeline(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_pipelineself-dataview_id-int-dataset_id-int-none-none---dictstr-any)
     - [`get_task(self, dataview_id: 'int', task_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_taskself-dataview_id-int-task_id-int-dataset_id-int-none-none---dictstr-any)
     - [`list_tasks(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#list_tasksself-dataview_id-int-dataset_id-int-none-none---dictstr-any)
     - [`preview_task(self, dataview_id: 'int', task_spec: 'dict[str, Any]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#preview_taskself-dataview_id-int-task_spec-dictstr-any-dataset_id-int-none-none---dictstr-any)
     - [`update_task(self, dataview_id: 'int', task_id: 'int', task_spec: 'dict[str, Any]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#update_taskself-dataview_id-int-task_id-int-task_spec-dictstr-any-dataset_id-int-none-none---dictstr-any)
-    - [`wait_for_pipeline(self, dataview_id: 'int', dataset_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 3) -> 'dict[str, Any]'`](#wait_for_pipelineself-dataview_id-int-dataset_id-int-none-none-timeout-int-none-none-poll_interval-int-3---dictstr-any)
 - [Jobs](#jobs)
   - [`JobsAPI`](#jobsapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
@@ -296,13 +280,11 @@
 - [Webhooks](#webhooks)
   - [`WebhooksAPI`](#webhooksapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
-    - [`create(self, name: 'str' = 'Generic Webhook', mode: 'str | WebhookMode' = 'replace', folder_resource_id: 'str | None' = None, origins: 'str' = '*', is_secure: 'bool' = False) -> 'dict[str, Any]'`](#createself-name-str-generic-webhook-mode-str-webhookmode-replace-folder_resource_id-str-none-none-origins-str-is_secure-bool-false---dictstr-any)
+    - [`create(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`](#createself-config-dictstr-any---dictstr-any)
     - [`delete(self, webhook_id: 'int') -> 'dict[str, Any]'`](#deleteself-webhook_id-int---dictstr-any)
     - [`get(self, webhook_id: 'int') -> 'dict[str, Any]'`](#getself-webhook_id-int---dictstr-any)
-    - [`list(self, limit: 'int' = 50, offset: 'int' = 0) -> '_list[dict[str, Any]]'`](#listself-limit-int-50-offset-int-0---_listdictstr-any)
-    - [`send_data(self, webhook_uri: 'str', data: 'dict[str, Any]') -> 'dict[str, Any]'`](#send_dataself-webhook_uri-str-data-dictstr-any---dictstr-any)
-    - [`send_data_get(self, webhook_uri: 'str', params: 'dict[str, Any] | None' = None) -> 'dict[str, Any]'`](#send_data_getself-webhook_uri-str-params-dictstr-any-none-none---dictstr-any)
-    - [`update(self, webhook_id: 'int', mode: 'str | WebhookMode | None' = None, origins: 'str | None' = None, is_secure: 'bool | None' = None) -> 'dict[str, Any]'`](#updateself-webhook_id-int-mode-str-webhookmode-none-none-origins-str-none-none-is_secure-bool-none-none---dictstr-any)
+    - [`list(self) -> '_list[dict[str, Any]]'`](#listself---_listdictstr-any)
+    - [`update(self, webhook_id: 'int', config: 'dict[str, Any]') -> 'dict[str, Any]'`](#updateself-webhook_id-int-config-dictstr-any---dictstr-any)
 - [Automations & Schedules](#automations-schedules)
   - [AutomationsAPI](#automationsapi)
     - [`AutomationsAPI`](#automationsapi)
@@ -1020,7 +1002,7 @@ Example::
     view.filter_rows(Condition("Sales", Operator.GTE, 1000))
     view.export.to_csv("output.csv")
 
-#### `__init__(self, api_key: 'str', api_secret: 'str', workspace_id: 'int', base_url: 'str' = 'https://app.mammoth.io/api/v2', timeout: 'int' = 30, job_timeout: 'int' = 60, pipeline_timeout: 'int' = 3600) -> 'None'`
+#### `__init__(self, api_key: 'str', api_secret: 'str', workspace_id: 'int', base_url: 'str' = 'https://app.mammoth.io/api/v2', timeout: 'int' = 30, job_timeout: 'int' = 60) -> 'None'`
 
 Initialize the Mammoth client.
 
@@ -1031,47 +1013,33 @@ Args:
     base_url: Base URL for the Mammoth API.
     timeout: Request timeout in seconds.
     job_timeout: Job polling timeout in seconds.
-    pipeline_timeout: Pipeline readiness polling timeout in seconds.
 
 #### `set_project_id(self, project_id: 'int') -> 'None'`
 
-Set the active project for subsequent API calls.
-
-Most operations (datasets, views, pipeline) require a project context.
-Call this once after creating the client.
+Set the default project ID for the client.
 
 Args:
-    project_id: ID of the project to use.
+    project_id: ID of the project to use as default.
 
-Example::
-
-    client.set_project_id(1134)
-
-#### `get_view(self, view_id: 'int') -> 'View'`
+#### `get_view(self, view_id: 'int', dataset_id: 'int | None' = None) -> 'View'`
 
 Get a rich View object by dataview ID.
 
-Shortcut for ``client.views.get(view_id)``. Automatically finds
-the parent dataset.
+Shortcut for ``client.views.get(view_id)``.
 
 Args:
     view_id: ID of the dataview.
+    dataset_id: Dataset ID (auto-detected if not provided).
 
 Returns:
-    :class:`~mammoth.view.View` with transformation methods and
-    metadata.
-
-Example::
-
-    view = client.get_view(1039)
-    print(view.display_names)
+    View object with transformation methods and metadata.
 
 #### `find_dataset_for_dataview(self, dataview_id: 'int') -> 'int'`
 
-Find the parent dataset ID for a given dataview.
+Find the dataset ID for a given dataview.
 
-Searches all datasets in the current project to locate which
-dataset contains the specified dataview.
+Searches all datasets in the current project to find
+which dataset contains the specified dataview.
 
 Args:
     dataview_id: ID of the dataview.
@@ -1080,13 +1048,9 @@ Returns:
     Dataset ID that contains the dataview.
 
 Raises:
-    MammothAPIError: If the dataview cannot be found in any dataset.
+    MammothAPIError: If the dataview cannot be found.
 
-Example::
-
-    dataset_id = client.find_dataset_for_dataview(1039)
-
-#### `branch_out(self, view_id: 'int', dest_dataset_id: 'int', column_mapping: 'dict[str, str] | None' = None, **kwargs: 'Any') -> 'dict[str, Any]'`
+#### `branch_out(self, view_id: 'int', dest_dataset_id: 'int', column_mapping: 'dict[str, str] | None' = None, dataset_id: 'int | None' = None, **kwargs: 'Any') -> 'dict[str, Any]'`
 
 Branch out a view to another dataset.
 
@@ -1094,6 +1058,7 @@ Args:
     view_id: Source dataview ID.
     dest_dataset_id: Target dataset ID.
     column_mapping: Column mapping dict (optional).
+    dataset_id: Source dataset ID (auto-detected if not provided).
     **kwargs: Additional export options.
 
 Returns:
@@ -1101,19 +1066,10 @@ Returns:
 
 #### `test_connection(self) -> 'bool'`
 
-Test the connection to the Mammoth API.
-
-Makes a lightweight API call to verify credentials and network
-connectivity.
+Test the connection to Mammoth API.
 
 Returns:
-    ``True`` if credentials are valid and API is reachable,
-    ``False`` otherwise.
-
-Example::
-
-    if client.test_connection():
-        print("Connected!")
+    True if connection is successful, False otherwise.
 
 ### ViewsResource
 
@@ -1124,24 +1080,26 @@ Resource that returns rich View objects.
 Access via client.views::
 
     view = client.views.get(view_id)           # returns View object
-    views = client.views.list()                 # returns list of View objects
+    views = client.views.list(dataset_id)       # returns list of View objects
     view = client.views.create(dataset_id)      # returns View object
 
-#### `get(self, view_id: 'int') -> 'View'`
+#### `get(self, view_id: 'int', dataset_id: 'int | None' = None) -> 'View'`
 
 Get a rich View object for a dataview.
 
 Args:
     view_id: ID of the dataview.
+    dataset_id: Dataset ID (auto-detected if not provided).
 
 Returns:
     View object with transformation methods and metadata.
 
-#### `list(self) -> '_list[View]'`
+#### `list(self, dataset_id: 'int') -> '_list[View]'`
 
-List all dataviews as View objects.
+List all dataviews in a dataset as View objects.
 
-Returns views from **all** datasets in the current project.
+Args:
+    dataset_id: ID of the dataset.
 
 Returns:
     List of View objects.
@@ -1158,21 +1116,23 @@ Args:
 Returns:
     View object for the newly created dataview.
 
-#### `delete(self, view_id: 'int') -> 'dict[str, Any]'`
+#### `delete(self, view_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Delete a dataview.
 
 Args:
     view_id: ID of the dataview.
+    dataset_id: Dataset ID (auto-detected if not provided).
 
 Returns:
     Dict with deletion result.
 
-#### `bulk_delete(self, view_ids: '_list[int]') -> 'dict[str, Any]'`
+#### `bulk_delete(self, dataset_id: 'int', view_ids: '_list[int]') -> 'dict[str, Any]'`
 
 Delete multiple dataviews.
 
 Args:
+    dataset_id: ID of the dataset.
     view_ids: List of dataview IDs to delete.
 
 Returns:
@@ -1338,195 +1298,72 @@ Each method returns the API response dict.
 
 #### `data(self, limit: 'int' = 400, offset: 'int' = 1, columns: 'list[str] | None' = None, condition: 'Condition | CompoundCondition | None' = None, sort: 'str | None' = None) -> 'dict[str, Any]'`
 
-Fetch data rows from the dataview.
+Fetch data from the dataview.
 
 Args:
-    limit: Maximum number of rows to return (default 400).
+    limit: Number of rows to fetch (default 400).
     offset: One-indexed starting row (default 1).
-    columns: List of display names to fetch. ``None`` fetches all.
-    condition: Filter condition — only matching rows are returned.
+    columns: List of display names to fetch (default all).
+    condition: Condition object for filtering.
     sort: Sort specification string.
 
 Returns:
-    Dict with ``data`` (list of row dicts), ``columns``, and
-    pagination info (``total``, ``limit``, ``offset``).
-
-Examples::
-
-    rows = view.data(limit=10)
-    rows = view.data(columns=["Name", "Sales"], limit=50)
-    rows = view.data(
-        condition=Condition("Sales", Operator.GTE, 1000),
-        limit=100,
-    )
+    Dict with data rows, columns, and pagination info.
 
 #### `refresh(self) -> 'View'`
 
 Re-fetch metadata from the API and update local state.
 
-Updates ``columns``, ``display_names``, ``column_types``, and ``raw``
-to reflect any changes (e.g. columns added by pipeline tasks).
-
 Returns:
     self (for chaining).
-
-Example::
-
-    view.refresh()
-    print(view.display_names)  # updated column list
-
-#### `get_metadata(self) -> 'list[dict[str, Any]]'`
-
-Return current column metadata as a list of dicts.
-
-Each dict has keys ``display_name``, ``internal_name``, and ``type``.
-Reflects all columns including those added by pipeline transformations.
-
-Returns:
-    List of column metadata dicts.
-
-Example::
-
-    meta = view.get_metadata()
-    for col in meta:
-        print(f"{col['display_name']} ({col['type']})")
 
 #### `list_tasks(self) -> 'list[dict[str, Any]]'`
 
 List all pipeline tasks on this dataview.
 
 Returns:
-    List of task dicts, each with ``id``, ``sequence``,
-    ``task_key``, ``params``, etc.
-
-Example::
-
-    tasks = view.list_tasks()
-    for t in tasks:
-        print(f"#{t['sequence']} {t['task_key']}")
+    List of task dicts.
 
 #### `delete_task(self, task_id: 'int') -> 'dict[str, Any]'`
 
-Delete a pipeline task and re-run the pipeline.
-
-Removes the task, waits for the pipeline to settle, then refreshes
-column metadata.
+Delete a pipeline task.
 
 Args:
-    task_id: ID of the task to remove (from ``list_tasks()``).
+    task_id: ID of the task to remove.
 
 Returns:
     Deletion confirmation dict.
 
-Example::
-
-    tasks = view.list_tasks()
-    view.delete_task(tasks[-1]["id"])  # remove last task
-
 #### `preview_task(self, task_spec: 'dict[str, Any]') -> 'dict[str, Any]'`
 
-Preview the result of a task without applying it to the pipeline.
+Preview a task without applying it.
 
 Args:
-    task_spec: Task specification dict (same format as ``_add_task``
-        payloads).
+    task_spec: Task specification dict.
 
 Returns:
-    Preview data dict showing what the data would look like.
-
-Example::
-
-    preview = view.preview_task({"DELETE": ["column_abc123"]})
+    Preview data dict.
 
 #### `get_column_mapping(self) -> 'dict[str, str]'`
 
-Return a copy of the display-name-to-internal-name mapping.
+Return a mapping of display names to internal column names.
 
 Returns:
-    Dict mapping display names to internal names (e.g.
-    ``{"Sales": "column_abc123", ...}``).
-
-Example::
-
-    mapping = view.get_column_mapping()
-    print(mapping)  # {"Sales": "column_abc123", "Region": "column_xyz"}
-
-#### `draft(self) -> '_DraftContext'`
-
-Context manager for draft mode.
-
-Enters draft mode on ``__enter__``, submits on clean exit,
-discards on exception::
-
-    with view.draft():
-        view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-        view.math("Price * 2", new_column="Double")
-    # Pipeline runs once for both tasks
-
-#### `enter_draft_mode(self) -> 'dict[str, Any]'`
-
-Enter draft mode — tasks are queued without pipeline execution.
-
-Returns:
-    Draft mode state dict from the API.
-
-#### `submit_draft(self) -> 'dict[str, Any]'`
-
-Submit queued draft tasks, run the pipeline, and exit draft mode.
-
-Executes all queued tasks, refreshes column metadata, then
-exits draft mode.
-
-Returns:
-    Pipeline state dict after execution.
-
-#### `discard_draft(self) -> 'dict[str, Any]'`
-
-Discard queued draft tasks and exit draft mode.
-
-Reverts all tasks added since ``enter_draft_mode()``, refreshes
-metadata to the pre-draft state.
-
-Returns:
-    Draft mode state dict from the discard call.
-
-#### `set_auto_run(self, enabled: 'bool') -> 'dict[str, Any]'`
-
-Toggle auto-run on the pipeline.
-
-When auto-run is enabled (default), each transformation triggers
-immediate pipeline execution. When disabled, the view enters draft
-mode and tasks are queued.
-
-Args:
-    enabled: ``True`` to enable auto-run, ``False`` to disable.
-
-Returns:
-    Updated pipeline state dict.
-
-#### `is_draft_mode` *property*
-
-Whether this view is currently in draft mode.
+    Dict mapping display names to internal names.
 
 #### `branch_out(self, dest_dataset_id: 'int', column_mapping: 'dict[str, str] | None' = None, **kwargs: 'Any') -> 'dict[str, Any]'`
 
-Branch out (export) this view's data to another dataset.
-
-Shortcut for ``view.export.to_dataset(dest_dataset_id)``.
+Branch out (export) this view to another dataset.
 
 Args:
-    dest_dataset_id: Target dataset ID to receive the data.
+    dest_dataset_id: Target dataset ID.
     column_mapping: Column mapping dict (optional).
     **kwargs: Additional export options.
 
 Returns:
     Export result dict.
 
-Example::
-
-    view.branch_out(dest_dataset_id=42)
-
-#### `filter_rows(self, condition: 'Condition | CompoundCondition | NotCondition', filter_type: 'FilterType' = <FilterType.SHOW: 'SHOW'>, prompt: 'str' = '') -> 'dict[str, Any]'`
+#### `filter_rows(self, condition: 'Condition | CompoundCondition', filter_type: 'FilterType' = <FilterType.SHOW: 'SHOW'>, prompt: 'str' = '') -> 'dict[str, Any]'`
 
 Filter rows by condition (SELECT task).
 
@@ -1543,14 +1380,15 @@ Example::
     view.filter_rows(Condition("Sales", Operator.GTE, 1000))
     view.filter_rows(cond1 & cond2, filter_type=FilterType.REMOVE)
 
-#### `set_values(self, values: 'list[SetValue]', new_column: 'str | None' = None, column_type: 'ColumnType' = <ColumnType.TEXT: 'TEXT'>, existing_column: 'str | None' = None, condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> 'dict[str, Any]'`
+#### `set_values(self, values: 'list[SetValue | dict[str, Any]]', new_column: 'str | None' = None, column_type: 'ColumnType' = <ColumnType.TEXT: 'TEXT'>, existing_column: 'str | None' = None, condition: 'Condition | CompoundCondition | None' = None) -> 'dict[str, Any]'`
 
 Label and insert values into a new or existing column (SET task).
 
 Creates a VERSION 2 SET payload.
 
 Args:
-    values: List of SetValue objects.
+    values: List of SetValue objects or dicts with ``value`` and
+        optional ``condition`` keys.
     new_column: Name for a new column (mutually exclusive with existing_column).
     column_type: Type for new column (default ColumnType.TEXT).
     existing_column: Display name of existing column to update.
@@ -1570,13 +1408,14 @@ Example::
         ],
     )
 
-#### `math(self, expression: 'str', new_column: 'str | None' = None, column_type: 'ColumnType' = <ColumnType.NUMERIC: 'NUMERIC'>, existing_column: 'str | None' = None, condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> 'dict[str, Any]'`
+#### `math(self, expression: 'str | list[dict[str, Any]]', new_column: 'str | None' = None, column_type: 'ColumnType' = <ColumnType.NUMERIC: 'NUMERIC'>, existing_column: 'str | None' = None, condition: 'Condition | CompoundCondition | None' = None) -> 'dict[str, Any]'`
 
 Apply arithmetic operations (MATH task).
 
 Args:
-    expression: A string expression (e.g. ``"Price * Quantity"``)
-        that will be parsed automatically.
+    expression: Either a string expression (e.g. ``"Price * Quantity"``)
+        that will be parsed automatically, or a raw list of expression
+        parts in backend format for power users.
     new_column: Name for result column (creates new).
     column_type: Type for new column (default ColumnType.NUMERIC).
     existing_column: Existing column to overwrite.
@@ -1587,10 +1426,19 @@ Returns:
 
 Examples::
 
+    # String expression (recommended)
     view.math("Price * Quantity", new_column="Total")
     view.math("(Price + Tax) * 1.1", new_column="Grand Total")
 
-#### `join(self, foreign_view: 'int | View', join_type: 'JoinType', on: 'list[JoinKeySpec]', select: 'list[str | JoinSelectSpec]', column_prefix: 'str | None' = None) -> 'dict[str, Any]'`
+    # Raw backend format (power users)
+    view.math(
+        [{"TYPE": "COLUMN", "VALUE": "Price"},
+         {"TYPE": "OPERATOR", "VALUE": "*"},
+         {"TYPE": "COLUMN", "VALUE": "Quantity"}],
+        new_column="Total",
+    )
+
+#### `join(self, foreign_view: 'int | View', join_type: 'JoinType', on: 'list[dict[str, str]]', select: 'list[str] | list[dict[str, str]]', column_prefix: 'str | None' = None) -> 'dict[str, Any]'`
 
 Join with another dataview (JOIN task).
 
@@ -1599,15 +1447,18 @@ Args:
         When a View object is passed, display names in ``on.right``
         and ``select`` are resolved automatically.
     join_type: Join type.
-    on: Join keys as JoinKeySpec objects::
+    on: Join keys::
 
-        [JoinKeySpec(left="Customer ID", right="Customer ID")]
+        [{"left": "Customer ID", "right": "Customer ID"}]
 
+        Both sides use display names when foreign_view is a View object.
+        When foreign_view is an int, ``right`` should be the internal
+        column name in the foreign view.
     select: Columns to bring in from the foreign view. Simple list of
-        display names or JoinSelectSpec objects::
+        display names (when foreign_view is a View) or list of dicts::
 
             ["Category", "Name"]
-            [JoinSelectSpec(column="Category", alias="Cat")]
+            [{"column": "Category", "alias": "Cat"}]
 
     column_prefix: Prefix for joined columns (optional).
 
@@ -1621,7 +1472,7 @@ Examples::
     view.join(
         foreign_view=other,
         join_type=JoinType.LEFT,
-        on=[JoinKeySpec(left="Customer ID", right="Customer ID")],
+        on=[{"left": "Customer ID", "right": "Customer ID"}],
         select=["Category", "Name"],
     )
 
@@ -1629,19 +1480,19 @@ Examples::
     view.join(
         foreign_view=2050,
         join_type=JoinType.LEFT,
-        on=[JoinKeySpec(left="Customer ID", right="column_1")],
-        select=[JoinSelectSpec(column="column_7", alias="Category")],
+        on=[{"left": "Customer ID", "right": "column_1"}],
+        select=[{"column": "column_7", "alias": "Category"}],
     )
 
-#### `pivot(self, group_by: 'list[str]', aggregations: 'list[AggregationSpec]', condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> 'dict[str, Any]'`
+#### `pivot(self, group_by: 'list[str]', aggregations: 'list[dict[str, Any]]', condition: 'Condition | CompoundCondition | None' = None) -> 'dict[str, Any]'`
 
 Group / aggregate / pivot (PIVOT task).
 
 Args:
     group_by: List of display names to group by.
-    aggregations: List of AggregationSpec objects::
+    aggregations: List of aggregation specs::
 
-        [AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total")]
+        [{"column": "Sales", "function": AggregateFunction.SUM, "as": "Total Sales"}]
 
     condition: Condition to apply.
 
@@ -1652,11 +1503,11 @@ Example::
 
     view.pivot(
         group_by=["Region"],
-        aggregations=[AggregationSpec(
-            column="Sales",
-            function=AggregateFunction.SUM,
-            as_name="Total Sales",
-        )],
+        aggregations=[{
+            "column": "Sales",
+            "function": AggregateFunction.SUM,
+            "as": "Total Sales",
+        }],
     )
 
 #### `window(self, function: 'WindowFunction', column: 'str | None' = None, new_column: 'str | None' = None, column_type: 'ColumnType' = <ColumnType.NUMERIC: 'NUMERIC'>, existing_column: 'str | None' = None, partition_by: 'list[str] | None' = None, order_by: 'list[list[str | SortDirection]] | None' = None, range_type: 'WindowRange' = <WindowRange.UNBOUNDED: 'UNBOUNDED'>) -> 'dict[str, Any]'`
@@ -1688,41 +1539,19 @@ Example::
         order_by=[["Sales", SortDirection.DESC]],
     )
 
-#### `crosstab(self, rows: 'list[str]', pivot_column: 'str', select: 'CrosstabSpec') -> 'dict[str, Any]'`
+#### `crosstab(self, rows: 'list[str]', pivot_column: 'str', select: 'dict[str, Any]') -> 'dict[str, Any]'`
 
 Crosstab / pivot table (CROSSTAB task).
 
-Creates a matrix where row grouping columns define the rows, the
-``pivot_column``'s distinct values become new columns, and cells
-contain the aggregated result.
-
-.. note::
-
-    Crosstab uses the exports endpoint internally rather than
-    standard pipeline tasks. Some post-crosstab operations may
-    behave differently from standard pipeline views.
-
 Args:
     rows: List of display names for row grouping.
-    pivot_column: Display name of column whose distinct values
-        become the output columns.
-    select: :class:`CrosstabSpec` defining the aggregation function
-        and (optionally) the value column.
+    pivot_column: Display name of column whose values become columns.
+    select: Aggregation spec::
+
+        {"column": "Sales", "function": AggregateFunction.SUM}
 
 Returns:
     API response dict.
-
-Example::
-
-    from mammoth import CrosstabSpec, AggregateFunction
-
-    view.crosstab(
-        rows=["Region"],
-        pivot_column="Product",
-        select=CrosstabSpec(
-            function=AggregateFunction.SUM, column="Sales",
-        ),
-    )
 
 #### `add_column(self, name: 'str', column_type: 'ColumnType' = <ColumnType.TEXT: 'TEXT'>) -> 'dict[str, Any]'`
 
@@ -1730,20 +1559,14 @@ Add an empty column (ADD_COLUMN task).
 
 Args:
     name: Display name for the new column.
-    column_type: Column type (default ``ColumnType.TEXT``).
+    column_type: Column type (default ColumnType.TEXT).
 
 Returns:
     API response dict.
 
-Examples::
-
-    view.add_column("Notes")
-    view.add_column("Score", column_type=ColumnType.NUMERIC)
-    view.add_column("Created", column_type=ColumnType.DATE)
-
 #### `delete_columns(self, columns: 'list[str]') -> 'dict[str, Any]'`
 
-Remove one or more columns (DELETE task).
+Remove columns (DELETE task).
 
 Args:
     columns: List of display names to delete.
@@ -1751,113 +1574,61 @@ Args:
 Returns:
     API response dict.
 
-Examples::
-
-    view.delete_columns(["Temp"])
-    view.delete_columns(["Notes", "Internal ID", "Debug"])
-
-#### `copy_columns(self, copies: 'list[CopySpec]') -> 'dict[str, Any]'`
+#### `copy_columns(self, copies: 'list[dict[str, Any]]') -> 'dict[str, Any]'`
 
 Duplicate columns (COPY task).
 
 Args:
-    copies: List of CopySpec objects::
+    copies: List of copy specs::
 
-        [CopySpec(source="Sales", as_name="Sales Copy", type=ColumnType.NUMERIC)]
+        [{"source": "Sales", "as": "Sales Copy", "type": "NUMERIC"}]
 
 Returns:
     API response dict.
 
-#### `combine_columns(self, sources: 'list[str]', new_column: 'str | None' = None, column_type: 'ColumnType' = <ColumnType.TEXT: 'TEXT'>, existing_column: 'str | None' = None, separator: 'str' = ' ', condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> 'dict[str, Any]'`
+#### `combine_columns(self, sources: 'list[str]', new_column: 'str | None' = None, column_type: 'ColumnType' = <ColumnType.TEXT: 'TEXT'>, existing_column: 'str | None' = None, separator: 'str' = ' ', condition: 'Condition | CompoundCondition | None' = None) -> 'dict[str, Any]'`
 
-Concatenate multiple columns into one (COMBINE task).
+Concatenate columns (COMBINE task).
 
 Args:
-    sources: List of display names to combine (in order).
-    new_column: Name for a new result column. Mutually exclusive with
-        ``existing_column``.
-    column_type: Type for the new column (default ``ColumnType.TEXT``).
-    existing_column: Display name of an existing column to overwrite
-        with the combined values.
-    separator: String inserted between each column's value
-        (default ``" "``).
-    condition: Only combine in rows matching this condition.
+    sources: List of display names to combine.
+    new_column: Name for result column.
+    column_type: Type for new column (default ColumnType.TEXT).
+    existing_column: Existing column to overwrite.
+    separator: Separator between values (default space).
+    condition: Condition to apply.
 
 Returns:
     API response dict.
 
-Examples::
+#### `convert_type(self, conversions: 'list[dict[str, str]]') -> 'dict[str, Any]'`
 
-    # Combine first + last name into a new column
-    view.combine_columns(
-        ["First Name", "Last Name"],
-        new_column="Full Name", separator=" ",
-    )
-
-    # Combine with custom separator, overwrite existing column
-    view.combine_columns(
-        ["City", "State", "Zip"],
-        existing_column="Address", separator=", ",
-    )
-
-#### `convert_type(self, conversions: 'list[ConversionSpec]') -> 'dict[str, Any]'`
-
-Convert column data types (CONVERT task).
+Convert column types (CONVERT task).
 
 Args:
-    conversions: List of :class:`ConversionSpec` objects. For date
-        conversions, provide the ``format`` that describes the
-        *current* string format of the data.
+    conversions: List of conversion specs::
+
+        [{"column": "Sales", "to": "NUMERIC"}]
 
 Returns:
     API response dict.
 
-Examples::
-
-    from mammoth import ConversionSpec, ColumnType
-
-    # Text to numeric
-    view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
-
-    # Text to date (specify the source format)
-    view.convert_type([
-        ConversionSpec(column="Order Date", to=ColumnType.DATE,
-                       format="MM/DD/YYYY"),
-    ])
-
-    # Multiple conversions at once
-    view.convert_type([
-        ConversionSpec(column="Price", to=ColumnType.NUMERIC),
-        ConversionSpec(column="Qty", to=ColumnType.NUMERIC),
-    ])
-
-#### `text_transform(self, columns: 'list[str]', case: 'TextCase | None' = None, trim: 'bool' = False, condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> 'dict[str, Any]'`
+#### `text_transform(self, columns: 'list[str]', case: 'TextCase | None' = None, trim: 'bool' = False, condition: 'Condition | CompoundCondition | None' = None) -> 'dict[str, Any]'`
 
 Apply text case change or trim (TEXT_TRANSFORM task).
 
 Args:
     columns: List of display names to transform.
-    case: Case transformation (e.g. ``TextCase.UPPER``). Optional if
-        ``trim=True``.
-    trim: Whether to trim leading/trailing whitespace (default False).
-    condition: Only transform rows matching this condition.
+    case: Case transformation (optional).
+    trim: Whether to trim whitespace (default False).
+    condition: Condition to apply.
 
 Returns:
     API response dict.
 
-Examples::
+#### `replace_values(self, columns: 'list[str]', find: 'str', replace: 'str', match_case: 'bool' = False, match_words: 'bool' = False, condition: 'Condition | CompoundCondition | None' = None) -> 'dict[str, Any]'`
 
-    view.text_transform(["Name"], case=TextCase.UPPER)
-    view.text_transform(["City", "State"], case=TextCase.TITLE)
-    view.text_transform(["Notes"], trim=True)
-    view.text_transform(
-        ["Name"], case=TextCase.LOWER,
-        condition=Condition("Region", Operator.EQ, "West"),
-    )
-
-#### `replace_values(self, columns: 'list[str]', find: 'str', replace: 'str', match_case: 'bool' = False, match_words: 'bool' = False, condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> 'dict[str, Any]'`
-
-Find and replace values in one or more columns (REPLACE task).
+Find and replace values (REPLACE task).
 
 Args:
     columns: List of display names to search in.
@@ -1865,20 +1636,12 @@ Args:
     replace: Replacement text.
     match_case: Case-sensitive matching (default False).
     match_words: Match whole words only (default False).
-    condition: Only replace in rows matching this condition.
+    condition: Condition to apply.
 
 Returns:
     API response dict.
 
-Examples::
-
-    view.replace_values(["City"], find="NYC", replace="New York")
-    view.replace_values(
-        ["Name"], find="Jr", replace="Junior",
-        match_case=True, match_words=True,
-    )
-
-#### `bulk_replace(self, columns: 'list[str]', mapping: 'list[BulkReplaceMapping]', match_case: 'bool' = True, match_words: 'bool' = False, condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> 'dict[str, Any]'`
+#### `bulk_replace(self, columns: 'list[str]', mapping: 'list[dict[str, Any]]', match_case: 'bool' = True, match_words: 'bool' = False, condition: 'Condition | CompoundCondition | None' = None) -> 'dict[str, Any]'`
 
 Bulk find-and-replace across one or more columns (REPLACE with MAPPING).
 
@@ -1886,9 +1649,9 @@ Each mapping entry maps multiple search values to a single replacement.
 
 Args:
     columns: Display names of columns to search in.
-    mapping: List of BulkReplaceMapping objects::
+    mapping: List of bulk mapping dicts::
 
-        [BulkReplaceMapping(search=["val1", "val2"], replace="replacement")]
+        [{"search": ["val1", "val2"], "replace": "replacement"}]
 
     match_case: Case-sensitive matching (default True).
     match_words: Whole-word matching (default False).
@@ -1902,89 +1665,43 @@ Example::
     view.bulk_replace(
         columns=["Item"],
         mapping=[
-            BulkReplaceMapping(search=["6 inch CAKE", "8 inch CAKE"], replace="CAKE"),
+            {"search": ["6 inch CAKE", "8 inch CAKE"], "replace": "CAKE"},
         ],
     )
 
-#### `split_column(self, column: 'str', delimiter: 'str', new_columns: 'list[SplitColumnSpec]') -> 'dict[str, Any]'`
+#### `split_column(self, column: 'str', delimiter: 'str', new_columns: 'list[dict[str, str]]') -> 'dict[str, Any]'`
 
-Split a column into multiple columns by delimiter (SPLIT task).
-
-Each new column receives the Nth segment after splitting. If a row
-has fewer segments than columns, the extra columns are empty.
+Split a column by delimiter (SPLIT task).
 
 Args:
     column: Display name of column to split.
-    delimiter: Delimiter string (e.g. ``" "``, ``","``).
-    new_columns: List of :class:`SplitColumnSpec` objects defining
-        the output columns::
+    delimiter: Delimiter string.
+    new_columns: List of new column specs::
 
-            [SplitColumnSpec("First"), SplitColumnSpec("Last")]
+        [{"name": "First", "type": "TEXT"}, {"name": "Last", "type": "TEXT"}]
 
 Returns:
     API response dict.
 
-Example::
+#### `substring(self, column: 'str', direction: 'SubstringDirection | None' = None, num_char: 'int | None' = None, char_position: 'int | None' = None, regex_pattern: 'str | None' = None, regex_invert: 'bool' = False, new_column: 'str | None' = None, existing_column: 'str | None' = None, condition: 'Condition | CompoundCondition | None' = None) -> 'dict[str, Any]'`
 
-    from mammoth import SplitColumnSpec
-
-    view.split_column(
-        "Full Name", " ",
-        [SplitColumnSpec("First Name"), SplitColumnSpec("Last Name")],
-    )
-
-#### `substring(self, column: 'str', direction: 'SubstringDirection | None' = None, num_char: 'int | None' = None, char_position: 'int | None' = None, regex_pattern: 'str | None' = None, regex_invert: 'bool' = False, new_column: 'str | None' = None, existing_column: 'str | None' = None, condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> 'dict[str, Any]'`
-
-Extract a substring from a column (SUBSTRING task).
-
-Two modes of extraction:
-
-**Position-based** — use ``direction`` with either ``num_char`` or
-``char_position``:
-
-- ``START`` + ``num_char``: first N characters.
-- ``END`` + ``num_char``: last N characters.
-- ``LEFT`` + ``char_position``: characters before position N.
-- ``RIGHT`` + ``char_position``: characters from position N onward.
-
-**Regex-based** — use ``regex_pattern`` (and optionally
-``regex_invert``) instead of direction.
+Extract text from a column (SUBSTRING task).
 
 Args:
     column: Source column display name.
-    direction: Extraction direction (see above).
-    num_char: Number of characters (use with ``START`` / ``END``).
-    char_position: Character position (use with ``LEFT`` / ``RIGHT``).
-    regex_pattern: Regex pattern string for extraction (alternative to
-        direction). Pass the raw pattern, not a dict.
-    regex_invert: If True, return the part that does *not* match the
-        regex (default False).
-    new_column: Name for a new result column.
-    existing_column: Display name of existing column to overwrite.
-    condition: Only apply to rows matching this condition.
+    direction: Extraction direction.
+        START/END with num_char (first/last N chars).
+        LEFT/RIGHT with char_position (chars before/after position).
+    num_char: Number of characters to extract (use with START/END).
+    char_position: Character position (use with LEFT/RIGHT).
+    regex_pattern: Regex pattern for extraction (alternative to direction).
+    regex_invert: Invert regex match (default False).
+    new_column: Name for result column.
+    existing_column: Existing column to overwrite.
+    condition: Condition to apply.
 
 Returns:
     API response dict.
-
-Examples::
-
-    from mammoth import SubstringDirection
-
-    # First 3 characters
-    view.substring("Code", direction=SubstringDirection.START,
-                   num_char=3, new_column="Prefix")
-
-    # Last 4 characters
-    view.substring("Phone", direction=SubstringDirection.END,
-                   num_char=4, new_column="Last4")
-
-    # Characters before position 5
-    view.substring("SKU", direction=SubstringDirection.LEFT,
-                   char_position=5, new_column="Category")
-
-    # Regex extraction
-    view.substring("Email", regex_pattern=r"@(.+)",
-                   new_column="Domain")
 
 #### `extract_date(self, column: 'str', component: 'DateComponent', new_column: 'str | None' = None, existing_column: 'str | None' = None) -> 'dict[str, Any]'`
 
@@ -2022,75 +1739,32 @@ Example::
     view.date_diff(DateDiffUnit.DAY, start="Start Date", end="End Date",
                    new_column="Duration")
 
-#### `increment_date(self, column: 'str', delta: 'DateDelta', new_column: 'str | None' = None, existing_column: 'str | None' = None, condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> 'dict[str, Any]'`
+#### `increment_date(self, column: 'str', delta: 'dict[str, int]', new_column: 'str | None' = None, existing_column: 'str | None' = None, condition: 'Condition | CompoundCondition | None' = None) -> 'dict[str, Any]'`
 
 Add or subtract from a date column (INCREMENT_DATE task).
 
 Args:
     column: Source date column display name.
-    delta: :class:`DateDelta` specifying the increment. Use negative
-        values to subtract::
-
-            DateDelta(days=30)
-            DateDelta(years=1, months=-3)
-
-    new_column: Name for a new result column.
-    existing_column: Display name of existing column to overwrite.
-    condition: Only apply to rows matching this condition.
+    delta: Delta spec: {"DAYS": 30} or {"MONTHS": -1, "YEARS": 2}.
+    new_column: Name for result column.
+    existing_column: Existing column to overwrite.
+    condition: Condition to apply.
 
 Returns:
     API response dict.
-
-Examples::
-
-    from mammoth import DateDelta
-
-    # Add 30 days
-    view.increment_date("Order Date", DateDelta(days=30),
-                        new_column="Due Date")
-
-    # Subtract 1 year, add 6 months
-    view.increment_date("Start Date", DateDelta(years=-1, months=6),
-                        new_column="Adjusted Date")
-
-    # Conditional increment
-    view.increment_date(
-        "Ship Date", DateDelta(days=7),
-        existing_column="Ship Date",
-        condition=Condition("Priority", Operator.EQ, "Low"),
-    )
 
 #### `fill_missing(self, column: 'str', direction: 'FillDirection', partition_by: 'str | None' = None, order_by: 'list[list[str | SortDirection]] | None' = None) -> 'dict[str, Any]'`
 
-Fill missing (null/empty) values using adjacent rows (FILL task).
+Fill missing values forward or backward (FILL task).
 
 Args:
     column: Display name of column to fill.
-    direction: Fill direction — ``FillDirection.LAST_VALUE``
-        fills downward (forward-fill), ``FillDirection.FIRST_VALUE``
-        fills upward (back-fill).
-    partition_by: Display name of column to partition by (optional).
-        Fill restarts at each partition boundary.
-    order_by: Sort order applied before filling (optional)::
-
-            [["Date", SortDirection.ASC]]
+    direction: Fill direction.
+    partition_by: Column to partition by (optional).
+    order_by: Sort order for fill direction (optional).
 
 Returns:
     API response dict.
-
-Examples::
-
-    from mammoth import FillDirection, SortDirection
-
-    # Forward-fill missing values
-    view.fill_missing("Price", FillDirection.LAST_VALUE)
-
-    # Fill within partitions, ordered by date
-    view.fill_missing(
-        "Metric", FillDirection.LAST_VALUE,
-        partition_by="Region",
-        order_by=[["Date", SortDirection.ASC]],
-    )
 
 #### `limit_rows(self, n: 'int', bottom: 'bool' = False, order_by: 'list[list[str | SortDirection]] | None' = None) -> 'dict[str, Any]'`
 
@@ -2098,22 +1772,11 @@ Keep top or bottom N rows (LIMIT task).
 
 Args:
     n: Number of rows to keep.
-    bottom: If True, keep bottom N rows instead of top N
-        (default False).
-    order_by: Sort order applied *before* limiting (optional)::
-
-            [["Sales", SortDirection.DESC]]
+    bottom: If True, keep bottom N instead of top N (default False).
+    order_by: Sort order before limiting (optional).
 
 Returns:
     API response dict.
-
-Examples::
-
-    from mammoth import SortDirection
-
-    view.limit_rows(100)
-    view.limit_rows(10, order_by=[["Sales", SortDirection.DESC]])
-    view.limit_rows(5, bottom=True)
 
 #### `discard_duplicates(self, ignore_columns: 'list[str] | None' = None) -> 'dict[str, Any]'`
 
@@ -2133,56 +1796,32 @@ Example::
 
 #### `unnest(self, columns: 'list[str]', label_column: 'str' = 'Label', value_column: 'str' = 'Value') -> 'dict[str, Any]'`
 
-Unpivot (melt) columns to rows (UNNEST task).
-
-Converts multiple columns into rows. Each original column becomes a
-label/value pair, multiplying the row count accordingly.
+Unpivot columns to rows (UNNEST task).
 
 Args:
     columns: Display names of columns to unnest.
-    label_column: Name for the new label column that holds the
-        original column names (default ``"Label"``).
-    value_column: Name for the new value column that holds the
-        original cell values (default ``"Value"``).
+    label_column: Name for the label column (default "Label").
+    value_column: Name for the value column (default "Value").
 
 Returns:
     API response dict.
-
-Example::
-
-    # Columns "Q1", "Q2", "Q3", "Q4" → rows with Label/Value
-    view.unnest(["Q1", "Q2", "Q3", "Q4"],
-                label_column="Quarter", value_column="Revenue")
 
 #### `lookup(self, source: 'str', lookup_view_id: 'int', key: 'str', value: 'str', new_column: 'str | None' = None, existing_column: 'str | None' = None) -> 'dict[str, Any]'`
 
-VLOOKUP-style value lookup from another dataview (LOOKUP task).
-
-For each row, matches ``source`` against ``key`` in the lookup view
-and returns the corresponding ``value``.
+Lookup values from another dataview (LOOKUP task).
 
 Args:
-    source: Display name of the key column in *this* view.
+    source: Source column display name (the key in this view).
     lookup_view_id: ID of the dataview to look up from.
-    key: Internal column name of the key in the lookup view.
-    value: Internal column name of the value in the lookup view.
-    new_column: Name for a new result column.
-    existing_column: Display name of existing column to overwrite.
+    key: Key column name in the lookup view.
+    value: Value column name in the lookup view.
+    new_column: Name for result column.
+    existing_column: Existing column to overwrite.
 
 Returns:
     API response dict.
 
-Example::
-
-    view.lookup(
-        source="Product ID",
-        lookup_view_id=2055,
-        key="column_abc123",
-        value="column_xyz789",
-        new_column="Product Name",
-    )
-
-#### `json_extract(self, column: 'str', json_type: 'JsonType' = <JsonType.OBJECT: 'OBJECT'>, keys: 'list[str] | None' = None, extractions: 'list[JsonExtractionSpec] | None' = None, keep_source: 'bool' = False, op_type: 'JsonOpType | None' = None) -> 'dict[str, Any]'`
+#### `json_extract(self, column: 'str', json_type: 'JsonType' = <JsonType.OBJECT: 'OBJECT'>, keys: 'list[str] | None' = None, extractions: 'list[dict[str, str]] | None' = None, keep_source: 'bool' = False, op_type: 'str | None' = None) -> 'dict[str, Any]'`
 
 Extract data from JSON column (JSON_HANDLE task).
 
@@ -2191,10 +1830,9 @@ Args:
     json_type: JSON structure type (default JsonType.OBJECT).
     keys: Simple list of keys to extract (each becomes TEXT column).
         Use for quick extraction without custom types/aliases.
-    extractions: Advanced extraction specs as JsonExtractionSpec objects
-        (overrides keys)::
+    extractions: Advanced extraction specs (overrides keys)::
 
-        [JsonExtractionSpec(key="name", as_name="Name", type=ColumnType.TEXT)]
+        [{"key": "name", "as": "Name", "type": "TEXT"}]
 
     keep_source: Keep the original JSON column (default False).
     op_type: Operation type override.
@@ -2211,12 +1849,12 @@ Example::
     view.json_extract(
         "data",
         extractions=[
-            JsonExtractionSpec(key="name", as_name="Name"),
-            JsonExtractionSpec(key="age", as_name="Age", type=ColumnType.NUMERIC),
+            {"key": "name", "as": "Name", "type": "TEXT"},
+            {"key": "age", "as": "Age", "type": "NUMERIC"},
         ],
     )
 
-#### `gen_ai(self, prompt: 'str', context_columns: 'list[str]', new_column: 'str' = 'AI Result', assistant_data: 'list[str] | None' = None, context_columns_derivation: 'bool | None' = None) -> 'dict[str, Any]'`
+#### `gen_ai(self, prompt: 'str', context_columns: 'list[str]', new_column: 'str' = 'AI Result', assistant_data: 'list[str] | None' = None) -> 'dict[str, Any]'`
 
 AI-powered transformation (GEN_AI task).
 
@@ -2225,7 +1863,6 @@ Args:
     context_columns: Display names of columns to use as context.
     new_column: Name for the AI output column (default "AI Result").
     assistant_data: Additional assistant context strings.
-    context_columns_derivation: Whether to derive from context columns.
 
 Returns:
     API response dict.
@@ -2240,40 +1877,26 @@ Example::
 
 #### `generate_sql(self, intent: 'str') -> 'str'`
 
-Generate SQL from natural language using the Mammoth LLM.
+Generate SQL from a natural language intent using Mammoth LLM.
 
-Calls the ``/sql_generation`` endpoint which converts the intent
-into SQL, adds the resulting task to the pipeline, waits for
-completion, and returns the generated query.
+Calls the ``/sql_generation`` endpoint which converts the intent to SQL
+and adds the resulting task to the pipeline.
 
 Args:
-    intent: Natural language description of the desired query
-        (e.g. ``"count employees by department"``).
+    intent: Natural language description (e.g. "count employees by department").
 
 Returns:
     The generated SQL query string.
 
-Example::
-
-    sql = view.generate_sql("show total sales by region")
-    print(sql)  # "SELECT region, SUM(sales) FROM ... GROUP BY region"
-
 #### `add_sql(self, query: 'str') -> 'dict[str, Any]'`
 
-Add a raw SQL query as a pipeline task (SQL task).
-
-The query runs against the dataview's underlying data. Column
-references should use internal names (e.g. ``column_abc123``).
+Add a raw SQL query as a pipeline task.
 
 Args:
     query: SQL query string.
 
 Returns:
     API response dict.
-
-Example::
-
-    view.add_sql("SELECT *, column_abc * 2 AS doubled FROM __TABLE__")
 
 ---
 
@@ -2404,112 +2027,59 @@ See the [Operator enum](#operator) for the complete list. Summary:
 
 ### `Condition`
 
-Single column condition. Supports ``&`` (AND), ``|`` (OR), ``~`` (NOT).
+Single column condition. Supports & (AND) and | (OR) operators.
 
 Args:
     column: Display name of the column (e.g. "Sales", "Region").
     operator: Operator enum value (e.g. Operator.GTE, Operator.IN_LIST).
     value: Comparison value. Required for most operators, omit for IS_EMPTY.
-    case_sensitive: Controls string comparison case sensitivity.
-        ``None`` (default) — don't emit STRING_PROP (backend default: case-sensitive).
-        ``True`` — emit CASE-SENSITIVE.
-        ``False`` — emit CASE-INSENSITIVE.
+    case_sensitive: Whether string comparisons are case-sensitive (default False).
 
 Examples::
 
-    # Basic comparisons
     Condition("Sales", Operator.GTE, 1000)
     Condition("Region", Operator.IN_LIST, ["West", "East"])
     Condition("Name", Operator.IS_NOT_EMPTY)
-
-    # Combine with & (AND), | (OR), ~ (NOT)
     Condition("Sales", Operator.GTE, 1000) & Condition("Region", Operator.EQ, "West")
-    ~Condition("Status", Operator.EQ, "Closed")
 
-    # Column-to-column comparison
-    Condition("Revenue", Operator.GT, "Cost", value_is_column=True)
-
-    # Date component filter (e.g. year of a date column)
-    Condition("Order Date", Operator.EQ, 2024, component="year")
-
-    # Date truncation filter (compare truncated dates)
-    Condition("Timestamp", Operator.GTE, "2024-01-01", truncate="day")
-
-    # Case-insensitive string matching
-    Condition("City", Operator.EQ, "new york", case_sensitive=False)
-
-Raises:
-    ValueError: If column is empty or a non-null operator is used without a value.
-
-#### `__init__(self, column: 'str', operator: 'str | Any', value: 'Any' = None, case_sensitive: 'bool | None' = None, value_is_column: 'bool' = False, component: 'str | None' = None, truncate: 'str | None' = None) -> 'None'`
+#### `__init__(self, column: 'str', operator: 'str | Any', value: 'Any' = None, case_sensitive: 'bool' = False) -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `build(self, column_map: 'dict[str, str] | None' = None, column_types: 'dict[str, str] | None' = None) -> 'dict[str, Any]'`
+#### `build(self, column_map: 'dict[str, str] | None' = None) -> 'dict[str, Any]'`
 
 Build API-format condition dict.
 
 Args:
     column_map: Mapping of display names to internal names.
-    column_types: Mapping of display names to column types (e.g. TEXT, NUMERIC).
 
 Returns:
     dict in Mammoth API condition format.
 
 ### `CompoundCondition`
 
-AND/OR composition of conditions. Supports further chaining with ``&``, ``|``, ``~``.
+AND/OR composition of conditions. Supports further chaining with & and |.
 
 Created automatically when combining Conditions with & or |::
 
     combined = cond1 & cond2  # CompoundCondition("AND", [cond1, cond2])
     triple = combined & cond3  # Flat AND of all three
 
-Raises:
-    ValueError: If logic is not AND/OR or conditions has fewer than 2 elements.
-    TypeError: If any element is not a valid condition type.
-
-#### `__init__(self, logic: 'str', conditions: 'list[Condition | CompoundCondition | NotCondition]') -> 'None'`
+#### `__init__(self, logic: 'str', conditions: 'list[Condition | CompoundCondition]') -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `build(self, column_map: 'dict[str, str] | None' = None, column_types: 'dict[str, str] | None' = None) -> 'dict[str, Any]'`
+#### `build(self, column_map: 'dict[str, str] | None' = None) -> 'dict[str, Any]'`
 
 Build API-format condition dict.
 
 Args:
     column_map: Mapping of display names to internal names.
-    column_types: Mapping of display names to column types (e.g. TEXT, NUMERIC).
 
 Returns:
     dict in Mammoth API condition format with AND/OR keys.
 
-### `NotCondition`
-
-Negation of a condition. Created via ``~condition``.
-
-Examples::
-
-    ~Condition("Status", Operator.EQ, "Closed")
-    ~(cond1 & cond2)  # NOT of an AND
-
-Raises:
-    TypeError: If the inner condition is not a valid condition type.
-
-#### `__init__(self, condition: 'ConditionType') -> 'None'`
-
-Initialize self.  See help(type(self)) for accurate signature.
-
-#### `build(self, column_map: 'dict[str, str] | None' = None, column_types: 'dict[str, str] | None' = None) -> 'dict[str, Any]'`
-
-Build API-format condition dict.
-
-Args:
-    column_map: Mapping of display names to internal names.
-    column_types: Mapping of display names to column types (e.g. TEXT, NUMERIC).
-
-Returns:
-    dict with NOT key wrapping the inner condition.
+*See API reference for `mammoth.condition.NotCondition`*
 
 ## See also
 
@@ -3449,33 +3019,9 @@ JSON structure types for json_extract.
 
 JSON structure types for json_extract.
 
-### `JsonOpType`
+*See API reference for `mammoth.models.pipeline.JsonOpType`*
 
-JSON operation types for json_extract.
-
-#### `JSON_LIST_TO_ROWS`
-
-JSON operation types for json_extract.
-
-#### `JSON_OBJECT_TO_COLUMNS`
-
-JSON operation types for json_extract.
-
-### `ExportFileType`
-
-File types for S3 and file-based exports.
-
-#### `CSV`
-
-File types for S3 and file-based exports.
-
-#### `JSON`
-
-File types for S3 and file-based exports.
-
-#### `PARQUET`
-
-File types for S3 and file-based exports.
+*See API reference for `mammoth.models.pipeline.ExportFileType`*
 
 ### `ProviderType`
 
@@ -3613,70 +3159,7 @@ Pipeline task types.
 
 Pipeline task types.
 
-### `DraftCommand`
-
-Draft mode commands for pipeline task batching.
-
-Use via ``view.draft()`` context manager or explicit methods::
-
-    with view.draft():  # preferred
-        view.filter_rows(...)
-
-    view.enter_draft_mode()   # uses DraftCommand.ENTER
-    view.submit_draft()       # uses SUBMIT then EXIT
-    view.discard_draft()      # uses DISCARD then EXIT
-
-#### `DISCARD`
-
-Draft mode commands for pipeline task batching.
-
-Use via ``view.draft()`` context manager or explicit methods::
-
-    with view.draft():  # preferred
-        view.filter_rows(...)
-
-    view.enter_draft_mode()   # uses DraftCommand.ENTER
-    view.submit_draft()       # uses SUBMIT then EXIT
-    view.discard_draft()      # uses DISCARD then EXIT
-
-#### `ENTER`
-
-Draft mode commands for pipeline task batching.
-
-Use via ``view.draft()`` context manager or explicit methods::
-
-    with view.draft():  # preferred
-        view.filter_rows(...)
-
-    view.enter_draft_mode()   # uses DraftCommand.ENTER
-    view.submit_draft()       # uses SUBMIT then EXIT
-    view.discard_draft()      # uses DISCARD then EXIT
-
-#### `EXIT`
-
-Draft mode commands for pipeline task batching.
-
-Use via ``view.draft()`` context manager or explicit methods::
-
-    with view.draft():  # preferred
-        view.filter_rows(...)
-
-    view.enter_draft_mode()   # uses DraftCommand.ENTER
-    view.submit_draft()       # uses SUBMIT then EXIT
-    view.discard_draft()      # uses DISCARD then EXIT
-
-#### `SUBMIT`
-
-Draft mode commands for pipeline task batching.
-
-Use via ``view.draft()`` context manager or explicit methods::
-
-    with view.draft():  # preferred
-        view.filter_rows(...)
-
-    view.enter_draft_mode()   # uses DraftCommand.ENTER
-    view.submit_draft()       # uses SUBMIT then EXIT
-    view.discard_draft()      # uses DISCARD then EXIT
+*See API reference for `mammoth.models.pipeline.DraftCommand`*
 
 ---
 
@@ -3700,280 +3183,29 @@ Example::
     ]
     view.set_values(new_column="Risk", values=values)
 
-#### `__init__(self, value: 'Any', condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> None`
+#### `__init__(self, value: 'Any', condition: 'Condition | CompoundCondition | None' = None) -> None`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-### `CopySpec`
+*See API reference for `mammoth.models.pipeline.CopySpec`*
 
-Specification for a single column copy in :meth:`View.copy_columns`.
+*See API reference for `mammoth.models.pipeline.ConversionSpec`*
 
-Example::
+*See API reference for `mammoth.models.pipeline.SplitColumnSpec`*
 
-    view.copy_columns([CopySpec(source="Sales", as_name="Sales Copy", type=ColumnType.NUMERIC)])
+*See API reference for `mammoth.models.pipeline.BulkReplaceMapping`*
 
-#### `__init__(self, source: 'str', as_name: 'str | None' = None, type: 'ColumnType' = <ColumnType.TEXT: 'TEXT'>, condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> None`
+*See API reference for `mammoth.models.pipeline.DateDelta`*
 
-Initialize self.  See help(type(self)) for accurate signature.
+*See API reference for `mammoth.models.pipeline.AggregationSpec`*
 
-#### `type`
+*See API reference for `mammoth.models.pipeline.JoinKeySpec`*
 
-Column data types for new columns and conversions.
+*See API reference for `mammoth.models.pipeline.JoinSelectSpec`*
 
-### `ConversionSpec`
+*See API reference for `mammoth.models.pipeline.JsonExtractionSpec`*
 
-Specification for a column type conversion in :meth:`View.convert_type`.
-
-Example::
-
-    view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
-    view.convert_type([
-        ConversionSpec(column="Date Col", to=ColumnType.DATE, format="MM/DD/YYYY")
-    ])
-
-#### `__init__(self, column: 'str', to: 'ColumnType', format: 'str | None' = None) -> None`
-
-Initialize self.  See help(type(self)) for accurate signature.
-
-### `SplitColumnSpec`
-
-Specification for a new column in :meth:`View.split_column`.
-
-Example::
-
-    view.split_column("Name", " ", [SplitColumnSpec("First"), SplitColumnSpec("Last")])
-
-#### `__init__(self, name: 'str', type: 'ColumnType' = <ColumnType.TEXT: 'TEXT'>) -> None`
-
-Initialize self.  See help(type(self)) for accurate signature.
-
-#### `type`
-
-Column data types for new columns and conversions.
-
-### `BulkReplaceMapping`
-
-Specification for a bulk replace mapping in :meth:`View.bulk_replace`.
-
-Example::
-
-    view.bulk_replace(
-        columns=["Item"],
-        mapping=[BulkReplaceMapping(search=["6 inch CAKE", "8 inch CAKE"], replace="CAKE")],
-    )
-
-#### `__init__(self, search: 'list[str]', replace: 'str') -> None`
-
-Initialize self.  See help(type(self)) for accurate signature.
-
-### `DateDelta`
-
-Delta specification for :meth:`View.increment_date`.
-
-Example::
-
-    view.increment_date("Order Date", DateDelta(days=30), new_column="Due Date")
-    view.increment_date("Start", DateDelta(years=1, months=-3), new_column="Adjusted")
-
-#### `__init__(self, years: 'int' = 0, months: 'int' = 0, weeks: 'int' = 0, days: 'int' = 0, hours: 'int' = 0, minutes: 'int' = 0, seconds: 'int' = 0) -> None`
-
-Initialize self.  See help(type(self)) for accurate signature.
-
-#### `days`
-
-int([x]) -> integer
-int(x, base=10) -> integer
-
-Convert a number or string to an integer, or return 0 if no arguments
-are given.  If x is a number, return x.__int__().  For floating point
-numbers, this truncates towards zero.
-
-If x is not a number or if base is given, then x must be a string,
-bytes, or bytearray instance representing an integer literal in the
-given base.  The literal can be preceded by '+' or '-' and be surrounded
-by whitespace.  The base defaults to 10.  Valid bases are 0 and 2-36.
-Base 0 means to interpret the base from the string as an integer literal.
->>> int('0b100', base=0)
-4
-
-#### `hours`
-
-int([x]) -> integer
-int(x, base=10) -> integer
-
-Convert a number or string to an integer, or return 0 if no arguments
-are given.  If x is a number, return x.__int__().  For floating point
-numbers, this truncates towards zero.
-
-If x is not a number or if base is given, then x must be a string,
-bytes, or bytearray instance representing an integer literal in the
-given base.  The literal can be preceded by '+' or '-' and be surrounded
-by whitespace.  The base defaults to 10.  Valid bases are 0 and 2-36.
-Base 0 means to interpret the base from the string as an integer literal.
->>> int('0b100', base=0)
-4
-
-#### `minutes`
-
-int([x]) -> integer
-int(x, base=10) -> integer
-
-Convert a number or string to an integer, or return 0 if no arguments
-are given.  If x is a number, return x.__int__().  For floating point
-numbers, this truncates towards zero.
-
-If x is not a number or if base is given, then x must be a string,
-bytes, or bytearray instance representing an integer literal in the
-given base.  The literal can be preceded by '+' or '-' and be surrounded
-by whitespace.  The base defaults to 10.  Valid bases are 0 and 2-36.
-Base 0 means to interpret the base from the string as an integer literal.
->>> int('0b100', base=0)
-4
-
-#### `months`
-
-int([x]) -> integer
-int(x, base=10) -> integer
-
-Convert a number or string to an integer, or return 0 if no arguments
-are given.  If x is a number, return x.__int__().  For floating point
-numbers, this truncates towards zero.
-
-If x is not a number or if base is given, then x must be a string,
-bytes, or bytearray instance representing an integer literal in the
-given base.  The literal can be preceded by '+' or '-' and be surrounded
-by whitespace.  The base defaults to 10.  Valid bases are 0 and 2-36.
-Base 0 means to interpret the base from the string as an integer literal.
->>> int('0b100', base=0)
-4
-
-#### `seconds`
-
-int([x]) -> integer
-int(x, base=10) -> integer
-
-Convert a number or string to an integer, or return 0 if no arguments
-are given.  If x is a number, return x.__int__().  For floating point
-numbers, this truncates towards zero.
-
-If x is not a number or if base is given, then x must be a string,
-bytes, or bytearray instance representing an integer literal in the
-given base.  The literal can be preceded by '+' or '-' and be surrounded
-by whitespace.  The base defaults to 10.  Valid bases are 0 and 2-36.
-Base 0 means to interpret the base from the string as an integer literal.
->>> int('0b100', base=0)
-4
-
-#### `to_dict(self) -> 'dict[str, int]'`
-
-Convert to backend DELTA format (uppercase keys, non-zero only).
-
-#### `weeks`
-
-int([x]) -> integer
-int(x, base=10) -> integer
-
-Convert a number or string to an integer, or return 0 if no arguments
-are given.  If x is a number, return x.__int__().  For floating point
-numbers, this truncates towards zero.
-
-If x is not a number or if base is given, then x must be a string,
-bytes, or bytearray instance representing an integer literal in the
-given base.  The literal can be preceded by '+' or '-' and be surrounded
-by whitespace.  The base defaults to 10.  Valid bases are 0 and 2-36.
-Base 0 means to interpret the base from the string as an integer literal.
->>> int('0b100', base=0)
-4
-
-#### `years`
-
-int([x]) -> integer
-int(x, base=10) -> integer
-
-Convert a number or string to an integer, or return 0 if no arguments
-are given.  If x is a number, return x.__int__().  For floating point
-numbers, this truncates towards zero.
-
-If x is not a number or if base is given, then x must be a string,
-bytes, or bytearray instance representing an integer literal in the
-given base.  The literal can be preceded by '+' or '-' and be surrounded
-by whitespace.  The base defaults to 10.  Valid bases are 0 and 2-36.
-Base 0 means to interpret the base from the string as an integer literal.
->>> int('0b100', base=0)
-4
-
-### `AggregationSpec`
-
-Specification for an aggregation in :meth:`View.pivot`.
-
-Example::
-
-    view.pivot(
-        group_by=["Region"],
-        aggregations=[AggregationSpec(
-            column="Sales", function=AggregateFunction.SUM, as_name="Total",
-        )],
-    )
-
-#### `__init__(self, column: 'str', function: 'AggregateFunction', as_name: 'str | None' = None, delimiter: 'str | None' = None) -> None`
-
-Initialize self.  See help(type(self)) for accurate signature.
-
-### `JoinKeySpec`
-
-Specification for a join key pair in :meth:`View.join`.
-
-Example::
-
-    view.join(..., on=[JoinKeySpec(left="Customer ID", right="Customer ID")])
-
-#### `__init__(self, left: 'str', right: 'str') -> None`
-
-Initialize self.  See help(type(self)) for accurate signature.
-
-### `JoinSelectSpec`
-
-Specification for a column to bring in from a join in :meth:`View.join`.
-
-Example::
-
-    view.join(..., select=[JoinSelectSpec(column="Category", alias="Cat")])
-
-#### `__init__(self, column: 'str', alias: 'str | None' = None) -> None`
-
-Initialize self.  See help(type(self)) for accurate signature.
-
-### `JsonExtractionSpec`
-
-Specification for a JSON key extraction in :meth:`View.json_extract`.
-
-Example::
-
-    view.json_extract("data", extractions=[
-        JsonExtractionSpec(key="name", as_name="Name", type="TEXT"),
-        JsonExtractionSpec(key="age", as_name="Age", type="NUMERIC"),
-    ])
-
-#### `__init__(self, key: 'str', as_name: 'str | None' = None, type: 'ColumnType' = <ColumnType.TEXT: 'TEXT'>) -> None`
-
-Initialize self.  See help(type(self)) for accurate signature.
-
-#### `type`
-
-Column data types for new columns and conversions.
-
-### `CrosstabSpec`
-
-Specification for the aggregation in :meth:`View.crosstab`.
-
-Example::
-
-    view.crosstab(rows=["Region"], pivot_column="Gender",
-                  select=CrosstabSpec(function=AggregateFunction.SUM, column="Sales"))
-
-#### `__init__(self, function: 'AggregateFunction', column: 'str | None' = None) -> None`
-
-Initialize self.  See help(type(self)) for accurate signature.
+*See API reference for `mammoth.models.pipeline.CrosstabSpec`*
 
 ## See also
 
@@ -4040,11 +3272,7 @@ except MammothJobTimeoutError as e:
 
 ### `MammothError`
 
-Base exception for all Mammoth SDK errors.
-
-Attributes:
-    message: Human-readable error description.
-    details: Additional context dict (varies by subclass).
+Base exception for Mammoth SDK errors.
 
 #### `__init__(self, message: 'str', details: 'dict[str, Any] | None' = None) -> 'None'`
 
@@ -4057,20 +3285,7 @@ set self.__traceback__ to tb and return self.
 
 ### `MammothAPIError`
 
-Exception raised when the Mammoth API returns an error response.
-
-Attributes:
-    message: Human-readable error description.
-    status_code: HTTP status code (e.g. 400, 404, 500), or ``None``.
-    response_body: Raw JSON response body dict from the API.
-
-Example::
-
-    try:
-        client.datasets.get(dataset_id=99999)
-    except MammothAPIError as e:
-        print(e.status_code)     # 404
-        print(e.response_body)   # {"detail": "Not found"}
+Exception raised for API-related errors.
 
 #### `__init__(self, message: 'str', status_code: 'int | None' = None, response_body: 'dict[str, Any] | None' = None, details: 'dict[str, Any] | None' = None) -> 'None'`
 
@@ -4083,11 +3298,7 @@ set self.__traceback__ to tb and return self.
 
 ### `MammothAuthError`
 
-Exception raised when API credentials are invalid (HTTP 401).
-
-Attributes:
-    message: ``"Authentication failed"`` (default).
-    status_code: Always ``401``.
+Exception raised for authentication-related errors.
 
 #### `__init__(self, message: 'str' = 'Authentication failed') -> 'None'`
 
@@ -4100,11 +3311,7 @@ set self.__traceback__ to tb and return self.
 
 ### `MammothJobTimeoutError`
 
-Exception raised when polling a job exceeds the timeout.
-
-Attributes:
-    message: Description including job ID and timeout.
-    details: ``{"job_id": int, "timeout": int}``.
+Exception raised when a job times out.
 
 #### `__init__(self, job_id: 'int', timeout_seconds: 'int') -> 'None'`
 
@@ -4117,11 +3324,7 @@ set self.__traceback__ to tb and return self.
 
 ### `MammothJobFailedError`
 
-Exception raised when a job completes with a failure status.
-
-Attributes:
-    message: Description including job ID and failure reason.
-    details: ``{"job_id": int, "failure_reason": str | None}``.
+Exception raised when a job fails.
 
 #### `__init__(self, job_id: 'int', failure_reason: 'str | None' = None) -> 'None'`
 
@@ -4134,12 +3337,7 @@ set self.__traceback__ to tb and return self.
 
 ### `MammothTransformError`
 
-Exception raised when a pipeline transformation task fails.
-
-Attributes:
-    message: Human-readable error description.
-    task_key: The pipeline task key (e.g. ``"SET"``, ``"MATH"``).
-    details: Additional context dict.
+Exception raised when a transformation task fails.
 
 #### `__init__(self, message: 'str', task_key: 'str | None' = None, details: 'dict[str, Any] | None' = None) -> 'None'`
 
@@ -4152,20 +3350,7 @@ set self.__traceback__ to tb and return self.
 
 ### `MammothColumnError`
 
-Exception raised when a column display name cannot be resolved.
-
-Attributes:
-    message: Description including the missing column name and
-        available columns.
-    details: ``{"column_name": str, "available_columns": list[str] | None}``.
-
-Example::
-
-    try:
-        view.filter_rows(Condition("NonExistent", Operator.EQ, 1))
-    except MammothColumnError as e:
-        print(e.details["column_name"])        # "NonExistent"
-        print(e.details["available_columns"])   # ["Sales", "Region", ...]
+Exception raised when a column name cannot be resolved.
 
 #### `__init__(self, column_name: 'str', available_columns: 'list[str] | None' = None) -> 'None'`
 
@@ -4286,8 +3471,6 @@ Returns:
 
 Update file configuration (e.g., set password, extract sheets).
 
-Waits for the job to complete before returning.
-
 Args:
     file_id: ID of the file to update.
     patch_request: Configuration changes to apply.
@@ -4295,7 +3478,7 @@ Args:
 Returns:
     ObjectJobSchema with job information.
 
-### `upload(self, files: '_list[str | Path | BinaryIO] | str | Path | BinaryIO | None' = None, folder_resource_id: 'str | int | None' = None, append_to_ds_id: 'int | None' = None, override_target_schema: 'bool | None' = None, wait_for_completion: 'bool' = True, timeout: 'int' = 300) -> '_list[int] | int | None'`
+### `upload(self, files: '_list[str | Path | BinaryIO] | str | Path | BinaryIO | None' = None, folder_resource_id: 'str | None' = None, append_to_ds_id: 'int | None' = None, override_target_schema: 'bool | None' = None, wait_for_completion: 'bool' = True, timeout: 'int' = 300) -> '_list[int] | int | None'`
 
 Upload one or more files to create datasets.
 
@@ -4358,19 +3541,18 @@ List active connectors with established connections.
 Returns:
     List of active connector dicts.
 
-### `create_connection(self, connector_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `create_connection(self, connector_key: 'str', config: 'dict[str, Any]') -> 'dict[str, Any]'`
 
 Create a new connection for a connector.
 
 Args:
     connector_key: Key identifying the connector type.
     config: Connection configuration (host, port, database, credentials, etc.).
-    project_id: Project ID (uses client default if not provided).
 
 Returns:
     Dict with created connection info.
 
-### `create_ds_config(self, connector_key: 'str', connection_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `create_ds_config(self, connector_key: 'str', connection_key: 'str', config: 'dict[str, Any]') -> 'dict[str, Any]'`
 
 Create a data source configuration.
 
@@ -4378,24 +3560,22 @@ Args:
     connector_key: Key identifying the connector type.
     connection_key: Key identifying the connection.
     config: Data source configuration.
-    project_id: Project ID (uses client default if not provided).
 
 Returns:
     Dict with created data source config.
 
-### `delete_connection(self, connector_key: 'str', connection_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `delete_connection(self, connector_key: 'str', connection_key: 'str') -> 'dict[str, Any]'`
 
 Delete a connection.
 
 Args:
     connector_key: Key identifying the connector type.
     connection_key: Key identifying the connection.
-    project_id: Project ID (uses client default if not provided).
 
 Returns:
     Dict with deletion result.
 
-### `delete_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `delete_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str') -> 'dict[str, Any]'`
 
 Delete a data source configuration.
 
@@ -4403,7 +3583,6 @@ Args:
     connector_key: Key identifying the connector type.
     connection_key: Key identifying the connection.
     ds_config_key: Key identifying the data source config.
-    project_id: Project ID (uses client default if not provided).
 
 Returns:
     Dict with deletion result.
@@ -4418,19 +3597,18 @@ Args:
 Returns:
     Dict with connector details.
 
-### `get_connection(self, connector_key: 'str', connection_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `get_connection(self, connector_key: 'str', connection_key: 'str') -> 'dict[str, Any]'`
 
 Get details of a specific connection.
 
 Args:
     connector_key: Key identifying the connector type.
     connection_key: Key identifying the connection.
-    project_id: Project ID (uses client default if not provided).
 
 Returns:
     Dict with connection details.
 
-### `get_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `get_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str') -> 'dict[str, Any]'`
 
 Get a specific data source configuration.
 
@@ -4438,7 +3616,6 @@ Args:
     connector_key: Key identifying the connector type.
     connection_key: Key identifying the connection.
     ds_config_key: Key identifying the data source config.
-    project_id: Project ID (uses client default if not provided).
 
 Returns:
     Dict with data source config details.
@@ -4450,30 +3627,28 @@ List all available connectors.
 Returns:
     List of connector dicts.
 
-### `list_connections(self, connector_key: 'str', project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`
+### `list_connections(self, connector_key: 'str') -> '_list[dict[str, Any]]'`
 
 List connections for a connector type.
 
 Args:
     connector_key: Key identifying the connector type.
-    project_id: Project ID (uses client default if not provided).
 
 Returns:
     List of connection dicts.
 
-### `list_ds_configs(self, connector_key: 'str', connection_key: 'str', project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`
+### `list_ds_configs(self, connector_key: 'str', connection_key: 'str') -> '_list[dict[str, Any]]'`
 
 List data source configurations for a connection.
 
 Args:
     connector_key: Key identifying the connector type.
     connection_key: Key identifying the connection.
-    project_id: Project ID (uses client default if not provided).
 
 Returns:
     List of data source config dicts.
 
-### `update_connection(self, connector_key: 'str', connection_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `update_connection(self, connector_key: 'str', connection_key: 'str', config: 'dict[str, Any]') -> 'dict[str, Any]'`
 
 Update a connection's configuration.
 
@@ -4481,12 +3656,11 @@ Args:
     connector_key: Key identifying the connector type.
     connection_key: Key identifying the connection.
     config: Updated connection configuration.
-    project_id: Project ID (uses client default if not provided).
 
 Returns:
     Dict with updated connection info.
 
-### `update_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `update_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str', config: 'dict[str, Any]') -> 'dict[str, Any]'`
 
 Update a data source configuration.
 
@@ -4495,7 +3669,6 @@ Args:
     connection_key: Key identifying the connection.
     ds_config_key: Key identifying the data source config.
     config: Updated data source configuration.
-    project_id: Project ID (uses client default if not provided).
 
 Returns:
     Dict with updated config.
@@ -5106,47 +4279,30 @@ Examples::
 
 #### `to_csv(self, output_path: 'str | None' = None, timeout: 'int' = 300) -> 'Path'`
 
-Download dataview data as a local CSV file.
+Download dataview data as CSV file.
 
 Args:
-    output_path: Local path for the output file. Auto-generated
-        if not provided.
+    output_path: Path for the output file.
     timeout: Timeout in seconds (default 300).
 
 Returns:
-    :class:`~pathlib.Path` to the downloaded CSV file.
+    Path to the downloaded CSV file.
 
-Example::
+#### `to_s3(self, file_name: 'str | None' = None, file_type: 'str' = 'csv', include_hidden: 'bool' = False, **kwargs: 'Any') -> 'dict[str, Any]'`
 
-    path = view.export.to_csv("output.csv")
-    print(f"Downloaded to {path}")
-
-#### `to_s3(self, file_name: 'str | None' = None, file_type: 'ExportFileType' = <ExportFileType.CSV: 'csv'>, include_hidden: 'bool' = False, **kwargs: 'Any') -> 'dict[str, Any]'`
-
-Export to S3 (Mammoth-managed bucket).
+Export to S3.
 
 Args:
-    file_name: Output filename. Auto-generated with timestamp if
-        not provided.
-    file_type: File format (default ``ExportFileType.CSV``).
-        Options: CSV, JSON, PARQUET.
+    file_name: Output filename (auto-generated if not provided).
+    file_type: File format (default "csv").
     include_hidden: Include hidden columns (default False).
-    **kwargs: Additional export options.
 
 Returns:
     Export result dict with download URL.
 
-Example::
-
-    result = view.export.to_s3(file_name="report.csv")
-    view.export.to_s3(file_type=ExportFileType.PARQUET)
-
 #### `to_postgres(self, host: 'str', port: 'int', database: 'str', table: 'str', username: 'str', password: 'str', **kwargs: 'Any') -> 'dict[str, Any]'`
 
-Export to a PostgreSQL database.
-
-Requires a pre-configured PostgreSQL instance accessible from
-the Mammoth platform.
+Export to PostgreSQL database.
 
 Args:
     host: Database host.
@@ -5155,19 +4311,9 @@ Args:
     table: Target table name.
     username: Database username.
     password: Database password.
-    **kwargs: Additional export options (``trigger_type``,
-        ``run_immediately``, etc.).
 
 Returns:
     Export result dict.
-
-Example::
-
-    view.export.to_postgres(
-        host="db.example.com", port=5432,
-        database="analytics", table="sales_export",
-        username="user", password="pass",
-    )
 
 #### `to_mysql(self, host: 'str', port: 'int', database: 'str', table: 'str', username: 'str', password: 'str', **kwargs: 'Any') -> 'dict[str, Any]'`
 
@@ -5186,19 +4332,14 @@ Returns:
 
 #### `to_dataset(self, dest_dataset_id: 'int', column_mapping: 'dict[str, str] | None' = None, **kwargs: 'Any') -> 'dict[str, Any]'`
 
-Export (branch out) to another Mammoth dataset.
+Export to another Mammoth dataset (branch out).
 
 Args:
-    dest_dataset_id: Target dataset ID to receive the data.
-    column_mapping: Optional column mapping dict.
-    **kwargs: Additional export options.
+    dest_dataset_id: Target dataset ID.
+    column_mapping: Column mapping dict (optional).
 
 Returns:
     Export result dict.
-
-Example::
-
-    view.export.to_dataset(dest_dataset_id=42)
 
 #### `to_ftp(self, host: 'str', path: 'str', username: 'str', password: 'str', port: 'int' = 21, **kwargs: 'Any') -> 'dict[str, Any]'`
 
@@ -5280,32 +4421,20 @@ Returns:
 
 #### `list(self) -> '_list[dict[str, Any]]'`
 
-List all exports configured for this dataview.
+List all exports for this dataview.
 
 Returns:
-    List of export dicts, each with ``id``, ``handler_type``,
-    ``target_properties``, etc.
-
-Example::
-
-    exports = view.export.list()
-    for exp in exports:
-        print(f"{exp['id']}: {exp['handler_type']}")
+    List of export dicts.
 
 #### `delete(self, export_id: 'int') -> 'dict[str, Any]'`
 
-Delete an export configuration.
+Delete an export.
 
 Args:
-    export_id: ID of the export to delete (from ``list()``).
+    export_id: ID of the export to delete.
 
 Returns:
     Deletion confirmation dict.
-
-Example::
-
-    exports = view.export.list()
-    view.export.delete(exports[0]["id"])
 
 ---
 
@@ -5507,19 +4636,17 @@ Args:
 Returns:
     Dict with bulk update result.
 
-### `create(self, name: 'str', color: 'str | None' = None, project_access: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `create(self, name: 'str', color: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Create a new project.
 
 Args:
     name: Name for the new project.
-    color: Color hex code (e.g., "#337FBD"). Defaults to server-assigned color.
-    project_access: Access level — "only_me", "some_members_of_workspace",
-        or "all_members_of_workspace". Defaults to "only_me".
+    color: Color code for the project (optional).
     workspace_id: ID of the workspace (uses client default if not provided).
 
 Returns:
-    Dict with created project info including id, name, properties, etc.
+    Dict with created project info.
 
 ### `delete(self, project_id: 'int', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -5925,7 +5052,7 @@ Args:
 Returns:
     Dict with complete dataview information.
 
-### `get_data(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 2) -> 'dict[str, Any]'`
+### `get_data(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Get dataview data (GET method).
 
@@ -5934,8 +5061,6 @@ Args:
     dataview_id: ID of the dataview.
     workspace_id: ID of the workspace (uses client default if not provided).
     project_id: ID of the project (uses client default if not provided).
-    timeout: Max job wait time in seconds (default: client.job_timeout).
-    poll_interval: Seconds between job polls (default: 2).
 
 Returns:
     Dict with dataview data.
@@ -6063,18 +5188,6 @@ Args:
 Returns:
     Draft mode state dict.
 
-### `edit_pipeline(self, dataview_id: 'int', patches: '_list[dict[str, Any]]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
-
-PATCH pipeline with operations (auto_run, run, reset, etc.).
-
-Args:
-    dataview_id: ID of the dataview.
-    patches: List of patch operation dicts.
-    dataset_id: Dataset ID (auto-detected if not provided).
-
-Returns:
-    Updated pipeline state dict.
-
 ### `get_pipeline(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Get pipeline state for a dataview.
@@ -6133,30 +5246,6 @@ Args:
 
 Returns:
     Updated task dict.
-
-### `wait_for_pipeline(self, dataview_id: 'int', dataset_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 3) -> 'dict[str, Any]'`
-
-Poll pipeline state until it reaches a terminal state.
-
-After any pipeline mutation (add_task, delete_task, sql_generation),
-the pipeline transitions through transient states before data is ready:
-``modifying → modified → running → ready``.
-
-This method blocks until the pipeline reaches a terminal state
-(``ready``, ``runtime_error``, ``ref_error``).
-
-Args:
-    dataview_id: ID of the dataview.
-    dataset_id: Dataset ID (auto-detected if not provided).
-    timeout: Max wait time in seconds (default: client.pipeline_timeout).
-    poll_interval: Seconds between polls (default: 3).
-
-Returns:
-    Final pipeline state dict.
-
-Raises:
-    MammothTransformError: If pipeline reaches ``runtime_error`` or ``ref_error``.
-    MammothJobTimeoutError: If timeout is exceeded.
 
 
 ---
@@ -6398,29 +5487,23 @@ The `WebhooksAPI` manages webhook datasets -- HTTP endpoints that receive data i
 
 ## `WebhooksAPI`
 
-Client for managing webhook datasets.
+Client for managing webhooks for event notifications.
 
 Access via client.webhooks:
     webhooks = client.webhooks.list()
-    webhook = client.webhooks.create(name="My Webhook", mode=WebhookMode.REPLACE)
-    client.webhooks.update(webhook_id, mode=WebhookMode.COMBINE)
+    webhook = client.webhooks.create(config={"name": "...", "url": "...", "events": [...]})
     client.webhooks.delete(webhook_id)
-    client.webhooks.send_data(webhook_uri, {"col1": "val1"})
 
 ### `__init__(self, client: 'MammothClient') -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-### `create(self, name: 'str' = 'Generic Webhook', mode: 'str | WebhookMode' = 'replace', folder_resource_id: 'str | None' = None, origins: 'str' = '*', is_secure: 'bool' = False) -> 'dict[str, Any]'`
+### `create(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
 
-Create a webhook dataset.
+Create a new webhook.
 
 Args:
-    name: Name of the webhook.
-    mode: Data ingestion mode — "replace" or "combine".
-    folder_resource_id: Optional folder to place the webhook in.
-    origins: Allowed CORS origins (default "*").
-    is_secure: Whether to generate a secret for authentication.
+    config: Webhook configuration (name, url, events, secret, etc.).
 
 Returns:
     Dict with created webhook info.
@@ -6445,48 +5528,20 @@ Args:
 Returns:
     Dict with webhook details.
 
-### `list(self, limit: 'int' = 50, offset: 'int' = 0) -> '_list[dict[str, Any]]'`
+### `list(self) -> '_list[dict[str, Any]]'`
 
-List webhook datasets.
-
-Args:
-    limit: Maximum number of results to return.
-    offset: Number of results to skip.
+List all webhooks.
 
 Returns:
     List of webhook dicts.
 
-### `send_data(self, webhook_uri: 'str', data: 'dict[str, Any]') -> 'dict[str, Any]'`
+### `update(self, webhook_id: 'int', config: 'dict[str, Any]') -> 'dict[str, Any]'`
 
-Send data to a webhook via POST.
-
-Args:
-    webhook_uri: The webhook URI path (e.g. "nHC1zIl97JzgDMopgcfpOgLV").
-    data: Data payload to send.
-
-Returns:
-    Dict with the API response.
-
-### `send_data_get(self, webhook_uri: 'str', params: 'dict[str, Any] | None' = None) -> 'dict[str, Any]'`
-
-Send data to a webhook via GET query parameters.
-
-Args:
-    webhook_uri: The webhook URI path (e.g. "nHC1zIl97JzgDMopgcfpOgLV").
-    params: Data as query parameters.
-
-Returns:
-    Dict with the API response.
-
-### `update(self, webhook_id: 'int', mode: 'str | WebhookMode | None' = None, origins: 'str | None' = None, is_secure: 'bool | None' = None) -> 'dict[str, Any]'`
-
-Update a webhook using JSON Patch format.
+Update a webhook.
 
 Args:
     webhook_id: ID of the webhook.
-    mode: New data ingestion mode.
-    origins: New allowed CORS origins.
-    is_secure: Whether the webhook requires a secret.
+    config: Updated webhook configuration.
 
 Returns:
     Dict with updated webhook info.
@@ -6814,8 +5869,6 @@ Initialize self.  See help(type(self)) for accurate signature.
 
 Change user password.
 
-Note: This endpoint is not documented in the public OpenAPI spec.
-
 Args:
     current_password: Current password.
     new_password: New password.
@@ -6883,7 +5936,7 @@ Access via client.folders:
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `create(self, name: 'str', parent_resource_id: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'FolderSchema'`
+#### `create(self, name: 'str', parent_resource_id: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'FolderDetails'`
 
 Create a new folder.
 
@@ -6894,7 +5947,7 @@ Args:
     project_id: ID of the project (uses client default if not provided).
 
 Returns:
-    FolderSchema with created folder info (id, name, resource_id, etc.).
+    FolderDetails with created folder info.
 
 #### `delete(self, folder_ids: '_list[int]', workspace_id: 'int | None' = None, project_id: 'int | None' = None, check_dependency: 'bool' = True, remove_contents: 'bool' = True) -> 'None'`
 
@@ -6906,23 +5959,6 @@ Args:
     project_id: ID of the project (uses client default if not provided).
     check_dependency: Check for dependency before deleting.
     remove_contents: Remove folder contents before deleting.
-
-#### `get_project_root(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'FolderSchema'`
-
-Get a FolderSchema representing the project root folder.
-
-In Mammoth, the project root is not a physical folder entity — it is the
-implicit top-level container.  The returned object has
-``resource_id=None``.  When passed to ``files.upload(folder_resource_id=...)``,
-a ``None`` resource_id causes files to be placed at the project root (the
-same as omitting the parameter entirely).
-
-Args:
-    workspace_id: ID of the workspace (uses client default if not provided).
-    project_id: ID of the project (uses client default if not provided).
-
-Returns:
-    FolderSchema with ``name="Project Root"`` and ``resource_id=None``.
 
 #### `list(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None, fields: 'str | None' = None, folder_ids: '_list[int] | None' = None, names: '_list[str] | None' = None, statuses: '_list[str] | None' = None, created_at: 'str | None' = None, updated_at: 'str | None' = None, created_by: '_list[str] | None' = None, limit: 'int' = 50, offset: 'int' = 0, sort: 'str | None' = None) -> 'FoldersList'`
 
@@ -7012,6 +6048,18 @@ Args:
 Returns:
     Dict with batch details.
 
+#### `get_status(self, dataset_id: 'int', batch_id: 'int', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Get batch processing status.
+
+Args:
+    dataset_id: ID of the dataset.
+    batch_id: ID of the batch.
+    project_id: Project ID (uses client default if not provided).
+
+Returns:
+    Dict with batch status info.
+
 #### `list(self, dataset_id: 'int', project_id: 'int | None' = None, limit: 'int' = 50, offset: 'int' = 0) -> 'dict[str, Any]'`
 
 List batches for a dataset.
@@ -7025,12 +6073,13 @@ Args:
 Returns:
     Dict with batches list and pagination info.
 
-#### `update(self, dataset_id: 'int', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `update(self, dataset_id: 'int', batch_id: 'int', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
-Update batches for a dataset.
+Update a batch.
 
 Args:
     dataset_id: ID of the dataset.
+    batch_id: ID of the batch.
     config: Updated batch configuration.
     project_id: Project ID (uses client default if not provided).
 
@@ -7276,76 +6325,70 @@ Client for managing workspace addons (connectors, storage, users).
 
 Access via client.addons::
 
-    client.addons.add_connector(config={...})
-    client.addons.remove_connector(config={...})
-    client.addons.add_storage(config={...})
-    client.addons.remove_storage(config={...})
-    client.addons.add_users(config={...})
-    client.addons.remove_users(config={...})
+    addons = client.addons.list()
+    client.addons.activate(addon_id)
 
 #### `__init__(self, client: 'MammothClient') -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `add_connector(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+#### `activate(self, addon_id: 'int') -> 'dict[str, Any]'`
 
-Add a connector addon to the workspace.
-
-Args:
-    config: Connector addon configuration.
-
-Returns:
-    Dict with addon result.
-
-#### `add_storage(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
-
-Add a storage addon to the workspace.
+Activate an addon.
 
 Args:
-    config: Storage addon configuration.
+    addon_id: ID of the addon to activate.
 
 Returns:
-    Dict with addon result.
+    Dict with activation result.
 
-#### `add_users(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+#### `deactivate(self, addon_id: 'int') -> 'dict[str, Any]'`
 
-Add a users addon to the workspace.
+Deactivate an addon.
 
 Args:
-    config: Users addon configuration.
+    addon_id: ID of the addon to deactivate.
 
 Returns:
-    Dict with addon result.
+    Dict with deactivation result.
 
-#### `remove_connector(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+#### `get(self, addon_id: 'int') -> 'dict[str, Any]'`
 
-Remove a connector addon from the workspace.
+Get addon details.
 
 Args:
-    config: Connector addon identification (connector_id, etc.).
+    addon_id: ID of the addon.
 
 Returns:
-    Dict with removal result.
+    Dict with addon details.
 
-#### `remove_storage(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+#### `get_usage(self, addon_id: 'int') -> 'dict[str, Any]'`
 
-Remove a storage addon from the workspace.
+Get addon usage statistics.
 
 Args:
-    config: Storage addon identification.
+    addon_id: ID of the addon.
 
 Returns:
-    Dict with removal result.
+    Dict with usage statistics.
 
-#### `remove_users(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+#### `list(self) -> 'dict[str, Any]'`
 
-Remove a users addon from the workspace.
+List available addons for the workspace.
+
+Returns:
+    Dict with addons list.
+
+#### `update_config(self, addon_id: 'int', config: 'dict[str, Any]') -> 'dict[str, Any]'`
+
+Update addon configuration.
 
 Args:
-    config: Users addon identification.
+    addon_id: ID of the addon.
+    config: Updated configuration.
 
 Returns:
-    Dict with removal result.
+    Dict with updated addon info.
 
 ---
 
@@ -7384,8 +6427,8 @@ Client for AI-powered features: profiling, generation, suggestions, SQL generati
 
 Access via client.ai:
     client.ai.generate_profile(dataview_id=1039)
-    client.ai.generate_sql(intent="total sales by region")
-    suggestions = client.ai.get_suggestions()
+    client.ai.generate_sql(intent="total sales by region", dataview_ids=[1039])
+    suggestions = client.ai.get_suggestions(dataview_id=1039)
 
 #### `__init__(self, client: 'MammothClient') -> 'None'`
 
@@ -7414,15 +6457,13 @@ Args:
 Returns:
     Dict with profile information.
 
-#### `generate_sql(self, intent: 'str', sequence_number: 'int' = 0) -> 'dict[str, Any]'`
+#### `generate_sql(self, intent: 'str', dataview_ids: 'list[int] | None' = None) -> 'dict[str, Any]'`
 
 Generate SQL from natural language intent.
 
-Uses the project-level sql_generation endpoint.
-
 Args:
     intent: Natural language description of the query.
-    sequence_number: Sequence number for the SQL generation request.
+    dataview_ids: List of dataview IDs to use as context (optional).
 
 Returns:
     Dict with generated SQL and metadata.
@@ -7438,14 +6479,18 @@ Args:
 Returns:
     Dict with data generation info.
 
-#### `get_suggestions(self) -> 'dict[str, Any]'`
+#### `get_suggestions(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
 
-Get AI-powered transformation suggestions for the current project.
+Get AI-powered transformation suggestions for a dataview.
+
+Args:
+    dataview_id: ID of the dataview.
+    dataset_id: ID of the dataset (auto-detected if not provided).
 
 Returns:
     Dict with suggested transformations.
 
-#### `query_gen(self, connector_key: 'str', connection_key: 'str', prompt: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `query_gen(self, connector_key: 'str', connection_key: 'str', prompt: 'str') -> 'dict[str, Any]'`
 
 Generate a query for a connector using AI.
 
@@ -7453,7 +6498,6 @@ Args:
     connector_key: Key identifying the connector type.
     connection_key: Key identifying the connection.
     prompt: Natural language prompt describing the query.
-    project_id: Project ID (uses client default if not provided).
 
 Returns:
     Dict with generated query.
