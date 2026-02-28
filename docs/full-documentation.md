@@ -529,13 +529,13 @@ view.export.to_csv("output.csv")
 ## Install from PyPI
 
 ```bash
-pip install mammoth-io==0.3.0
+pip install mammoth-io==0.3.5
 ```
 
 Or with Poetry:
 
 ```bash
-poetry add mammoth-io==0.3.0
+poetry add mammoth-io==0.3.5
 ```
 
 ## Dependencies
@@ -617,7 +617,7 @@ Get up and running with the Mammoth Python SDK in five minutes.
 ## 1. Install the SDK
 
 ```bash
-pip install mammoth-io==0.3.0
+pip install mammoth-io==0.3.5
 ```
 
 ## 2. Get your API credentials
