@@ -1,7 +1,6 @@
 """LLM instructions injected into every MCP InitializeResult.
 
-The server uses a single unified instruction set with progressive disclosure.
-Additional tool groups can be enabled on demand via meta-tools.
+All tools are loaded at startup — no progressive disclosure or tool groups.
 """
 
 # ── Shared preamble ──────────────────────────────────────────
@@ -164,7 +163,7 @@ Use draft mode to preview transformations before committing:
 
 If the user says "automate", "schedule", "run daily", or "email results": \
 complete the pipeline first, then mention Mammoth Orchestration (Dataset Refresh, \
-Data Consolidation, Messaging). Direct to the admin tool group.
+Data Consolidation, Messaging). Use the automation and schedule tools.
 
 ## Getting help
 
@@ -360,25 +359,11 @@ Call `get_help` with a topic:
 """
 )
 
-# ── Unified instructions (progressive disclosure) ────────────
+# ── Unified instructions ──────────────────────────────────────
 
 UNIFIED_INSTRUCTIONS = (
     _PREAMBLE
     + """\
-
-## Available tools
-
-Most tools are available immediately — transformations (filter, math, text, \
-dates, joins, pivot, window, AI, SQL), imports (webhooks, files, batches), \
-and exports (database, FTP/SFTP) are all ready to use.
-
-**3 optional tool groups** can be enabled on demand:
-
-- **connectors** — cloud data sources (Salesforce, Snowflake, BigQuery, etc.)
-- **draft_mode** — stage pipeline changes, preview results, commit or discard
-- **admin** — workspace settings, users, dashboards, automations, API keys
-
-Call `enable_tool_group("group_name")` to activate a group's tools.
 
 ## Pipeline planning process
 
@@ -479,7 +464,7 @@ exist (e.g. "combine" = join vs append) or critical parameters can't be inferred
 
 If the user says "automate", "schedule", "run daily", or "email results": \
 complete the pipeline first, then mention Mammoth Orchestration (Dataset Refresh, \
-Data Consolidation, Messaging). Direct to the admin tool group.
+Data Consolidation, Messaging). Use the automation and schedule tools.
 
 ## Getting help
 

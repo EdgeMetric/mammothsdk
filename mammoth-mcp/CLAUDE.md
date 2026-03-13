@@ -30,25 +30,17 @@ pytest tests/ -q
 
 ## Architecture
 
-### Progressive Disclosure
+### Tool Loading
 
-Single server with ~15 core tools always loaded. Additional tools (~138) organized into 4 groups enabled on demand via meta-tools:
-
-| Group | ~Tools | What's in it |
-|-------|--------|--------------|
-| `transformations` | ~37 | create/delete views, filter, set values, math, text, dates, joins, pivot, window, AI, SQL, draft mode |
-| `import` | ~30 | Webhooks, cloud connectors, file management, batch imports |
-| `exports` | ~6 | Database, FTP/SFTP exports, export management, publish |
-| `admin` | ~65 | Workspace/user management, dashboards, automations, API keys, AI profiling |
-
-Claude calls `list_tool_groups` / `enable_tool_group("name")` to activate groups as needed.
+All 152 tools are loaded at startup from 24 tool modules — no progressive disclosure.
+`server.py` imports all modules via `_ALL_MODULES` list at module load time.
 
 ### Key Files
 
 | File | Purpose |
 |------|---------|
 | `server.py` | FastMCP server, lifespan, ASGI app factory, core tool loading |
-| `tool_groups.py` | Progressive disclosure — group registry + `list_tool_groups` / `enable_tool_group` meta-tools |
+| `tool_groups.py` | Legacy — no longer used (all tools loaded at startup) |
 | `settings.py` | Pydantic settings from `.env` / environment |
 | `instructions.py` | Unified LLM instructions (injected into every MCP session) |
 | `helpers.py` | `get_manager`, `handle_errors`, `log_tool_call`, `run_sync`, `success_response` |
@@ -58,10 +50,6 @@ Claude calls `list_tool_groups` / `enable_tool_group("name")` to activate groups
 | `rate_limit.py` | Per-user rate limiting middleware (remote mode only) |
 | `config.py` | `MammothConfig` dataclass for stdio credentials |
 | `tools/` | One file per tool module (24 files), loaded by core or group |
-
-### Tool Loading
-
-`server.py` loads 6 core modules at import time via `importlib.import_module()`. `tool_groups.py` defines 4 groups; when `enable_tool_group` is called, it imports the group's modules and sends a `ToolListChanged` notification to the client.
 
 ### Modes
 
@@ -94,7 +82,7 @@ Claude UI integration URL: `https://mcp.mammoth.io/mcp`
        result = await run_sync(manager.client.sub_client.method, param)
        return success_response(result, "message")
    ```
-3. If new file: add the module name to the appropriate group in `TOOL_GROUPS` in `tool_groups.py`, or to `_CORE_MODULES` in `server.py` if it's a core tool
+3. If new file: add the module name to `_ALL_MODULES` in `server.py`
 4. Update `instructions.py` if the tool needs special LLM guidance
 5. Update `tools/help.py` if adding a new help topic
 

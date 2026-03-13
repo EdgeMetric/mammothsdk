@@ -186,23 +186,25 @@ def get_enums() -> str:
     return json.dumps(enums, indent=2)
 
 
-# ── Core tool registration + progressive disclosure ──────────
+# ── Tool registration (all tools loaded at startup) ──────────
 
-_CORE_MODULES = [
+_ALL_MODULES = [
     # Connection & discovery
     "connection", "discovery", "views", "data", "pipeline", "help",
     # Import & export
     "webhooks", "files_extended", "batches", "export",
     # Transformations
     "views_management", "columns", "values", "aggregate", "advanced", "ai",
+    # Connectors
+    "connectors",
+    # Draft mode
+    "draft_mode",
+    # Admin & workspace
+    "organization", "dashboards", "automations", "admin", "client_apps", "ai_extended",
 ]
 
-for _module_name in _CORE_MODULES:
+for _module_name in _ALL_MODULES:
     importlib.import_module(f"mammoth_mcp.tools.{_module_name}")
-
-from mammoth_mcp.tool_groups import register_meta_tools  # noqa: E402
-
-register_meta_tools(mcp)
 
 
 # ── Entry points ─────────────────────────────────────────────
