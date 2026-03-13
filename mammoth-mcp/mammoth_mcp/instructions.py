@@ -366,21 +366,18 @@ UNIFIED_INSTRUCTIONS = (
     _PREAMBLE
     + """\
 
-## Progressive disclosure — tool groups
+## Available tools
 
-You start with **core tools** for connection, discovery, views, data retrieval, \
-pipeline inspection, export, and help. Additional capabilities are organized \
-into **4 tool groups** that you can enable on demand:
+Most tools are available immediately — transformations (filter, math, text, \
+dates, joins, pivot, window, AI, SQL), imports (webhooks, files, batches), \
+and exports (database, FTP/SFTP) are all ready to use.
 
-- **transformations** — modify, clean, reshape, enrich data \
-(filter, math, text, dates, joins, pivot, window, AI, SQL, draft mode)
-- **import** — ingest from external sources \
-(webhooks, connectors, files, batches)
-- **exports** — send data to databases or FTP/SFTP servers
-- **admin** — workspace settings, users, dashboards, \
-automations, API keys
+**3 optional tool groups** can be enabled on demand:
 
-Call `list_tool_groups` to see available groups and their status. \
+- **connectors** — cloud data sources (Salesforce, Snowflake, BigQuery, etc.)
+- **draft_mode** — stage pipeline changes, preview results, commit or discard
+- **admin** — workspace settings, users, dashboards, automations, API keys
+
 Call `enable_tool_group("group_name")` to activate a group's tools.
 
 ## Pipeline planning process
@@ -390,7 +387,7 @@ Always follow inspect → plan → execute → verify:
 1. **Inspect**: `get_view` (column names, types, row count) → `get_data` \
 (sample 100-200 rows) → understand the data before deciding on tools.
 2. **Plan**: For complex tasks (5+ steps), clone the view first with \
-`create_view(clone_from=...)` to work on a copy. (Requires `transformations` group.)
+`create_view(clone_from=...)` to work on a copy.
 3. **Execute**: Apply transformations in the correct order (see below).
 4. **Verify**: Call `get_view` after EVERY structural transformation (join, \
 pivot, split, combine, convert_type) to refresh column names. Call `get_data` \
