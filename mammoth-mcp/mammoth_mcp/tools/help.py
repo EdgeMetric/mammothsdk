@@ -361,7 +361,7 @@ subqueries, GROUP BY + HAVING.
 # Building Conditions
 
 Conditions are used in `filter_rows`, `set_values`, `combine_columns`, \
-`copy_columns`, `math_transform`, `text_transform`, `replace_values`, \
+`math_transform`, `text_transform`, `replace_values`, \
 `substring`, and `increment_date`.
 
 ## Simple Condition
@@ -1533,7 +1533,7 @@ create_connector_dataset(
 # File Management
 
 ## File Lifecycle
-1. **Upload** → `upload_file` (from discovery tools) or `upload_folder`
+1. **Upload** → `upload_file` or `upload_folder`
 2. **Process** → Mammoth auto-detects format, creates dataset
 3. **Manage** → list, inspect, delete files
 
@@ -1544,7 +1544,7 @@ create_connector_dataset(
 - `get_file(file_id)` — detailed file info (size, status, dataset)
 
 ### Upload
-- `upload_file` (from discovery tools) — single file upload
+- `upload_file` — single file upload
 - `upload_folder(folder_path)` — upload all files in a directory
 
 ### Excel Sheet Extraction
@@ -1648,9 +1648,9 @@ Automations define event-driven workflows: when X happens, do Y.
 ### Management
 - `list_automations()` — all automations
 - `create_automation(config)` — new automation
-- `get_automation(id)` — details
-- `update_automation(id, config)` — modify
-- `delete_automation(id)` — remove
+- `get_automation(automation_id)` — details
+- `update_automation(automation_id, config)` — modify
+- `delete_automation(automation_id)` — remove
 
 ## Schedules
 Schedules define time-based triggers for data processing.
@@ -1658,9 +1658,9 @@ Schedules define time-based triggers for data processing.
 ### Management
 - `list_schedules()` — all schedules
 - `create_schedule(config)` — new schedule
-- `get_schedule(id)` — details
-- `update_schedule(id, config)` — modify
-- `delete_schedule(id)` — remove
+- `get_schedule(schedule_id)` — details
+- `update_schedule(schedule_id, config)` — modify
+- `delete_schedule(schedule_id)` — remove
 
 ## Common Patterns
 
@@ -1728,7 +1728,7 @@ Projects group related datasets and provide access control.
 
 ### Client Apps (API access tokens)
 - `list_client_apps()` — see API tokens
-- `create_client_app(name)` — generate new API key pair
+- `create_client_app(app_name)` — generate new API key pair
 - `update_client_app(key, patch)` — modify app settings
 - `delete_client_app(key)` — revoke API access
 
