@@ -29,49 +29,26 @@ class ToolGroup:
 
 
 TOOL_GROUPS: dict[str, ToolGroup] = {
-    "transformations": ToolGroup(
-        name="transformations",
+    "connectors": ToolGroup(
+        name="connectors",
         description=(
-            "Data transformation tools — create/delete views, filter rows, set values, "
-            "math, text transforms, date operations, joins, pivot, window, crosstab, "
-            "AI transforms, SQL queries, draft mode, and undo tasks. "
-            "Enable when the user wants to modify, clean, reshape, or enrich data."
+            "Cloud connector tools — Salesforce, Snowflake, BigQuery, databases, etc. "
+            "Create and manage connections, import data from cloud sources. "
+            "Enable when the user wants to connect to external data sources."
         ),
         modules=[
-            "views_management",
-            "columns",
-            "values",
-            "aggregate",
-            "advanced",
-            "ai",
-            "draft_mode",
-        ],
-    ),
-    "import": ToolGroup(
-        name="import",
-        description=(
-            "Data import tools — webhooks (push data via HTTP), cloud connectors "
-            "(Salesforce, Snowflake, etc.), file management (list, delete, extract sheets, "
-            "passwords), and batch imports. "
-            "Enable when the user wants to ingest data from external sources."
-        ),
-        modules=[
-            "webhooks",
             "connectors",
-            "files_extended",
-            "batches",
         ],
     ),
-    "exports": ToolGroup(
-        name="exports",
+    "draft_mode": ToolGroup(
+        name="draft_mode",
         description=(
-            "Database and file export tools — export to PostgreSQL, MySQL, BigQuery, "
-            "Redshift, Elasticsearch, FTP/SFTP servers. List and delete configured exports, "
-            "publish views to internal database for dashboards. "
-            "Enable when the user wants to send data to external databases or servers."
+            "Draft mode tools — stage pipeline changes without executing, preview results, "
+            "then commit or discard. Also includes auto-run settings and task management. "
+            "Enable when the user wants to batch changes or preview before applying."
         ),
         modules=[
-            "export",
+            "draft_mode",
         ],
     ),
     "admin": ToolGroup(
@@ -135,7 +112,7 @@ def register_meta_tools(mcp: FastMCP) -> None:
         """Enable a tool group, making its tools available for use.
 
         Args:
-            group_name: Name of the group to enable (transformations, import, exports, admin).
+            group_name: Name of the group to enable (connectors, draft_mode, admin).
         """
         if group_name not in TOOL_GROUPS:
             return {

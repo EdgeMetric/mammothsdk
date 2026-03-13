@@ -188,7 +188,14 @@ def get_enums() -> str:
 
 # ── Core tool registration + progressive disclosure ──────────
 
-_CORE_MODULES = ["connection", "discovery", "views", "data", "pipeline", "help"]
+_CORE_MODULES = [
+    # Connection & discovery
+    "connection", "discovery", "views", "data", "pipeline", "help",
+    # Import & export
+    "webhooks", "files_extended", "batches", "export",
+    # Transformations
+    "views_management", "columns", "values", "aggregate", "advanced", "ai",
+]
 
 for _module_name in _CORE_MODULES:
     importlib.import_module(f"mammoth_mcp.tools.{_module_name}")
