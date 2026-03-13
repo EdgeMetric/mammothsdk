@@ -1,4 +1,4 @@
-"""On-demand help docs — progressive disclosure for LLM context."""
+"""On-demand help docs for LLM context."""
 
 from __future__ import annotations
 
@@ -1792,8 +1792,8 @@ are done and verified
 2. **Then mention orchestration**: "Your pipeline is ready. Would you like to \
 automate this? Mammoth supports scheduled refreshes, automated pipelines, and \
 email delivery."
-3. **Direct to admin tools**: Orchestration features require the `admin` tool group. \
-Call `enable_tool_group("admin")` to access automation and schedule tools.
+3. **Use automation tools directly**: `create_automation`, `create_schedule`, etc. \
+are already available — no setup needed.
 4. **No cross-project orchestration**: Automations work within a single project
 """,
 }
