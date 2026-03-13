@@ -529,13 +529,13 @@ view.export.to_csv("output.csv")
 ## Install from PyPI
 
 ```bash
-pip install mammoth-io==0.3.6
+pip install mammoth-io==0.3.7
 ```
 
 Or with Poetry:
 
 ```bash
-poetry add mammoth-io==0.3.6
+poetry add mammoth-io==0.3.7
 ```
 
 ## Dependencies
@@ -1236,8 +1236,8 @@ view = client.views.get(1039)
 You can also list, create, and delete views:
 
 ```python
-# List all views in the project
-views = client.views.list()
+# List all views in a dataset
+views = client.views.list(dataset_id=42)
 
 # Create a new view
 view = client.views.create(dataset_id=42, name="My Analysis")
@@ -7159,6 +7159,20 @@ Args:
 Returns:
     Dict with dataview resources.
 
+#### `folder_resources(self, folder_id: 'int', project_id: 'int | None' = None, workspace_id: 'int | None' = None, level: 'int' = 2, fields: 'str' = '__min') -> 'dict[str, Any]'`
+
+Browse resources inside a folder.
+
+Args:
+    folder_id: ID of the folder (label).
+    project_id: Project ID (uses client default if not provided).
+    workspace_id: Workspace ID (uses client default if not provided).
+    level: Depth of children to include (1 or 2, default 2).
+    fields: Fields to return (default "__min").
+
+Returns:
+    Dict with folder's child resources.
+
 #### `projects(self, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Browse projects in a workspace.
@@ -7168,6 +7182,19 @@ Args:
 
 Returns:
     Dict with project resources.
+
+#### `workspace_resources(self, workspace_id: 'int | None' = None, level: 'int' = 2, fields: 'str' = '__min', limit: 'int' = 100) -> 'dict[str, Any]'`
+
+Browse all resources in a workspace (projects, datasets, folders).
+
+Args:
+    workspace_id: Workspace ID (uses client default if not provided).
+    level: Depth of children to include (1 or 2, default 2).
+    fields: Fields to return (default "__min").
+    limit: Max resources to return (default 100).
+
+Returns:
+    Dict with hierarchical resource list.
 
 #### `workspaces(self) -> 'dict[str, Any]'`
 
@@ -7600,8 +7627,8 @@ dataset_id = client.files.upload("sales_data.csv")
 print(f"Created dataset: {dataset_id}")
 
 # Get the default View for the uploaded dataset
-views = client.views.list()
-view = next(v for v in views if v.dataset_id == dataset_id)
+views = client.views.list(dataset_id=dataset_id)
+view = views[0]
 ```
 
 Other upload options:
@@ -7802,8 +7829,8 @@ client.set_project_id(42)
 try:
     # 2. Upload data
     dataset_id = client.files.upload("sales_data.csv")
-    views = client.views.list()
-    view = next(v for v in views if v.dataset_id == dataset_id)
+    views = client.views.list(dataset_id=dataset_id)
+    view = views[0]
     print(f"Uploaded: {view.name} ({len(view.display_names)} columns)")
 
     # 3. Clean data
@@ -7889,8 +7916,8 @@ dataset_ids = client.files.upload(["sales.csv", "customers.xlsx"])
 dataset_ids = client.files.upload_folder("./data/")
 
 # After upload, get the view for the new dataset
-views = client.views.list()
-view = next(v for v in views if v.dataset_id == dataset_id)
+views = client.views.list(dataset_id=dataset_id)
+view = views[0]
 print(view.display_names)
 ```
 
@@ -7906,8 +7933,8 @@ for p in projects:
 # List datasets
 datasets = client.datasets.list()
 
-# List all views in the project (returns list of View objects)
-views = client.views.list()
+# List all views in a dataset (returns list of View objects)
+views = client.views.list(dataset_id=42)
 for v in views:
     print(f"{v.id}: {v.name} ({len(v.display_names)} columns)")
 ```

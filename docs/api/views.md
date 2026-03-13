@@ -18,8 +18,8 @@ view = client.views.get(1039)
 You can also list, create, and delete views:
 
 ```python
-# List all views in the project
-views = client.views.list()
+# List all views in a dataset
+views = client.views.list(dataset_id=42)
 
 # Create a new view
 view = client.views.create(dataset_id=42, name="My Analysis")

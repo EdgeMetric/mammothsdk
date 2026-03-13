@@ -42,8 +42,8 @@ dataset_id = client.files.upload("sales_data.csv")
 print(f"Created dataset: {dataset_id}")
 
 # Get the default View for the uploaded dataset
-views = client.views.list()
-view = next(v for v in views if v.dataset_id == dataset_id)
+views = client.views.list(dataset_id=dataset_id)
+view = views[0]
 ```
 
 Other upload options:
@@ -242,8 +242,8 @@ client.set_project_id(42)
 try:
     # 2. Upload data
     dataset_id = client.files.upload("sales_data.csv")
-    views = client.views.list()
-    view = next(v for v in views if v.dataset_id == dataset_id)
+    views = client.views.list(dataset_id=dataset_id)
+    view = views[0]
     print(f"Uploaded: {view.name} ({len(view.display_names)} columns)")
 
     # 3. Clean data
