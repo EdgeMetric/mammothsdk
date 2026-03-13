@@ -81,7 +81,7 @@ class TestClientManagerCache:
 
         result = manager.get_view(200)
         assert result is mock_view
-        mock_client.views.get.assert_called_once_with(200, None)
+        mock_client.views.get.assert_called_once_with(200)
         assert 200 in manager._view_cache
 
     def test_lru_eviction(self):

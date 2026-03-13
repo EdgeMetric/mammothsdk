@@ -26,10 +26,10 @@ logger = logging.getLogger(__name__)
 async def test_connection(ctx: Context) -> dict[str, Any]:
     """Test that the Mammoth API credentials are valid and the connection works."""
     manager = await get_manager(ctx)
-    ok = await run_sync(manager.client.test_connection)
-    if ok:
-        return success_response(manager.config.summary(), "Connection successful")
-    raise RuntimeError("Connection failed — check API key/secret")
+    # Use projects.list() directly — more reliable than SDK's test_connection()
+    # which silently swallows all exceptions.
+    await run_sync(manager.client.projects.list, limit=1)
+    return success_response(manager.config.summary(), "Connection successful")
 
 
 @mcp.tool()

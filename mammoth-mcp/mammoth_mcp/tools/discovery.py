@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from mcp.server.fastmcp import Context
@@ -14,6 +15,8 @@ from mammoth_mcp.helpers import (
     success_response,
 )
 from mammoth_mcp.server import mcp
+
+logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
@@ -41,18 +44,8 @@ async def list_projects(ctx: Context) -> dict[str, Any]:
 async def list_datasets(ctx: Context) -> dict[str, Any]:
     """List all datasets in the current project."""
     manager = await get_manager(ctx)
-    datasets = await run_sync(manager.client.datasets.list)
-    items = datasets if isinstance(datasets, list) else datasets.get("datasets", [])
-    result = [
-        {
-            "id": d.get("id"),
-            "name": d.get("name"),
-            "description": d.get("description", ""),
-            "dataview_count": d.get("dataview_count", 0),
-        }
-        for d in items
-    ]
-    return success_response(result, f"Found {len(result)} datasets")
+    datasets = await run_sync(browse_project_datasets, manager.client)
+    return success_response(datasets, f"Found {len(datasets)} datasets")
 
 
 @mcp.tool()
@@ -84,3 +77,69 @@ async def upload_file(ctx: Context, file_path: str) -> dict[str, Any]:
         {"dataset_ids": result if isinstance(result, list) else [result]},
         "File uploaded successfully",
     )
+
+
+# ── Browse-based dataset discovery ───────────────────────────
+
+
+def browse_project_datasets(client: Any) -> list[dict[str, Any]]:
+    """Discover datasets in the current project using the browse API.
+
+    Uses workspace browse + folder recursion instead of datasets.list(),
+    which requires project-level permissions that resource-level API keys
+    may not have.
+    """
+    ws = client.workspace_id
+    proj = client.project_id
+    if proj is None:
+        raise ValueError("project_id must be set — call set_project first")
+
+    browse_resp = client.browse.workspace_resources(workspace_id=ws, level=2)
+    project_children: list[dict[str, Any]] = []
+    for resource in browse_resp.get("resources", []):
+        if resource.get("id") == proj:
+            project_children = resource.get("children", [])
+            break
+
+    return _collect_datasets_from_browse(client, project_children, proj, ws)
+
+
+def _collect_datasets_from_browse(
+    client: Any,
+    children: list[dict[str, Any]],
+    project_id: int,
+    workspace_id: int,
+) -> list[dict[str, Any]]:
+    """Recursively collect datasets from browse hierarchy."""
+    datasets: list[dict[str, Any]] = []
+    folders: list[dict[str, Any]] = []
+
+    for child in children:
+        child_type = child.get("type", "")
+        if child_type == "datasource":
+            datasets.append({
+                "id": child["id"],
+                "name": child.get("name", ""),
+            })
+        elif child_type == "label":
+            folders.append(child)
+
+    for folder in folders:
+        try:
+            resp = client.browse.folder_resources(
+                folder_id=folder["id"],
+                project_id=project_id,
+                workspace_id=workspace_id,
+                level=2,
+            )
+            all_children: list[dict[str, Any]] = []
+            for sub_resource in resp.get("resources", []):
+                all_children.extend(sub_resource.get("children", []))
+            datasets.extend(
+                _collect_datasets_from_browse(client, all_children, project_id, workspace_id)
+            )
+        except Exception:
+            logger.warning("Failed to browse folder %s", folder.get("id"), exc_info=True)
+            continue
+
+    return datasets
