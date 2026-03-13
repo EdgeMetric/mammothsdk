@@ -90,6 +90,7 @@ def error_result(error: Exception) -> CallToolResult:
         body["recovery_hint"] = hint
     return CallToolResult(
         content=[TextContent(type="text", text=json.dumps(body))],
+        structuredContent=body,
         isError=True,
     )
 

@@ -356,7 +356,14 @@ class MammothClient:
             raise MammothAPIError(f"Request error: {e}") from e
 
         if response.status_code == 401:
-            raise MammothAuthError("Invalid API credentials")
+            detail = "Invalid API credentials"
+            try:
+                body = response.json()
+                if isinstance(body, dict):
+                    detail = body.get("message", body.get("detail", detail))
+            except ValueError:
+                pass
+            raise MammothAuthError(detail)
 
         if 200 <= response.status_code < 300:
             if response.status_code == 204 or not response.content:
@@ -499,12 +506,14 @@ class MammothClient:
                 print("Connected!")
         """
         try:
-            self._request("GET", "/jobs", params={"job_ids": ""})
+            self._request(
+                "GET",
+                f"/workspaces/{self.workspace_id}/projects",
+                params={"fields": "id", "limit": 1},
+            )
             return True
         except MammothAuthError:
             return False
-        except MammothAPIError as e:
-            return e.status_code == 400
         except Exception:
             return False
 
