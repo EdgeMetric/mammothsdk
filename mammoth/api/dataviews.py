@@ -113,11 +113,12 @@ class DataviewsAPI:
         payload: dict[str, Any] = {"name": name}
         if clone_config_from is not None:
             payload["clone_config_from"] = clone_config_from
-        return self._client._request_json(
+        response = self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews",
             json=payload,
         )
+        return self._client._wait_if_job(response)
 
     def update(
         self,

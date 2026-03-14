@@ -149,9 +149,7 @@ class PipelineAPI:
             return all_children
 
         with ThreadPoolExecutor(max_workers=min(len(folders), 8)) as pool:
-            futures = {
-                pool.submit(_browse_folder, folder["id"]): folder for folder in folders
-            }
+            futures = {pool.submit(_browse_folder, folder["id"]): folder for folder in folders}
             for future in as_completed(futures):
                 try:
                     sub_children = future.result()

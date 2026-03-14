@@ -142,8 +142,10 @@ class AdvancedOpsMixin:
         Args:
             source: Display name of the key column in *this* view.
             lookup_view_id: ID of the dataview to look up from.
-            key: Internal column name of the key in the lookup view.
-            value: Internal column name of the value in the lookup view.
+            key: Column name of the key in the lookup view (display name
+                or internal name — both are accepted).
+            value: Column name of the value in the lookup view (display name
+                or internal name — both are accepted).
             new_column: Name for a new result column.
             existing_column: Display name of existing column to overwrite.
 

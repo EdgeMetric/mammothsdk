@@ -129,3 +129,58 @@ def adv_second_view(adv_client, adv_second_dataset_id):
     yield v
     with contextlib.suppress(Exception):
         adv_client.views.delete(v.id, adv_second_dataset_id)
+
+
+# ── Config (validation tests — new credentials) ──────────
+
+VAL_BASE_URL = os.environ.get("VAL_BASE_URL", "https://app.mammoth.io/api/v2")
+VAL_API_KEY = os.environ.get("VAL_API_KEY", "REDACTED_CREDENTIAL")
+VAL_API_SECRET = os.environ.get("VAL_API_SECRET", "REDACTED_CREDENTIAL")
+VAL_WORKSPACE_ID = int(os.environ.get("VAL_WORKSPACE_ID", "304"))
+VAL_PROJECT_ID = int(os.environ.get("VAL_PROJECT_ID", "1134"))
+
+
+@pytest.fixture(scope="session")
+def val_client():
+    """Authenticated MammothClient for full validation tests."""
+    c = MammothClient(
+        api_key=VAL_API_KEY,
+        api_secret=VAL_API_SECRET,
+        workspace_id=VAL_WORKSPACE_ID,
+        base_url=VAL_BASE_URL,
+        timeout=120,
+        job_timeout=180,
+    )
+    c.set_project_id(VAL_PROJECT_ID)
+    return c
+
+
+@pytest.fixture(scope="session")
+def val_uploaded_dataset_id(val_client):
+    """Upload employee.csv for validation tests."""
+    assert CSV_PATH.exists(), f"Test CSV not found: {CSV_PATH}"
+    ds_id = val_client.files.upload(str(CSV_PATH))
+    assert ds_id is not None, "Upload returned None"
+    yield ds_id
+    with contextlib.suppress(Exception):
+        val_client.datasets.delete(ds_id)
+
+
+@pytest.fixture
+def val_view(val_client, val_uploaded_dataset_id):
+    """Create a fresh view for each validation test, delete after."""
+    v = val_client.views.create(dataset_id=val_uploaded_dataset_id, name="pytest_val_temp")
+    yield v
+    with contextlib.suppress(Exception):
+        val_client.views.delete(v.id)
+
+
+@pytest.fixture(scope="session")
+def val_second_dataset_id(val_client):
+    """Upload employee.csv as a second dataset for branch-out tests."""
+    assert EMPLOYEE_CSV_PATH.exists(), f"Test CSV not found: {EMPLOYEE_CSV_PATH}"
+    ds_id = val_client.files.upload(str(EMPLOYEE_CSV_PATH))
+    assert ds_id is not None
+    yield ds_id
+    with contextlib.suppress(Exception):
+        val_client.datasets.delete(ds_id)

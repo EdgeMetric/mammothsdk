@@ -580,7 +580,7 @@ class ViewExport:
 
         spec = AddExportSpec(
             DATAVIEW_ID=self._view.id,
-            handler_type=HandlerType(handler_type),
+            handler_type=HandlerType(handler_type.lower()),
             trigger_type=kwargs.get("trigger_type", TriggerType.PIPELINE),
             target_properties=target_properties,
             additional_properties=kwargs.get("additional_properties", {}),
@@ -663,6 +663,10 @@ class ViewExport:
             table: Target table name.
             username: Database username.
             password: Database password.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
 
         Returns:
             Export result dict.
@@ -786,6 +790,10 @@ class ViewExport:
             username: FTP username.
             password: FTP password.
             port: FTP port (default 21).
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
 
         Returns:
             Export result dict.
@@ -819,6 +827,10 @@ class ViewExport:
             username: SFTP username.
             password: SFTP password.
             port: SFTP port (default 22).
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
 
         Returns:
             Export result dict.
@@ -840,6 +852,10 @@ class ViewExport:
 
         Args:
             recipients: List of email addresses.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
 
         Returns:
             Export result dict.
@@ -850,7 +866,14 @@ class ViewExport:
         """Export to Google BigQuery.
 
         Args:
-            **kwargs: BigQuery connection and table configuration.
+            **kwargs: BigQuery target properties and export options.
+                Target properties (passed as ``target_properties``):
+                    ``project`` (str): GCP project ID.
+                    ``dataset`` (str): BigQuery dataset name.
+                    ``table`` (str): Destination table name.
+                Export options:
+                    ``trigger_type``, ``run_immediately``, ``validate_only``,
+                    ``end_of_pipeline``, ``additional_properties``, ``condition``.
 
         Returns:
             Export result dict.
@@ -862,7 +885,13 @@ class ViewExport:
         """Export to Amazon Redshift.
 
         Args:
-            **kwargs: Redshift connection and table configuration.
+            **kwargs: Redshift target properties and export options.
+                Target properties:
+                    ``host`` (str), ``port`` (int), ``database`` (str),
+                    ``table`` (str), ``username`` (str), ``password`` (str).
+                Export options:
+                    ``trigger_type``, ``run_immediately``, ``validate_only``,
+                    ``end_of_pipeline``, ``additional_properties``, ``condition``.
 
         Returns:
             Export result dict.
@@ -874,7 +903,12 @@ class ViewExport:
         """Export to Elasticsearch.
 
         Args:
-            **kwargs: Elasticsearch connection and index configuration.
+            **kwargs: Elasticsearch target properties and export options.
+                Target properties:
+                    ``host`` (str), ``index`` (str), ``port`` (int, optional).
+                Export options:
+                    ``trigger_type``, ``run_immediately``, ``validate_only``,
+                    ``end_of_pipeline``, ``additional_properties``, ``condition``.
 
         Returns:
             Export result dict.
@@ -883,10 +917,17 @@ class ViewExport:
         return self._create_export("ELASTICSEARCH", target, **kwargs)
 
     def publish_to_db(self, **kwargs: Any) -> dict[str, Any]:
-        """Publish dataview to database.
+        """Publish dataview to database for dashboard consumption.
 
         Args:
-            **kwargs: Database connection and table configuration.
+            **kwargs: Database target properties and export options.
+                Target properties:
+                    ``host`` (str), ``database`` (str), ``table`` (str),
+                    ``port`` (int, optional), ``username`` (str, optional),
+                    ``password`` (str, optional).
+                Export options:
+                    ``trigger_type``, ``run_immediately``, ``validate_only``,
+                    ``end_of_pipeline``, ``additional_properties``, ``condition``.
 
         Returns:
             Export result dict.
