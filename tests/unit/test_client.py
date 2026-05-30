@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from mammoth.client import MammothClient, ViewsResource
+from mammoth.client import MammothClient
 
 
 class TestClientInit:

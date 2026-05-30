@@ -39,7 +39,7 @@ def _get_sig_params(func: Any) -> set[str]:
     """Get all param names (excluding self/cls) from a function signature."""
     try:
         sig = inspect.signature(func)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return set()
     return {
         name
@@ -119,7 +119,7 @@ class TestCoreClassDocstrings:
 MIXIN_CLASSES: list[type] = []
 MIXIN_IDS: list[str] = []
 
-from mammoth._mixins import (
+from mammoth._mixins import (  # noqa: E402
     AdvancedOpsMixin,
     AggregateOpsMixin,
     ColumnOpsMixin,
@@ -192,7 +192,7 @@ class TestDocstringArgsMatchSignature:
             pytest.skip("No Args section")
         try:
             sig = inspect.signature(method)
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             pytest.skip("Cannot inspect signature")
         doc_args = _parse_docstring_args(doc)
         for pname, param in sig.parameters.items():
@@ -210,7 +210,7 @@ class TestDocstringArgsMatchSignature:
 # ── Enum docstrings ──────────────────────────────────────────────
 
 
-from mammoth.models.pipeline import (
+from mammoth.models.pipeline import (  # noqa: E402
     AggregateFunction,
     ColumnType,
     DateComponent,
@@ -268,7 +268,7 @@ def test_enum_has_docstring(enum_cls: type):
 # ── Dataclass docstrings ─────────────────────────────────────────
 
 
-from mammoth.models.pipeline import (
+from mammoth.models.pipeline import (  # noqa: E402
     AggregationSpec,
     BulkReplaceMapping,
     ConversionSpec,
@@ -306,7 +306,7 @@ def test_dataclass_has_docstring(dc_cls: type):
 # ── Exception docstrings ─────────────────────────────────────────
 
 
-from mammoth.exceptions import (
+from mammoth.exceptions import (  # noqa: E402
     MammothAPIError,
     MammothAuthError,
     MammothColumnError,

@@ -97,7 +97,7 @@ class TestParseExpression:
         assert result[2] == {"TYPE": "NUMBER", "VALUE": 0.15}
 
     def test_column_name_substring_of_another(self):
-        """Longer column name should match first (Tax vs Total Sales contains no overlap, but test boundary)."""
+        """Longer column name should match first (substring-boundary case)."""
         col_map = {"Tax Rate": "col_tr", "Tax": "col_t"}
         result = parse_expression("Tax Rate + Tax", col_map)
         assert result[0] == {"TYPE": "COLUMN", "VALUE": "col_tr"}

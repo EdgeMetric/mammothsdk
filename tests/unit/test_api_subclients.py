@@ -10,9 +10,7 @@ Tests every public method on every API sub-client:
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
