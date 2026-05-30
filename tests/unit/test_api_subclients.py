@@ -16,6 +16,15 @@ import pytest
 
 from mammoth.client import MammothClient
 from mammoth.exceptions import MammothValidationError
+from mammoth.models.dashboards import (
+    DashboardActionType,
+    DashboardAuthType,
+    DashboardPatchItem,
+    DashboardPatchOp,
+    DashboardPatchPath,
+    DashboardShareRole,
+    DashboardShareUser,
+)
 from mammoth.models.external_keys import ExternalKeyType, ModelConfigSpec
 
 # ── Shared Fixtures ──────────────────────────────────────────────
@@ -491,21 +500,15 @@ class TestConnectorsAPI:
 
 
 class TestDashboardsAPI:
+    # ── list / get / delete / get_sources / get_analytics / get_by_url ───────
+
     def test_list(self, client: MammothClient):
         client.dashboards.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/dashboards")
 
-    def test_create(self, client: MammothClient):
-        client.dashboards.create(config={"name": "Dashboard 1"})
-        assert_called_with_method_and_endpoint(client._request_json, "POST", "/dashboards")
-
     def test_get(self, client: MammothClient):
         client.dashboards.get(dashboard_id=5)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/dashboards/5")
-
-    def test_update(self, client: MammothClient):
-        client.dashboards.update(dashboard_id=5, config={"name": "Updated"})
-        assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/dashboards/5")
 
     def test_delete(self, client: MammothClient):
         client.dashboards.delete(dashboard_id=5)
@@ -520,14 +523,6 @@ class TestDashboardsAPI:
         assert_called_with_method_and_endpoint(
             client._request_json, "GET", "/dashboards/5/analytics"
         )
-
-    def test_share(self, client: MammothClient):
-        client.dashboards.share(dashboard_id=5, config={"emails": ["a@b.com"]})
-        assert_called_with_method_and_endpoint(client._request_json, "POST", "/dashboards/5/share")
-
-    def test_action(self, client: MammothClient):
-        client.dashboards.action(dashboard_id=5, action_config={"type": "refresh"})
-        assert_called_with_method_and_endpoint(client._request_json, "POST", "/dashboards/5/action")
 
     def test_get_by_url(self, client: MammothClient):
         client.dashboards.get_by_url(url="my-dashboard")
@@ -546,6 +541,247 @@ class TestDashboardsAPI:
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/dashboards/5/getPublishData"
         )
+
+    # ── create ───────────────────────────────────────────────────────────────
+
+    def test_create_sends_correct_body(self, client: MammothClient):
+        client.dashboards.create(
+            intent="Show quarterly revenue by region",
+            source=[101, 102],
+        )
+        assert_called_with_method_and_endpoint(client._request_json, "POST", "/dashboards")
+        assert_json_body(
+            client._request_json,
+            {
+                "params": {
+                    "intent": "Show quarterly revenue by region",
+                    "source": [101, 102],
+                    "enable_filters": True,
+                    "enable_pages": False,
+                }
+            },
+        )
+
+    def test_create_explicit_flags(self, client: MammothClient):
+        client.dashboards.create(
+            intent="Sales performance breakdown for EMEA",
+            source=[7],
+            enable_filters=False,
+            enable_pages=True,
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "params": {
+                    "intent": "Sales performance breakdown for EMEA",
+                    "source": [7],
+                    "enable_filters": False,
+                    "enable_pages": True,
+                }
+            },
+        )
+
+    def test_create_rejects_short_intent(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="intent"):
+            client.dashboards.create(intent="too short", source=[1])
+        client._request_json.assert_not_called()
+
+    def test_create_rejects_empty_source(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="source"):
+            client.dashboards.create(intent="Show quarterly revenue by region", source=[])
+        client._request_json.assert_not_called()
+
+    def test_create_rejects_nonpositive_source_id(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="source"):
+            client.dashboards.create(intent="Show quarterly revenue by region", source=[1, 0])
+        client._request_json.assert_not_called()
+
+    # ── update ───────────────────────────────────────────────────────────────
+
+    def test_update_rename(self, client: MammothClient):
+        op = DashboardPatchItem(
+            op=DashboardPatchOp.REPLACE, path=DashboardPatchPath.TITLE, value="New Name"
+        )
+        client.dashboards.update(dashboard_id=5, patch=[op])
+        assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/dashboards/5")
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "replace", "path": "title", "value": "New Name"}]},
+        )
+
+    def test_update_theme(self, client: MammothClient):
+        op = DashboardPatchItem(
+            op=DashboardPatchOp.REPLACE, path=DashboardPatchPath.THEME, value="DARK_MODE"
+        )
+        client.dashboards.update(dashboard_id=5, patch=[op])
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "replace", "path": "theme", "value": "DARK_MODE"}]},
+        )
+
+    def test_update_intent(self, client: MammothClient):
+        intent_value = "Show quarterly revenue by product line"
+        op = DashboardPatchItem(
+            op=DashboardPatchOp.ADD, path=DashboardPatchPath.INTENT, value=intent_value
+        )
+        client.dashboards.update(dashboard_id=5, patch=[op])
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "add", "path": "intent", "value": intent_value}]},
+        )
+
+    def test_update_rejects_nonpositive_id(self, client: MammothClient):
+        op = DashboardPatchItem(
+            op=DashboardPatchOp.REPLACE, path=DashboardPatchPath.TITLE, value="x"
+        )
+        with pytest.raises(MammothValidationError, match="dashboard_id"):
+            client.dashboards.update(dashboard_id=0, patch=[op])
+        client._request_json.assert_not_called()
+
+    def test_update_rejects_empty_patch(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="patch"):
+            client.dashboards.update(dashboard_id=5, patch=[])
+        client._request_json.assert_not_called()
+
+    def test_update_rejects_short_intent_value(self, client: MammothClient):
+        op = DashboardPatchItem(
+            op=DashboardPatchOp.ADD, path=DashboardPatchPath.INTENT, value="too short"
+        )
+        with pytest.raises(MammothValidationError, match="intent"):
+            client.dashboards.update(dashboard_id=5, patch=[op])
+        client._request_json.assert_not_called()
+
+    # ── share ────────────────────────────────────────────────────────────────
+
+    def test_share_public(self, client: MammothClient):
+        client.dashboards.share(dashboard_id=5, type_of_auth=DashboardAuthType.PUBLIC)
+        assert_called_with_method_and_endpoint(client._request_json, "POST", "/dashboards/5/share")
+        assert_json_body(
+            client._request_json,
+            {"params": {"auth": {"type_of_auth": "public"}}},
+        )
+
+    def test_share_mammoth_with_users(self, client: MammothClient):
+        user = DashboardShareUser(
+            email="alice@example.com", role=DashboardShareRole.EDITOR, shared=True
+        )
+        client.dashboards.share(
+            dashboard_id=5,
+            type_of_auth=DashboardAuthType.MAMMOTH,
+            users=[user],
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "params": {
+                    "auth": {
+                        "type_of_auth": "mammoth",
+                        "options": {
+                            "users": [
+                                {
+                                    "email": "alice@example.com",
+                                    "role": "dashboard_editor",
+                                    "shared": True,
+                                }
+                            ]
+                        },
+                    }
+                }
+            },
+        )
+
+    def test_share_password_type(self, client: MammothClient):
+        client.dashboards.share(dashboard_id=5, type_of_auth=DashboardAuthType.PASSWORD)
+        assert_json_body(
+            client._request_json,
+            {"params": {"auth": {"type_of_auth": "password"}}},
+        )
+
+    def test_share_rejects_nonpositive_id(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="dashboard_id"):
+            client.dashboards.share(dashboard_id=0, type_of_auth=DashboardAuthType.PUBLIC)
+        client._request_json.assert_not_called()
+
+    def test_share_rejects_empty_user_email(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="email"):
+            client.dashboards.share(
+                dashboard_id=5,
+                type_of_auth=DashboardAuthType.MAMMOTH,
+                users=[DashboardShareUser(email="", role=DashboardShareRole.VIEWER, shared=True)],
+            )
+        client._request_json.assert_not_called()
+
+    # ── action ───────────────────────────────────────────────────────────────
+
+    def test_action_sync_no_params(self, client: MammothClient):
+        client.dashboards.action(dashboard_id=5, action=DashboardActionType.SYNC)
+        assert_called_with_method_and_endpoint(client._request_json, "POST", "/dashboards/5/action")
+        assert_json_body(client._request_json, {"action": "sync"})
+
+    def test_action_sync_scoped(self, client: MammothClient):
+        client.dashboards.action(dashboard_id=5, action=DashboardActionType.SYNC, params_view_id=42)
+        assert_json_body(client._request_json, {"action": "sync", "params": {"view_id": 42}})
+
+    def test_action_publish_data(self, client: MammothClient):
+        client.dashboards.action(dashboard_id=5, action=DashboardActionType.PUBLISH_DATA)
+        assert_json_body(client._request_json, {"action": "publish-data"})
+
+    def test_action_auto_sync(self, client: MammothClient):
+        client.dashboards.action(
+            dashboard_id=5,
+            action=DashboardActionType.AUTO_SYNC,
+            params_enabled=True,
+            params_view_id=42,
+        )
+        assert_json_body(
+            client._request_json,
+            {"action": "auto-sync", "params": {"enabled": True, "view_id": 42}},
+        )
+
+    def test_action_auto_publish(self, client: MammothClient):
+        client.dashboards.action(
+            dashboard_id=5, action=DashboardActionType.AUTO_PUBLISH, params_enabled=False
+        )
+        assert_json_body(
+            client._request_json,
+            {"action": "auto-publish", "params": {"enabled": False}},
+        )
+
+    def test_action_delete_source(self, client: MammothClient):
+        client.dashboards.action(
+            dashboard_id=5, action=DashboardActionType.DELETE_SOURCE, params_view_id=7
+        )
+        assert_json_body(
+            client._request_json,
+            {"action": "delete-source", "params": {"view_id": 7}},
+        )
+
+    def test_action_rejects_nonpositive_dashboard_id(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="dashboard_id"):
+            client.dashboards.action(dashboard_id=0, action=DashboardActionType.SYNC)
+        client._request_json.assert_not_called()
+
+    def test_action_auto_sync_requires_enabled(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="auto-sync"):
+            client.dashboards.action(dashboard_id=5, action=DashboardActionType.AUTO_SYNC)
+        client._request_json.assert_not_called()
+
+    def test_action_auto_publish_requires_enabled(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="auto-publish"):
+            client.dashboards.action(dashboard_id=5, action=DashboardActionType.AUTO_PUBLISH)
+        client._request_json.assert_not_called()
+
+    def test_action_delete_source_requires_view_id(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="delete-source"):
+            client.dashboards.action(dashboard_id=5, action=DashboardActionType.DELETE_SOURCE)
+        client._request_json.assert_not_called()
+
+    def test_action_rejects_nonpositive_view_id(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="params_view_id"):
+            client.dashboards.action(
+                dashboard_id=5, action=DashboardActionType.DELETE_SOURCE, params_view_id=0
+            )
+        client._request_json.assert_not_called()
 
 
 # ======================================================================

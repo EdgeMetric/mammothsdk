@@ -60,6 +60,15 @@ from mammoth.exceptions import (
     MammothValidationError,
 )
 from mammoth.helpers import parse_path
+from mammoth.models.dashboards import (
+    DashboardActionType,
+    DashboardAuthType,
+    DashboardPatchItem,
+    DashboardPatchOp,
+    DashboardPatchPath,
+    DashboardShareRole,
+    DashboardShareUser,
+)
 from mammoth.models.exports import (
     BigQueryExportType,
     HandlerType,
@@ -163,6 +172,14 @@ __all__ = [
     "OdbcType",
     "RestAuthType",
     "HttpMethod",
+    # Dashboard enums / models
+    "DashboardActionType",
+    "DashboardAuthType",
+    "DashboardPatchItem",
+    "DashboardPatchOp",
+    "DashboardPatchPath",
+    "DashboardShareRole",
+    "DashboardShareUser",
     # External keys
     "ExternalKeyType",
     "ModelConfigSpec",

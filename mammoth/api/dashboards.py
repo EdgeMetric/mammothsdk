@@ -1,25 +1,58 @@
-"""
-Dashboards API client for managing dashboards in Mammoth.
-"""
+"""Dashboards API client for managing dashboards in Mammoth."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
+
+from mammoth.exceptions import MammothValidationError
+from mammoth.models.dashboards import (
+    DashboardActionType,
+    DashboardAuthType,
+    DashboardPatchItem,
+    DashboardPatchPath,
+    DashboardShareUser,
+)
 
 if TYPE_CHECKING:
     from ..client import MammothClient
 
 _list = list  # Alias to avoid shadowing by method name
 
+# ── Validation error constants ────────────────────────────────────────────────
+
+ERR_DASHBOARD_ID_POSITIVE = "`dashboard_id` must be a positive integer, got {0}."
+ERR_INTENT_TOO_SHORT = "`intent` must be at least 10 characters, got {0!r}."
+ERR_SOURCE_EMPTY = "`source` must be a non-empty list of dataview IDs."
+ERR_SOURCE_IDS_POSITIVE = "All `source` IDs must be positive integers; got invalid ID {0}."
+ERR_PATCH_EMPTY = "`patch` must be a non-empty list of patch operations."
+ERR_INTENT_VALUE_TOO_SHORT = "Patch value for `intent` must be at least 10 characters, got {0!r}."
+ERR_INTENT_VALUE_NOT_STR = "Patch value for `intent` must be a string."
+ERR_TITLE_VALUE_NOT_STR = "Patch value for `title` must be a string."
+ERR_THEME_VALUE_NOT_STR = "Patch value for `theme` must be a string."
+ERR_SHARE_USER_EMAIL_EMPTY = "Each shared user must have a non-empty `email`."
+ERR_AUTO_SYNC_NEEDS_ENABLED = "`auto-sync` action requires `params_enabled` (bool)."
+ERR_AUTO_PUBLISH_NEEDS_ENABLED = "`auto-publish` action requires `params_enabled` (bool)."
+ERR_DELETE_SOURCE_NEEDS_VIEW_ID = "`delete-source` action requires `params_view_id` (int > 0)."
+ERR_VIEW_ID_POSITIVE = "`params_view_id` must be a positive integer, got {0}."
+
+_INTENT_MIN_LEN = 10
+
 
 class DashboardsAPI:
     """Client for managing Mammoth dashboards.
 
-    Access via client.dashboards:
+    Access via ``client.dashboards``::
+
         dashboards = client.dashboards.list()
-        dashboard = client.dashboards.create(config={...})
-        client.dashboards.share(dashboard_id, config={...})
-        client.dashboards.delete(dashboard_id)
+        dashboard = client.dashboards.create(
+            intent="Show quarterly revenue by region",
+            source=[101, 102],
+        )
+        client.dashboards.share(
+            dashboard_id=5,
+            type_of_auth=DashboardAuthType.PUBLIC,
+        )
+        client.dashboards.delete(dashboard_id=5)
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -34,16 +67,49 @@ class DashboardsAPI:
         response = self._client._request_json("GET", "/dashboards")
         return response.get("dashboards", response if isinstance(response, _list) else [])
 
-    def create(self, config: dict[str, Any]) -> dict[str, Any]:
-        """Create a new dashboard.
+    def create(
+        self,
+        intent: str,
+        source: _list[int],
+        enable_filters: bool = True,
+        enable_pages: bool = False,
+    ) -> dict[str, Any]:
+        """Create a new AI-generated dashboard.
 
         Args:
-            config: Dashboard configuration (name, sources, layout, etc.).
+            intent: Natural-language description of what the dashboard should
+                show (minimum 10 characters).
+            source: Non-empty list of dataview IDs to use as the data source.
+                All IDs must be positive integers; existence is validated
+                server-side.
+            enable_filters: Whether to include filter widgets (default ``True``).
+            enable_pages: Whether to generate multiple pages (default ``False``).
 
         Returns:
-            Dict with created dashboard info (may include job ID for async creation).
+            Dict with created dashboard info (may include a job ID for async
+            creation).
+
+        Raises:
+            MammothValidationError: If *intent* is shorter than 10 characters,
+                *source* is empty, or any source ID is not a positive integer.
         """
-        return self._client._request_json("POST", "/dashboards", json=config)
+        if len(intent) < _INTENT_MIN_LEN:
+            raise MammothValidationError(ERR_INTENT_TOO_SHORT.format(intent))
+        if not source:
+            raise MammothValidationError(ERR_SOURCE_EMPTY)
+        for sid in source:
+            if sid <= 0:
+                raise MammothValidationError(ERR_SOURCE_IDS_POSITIVE.format(sid))
+
+        body: dict[str, Any] = {
+            "params": {
+                "intent": intent,
+                "source": source,
+                "enable_filters": enable_filters,
+                "enable_pages": enable_pages,
+            }
+        }
+        return self._client._request_json("POST", "/dashboards", json=body)
 
     def get(self, dashboard_id: int) -> dict[str, Any]:
         """Get dashboard details.
@@ -56,17 +122,46 @@ class DashboardsAPI:
         """
         return self._client._request_json("GET", f"/dashboards/{dashboard_id}")
 
-    def update(self, dashboard_id: int, config: dict[str, Any]) -> dict[str, Any]:
-        """Update a dashboard.
+    def update(
+        self,
+        dashboard_id: int,
+        patch: _list[DashboardPatchItem],
+    ) -> dict[str, Any]:
+        """Update a dashboard via JSON-patch operations.
 
         Args:
-            dashboard_id: ID of the dashboard.
-            config: Updated dashboard configuration.
+            dashboard_id: ID of the dashboard (must be > 0).
+            patch: Non-empty list of :class:`~mammoth.models.dashboards.DashboardPatchItem`
+                describing the operations to apply.
+
+                Supported combos:
+
+                * ``op=add, path=intent`` — trigger AI edit; value must be str ≥ 10 chars.
+                * ``op=replace, path=title`` — rename dashboard; value must be str.
+                * ``op=replace, path=theme`` — change theme; value must be str.
 
         Returns:
             Dict with updated dashboard info.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0, *patch* is empty, or
+                an ``intent`` value is too short / a ``title``/``theme`` value is
+                not a string.
         """
-        return self._client._request_json("PATCH", f"/dashboards/{dashboard_id}", json=config)
+        if dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        if not patch:
+            raise MammothValidationError(ERR_PATCH_EMPTY)
+        for item in patch:
+            _validate_patch_item(item)
+
+        body: dict[str, Any] = {
+            "patch": [
+                {"op": item.op.value, "path": item.path.value, "value": item.value}
+                for item in patch
+            ]
+        }
+        return self._client._request_json("PATCH", f"/dashboards/{dashboard_id}", json=body)
 
     def delete(self, dashboard_id: int) -> dict[str, Any]:
         """Delete a dashboard.
@@ -103,31 +198,97 @@ class DashboardsAPI:
         """
         return self._client._request_json("GET", f"/dashboards/{dashboard_id}/analytics")
 
-    def share(self, dashboard_id: int, config: dict[str, Any]) -> dict[str, Any]:
+    def share(
+        self,
+        dashboard_id: int,
+        type_of_auth: DashboardAuthType,
+        users: _list[DashboardShareUser] | None = None,
+    ) -> dict[str, Any]:
         """Share a dashboard.
 
         Args:
-            dashboard_id: ID of the dashboard.
-            config: Sharing configuration (users, permissions, etc.).
+            dashboard_id: ID of the dashboard (must be > 0).
+            type_of_auth: Authentication model for the shared link.
+            users: Optional list of :class:`~mammoth.models.dashboards.DashboardShareUser`
+                granting per-user access.  Only used when *type_of_auth* is
+                :attr:`~mammoth.models.dashboards.DashboardAuthType.MAMMOTH`;
+                ignored for ``public`` / ``password``.  Each user must have a
+                non-empty ``email``.
 
         Returns:
             Dict with sharing result.
-        """
-        return self._client._request_json("POST", f"/dashboards/{dashboard_id}/share", json=config)
 
-    def action(self, dashboard_id: int, action_config: dict[str, Any]) -> dict[str, Any]:
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0 or any user has an
+                empty ``email``.
+        """
+        if dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        if users is not None:
+            for user in users:
+                if not user.email:
+                    raise MammothValidationError(ERR_SHARE_USER_EMAIL_EMPTY)
+
+        auth_dict: dict[str, Any] = {"type_of_auth": type_of_auth.value}
+        if users is not None and type_of_auth is DashboardAuthType.MAMMOTH:
+            auth_dict["options"] = {
+                "users": [
+                    {"email": u.email, "role": u.role.value, "shared": u.shared} for u in users
+                ]
+            }
+
+        body: dict[str, Any] = {"params": {"auth": auth_dict}}
+        return self._client._request_json("POST", f"/dashboards/{dashboard_id}/share", json=body)
+
+    def action(
+        self,
+        dashboard_id: int,
+        action: DashboardActionType,
+        params_enabled: bool | None = None,
+        params_view_id: int | None = None,
+    ) -> dict[str, Any]:
         """Perform an action on a dashboard.
 
         Args:
-            dashboard_id: ID of the dashboard.
-            action_config: Action configuration.
+            dashboard_id: ID of the dashboard (must be > 0).
+            action: The action to execute.
+            params_enabled: Required for ``auto-sync`` and ``auto-publish``;
+                enables or disables the behaviour.
+            params_view_id: Required (> 0) for ``delete-source``;
+                optional for ``sync`` and ``auto-sync`` to scope to one source.
 
         Returns:
             Dict with action result.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0, ``auto-sync`` /
+                ``auto-publish`` are called without *params_enabled*, or
+                ``delete-source`` is called without a positive *params_view_id*.
         """
-        return self._client._request_json(
-            "POST", f"/dashboards/{dashboard_id}/action", json=action_config
-        )
+        if dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        if action is DashboardActionType.AUTO_SYNC and params_enabled is None:
+            raise MammothValidationError(ERR_AUTO_SYNC_NEEDS_ENABLED)
+        if action is DashboardActionType.AUTO_PUBLISH and params_enabled is None:
+            raise MammothValidationError(ERR_AUTO_PUBLISH_NEEDS_ENABLED)
+        if action is DashboardActionType.DELETE_SOURCE:
+            if params_view_id is None:
+                raise MammothValidationError(ERR_DELETE_SOURCE_NEEDS_VIEW_ID)
+            if params_view_id <= 0:
+                raise MammothValidationError(ERR_VIEW_ID_POSITIVE.format(params_view_id))
+        if params_view_id is not None and params_view_id <= 0:
+            raise MammothValidationError(ERR_VIEW_ID_POSITIVE.format(params_view_id))
+
+        body: dict[str, Any] = {"action": action.value}
+        params: dict[str, Any] = {}
+        if params_enabled is not None:
+            params["enabled"] = params_enabled
+        if params_view_id is not None:
+            params["view_id"] = params_view_id
+        if params:
+            body["params"] = params
+
+        return self._client._request_json("POST", f"/dashboards/{dashboard_id}/action", json=body)
 
     def get_by_url(self, url: str) -> dict[str, Any]:
         """Get dashboard by URL slug.
@@ -171,3 +332,21 @@ class DashboardsAPI:
             f"/dashboards/{dashboard_id}/getPublishData",
             json={"sql": sql},
         )
+
+
+# ── Private helpers ───────────────────────────────────────────────────────────
+
+
+def _validate_patch_item(item: DashboardPatchItem) -> None:
+    """Raise MammothValidationError if the patch item's value constraints fail."""
+    if item.path is DashboardPatchPath.INTENT:
+        if not isinstance(item.value, str):
+            raise MammothValidationError(ERR_INTENT_VALUE_NOT_STR)
+        if len(item.value) < _INTENT_MIN_LEN:
+            raise MammothValidationError(ERR_INTENT_VALUE_TOO_SHORT.format(item.value))
+    elif item.path is DashboardPatchPath.TITLE:
+        if not isinstance(item.value, str):
+            raise MammothValidationError(ERR_TITLE_VALUE_NOT_STR)
+    elif item.path is DashboardPatchPath.THEME:
+        if not isinstance(item.value, str):
+            raise MammothValidationError(ERR_THEME_VALUE_NOT_STR)
