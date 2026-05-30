@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from mcp.server.fastmcp import Context
@@ -11,74 +12,65 @@ from mammoth_mcp.helpers import (
     get_manager,
     handle_errors,
     log_tool_call,
+    run_sync,
     success_response,
 )
 from mammoth_mcp.server import mcp
 
+logger = logging.getLogger(__name__)
+
 
 @mcp.tool()
 @log_tool_call
 @handle_errors
-async def list_views(ctx: Context, dataset_id: int | None = None) -> dict[str, Any]:
-    """List all views in a dataset.
-
-    Args:
-        dataset_id: The dataset ID (auto-detected if not provided).
-    """
+async def list_views(ctx: Context) -> dict[str, Any]:
+    """List all views across all datasets in the current project."""
     manager = await get_manager(ctx)
-    views = manager.client.views.list(dataset_id)
-    result = [format_view_info(v) for v in views]
-    return success_response(result, f"Found {len(result)} views")
+    views = await run_sync(_list_all_views, manager.client)
+    return success_response(views, f"Found {len(views)} views")
+
+
+def _list_all_views(client: Any) -> list[dict[str, Any]]:
+    """List views across all datasets using browse API for dataset discovery."""
+    from mammoth_mcp.tools.discovery import browse_project_datasets
+
+    datasets = browse_project_datasets(client)
+    ws = client.workspace_id
+    proj = client.project_id
+
+    all_views: list[dict[str, Any]] = []
+    for ds in datasets:
+        try:
+            dv_resp = client.dataviews.list(
+                dataset_id=ds["id"],
+                workspace_id=ws,
+                project_id=proj,
+            )
+            for dv in dv_resp.get("dataviews", []):
+                all_views.append({
+                    "id": dv.get("id"),
+                    "name": dv.get("name", ""),
+                    "dataset_id": ds["id"],
+                    "dataset_name": ds["name"],
+                })
+        except Exception:
+            logger.warning("Failed to list views for dataset %s", ds.get("id"), exc_info=True)
+            continue
+
+    return all_views
 
 
 @mcp.tool()
 @log_tool_call
 @handle_errors
-async def get_view(ctx: Context, view_id: int, dataset_id: int | None = None) -> dict[str, Any]:
-    """Get detailed metadata for a view, including all columns and their types. Auto-discovers the project and dataset — no need to call set_project or list_projects first.
+async def get_view(ctx: Context, view_id: int) -> dict[str, Any]:
+    """Get detailed metadata for a view, including all columns and types.
+
+    Auto-discovers the project and dataset — no need to call set_project first.
 
     Args:
         view_id: The dataview ID.
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
     return success_response(format_view_info(view))
-
-
-@mcp.tool()
-@log_tool_call
-@handle_errors
-async def create_view(
-    ctx: Context,
-    dataset_id: int,
-    name: str = "View",
-    clone_from: int | None = None,
-) -> dict[str, Any]:
-    """Create a new view in a dataset. Use clone_from to safely experiment on a copy.
-
-    Args:
-        dataset_id: The dataset ID to create the view in.
-        name: Name for the new view (default "View").
-        clone_from: ID of an existing view to clone from (optional).
-    """
-    manager = await get_manager(ctx)
-    view = manager.client.views.create(dataset_id, name=name, clone_from=clone_from)
-    return success_response(format_view_info(view), f"Created view '{name}'")
-
-
-@mcp.tool()
-@log_tool_call
-@handle_errors
-async def delete_view(ctx: Context, view_id: int, dataset_id: int | None = None) -> dict[str, Any]:
-    """Permanently delete a view. This action is irreversible — the view and its pipeline are lost.
-
-    Args:
-        view_id: The dataview ID to delete.
-        dataset_id: The dataset ID (auto-detected if not provided).
-    """
-    manager = await get_manager(ctx)
-    manager._ensure_project_for_view(view_id)
-    manager.client.views.delete(view_id, dataset_id)
-    manager.invalidate_view(view_id)
-    return success_response(message=f"Deleted view {view_id}")

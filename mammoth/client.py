@@ -61,13 +61,16 @@ from mammoth.exceptions import MammothAPIError, MammothAuthError
 def _get_version() -> str:
     try:
         from mammoth import __version__
+
         return __version__
     except ImportError:
         return "0.2.0"
 
+
 # ── Configurable defaults ─────────────────────────────────────
 DEFAULT_TIMEOUT = 30  # seconds — max time for any single API call
 DEFAULT_JOB_TIMEOUT = 60  # seconds — max time to poll a job to completion
+DEFAULT_PIPELINE_TIMEOUT = 3600  # seconds — max time to wait for pipeline readiness
 
 _list = list  # Alias to avoid shadowing by method name
 
@@ -78,27 +81,25 @@ class ViewsResource:
     Access via client.views::
 
         view = client.views.get(view_id)           # returns View object
-        views = client.views.list(dataset_id)       # returns list of View objects
+        views = client.views.list()                 # returns list of View objects
         view = client.views.create(dataset_id)      # returns View object
     """
 
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def get(self, view_id: int, dataset_id: int | None = None) -> View:
+    def get(self, view_id: int) -> View:
         """Get a rich View object for a dataview.
 
         Args:
             view_id: ID of the dataview.
-            dataset_id: Dataset ID (auto-detected if not provided).
 
         Returns:
             View object with transformation methods and metadata.
         """
         from mammoth.view import View
 
-        if dataset_id is None:
-            dataset_id = self._client.pipeline._find_dataset_for_dataview(view_id)
+        dataset_id = self._client.pipeline._find_dataset_for_dataview(view_id)
 
         data = self._client.dataviews.get(
             dataset_id=dataset_id,
@@ -106,36 +107,21 @@ class ViewsResource:
         )
         return View(self._client, data, dataset_id)
 
-    def list(self, dataset_id: int | None = None) -> _list[View]:
-        """List all dataviews as View objects.
+    def list(self, dataset_id: int) -> _list[View]:
+        """List all dataviews in a dataset as View objects.
 
         Args:
-            dataset_id: ID of the dataset.  When *None*, returns views
-                from **all** datasets in the current project.
+            dataset_id: ID of the dataset to list views from.
 
         Returns:
             List of View objects.
         """
         from mammoth.view import View
 
-        if dataset_id is not None:
-            response = self._client.dataviews.list(dataset_id=dataset_id)
-            return [View(self._client, dv, dataset_id) for dv in response.get("dataviews", [])]
-
-        # Iterate every dataset in the project
-        project_id = self._client.project_id
-        if project_id is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
-        datasets_resp = self._client.datasets.list(
-            workspace_id=self._client.workspace_id,
-            project_id=project_id,
-        )
+        dv_resp = self._client.dataviews.list(dataset_id=dataset_id)
         views: _list[View] = []
-        for ds in datasets_resp.get("datasets", []):
-            ds_id = ds["id"]
-            dv_resp = self._client.dataviews.list(dataset_id=ds_id)
-            for dv in dv_resp.get("dataviews", []):
-                views.append(View(self._client, dv, ds_id))
+        for dv in dv_resp.get("dataviews", []):
+            views.append(View(self._client, dv, dataset_id))
         return views
 
     def create(
@@ -170,32 +156,28 @@ class ViewsResource:
             return View(self._client, full_data, dataset_id)
         return View(self._client, data, dataset_id)
 
-    def delete(self, view_id: int, dataset_id: int | None = None) -> dict[str, Any]:
+    def delete(self, view_id: int) -> dict[str, Any]:
         """Delete a dataview.
 
         Args:
             view_id: ID of the dataview.
-            dataset_id: Dataset ID (auto-detected if not provided).
 
         Returns:
             Dict with deletion result.
         """
-        if dataset_id is None:
-            dataset_id = self._client.pipeline._find_dataset_for_dataview(view_id)
+        dataset_id = self._client.pipeline._find_dataset_for_dataview(view_id)
         return self._client.dataviews.delete(dataset_id=dataset_id, dataview_id=view_id)
 
-    def bulk_delete(self, view_ids: _list[int], dataset_id: int | None = None) -> dict[str, Any]:
+    def bulk_delete(self, view_ids: _list[int]) -> dict[str, Any]:
         """Delete multiple dataviews.
 
         Args:
             view_ids: List of dataview IDs to delete.
-            dataset_id: Dataset ID (auto-detected from the first view if not provided).
 
         Returns:
             Dict with bulk deletion result.
         """
-        if dataset_id is None:
-            dataset_id = self._client.pipeline._find_dataset_for_dataview(view_ids[0])
+        dataset_id = self._client.pipeline._find_dataset_for_dataview(view_ids[0])
         return self._client.dataviews.bulk_delete(dataset_id=dataset_id, dataview_ids=view_ids)
 
 
@@ -231,6 +213,7 @@ class MammothClient:
         base_url: str = "https://app.mammoth.io/api/v2",
         timeout: int = DEFAULT_TIMEOUT,
         job_timeout: int = DEFAULT_JOB_TIMEOUT,
+        pipeline_timeout: int = DEFAULT_PIPELINE_TIMEOUT,
     ) -> None:
         """Initialize the Mammoth client.
 
@@ -241,6 +224,7 @@ class MammothClient:
             base_url: Base URL for the Mammoth API.
             timeout: Request timeout in seconds.
             job_timeout: Job polling timeout in seconds.
+            pipeline_timeout: Pipeline readiness polling timeout in seconds.
         """
         self.api_key = api_key
         self.api_secret = api_secret
@@ -248,6 +232,7 @@ class MammothClient:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.job_timeout = job_timeout
+        self.pipeline_timeout = pipeline_timeout
 
         self.project_id: int | None = None
 
@@ -291,10 +276,10 @@ class MammothClient:
         self.reports = ReportsAPI(self)
 
     def find_dataset_for_dataview(self, dataview_id: int) -> int:
-        """Find the dataset ID for a given dataview.
+        """Find the parent dataset ID for a given dataview.
 
-        Searches all datasets in the current project to find
-        which dataset contains the specified dataview.
+        Searches all datasets in the current project to locate which
+        dataset contains the specified dataview.
 
         Args:
             dataview_id: ID of the dataview.
@@ -303,7 +288,11 @@ class MammothClient:
             Dataset ID that contains the dataview.
 
         Raises:
-            MammothAPIError: If the dataview cannot be found.
+            MammothAPIError: If the dataview cannot be found in any dataset.
+
+        Example::
+
+            dataset_id = client.find_dataset_for_dataview(1039)
         """
         return self.pipeline._find_dataset_for_dataview(dataview_id)
 
@@ -367,7 +356,14 @@ class MammothClient:
             raise MammothAPIError(f"Request error: {e}") from e
 
         if response.status_code == 401:
-            raise MammothAuthError("Invalid API credentials")
+            detail = "Invalid API credentials"
+            try:
+                body = response.json()
+                if isinstance(body, dict):
+                    detail = str(body.get("message", body.get("detail", detail)))
+            except ValueError:
+                pass
+            raise MammothAuthError(detail)
 
         if 200 <= response.status_code < 300:
             if response.status_code == 204 or not response.content:
@@ -468,6 +464,9 @@ class MammothClient:
             "error",
         ):
             job_id = response["id"]
+        # Pattern 4: PipelineModificationResp — {"future_id": N, ...}
+        elif "future_id" in response and response.get("future_id") is not None:
+            job_id = response["future_id"]
 
         if job_id:
             t = timeout if timeout is not None else self.job_timeout
@@ -477,67 +476,97 @@ class MammothClient:
         return response
 
     def set_project_id(self, project_id: int) -> None:
-        """Set the default project ID for the client.
+        """Set the active project for subsequent API calls.
+
+        Most operations (datasets, views, pipeline) require a project context.
+        Call this once after creating the client.
 
         Args:
-            project_id: ID of the project to use as default.
+            project_id: ID of the project to use.
+
+        Example::
+
+            client.set_project_id(1134)
         """
         self.project_id = project_id
 
     def test_connection(self) -> bool:
-        """Test the connection to Mammoth API.
+        """Test the connection to the Mammoth API.
+
+        Makes a lightweight API call to verify credentials and network
+        connectivity.
 
         Returns:
-            True if connection is successful, False otherwise.
+            ``True`` if credentials are valid and API is reachable,
+            ``False`` otherwise.
+
+        Example::
+
+            if client.test_connection():
+                print("Connected!")
         """
         try:
-            self._request("GET", "/jobs", params={"job_ids": ""})
+            self._request(
+                "GET",
+                f"/workspaces/{self.workspace_id}/projects",
+                params={"fields": "id", "limit": 1},
+            )
             return True
         except MammothAuthError:
             return False
-        except MammothAPIError as e:
-            return e.status_code == 400
         except Exception:
             return False
 
     # ── Top-level Convenience Methods ──────────────────────────
 
-    def get_view(self, view_id: int, dataset_id: int | None = None) -> View:
+    def get_view(self, view_id: int) -> View:
         """Get a rich View object by dataview ID.
 
-        Shortcut for ``client.views.get(view_id)``.
+        Shortcut for ``client.views.get(view_id)``. Automatically finds
+        the parent dataset.
 
         Args:
             view_id: ID of the dataview.
-            dataset_id: Dataset ID (auto-detected if not provided).
 
         Returns:
-            View object with transformation methods and metadata.
+            :class:`~mammoth.view.View` with transformation methods and
+            metadata.
+
+        Example::
+
+            view = client.get_view(1039)
+            print(view.display_names)
         """
-        return self.views.get(view_id, dataset_id)
+        return self.views.get(view_id)
 
     def branch_out(
         self,
         view_id: int,
-        dest_dataset_id: int,
+        dataset_name: str,
+        *,
+        target_ds_id: int | None = None,
         column_mapping: dict[str, str] | None = None,
-        dataset_id: int | None = None,
         **kwargs: Any,
-    ) -> dict[str, Any]:
-        """Branch out a view to another dataset.
+    ) -> int:
+        """Branch out a view — save its data as a Mammoth dataset.
 
         Args:
             view_id: Source dataview ID.
-            dest_dataset_id: Target dataset ID.
-            column_mapping: Column mapping dict (optional).
-            dataset_id: Source dataset ID (auto-detected if not provided).
-            **kwargs: Additional export options.
+            dataset_name: Name for the new dataset (display name when writing
+                into an existing one).
+            target_ds_id: Existing dataset to write into; None creates a new one.
+            column_mapping: Source -> destination column-name map (optional).
+            **kwargs: Additional options forwarded to :meth:`View.branch_out`
+                (``save_as_mode``, ``label_ids``, ``condition``, ``timeout``).
 
         Returns:
-            Export result dict.
+            The id of the dataset written to (new when ``target_ds_id`` is None,
+            otherwise ``target_ds_id``).
         """
-        view = self.views.get(view_id, dataset_id)
-        return view.branch_out(dest_dataset_id, column_mapping, **kwargs)
+        view = self.views.get(view_id)
+        return view.branch_out(
+            dataset_name, target_ds_id=target_ds_id, column_mapping=column_mapping, **kwargs
+        )
 
     def __enter__(self) -> MammothClient:
         """Context manager entry."""

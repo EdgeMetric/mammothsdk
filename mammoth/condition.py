@@ -6,7 +6,7 @@ Build filter conditions using Python's ``&`` (AND), ``|`` (OR), and ``~``
 
 Creating conditions::
 
-    from mammoth import Condition, Operator
+    from mammoth import Condition, Operator, DateFunction
 
     high_sales = Condition("Sales", Operator.GTE, 10000)
     west = Condition("Region", Operator.IN_LIST, ["West", "East"])
@@ -38,29 +38,45 @@ Conditions are resolved to Mammoth API format via ``build(column_map)``::
 
 Supported operators (from ``mammoth.Operator`` enum):
     Comparison: GT, LT, GTE, LTE, EQ, NE
+    Range: IN_RANGE (between two numeric/date bounds)
     List: IN_LIST, NOT_IN_LIST, CONTAINS, NOT_CONTAINS
-    String: STARTS_WITH, ENDS_WITH, NOT_STARTS_WITH, NOT_ENDS_WITH
+    String: STARTS_WITH, ENDS_WITH, NOT_STARTS_WITH, NOT_ENDS_WITH, ICONTAINS
     Null: IS_EMPTY, IS_NOT_EMPTY
     Aggregate: IS_MAXVAL, IS_NOT_MAXVAL, IS_MINVAL, IS_NOT_MINVAL
+
+Date-relative function operands (``DateFunction`` enum):
+    Pass a ``DateFunction`` as ``value`` with ``value_is_date_fn=True``::
+
+        Condition("Order Date", Operator.GT, DateFunction.TODAY, value_is_date_fn=True)
+        Condition("Date", Operator.EQ, DateFunction.MAX, value_is_date_fn=True)
 """
 
 from __future__ import annotations
 
 import warnings
-from typing import Any
+from typing import TYPE_CHECKING, Any, Union
 
-# Type alias for any condition type
-ConditionType = "Condition | CompoundCondition | NotCondition"
+if TYPE_CHECKING:
+    from typing import TypeAlias
+
+    ConditionType: TypeAlias = Union["Condition", "CompoundCondition", "NotCondition"]
+else:
+    ConditionType = Union["Condition", "CompoundCondition", "NotCondition"]
 
 # Operators that take no value
-_NULL_OPERATORS = frozenset({
-    "IS_EMPTY",
-    "IS_NOT_EMPTY",
-    "IS_MAXVAL",
-    "IS_NOT_MAXVAL",
-    "IS_MINVAL",
-    "IS_NOT_MINVAL",
-})
+_NULL_OPERATORS = frozenset(
+    {
+        "IS_EMPTY",
+        "IS_NOT_EMPTY",
+        "IS_MAXVAL",
+        "IS_NOT_MAXVAL",
+        "IS_MINVAL",
+        "IS_NOT_MINVAL",
+    }
+)
+
+ERR_IN_RANGE_NOT_LIST = "IN_RANGE requires a list of exactly 2 bounds, got {value!r}."
+ERR_IN_RANGE_NOT_TWO = "IN_RANGE requires exactly 2 bounds, got {n}."
 
 
 class Condition:
@@ -70,21 +86,58 @@ class Condition:
         column: Display name of the column (e.g. "Sales", "Region").
         operator: Operator enum value (e.g. Operator.GTE, Operator.IN_LIST).
         value: Comparison value. Required for most operators, omit for IS_EMPTY.
+            For IN_RANGE, pass a 2-element list: ``[lower_bound, upper_bound]``.
+            For date-relative functions, pass a ``DateFunction`` with
+            ``value_is_date_fn=True``.
         case_sensitive: Controls string comparison case sensitivity.
             ``None`` (default) — don't emit STRING_PROP (backend default: case-sensitive).
             ``True`` — emit CASE-SENSITIVE.
             ``False`` — emit CASE-INSENSITIVE.
+        value_is_column: If ``True``, ``value`` names another column (column-to-column
+            comparison) rather than a literal.
+        component: Date component string (e.g. "year", "month") for date component
+            filtering.
+        truncate: Date truncation unit (e.g. "DAY", "MONTH") for truncated date
+            comparison.
+        value_is_date_fn: If ``True``, ``value`` is a ``DateFunction`` enum member and
+            is emitted as ``{"VALUE": {"FUNCTION": "<fn>"}}`` in the wire payload.
 
     Examples::
 
+        # Basic comparisons
         Condition("Sales", Operator.GTE, 1000)
         Condition("Region", Operator.IN_LIST, ["West", "East"])
         Condition("Name", Operator.IS_NOT_EMPTY)
+
+        # Range filter (numeric or date, not TEXT)
+        Condition("Amount", Operator.IN_RANGE, [100, 500])
+
+        # Case-insensitive contains (always case-insensitive, no STRING_PROP needed)
+        Condition("City", Operator.ICONTAINS, "york")
+
+        # Combine with & (AND), | (OR), ~ (NOT)
         Condition("Sales", Operator.GTE, 1000) & Condition("Region", Operator.EQ, "West")
         ~Condition("Status", Operator.EQ, "Closed")
 
+        # Column-to-column comparison
+        Condition("Revenue", Operator.GT, "Cost", value_is_column=True)
+
+        # Date component filter (e.g. year of a date column)
+        Condition("Order Date", Operator.EQ, 2024, component="year")
+
+        # Date truncation filter (compare truncated dates)
+        Condition("Timestamp", Operator.GTE, "2024-01-01", truncate="day")
+
+        # Case-insensitive string matching
+        Condition("City", Operator.EQ, "new york", case_sensitive=False)
+
+        # Date-relative function operand
+        Condition("Order Date", Operator.GT, DateFunction.TODAY, value_is_date_fn=True)
+        Condition("Date", Operator.GTE, DateFunction.NOW, value_is_date_fn=True)
+
     Raises:
-        ValueError: If column is empty or a non-null operator is used without a value.
+        ValueError: If column is empty, a non-null operator is used without a value,
+            or IN_RANGE is not given exactly 2 bounds.
     """
 
     def __init__(
@@ -96,17 +149,19 @@ class Condition:
         value_is_column: bool = False,
         component: str | None = None,
         truncate: str | None = None,
+        value_is_date_fn: bool = False,
     ) -> None:
         if not column or not isinstance(column, str):
             raise ValueError(f"column must be a non-empty string, got {column!r}")
 
         self.column = column
-        self.operator: str = operator.value if hasattr(operator, "value") else str(operator)
+        self.operator: str = str(getattr(operator, "value", operator))
         self.value = value
         self.case_sensitive = case_sensitive
         self.value_is_column = value_is_column
         self.component = component
         self.truncate = truncate
+        self.value_is_date_fn = value_is_date_fn
 
         # Validation: null operators with a value, non-null without
         if self.operator in _NULL_OPERATORS and value is not None:
@@ -117,9 +172,14 @@ class Condition:
                 stacklevel=2,
             )
         elif self.operator not in _NULL_OPERATORS and value is None:
-            raise ValueError(
-                f"Operator {self.operator!r} requires a value, but none was provided."
-            )
+            raise ValueError(f"Operator {self.operator!r} requires a value, but none was provided.")
+
+        # Validation: IN_RANGE requires exactly 2 bounds
+        if self.operator == "IN_RANGE":
+            if not isinstance(value, list):
+                raise ValueError(ERR_IN_RANGE_NOT_LIST.format(value=value))
+            if len(value) != 2:
+                raise ValueError(ERR_IN_RANGE_NOT_TWO.format(n=len(value)))
 
     def __and__(self, other: ConditionType) -> CompoundCondition:
         """Combine with AND: cond1 & cond2."""
@@ -137,49 +197,86 @@ class Condition:
         """Negate: ~condition."""
         return NotCondition(self)
 
-    def _build_inner(self, column_map: dict[str, str] | None = None) -> dict[str, Any]:
+    def _build_inner(
+        self,
+        column_map: dict[str, str] | None = None,
+        column_types: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """Build the pure condition structure (no STRING_PROP)."""
         internal_name = column_map.get(self.column, self.column) if column_map else self.column
 
-        # Boolean operators (no value needed)
-        if self.operator in _NULL_OPERATORS:
-            return {internal_name: {self.operator: True}}
+        # Workaround: backend falsely rejects TEXT + EQ/NE as "type mismatch".
+        # Use IN_LIST/NOT_IN_LIST (single-element) which bypasses the broken validation.
+        operator = self.operator
+        if column_types and operator in ("EQ", "NE") and not self.value_is_column:
+            col_type = column_types.get(self.column) or column_types.get(internal_name)
+            if col_type == "TEXT":
+                operator = "IN_LIST" if operator == "EQ" else "NOT_IN_LIST"
 
-        # List operators
-        if self.operator in ("IN_LIST", "NOT_IN_LIST", "CONTAINS", "NOT_CONTAINS"):
+        # Boolean operators (no value needed)
+        if operator in _NULL_OPERATORS:
+            return {internal_name: {operator: True}}
+
+        # IN_RANGE: 2-element list, each element wrapped as {"VALUE": bound}
+        # Wire: {col: {"IN_RANGE": [{"VALUE": lower}, {"VALUE": upper}]}}
+        if operator == "IN_RANGE":
+            lower, upper = self.value[0], self.value[1]
+            return {internal_name: {"IN_RANGE": [{"VALUE": lower}, {"VALUE": upper}]}}
+
+        # List operators — also catches remapped EQ/NE
+        if operator in ("IN_LIST", "NOT_IN_LIST", "CONTAINS", "NOT_CONTAINS"):
             val = self.value if isinstance(self.value, list) else [self.value]
-            return {internal_name: {self.operator: {"VALUE": val}}}
+            return {internal_name: {operator: {"VALUE": val}}}
 
         # Column-to-column comparison
         if self.value_is_column:
             resolved_val = column_map.get(self.value, self.value) if column_map else self.value
-            return {internal_name: {self.operator: {"COLUMN": resolved_val}}}
+            return {internal_name: {operator: {"COLUMN": resolved_val}}}
+
+        # Date-relative function operand
+        # Wire: {col: {op: {"VALUE": {"FUNCTION": "NOW"}}}}
+        if self.value_is_date_fn:
+            fn_str = str(getattr(self.value, "value", self.value))
+            return {internal_name: {operator: {"VALUE": {"FUNCTION": fn_str}}}}
 
         # Date component wrapper
         if self.component is not None:
-            return {internal_name: {self.operator: {"VALUE": {"COMPONENT": self.component, "VALUE": self.value}}}}
+            return {
+                internal_name: {
+                    operator: {"VALUE": {"COMPONENT": self.component, "VALUE": self.value}}
+                }
+            }
 
         # Date truncation wrapper
         if self.truncate is not None:
-            return {internal_name: {self.operator: {"VALUE": {"TRUNCATE": self.truncate, "VALUE": self.value}}}}
+            return {
+                internal_name: {
+                    operator: {"VALUE": {"TRUNCATE": self.truncate, "VALUE": self.value}}
+                }
+            }
 
-        # All other operators (comparison, string)
-        return {internal_name: {self.operator: {"VALUE": self.value}}}
+        # All other operators (comparison, string, ICONTAINS)
+        return {internal_name: {operator: {"VALUE": self.value}}}
 
     def _collect_case_sensitive(self) -> bool | None:
         """Return this leaf's case_sensitive setting."""
         return self.case_sensitive
 
-    def build(self, column_map: dict[str, str] | None = None) -> dict[str, Any]:
+    def build(
+        self,
+        column_map: dict[str, str] | None = None,
+        column_types: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """Build API-format condition dict.
 
         Args:
             column_map: Mapping of display names to internal names.
+            column_types: Mapping of display names to column types (e.g. TEXT, NUMERIC).
 
         Returns:
             dict in Mammoth API condition format.
         """
-        result = self._build_inner(column_map)
+        result = self._build_inner(column_map, column_types)
         cs = self._collect_case_sensitive()
         if cs is not None:
             case_str = "CASE-SENSITIVE" if cs else "CASE-INSENSITIVE"
@@ -226,25 +323,34 @@ class NotCondition:
         """Double negation cancels: ~~cond returns original."""
         return self.condition
 
-    def _build_inner(self, column_map: dict[str, str] | None = None) -> dict[str, Any]:
+    def _build_inner(
+        self,
+        column_map: dict[str, str] | None = None,
+        column_types: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """Build the NOT structure (no STRING_PROP)."""
-        inner = self.condition._build_inner(column_map)
+        inner = self.condition._build_inner(column_map, column_types)
         return {"NOT": inner}
 
     def _collect_case_sensitive(self) -> bool | None:
         """Delegate to inner condition."""
         return self.condition._collect_case_sensitive()
 
-    def build(self, column_map: dict[str, str] | None = None) -> dict[str, Any]:
+    def build(
+        self,
+        column_map: dict[str, str] | None = None,
+        column_types: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """Build API-format condition dict.
 
         Args:
             column_map: Mapping of display names to internal names.
+            column_types: Mapping of display names to column types (e.g. TEXT, NUMERIC).
 
         Returns:
             dict with NOT key wrapping the inner condition.
         """
-        result = self._build_inner(column_map)
+        result = self._build_inner(column_map, column_types)
         cs = self._collect_case_sensitive()
         if cs is not None:
             case_str = "CASE-SENSITIVE" if cs else "CASE-INSENSITIVE"
@@ -308,9 +414,13 @@ class CompoundCondition:
         """Negate: ~(cond1 & cond2)."""
         return NotCondition(self)
 
-    def _build_inner(self, column_map: dict[str, str] | None = None) -> dict[str, Any]:
+    def _build_inner(
+        self,
+        column_map: dict[str, str] | None = None,
+        column_types: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """Build the AND/OR structure (no STRING_PROP)."""
-        built = [cond._build_inner(column_map) for cond in self.conditions]
+        built = [cond._build_inner(column_map, column_types) for cond in self.conditions]
         return {self.logic: built}
 
     def _collect_case_sensitive(self) -> bool | None:
@@ -321,16 +431,21 @@ class CompoundCondition:
                 return cs
         return None
 
-    def build(self, column_map: dict[str, str] | None = None) -> dict[str, Any]:
+    def build(
+        self,
+        column_map: dict[str, str] | None = None,
+        column_types: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """Build API-format condition dict.
 
         Args:
             column_map: Mapping of display names to internal names.
+            column_types: Mapping of display names to column types (e.g. TEXT, NUMERIC).
 
         Returns:
             dict in Mammoth API condition format with AND/OR keys.
         """
-        result = self._build_inner(column_map)
+        result = self._build_inner(column_map, column_types)
         cs = self._collect_case_sensitive()
         if cs is not None:
             case_str = "CASE-SENSITIVE" if cs else "CASE-INSENSITIVE"

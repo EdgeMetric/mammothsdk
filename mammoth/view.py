@@ -32,7 +32,7 @@ Exports are accessed via ``view.export``::
 
     view.export.to_csv("output.csv")
     view.export.to_postgres(host="db.example.com", port=5432, ...)
-    view.branch_out(dest_dataset_id=42)
+    view.branch_out(dataset_name="Sales snapshot")
 """
 
 from __future__ import annotations
@@ -40,6 +40,7 @@ from __future__ import annotations
 import datetime
 import random
 import string
+import time
 from pathlib import Path
 from typing import Any
 
@@ -53,9 +54,76 @@ from mammoth._mixins import (
     RowOpsMixin,
     TextOpsMixin,
 )
+from mammoth._pure.builders import build_branch_out_params
 from mammoth.condition import CompoundCondition, Condition, NotCondition
+from mammoth.exceptions import MammothColumnError, MammothExportError, MammothValidationError
+from mammoth.models.exports import (
+    AddExportSpec,
+    BigQueryExportType,
+    ExportResult,
+    ExportStatus,
+    HandlerType,
+    HttpMethod,
+    OdbcType,
+    RestAuthType,
+    TriggerType,
+)
+from mammoth.models.jobs import JobResponse
+from mammoth.models.pipeline import (
+    DraftCommand,
+    ExportFileType,
+    SaveAsDatasetMode,
+)
 
 _list = list  # Alias to avoid shadowing by method name
+
+# Raised when a new internal-dataset export never exposes its dataset id in time.
+ERR_EXPORT_DATASET_UNRESOLVED = (
+    "Export for dataset {name!r} completed but its dataset id did not resolve "
+    "before the timeout; the materialisation may still be in progress."
+)
+
+# Export-method argument validation (raised before any API call).
+ERR_EMAIL_NO_RECIPIENTS = "to_email requires at least one recipient in `emails`."
+ERR_SFTP_KEY_REQUIRED = (
+    "to_sftp with ssh_key_authentication=True requires a non-empty `private_key`."
+)
+ERR_BIGQUERY_UPSERT_KEYS = (
+    "to_bigquery with export_type=UPSERT requires at least one entry in `upsert_keys`."
+)
+ERR_REST_BATCH_SIZE = "to_rest_api `batch_size` must be between 1 and 10000 (got {value})."
+ERR_REST_TIMEOUT = "to_rest_api `timeout_seconds` must be between 5 and 300 (got {value})."
+
+# Inclusive bounds the REST-API handler accepts.
+_REST_BATCH_SIZE_MIN = 1
+_REST_BATCH_SIZE_MAX = 10000
+_REST_TIMEOUT_MIN = 5
+_REST_TIMEOUT_MAX = 300
+
+
+class _DraftContext:
+    """Context manager for View.draft().
+
+    Enters draft mode on entry, submits on clean exit, discards on exception.
+    """
+
+    def __init__(self, view: View) -> None:
+        self._view = view
+
+    def __enter__(self) -> View:
+        self._view.enter_draft_mode()
+        return self._view
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any,
+    ) -> None:
+        if exc_type is not None:
+            self._view.discard_draft()
+        else:
+            self._view.submit_draft()
 
 
 class View(
@@ -104,17 +172,41 @@ class View(
 
         self._build_column_maps(dataview_data)
 
+        # Draft mode tracking
+        self._draft_mode: bool = False
+
         # Attach export helper
         self.export = ViewExport(self)
 
     def _build_column_maps(self, data: dict[str, Any]) -> None:
-        """Extract column name mappings from dataview metadata."""
+        """Extract column name mappings from dataview metadata.
+
+        Reads column metadata from the last task in ``taskwise_info``, which
+        always reflects the final post-pipeline column list including any columns
+        added by transforms (math, set_values, add_column, etc.).  Falls back to
+        the top-level ``metadata`` field for views that have no pipeline tasks yet.
+        """
         self.columns = {}
         self.display_names = []
         self.column_types = {}
         self._internal_names = []
 
-        columns_list = data.get("metadata", [])
+        # taskwise_info keys are task sequence numbers (str in JSON).
+        # The entry with the highest sequence holds the final column list.
+        columns_list: list[dict[str, Any]] = []
+        taskwise_info = data.get("taskwise_info") or {}
+        if taskwise_info:
+            try:
+                last_seq = max(int(k) for k in taskwise_info)
+                task_info = taskwise_info.get(last_seq) or taskwise_info.get(str(last_seq)) or {}
+                columns_list = task_info.get("metadata") or []
+            except ValueError, TypeError:
+                pass
+
+        # Fresh view with no tasks yet — taskwise_info is null, fall back to
+        # the top-level metadata field which has the original dataset columns.
+        if not columns_list:
+            columns_list = data.get("metadata") or []
         if not columns_list:
             properties = data.get("properties", {})
             columns_list = properties.get("columns", []) if isinstance(properties, dict) else []
@@ -146,8 +238,6 @@ class View(
             return self.columns[display_name]
         if display_name in self._internal_names:
             return display_name
-        from mammoth.exceptions import MammothColumnError
-
         raise MammothColumnError(display_name, self.display_names)
 
     def _resolve_columns(self, names: list[str]) -> list[str]:
@@ -180,10 +270,13 @@ class View(
             return None
         if isinstance(condition, dict):
             return condition
-        return condition.build(self.columns)
+        return condition.build(self.columns, self.column_types)
 
     def _add_task(self, task_spec: dict[str, Any]) -> dict[str, Any]:
         """Add a task to the pipeline, wait for completion, and refresh metadata.
+
+        In draft mode, skips waiting and metadata refresh — tasks are queued
+        and executed when ``submit_draft()`` is called.
 
         Args:
             task_spec: Task specification dict.
@@ -192,8 +285,83 @@ class View(
             API response dict.
         """
         result = self._client.pipeline.add_task(self.id, task_spec, self.dataset_id)
-        self.refresh()
+        if not self._draft_mode:
+            self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+            self.refresh()
         return result
+
+    def _run_internal_dataset_export(
+        self,
+        target_properties: dict[str, Any],
+        timeout: int | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
+    ) -> int:
+        """Submit an internal-dataset export (crosstab / branch-out) and return the id.
+
+        Both crosstab and branch-out materialise a dataset through the same
+        ``internal_dataset`` export handler. *condition* is a typed condition
+        object (the wire dict is built here, so callers never deal with the raw
+        payload).
+
+        The submit job returns with an empty ``response`` *before* the dataset
+        is created (the materialisation is a fire-and-forget downstream action),
+        so the new id is resolved from the export trigger once it reaches
+        ``EXECUTED``. When writing into a known existing dataset
+        (``TARGET_DS_ID`` set) that id is returned directly.
+
+        Returns:
+            The id of the dataset the export wrote to (new or existing).
+
+        Raises:
+            MammothExportError: If a new dataset's id does not resolve within
+                the timeout.
+        """
+        spec = AddExportSpec(
+            DATAVIEW_ID=self.id,
+            handler_type=HandlerType.INTERNAL_DATASET,
+            trigger_type=TriggerType.PIPELINE,
+            target_properties=target_properties,
+            additional_properties={},
+            condition=self._build_condition(condition) or {},
+            run_immediately=True,
+            validate_only=False,
+            end_of_pipeline=True,
+        )
+        result = self._client.exports.create(self.id, spec, self.dataset_id)
+        if isinstance(result, JobResponse):
+            self._client.jobs.wait_for_job(result.job.id, timeout)
+
+        existing_id = target_properties.get("TARGET_DS_ID")
+        if existing_id is not None:
+            return int(existing_id)
+        return self._resolve_exported_dataset_id(target_properties["DS_NAME"], timeout)
+
+    def _resolve_exported_dataset_id(self, dataset_name: str, timeout: int | None = None) -> int:
+        """Resolve the id of the dataset a new internal-dataset export created.
+
+        Polls this dataview's ``internal_dataset`` export triggers for the one
+        named *dataset_name* (the most recent, by id) until it reaches
+        ``EXECUTED`` and exposes ``TARGET_DS_ID``.
+        """
+        deadline = time.monotonic() + (timeout or getattr(self._client, "job_timeout", 60) or 60)
+        poll_interval = 2.0
+        while time.monotonic() < deadline:
+            page = self._client.exports.list(self.id, handler_type=HandlerType.INTERNAL_DATASET)
+            matches = [
+                e
+                for e in page.exports
+                if (e.target_properties or {}).get("DS_NAME") == dataset_name
+            ]
+            if matches:
+                export = max(matches, key=lambda e: e.id or 0)
+                target_id = (export.target_properties or {}).get("TARGET_DS_ID")
+                if export.status == ExportStatus.EXECUTED and target_id is not None:
+                    return int(target_id)
+            time.sleep(poll_interval)
+        raise MammothExportError(
+            ERR_EXPORT_DATASET_UNRESOLVED.format(name=dataset_name),
+            {"dataset_name": dataset_name, "timeout": timeout},
+        )
 
     # ── Data Access ─────────────────────────────────────────────
 
@@ -205,17 +373,27 @@ class View(
         condition: Condition | CompoundCondition | None = None,
         sort: str | None = None,
     ) -> dict[str, Any]:
-        """Fetch data from the dataview.
+        """Fetch data rows from the dataview.
 
         Args:
-            limit: Number of rows to fetch (default 400).
+            limit: Maximum number of rows to return (default 400).
             offset: One-indexed starting row (default 1).
-            columns: List of display names to fetch (default all).
-            condition: Condition object for filtering.
+            columns: List of display names to fetch. ``None`` fetches all.
+            condition: Filter condition — only matching rows are returned.
             sort: Sort specification string.
 
         Returns:
-            Dict with data rows, columns, and pagination info.
+            Dict with ``data`` (list of row dicts), ``columns``, and
+            pagination info (``total``, ``limit``, ``offset``).
+
+        Examples::
+
+            rows = view.data(limit=10)
+            rows = view.data(columns=["Name", "Sales"], limit=50)
+            rows = view.data(
+                condition=Condition("Sales", Operator.GTE, 1000),
+                limit=100,
+            )
         """
         resolved_cols = self._resolve_columns(columns) if columns else None
         built_condition = self._build_condition(condition)
@@ -233,8 +411,24 @@ class View(
     def refresh(self) -> View:
         """Re-fetch metadata from the API and update local state.
 
+        Updates ``columns``, ``display_names``, ``column_types``, and ``raw``
+        to reflect any changes (e.g. columns added by pipeline tasks).
+
+        .. note::
+
+            Pipeline-derived columns (from add_column, math, etc.) are
+            included only when the server response contains ``taskwise_info``.
+            If a column is missing after refresh, call ``view.data(limit=1)``
+            to verify the column exists in the output, or re-get the view
+            with ``client.views.get(view.id)``.
+
         Returns:
             self (for chaining).
+
+        Example::
+
+            view.refresh()
+            print(view.display_names)  # updated column list
         """
         proj = getattr(self._client, "project_id", None)
         if proj is None:
@@ -249,66 +443,232 @@ class View(
         self._build_column_maps(data)
         return self
 
+    def get_metadata(self) -> list[dict[str, Any]]:
+        """Return current column metadata as a list of dicts.
+
+        Each dict has keys ``display_name``, ``internal_name``, and ``type``.
+        Reflects all columns including those added by pipeline transformations.
+
+        Returns:
+            List of column metadata dicts.
+
+        Example::
+
+            meta = view.get_metadata()
+            for col in meta:
+                print(f"{col['display_name']} ({col['type']})")
+        """
+        return [
+            {
+                "display_name": name,
+                "internal_name": self.columns[name],
+                "type": self.column_types[name],
+            }
+            for name in self.display_names
+        ]
+
     # ── Pipeline Management ─────────────────────────────────────
 
     def list_tasks(self) -> list[dict[str, Any]]:
         """List all pipeline tasks on this dataview.
 
         Returns:
-            List of task dicts.
+            List of task dicts, each with ``id``, ``sequence``,
+            ``task_key``, ``params``, etc.
+
+        Example::
+
+            tasks = view.list_tasks()
+            for t in tasks:
+                print(f"#{t['sequence']} {t['task_key']}")
         """
         result = self._client.pipeline.list_tasks(self.id, self.dataset_id)
         return result.get("tasks", result if isinstance(result, list) else [])
 
     def delete_task(self, task_id: int) -> dict[str, Any]:
-        """Delete a pipeline task.
+        """Delete a pipeline task and re-run the pipeline.
+
+        Removes the task, waits for the pipeline to settle, then refreshes
+        column metadata.
 
         Args:
-            task_id: ID of the task to remove.
+            task_id: ID of the task to remove (from ``list_tasks()``).
 
         Returns:
             Deletion confirmation dict.
+
+        Example::
+
+            tasks = view.list_tasks()
+            view.delete_task(tasks[-1]["id"])  # remove last task
         """
         result = self._client.pipeline.delete_task(self.id, task_id, self.dataset_id)
+        self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
         self.refresh()
         return result
 
     def preview_task(self, task_spec: dict[str, Any]) -> dict[str, Any]:
-        """Preview a task without applying it.
+        """Preview the result of a task without applying it to the pipeline.
 
         Args:
-            task_spec: Task specification dict.
+            task_spec: Task specification dict (same format as ``_add_task``
+                payloads).
 
         Returns:
-            Preview data dict.
+            Preview data dict showing what the data would look like.
+
+        Example::
+
+            preview = view.preview_task({"DELETE": ["column_abc123"]})
         """
         return self._client.pipeline.preview_task(self.id, task_spec, self.dataset_id)
 
-    def get_column_mapping(self) -> dict[str, str]:
-        """Return a mapping of display names to internal column names.
+    # ── Draft Mode ───────────────────────────────────────────────
+
+    @property
+    def is_draft_mode(self) -> bool:
+        """Whether this view is currently in draft mode."""
+        return self._draft_mode
+
+    def enter_draft_mode(self) -> dict[str, Any]:
+        """Enter draft mode — tasks are queued without pipeline execution.
+
+        If already in draft mode, returns immediately without making an API call.
 
         Returns:
-            Dict mapping display names to internal names.
+            Draft mode state dict from the API, or a status dict if already in
+            draft mode.
+        """
+        if self._draft_mode:
+            return {"status": "already_in_draft_mode"}
+
+        result = self._client.pipeline.draft_mode(self.id, DraftCommand.ENTER, self.dataset_id)
+        self._draft_mode = True
+        return result
+
+    def submit_draft(self) -> dict[str, Any]:
+        """Submit queued draft tasks, run the pipeline, and exit draft mode.
+
+        Executes all queued tasks, refreshes column metadata, then
+        exits draft mode.
+
+        Returns:
+            Pipeline state dict after execution.
+        """
+        self._client.pipeline.draft_mode(self.id, DraftCommand.SUBMIT, self.dataset_id)
+        pipeline = self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+        self.refresh()
+        self._client.pipeline.draft_mode(self.id, DraftCommand.EXIT, self.dataset_id)
+        self._draft_mode = False
+        return pipeline
+
+    def discard_draft(self) -> dict[str, Any]:
+        """Discard queued draft tasks and exit draft mode.
+
+        Reverts all tasks added since ``enter_draft_mode()``, refreshes
+        metadata to the pre-draft state.
+
+        Returns:
+            Draft mode state dict from the discard call.
+        """
+        result = self._client.pipeline.draft_mode(self.id, DraftCommand.DISCARD, self.dataset_id)
+        self._client.pipeline.draft_mode(self.id, DraftCommand.EXIT, self.dataset_id)
+        self.refresh()
+        self._draft_mode = False
+        return result
+
+    def set_auto_run(self, enabled: bool) -> dict[str, Any]:
+        """Toggle auto-run on the pipeline.
+
+        When auto-run is enabled (default), each transformation triggers
+        immediate pipeline execution. When disabled, the view enters draft
+        mode and tasks are queued.
+
+        Args:
+            enabled: ``True`` to enable auto-run, ``False`` to disable.
+
+        Returns:
+            Updated pipeline state dict.
+        """
+        result = self._client.pipeline.edit_pipeline(
+            self.id,
+            [{"op": "command", "path": "auto_run", "value": enabled}],
+            self.dataset_id,
+        )
+        self._draft_mode = not enabled
+        return result
+
+    def draft(self) -> _DraftContext:
+        """Context manager for draft mode.
+
+        Enters draft mode on ``__enter__``, submits on clean exit,
+        discards on exception::
+
+            with view.draft():
+                view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+                view.math("Price * 2", new_column="Double")
+            # Pipeline runs once for both tasks
+        """
+        return _DraftContext(self)
+
+    def get_column_mapping(self) -> dict[str, str]:
+        """Return a copy of the display-name-to-internal-name mapping.
+
+        Returns:
+            Dict mapping display names to internal names (e.g.
+            ``{"Sales": "column_abc123", ...}``).
+
+        Example::
+
+            mapping = view.get_column_mapping()
+            print(mapping)  # {"Sales": "column_abc123", "Region": "column_xyz"}
         """
         return dict(self.columns)
 
     def branch_out(
         self,
-        dest_dataset_id: int,
+        dataset_name: str,
+        *,
+        target_ds_id: int | None = None,
+        save_as_mode: SaveAsDatasetMode = SaveAsDatasetMode.REPLACE,
         column_mapping: dict[str, str] | None = None,
-        **kwargs: Any,
-    ) -> dict[str, Any]:
-        """Branch out (export) this view to another dataset.
+        label_ids: list[int] | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
+        timeout: int | None = None,
+    ) -> int:
+        """Branch out — save this view's data as a Mammoth dataset.
+
+        Shortcut for :meth:`ViewExport.to_dataset`. ``target_ds_id`` None
+        creates a new dataset named *dataset_name*; an int replaces/appends
+        into that existing dataset (per *save_as_mode*).
 
         Args:
-            dest_dataset_id: Target dataset ID.
-            column_mapping: Column mapping dict (optional).
-            **kwargs: Additional export options.
+            dataset_name: Name for the new dataset (display name when writing
+                into an existing one).
+            target_ds_id: Existing dataset to write into; None creates a new one.
+            save_as_mode: Replace or append when writing the output dataset.
+            column_mapping: Source -> destination column-name map (empty = all).
+            label_ids: Folder/label ids for the new dataset.
+            condition: Optional row filter applied before copying.
+            timeout: Max seconds to wait for the job.
 
         Returns:
-            Export result dict.
+            The id of the dataset written to (new when ``target_ds_id`` is None,
+            otherwise ``target_ds_id``).
+
+        Example::
+
+            new_id = view.branch_out(dataset_name="Q1 snapshot")
         """
-        return self.export.to_dataset(dest_dataset_id, column_mapping, **kwargs)
+        return self.export.to_dataset(
+            dataset_name,
+            target_ds_id=target_ds_id,
+            save_as_mode=save_as_mode,
+            column_mapping=column_mapping,
+            label_ids=label_ids,
+            condition=condition,
+            timeout=timeout,
+        )
 
     def __repr__(self) -> str:
         return f"View(id={self.id}, name={self.name!r}, " f"columns={len(self.display_names)})"
@@ -329,14 +689,12 @@ class ViewExport:
         self._client = view._client
 
     def _create_export(
-        self, handler_type: str, target_properties: dict[str, Any], **kwargs: Any
-    ) -> dict[str, Any]:
+        self, handler_type: HandlerType, target_properties: dict[str, Any], **kwargs: Any
+    ) -> ExportResult:
         """Internal helper to create an export."""
-        from mammoth.models.exports import AddExportSpec, HandlerType, TriggerType
-
         spec = AddExportSpec(
             DATAVIEW_ID=self._view.id,
-            handler_type=HandlerType(handler_type),
+            handler_type=handler_type,
             trigger_type=kwargs.get("trigger_type", TriggerType.PIPELINE),
             target_properties=target_properties,
             additional_properties=kwargs.get("additional_properties", {}),
@@ -360,8 +718,11 @@ class ViewExport:
         username: str,
         password: str,
         **kwargs: Any,
-    ) -> dict[str, Any]:
-        """Export to PostgreSQL database.
+    ) -> ExportResult:
+        """Export to a PostgreSQL database.
+
+        Requires a pre-configured PostgreSQL instance accessible from
+        the Mammoth platform.
 
         Args:
             host: Database host.
@@ -370,12 +731,22 @@ class ViewExport:
             table: Target table name.
             username: Database username.
             password: Database password.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, etc.).
 
         Returns:
             Export result dict.
+
+        Example::
+
+            view.export.to_postgres(
+                host="db.example.com", port=5432,
+                database="analytics", table="sales_export",
+                username="user", password="pass",
+            )
         """
         return self._create_export(
-            "POSTGRES",
+            HandlerType.POSTGRES,
             {
                 "host": host,
                 "port": port,
@@ -396,7 +767,7 @@ class ViewExport:
         username: str,
         password: str,
         **kwargs: Any,
-    ) -> dict[str, Any]:
+    ) -> ExportResult:
         """Export to MySQL database.
 
         Args:
@@ -406,12 +777,16 @@ class ViewExport:
             table: Target table name.
             username: Database username.
             password: Database password.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
 
         Returns:
             Export result dict.
         """
         return self._create_export(
-            "MYSQL",
+            HandlerType.MYSQL,
             {
                 "host": host,
                 "port": port,
@@ -426,29 +801,37 @@ class ViewExport:
     def to_s3(
         self,
         file_name: str | None = None,
-        file_type: str = "csv",
+        file_type: ExportFileType = ExportFileType.CSV,
         include_hidden: bool = False,
         **kwargs: Any,
-    ) -> dict[str, Any]:
-        """Export to S3.
+    ) -> ExportResult:
+        """Export to S3 (Mammoth-managed bucket).
 
         Args:
-            file_name: Output filename (auto-generated if not provided).
-            file_type: File format (default "csv").
+            file_name: Output filename. Auto-generated with timestamp if
+                not provided.
+            file_type: File format (default ``ExportFileType.CSV``).
+                Supported formats: CSV, JSON, PARQUET.
             include_hidden: Include hidden columns (default False).
+            **kwargs: Additional export options.
 
         Returns:
             Export result dict with download URL.
+
+        Example::
+
+            result = view.export.to_s3(file_name="report.csv")
+            view.export.to_s3(file_type=ExportFileType.PARQUET)
         """
         if file_name is None:
             ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             file_name = f"view_{self._view.id}_export_{ts}.{file_type}"
 
         return self._create_export(
-            "S3",
+            HandlerType.S3,
             {
                 "file": file_name,
-                "file_type": file_type,
+                "file_type": file_type.value,
                 "include_hidden": include_hidden,
                 "is_format_set": True,
                 "use_format": True,
@@ -458,33 +841,62 @@ class ViewExport:
 
     def to_dataset(
         self,
-        dest_dataset_id: int,
+        dataset_name: str,
+        *,
+        target_ds_id: int | None = None,
+        save_as_mode: SaveAsDatasetMode = SaveAsDatasetMode.REPLACE,
         column_mapping: dict[str, str] | None = None,
-        **kwargs: Any,
-    ) -> dict[str, Any]:
-        """Export to another Mammoth dataset (branch out).
+        label_ids: list[int] | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
+        timeout: int | None = None,
+    ) -> int:
+        """Save this view's data as an internal Mammoth dataset (branch out).
+
+        Runs through the ``internal_dataset`` export handler and blocks until
+        the dataset is materialised.
 
         Args:
-            dest_dataset_id: Target dataset ID.
-            column_mapping: Column mapping dict (optional).
+            dataset_name: Name for the new dataset (display name when writing
+                into an existing one).
+            target_ds_id: Existing dataset to write into; None creates a new one.
+            save_as_mode: Replace or append when writing the output dataset.
+            column_mapping: Source -> destination column-name map (empty = all).
+            label_ids: Folder/label ids for the new dataset.
+            condition: Optional row filter applied before copying.
+            timeout: Max seconds to wait for the job.
 
         Returns:
-            Export result dict.
+            The id of the dataset written to (new when ``target_ds_id`` is None,
+            otherwise ``target_ds_id``).
+
+        Example::
+
+            new_id = view.export.to_dataset("Sales snapshot")
         """
-        target: dict[str, Any] = {"dataset_name": str(dest_dataset_id)}
-        if column_mapping:
-            target["COLUMN_MAPPING"] = column_mapping
-        return self._create_export("INTERNAL_DATASET", target, **kwargs)
+        target_properties = build_branch_out_params(
+            dataset_name,
+            target_ds_id=target_ds_id,
+            save_as_mode=save_as_mode,
+            column_mapping=column_mapping,
+            label_ids=label_ids,
+        )
+        return self._view._run_internal_dataset_export(target_properties, timeout, condition)
 
     def to_csv(self, output_path: str | None = None, timeout: int = 300) -> Path:
-        """Download dataview data as CSV file.
+        """Download dataview data as a local CSV file.
 
         Args:
-            output_path: Path for the output file.
+            output_path: Local path for the output file. Auto-generated
+                if not provided.
             timeout: Timeout in seconds (default 300).
 
         Returns:
-            Path to the downloaded CSV file.
+            :class:`~pathlib.Path` to the downloaded CSV file.
+
+        Example::
+
+            path = view.export.to_csv("output.csv")
+            print(f"Downloaded to {path}")
         """
         return self._client.exports.to_csv(
             dataview_id=self._view.id,
@@ -495,31 +907,45 @@ class ViewExport:
 
     def to_ftp(
         self,
-        host: str,
-        path: str,
+        domain: str,
+        directory: str,
+        file: str,
         username: str,
         password: str,
         port: int = 21,
         **kwargs: Any,
-    ) -> dict[str, Any]:
-        """Export to FTP server.
+    ) -> ExportResult:
+        """Export to an FTP server.
 
         Args:
-            host: FTP host.
-            path: Remote file path.
+            domain: FTP server hostname.
+            directory: Remote directory to write into.
+            file: Remote filename to write.
             username: FTP username.
             password: FTP password.
             port: FTP port (default 21).
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
 
         Returns:
-            Export result dict.
+            The created export trigger record or its tracking job.
+
+        Example::
+
+            view.export.to_ftp(
+                domain="ftp.example.com", directory="/exports",
+                file="sales.csv", username="user", password="pass",
+            )
         """
         return self._create_export(
-            "FTP",
+            HandlerType.FTP,
             {
-                "host": host,
+                "domain": domain,
                 "port": port,
-                "path": path,
+                "directory": directory,
+                "file": file,
                 "username": username,
                 "password": password,
             },
@@ -529,132 +955,613 @@ class ViewExport:
     def to_sftp(
         self,
         host: str,
-        path: str,
         username: str,
-        password: str,
+        password: str = "",
+        directory: str = "",
+        file_name: str = "",
         port: int = 22,
+        randomize_file_name: bool = False,
+        ssh_key_authentication: bool = False,
+        private_key: str = "",
+        passphrase: str = "",
         **kwargs: Any,
-    ) -> dict[str, Any]:
-        """Export to SFTP server.
+    ) -> ExportResult:
+        """Export to an SFTP server.
+
+        Supports both password and private-key authentication. For key auth,
+        set *ssh_key_authentication* and provide *private_key* (PEM string)
+        plus an optional *passphrase*.
 
         Args:
-            host: SFTP host.
-            path: Remote file path.
+            host: SFTP server hostname.
             username: SFTP username.
-            password: SFTP password.
+            password: SFTP password (omit when using key auth).
+            directory: Remote directory; defaults server-side to the user home.
+            file_name: Output filename; defaults server-side to
+                ``{dataset}_{view}.csv``.
             port: SFTP port (default 22).
+            randomize_file_name: Append a random suffix to the filename.
+            ssh_key_authentication: Authenticate with a private key.
+            private_key: PEM-format private key string (key auth).
+            passphrase: Passphrase protecting *private_key*, if any.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
 
         Returns:
-            Export result dict.
+            The created export trigger record or its tracking job.
+
+        Raises:
+            MammothValidationError: If key authentication is requested without a
+                ``private_key``.
+        """
+        if ssh_key_authentication and not private_key:
+            raise MammothValidationError(ERR_SFTP_KEY_REQUIRED)
+        target: dict[str, Any] = {
+            "host": host,
+            "port": port,
+            "username": username,
+            "directory": directory,
+            "file_name": file_name,
+            "randomize_file_name": randomize_file_name,
+            "ssh_key_authentication": ssh_key_authentication,
+        }
+        if ssh_key_authentication:
+            target["private_key"] = private_key
+            target["passphrase"] = passphrase
+        else:
+            target["password"] = password
+        return self._create_export(HandlerType.SFTP, target, **kwargs)
+
+    def to_email(
+        self,
+        emails: list[str],
+        subject: str = "",
+        message: str = "",
+        resource: str = "",
+        **kwargs: Any,
+    ) -> ExportResult:
+        """Export by emailing a download link to recipients.
+
+        Args:
+            emails: Recipient email addresses.
+            subject: Email subject (defaults server-side).
+            message: Body message appended to the email.
+            resource: Display name of the exported resource in the email.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
+
+        Returns:
+            The created export trigger record or its tracking job.
+
+        Example::
+
+            view.export.to_email(emails=["analyst@example.com"], subject="Q1")
+
+        Raises:
+            MammothValidationError: If *emails* is empty.
+        """
+        if not emails:
+            raise MammothValidationError(ERR_EMAIL_NO_RECIPIENTS)
+        target: dict[str, Any] = {"emails": emails}
+        if subject:
+            target["subject"] = subject
+        if message:
+            target["message"] = message
+        if resource:
+            target["resource"] = resource
+        return self._create_export(HandlerType.EMAIL, target, **kwargs)
+
+    def to_mssql(
+        self,
+        host: str,
+        port: int,
+        database: str,
+        table: str,
+        username: str,
+        password: str,
+        **kwargs: Any,
+    ) -> ExportResult:
+        """Export to a Microsoft SQL Server database.
+
+        Args:
+            host: Database host.
+            port: Database port (SQL Server default is 1433).
+            database: Database name.
+            table: Target table name.
+            username: Database username.
+            password: Database password.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
+
+        Returns:
+            The created export trigger record or its tracking job.
         """
         return self._create_export(
-            "SFTP",
+            HandlerType.MSSQL,
             {
                 "host": host,
                 "port": port,
-                "path": path,
+                "database": database,
+                "table": table,
                 "username": username,
                 "password": password,
             },
             **kwargs,
         )
 
-    def to_email(self, recipients: list[str], **kwargs: Any) -> dict[str, Any]:
-        """Export via email.
+    def to_redshift(
+        self,
+        host: str,
+        port: int,
+        database: str,
+        table: str,
+        username: str,
+        password: str,
+        **kwargs: Any,
+    ) -> ExportResult:
+        """Export to an Amazon Redshift cluster.
+
+        Data is staged through a Mammoth-managed S3 bucket and then
+        ``COPY``-ed into the target table.
 
         Args:
-            recipients: List of email addresses.
+            host: Cluster endpoint host.
+            port: Cluster port (Redshift default is 5439).
+            database: Database name.
+            table: Target table name.
+            username: Database username.
+            password: Database password.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
 
         Returns:
-            Export result dict.
+            The created export trigger record or its tracking job.
         """
-        return self._create_export("EMAIL", {"recipients": recipients}, **kwargs)
+        return self._create_export(
+            HandlerType.REDSHIFT,
+            {
+                "host": host,
+                "port": port,
+                "database": database,
+                "table": table,
+                "username": username,
+                "password": password,
+            },
+            **kwargs,
+        )
 
-    def to_bigquery(self, **kwargs: Any) -> dict[str, Any]:
+    def to_bigquery(
+        self,
+        selected_profile: dict[str, Any],
+        selected_identity: dict[str, Any],
+        table: str,
+        export_type: BigQueryExportType = BigQueryExportType.REPLACE,
+        upsert_keys: list[dict[str, Any]] | None = None,
+        partition: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> ExportResult:
         """Export to Google BigQuery.
 
-        Args:
-            **kwargs: BigQuery connection and table configuration.
-
-        Returns:
-            Export result dict.
-        """
-        _export_keys = {
-            "trigger_type",
-            "additional_properties",
-            "condition",
-            "run_immediately",
-            "validate_only",
-            "end_of_pipeline",
-        }
-        target = {k: v for k, v in kwargs.items() if k not in _export_keys}
-        return self._create_export("BIGQUERY", target, **kwargs)
-
-    def to_redshift(self, **kwargs: Any) -> dict[str, Any]:
-        """Export to Amazon Redshift.
+        Uses an existing Mammoth BigQuery integration; *selected_profile*
+        and *selected_identity* are obtained from that integration rather
+        than passed as raw credentials here.
 
         Args:
-            **kwargs: Redshift connection and table configuration.
+            selected_profile: Project/dataset selection, shaped as
+                ``{"name": "<dataset>", "value": [[project_id, dataset_id]]}``.
+            selected_identity: Service-account identity config, shaped as
+                ``{"identity_config": {...}, "host": "<sa-email>"}``.
+            table: Destination table name.
+            export_type: Write mode (REPLACE, COMBINE, or UPSERT).
+            upsert_keys: Required when *export_type* is UPSERT — a list of
+                ``{"column": {"display_name": "<col>"}}`` dicts.
+            partition: Optional partitioning spec. For datetime partitioning,
+                ``{"FIELD": str, "GRANULARITY": "DAY"|"MONTH"|"YEAR"}``; for
+                integer-range partitioning, ``{"FIELD": str, "START": int,
+                "END": int, "INTERVAL": int}``.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
 
         Returns:
-            Export result dict.
-        """
-        _export_keys = {
-            "trigger_type",
-            "additional_properties",
-            "condition",
-            "run_immediately",
-            "validate_only",
-            "end_of_pipeline",
-        }
-        target = {k: v for k, v in kwargs.items() if k not in _export_keys}
-        return self._create_export("REDSHIFT", target, **kwargs)
+            The created export trigger record or its tracking job.
 
-    def to_elasticsearch(self, **kwargs: Any) -> dict[str, Any]:
-        """Export to Elasticsearch.
+        Raises:
+            MammothValidationError: If *export_type* is UPSERT but no
+                *upsert_keys* are given.
+        """
+        if export_type is BigQueryExportType.UPSERT and not upsert_keys:
+            raise MammothValidationError(ERR_BIGQUERY_UPSERT_KEYS)
+        target: dict[str, Any] = {
+            "selected_profile": selected_profile,
+            "selected_identity": selected_identity,
+            "table": table,
+            "exportType": export_type.value,
+        }
+        if upsert_keys is not None:
+            target["upsertKeys"] = upsert_keys
+        if partition is not None:
+            target["partition"] = partition
+        return self._create_export(HandlerType.BIGQUERY, target, **kwargs)
+
+    def to_elasticsearch(
+        self,
+        host: str,
+        username: str,
+        password: str,
+        index: str,
+        port: int = 9243,
+        connection: str = "https",
+        chunksize: int = 200,
+        **kwargs: Any,
+    ) -> ExportResult:
+        """Export to an Elasticsearch index.
 
         Args:
-            **kwargs: Elasticsearch connection and index configuration.
+            host: Elasticsearch host.
+            username: Auth username.
+            password: Auth password.
+            index: Destination index name.
+            port: Port (default 9243).
+            connection: Protocol, ``"http"`` or ``"https"`` (default).
+            chunksize: Bulk-insert batch size (default 200).
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
 
         Returns:
-            Export result dict.
+            The created export trigger record or its tracking job.
         """
-        _export_keys = {
-            "trigger_type",
-            "additional_properties",
-            "condition",
-            "run_immediately",
-            "validate_only",
-            "end_of_pipeline",
-        }
-        target = {k: v for k, v in kwargs.items() if k not in _export_keys}
-        return self._create_export("ELASTICSEARCH", target, **kwargs)
+        return self._create_export(
+            HandlerType.ELASTICSEARCH,
+            {
+                "host": host,
+                "port": port,
+                "username": username,
+                "password": password,
+                "index": index,
+                "connection": connection,
+                "chunksize": chunksize,
+            },
+            **kwargs,
+        )
 
-    def publish_to_db(self, **kwargs: Any) -> dict[str, Any]:
-        """Publish dataview to database.
+    def to_azure_blob(
+        self,
+        storage_account_name: str,
+        tenant_id: str,
+        client_id: str,
+        client_secret: str,
+        container_name: str,
+        folder_path: str = "",
+        file_name: str = "",
+        **kwargs: Any,
+    ) -> ExportResult:
+        """Export to Azure Blob Storage.
 
         Args:
-            **kwargs: Database connection and table configuration.
+            storage_account_name: Azure storage account name.
+            tenant_id: Azure AD tenant id.
+            client_id: App registration client id.
+            client_secret: App registration client secret.
+            container_name: Target blob container.
+            folder_path: Optional subfolder within the container.
+            file_name: Optional output filename (no slashes).
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
 
         Returns:
-            Export result dict.
+            The created export trigger record or its tracking job.
         """
-        _export_keys = {
-            "trigger_type",
-            "additional_properties",
-            "condition",
-            "run_immediately",
-            "validate_only",
-            "end_of_pipeline",
+        target: dict[str, Any] = {
+            "storage_account_name": storage_account_name,
+            "tenant_id": tenant_id,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "container_name": container_name,
         }
-        target = {k: v for k, v in kwargs.items() if k not in _export_keys}
-        return self._create_export("PUBLISHDB", target, **kwargs)
+        if folder_path:
+            target["folder_path"] = folder_path
+        if file_name:
+            target["file_name"] = file_name
+        return self._create_export(HandlerType.AZURE_BLOB, target, **kwargs)
+
+    def to_sharepoint(
+        self,
+        tenant_id: str,
+        client_id: str,
+        client_secret: str,
+        site_url: str,
+        document_library: str = "Documents",
+        folder_path: str = "",
+        file_name: str = "",
+        **kwargs: Any,
+    ) -> ExportResult:
+        """Export to a SharePoint document library.
+
+        Args:
+            tenant_id: Azure AD tenant id.
+            client_id: App registration client id.
+            client_secret: App registration client secret.
+            site_url: Full or partial SharePoint site URL.
+            document_library: Target library (default ``"Documents"``).
+            folder_path: Optional subfolder path within the library.
+            file_name: Optional output filename.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
+
+        Returns:
+            The created export trigger record or its tracking job.
+        """
+        target: dict[str, Any] = {
+            "tenant_id": tenant_id,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "site_url": site_url,
+            "document_library": document_library,
+        }
+        if folder_path:
+            target["folder_path"] = folder_path
+        if file_name:
+            target["file_name"] = file_name
+        return self._create_export(HandlerType.SHAREPOINT, target, **kwargs)
+
+    def to_onedrive(
+        self,
+        tenant_id: str,
+        client_id: str,
+        client_secret: str,
+        user_id: str,
+        folder_path: str = "",
+        file_name: str = "",
+        **kwargs: Any,
+    ) -> ExportResult:
+        """Export to a user's OneDrive.
+
+        Args:
+            tenant_id: Azure AD tenant id.
+            client_id: App registration client id.
+            client_secret: App registration client secret.
+            user_id: Azure AD user object id or UPN whose drive is targeted.
+            folder_path: Optional subfolder path.
+            file_name: Optional output filename.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
+
+        Returns:
+            The created export trigger record or its tracking job.
+        """
+        target: dict[str, Any] = {
+            "tenant_id": tenant_id,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "user_id": user_id,
+        }
+        if folder_path:
+            target["folder_path"] = folder_path
+        if file_name:
+            target["file_name"] = file_name
+        return self._create_export(HandlerType.ONEDRIVE, target, **kwargs)
+
+    def to_tableau(
+        self,
+        server_url: str,
+        token_name: str,
+        token_secret: str,
+        site_name: str = "",
+        project_name: str = "Default",
+        datasource_name: str = "mammoth_export",
+        ca_bundle_path: str = "",
+        **kwargs: Any,
+    ) -> ExportResult:
+        """Publish this view as a Tableau Server datasource.
+
+        Authenticates with a Tableau Personal Access Token (PAT).
+
+        Args:
+            server_url: Tableau Server base URL.
+            token_name: PAT name.
+            token_secret: PAT secret.
+            site_name: Tableau site; empty string targets the default site.
+            project_name: Destination project (default ``"Default"``).
+            datasource_name: Published datasource name
+                (default ``"mammoth_export"``).
+            ca_bundle_path: Optional CA bundle path for self-signed TLS.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
+
+        Returns:
+            The created export trigger record or its tracking job.
+        """
+        target: dict[str, Any] = {
+            "server_url": server_url,
+            "token_name": token_name,
+            "token_secret": token_secret,
+            "site_name": site_name,
+            "project_name": project_name,
+            "datasource_name": datasource_name,
+        }
+        if ca_bundle_path:
+            target["ca_bundle_path"] = ca_bundle_path
+        return self._create_export(HandlerType.TABLEAU_SERVER, target, **kwargs)
+
+    def to_powerbi(
+        self,
+        username: str,
+        password: str,
+        client_id: str,
+        dataset: str,
+        table: str,
+        **kwargs: Any,
+    ) -> ExportResult:
+        """Push this view into a Power BI dataset table.
+
+        Args:
+            username: Power BI account username.
+            password: Power BI account password.
+            client_id: Azure AD application (client) id.
+            dataset: Target Power BI dataset name.
+            table: Target table within the dataset.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
+
+        Returns:
+            The created export trigger record or its tracking job.
+        """
+        return self._create_export(
+            HandlerType.POWERBI,
+            {
+                "username": username,
+                "password": password,
+                # Backend reads the camelCase key (powerbi.py:82,140).
+                "clientId": client_id,
+                "dataset": dataset,
+                "table": table,
+            },
+            **kwargs,
+        )
+
+    def to_rest_api(
+        self,
+        base_url: str,
+        endpoint_path: str,
+        auth_type: RestAuthType = RestAuthType.NONE,
+        http_method: HttpMethod = HttpMethod.POST,
+        wrap_path: str = "records",
+        batch_size: int = 1000,
+        timeout_seconds: int = 30,
+        ssl_verify: bool = True,
+        auth: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        query_params: dict[str, str] | None = None,
+        extra_body_fields: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> ExportResult:
+        """Export rows to a generic REST API endpoint.
+
+        Rows are batched and POSTed (or PUT/PATCHed) to
+        ``base_url + endpoint_path``.
+
+        Args:
+            base_url: API base URL (http/https).
+            endpoint_path: Path appended to *base_url*, e.g. ``"/v1/records"``.
+            auth_type: Authentication scheme (:class:`RestAuthType`); defaults to
+                ``RestAuthType.NONE``.
+            http_method: Request verb (:class:`HttpMethod`); defaults to
+                ``HttpMethod.POST``.
+            wrap_path: Dot-path under which records are nested in the body
+                (default ``"records"``).
+            batch_size: Records per request (default 1000, 1-10000).
+            timeout_seconds: Per-request timeout, 5-300s (default 30).
+            ssl_verify: Verify TLS certificates (default True).
+            auth: Auth-type-specific secrets, merged flat into the request.
+                ``api_key``: ``{"key_name", "key_value", "key_location"}``.
+                ``bearer``: ``{"token"}``. ``basic``: ``{"username", "password"}``.
+                ``oauth2_authorization_code``: ``{"token_url", "client_id",
+                "client_secret", "refresh_token", ...}``.
+            headers: Static headers sent on every request.
+            query_params: URL query params appended to every request.
+            extra_body_fields: Static fields merged alongside records in body.
+            **kwargs: Additional export options (``trigger_type``,
+                ``run_immediately``, ``validate_only``,
+                ``end_of_pipeline``, ``additional_properties``,
+                ``condition``).
+
+        Returns:
+            The created export trigger record or its tracking job.
+
+        Raises:
+            MammothValidationError: If *batch_size* or *timeout_seconds* is
+                outside the accepted range.
+        """
+        if not _REST_BATCH_SIZE_MIN <= batch_size <= _REST_BATCH_SIZE_MAX:
+            raise MammothValidationError(ERR_REST_BATCH_SIZE.format(value=batch_size))
+        if not _REST_TIMEOUT_MIN <= timeout_seconds <= _REST_TIMEOUT_MAX:
+            raise MammothValidationError(ERR_REST_TIMEOUT.format(value=timeout_seconds))
+        target: dict[str, Any] = {
+            "base_url": base_url,
+            "endpoint_path": endpoint_path,
+            "auth_type": auth_type.value,
+            "http_method": http_method.value,
+            "wrap_path": wrap_path,
+            "batch_size": batch_size,
+            "timeout_seconds": timeout_seconds,
+            "ssl_verify": ssl_verify,
+        }
+        if auth:
+            target.update(auth)
+        if headers is not None:
+            target["default_headers"] = headers
+        if query_params is not None:
+            target["query_params"] = query_params
+        if extra_body_fields is not None:
+            target["extra_body_fields"] = extra_body_fields
+        return self._create_export(HandlerType.GENERIC_REST_API_EXPORT, target, **kwargs)
+
+    def publish_to_db(self, table: str, odbc_type: OdbcType = OdbcType.POSTGRES) -> dict[str, Any]:
+        """Publish this view to a Mammoth-managed database for dashboards.
+
+        Unlike the other export helpers, publish-to-db uses
+        Mammoth-managed connection credentials (configured once per
+        workspace) — you only name the target *table* and connection type.
+        It posts to the dedicated ``publish-to-db`` endpoint, not the
+        pipeline-exports endpoint.
+
+        Args:
+            table: Destination table name.
+            odbc_type: Managed connection type (postgres or bigquery).
+
+        Returns:
+            Dict with the tracking ``job_id`` for the publish job.
+
+        Example::
+
+            view.export.publish_to_db(table="sales_dashboard")
+        """
+        ws = self._client.workspace_id
+        proj = getattr(self._client, "project_id", None)
+        if proj is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
+
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{self._view.dataset_id}"
+            f"/dataviews/{self._view.id}/publish-to-db",
+            json={"odbc_type": odbc_type.value, "target_properties": {"table": table}},
+        )
 
     def list(self) -> _list[dict[str, Any]]:
-        """List all exports for this dataview.
+        """List all exports configured for this dataview.
 
         Returns:
-            List of export dicts.
+            List of export dicts, each with ``id``, ``handler_type``,
+            ``target_properties``, etc.
+
+        Example::
+
+            exports = view.export.list()
+            for exp in exports:
+                print(f"{exp['id']}: {exp['handler_type']}")
         """
         result = self._client.exports.list(dataview_id=self._view.id)
         if hasattr(result, "exports"):
@@ -662,13 +1569,18 @@ class ViewExport:
         return result.get("exports", []) if isinstance(result, dict) else []
 
     def delete(self, export_id: int) -> dict[str, Any]:
-        """Delete an export.
+        """Delete an export configuration.
 
         Args:
-            export_id: ID of the export to delete.
+            export_id: ID of the export to delete (from ``list()``).
 
         Returns:
             Deletion confirmation dict.
+
+        Example::
+
+            exports = view.export.list()
+            view.export.delete(exports[0]["id"])
         """
         ws = self._client.workspace_id
         proj = getattr(self._client, "project_id", None)

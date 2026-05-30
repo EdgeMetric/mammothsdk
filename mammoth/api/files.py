@@ -130,7 +130,7 @@ class FilesAPI:
     def upload(
         self,
         files: _list[str | Path | BinaryIO] | str | Path | BinaryIO | None = None,
-        folder_resource_id: str | None = None,
+        folder_resource_id: str | int | None = None,
         append_to_ds_id: int | None = None,
         override_target_schema: bool | None = None,
         wait_for_completion: bool = True,
@@ -252,7 +252,7 @@ class FilesAPI:
         if not folder_path.exists() or not folder_path.is_dir():
             raise ValueError(f"Folder not found or not a directory: {folder_path}")
 
-        files = [f for f in folder_path.iterdir() if f.is_file()]
+        files: _list[str | Path | BinaryIO] = [f for f in folder_path.iterdir() if f.is_file()]
         if not files:
             raise ValueError(f"No files found in folder: {folder_path}")
 

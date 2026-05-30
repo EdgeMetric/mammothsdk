@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import functools
 import inspect
 import json
@@ -9,18 +10,31 @@ import logging
 import time
 from typing import Any
 
+from mcp.server.fastmcp import Context
+from mcp.types import CallToolResult, TextContent
+
 from mammoth import (
     CompoundCondition,
     Condition,
     Operator,
 )
 from mammoth.exceptions import MammothAPIError, MammothColumnError
-from mcp.server.fastmcp import Context
-from mcp.types import CallToolResult, TextContent
-
 from mammoth_mcp.state import ClientManager
 
 logger = logging.getLogger("mammoth_mcp.tools")
+
+
+# ── Async helper for sync SDK calls ─────────────────────────
+
+
+async def run_sync(fn, *args, **kwargs):
+    """Run a synchronous SDK function in a thread to avoid blocking the event loop.
+
+    Sync SDK calls use ``time.sleep()`` for polling, which blocks the asyncio
+    event loop and causes SSE keepalive failures in MCP remote mode. This
+    helper offloads them to a thread pool via ``asyncio.to_thread()``.
+    """
+    return await asyncio.to_thread(fn, *args, **kwargs)
 
 
 # ── Recovery hints by error type ─────────────────────────────
@@ -76,6 +90,7 @@ def error_result(error: Exception) -> CallToolResult:
         body["recovery_hint"] = hint
     return CallToolResult(
         content=[TextContent(type="text", text=json.dumps(body))],
+        structuredContent=body,
         isError=True,
     )
 
@@ -151,7 +166,10 @@ def log_tool_call(fn):
                 success = True
             logger.info(
                 "TOOL_RESULT %s%s success=%s elapsed=%.2fs",
-                fn.__name__, extra, success, elapsed,
+                fn.__name__,
+                extra,
+                success,
+                elapsed,
             )
             return result
         except Exception:
@@ -248,7 +266,11 @@ def format_view_info(view: Any) -> dict[str, Any]:
         "name": view.name,
         "dataset_id": view.dataset_id,
         "columns": [
-            {"name": name, "internal_name": view.columns[name], "type": view.column_types.get(name, "TEXT")}
+            {
+                "name": name,
+                "internal_name": view.columns[name],
+                "type": view.column_types.get(name, "TEXT"),
+            }
             for name in view.display_names
         ],
         "column_count": len(view.display_names),

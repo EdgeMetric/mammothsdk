@@ -2,24 +2,40 @@
 
 from __future__ import annotations
 
-import uuid
 from typing import TYPE_CHECKING, Any
 
-from mammoth.models.pipeline import JoinType, JsonType
+from mammoth._pure.builders import (
+    build_gen_ai_params,
+    build_join_params,
+    build_json_extract_params,
+    build_lookup_params,
+    build_sql_params,
+)
+from mammoth.models.pipeline import (
+    JoinKeySpec,
+    JoinSelectSpec,
+    JoinType,
+    JsonExtractionSpec,
+    JsonOpType,
+    JsonType,
+)
 
 if TYPE_CHECKING:
+    from mammoth._mixins._host import ViewHost
     from mammoth.view import View
+else:
+    ViewHost = object
 
 
-class AdvancedOpsMixin:
+class AdvancedOpsMixin(ViewHost):
     """Mixin for advanced operations on a View: join, lookup, JSON, AI, SQL."""
 
     def join(
         self,
         foreign_view: int | View,
         join_type: JoinType,
-        on: list[dict[str, str]],
-        select: list[str] | list[dict[str, str]],
+        on: list[JoinKeySpec],
+        select: list[str | JoinSelectSpec],
         column_prefix: str | None = None,
     ) -> dict[str, Any]:
         """Join with another dataview (JOIN task).
@@ -29,18 +45,15 @@ class AdvancedOpsMixin:
                 When a View object is passed, display names in ``on.right``
                 and ``select`` are resolved automatically.
             join_type: Join type.
-            on: Join keys::
+            on: Join keys as JoinKeySpec objects::
 
-                [{"left": "Customer ID", "right": "Customer ID"}]
+                [JoinKeySpec(left="Customer ID", right="Customer ID")]
 
-                Both sides use display names when foreign_view is a View object.
-                When foreign_view is an int, ``right`` should be the internal
-                column name in the foreign view.
             select: Columns to bring in from the foreign view. Simple list of
-                display names (when foreign_view is a View) or list of dicts::
+                display names or JoinSelectSpec objects::
 
                     ["Category", "Name"]
-                    [{"column": "Category", "alias": "Cat"}]
+                    [JoinSelectSpec(column="Category", alias="Cat")]
 
             column_prefix: Prefix for joined columns (optional).
 
@@ -54,7 +67,7 @@ class AdvancedOpsMixin:
             view.join(
                 foreign_view=other,
                 join_type=JoinType.LEFT,
-                on=[{"left": "Customer ID", "right": "Customer ID"}],
+                on=[JoinKeySpec(left="Customer ID", right="Customer ID")],
                 select=["Category", "Name"],
             )
 
@@ -62,8 +75,8 @@ class AdvancedOpsMixin:
             view.join(
                 foreign_view=2050,
                 join_type=JoinType.LEFT,
-                on=[{"left": "Customer ID", "right": "column_1"}],
-                select=[{"column": "column_7", "alias": "Category"}],
+                on=[JoinKeySpec(left="Customer ID", right="column_1")],
+                select=[JoinSelectSpec(column="column_7", alias="Category")],
             )
         """
         # Resolve foreign view
@@ -76,52 +89,18 @@ class AdvancedOpsMixin:
             foreign_view_id = foreign_view.id
             foreign_columns = foreign_view.columns
 
-        on_specs = []
-        for j in on:
-            left = j.get("left", "")
-            right = j.get("right", "")
-            on_specs.append(
-                {
-                    "LEFT": self._resolve_column(left),
-                    "RIGHT": (
-                        foreign_columns[right]
-                        if foreign_columns and right in foreign_columns
-                        else right
-                    ),
-                }
+        return self._add_task(
+            build_join_params(
+                foreign_view_id,
+                join_type,
+                on,
+                select,
+                self.columns,
+                self._internal_names,
+                foreign_columns=foreign_columns,
+                column_prefix=column_prefix,
             )
-
-        select_specs = []
-        for s in select:
-            if isinstance(s, str):
-                # Simple display name — resolve via foreign view
-                if foreign_columns and s in foreign_columns:
-                    select_specs.append(
-                        {
-                            "COLUMN": foreign_columns[s],
-                            "ALIAS": s,
-                        }
-                    )
-                else:
-                    select_specs.append({"COLUMN": s, "ALIAS": s})
-            else:
-                col = s.get("column", "")
-                alias = s.get("alias", col)
-                if foreign_columns and col in foreign_columns:
-                    col = foreign_columns[col]
-                select_specs.append({"COLUMN": col, "ALIAS": alias})
-
-        join_spec: dict[str, Any] = {
-            "JOIN_ID": str(uuid.uuid4())[:8],
-            "DATAVIEW_ID": foreign_view_id,
-            "TYPE": join_type,
-            "ON": on_specs,
-            "SELECT": select_specs,
-        }
-        if column_prefix:
-            join_spec["COLUMN_PREFIX"] = column_prefix
-
-        return self._add_task({"JOIN": join_spec})
+        )
 
     def lookup(
         self,
@@ -132,41 +111,56 @@ class AdvancedOpsMixin:
         new_column: str | None = None,
         existing_column: str | None = None,
     ) -> dict[str, Any]:
-        """Lookup values from another dataview (LOOKUP task).
+        """VLOOKUP-style value lookup from another dataview (LOOKUP task).
+
+        For each row, matches ``source`` against ``key`` in the lookup view
+        and returns the corresponding ``value``.
 
         Args:
-            source: Source column display name (the key in this view).
+            source: Display name of the key column in *this* view.
             lookup_view_id: ID of the dataview to look up from.
-            key: Key column name in the lookup view.
-            value: Value column name in the lookup view.
-            new_column: Name for result column.
-            existing_column: Existing column to overwrite.
+            key: Column name of the key in the lookup view (display name
+                or internal name — both are accepted).
+            value: Column name of the value in the lookup view (display name
+                or internal name — both are accepted).
+            new_column: Name for a new result column.
+            existing_column: Display name of existing column to overwrite.
 
         Returns:
             API response dict.
+
+        Example::
+
+            view.lookup(
+                source="Product ID",
+                lookup_view_id=2055,
+                key="column_abc123",
+                value="column_xyz789",
+                new_column="Product Name",
+            )
         """
-        lookup_spec: dict[str, Any] = {
-            "DATAVIEW_ID": lookup_view_id,
-            "SOURCE": self._resolve_column(source),
-            "KEY": key,
-            "VALUE": value,
-        }
-
-        if new_column:
-            lookup_spec["AS"] = self._build_as_column(new_column, "TEXT")
-        elif existing_column:
-            lookup_spec["DESTINATION"] = self._resolve_column(existing_column)
-
-        return self._add_task({"LOOKUP": lookup_spec})
+        return self._add_task(
+            build_lookup_params(
+                source,
+                lookup_view_id,
+                key,
+                value,
+                self.columns,
+                self._internal_names,
+                new_column=new_column,
+                existing_column=existing_column,
+                name_gen=self._next_internal_name,
+            )
+        )
 
     def json_extract(
         self,
         column: str,
         json_type: JsonType = JsonType.OBJECT,
         keys: list[str] | None = None,
-        extractions: list[dict[str, str]] | None = None,
+        extractions: list[JsonExtractionSpec] | None = None,
         keep_source: bool = False,
-        op_type: str | None = None,
+        op_type: JsonOpType | None = None,
     ) -> dict[str, Any]:
         """Extract data from JSON column (JSON_HANDLE task).
 
@@ -175,9 +169,10 @@ class AdvancedOpsMixin:
             json_type: JSON structure type (default JsonType.OBJECT).
             keys: Simple list of keys to extract (each becomes TEXT column).
                 Use for quick extraction without custom types/aliases.
-            extractions: Advanced extraction specs (overrides keys)::
+            extractions: Advanced extraction specs as JsonExtractionSpec objects
+                (overrides keys)::
 
-                [{"key": "name", "as": "Name", "type": "TEXT"}]
+                [JsonExtractionSpec(key="name", as_name="Name", type=ColumnType.TEXT)]
 
             keep_source: Keep the original JSON column (default False).
             op_type: Operation type override.
@@ -194,43 +189,24 @@ class AdvancedOpsMixin:
             view.json_extract(
                 "data",
                 extractions=[
-                    {"key": "name", "as": "Name", "type": "TEXT"},
-                    {"key": "age", "as": "Age", "type": "NUMERIC"},
+                    JsonExtractionSpec(key="name", as_name="Name"),
+                    JsonExtractionSpec(key="age", as_name="Age", type=ColumnType.NUMERIC),
                 ],
             )
         """
-        extract_specs: list[dict[str, str]] = []
-        if extractions:
-            for e in extractions:
-                extract_specs.append(
-                    {
-                        "COLUMN": e.get("as", e["key"]),
-                        "KEY": e["key"],
-                        "TYPE": e.get("type", "TEXT").upper(),
-                    }
-                )
-        elif keys:
-            for key in keys:
-                extract_specs.append({"COLUMN": key, "KEY": key, "TYPE": "TEXT"})
-
-        if json_type == JsonType.OBJECT:
-            backend_type = "JSON_OBJECT"
-            default_op = "JSON_OBJECT_TO_COLUMNS"
-            op_key = "JSON_OBJECT_OP_TYPE"
-        else:
-            backend_type = "JSON_LIST"
-            default_op = "JSON_LIST_TO_ROWS"
-            op_key = "JSON_LIST_OP_TYPE"
-
-        json_handle_spec: dict[str, Any] = {
-            "SOURCE": self._resolve_column(column),
-            "TYPE": backend_type,
-            "JSON_EXTRACT": extract_specs,
-            "JSON_KEEP_SOURCE": keep_source,
-            op_key: op_type or default_op,
-        }
-
-        return self._add_task({"JSON_HANDLE": json_handle_spec})
+        return self._add_task(
+            build_json_extract_params(
+                column,
+                self.columns,
+                self._internal_names,
+                json_type=json_type,
+                keys=keys,
+                extractions=extractions,
+                keep_source=keep_source,
+                op_type=op_type,
+                name_gen=self._next_internal_name,
+            )
+        )
 
     def gen_ai(
         self,
@@ -260,16 +236,18 @@ class AdvancedOpsMixin:
                 new_column="Sentiment",
             )
         """
-        gen_ai_spec: dict[str, Any] = {
-            "AS": self._build_as_column(new_column, "TEXT"),
-            "ASSISTANT_DATA": assistant_data or [],
-            "query": prompt,
-            "context_columns": self._resolve_columns(context_columns),
-        }
-        if context_columns_derivation is not None:
-            gen_ai_spec["context_columns_derivation"] = context_columns_derivation
-
-        return self._add_task({"GEN_AI": gen_ai_spec})
+        return self._add_task(
+            build_gen_ai_params(
+                prompt,
+                context_columns,
+                self.columns,
+                self._internal_names,
+                new_column=new_column,
+                assistant_data=assistant_data,
+                context_columns_derivation=context_columns_derivation,
+                name_gen=self._next_internal_name,
+            )
+        )
 
     def _next_sequence_number(self) -> int:
         """Return the next pipeline sequence number for this view."""
@@ -279,16 +257,23 @@ class AdvancedOpsMixin:
         return max(t.get("sequence", 0) for t in tasks) + 1
 
     def generate_sql(self, intent: str) -> str:
-        """Generate SQL from a natural language intent using Mammoth LLM.
+        """Generate SQL from natural language using the Mammoth LLM.
 
-        Calls the ``/sql_generation`` endpoint which converts the intent to SQL
-        and adds the resulting task to the pipeline.
+        Calls the ``/sql_generation`` endpoint which converts the intent
+        into SQL, adds the resulting task to the pipeline, waits for
+        completion, and returns the generated query.
 
         Args:
-            intent: Natural language description (e.g. "count employees by department").
+            intent: Natural language description of the desired query
+                (e.g. ``"count employees by department"``).
 
         Returns:
             The generated SQL query string.
+
+        Example::
+
+            sql = view.generate_sql("show total sales by region")
+            print(sql)  # "SELECT region, SUM(sales) FROM ... GROUP BY region"
         """
         ws = self._client.workspace_id
         proj = getattr(self._client, "project_id", None)
@@ -311,6 +296,7 @@ class AdvancedOpsMixin:
             job = self._client.jobs.wait_for_job(job_id)
         else:
             job = result
+        self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
         self.refresh()
 
         resp = job.get("response", {})
@@ -318,48 +304,23 @@ class AdvancedOpsMixin:
         return inner.get("result", "")
 
     def add_sql(self, query: str) -> dict[str, Any]:
-        """Add a raw SQL query as a pipeline task.
+        """Add a raw SQL query as a pipeline task (SQL task).
+
+        The query runs against the dataview's underlying data. Column
+        references should use internal names (e.g. ``column_abc123``).
+
+        .. note::
+
+            Requires the SQL addon to be enabled on the workspace.
 
         Args:
             query: SQL query string.
 
         Returns:
             API response dict.
+
+        Example::
+
+            view.add_sql("SELECT *, column_abc * 2 AS doubled FROM __TABLE__")
         """
-        return self._add_task({"SQL": {"USER_QUERY": query}})
-
-    def sql(self, intent: str) -> dict[str, Any]:
-        """Generate SQL from intent and add as a pipeline task.
-
-        Combines ``generate_sql`` + pipeline task addition in one call.
-        The backend generates the SQL and adds a pipeline task automatically.
-
-        Args:
-            intent: Natural language description (e.g. "count employees by department").
-
-        Returns:
-            Completed job dict with generated SQL in ``response.response.result``.
-        """
-        ws = self._client.workspace_id
-        proj = getattr(self._client, "project_id", None)
-        if proj is None:
-            raise ValueError("project_id must be set")
-
-        seq = self._next_sequence_number()
-        result = self._client._request_json(
-            "POST",
-            f"/workspaces/{ws}/projects/{proj}/sql_generation",
-            params={
-                "dataset_id": self.dataset_id,
-                "dataview_id": self.id,
-            },
-            json={"params": {"intent": intent, "sequence_number": seq}},
-        )
-
-        job_id = result.get("id")
-        if job_id:
-            job = self._client.jobs.wait_for_job(job_id)
-        else:
-            job = result
-        self.refresh()
-        return job
+        return self._add_task(build_sql_params(query))

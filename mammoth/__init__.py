@@ -41,32 +41,102 @@ Key modules:
 
 from __future__ import annotations
 
-from mammoth.client import DEFAULT_JOB_TIMEOUT, DEFAULT_TIMEOUT, MammothClient
+from mammoth.api.automations import SchedulePatchItem
+from mammoth.client import (
+    DEFAULT_JOB_TIMEOUT,
+    DEFAULT_PIPELINE_TIMEOUT,
+    DEFAULT_TIMEOUT,
+    MammothClient,
+)
 from mammoth.condition import CompoundCondition, Condition, NotCondition
 from mammoth.exceptions import (
     MammothAPIError,
     MammothAuthError,
     MammothColumnError,
     MammothError,
+    MammothExportError,
     MammothJobFailedError,
     MammothJobTimeoutError,
     MammothTransformError,
+    MammothValidationError,
 )
 from mammoth.helpers import parse_path
+from mammoth.models.automations import (
+    AlertType,
+    AutomationConditionMode,
+    AutomationConditionSpec,
+    AutomationConditionType,
+    AutomationPatchItem,
+    AutomationPatchOp,
+    AutomationPatchPath,
+    AutomationStatus,
+    AutomationTaskSpec,
+    AutomationTaskType,
+    ConditionDetailsSpec,
+    DataRefreshConfig,
+    FirstPullAt,
+    OnRefreshAction,
+    PatchAutomationDetails,
+    PullDataExecutionParams,
+    RruleFrequency,
+    RruleSpec,
+    ScheduleCreateSpec,
+    SchedulePatchPath,
+    SchedulePatchValue,
+    ScheduleStatus,
+    ScheduleType,
+    TaskDetailsSpec,
+    WorkItemName,
+    WorkItemSpec,
+)
+from mammoth.models.connectors import DsConfigPatchOp, DsConfigPatchPath
+from mammoth.models.dashboards import (
+    DashboardActionType,
+    DashboardAuthType,
+    DashboardPatchItem,
+    DashboardPatchOp,
+    DashboardPatchPath,
+    DashboardShareRole,
+    DashboardShareUser,
+)
+from mammoth.models.exports import (
+    BigQueryExportType,
+    HandlerType,
+    HttpMethod,
+    OdbcType,
+    RestAuthType,
+    TriggerType,
+)
+from mammoth.models.external_keys import ExternalKeyType, ModelConfigSpec
 from mammoth.models.pipeline import (
     AggregateFunction,
+    AggregationSpec,
+    BulkReplaceMapping,
     ColumnType,
+    ConversionSpec,
+    CopySpec,
+    CrosstabSpec,
     DateComponent,
+    DateDelta,
     DateDiffUnit,
+    DateFunction,
+    DraftCommand,
+    ExportFileType,
     FillDirection,
     FilterType,
+    JoinKeySpec,
+    JoinSelectSpec,
     JoinType,
+    JsonExtractionSpec,
+    JsonOpType,
     JsonType,
     MathOperator,
     Operator,
     ProviderType,
+    SaveAsDatasetMode,
     SetValue,
     SortDirection,
+    SplitColumnSpec,
     SubstringDirection,
     TaskType,
     TextCase,
@@ -74,14 +144,23 @@ from mammoth.models.pipeline import (
     WindowFunction,
     WindowRange,
 )
+from mammoth.models.webhooks import WebhookMode
+from mammoth.models.workspaces import (
+    BillingCycle,
+    UserRolePatchOp,
+    WorkspacePatchOp,
+    WorkspacePatchPath,
+    WorkspaceRoleType,
+)
 from mammoth.view import View, ViewExport
 
-__version__ = "0.2.0"
+__version__ = "0.4.0"
 __all__ = [
     # Client
     "MammothClient",
     "DEFAULT_TIMEOUT",
     "DEFAULT_JOB_TIMEOUT",
+    "DEFAULT_PIPELINE_TIMEOUT",
     # Condition builder
     "Condition",
     "CompoundCondition",
@@ -92,24 +171,95 @@ __all__ = [
     # Enums
     "Operator",
     "ColumnType",
-    "ValueType",
     "JoinType",
     "TextCase",
     "DateComponent",
     "DateDiffUnit",
+    "DateFunction",
     "WindowFunction",
     "WindowRange",
     "FillDirection",
     "AggregateFunction",
-    "ProviderType",
     "FilterType",
     "SortDirection",
-    "MathOperator",
     "SubstringDirection",
     "JsonType",
+    "JsonOpType",
+    "ExportFileType",
+    "MathOperator",
+    "ProviderType",
+    "SaveAsDatasetMode",
     "TaskType",
-    # Dataclasses
+    "DraftCommand",
+    "ValueType",
+    # Parameter spec dataclasses
     "SetValue",
+    "CopySpec",
+    "ConversionSpec",
+    "AggregationSpec",
+    "JoinKeySpec",
+    "JoinSelectSpec",
+    "JsonExtractionSpec",
+    "CrosstabSpec",
+    "SplitColumnSpec",
+    "BulkReplaceMapping",
+    "DateDelta",
+    # Export enums
+    "HandlerType",
+    "TriggerType",
+    "BigQueryExportType",
+    "OdbcType",
+    "RestAuthType",
+    "HttpMethod",
+    # Dashboard enums / models
+    "DashboardActionType",
+    "DashboardAuthType",
+    "DashboardPatchItem",
+    "DashboardPatchOp",
+    "DashboardPatchPath",
+    "DashboardShareRole",
+    "DashboardShareUser",
+    # Automation enums / models
+    "AutomationTaskType",
+    "AutomationConditionType",
+    "AutomationConditionMode",
+    "AutomationPatchOp",
+    "AutomationPatchPath",
+    "AutomationStatus",
+    "AlertType",
+    "AutomationTaskSpec",
+    "TaskDetailsSpec",
+    "DataRefreshConfig",
+    "AutomationConditionSpec",
+    "ConditionDetailsSpec",
+    "AutomationPatchItem",
+    "PatchAutomationDetails",
+    # Schedule enums / models (shared by AutomationsAPI + SchedulesAPI)
+    "RruleFrequency",
+    "ScheduleStatus",
+    "SchedulePatchPath",
+    "WorkItemName",
+    "ScheduleType",
+    "FirstPullAt",
+    "OnRefreshAction",
+    "RruleSpec",
+    "PullDataExecutionParams",
+    "WorkItemSpec",
+    "ScheduleCreateSpec",
+    "SchedulePatchValue",
+    "SchedulePatchItem",
+    # Connector patch models
+    "DsConfigPatchPath",
+    "DsConfigPatchOp",
+    # Workspace patch models
+    "BillingCycle",
+    "WorkspacePatchPath",
+    "WorkspacePatchOp",
+    "WorkspaceRoleType",
+    "UserRolePatchOp",
+    # External keys
+    "ExternalKeyType",
+    "ModelConfigSpec",
     # Exceptions
     "MammothError",
     "MammothAPIError",
@@ -118,6 +268,10 @@ __all__ = [
     "MammothColumnError",
     "MammothJobTimeoutError",
     "MammothJobFailedError",
+    "MammothValidationError",
+    "MammothExportError",
+    # Webhooks
+    "WebhookMode",
     # Helpers
     "parse_path",
 ]

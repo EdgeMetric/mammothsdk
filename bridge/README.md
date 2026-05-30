@@ -1,0 +1,99 @@
+# Mammoth SDK HTTP Bridge
+
+A thin local HTTP server that proxies JSON requests from browser artifacts to the Mammoth Python SDK, adding CORS headers so browser JavaScript can call the SDK without hitting cross-origin restrictions.
+
+## Setup
+
+```bash
+# From the repo root
+poetry install --with bridge
+# or
+pip install -e ".[bridge]"
+```
+
+## Configuration
+
+Create `bridge/.env` (copy from `bridge/.env.example`):
+
+```env
+MAMMOTH_API_KEY=your-api-key
+MAMMOTH_API_SECRET=your-api-secret
+MAMMOTH_WORKSPACE_ID=304
+MAMMOTH_BASE_URL=https://app.mammoth.io/api/v2
+```
+
+All values can also be passed as CLI args (run `python bridge/main.py --help`).
+
+Set the project at runtime via RPC: `{"method": "client.set_project_id", "args": {"project_id": 1134}}`.
+
+## Running
+
+```bash
+python bridge/main.py
+# Mammoth bridge listening on http://127.0.0.1:5555
+```
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Connection test (`{"ok": true}`) |
+| `GET` | `/methods` | List all available SDK methods |
+| `POST` | `/rpc` | Dispatch an SDK method call |
+
+## Request format
+
+```json
+{
+  "method": "view.filter_rows",
+  "view_id": 1039,
+  "args": {
+    "condition": {"column": "Sales", "operator": "GTE", "value": 1000},
+    "filter_type": "SHOW"
+  }
+}
+```
+
+**Method namespaces**: `view.<method>`, `view.export.<method>`, `views.<method>`, `client.<method>`, `client.<sub>.<method>`.
+
+## Response format
+
+```json
+{"ok": true, "result": {...}}
+{"ok": false, "error": "MammothColumnError", "message": "Column 'X' not found..."}
+```
+
+## Condition syntax
+
+```json
+{"column": "Sales", "operator": "GTE", "value": 1000}
+{"and": [{"column": "Sales", "operator": "GTE", "value": 1000}, {"column": "Region", "operator": "EQ", "value": "West"}]}
+{"or": [...]}
+{"not": {"column": "Status", "operator": "EQ", "value": "Closed"}}
+```
+
+## Using with Claude artifacts
+
+The bridge dynamically dispatches any SDK method — there is no hardcoded list. Claude can call `views.get`, `client.projects.list`, `view.filter_rows`, or any other SDK function through the same `POST /rpc` interface.
+
+Claude needs two docs to use the bridge effectively:
+
+1. **This README** — bridge request/response format.
+2. **`docs/full-documentation.md`** — complete SDK reference (all methods, enums, conditions, exports, examples).
+
+## Usage from a browser artifact
+
+```js
+const BRIDGE = "http://localhost:5555";
+
+const res = await fetch(`${BRIDGE}/rpc`, {
+  method: "POST",
+  headers: {"Content-Type": "application/json"},
+  body: JSON.stringify({
+    method: "view.data",
+    view_id: 1039,
+    args: {limit: 10}
+  })
+});
+const {ok, result, error, message} = await res.json();
+```

@@ -19,7 +19,7 @@ class FolderSchema(BaseModel):
     updated_at: datetime | None = Field(
         None, description="Timestamp when the folder was last updated"
     )
-    resource_id: str | None = Field(None, description="Resource ID of the folder")
+    resource_id: str | int | None = Field(None, description="Resource ID of the folder")
     created_by: str | None = Field(None, description="User who created the folder")
     parent_id: int | None = Field(None, description="Parent folder ID")
     resource_path: str | None = Field(None, description="Resource path of the folder")
@@ -28,10 +28,11 @@ class FolderSchema(BaseModel):
 class FoldersList(BaseModel):
     """Schema for a list of folders with pagination."""
 
-    folders: list[FolderSchema] = Field(..., description="List of folder objects")
-    total: int = Field(..., description="Total number of folders")
-    limit: int = Field(..., description="Maximum number of results returned")
-    offset: int = Field(..., description="Number of results skipped")
+    folders: list[FolderSchema] = Field(default_factory=list, description="List of folder objects")
+    total: int | None = Field(None, description="Total number of folders")
+    limit: int | None = Field(None, description="Maximum number of results returned")
+    offset: int | None = Field(None, description="Number of results skipped")
+    next: str | None = Field(None, description="URL for the next page of results")
 
 
 class CreateFolder(BaseModel):

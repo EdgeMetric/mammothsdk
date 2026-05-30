@@ -28,16 +28,37 @@ print(ids)
 # {"workspace_id": 11, "project_id": 10, "dataview_id": 1039}
 ```
 
+## Upload files
+
+```python
+# Upload a single CSV file (returns dataset ID)
+dataset_id = client.files.upload("sales_data.csv")
+
+# Upload multiple files at once
+dataset_ids = client.files.upload(["sales.csv", "customers.xlsx"])
+
+# Upload all files in a folder
+dataset_ids = client.files.upload_folder("./data/")
+
+# After upload, get the view for the new dataset
+views = client.views.list(dataset_id=dataset_id)
+view = views[0]
+print(view.display_names)
+```
+
 ## List resources
 
 ```python
-# List projects
-projects = client.projects.list()
+# List projects — returns envelope dict, unwrap "projects" key
+resp = client.projects.list()
+projects = resp["projects"]                 # list of plain dicts
+for p in projects:
+    print(p["id"], p["name"])               # dict access, NOT p.id / p.name
 
 # List datasets
 datasets = client.datasets.list()
 
-# List views in a dataset
+# List all views in a dataset (returns list of View objects)
 views = client.views.list(dataset_id=42)
 for v in views:
     print(f"{v.id}: {v.name} ({len(v.display_names)} columns)")

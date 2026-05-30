@@ -4,43 +4,47 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from mammoth._pure.builders import (
+    build_crosstab_params,
+    build_pivot_params,
+    build_window_params,
+)
 from mammoth.models.pipeline import (
+    AggregationSpec,
     ColumnType,
+    CrosstabSpec,
+    SaveAsDatasetMode,
     SortDirection,
     WindowFunction,
     WindowRange,
 )
 
 if TYPE_CHECKING:
+    from mammoth._mixins._host import ViewHost
     from mammoth.condition import CompoundCondition, Condition, NotCondition
+else:
+    ViewHost = object
 
 
-class AggregateOpsMixin:
+class AggregateOpsMixin(ViewHost):
     """Mixin for aggregation operations on a View."""
-
-    def _resolve_order_by(self, order_by: list[list[str | SortDirection]]) -> list[list[str]]:
-        """Resolve order_by specs, mapping display names to internal names."""
-        resolved: list[list[str]] = []
-        for ob in order_by:
-            col_name = str(ob[0])
-            col = self._resolve_column(col_name) if col_name in self.columns else col_name
-            direction = ob[1] if len(ob) > 1 else "ASC"
-            resolved.append([col, direction])
-        return resolved
 
     def pivot(
         self,
         group_by: list[str],
-        aggregations: list[dict[str, Any]],
+        aggregations: list[AggregationSpec],
         condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> dict[str, Any]:
         """Group / aggregate / pivot (PIVOT task).
 
         Args:
             group_by: List of display names to group by.
-            aggregations: List of aggregation specs::
+            aggregations: List of :class:`AggregationSpec` objects::
 
-                [{"column": "Sales", "function": AggregateFunction.SUM, "as": "Total Sales"}]
+                    [AggregationSpec(
+                        column="Sales", function=AggregateFunction.SUM,
+                        as_name="Total",
+                    )]
 
             condition: Condition to apply.
 
@@ -51,42 +55,23 @@ class AggregateOpsMixin:
 
             view.pivot(
                 group_by=["Region"],
-                aggregations=[{
-                    "column": "Sales",
-                    "function": AggregateFunction.SUM,
-                    "as": "Total Sales",
-                }],
+                aggregations=[AggregationSpec(
+                    column="Sales",
+                    function=AggregateFunction.SUM,
+                    as_name="Total Sales",
+                )],
             )
         """
-        group_specs = []
-        for idx, g in enumerate(group_by):
-            group_specs.append(
-                {
-                    "COLUMN": self._resolve_column(g),
-                    "ORDER": idx,
-                }
+        return self._add_task(
+            build_pivot_params(
+                group_by,
+                aggregations,
+                self.columns,
+                self._internal_names,
+                condition=condition,
+                column_types=self.column_types,
             )
-
-        select_specs = []
-        base_order = len(group_by)
-        for idx, agg in enumerate(aggregations):
-            func = agg["function"]
-            func_str = func.upper() if isinstance(func, str) else str(func)
-            sel: dict[str, Any] = {
-                "ORDER": base_order + idx,
-                "FUNCTION": func_str,
-                "COLUMN": self._resolve_column(agg["column"]),
-                "AS": agg.get("as", f"{func_str}_{agg['column']}"),
-            }
-            if "delimiter" in agg:
-                sel["DELIMITER"] = agg["delimiter"]
-            select_specs.append(sel)
-
-        pivot_spec: dict[str, Any] = {"GROUP_BY": group_specs, "SELECT": select_specs}
-        if condition:
-            pivot_spec["CONDITION"] = self._build_condition(condition)
-
-        return self._add_task({"PIVOT": pivot_spec})
+        )
 
     def window(
         self,
@@ -126,70 +111,82 @@ class AggregateOpsMixin:
                 order_by=[["Sales", SortDirection.DESC]],
             )
         """
-        evaluate: dict[str, Any] = {"FUNCTION": function}
-        if column:
-            resolved = self._resolve_column(column)
-            evaluate["SOURCES"] = resolved
-            evaluate["ARGUMENTS"] = [resolved]
-
-        window_spec: dict[str, Any] = {
-            "EVALUATE": evaluate,
-            "RANGE": range_type,
-        }
-
-        if new_column:
-            window_spec["AS"] = self._build_as_column(new_column, column_type)
-        elif existing_column:
-            window_spec["DESTINATION"] = self._resolve_column(existing_column)
-
-        if partition_by:
-            window_spec["GROUP_BY"] = [{"COLUMN": self._resolve_column(p)} for p in partition_by]
-
-        if order_by:
-            window_spec["ORDER_BY"] = self._resolve_order_by(order_by)
-
-        return self._add_task({"WINDOW": window_spec})
+        return self._add_task(
+            build_window_params(
+                function,
+                self.columns,
+                self._internal_names,
+                column=column,
+                new_column=new_column,
+                column_type=column_type,
+                existing_column=existing_column,
+                partition_by=partition_by,
+                order_by=order_by,
+                range_type=range_type,
+                name_gen=self._next_internal_name,
+            )
+        )
 
     def crosstab(
         self,
         rows: list[str],
         pivot_column: str,
-        select: dict[str, Any],
-    ) -> dict[str, Any]:
-        """Crosstab / pivot table (CROSSTAB task).
+        select: CrosstabSpec | list[CrosstabSpec],
+        *,
+        dataset_name: str,
+        save_as_mode: SaveAsDatasetMode = SaveAsDatasetMode.REPLACE,
+        target_ds_id: int | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
+        timeout: int | None = None,
+    ) -> int:
+        """Crosstab / group-and-pivot — materialise a new pivoted dataset.
+
+        Row grouping columns define the rows, the ``pivot_column``'s distinct
+        values become new columns, and cells hold the aggregated result.
+
+        Unlike standard transforms, a crosstab produces a NEW dataset, so it is
+        submitted through the internal-dataset export handler and run as an
+        async job. This method blocks until the dataset is materialised.
 
         Args:
-            rows: List of display names for row grouping.
-            pivot_column: Display name of column whose values become columns.
-            select: Aggregation spec::
-
-                {"column": "Sales", "function": AggregateFunction.SUM}
+            rows: Display names of the row-grouping columns.
+            pivot_column: Display name of the column whose distinct values
+                become the output columns.
+            select: A :class:`CrosstabSpec` (or list of them) defining each
+                aggregation function and (except for COUNT) its value column.
+            dataset_name: Name for the dataset the crosstab creates.
+            save_as_mode: Whether to replace or append when writing the output
+                dataset (defaults to :attr:`SaveAsDatasetMode.REPLACE`).
+            target_ds_id: Existing dataset to write into; ``None`` creates a
+                new one.
+            condition: Optional row filter applied before aggregating.
+            timeout: Max seconds to wait for the job (defaults to the client's
+                ``job_timeout``).
 
         Returns:
-            API response dict.
+            The id of the dataset the crosstab wrote to (the new dataset when
+            ``target_ds_id`` is None, otherwise ``target_ds_id``).
+
+        Example::
+
+            from mammoth import CrosstabSpec, AggregateFunction
+
+            view.crosstab(
+                rows=["Region"],
+                pivot_column="Product",
+                select=CrosstabSpec(function=AggregateFunction.SUM, column="Sales"),
+                dataset_name="Sales by Region x Product",
+            )
         """
-        func = select["function"]
-        func_str = func.upper() if isinstance(func, str) else str(func)
-        select_spec: dict[str, Any] = {"FUNCTION": func_str}
-        if "column" in select:
-            select_spec["COLUMN"] = self._resolve_column(select["column"])
-        return self._add_task(
-            {
-                "CROSSTAB": {
-                    "ROWS": [
-                        {
-                            "COLUMN": self._resolve_column(r),
-                            "TYPE": self.column_types.get(r, "TEXT"),
-                        }
-                        for r in rows
-                    ],
-                    "COLUMNS": [
-                        {
-                            "COLUMN": self._resolve_column(pivot_column),
-                            "TYPE": self.column_types.get(pivot_column, "TEXT"),
-                        }
-                    ],
-                    "SELECT": select_spec,
-                },
-            }
+        target_properties = build_crosstab_params(
+            rows,
+            pivot_column,
+            select,
+            dataset_name,
+            self.columns,
+            self._internal_names,
+            self.column_types,
+            save_as_mode=save_as_mode,
+            target_ds_id=target_ds_id,
         )
+        return self._run_internal_dataset_export(target_properties, timeout, condition)

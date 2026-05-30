@@ -146,28 +146,68 @@ class DatasetsAPI:
 
     def update(
         self,
-        dataset_id: int,
-        patch_data: dict[str, Any],
+        patch_data: _list[dict[str, Any]],
         workspace_id: int | None = None,
         project_id: int | None = None,
     ) -> dict[str, Any]:
-        """Update a dataset.
+        """Update datasets using JSON Patch operations.
+
+        The server expects patch operations sent to the plural ``/datasets``
+        endpoint. Each operation must include ``op``, ``path``, and ``value``.
+
+        Supported operations (mapped via ``OP_PATCH_TO_FUNCTION_MAP`` on the
+        backend): ``rename_dataset``, ``update_datasets``, ``delete_datasets``,
+        ``change_ds_column_type``, ``add_columns``, ``remove_columns``,
+        ``rename_column``, ``refresh_data``, ``reattach_connection``.
 
         Args:
-            dataset_id: ID of the dataset to update.
-            patch_data: Patch operation data.
+            patch_data: List of patch operations.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
 
         Returns:
-            Dict with updated dataset information.
+            Dict with update result.
+
+        Example::
+
+            # Rename a dataset
+            client.datasets.update([
+                {"op": "rename_dataset", "path": "/123", "value": {"name": "New Name"}}
+            ])
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
         return self._client._request_json(
             "PATCH",
-            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}",
+            f"/workspaces/{ws}/projects/{proj}/datasets",
             json={"patch": patch_data},
+        )
+
+    def rename(
+        self,
+        dataset_id: int,
+        name: str,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Rename a dataset.
+
+        Convenience method wrapping :meth:`update` with a ``rename_dataset``
+        patch operation.
+
+        Args:
+            dataset_id: ID of the dataset to rename.
+            name: New name for the dataset.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with update result.
+        """
+        return self.update(
+            [{"op": "rename_dataset", "path": f"/{dataset_id}", "value": {"name": name}}],
+            workspace_id=workspace_id,
+            project_id=project_id,
         )
 
     def delete(
@@ -225,28 +265,6 @@ class DatasetsAPI:
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
         self._client._request_json("DELETE", f"/workspaces/{ws}/projects/{proj}/datasets")
-
-    def browse(
-        self,
-        dataset_id: int,
-        workspace_id: int | None = None,
-        project_id: int | None = None,
-    ) -> dict[str, Any]:
-        """Browse dataset contents (dataviews, metadata).
-
-        Args:
-            dataset_id: ID of the dataset.
-            workspace_id: ID of the workspace (uses client default if not provided).
-            project_id: ID of the project (uses client default if not provided).
-
-        Returns:
-            Dict with dataset contents.
-        """
-        ws = workspace_id or self._ws()
-        proj = self._proj(project_id)
-        return self._client._request_json(
-            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/browse"
-        )
 
     def list_batches(
         self,

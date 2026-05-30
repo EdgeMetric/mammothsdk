@@ -1,4 +1,4 @@
-# SDK Architecture (v0.2.0)
+# SDK Architecture (v0.3.0)
 
 ## File Layout
 
@@ -16,7 +16,7 @@ mammoth/
 │   ├── __init__.py
 │   ├── _column_ops.py       # add_column, delete_columns, copy_columns, combine, convert
 │   ├── _filter_ops.py       # filter_rows, set_values
-│   ├── _math_ops.py         # math (string expression + raw format)
+│   ├── _math_ops.py         # math (string expression parser)
 │   ├── _text_ops.py         # text_transform, replace_values, bulk_replace, split, substring
 │   ├── _date_ops.py         # extract_date, date_diff, increment_date
 │   ├── _aggregate_ops.py    # pivot, window, crosstab
@@ -59,7 +59,7 @@ mammoth/
 │   ├── files.py
 │   ├── folders.py
 │   ├── jobs.py
-│   ├── pipeline.py          # Enums + SetValue dataclass
+│   ├── pipeline.py          # Enums + dataclasses (SetValue, CopySpec, ConversionSpec, etc.)
 │   ├── projects.py
 │   ├── webhooks.py
 │   └── workspaces.py
@@ -89,7 +89,7 @@ All enums extend `(str, Enum)` so they:
 - Work as plain strings in JSON serialization (`json.dumps` handles them)
 - Support string comparison: `ColumnType.TEXT == "TEXT"` is True
 - Support string methods: `column_type.upper()` works
-- Accept both enum values AND raw strings in method parameters
+- Require enum values in method parameters (raw strings no longer accepted)
 
 ### Pipeline Task Flow
 
@@ -98,10 +98,27 @@ view.method()
   → Build task payload dict
   → self._add_task(payload)
     → client.pipeline.add_task(dataset_id, view_id, params)
-    → Wait for job completion (client.jobs.wait_for_job())
-    → Refresh view metadata (self.refresh())
+    → If NOT draft mode:
+        → Wait for pipeline completion (client.pipeline.wait_for_pipeline())
+        → Refresh view metadata (self.refresh())
+    → If draft mode: return immediately (task is queued)
   → Return API response
 ```
+
+### Draft Mode
+
+Views support draft mode where tasks are queued without executing the pipeline:
+
+```python
+with view.draft():
+    view.filter_rows(...)   # queued, no pipeline run
+    view.math(...)          # queued, no pipeline run
+# Pipeline runs once here for all queued tasks
+```
+
+The `_DraftContext` class (context manager) calls `enter_draft_mode()` on entry,
+`submit_draft()` on clean exit, or `discard_draft()` on exception. The `_draft_mode`
+flag on View controls whether `_add_task()` skips waiting and metadata refresh.
 
 ### Column Resolution
 
@@ -124,9 +141,9 @@ MammothError (base)
 
 ## Testing
 
-- **Unit tests** (`tests/unit/`): 143 tests, ~0.5s, no API calls needed
-- **Integration tests** (`tests/test_live_api.py`): 43 tests, ~6 min, requires release.mammoth.io
-- Run: `pytest tests/unit/ -q` (unit) or `pytest tests/test_live_api.py -q` (integration)
+- **Unit tests** (`tests/unit/`): 429 tests, ~2s, no API calls needed
+- **Integration tests** (`tests/integration/`): 43 tests, ~6 min, requires API credentials
+- Run: `pytest tests/unit/ -q` (unit) or `pytest tests/integration/ -q` (integration)
 
 ## Code Quality
 

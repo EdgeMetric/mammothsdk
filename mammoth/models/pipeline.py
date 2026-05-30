@@ -67,6 +67,36 @@ class Operator(str, Enum):
     IS_NOT_MAXVAL = "IS_NOT_MAXVAL"
     IS_MINVAL = "IS_MINVAL"
     IS_NOT_MINVAL = "IS_NOT_MINVAL"
+    IN_RANGE = "IN_RANGE"
+    ICONTAINS = "ICONTAINS"
+
+
+class DateFunction(str, Enum):
+    """Date-relative function operands for condition values.
+
+    Used when the comparison value should be a dynamic date/time function
+    rather than a literal. Pass a ``DateFunction`` as the ``value`` argument
+    with ``value_is_date_fn=True`` on a ``Condition``::
+
+        Condition("Order Date", Operator.GT, DateFunction.TODAY, value_is_date_fn=True)
+        Condition("Created", Operator.GTE, DateFunction.NOW, value_is_date_fn=True)
+        Condition("Date", Operator.EQ, DateFunction.MAX, value_is_date_fn=True)
+
+    Functions:
+        NOW — current timestamp (date + time precision).
+        TODAY — current date (date-only, no time component).
+        MAX — maximum value of the filtered column.
+        MIN — minimum value of the filtered column.
+        SYSTEM_DATE — system-configured date (passed as execution timestamp).
+        SYSTEM_TIME — system-configured timestamp (seconds precision).
+    """
+
+    NOW = "NOW"
+    TODAY = "TODAY"
+    MAX = "MAX"
+    MIN = "MIN"
+    SYSTEM_DATE = "SYSTEM_DATE"
+    SYSTEM_TIME = "SYSTEM_TIME"
 
 
 class ColumnType(str, Enum):
@@ -212,6 +242,18 @@ class AggregateFunction(str, Enum):
     CONCAT = "CONCAT"
 
 
+class SaveAsDatasetMode(str, Enum):
+    """Destination mode for a crosstab's output dataset (SAVE_AS_DS_MODE).
+
+    REPLACE — overwrite the rows of the target dataset (also used when
+        creating a brand-new dataset, i.e. ``target_ds_id`` is None).
+    APPEND — append the crosstab result to the target dataset.
+    """
+
+    REPLACE = "REPLACE_IN_DS"
+    APPEND = "APPEND_TO_DS"
+
+
 class ProviderType(str, Enum):
     """Value provider types for SET task VALUES items.
 
@@ -273,6 +315,21 @@ class JsonType(str, Enum):
     LIST = "LIST"
 
 
+class JsonOpType(str, Enum):
+    """JSON operation types for json_extract."""
+
+    JSON_OBJECT_TO_COLUMNS = "JSON_OBJECT_TO_COLUMNS"
+    JSON_LIST_TO_ROWS = "JSON_LIST_TO_ROWS"
+
+
+class ExportFileType(str, Enum):
+    """File types for S3 and file-based exports."""
+
+    CSV = "csv"
+    JSON = "json"
+    PARQUET = "parquet"
+
+
 class TaskType(str, Enum):
     """Pipeline task types."""
 
@@ -305,6 +362,25 @@ class TaskType(str, Enum):
     DISCARD_DUPLICATES = "DISCARD_DUPLICATES"
 
 
+class DraftCommand(str, Enum):
+    """Draft mode commands for pipeline task batching.
+
+    Use via ``view.draft()`` context manager or explicit methods::
+
+        with view.draft():  # preferred
+            view.filter_rows(...)
+
+        view.enter_draft_mode()   # uses DraftCommand.ENTER
+        view.submit_draft()       # uses SUBMIT then EXIT
+        view.discard_draft()      # uses DISCARD then EXIT
+    """
+
+    ENTER = "enter"
+    SUBMIT = "submit"
+    DISCARD = "discard"
+    EXIT = "exit"
+
+
 @dataclass
 class SetValue:
     """A value specification for set_values().
@@ -326,6 +402,181 @@ class SetValue:
 
     value: Any
     condition: Condition | CompoundCondition | NotCondition | None = field(default=None)
+
+
+# ── Parameter spec dataclasses ─────────────────────────────────
+# These are the required input types for transformation methods.
+# Enum-typed fields enforce valid values at construction time.
+
+
+@dataclass
+class SplitColumnSpec:
+    """Specification for a new column in :meth:`View.split_column`.
+
+    Example::
+
+        view.split_column("Name", " ", [SplitColumnSpec("First"), SplitColumnSpec("Last")])
+    """
+
+    name: str
+    type: ColumnType = ColumnType.TEXT
+
+
+@dataclass
+class BulkReplaceMapping:
+    """Specification for a bulk replace mapping in :meth:`View.bulk_replace`.
+
+    Example::
+
+        view.bulk_replace(
+            columns=["Item"],
+            mapping=[BulkReplaceMapping(search=["6 inch CAKE", "8 inch CAKE"], replace="CAKE")],
+        )
+    """
+
+    search: list[str]
+    replace: str
+
+
+@dataclass
+class DateDelta:
+    """Delta specification for :meth:`View.increment_date`.
+
+    Example::
+
+        view.increment_date("Order Date", DateDelta(days=30), new_column="Due Date")
+        view.increment_date("Start", DateDelta(years=1, months=-3), new_column="Adjusted")
+    """
+
+    years: int = 0
+    months: int = 0
+    weeks: int = 0
+    days: int = 0
+    hours: int = 0
+    minutes: int = 0
+    seconds: int = 0
+
+    def to_dict(self) -> dict[str, int]:
+        """Convert to backend DELTA format (uppercase keys, non-zero only)."""
+        mapping = {
+            "YEAR": self.years,
+            "MONTH": self.months,
+            "WEEK": self.weeks,
+            "DAY": self.days,
+            "HOUR": self.hours,
+            "MINUTE": self.minutes,
+            "SECOND": self.seconds,
+        }
+        return {k: v for k, v in mapping.items() if v != 0}
+
+
+@dataclass
+class CopySpec:
+    """Specification for a single column copy in :meth:`View.copy_columns`.
+
+    Example::
+
+        view.copy_columns([CopySpec(source="Sales", as_name="Sales Copy", type=ColumnType.NUMERIC)])
+    """
+
+    source: str
+    as_name: str | None = None
+    type: ColumnType = ColumnType.TEXT
+    condition: Condition | CompoundCondition | NotCondition | None = field(default=None)
+
+
+@dataclass
+class ConversionSpec:
+    """Specification for a column type conversion in :meth:`View.convert_type`.
+
+    Example::
+
+        view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
+        view.convert_type([
+            ConversionSpec(column="Date Col", to=ColumnType.DATE, format="MM/DD/YYYY")
+        ])
+    """
+
+    column: str
+    to: ColumnType
+    format: str | None = None
+
+
+@dataclass
+class AggregationSpec:
+    """Specification for an aggregation in :meth:`View.pivot`.
+
+    Example::
+
+        view.pivot(
+            group_by=["Region"],
+            aggregations=[AggregationSpec(
+                column="Sales", function=AggregateFunction.SUM, as_name="Total",
+            )],
+        )
+    """
+
+    column: str
+    function: AggregateFunction
+    as_name: str | None = None
+    delimiter: str | None = None
+
+
+@dataclass
+class JoinKeySpec:
+    """Specification for a join key pair in :meth:`View.join`.
+
+    Example::
+
+        view.join(..., on=[JoinKeySpec(left="Customer ID", right="Customer ID")])
+    """
+
+    left: str
+    right: str
+
+
+@dataclass
+class JoinSelectSpec:
+    """Specification for a column to bring in from a join in :meth:`View.join`.
+
+    Example::
+
+        view.join(..., select=[JoinSelectSpec(column="Category", alias="Cat")])
+    """
+
+    column: str
+    alias: str | None = None
+
+
+@dataclass
+class JsonExtractionSpec:
+    """Specification for a JSON key extraction in :meth:`View.json_extract`.
+
+    Example::
+
+        view.json_extract("data", extractions=[
+            JsonExtractionSpec(key="name", as_name="Name", type="TEXT"),
+            JsonExtractionSpec(key="age", as_name="Age", type="NUMERIC"),
+        ])
+    """
+
+    key: str
+    as_name: str | None = None
+    type: ColumnType = ColumnType.TEXT
+
+
+@dataclass
+class CrosstabSpec:
+    """Specification for the aggregation in :meth:`View.crosstab`.
+
+    Example::
+
+        view.crosstab(rows=["Region"], pivot_column="Gender",
+                      select=CrosstabSpec(function=AggregateFunction.SUM, column="Sales"))
+    """
+
+    function: AggregateFunction
+    column: str | None = None
 
 
 # ── Pydantic response models ──────────────────────────────────

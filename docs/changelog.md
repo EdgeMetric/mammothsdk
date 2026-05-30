@@ -1,5 +1,78 @@
 # Changelog
 
+## v0.3.0
+
+### Breaking changes
+
+- **Removed `dataset_id` from ViewsResource methods** — `views.get()`, `views.list()`, `views.delete()`, `views.bulk_delete()`, `get_view()`, and `branch_out()` no longer accept a `dataset_id` parameter. The dataset is auto-detected via the pipeline API. `views.create()` still requires `dataset_id`.
+- **Dict fallback paths removed** — all transformation methods now accept only typed dataclasses, not raw dicts:
+    - `copy_columns()`: `list[CopySpec]` (not `list[dict]`)
+    - `convert_type()`: `list[ConversionSpec]` (not `list[dict]`)
+    - `set_values()`: `list[SetValue]` (not `list[dict]`)
+    - `pivot()`: `list[AggregationSpec]` (not `list[dict]`)
+    - `crosstab()`: `CrosstabSpec` (not `dict`)
+    - `split_column()`: `list[SplitColumnSpec]` (not `list[dict]`)
+    - `bulk_replace()`: `list[BulkReplaceMapping]` (not `list[dict]`)
+    - `increment_date()`: `DateDelta` (not `dict`)
+    - `join()`: `list[JoinKeySpec]` and `list[JoinSelectSpec]` (not `list[dict]`)
+    - `json_extract()`: `list[JsonExtractionSpec]` and `JsonOpType` (not `list[dict]` and `str`)
+    - `math()`: `str` only (removed `list[dict]` expression format)
+- **String fields changed to enums** in dataclasses:
+    - `CopySpec.type`: `ColumnType` (was `str`)
+    - `ConversionSpec.to`: `ColumnType` (was `str`)
+    - `AggregationSpec.function`: `AggregateFunction` (was `str | AggregateFunction`)
+    - `CrosstabSpec.function`: `AggregateFunction` (was `str | AggregateFunction`)
+    - `JsonExtractionSpec.type`: `ColumnType` (was `str`)
+- **`to_s3()` file_type** — now `ExportFileType` enum (was `str`)
+
+### Added
+
+- **`SplitColumnSpec`** dataclass for `split_column()` new column specs
+- **`BulkReplaceMapping`** dataclass for `bulk_replace()` search/replace mappings
+- **`DateDelta`** dataclass for `increment_date()` with named fields (`years`, `months`, `weeks`, `days`, `hours`, `minutes`, `seconds`)
+- **`JsonOpType`** enum — `JSON_OBJECT_TO_COLUMNS`, `JSON_LIST_TO_ROWS`
+- **`ExportFileType`** enum — `CSV`, `JSON`, `PARQUET`
+- **`HandlerType`** and **`TriggerType`** enums re-exported from top-level `mammoth` package
+
+---
+
+## v0.2.4
+
+### Added
+
+- **Draft mode** — batch multiple transformations and run the pipeline once:
+    - `view.draft()` context manager (recommended): enters draft on entry, submits on clean exit, discards on exception
+    - `view.enter_draft_mode()`, `view.submit_draft()`, `view.discard_draft()` for explicit control
+    - `view.set_auto_run(enabled)` to toggle auto-run
+    - `view.is_draft_mode` property to check current state
+- **`DraftCommand` enum** — `ENTER`, `SUBMIT`, `DISCARD`, `EXIT` values for draft mode operations
+
+### Fixed
+
+- **`draft_mode()` API payload** — both `PipelineAPI.draft_mode()` and `DataviewsAPI.draft_mode()` now send `{"draft_operation": command}` instead of the incorrect `{"command": command}`
+
+---
+
+## v0.2.3
+
+### Fixed
+
+- **`_build_column_maps` now uses `taskwise_info` exclusively** — removed incorrect use of `dependencies_info.dependents` for column metadata resolution. `taskwise_info[last_seq]["metadata"]` is the authoritative post-pipeline column list; falls back to top-level `metadata` only for fresh views with no tasks.
+
+---
+
+## v0.2.2
+
+### Fixed
+
+- **`display_names` not updated after transforms** — `_build_column_maps` now reads column metadata from `taskwise_info[last_seq]["metadata"]` (the authoritative post-pipeline column list), so columns added by `math`, `set_values`, `add_column`, and other transforms appear immediately in `view.display_names`, `view.columns`, and `view.column_types`.
+
+### Added
+
+- **`view.get_metadata()`** — returns the current column list as `[{"display_name", "internal_name", "type"}, ...]`. Useful for inspecting all columns (including pipeline-added ones) after transforms.
+
+---
+
 ## v0.2.0
 
 Major release with rich View objects, transformation methods, and the condition builder.

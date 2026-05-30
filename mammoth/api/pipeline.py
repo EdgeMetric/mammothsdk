@@ -7,12 +7,20 @@ Not intended for direct use — use client.views.get(id) to get a View object in
 
 from __future__ import annotations
 
+import logging
+import time
 from typing import TYPE_CHECKING, Any
 
-from ..exceptions import MammothAPIError
+from ..exceptions import MammothAPIError, MammothJobTimeoutError, MammothTransformError
+
+_list = list  # Alias to avoid shadowing by method name
 
 if TYPE_CHECKING:
     from ..client import MammothClient
+
+logger = logging.getLogger(__name__)
+
+PIPELINE_TERMINAL_STATES = frozenset({"ready", "runtime_error", "ref_error"})
 
 
 class PipelineAPI:
@@ -49,6 +57,9 @@ class PipelineAPI:
     def _find_dataset_for_dataview(self, dataview_id: int) -> int:
         """Find which dataset contains the specified dataview.
 
+        Uses the browse API to discover datasets (including those nested
+        inside folders), then checks each dataset for the dataview.
+
         Args:
             dataview_id: ID of the dataview to search for.
 
@@ -63,23 +74,92 @@ class PipelineAPI:
         if project_id is None:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
 
-        datasets_response = self._client.datasets.list(
-            workspace_id=workspace_id, project_id=project_id
+        # Use workspace browse to get project's children (datasets + folders)
+        browse_response = self._client.browse.workspace_resources(
+            workspace_id=workspace_id, level=2
         )
+        project_children: _list[dict[str, Any]] = []
+        for resource in browse_response.get("resources", []):
+            if resource.get("id") == project_id:
+                project_children = resource.get("children", [])
+                break
 
-        for dataset in datasets_response.get("datasets", []):
-            dataset_id = dataset["id"]
+        # DFS through folders to collect all dataset IDs
+        dataset_ids = self._collect_dataset_ids(project_children, project_id, workspace_id)
+
+        # Check each dataset for the dataview
+        for dataset_id in dataset_ids:
             try:
-                dataviews_response = self._client.dataviews.list(
-                    dataset_id=dataset_id, workspace_id=workspace_id, project_id=project_id
+                self._client.dataviews.get(
+                    dataset_id=dataset_id,
+                    dataview_id=dataview_id,
+                    workspace_id=workspace_id,
+                    project_id=project_id,
                 )
-                for dv in dataviews_response.get("dataviews", []):
-                    if dv.get("id") == dataview_id:
-                        return dataset_id
-            except (MammothAPIError, KeyError):
+                return dataset_id
+            except MammothAPIError, KeyError:
                 continue
 
         raise ValueError(f"Dataview {dataview_id} not found in any dataset in project {project_id}")
+
+    def _collect_dataset_ids(
+        self,
+        children: _list[dict[str, Any]],
+        project_id: int,
+        workspace_id: int,
+    ) -> _list[int]:
+        """Collect all dataset IDs from browse children, recursing into folders.
+
+        Folder browsing is parallelized to avoid sequential latency when
+        projects have many nested folders.
+
+        Args:
+            children: List of browse resource children.
+            project_id: Current project ID.
+            workspace_id: Current workspace ID.
+
+        Returns:
+            List of dataset IDs found.
+        """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        dataset_ids: _list[int] = []
+        folders: _list[dict[str, Any]] = []
+
+        for child in children:
+            child_type = child.get("type", "")
+            if child_type == "datasource":
+                dataset_ids.append(child["id"])
+            elif child_type == "label":
+                folders.append(child)
+
+        if not folders:
+            return dataset_ids
+
+        def _browse_folder(folder_id: int) -> _list[dict[str, Any]]:
+            resp = self._client.browse.folder_resources(
+                folder_id=folder_id,
+                project_id=project_id,
+                workspace_id=workspace_id,
+                level=2,
+            )
+            all_children: _list[dict[str, Any]] = []
+            for sub_resource in resp.get("resources", []):
+                all_children.extend(sub_resource.get("children", []))
+            return all_children
+
+        with ThreadPoolExecutor(max_workers=min(len(folders), 8)) as pool:
+            futures = {pool.submit(_browse_folder, folder["id"]): folder for folder in folders}
+            for future in as_completed(futures):
+                try:
+                    sub_children = future.result()
+                    dataset_ids.extend(
+                        self._collect_dataset_ids(sub_children, project_id, workspace_id)
+                    )
+                except MammothAPIError:
+                    continue
+
+        return dataset_ids
 
     def _base_url(self, ws_id: int, proj_id: int, ds_id: int, dv_id: int) -> str:
         return f"/workspaces/{ws_id}/projects/{proj_id}/datasets/{ds_id}/dataviews/{dv_id}/pipeline"
@@ -228,6 +308,86 @@ class PipelineAPI:
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
         response = self._client._request_json(
-            "POST", f"{self._dv_url(ws, proj, ds, dv)}/draft-mode", json={"command": command}
+            "POST",
+            f"{self._dv_url(ws, proj, ds, dv)}/draft-mode",
+            json={"draft_operation": command},
         )
         return self._client._wait_if_job(response)
+
+    def edit_pipeline(
+        self,
+        dataview_id: int,
+        patches: _list[dict[str, Any]],
+        dataset_id: int | None = None,
+    ) -> dict[str, Any]:
+        """PATCH pipeline with operations (auto_run, run, reset, etc.).
+
+        Args:
+            dataview_id: ID of the dataview.
+            patches: List of patch operation dicts.
+            dataset_id: Dataset ID (auto-detected if not provided).
+
+        Returns:
+            Updated pipeline state dict.
+        """
+        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
+        return self._client._request_json(
+            "PATCH", self._base_url(ws, proj, ds, dv), json={"patches": patches}
+        )
+
+    def wait_for_pipeline(
+        self,
+        dataview_id: int,
+        dataset_id: int | None = None,
+        timeout: int | None = None,
+        poll_interval: int = 3,
+    ) -> dict[str, Any]:
+        """Poll pipeline state until it reaches a terminal state.
+
+        After any pipeline mutation (add_task, delete_task, sql_generation),
+        the pipeline transitions through transient states before data is ready:
+        ``modifying → modified → running → ready``.
+
+        This method blocks until the pipeline reaches a terminal state
+        (``ready``, ``runtime_error``, ``ref_error``).
+
+        Args:
+            dataview_id: ID of the dataview.
+            dataset_id: Dataset ID (auto-detected if not provided).
+            timeout: Max wait time in seconds (default: client.pipeline_timeout).
+            poll_interval: Seconds between polls (default: 3).
+
+        Returns:
+            Final pipeline state dict.
+
+        Raises:
+            MammothTransformError: If pipeline reaches ``runtime_error`` or ``ref_error``.
+            MammothJobTimeoutError: If timeout is exceeded.
+        """
+        effective_timeout = (
+            timeout if timeout is not None else int(getattr(self._client, "pipeline_timeout", 3600))
+        )
+
+        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
+        url = self._base_url(ws, proj, ds, dv)
+        deadline = time.monotonic() + effective_timeout
+
+        while True:
+            pipeline = self._client._request_json("GET", url)
+            state = pipeline.get("state", "").lower()
+
+            if state in PIPELINE_TERMINAL_STATES:
+                if state in ("runtime_error", "ref_error"):
+                    detail = pipeline.get("error", state)
+                    raise MammothTransformError(
+                        f"Pipeline failed with state '{state}': {detail}",
+                        details={"pipeline_state": state, "pipeline": pipeline},
+                    )
+                logger.debug("Pipeline ready for dataview %d (state=%s)", dataview_id, state)
+                return pipeline
+
+            if time.monotonic() >= deadline:
+                raise MammothJobTimeoutError(job_id=dataview_id, timeout_seconds=effective_timeout)
+
+            logger.debug("Pipeline state for dataview %d: %s — waiting...", dataview_id, state)
+            time.sleep(poll_interval)

@@ -106,18 +106,19 @@ class DataviewsAPI:
             project_id: ID of the project (uses client default if not provided).
 
         Returns:
-            Dict with created dataview information.
+            Dict with ``"dataview_id"`` key containing the new dataview's ID.
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
         payload: dict[str, Any] = {"name": name}
         if clone_config_from is not None:
             payload["clone_config_from"] = clone_config_from
-        return self._client._request_json(
+        response = self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews",
             json=payload,
         )
+        return self._client._wait_if_job(response)
 
     def update(
         self,
@@ -127,7 +128,10 @@ class DataviewsAPI:
         workspace_id: int | None = None,
         project_id: int | None = None,
     ) -> dict[str, Any]:
-        """Update dataview properties.
+        """Update dataview properties using JSON Patch operations.
+
+        Each operation in ``patch_data`` should have ``op``, ``path``, and
+        ``value`` keys following JSON Patch conventions.
 
         Args:
             dataset_id: ID of the dataset.
@@ -138,6 +142,13 @@ class DataviewsAPI:
 
         Returns:
             Dict with update result.
+
+        Example::
+
+            client.dataviews.update(
+                dataset_id=123, dataview_id=456,
+                patch_data=[{"op": "replace", "path": "/name", "value": "Renamed"}],
+            )
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
@@ -460,5 +471,5 @@ class DataviewsAPI:
         return self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/draft-mode",
-            json={"command": command},
+            json={"draft_operation": command},
         )

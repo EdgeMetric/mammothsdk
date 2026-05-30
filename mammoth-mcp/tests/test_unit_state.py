@@ -3,21 +3,18 @@
 from __future__ import annotations
 
 import time
-from collections import OrderedDict
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from mammoth_mcp.config import MammothConfig
 from mammoth_mcp.state import (
+    _MANAGER_CACHE_MAX,
+    _VIEW_CACHE_MAX,
+    _VIEW_CACHE_TTL,
     ClientManager,
     UserClientRegistry,
     _TTLEntry,
-    _VIEW_CACHE_MAX,
-    _VIEW_CACHE_TTL,
-    _MANAGER_CACHE_MAX,
 )
-
 
 # ── _TTLEntry ─────────────────────────────────────────────────
 
@@ -84,7 +81,7 @@ class TestClientManagerCache:
 
         result = manager.get_view(200)
         assert result is mock_view
-        mock_client.views.get.assert_called_once_with(200, None)
+        mock_client.views.get.assert_called_once_with(200)
         assert 200 in manager._view_cache
 
     def test_lru_eviction(self):
@@ -152,13 +149,15 @@ class TestUserClientRegistry:
     @pytest.mark.asyncio
     async def test_creates_manager_on_first_access(self):
         store = MagicMock()
-        store.get_token = AsyncMock(return_value={
-            "credentials": {
-                "api_key": "k",
-                "api_secret": "s",
-                "workspace_id": 1,
-            },
-        })
+        store.get_token = AsyncMock(
+            return_value={
+                "credentials": {
+                    "api_key": "k",
+                    "api_secret": "s",
+                    "workspace_id": 1,
+                },
+            }
+        )
 
         with patch("mammoth_mcp.state.MammothClient"):
             registry = UserClientRegistry(store, job_timeout=30)
@@ -170,13 +169,15 @@ class TestUserClientRegistry:
     @pytest.mark.asyncio
     async def test_returns_cached_manager(self):
         store = MagicMock()
-        store.get_token = AsyncMock(return_value={
-            "credentials": {
-                "api_key": "k",
-                "api_secret": "s",
-                "workspace_id": 1,
-            },
-        })
+        store.get_token = AsyncMock(
+            return_value={
+                "credentials": {
+                    "api_key": "k",
+                    "api_secret": "s",
+                    "workspace_id": 1,
+                },
+            }
+        )
 
         with patch("mammoth_mcp.state.MammothClient"):
             registry = UserClientRegistry(store, job_timeout=30)
@@ -196,13 +197,15 @@ class TestUserClientRegistry:
     @pytest.mark.asyncio
     async def test_lru_eviction(self):
         store = MagicMock()
-        store.get_token = AsyncMock(return_value={
-            "credentials": {
-                "api_key": "k",
-                "api_secret": "s",
-                "workspace_id": 1,
-            },
-        })
+        store.get_token = AsyncMock(
+            return_value={
+                "credentials": {
+                    "api_key": "k",
+                    "api_secret": "s",
+                    "workspace_id": 1,
+                },
+            }
+        )
 
         with patch("mammoth_mcp.state.MammothClient"):
             registry = UserClientRegistry(store, job_timeout=30)

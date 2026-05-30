@@ -1,37 +1,10 @@
-# Job Lifecycle
+# Async Operations & Timeouts
 
-The Mammoth platform processes many operations asynchronously via jobs. Understanding the job lifecycle helps you work effectively with the SDK.
+All SDK operations are **synchronous** — transformation methods block until the operation completes and view metadata is refreshed. The backend processes tasks asynchronously, but the SDK handles this transparently.
 
-## How jobs work
+## Timeouts
 
-When you apply a transformation, export data, or perform other operations, the backend creates a job:
-
-1. The SDK sends the task to the API
-2. The API returns a job ID
-3. The SDK polls the job until it completes (or times out)
-4. On success, the SDK refreshes view metadata
-
-Most of this is handled automatically by View transformation methods. You only need to interact with jobs directly for advanced use cases.
-
-## Automatic job handling
-
-View transformation methods handle jobs internally:
-
-```python
-# This sends a task, waits for the job, and refreshes the view -- all in one call
-view.filter_rows(Condition("Sales", Operator.GTE, 1000))
-```
-
-The `_add_task()` internal method:
-
-1. Calls `pipeline.add_task()` to submit the task
-2. Extracts the job ID from the response
-3. Calls `jobs.wait_for_job(job_id)` to poll until completion
-4. Calls `view.refresh()` to update metadata
-
-## Job timeout
-
-The `job_timeout` client parameter controls how long the SDK waits:
+The `job_timeout` and `pipeline_timeout` client parameters control how long the SDK waits:
 
 ```python
 client = MammothClient(
@@ -43,33 +16,15 @@ client = MammothClient(
 If a job does not complete in time, `MammothJobTimeoutError` is raised:
 
 ```python
-from mammoth import MammothJobTimeoutError
+from mammoth import MammothJobTimeoutError, AggregateFunction, AggregationSpec
 
 try:
     view.pivot(
         group_by=["Region"],
-        aggregations=[{"column": "Sales", "function": "SUM", "as": "Total"}],
+        aggregations=[AggregationSpec(column="Sales", function=AggregateFunction.SUM, as_name="Total")],
     )
 except MammothJobTimeoutError as e:
     print(f"Job {e.details['job_id']} is still running")
-```
-
-## Manual job management
-
-For advanced scenarios, use the jobs sub-client directly:
-
-```python
-# Get job status
-job = client.jobs.get_job(job_id=12345)
-
-# Wait for a job with custom timeout
-completed = client.jobs.wait_for_job(job_id=12345, timeout=600)
-
-# Check the result
-if completed.get("status") == "success":
-    print("Job completed successfully")
-else:
-    print(f"Job failed: {completed.get('response', {}).get('response', {}).get('detail')}")
 ```
 
 ## Pipeline tasks
@@ -88,6 +43,30 @@ view.delete_task(task_id=42)
 # Preview a task before applying
 preview = view.preview_task(task_spec)
 ```
+
+## Draft mode
+
+By default, each transformation triggers an immediate pipeline run. For batch operations on large datasets, use **draft mode** to queue tasks and run the pipeline once:
+
+```python
+from mammoth import Condition, Operator, SetValue, ColumnType
+
+# Context manager approach (recommended)
+with view.draft():
+    view.filter_rows(Condition("Sales", Operator.GTE, 1000))
+    view.math("Price * 2", new_column="Double")
+# Pipeline runs once for both tasks
+
+# Explicit approach
+view.enter_draft_mode()
+view.add_column("Notes")
+view.set_values(new_column="Flag", column_type=ColumnType.TEXT, values=[SetValue("x")])
+view.submit_draft()  # runs pipeline, refreshes metadata, exits draft mode
+```
+
+If an exception occurs inside the `with view.draft():` block, all queued tasks are discarded automatically. You can also discard explicitly with `view.discard_draft()`.
+
+See [Views reference](../api/views.md#draft-mode) for the full API.
 
 ## See also
 

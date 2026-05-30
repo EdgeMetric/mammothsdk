@@ -4,13 +4,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from mammoth._pure.builders import build_filter_params, build_set_params
 from mammoth.models.pipeline import ColumnType, FilterType, SetValue
 
 if TYPE_CHECKING:
+    from mammoth._mixins._host import ViewHost
     from mammoth.condition import CompoundCondition, Condition, NotCondition
+else:
+    ViewHost = object
 
 
-class FilterOpsMixin:
+class FilterOpsMixin(ViewHost):
     """Mixin for filter and set_values operations on a View."""
 
     def filter_rows(
@@ -34,16 +38,13 @@ class FilterOpsMixin:
             view.filter_rows(Condition("Sales", Operator.GTE, 1000))
             view.filter_rows(cond1 & cond2, filter_type=FilterType.REMOVE)
         """
-        built_condition = self._build_condition(condition)
-        if isinstance(built_condition, dict):
-            built_condition["FILTER_TYPE"] = filter_type
-            built_condition["PROMPT"] = prompt
-        spec: dict[str, Any] = {"SELECT": "ALL", "CONDITION": built_condition}
-        return self._add_task(spec)
+        return self._add_task(
+            build_filter_params(condition, self.columns, self.column_types, filter_type, prompt)
+        )
 
     def set_values(
         self,
-        values: list[SetValue | dict[str, Any]],
+        values: list[SetValue],
         new_column: str | None = None,
         column_type: ColumnType = ColumnType.TEXT,
         existing_column: str | None = None,
@@ -54,8 +55,7 @@ class FilterOpsMixin:
         Creates a VERSION 2 SET payload.
 
         Args:
-            values: List of SetValue objects or dicts with ``value`` and
-                optional ``condition`` keys.
+            values: List of SetValue objects.
             new_column: Name for a new column (mutually exclusive with existing_column).
             column_type: Type for new column (default ColumnType.TEXT).
             existing_column: Display name of existing column to update.
@@ -75,28 +75,16 @@ class FilterOpsMixin:
                 ],
             )
         """
-        value_items: list[dict[str, Any]] = []
-        for v in values:
-            if isinstance(v, SetValue):
-                item: dict[str, Any] = {"PROVIDER_TYPE": "FIXED", "PROVIDER": v.value}
-                cond = v.condition
-            else:
-                item = {"PROVIDER_TYPE": "FIXED", "PROVIDER": v["value"]}
-                cond = v.get("condition")
-            if cond is not None:
-                item["CONDITION"] = self._build_condition(cond)
-            value_items.append(item)
-
-        set_dict: dict[str, Any] = {"VALUES": value_items}
-
-        if new_column:
-            set_dict["AS"] = self._build_as_column(new_column, column_type)
-        elif existing_column:
-            set_dict["DESTINATION"] = self._resolve_column(existing_column)
-
-        spec: dict[str, Any] = {"SET": set_dict, "VERSION": 2}
-
-        if condition:
-            spec["CONDITION"] = self._build_condition(condition)
-
-        return self._add_task(spec)
+        return self._add_task(
+            build_set_params(
+                values,
+                self.columns,
+                new_column=new_column,
+                column_type=column_type,
+                existing_column=existing_column,
+                internal_names=self._internal_names,
+                condition=condition,
+                column_types=self.column_types,
+                name_gen=self._next_internal_name,
+            )
+        )

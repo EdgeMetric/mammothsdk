@@ -34,13 +34,27 @@ theme:
 plugins:
   - search
   - mkdocstrings:
+      default_handler: python
       handlers:
         python:
+          paths:
+            - .
           options:
             show_source: false
             show_root_heading: true
+            show_root_full_path: false
             heading_level: 3
             docstring_style: google
+            docstring_section_style: spacy
+            merge_init_into_class: true
+            show_if_no_docstring: false
+            show_signature_annotations: true
+            separate_signature: true
+            signature_crossrefs: true
+            members_order: source
+            filters:
+              - "!^_"
+              - "^__init__$"
 
 markdown_extensions:
   - admonition
@@ -58,18 +72,36 @@ markdown_extensions:
 
 nav:
   - Home: README.md
-  - Installation: installation.md
-  - Quick Start: quick-start.md
-  - Authentication: authentication.md
-  - API Reference:
+  - Getting Started:
+      - Installation: installation.md
+      - Quick Start: quick-start.md
+      - Authentication: authentication.md
+  - Core:
       - Client: api/client.md
       - Views: api/views.md
       - Conditions: api/conditions.md
-      - Enums: api/enums.md
-      - Exports: api/exports.md
+      - Enums & Data Classes: api/enums.md
       - Exceptions: api/exceptions.md
-  - Examples:
-      - Transformations: examples/transformations.md
+  - Import:
+      - Files: api/files.md
+      - Connectors: api/connectors.md
+  - Transform:
+      - Transformation Reference: examples/transformations.md
+  - Export:
+      - Exports: api/exports.md
+  - Manage:
+      - Projects: api/projects.md
+      - Datasets: api/datasets.md
+      - Dataviews: api/dataviews.md
+      - Pipeline: api/pipeline.md
+      - Jobs: api/jobs.md
+      - Dashboards: api/dashboards.md
+      - Webhooks: api/webhooks.md
+      - Automations & Schedules: api/automations.md
+      - Workspace & Users: api/workspace.md
+      - Other APIs: api/other-apis.md
+  - Guides:
+      - End-to-End Workflow: guides/end-to-end-workflow.md
       - Basic Usage: examples/basic-usage.md
       - Error Handling: examples/error-handling.md
   - Advanced:

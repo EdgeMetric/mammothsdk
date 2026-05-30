@@ -92,3 +92,54 @@ class BrowseAPI:
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews",
         )
+
+    def workspace_resources(
+        self,
+        workspace_id: int | None = None,
+        level: int = 2,
+        fields: str = "__min",
+        limit: int = 100,
+    ) -> dict[str, Any]:
+        """Browse all resources in a workspace (projects, datasets, folders).
+
+        Args:
+            workspace_id: Workspace ID (uses client default if not provided).
+            level: Depth of children to include (1 or 2, default 2).
+            fields: Fields to return (default "__min").
+            limit: Max resources to return (default 100).
+
+        Returns:
+            Dict with hierarchical resource list.
+        """
+        ws = workspace_id or self._ws()
+        params: dict[str, Any] = {"level": level, "fields": fields, "limit": limit}
+        return self._client._request_json("GET", f"/workspaces/{ws}/browse", params=params)
+
+    def folder_resources(
+        self,
+        folder_id: int,
+        project_id: int | None = None,
+        workspace_id: int | None = None,
+        level: int = 2,
+        fields: str = "__min",
+    ) -> dict[str, Any]:
+        """Browse resources inside a folder.
+
+        Args:
+            folder_id: ID of the folder (label).
+            project_id: Project ID (uses client default if not provided).
+            workspace_id: Workspace ID (uses client default if not provided).
+            level: Depth of children to include (1 or 2, default 2).
+            fields: Fields to return (default "__min").
+
+        Returns:
+            Dict with folder's child resources.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        params: dict[str, Any] = {"level": level, "fields": fields}
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/folders/{folder_id}/browse",
+            params=params,
+        )

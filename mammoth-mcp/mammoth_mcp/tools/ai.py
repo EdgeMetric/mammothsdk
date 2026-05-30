@@ -11,6 +11,7 @@ from mammoth_mcp.helpers import (
     get_manager,
     handle_errors,
     log_tool_call,
+    run_sync,
     success_response,
 )
 from mammoth_mcp.server import mcp
@@ -25,7 +26,8 @@ async def ai_transform(
     prompt: str,
     context_columns: list[str],
     new_column: str = "AI Result",
-    dataset_id: int | None = None,
+    assistant_data: list[str] | None = None,
+    context_columns_derivation: bool | None = None,
 ) -> dict[str, Any]:
     """Use an OpenAI LLM to generate a NEW column from a prompt and context columns. Adds a reversible pipeline task (undo with delete_task).
 
@@ -48,15 +50,21 @@ async def ai_transform(
         prompt: Natural language instruction for the AI (e.g. "Classify the sentiment of the review as Positive, Negative, or Neutral").
         context_columns: List of column display names to provide as context to the AI (max 20 — include only relevant columns).
         new_column: Name for the AI output column (default "AI Result").
-        dataset_id: The dataset ID (auto-detected if not provided).
+        assistant_data: Additional assistant context strings (optional).
+        context_columns_derivation: Whether to derive from context columns (optional).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
-    view.gen_ai(
-        prompt=prompt,
-        context_columns=context_columns,
-        new_column=new_column,
-    )
+    view = await run_sync(manager.get_view, view_id)
+    kwargs: dict[str, Any] = {
+        "prompt": prompt,
+        "context_columns": context_columns,
+        "new_column": new_column,
+    }
+    if assistant_data is not None:
+        kwargs["assistant_data"] = assistant_data
+    if context_columns_derivation is not None:
+        kwargs["context_columns_derivation"] = context_columns_derivation
+    await run_sync(view.gen_ai, **kwargs)
     return success_response(format_view_info(view), "AI transform applied")
 
 
@@ -68,7 +76,6 @@ async def sql_query(
     view_id: int,
     intent: str | None = None,
     raw_sql: str | None = None,
-    dataset_id: int | None = None,
 ) -> dict[str, Any]:
     """Transform data using DuckDB SQL — either natural language intent or direct SQL. Adds a reversible pipeline task (undo with delete_task).
 
@@ -87,19 +94,18 @@ async def sql_query(
         view_id: The dataview ID.
         intent: Natural language description of the query (e.g. "show top 10 customers by total revenue with order count").
         raw_sql: Raw DuckDB SQL query string (e.g. "SELECT \"Name\", SUM(\"Sales\") as total FROM dataview GROUP BY \"Name\"").
-        dataset_id: The dataset ID (auto-detected if not provided).
     """
     manager = await get_manager(ctx)
-    view = manager.get_view(view_id, dataset_id)
+    view = await run_sync(manager.get_view, view_id)
 
     if intent:
-        generated_sql = view.generate_sql(intent)
+        generated_sql = await run_sync(view.generate_sql, intent)
         return success_response(
             {"generated_sql": generated_sql, "view": format_view_info(view)},
             "SQL generated and applied",
         )
     elif raw_sql:
-        view.add_sql(raw_sql)
+        await run_sync(view.add_sql, raw_sql)
         return success_response(format_view_info(view), "SQL query applied")
     else:
         raise ValueError("Either intent or raw_sql must be provided")

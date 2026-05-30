@@ -10,22 +10,74 @@ Returns rich **View** objects (not raw dicts).
 
 ```python
 view = client.views.get(view_id)                           # View object
-view = client.views.get(view_id, dataset_id=123)           # with explicit dataset
-views = client.views.list(dataset_id)                       # list of View objects
+views = client.views.list()                                 # list of View objects
 view = client.views.create(dataset_id, name="My View")      # new View
-client.views.delete(view_id, dataset_id)                    # delete
+client.views.delete(view_id)                                # delete
+client.views.bulk_delete([view_id1, view_id2])              # bulk delete
 ```
+
+Note: `views.get()`, `views.list()`, `views.delete()`, `views.bulk_delete()` no longer accept `dataset_id` — it's auto-detected. Only `views.create()` still requires it.
+
+### View metadata attributes
+
+After any transformation, `view.display_names`, `view.columns`, and `view.column_types` are automatically refreshed and include pipeline-added columns:
+
+```python
+view.math(expression="Price * 1.1", new_column="adj_price")
+print("adj_price" in view.display_names)    # True
+print(view.columns["adj_price"])            # "column_xyzabc1234" (internal name)
+print(view.column_types["adj_price"])       # "NUMERIC"
+```
+
+### `view.get_metadata()`
+
+Returns the full column list as a list of dicts — useful for debugging column resolution after transforms:
+
+```python
+for col in view.get_metadata():
+    print(col)
+# {"display_name": "adj_price", "internal_name": "column_xyzabc1234", "type": "NUMERIC"}
+```
+
+> **How it works:** column metadata is read from `taskwise_info[last_seq]["metadata"]` in the API response — the highest sequence number is the last task, and its `metadata` list is the complete post-pipeline column list. For fresh views with no tasks yet, `taskwise_info` is null so the top-level `metadata` field is used instead.
+
+### View attributes & metadata
+
+`view.display_names`, `view.columns`, and `view.column_types` are automatically
+refreshed after **every** transformation — including columns added by pipeline
+tasks (`math`, `set_values`, `add_column`, etc.).
+
+```python
+view.display_names   # ["Sales", "Region", "Revenue"]  — updated after each transform
+view.columns         # {"Sales": "column_1", ...}
+view.column_types    # {"Sales": "NUMERIC", ...}
+
+# Inspect full column list with types (useful after transforms):
+meta = view.get_metadata()
+# [{"display_name": "Revenue", "internal_name": "column_x1y2z3", "type": "NUMERIC"}, ...]
+
+# Force re-fetch from API:
+view.refresh()
+```
+
+**Implementation note:** After a transformation the API populates `taskwise_info[last_seq]["metadata"]` with the complete post-pipeline column list. The SDK reads from there so new columns are always visible. For fresh views with no tasks yet, `taskwise_info` is null and the SDK falls back to the top-level `metadata` field.
 
 ---
 
 ## ProjectsAPI (`client.projects`)
 
+Returns **raw dicts**, not rich objects. `list()` returns a response envelope — unwrap with `["projects"]`.
+
 ```python
-projects = client.projects.list()                           # list all projects
-project = client.projects.get(project_id=10)                # get one
-project = client.projects.create(config={...})              # create
-client.projects.update(project_id=10, config={...})         # update
-client.projects.delete(project_id=10)                       # delete
+resp = client.projects.list()                               # {"projects": [...], "offset": 0, ...}
+projects = resp["projects"]                                 # plain list of dicts
+for p in projects:
+    print(p["id"], p["name"])                               # dict access, NOT p.id / p.name
+
+project = client.projects.get(10)                           # {"id": 10, "name": "..."}
+project = client.projects.create(name="My Project")         # raw dict response
+client.projects.update(project_id=10, name="New Name")
+client.projects.delete(project_id=10)
 ```
 
 ---
@@ -48,7 +100,7 @@ batches = client.datasets.list_batches(dataset_id=123)       # list data batches
 ds_id = client.files.upload("path/to/data.csv")
 
 # Upload with folder
-ds_id = client.files.upload("data.csv", folder_id=5)
+ds_id = client.files.upload("data.csv", folder_resource_id="folder-abc-123")
 
 # List files
 files = client.files.list()
@@ -83,8 +135,8 @@ dv = client.dataviews.create(dataset_id=123, name="New View")
 # Delete
 client.dataviews.delete(dataset_id=123, dataview_id=456)
 
-# Draft mode
-client.dataviews.draft_mode(dataset_id=123, dataview_id=456, command="enable")
+# Draft mode (low-level — prefer view.draft() context manager)
+client.dataviews.draft_mode(dataset_id=123, dataview_id=456, command="enter")
 ```
 
 ---
@@ -110,6 +162,9 @@ client.pipeline.delete_task(dataview_id=456, task_id=789, dataset_id=123)
 
 # Preview a task without applying
 preview = client.pipeline.preview_task(dataview_id=456, task_spec={...}, dataset_id=123)
+
+# Draft mode (low-level — prefer view.draft() context manager)
+client.pipeline.draft_mode(dataview_id=456, command=DraftCommand.ENTER, dataset_id=123)
 ```
 
 ---
@@ -138,7 +193,7 @@ Job statuses: `processing`, `success`, `failure`, `error`
 
 ```python
 # List exports for a dataview
-exports = client.exports.list(dataview_id=456, dataset_id=123)
+exports = client.exports.list(dataview_id=456)
 
 # Create export
 result = client.exports.create(
@@ -160,7 +215,7 @@ Prefer using `view.export.to_csv()`, `view.export.to_postgres()`, etc. on View o
 ```python
 folders = client.folders.list()
 folder = client.folders.create(name="Reports")
-client.folders.delete(folder_id=5)
+client.folders.delete(folder_ids=[5])
 ```
 
 ---
@@ -194,7 +249,7 @@ data = client.dashboards.get_publish_data(dashboard_id=1, sql="SELECT ...")
 
 ```python
 webhooks = client.webhooks.list()
-webhook = client.webhooks.create(config={...})
+webhook = client.webhooks.create(name="My Webhook", mode="replace")
 client.webhooks.delete(webhook_id=1)
 ```
 
@@ -221,10 +276,10 @@ AI features.
 profile = client.ai.generate_profile(dataview_id=456)
 
 # Generate synthetic data
-data = client.ai.generate_data(dataview_id=456, columns=["Name", "Age"], num_rows=100)
+data = client.ai.generate_data(dataview_id=456, config={"columns": ["Name", "Age"], "num_rows": 100})
 
-# Get AI suggestions for a view
-suggestions = client.ai.get_suggestions(dataview_id=456)
+# Get AI suggestions for the current project
+suggestions = client.ai.get_suggestions()
 ```
 
 ---
@@ -243,7 +298,7 @@ users = client.workspaces.list_users()
 
 ```python
 apps = client.client_apps.list()
-app = client.client_apps.create(config={...})
+app = client.client_apps.create(app_name="My Integration")
 ```
 
 ---
@@ -253,8 +308,9 @@ app = client.client_apps.create(config={...})
 ```python
 # Quick access to View object
 view = client.get_view(view_id=1039)
-view = client.get_view(view_id=1039, dataset_id=123)
 
 # Branch out (export view to another dataset)
 client.branch_out(view_id=1039, dest_dataset_id=42)
 ```
+
+Note: `get_view()` and `branch_out()` no longer accept `dataset_id` — it's auto-detected from the view.

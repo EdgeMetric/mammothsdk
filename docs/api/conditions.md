@@ -1,78 +1,32 @@
 # Conditions Reference
 
-The condition module provides a Pythonic filter builder with operator overloading. Build conditions using `Condition` objects, combine them with `&` (AND) and `|` (OR), and pass them to View transformation methods.
+The condition module provides a Pythonic filter builder with operator overloading. Build conditions using `Condition` objects, combine them with `&` (AND), `|` (OR), and `~` (NOT), and pass them to View transformation methods.
 
-## Condition
-
-A single-column condition.
-
-```python
-from mammoth import Condition, Operator
-
-Condition(
-    column: str,
-    operator: Operator,
-    value: Any = None,
-    case_sensitive: bool = False,
-)
-```
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `column` | `str` | *required* | Display name of the column |
-| `operator` | `Operator` | *required* | Comparison operator |
-| `value` | `Any` | `None` | Comparison value (omit for `IS_EMPTY` / `IS_NOT_EMPTY`) |
-| `case_sensitive` | `bool` | `False` | Case-sensitive string comparison |
-
-### Examples
+## Quick examples
 
 ```python
 from mammoth import Condition, Operator
 
 # Numeric comparisons
 high_sales = Condition("Sales", Operator.GTE, 10000)
-low_price = Condition("Price", Operator.LT, 5.0)
-
-# Equality
-west = Condition("Region", Operator.EQ, "West")
 
 # List membership
 selected = Condition("Region", Operator.IN_LIST, ["West", "East"])
-excluded = Condition("Status", Operator.NOT_IN_LIST, ["Cancelled", "Refunded"])
-
-# String matching
-contains_corp = Condition("Name", Operator.CONTAINS, "Corp")
-starts_with_a = Condition("Name", Operator.STARTS_WITH, "A")
 
 # Null checks (no value needed)
 empty = Condition("Name", Operator.IS_EMPTY)
-not_empty = Condition("Email", Operator.IS_NOT_EMPTY)
 
-# Aggregate checks
-is_max = Condition("Sales", Operator.IS_MAXVAL)
-is_min = Condition("Sales", Operator.IS_MINVAL)
-```
-
-## CompoundCondition
-
-An AND/OR composition of conditions. Normally created automatically via `&` and `|` operators -- you rarely need to construct one directly.
-
-```python
-from mammoth import CompoundCondition
-
-CompoundCondition(
-    logic: str,          # "AND" or "OR"
-    conditions: list,    # list of Condition or CompoundCondition
-)
+# Combine with & (AND), | (OR), ~ (NOT)
+both = high_sales & selected
+negated = ~Condition("Status", Operator.EQ, "Closed")
+complex_cond = (high_sales & selected) | negated
 ```
 
 ## Operator overloading
 
-Combine conditions with `&` (AND) and `|` (OR). Use parentheses for grouping.
+Combine conditions with `&` (AND), `|` (OR), and `~` (NOT). Use parentheses for grouping.
 
 ```python
-from mammoth import Condition, Operator
-
 high_sales = Condition("Sales", Operator.GTE, 10000)
 west = Condition("Region", Operator.EQ, "West")
 active = Condition("Status", Operator.EQ, "Active")
@@ -86,22 +40,8 @@ either = high_sales | west
 # Nested: parentheses control grouping
 complex_cond = (high_sales & west) | active
 
-# Chain multiple
-all_three = high_sales & west & active
-```
-
-Chaining is flat when using the same operator:
-
-```python
-# These are equivalent:
-a & b & c           # CompoundCondition("AND", [a, b, c])
-(a & b) & c         # CompoundCondition("AND", [a, b, c])
-```
-
-Mixing operators creates nesting:
-
-```python
-(a & b) | c         # CompoundCondition("OR", [CompoundCondition("AND", [a, b]), c])
+# Chain multiple — flat when using the same operator
+all_three = high_sales & west & active  # AND of all three
 ```
 
 ## Using conditions with View methods
@@ -133,16 +73,6 @@ view.set_values(
 )
 ```
 
-A global condition can also be applied to the entire task:
-
-```python
-view.set_values(
-    existing_column="Label",
-    values=[SetValue("Active")],
-    condition=Condition("Status", Operator.EQ, "Active"),
-)
-```
-
 ### math, combine_columns, and other methods
 
 Many transformation methods accept an optional `condition` parameter:
@@ -153,20 +83,6 @@ view.math(
     existing_column="Price",
     condition=Condition("Region", Operator.EQ, "West"),
 )
-```
-
-## build()
-
-The `build()` method converts a condition to the Mammoth API dict format. The SDK calls this automatically -- you normally do not need to call it yourself.
-
-```python
-cond = Condition("Sales", Operator.GTE, 1000)
-payload = cond.build({"Sales": "column_1"})
-# {"column_1": {"GTE": {"VALUE": 1000}}}
-
-compound = cond & Condition("Region", Operator.EQ, "West")
-payload = compound.build({"Sales": "column_1", "Region": "column_2"})
-# {"AND": [{"column_1": {"GTE": {"VALUE": 1000}}}, {"column_2": {"EQ": {"VALUE": "West"}}}]}
 ```
 
 ## All operators
@@ -180,6 +96,28 @@ See the [Operator enum](enums.md#operator) for the complete list. Summary:
 | String | `STARTS_WITH`, `ENDS_WITH`, `NOT_STARTS_WITH`, `NOT_ENDS_WITH` |
 | Null | `IS_EMPTY`, `IS_NOT_EMPTY` |
 | Aggregate | `IS_MAXVAL`, `IS_NOT_MAXVAL`, `IS_MINVAL`, `IS_NOT_MINVAL` |
+
+---
+
+## Full API Reference
+
+::: mammoth.condition.Condition
+    options:
+      members:
+        - __init__
+        - build
+
+::: mammoth.condition.CompoundCondition
+    options:
+      members:
+        - __init__
+        - build
+
+::: mammoth.condition.NotCondition
+    options:
+      members:
+        - __init__
+        - build
 
 ## See also
 

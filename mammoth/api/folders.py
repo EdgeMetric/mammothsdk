@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from ..client import MammothClient
 
-from ..models.folders import BulkFolderPatchRequest, CreateFolder, FolderDetails, FoldersList
+from ..models.folders import BulkFolderPatchRequest, CreateFolder, FolderSchema, FoldersList
 from ..models.jobs import ObjectJobSchema
 
 _list = list  # Alias to avoid shadowing by method name
@@ -38,6 +38,40 @@ class FoldersAPI:
         if proj is not None:
             return proj
         raise ValueError("project_id must be set on the client using client.set_project_id()")
+
+    def get_project_root(
+        self,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> FolderSchema:
+        """Get a FolderSchema representing the project root folder.
+
+        In Mammoth, the project root is not a physical folder entity — it is the
+        implicit top-level container.  The returned object has
+        ``resource_id=None``.  When passed to ``files.upload(folder_resource_id=...)``,
+        a ``None`` resource_id causes files to be placed at the project root (the
+        same as omitting the parameter entirely).
+
+        Args:
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            FolderSchema with ``name="Project Root"`` and ``resource_id=None``.
+        """
+        # Validate that project_id is set (raises ValueError if not)
+        self._proj(project_id)
+        return FolderSchema(
+            id=0,
+            name="Project Root",
+            status=None,
+            created_at=None,
+            updated_at=None,
+            resource_id=None,
+            created_by=None,
+            parent_id=None,
+            resource_path=None,
+        )
 
     def list(
         self,
@@ -109,7 +143,7 @@ class FoldersAPI:
         parent_resource_id: str | None = None,
         workspace_id: int | None = None,
         project_id: int | None = None,
-    ) -> FolderDetails:
+    ) -> FolderSchema:
         """Create a new folder.
 
         Args:
@@ -119,7 +153,7 @@ class FoldersAPI:
             project_id: ID of the project (uses client default if not provided).
 
         Returns:
-            FolderDetails with created folder info.
+            FolderSchema with created folder info (id, name, resource_id, etc.).
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
@@ -129,7 +163,7 @@ class FoldersAPI:
             f"/workspaces/{ws}/projects/{proj}/folders",
             json=folder_data.model_dump(exclude_none=True),
         )
-        return FolderDetails(**response)
+        return FolderSchema(**response.get("folder", response))
 
     def delete(
         self,
