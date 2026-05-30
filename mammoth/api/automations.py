@@ -234,6 +234,19 @@ def build_schedule_patch_ops(patch: _list[SchedulePatchItem]) -> _list[dict[str,
     """Validate and serialize a list of SchedulePatchItems to wire ops.
 
     Shared by AutomationsAPI.update_schedule and SchedulesAPI.update.
+
+    Args:
+        patch: Non-empty list of :class:`SchedulePatchItem` to validate and
+            serialize.
+
+    Returns:
+        List of wire-format op dicts ready for the schedule PATCH body.
+
+    Raises:
+        MammothValidationError: If any op is not ``"replace"``, any path is
+            not ``"rrule"`` or ``"status"``, a ``rrule`` value is not a
+            :class:`~mammoth.models.automations.SchedulePatchValue`, or a
+            ``status`` value is not ``"pause"`` or ``"resume"``.
     """
     ops: _list[dict[str, Any]] = []
     for item in patch:
