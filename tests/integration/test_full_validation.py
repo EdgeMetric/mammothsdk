@@ -536,9 +536,14 @@ class TestBranchOut:
     """Branch out (export) to another dataset."""
 
     def test_branch_out(self, val_view: View, val_second_dataset_id: int) -> None:
-        result = val_view.branch_out(dest_dataset_id=val_second_dataset_id)
-        # Result may be a dict or Pydantic model from exports API
-        assert result is not None
+        # REPLACE the target dataset's contents with this view's rows.
+        returned_id = val_view.branch_out(
+            "branch_out_validation", target_ds_id=val_second_dataset_id
+        )
+        # An existing-target branch-out returns the id of the dataset it wrote
+        # into (not a freshly created one) — the contract that lets a caller act
+        # on the result.
+        assert returned_id == val_second_dataset_id
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -633,8 +638,11 @@ class TestExportToDataset:
     """Export view data to another dataset."""
 
     def test_to_dataset(self, val_view: View, val_second_dataset_id: int) -> None:
-        result = val_view.export.to_dataset(val_second_dataset_id)
-        assert result is not None
+        # The export-namespace entry point to the same capability as branch_out.
+        returned_id = val_view.export.to_dataset(
+            "to_dataset_validation", target_ds_id=val_second_dataset_id
+        )
+        assert returned_id == val_second_dataset_id
 
 
 # ═══════════════════════════════════════════════════════════════

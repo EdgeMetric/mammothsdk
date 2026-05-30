@@ -9,6 +9,8 @@ Run:
 
 from __future__ import annotations
 
+import contextlib
+
 import pytest
 
 from mammoth import (
@@ -27,16 +29,86 @@ from mammoth import (
     JoinKeySpec,
     JoinSelectSpec,
     JoinType,
+    MammothClient,
     Operator,
     SetValue,
     SortDirection,
     SplitColumnSpec,
     SubstringDirection,
     TextCase,
+    View,
     WindowFunction,
 )
 
 # Fixtures adv_second_dataset_id, adv_second_view are defined in conftest.py
+
+# ── Read-back helpers (verify the EFFECT of dataset-producing exports) ──
+#
+# branch_out / crosstab return the new dataset's id (int). To prove the export
+# actually did what was asked — not merely "it ran" — we open a view on that
+# dataset and assert on its real contents. The live data() shape is
+# ``{"data": [rows], "paging": {...}}`` where ``paging.total`` is unreliable
+# (observed 0), rows are keyed by INTERNAL name (``column_1``…) plus a ``hash``
+# field, and values are strings. So: count via the paginated ``data`` list,
+# read cell values positionally while skipping ``hash``, and coerce strings.
+
+_PAGE = 10_000
+_HASH_KEY = "hash"
+
+
+def _open_new_dataset(client: MammothClient, dataset_id: int) -> View:
+    """Open the default view of a freshly-materialised dataset."""
+    return client.views.list(dataset_id)[0]
+
+
+def _data_rows(view: View, columns: list[str] | None = None, condition=None):
+    """Yield every (optionally filtered) row of a view, paginating fully.
+
+    A single large ``limit`` is unreliable, so page by ``offset`` until a short
+    page arrives — this reads the dataset in full regardless of any cap.
+    """
+    offset = 1
+    while True:
+        page = view.data(columns=columns, condition=condition, limit=_PAGE, offset=offset)["data"]
+        yield from page
+        if len(page) < _PAGE:
+            return
+        offset += _PAGE
+
+
+def _cells(row: dict[str, object]) -> list[object]:
+    """The row's real cell values (excluding the internal ``hash`` field)."""
+    return [v for k, v in row.items() if k != _HASH_KEY]
+
+
+def _count_rows(view: View, condition=None) -> int:
+    """Exact row count via full pagination (``paging.total`` is unreliable)."""
+    return sum(1 for _ in _data_rows(view, condition=condition))
+
+
+def _distinct_count(view: View, column: str) -> int:
+    """Number of distinct values in one column of a view."""
+    return len({_cells(r)[0] for r in _data_rows(view, [column])})
+
+
+def _to_number(value: object) -> float | None:
+    """Coerce a cell to float, or None if it isn't numeric (e.g. a text label)."""
+    try:
+        return float(value)  # type: ignore[arg-type]
+    except TypeError, ValueError:
+        return None
+
+
+def _sum_numeric_cells(view: View) -> float:
+    """Sum every numeric cell across a view (text labels and hash are skipped)."""
+    return sum(
+        n for row in _data_rows(view) for v in _cells(row) if (n := _to_number(v)) is not None
+    )
+
+
+def _sum_column(view: View, column: str) -> float:
+    """Sum one numeric column over all rows of a view."""
+    return sum(n for r in _data_rows(view, [column]) if (n := _to_number(_cells(r)[0])) is not None)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -408,25 +480,108 @@ class TestAdvancedAggregation:
         )
         assert result is not None
 
-    @pytest.mark.xfail(reason="CROSSTAB uses exports endpoint, not pipeline tasks — SDK fix needed")
-    def test_crosstab_count(self, adv_view):
-        """Crosstab with COUNT (no column needed)."""
-        result = adv_view.crosstab(
+    def test_crosstab_count(self, adv_view, adv_client):
+        """Crosstab COUNT → a dataset grouped by Department, pivoted on type.
+
+        Verifies the EFFECT, not just job success: the row-grouping column
+        survives, the pivot adds value columns, and aggregation collapses the
+        output to exactly one row per distinct Department.
+        """
+        n_depts = _distinct_count(adv_view, "Department")
+        n_types = _distinct_count(adv_view, "Transaction Type")
+        source_rows = _count_rows(adv_view)
+        new_ds_id = adv_view.crosstab(
             rows=["Department"],
             pivot_column="Transaction Type",
             select=CrosstabSpec(function=AggregateFunction.COUNT),
+            dataset_name="xtab_count_by_dept",
         )
-        assert result is not None
+        assert isinstance(new_ds_id, int)
+        try:
+            xtab = _open_new_dataset(adv_client, new_ds_id)
+            names = xtab.display_names
+            assert "Department" in names, "row-grouping column must survive"
+            # One label column (Department) + one value column per pivot value.
+            assert len(names) >= 1 + n_types
+            # Aggregation collapses to one row per distinct row-group value.
+            assert _count_rows(xtab) == n_depts
+            # The grand total of all COUNT cells equals the source row count.
+            assert _sum_numeric_cells(xtab) == source_rows
+        finally:
+            with contextlib.suppress(Exception):
+                adv_client.datasets.delete(new_ds_id)
 
-    @pytest.mark.xfail(reason="CROSSTAB uses exports endpoint, not pipeline tasks — SDK fix needed")
-    def test_crosstab_sum(self, adv_view):
-        """Crosstab with SUM on a numeric column (Bug 1 fix verification)."""
-        result = adv_view.crosstab(
+    def test_crosstab_sum(self, adv_view, adv_client):
+        """Crosstab SUM of Total, grouped by Department, pivoted on type.
+
+        Verifies the SUM math end-to-end: SUM is partition-invariant, so the
+        grand total of every value cell in the crosstab must equal the SUM of
+        ``Total`` over the whole source dataset.
+        """
+        n_depts = _distinct_count(adv_view, "Department")
+        source_total_sum = _sum_column(adv_view, "Total")
+        new_ds_id = adv_view.crosstab(
             rows=["Department"],
             pivot_column="Transaction Type",
             select=CrosstabSpec(function=AggregateFunction.SUM, column="Total"),
+            dataset_name="xtab_sum_total_by_dept",
         )
-        assert result is not None
+        assert isinstance(new_ds_id, int)
+        try:
+            xtab = _open_new_dataset(adv_client, new_ds_id)
+            assert "Department" in xtab.display_names
+            assert _count_rows(xtab) == n_depts
+            # Grand total of the pivoted SUM cells == source SUM(Total).
+            assert _sum_numeric_cells(xtab) == pytest.approx(source_total_sum, rel=1e-6)
+        finally:
+            with contextlib.suppress(Exception):
+                adv_client.datasets.delete(new_ds_id)
+
+
+class TestBranchOut:
+    """Branch out — save the view as a new internal dataset (internal export)."""
+
+    def test_branch_out_new_dataset(self, adv_view, adv_client):
+        """Branch out the full view into a brand-new dataset.
+
+        Verifies the EFFECT: the new dataset is a faithful copy — same row
+        count and the exact same set of columns as the source.
+        """
+        full_total = _count_rows(adv_view)
+        source_columns = set(adv_view.display_names)
+        new_ds_id = adv_view.branch_out(dataset_name="branchout_e2e_full")
+        assert isinstance(new_ds_id, int)
+        try:
+            copy = _open_new_dataset(adv_client, new_ds_id)
+            assert _count_rows(copy) == full_total, "full copy must preserve every row"
+            assert set(copy.display_names) == source_columns, "all columns must carry over"
+        finally:
+            with contextlib.suppress(Exception):
+                adv_client.datasets.delete(new_ds_id)
+
+    def test_branch_out_with_condition(self, adv_view, adv_client):
+        """Branch out only rows matching a condition into a new dataset.
+
+        Verifies the filter was truly applied: the new dataset has exactly the
+        rows the same condition selects in the source, strictly fewer rows than
+        the full source, and ZERO rows that violate the condition.
+        """
+        sale = Condition("Transaction Type", Operator.EQ, "sale")
+        full_total = _count_rows(adv_view)
+        sales_total = _count_rows(adv_view, condition=sale)
+        assert 0 < sales_total < full_total, "fixture must have both sale and non-sale rows"
+
+        new_ds_id = adv_view.branch_out(dataset_name="branchout_e2e_sales_only", condition=sale)
+        assert isinstance(new_ds_id, int)
+        try:
+            filtered = _open_new_dataset(adv_client, new_ds_id)
+            # Kept exactly the matching rows — no more, no fewer.
+            assert _count_rows(filtered) == sales_total
+            # And not one row that breaks the condition leaked through.
+            assert _count_rows(filtered, condition=~sale) == 0, "filter must exclude non-matches"
+        finally:
+            with contextlib.suppress(Exception):
+                adv_client.datasets.delete(new_ds_id)
 
 
 # ═══════════════════════════════════════════════════════════════

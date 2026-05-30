@@ -31,11 +31,13 @@ Public API::
         build_pivot_params,
         build_window_params,
         build_crosstab_params,
+        build_branch_out_params,
         build_join_params,
         build_lookup_params,
         build_json_extract_params,
         build_gen_ai_params,
         build_date_normalize_params,
+        build_sql_params,
     )
 """
 

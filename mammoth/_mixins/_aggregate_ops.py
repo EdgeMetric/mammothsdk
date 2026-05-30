@@ -13,6 +13,7 @@ from mammoth.models.pipeline import (
     AggregationSpec,
     ColumnType,
     CrosstabSpec,
+    SaveAsDatasetMode,
     SortDirection,
     WindowFunction,
     WindowRange,
@@ -130,29 +131,41 @@ class AggregateOpsMixin(ViewHost):
         self,
         rows: list[str],
         pivot_column: str,
-        select: CrosstabSpec,
-    ) -> dict[str, Any]:
-        """Crosstab / pivot table (CROSSTAB task).
+        select: CrosstabSpec | list[CrosstabSpec],
+        *,
+        dataset_name: str,
+        save_as_mode: SaveAsDatasetMode = SaveAsDatasetMode.REPLACE,
+        target_ds_id: int | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
+        timeout: int | None = None,
+    ) -> int:
+        """Crosstab / group-and-pivot — materialise a new pivoted dataset.
 
-        Creates a matrix where row grouping columns define the rows, the
-        ``pivot_column``'s distinct values become new columns, and cells
-        contain the aggregated result.
+        Row grouping columns define the rows, the ``pivot_column``'s distinct
+        values become new columns, and cells hold the aggregated result.
 
-        .. note::
-
-            Crosstab uses the exports endpoint internally rather than
-            standard pipeline tasks. Some post-crosstab operations may
-            behave differently from standard pipeline views.
+        Unlike standard transforms, a crosstab produces a NEW dataset, so it is
+        submitted through the internal-dataset export handler and run as an
+        async job. This method blocks until the dataset is materialised.
 
         Args:
-            rows: List of display names for row grouping.
-            pivot_column: Display name of column whose distinct values
+            rows: Display names of the row-grouping columns.
+            pivot_column: Display name of the column whose distinct values
                 become the output columns.
-            select: :class:`CrosstabSpec` defining the aggregation function
-                and (optionally) the value column.
+            select: A :class:`CrosstabSpec` (or list of them) defining each
+                aggregation function and (except for COUNT) its value column.
+            dataset_name: Name for the dataset the crosstab creates.
+            save_as_mode: Whether to replace or append when writing the output
+                dataset (defaults to :attr:`SaveAsDatasetMode.REPLACE`).
+            target_ds_id: Existing dataset to write into; ``None`` creates a
+                new one.
+            condition: Optional row filter applied before aggregating.
+            timeout: Max seconds to wait for the job (defaults to the client's
+                ``job_timeout``).
 
         Returns:
-            API response dict.
+            The id of the dataset the crosstab wrote to (the new dataset when
+            ``target_ds_id`` is None, otherwise ``target_ds_id``).
 
         Example::
 
@@ -161,18 +174,19 @@ class AggregateOpsMixin(ViewHost):
             view.crosstab(
                 rows=["Region"],
                 pivot_column="Product",
-                select=CrosstabSpec(
-                    function=AggregateFunction.SUM, column="Sales",
-                ),
+                select=CrosstabSpec(function=AggregateFunction.SUM, column="Sales"),
+                dataset_name="Sales by Region x Product",
             )
         """
-        return self._add_task(
-            build_crosstab_params(
-                rows,
-                pivot_column,
-                select,
-                self.columns,
-                self._internal_names,
-                self.column_types,
-            )
+        target_properties = build_crosstab_params(
+            rows,
+            pivot_column,
+            select,
+            dataset_name,
+            self.columns,
+            self._internal_names,
+            self.column_types,
+            save_as_mode=save_as_mode,
+            target_ds_id=target_ds_id,
         )
+        return self._run_internal_dataset_export(target_properties, timeout, condition)

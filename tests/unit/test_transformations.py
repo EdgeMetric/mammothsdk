@@ -42,6 +42,15 @@ def last_payload(mock_view):
     return mock_view._captured_payloads[-1]
 
 
+def last_crosstab(mock_view):
+    """Get the CROSSTAB transform block from the last captured export.
+
+    Crosstab routes through the internal-dataset export seam (not _add_task),
+    so its payload lands in ``_captured_exports`` as built ``target_properties``.
+    """
+    return mock_view._captured_exports[-1].target_properties["TRANSFORM"]["CROSSTAB"]
+
+
 # ── Column operations ────────────────────────────────────────
 
 
@@ -918,30 +927,39 @@ class TestCrosstab:
             rows=["department"],
             pivot_column="gender",
             select=CrosstabSpec(function=AggregateFunction.COUNT),
+            dataset_name="Headcount by gender",
         )
-        p = last_payload(mock_view)
-        assert "CROSSTAB" in p
-        assert p["CROSSTAB"]["SELECT"]["FUNCTION"] == "COUNT"
-        assert "COLUMN" not in p["CROSSTAB"]["SELECT"]
+        ct = last_crosstab(mock_view)
+        # ROWS/COLUMNS resolve display names to internal names + live type.
+        assert ct["ROWS"] == [{"COLUMN": "column_ghi1234567", "TYPE": "TEXT"}]
+        assert ct["COLUMNS"] == [{"COLUMN": "column_stu1234567", "TYPE": "TEXT"}]
+        # SELECT is a LIST; COUNT carries no value column.
+        assert ct["SELECT"] == [{"FUNCTION": "COUNT"}]
 
     def test_with_column_aggregate(self, mock_view):
         mock_view.crosstab(
             rows=["department"],
             pivot_column="gender",
             select=CrosstabSpec(column="base_salary", function=AggregateFunction.SUM),
+            dataset_name="Salary by gender",
         )
-        p = last_payload(mock_view)
-        assert p["CROSSTAB"]["SELECT"]["FUNCTION"] == "SUM"
-        assert p["CROSSTAB"]["SELECT"]["COLUMN"] == "column_jkl1234567"
+        ct = last_crosstab(mock_view)
+        # SUM resolves base_salary to its internal name in the single SELECT item.
+        assert ct["SELECT"] == [{"FUNCTION": "SUM", "COLUMN": "column_jkl1234567"}]
 
     def test_multiple_rows(self, mock_view):
         mock_view.crosstab(
             rows=["department", "full_name"],
             pivot_column="gender",
             select=CrosstabSpec(function=AggregateFunction.COUNT),
+            dataset_name="Headcount by dept and name",
         )
-        p = last_payload(mock_view)
-        assert len(p["CROSSTAB"]["ROWS"]) == 2
+        ct = last_crosstab(mock_view)
+        # Both row columns resolve, in order, to their internal names.
+        assert ct["ROWS"] == [
+            {"COLUMN": "column_ghi1234567", "TYPE": "TEXT"},
+            {"COLUMN": "column_def1234567", "TYPE": "TEXT"},
+        ]
 
 
 # ── Advanced operations ──────────────────────────────────────
@@ -1600,13 +1618,16 @@ class TestGoldenReference:
             rows=["department"],
             pivot_column="gender",
             select=CrosstabSpec(column="base_salary", function=AggregateFunction.SUM),
+            dataset_name="Salary crosstab",
         )
-        p = last_payload(mock_view)
-        ct = p["CROSSTAB"]
-        assert isinstance(ct["ROWS"], list)
-        assert isinstance(ct["COLUMNS"], list)
-        assert ct["SELECT"]["FUNCTION"] == "SUM"
-        assert ct["SELECT"]["COLUMN"] == "column_jkl1234567"
+        tp = mock_view._captured_exports[-1].target_properties
+        # Full target_properties envelope: dataset name + new-dataset target.
+        assert tp["DS_NAME"] == "Salary crosstab"
+        assert tp["TARGET_DS_ID"] is None
+        ct = tp["TRANSFORM"]["CROSSTAB"]
+        assert ct["ROWS"] == [{"COLUMN": "column_ghi1234567", "TYPE": "TEXT"}]
+        assert ct["COLUMNS"] == [{"COLUMN": "column_stu1234567", "TYPE": "TEXT"}]
+        assert ct["SELECT"] == [{"FUNCTION": "SUM", "COLUMN": "column_jkl1234567"}]
 
     def test_golden_text_eq_remaps_to_in_list(self, mock_view):
         """TEXT column + EQ condition emits IN_LIST (backend workaround)."""

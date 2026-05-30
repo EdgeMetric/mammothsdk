@@ -10,6 +10,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from mammoth.models.jobs import JobResponse
+
 
 class HandlerType(str, Enum):
     """Handler types for export operations."""
@@ -28,6 +30,11 @@ class HandlerType(str, Enum):
     BIGQUERY = "bigquery"
     INTERNAL_DATASET = "internal_dataset"
     PUBLISHDB = "publishdb"
+    AZURE_BLOB = "azure_blob"
+    SHAREPOINT = "sharepoint"
+    ONEDRIVE = "onedrive"
+    TABLEAU_SERVER = "tableau_server"
+    GENERIC_REST_API_EXPORT = "generic_rest_api_export"
 
 
 class TriggerType(str, Enum):
@@ -36,6 +43,21 @@ class TriggerType(str, Enum):
     NONE = "none"
     PIPELINE = "pipeline"
     SCHEDULE = "schedule"
+
+
+class OdbcType(str, Enum):
+    """Managed-connection types supported by publish-to-db."""
+
+    POSTGRES = "postgres"
+    BIGQUERY = "bigquery"
+
+
+class BigQueryExportType(str, Enum):
+    """How rows are written into the BigQuery destination table."""
+
+    REPLACE = "REPLACE"
+    COMBINE = "COMBINE"
+    UPSERT = "UPSERT"
 
 
 class ExportStatus(str, Enum):
@@ -152,3 +174,8 @@ class PipelineExportsModificationResp(BaseModel):
     future_id: int | None = Field(
         None, description="Id of the trackable job running in the background"
     )
+
+
+# What an export-creation call returns: either the saved trigger record
+# (synchronous handlers) or a tracking job (asynchronous handlers).
+ExportResult = PipelineExportsModificationResp | JobResponse

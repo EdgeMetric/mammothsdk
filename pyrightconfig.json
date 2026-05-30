@@ -2,6 +2,12 @@
   "include": ["mammoth", "tests"],
   "venvPath": ".",
   "venv": "venv",
-  "typeCheckingMode": "basic",
-  "reportMissingImports": "error"
+  "pythonVersion": "3.14",
+  "typeCheckingMode": "strict",
+  "reportMissingImports": "error",
+  "reportPrivateUsage": false,
+  "reportUnknownMemberType": false,
+  "reportUnknownVariableType": false,
+  "reportUnknownArgumentType": false,
+  "reportUnnecessaryIsInstance": false
 }

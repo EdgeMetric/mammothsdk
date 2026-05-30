@@ -16,6 +16,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:
+    from mammoth.condition import CompoundCondition, Condition, NotCondition
     from mammoth.view import View
 
 
@@ -32,6 +33,17 @@ class ViewHost(Protocol):
     def _add_task(self, task_spec: dict[str, Any]) -> dict[str, Any]: ...
 
     def _next_internal_name(self) -> str: ...
+
+    def _build_condition(
+        self, condition: Condition | CompoundCondition | NotCondition | dict[str, Any] | None
+    ) -> dict[str, Any] | None: ...
+
+    def _run_internal_dataset_export(
+        self,
+        target_properties: dict[str, Any],
+        timeout: int | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
+    ) -> int: ...
 
     def list_tasks(self) -> list[dict[str, Any]]: ...
 

@@ -2,13 +2,30 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, NamedTuple
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from mammoth.client import MammothClient
+from mammoth.condition import CompoundCondition, Condition, NotCondition
 from mammoth.view import View
+
+# Stub id the mocked export seam returns for a NEW dataset (no target_ds_id).
+FAKE_NEW_DATASET_ID = 9999
+
+
+class CapturedExport(NamedTuple):
+    """One captured internal-dataset export call (crosstab / branch-out).
+
+    Typed so tests assert ``capture.target_properties`` / ``capture.condition``
+    instead of indexing magic string keys.
+    """
+
+    target_properties: dict[str, Any]
+    timeout: int | None
+    condition: Condition | CompoundCondition | NotCondition | None
+
 
 # ── Sample metadata matching real API shape ──────────────────
 
@@ -102,6 +119,24 @@ def mock_view(mock_client: MammothClient) -> View:
 
     view._add_task = fake_add_task  # type: ignore[assignment]
     view._captured_payloads = captured_payloads  # type: ignore[attr-defined]
+
+    # Mock the internal-dataset export seam (crosstab / branch-out) too, so
+    # those mixin methods can be unit-tested without HTTP. Captures the built
+    # target_properties + condition; returns a job-shaped success dict.
+    captured_exports: list[CapturedExport] = []
+
+    def fake_run_export(
+        target_properties: dict[str, Any],
+        timeout: int | None = None,
+        condition: Condition | CompoundCondition | NotCondition | None = None,
+    ) -> int:
+        captured_exports.append(CapturedExport(target_properties, timeout, condition))
+        # The seam resolves and returns the materialised dataset's id (int);
+        # for an existing target that's the id passed in, else a fixed stub.
+        return int(target_properties.get("TARGET_DS_ID") or FAKE_NEW_DATASET_ID)
+
+    view._run_internal_dataset_export = fake_run_export  # type: ignore[assignment]
+    view._captured_exports = captured_exports  # type: ignore[attr-defined]
     return view
 
 

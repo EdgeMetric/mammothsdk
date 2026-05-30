@@ -107,6 +107,55 @@ class MammothTransformError(MammothError):
         self.task_key = task_key
 
 
+class MammothExportError(MammothError):
+    """Exception raised when an export completes but its result can't be resolved.
+
+    Internal-dataset exports (crosstab / branch-out) run as a fire-and-forget
+    downstream action: the submit job returns immediately and the new dataset's
+    id only appears on the export trigger once it reaches ``EXECUTED``. This is
+    raised when that trigger never materialises a dataset id within the timeout.
+
+    Attributes:
+        message: Human-readable error description.
+        details: Additional context dict (e.g. ``{"dataset_name": str,
+            "timeout": int}``).
+
+    Example::
+
+        try:
+            new_id = view.branch_out("Sales snapshot")
+        except MammothExportError as exc:
+            # The export was submitted but its dataset id didn't resolve in time.
+            print(exc.details["dataset_name"], exc.details["timeout"])
+    """
+
+
+class MammothValidationError(MammothError):
+    """Exception raised when SDK method arguments are invalid.
+
+    Raised proactively — before any API call — when an argument or a
+    combination of arguments cannot form a valid request (e.g. an aggregation
+    that needs a value column was given none, or APPEND mode without a target
+    dataset). The message states exactly what is wrong and how to fix it, so
+    callers fail fast with an actionable error instead of an opaque backend one.
+
+    Attributes:
+        message: Description of exactly what is wrong and how to fix it.
+        details: Additional context dict (the offending argument(s)).
+
+    Example::
+
+        try:
+            view.crosstab(
+                rows=["Region"], pivot_column="Product",
+                select=CrosstabSpec(function=AggregateFunction.SUM),  # missing column
+                dataset_name="x",
+            )
+        except MammothValidationError as e:
+            print(e.message)  # "Crosstab SUM requires a value `column`."
+    """
+
+
 class MammothColumnError(MammothError):
     """Exception raised when a column display name cannot be resolved.
 

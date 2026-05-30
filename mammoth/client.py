@@ -360,7 +360,7 @@ class MammothClient:
             try:
                 body = response.json()
                 if isinstance(body, dict):
-                    detail = body.get("message", body.get("detail", detail))
+                    detail = str(body.get("message", body.get("detail", detail)))
             except ValueError:
                 pass
             raise MammothAuthError(detail)
@@ -542,23 +542,31 @@ class MammothClient:
     def branch_out(
         self,
         view_id: int,
-        dest_dataset_id: int,
+        dataset_name: str,
+        *,
+        target_ds_id: int | None = None,
         column_mapping: dict[str, str] | None = None,
         **kwargs: Any,
-    ) -> dict[str, Any]:
-        """Branch out a view to another dataset.
+    ) -> int:
+        """Branch out a view — save its data as a Mammoth dataset.
 
         Args:
             view_id: Source dataview ID.
-            dest_dataset_id: Target dataset ID.
-            column_mapping: Column mapping dict (optional).
-            **kwargs: Additional export options.
+            dataset_name: Name for the new dataset (display name when writing
+                into an existing one).
+            target_ds_id: Existing dataset to write into; None creates a new one.
+            column_mapping: Source -> destination column-name map (optional).
+            **kwargs: Additional options forwarded to :meth:`View.branch_out`
+                (``save_as_mode``, ``label_ids``, ``condition``, ``timeout``).
 
         Returns:
-            Export result dict.
+            The id of the dataset written to (new when ``target_ds_id`` is None,
+            otherwise ``target_ds_id``).
         """
         view = self.views.get(view_id)
-        return view.branch_out(dest_dataset_id, column_mapping, **kwargs)
+        return view.branch_out(
+            dataset_name, target_ds_id=target_ds_id, column_mapping=column_mapping, **kwargs
+        )
 
     def __enter__(self) -> MammothClient:
         """Context manager entry."""

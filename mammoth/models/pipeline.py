@@ -212,6 +212,18 @@ class AggregateFunction(str, Enum):
     CONCAT = "CONCAT"
 
 
+class SaveAsDatasetMode(str, Enum):
+    """Destination mode for a crosstab's output dataset (SAVE_AS_DS_MODE).
+
+    REPLACE — overwrite the rows of the target dataset (also used when
+        creating a brand-new dataset, i.e. ``target_ds_id`` is None).
+    APPEND — append the crosstab result to the target dataset.
+    """
+
+    REPLACE = "REPLACE_IN_DS"
+    APPEND = "APPEND_TO_DS"
+
+
 class ProviderType(str, Enum):
     """Value provider types for SET task VALUES items.
 

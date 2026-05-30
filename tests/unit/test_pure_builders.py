@@ -27,7 +27,7 @@ from mammoth._pure.resolve import (
     resolve_order_by,
 )
 from mammoth.condition import Condition
-from mammoth.exceptions import MammothColumnError
+from mammoth.exceptions import MammothColumnError, MammothValidationError
 from mammoth.models.pipeline import (
     AggregateFunction,
     AggregationSpec,
@@ -48,6 +48,7 @@ from mammoth.models.pipeline import (
     JsonOpType,
     JsonType,
     Operator,
+    SaveAsDatasetMode,
     SetValue,
     SortDirection,
     SplitColumnSpec,
@@ -728,28 +729,234 @@ class TestAggregation:
         assert "GROUP_BY" not in spec["WINDOW"] and "ORDER_BY" not in spec["WINDOW"]
 
     def test_crosstab_with_value_column(self) -> None:
-        spec = b.build_crosstab_params(
+        tp = b.build_crosstab_params(
             ["Region"],
             "Notes",
             CrosstabSpec(function=AggregateFunction.SUM, column="Sales"),
+            "Region x Notes",
             COLS,
             INTERNALS,
             TYPES,
         )
-        assert spec["CROSSTAB"]["ROWS"] == [{"COLUMN": "c2", "TYPE": "TEXT"}]
-        assert spec["CROSSTAB"]["COLUMNS"] == [{"COLUMN": "c4", "TYPE": "TEXT"}]
-        assert spec["CROSSTAB"]["SELECT"] == {"FUNCTION": "SUM", "COLUMN": "c1"}
+        assert tp["DS_NAME"] == "Region x Notes"
+        assert tp["TARGET_DS_ID"] is None
+        assert tp["SAVE_AS_DS_MODE"] == "REPLACE_IN_DS"
+        assert tp["COLUMNS_USED"] == {
+            "c2": {"display_name": "Region", "internal_name": "c2", "type": "TEXT"},
+            "c4": {"display_name": "Notes", "internal_name": "c4", "type": "TEXT"},
+            "c1": {"display_name": "Sales", "internal_name": "c1", "type": "NUMERIC"},
+        }
+        ct = tp["TRANSFORM"]["CROSSTAB"]
+        assert ct["ROWS"] == [{"COLUMN": "c2", "TYPE": "TEXT"}]
+        assert ct["COLUMNS"] == [{"COLUMN": "c4", "TYPE": "TEXT"}]
+        assert ct["SELECT"] == [{"FUNCTION": "SUM", "COLUMN": "c1"}]
 
     def test_crosstab_count_no_column(self) -> None:
-        spec = b.build_crosstab_params(
+        tp = b.build_crosstab_params(
             ["Region"],
             "Notes",
             CrosstabSpec(function=AggregateFunction.COUNT),
+            "DS",
             COLS,
             INTERNALS,
             TYPES,
         )
-        assert spec["CROSSTAB"]["SELECT"] == {"FUNCTION": "COUNT"}
+        assert tp["TRANSFORM"]["CROSSTAB"]["SELECT"] == [{"FUNCTION": "COUNT"}]
+        # COUNT references no value column → not in COLUMNS_USED.
+        assert set(tp["COLUMNS_USED"]) == {"c2", "c4"}
+
+    def test_crosstab_distinct_count_keyword_remap(self) -> None:
+        # SDK enum spells it COUNT_DISTINCT; the crosstab backend wants
+        # DISTINCT_COUNT (different word order).
+        tp = b.build_crosstab_params(
+            ["Region"],
+            "Notes",
+            CrosstabSpec(function=AggregateFunction.COUNT_DISTINCT, column="Sales"),
+            "DS",
+            COLS,
+            INTERNALS,
+            TYPES,
+        )
+        assert tp["TRANSFORM"]["CROSSTAB"]["SELECT"] == [
+            {"FUNCTION": "DISTINCT_COUNT", "COLUMN": "c1"}
+        ]
+
+    def test_crosstab_multi_aggregation_list(self) -> None:
+        tp = b.build_crosstab_params(
+            ["Region"],
+            "Notes",
+            [
+                CrosstabSpec(function=AggregateFunction.COUNT),
+                CrosstabSpec(function=AggregateFunction.SUM, column="Sales"),
+            ],
+            "DS",
+            COLS,
+            INTERNALS,
+            TYPES,
+            save_as_mode=SaveAsDatasetMode.APPEND,
+            target_ds_id=42,
+        )
+        assert tp["SAVE_AS_DS_MODE"] == "APPEND_TO_DS"
+        assert tp["TARGET_DS_ID"] == 42
+        assert tp["TRANSFORM"]["CROSSTAB"]["SELECT"] == [
+            {"FUNCTION": "COUNT"},
+            {"FUNCTION": "SUM", "COLUMN": "c1"},
+        ]
+
+
+class TestCrosstabValidation:
+    """Negative + edge cases — every validation branch must raise."""
+
+    def _xtab(self, select, dataset_name="DS"):
+        return b.build_crosstab_params(
+            ["Region"], "Notes", select, dataset_name, COLS, INTERNALS, TYPES
+        )
+
+    def test_empty_dataset_name_raises(self) -> None:
+        with pytest.raises(MammothValidationError) as exc:
+            self._xtab(CrosstabSpec(function=AggregateFunction.COUNT), dataset_name="")
+        assert exc.value.message == b.ERR_CROSSTAB_DATASET_NAME
+
+    def test_empty_select_list_raises(self) -> None:
+        with pytest.raises(MammothValidationError) as exc:
+            self._xtab([])
+        assert exc.value.message == b.ERR_CROSSTAB_EMPTY_SELECT
+
+    @pytest.mark.parametrize(
+        "fn",
+        [
+            AggregateFunction.MEDIAN,
+            AggregateFunction.FIRST,
+            AggregateFunction.LAST,
+            AggregateFunction.CONCAT,
+        ],
+    )
+    def test_unsupported_function_raises_with_supported_list(self, fn) -> None:
+        with pytest.raises(MammothValidationError) as exc:
+            self._xtab(CrosstabSpec(function=fn, column="Sales"))
+        assert fn.value in exc.value.message
+        # The error advertises the allowed functions and carries them in details.
+        assert "SUM" in exc.value.message
+        assert exc.value.details["function"] == fn.value
+        # `supported` advertises the SDK enum values a caller passes, NOT the
+        # backend wire keyword (COUNT_DISTINCT -> DISTINCT_COUNT remap happens
+        # only when building a *valid* payload).
+        assert "COUNT_DISTINCT" in exc.value.details["supported"]
+        assert "DISTINCT_COUNT" not in exc.value.details["supported"]
+
+    def test_count_with_column_raises(self) -> None:
+        with pytest.raises(MammothValidationError) as exc:
+            self._xtab(CrosstabSpec(function=AggregateFunction.COUNT, column="Sales"))
+        assert "COUNT" in exc.value.message
+        assert exc.value.details["column"] == "Sales"
+
+    @pytest.mark.parametrize(
+        "fn",
+        [
+            AggregateFunction.SUM,
+            AggregateFunction.AVG,
+            AggregateFunction.MIN,
+            AggregateFunction.MAX,
+            AggregateFunction.STDDEV,
+            AggregateFunction.VARIANCE,
+            AggregateFunction.COUNT_DISTINCT,
+        ],
+    )
+    def test_non_count_without_column_raises(self, fn) -> None:
+        with pytest.raises(MammothValidationError) as exc:
+            self._xtab(CrosstabSpec(function=fn))
+        assert exc.value.message == b.ERR_CROSSTAB_MISSING_COLUMN.format(fn=fn.value)
+
+    def test_one_bad_spec_in_a_list_still_raises(self) -> None:
+        # A valid COUNT followed by an invalid SUM-without-column.
+        with pytest.raises(MammothValidationError):
+            self._xtab(
+                [
+                    CrosstabSpec(function=AggregateFunction.COUNT),
+                    CrosstabSpec(function=AggregateFunction.SUM),
+                ]
+            )
+
+    def test_unknown_row_column_raises_column_error(self) -> None:
+        with pytest.raises(MammothColumnError):
+            b.build_crosstab_params(
+                ["NoSuchCol"],
+                "Notes",
+                CrosstabSpec(function=AggregateFunction.COUNT),
+                "DS",
+                COLS,
+                INTERNALS,
+                TYPES,
+            )
+
+    def test_unknown_pivot_column_raises_column_error(self) -> None:
+        with pytest.raises(MammothColumnError):
+            b.build_crosstab_params(
+                ["Region"],
+                "NoSuchPivot",
+                CrosstabSpec(function=AggregateFunction.COUNT),
+                "DS",
+                COLS,
+                INTERNALS,
+                TYPES,
+            )
+
+    def test_date_row_emits_date_type(self) -> None:
+        # Edge: a DATE row column carries its live TYPE (not defaulted to TEXT).
+        tp = b.build_crosstab_params(
+            ["Order Date"],
+            "Notes",
+            CrosstabSpec(function=AggregateFunction.COUNT),
+            "DS",
+            COLS,
+            INTERNALS,
+            TYPES,
+        )
+        assert tp["TRANSFORM"]["CROSSTAB"]["ROWS"] == [{"COLUMN": "c3", "TYPE": "DATE"}]
+
+
+class TestBranchOut:
+    """build_branch_out_params — shapes + validation (happy, edge, negative)."""
+
+    def test_new_dataset_shape(self) -> None:
+        tp = b.build_branch_out_params("Fresh DS")
+        assert tp == {
+            "DS_NAME": "Fresh DS",
+            "TARGET_DS_ID": None,
+            "SAVE_AS_DS_MODE": "REPLACE_IN_DS",
+            "COLUMN_MAPPING": {},
+            "TARGET_DS_LABEL_IDS": None,
+            "TRANSFORM": None,
+        }
+
+    def test_existing_dataset_append_with_mapping_and_labels(self) -> None:
+        tp = b.build_branch_out_params(
+            "Existing",
+            target_ds_id=7,
+            save_as_mode=SaveAsDatasetMode.APPEND,
+            column_mapping={"Sales": "Revenue"},
+            label_ids=[3, 4],
+        )
+        assert tp["TARGET_DS_ID"] == 7
+        assert tp["SAVE_AS_DS_MODE"] == "APPEND_TO_DS"
+        assert tp["COLUMN_MAPPING"] == {"Sales": "Revenue"}
+        assert tp["TARGET_DS_LABEL_IDS"] == [3, 4]
+        assert tp["TRANSFORM"] is None
+
+    def test_empty_dataset_name_raises(self) -> None:
+        with pytest.raises(MammothValidationError) as exc:
+            b.build_branch_out_params("")
+        assert exc.value.message == b.ERR_BRANCHOUT_DATASET_NAME
+
+    def test_append_without_target_raises(self) -> None:
+        with pytest.raises(MammothValidationError) as exc:
+            b.build_branch_out_params("DS", save_as_mode=SaveAsDatasetMode.APPEND)
+        assert exc.value.message == b.ERR_BRANCHOUT_APPEND_NO_TARGET
+        assert exc.value.details["save_as_mode"] == "APPEND_TO_DS"
+
+    def test_append_with_target_is_allowed(self) -> None:
+        tp = b.build_branch_out_params("DS", target_ds_id=9, save_as_mode=SaveAsDatasetMode.APPEND)
+        assert tp["TARGET_DS_ID"] == 9
 
 
 # ===============================================================

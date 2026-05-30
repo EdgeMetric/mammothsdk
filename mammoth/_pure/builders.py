@@ -45,7 +45,9 @@ from mammoth._pure.resolve import (
     resolve_columns,
     resolve_order_by,
 )
+from mammoth.exceptions import MammothValidationError
 from mammoth.models.pipeline import (
+    AggregateFunction,
     AggregationSpec,
     BulkReplaceMapping,
     ColumnType,
@@ -63,6 +65,7 @@ from mammoth.models.pipeline import (
     JsonExtractionSpec,
     JsonOpType,
     JsonType,
+    SaveAsDatasetMode,
     SetValue,
     SplitColumnSpec,
     SubstringDirection,
@@ -681,39 +684,187 @@ def build_window_params(
     return {"WINDOW": window_spec}
 
 
+# CROSSTAB SELECT functions whose backend keyword differs from the SDK enum
+# value. The crosstab DuckDB op checks ``"DISTINCT_COUNT"`` (dba_const.py),
+# whereas the shared :class:`AggregateFunction` enum spells it COUNT_DISTINCT.
+_CROSSTAB_FUNCTION_KEYWORD = {AggregateFunction.COUNT_DISTINCT: "DISTINCT_COUNT"}
+
+# Aggregations the CROSSTAB DuckDB op can execute. Functions outside this set
+# (MEDIAN, FIRST, LAST, CONCAT) are rejected by the SDK before any API call
+# rather than failing opaquely in the backend.
+_CROSSTAB_FUNCTIONS = frozenset(
+    {
+        AggregateFunction.COUNT,
+        AggregateFunction.COUNT_DISTINCT,
+        AggregateFunction.SUM,
+        AggregateFunction.AVG,
+        AggregateFunction.MIN,
+        AggregateFunction.MAX,
+        AggregateFunction.STDDEV,
+        AggregateFunction.VARIANCE,
+    }
+)
+
+
+# Validation messages (module-level for consistency + drift-free test asserts).
+# Templates carry ``{}`` placeholders filled via ``.format()`` at raise time.
+ERR_CROSSTAB_DATASET_NAME = "Crosstab `dataset_name` must be a non-empty string."
+ERR_CROSSTAB_EMPTY_SELECT = "Crosstab requires at least one aggregation in `select`."
+ERR_CROSSTAB_UNSUPPORTED_FN = (
+    "Crosstab does not support the {fn} function. Supported functions: {supported}."
+)
+ERR_CROSSTAB_COUNT_WITH_COLUMN = (
+    "Crosstab COUNT counts rows and takes no value column; omit `column` (got {column!r})."
+)
+ERR_CROSSTAB_MISSING_COLUMN = "Crosstab {fn} requires a value `column` to aggregate."
+
+
+def _validate_crosstab_select(specs: list[CrosstabSpec]) -> None:
+    """Reject crosstab aggregations the backend cannot execute.
+
+    Raises:
+        MammothValidationError: If *specs* is empty, names an unsupported
+            function, gives COUNT a value column, or omits the value column a
+            non-COUNT aggregation requires.
+    """
+    if not specs:
+        raise MammothValidationError(ERR_CROSSTAB_EMPTY_SELECT)
+    for s in specs:
+        if s.function not in _CROSSTAB_FUNCTIONS:
+            supported = sorted(f.value for f in _CROSSTAB_FUNCTIONS)
+            raise MammothValidationError(
+                ERR_CROSSTAB_UNSUPPORTED_FN.format(fn=s.function.value, supported=supported),
+                {"function": s.function.value, "supported": supported},
+            )
+        if s.function is AggregateFunction.COUNT and s.column is not None:
+            raise MammothValidationError(
+                ERR_CROSSTAB_COUNT_WITH_COLUMN.format(column=s.column),
+                {"function": "COUNT", "column": s.column},
+            )
+        if s.function is not AggregateFunction.COUNT and s.column is None:
+            raise MammothValidationError(
+                ERR_CROSSTAB_MISSING_COLUMN.format(fn=s.function.value),
+                {"function": s.function.value},
+            )
+
+
+def _crosstab_axis_item(
+    name: str, col_map: dict[str, str], internal_names: list[str], column_types: dict[str, str]
+) -> dict[str, str]:
+    """One ROWS/COLUMNS entry: internal column name + its live type."""
+    return {
+        "COLUMN": resolve_column(name, col_map, internal_names),
+        "TYPE": column_types.get(name, "TEXT"),
+    }
+
+
 def build_crosstab_params(
     rows: list[str],
     pivot_column: str,
-    select: CrosstabSpec,
+    select: CrosstabSpec | list[CrosstabSpec],
+    dataset_name: str,
     col_map: dict[str, str],
     internal_names: list[str],
     column_types: dict[str, str],
+    save_as_mode: SaveAsDatasetMode = SaveAsDatasetMode.REPLACE,
+    target_ds_id: int | None = None,
 ) -> dict[str, Any]:
-    """Build a CROSSTAB (pivot table) parameter dict.
+    """Build the ``target_properties`` for a CROSSTAB (group-and-pivot) export.
 
-    The SELECT clause carries ``COLUMN`` when :attr:`CrosstabSpec.column` is set
-    (omitted for count-style aggregations that take no value column).
+    A crosstab materialises a NEW dataset, so the backend routes it through the
+    internal-dataset export handler (not a pipeline add-task). This returns the
+    ``target_properties`` payload; the caller wraps it in an export spec.
+
+    *select* may be a single :class:`CrosstabSpec` or a list (one output value
+    column per spec). Each SELECT item carries ``COLUMN`` only when its
+    :attr:`CrosstabSpec.column` is set (omitted for COUNT). ``COLUMNS_USED``
+    maps every referenced internal name to its display name and type.
     """
-    select_spec: dict[str, Any] = {"FUNCTION": select.function.value}
-    if select.column is not None:
-        select_spec["COLUMN"] = resolve_column(select.column, col_map, internal_names)
-    return {
-        "CROSSTAB": {
-            "ROWS": [
-                {
-                    "COLUMN": resolve_column(r, col_map, internal_names),
-                    "TYPE": column_types.get(r, "TEXT"),
-                }
-                for r in rows
-            ],
-            "COLUMNS": [
-                {
-                    "COLUMN": resolve_column(pivot_column, col_map, internal_names),
-                    "TYPE": column_types.get(pivot_column, "TEXT"),
-                }
-            ],
-            "SELECT": select_spec,
+    if not dataset_name:
+        raise MammothValidationError(ERR_CROSSTAB_DATASET_NAME)
+    specs = [select] if isinstance(select, CrosstabSpec) else select
+    _validate_crosstab_select(specs)
+    select_items: list[dict[str, Any]] = []
+    for s in specs:
+        item: dict[str, Any] = {
+            "FUNCTION": _CROSSTAB_FUNCTION_KEYWORD.get(s.function, s.function.value)
         }
+        if s.column is not None:
+            item["COLUMN"] = resolve_column(s.column, col_map, internal_names)
+        select_items.append(item)
+
+    referenced = [*rows, pivot_column, *(s.column for s in specs if s.column is not None)]
+    columns_used = {
+        resolve_column(name, col_map, internal_names): {
+            "display_name": name,
+            "internal_name": resolve_column(name, col_map, internal_names),
+            "type": column_types.get(name, "TEXT"),
+        }
+        for name in referenced
+    }
+
+    return {
+        "DS_NAME": dataset_name,
+        "TARGET_DS_ID": target_ds_id,
+        "SAVE_AS_DS_MODE": save_as_mode.value,
+        "COLUMNS_USED": columns_used,
+        "TRANSFORM": {
+            "CROSSTAB": {
+                "ROWS": [
+                    _crosstab_axis_item(r, col_map, internal_names, column_types) for r in rows
+                ],
+                "COLUMNS": [
+                    _crosstab_axis_item(pivot_column, col_map, internal_names, column_types)
+                ],
+                "SELECT": select_items,
+            }
+        },
+    }
+
+
+ERR_BRANCHOUT_DATASET_NAME = "Branch-out `dataset_name` must be a non-empty string."
+ERR_BRANCHOUT_APPEND_NO_TARGET = (
+    "APPEND mode needs an existing `target_ds_id` to append into; "
+    "pass target_ds_id, or use REPLACE to create a new dataset."
+)
+
+
+def build_branch_out_params(
+    dataset_name: str,
+    target_ds_id: int | None = None,
+    save_as_mode: SaveAsDatasetMode = SaveAsDatasetMode.REPLACE,
+    column_mapping: dict[str, str] | None = None,
+    label_ids: list[int] | None = None,
+) -> dict[str, Any]:
+    """Build the ``target_properties`` for a branch-out (save-as-dataset) export.
+
+    Branch-out copies the view's data into a Mammoth dataset via the same
+    internal-dataset export handler as crosstab, but with NO transform.
+
+    ``target_ds_id`` None creates a new dataset named *dataset_name*; an int
+    replaces/appends into that existing dataset (per *save_as_mode*).
+    *column_mapping* maps source -> destination column names (empty = all
+    columns). ``TRANSFORM`` is explicitly ``None`` — the backend treats a
+    non-dict transform as "plain copy".
+
+    Raises:
+        MammothValidationError: If *dataset_name* is empty, or APPEND mode is
+            requested without a *target_ds_id* to append into.
+    """
+    if not dataset_name:
+        raise MammothValidationError(ERR_BRANCHOUT_DATASET_NAME)
+    if save_as_mode is SaveAsDatasetMode.APPEND and target_ds_id is None:
+        raise MammothValidationError(
+            ERR_BRANCHOUT_APPEND_NO_TARGET,
+            {"save_as_mode": save_as_mode.value, "target_ds_id": None},
+        )
+    return {
+        "DS_NAME": dataset_name,
+        "TARGET_DS_ID": target_ds_id,
+        "SAVE_AS_DS_MODE": save_as_mode.value,
+        "COLUMN_MAPPING": column_mapping or {},
+        "TARGET_DS_LABEL_IDS": label_ids,
+        "TRANSFORM": None,
     }
 
 
