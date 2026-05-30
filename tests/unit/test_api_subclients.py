@@ -15,6 +15,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from mammoth.client import MammothClient
+from mammoth.exceptions import MammothValidationError
+from mammoth.models.external_keys import ExternalKeyType, ModelConfigSpec
 
 # ── Shared Fixtures ──────────────────────────────────────────────
 
@@ -45,6 +47,16 @@ def assert_called_with_method_and_endpoint(
     assert (
         endpoint_substring in args[0][1]
     ), f"Expected endpoint containing '{endpoint_substring}', got '{args[0][1]}'"
+
+
+def assert_json_body(mock: MagicMock, expected: dict) -> None:
+    """Assert the mock's last call sent exactly *expected* as the JSON body.
+
+    Pins the full request payload (not a subset) so a renamed/dropped/extra key
+    is caught — the regression guard the route-only assertions above can't give.
+    """
+    body = mock.call_args.kwargs.get("json")
+    assert body == expected, f"Expected JSON body {expected}, got {body}"
 
 
 # ======================================================================
@@ -715,9 +727,63 @@ class TestExternalKeysAPI:
         client.external_keys.get(key_id=3)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/external_keys/3")
 
-    def test_create(self, client: MammothClient):
-        client.external_keys.create(config={"name": "key1"})
+    def test_create_minimal(self, client: MammothClient):
+        client.external_keys.create(
+            key_type=ExternalKeyType.ANTHROPIC,
+            key_name="Claude key",
+            secure_key="sk-ant-123",
+        )
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/external_keys")
+        assert_json_body(
+            client._request_json,
+            {"key_type": "anthropic", "key_name": "Claude key", "secure_key": "sk-ant-123"},
+        )
+
+    def test_create_with_model_settings(self, client: MammothClient):
+        client.external_keys.create(
+            key_type=ExternalKeyType.OPEN_AI,
+            key_name="GPT key",
+            secure_key="sk-123",
+            description="prod",
+            model_id="gpt-5.4",
+            model_settings=ModelConfigSpec(web_search=True, thinking_budget=2048),
+        )
+        # model_settings emits the aliased wire key "model_config" with only set fields.
+        assert_json_body(
+            client._request_json,
+            {
+                "key_type": "open_ai",
+                "key_name": "GPT key",
+                "secure_key": "sk-123",
+                "description": "prod",
+                "model_id": "gpt-5.4",
+                "model_config": {"web_search": True, "thinking_budget": 2048},
+            },
+        )
+
+    def test_create_rejects_empty_name(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="key_name"):
+            client.external_keys.create(
+                key_type=ExternalKeyType.GEMINI, key_name="", secure_key="abc"
+            )
+        client._request_json.assert_not_called()
+
+    def test_create_rejects_short_secure_key(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="secure_key"):
+            client.external_keys.create(
+                key_type=ExternalKeyType.GROK, key_name="k", secure_key="ab"
+            )
+        client._request_json.assert_not_called()
+
+    def test_create_model_settings_requires_model_id(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="model_id"):
+            client.external_keys.create(
+                key_type=ExternalKeyType.OPEN_AI,
+                key_name="k",
+                secure_key="abc",
+                model_settings=ModelConfigSpec(web_search=True),
+            )
+        client._request_json.assert_not_called()
 
     def test_delete(self, client: MammothClient):
         client.external_keys.delete(key_id=3)
@@ -745,29 +811,76 @@ class TestActivityLogsAPI:
 
 
 class TestAddonsAPI:
-    def test_add_connector(self, client: MammothClient):
-        client.addons.add_connector(config={"type": "salesforce"})
+    def test_add_connector_single(self, client: MammothClient):
+        client.addons.add_connector(connector_id=42)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/addons/connectors")
+        assert_json_body(client._request_json, {"connector_id": 42})
 
-    def test_remove_connector(self, client: MammothClient):
-        client.addons.remove_connector(config={"type": "salesforce"})
+    def test_add_connector_bulk(self, client: MammothClient):
+        client.addons.add_connector(connector_ids=[42, 43])
+        assert_json_body(client._request_json, {"connector_ids": [42, 43]})
+
+    def test_remove_connector_single(self, client: MammothClient):
+        client.addons.remove_connector(connector_id=42)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/addons/connectors")
+        assert_json_body(client._request_json, {"connector_id": 42})
+
+    def test_connector_requires_exactly_one(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="exactly one"):
+            client.addons.add_connector()
+        with pytest.raises(MammothValidationError, match="exactly one"):
+            client.addons.add_connector(connector_id=1, connector_ids=[2])
+        client._request_json.assert_not_called()
+
+    def test_connector_rejects_nonpositive_id(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="positive"):
+            client.addons.add_connector(connector_id=0)
+        with pytest.raises(MammothValidationError, match="positive"):
+            client.addons.add_connector(connector_ids=[1, -2])
+        client._request_json.assert_not_called()
+
+    def test_connector_rejects_empty_list(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="non-empty"):
+            client.addons.add_connector(connector_ids=[])
+        client._request_json.assert_not_called()
 
     def test_add_storage(self, client: MammothClient):
-        client.addons.add_storage(config={"type": "s3"})
+        client.addons.add_storage(additional_storage_gb=50)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/addons/storage")
+        assert_json_body(client._request_json, {"additional_storage_gb": 50})
 
     def test_remove_storage(self, client: MammothClient):
-        client.addons.remove_storage(config={"type": "s3"})
+        client.addons.remove_storage(removal_storage_gb=20)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/addons/storage")
+        assert_json_body(client._request_json, {"removal_storage_gb": 20})
+
+    def test_storage_rejects_nonpositive(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="positive"):
+            client.addons.add_storage(additional_storage_gb=0)
+        with pytest.raises(MammothValidationError, match="positive"):
+            client.addons.remove_storage(removal_storage_gb=-5)
+        client._request_json.assert_not_called()
 
     def test_add_users(self, client: MammothClient):
-        client.addons.add_users(config={"count": 5})
+        client.addons.add_users(user_count=5)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/addons/users")
+        assert_json_body(client._request_json, {"user_count": 5})
+
+    def test_add_users_defaults_to_one(self, client: MammothClient):
+        client.addons.add_users()
+        assert_json_body(client._request_json, {"user_count": 1})
 
     def test_remove_users(self, client: MammothClient):
-        client.addons.remove_users(config={"count": 5})
+        client.addons.remove_users(user_count=5)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/addons/users")
+        assert_json_body(client._request_json, {"user_count": 5})
+
+    def test_users_rejects_nonpositive(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="positive"):
+            client.addons.add_users(user_count=0)
+        with pytest.raises(MammothValidationError, match="positive"):
+            client.addons.remove_users(user_count=-1)
+        client._request_json.assert_not_called()
 
 
 # ======================================================================

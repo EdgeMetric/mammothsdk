@@ -53,12 +53,22 @@ from mammoth.exceptions import (
     MammothAuthError,
     MammothColumnError,
     MammothError,
+    MammothExportError,
     MammothJobFailedError,
     MammothJobTimeoutError,
     MammothTransformError,
+    MammothValidationError,
 )
 from mammoth.helpers import parse_path
-from mammoth.models.exports import HandlerType, TriggerType
+from mammoth.models.exports import (
+    BigQueryExportType,
+    HandlerType,
+    HttpMethod,
+    OdbcType,
+    RestAuthType,
+    TriggerType,
+)
+from mammoth.models.external_keys import ExternalKeyType, ModelConfigSpec
 from mammoth.models.pipeline import (
     AggregateFunction,
     AggregationSpec,
@@ -149,6 +159,13 @@ __all__ = [
     # Export enums
     "HandlerType",
     "TriggerType",
+    "BigQueryExportType",
+    "OdbcType",
+    "RestAuthType",
+    "HttpMethod",
+    # External keys
+    "ExternalKeyType",
+    "ModelConfigSpec",
     # Exceptions
     "MammothError",
     "MammothAPIError",
@@ -157,6 +174,8 @@ __all__ = [
     "MammothColumnError",
     "MammothJobTimeoutError",
     "MammothJobFailedError",
+    "MammothValidationError",
+    "MammothExportError",
     # Webhooks
     "WebhookMode",
     # Helpers
