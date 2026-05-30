@@ -41,6 +41,7 @@ Key modules:
 
 from __future__ import annotations
 
+from mammoth.api.automations import SchedulePatchItem
 from mammoth.client import (
     DEFAULT_JOB_TIMEOUT,
     DEFAULT_PIPELINE_TIMEOUT,
@@ -60,6 +61,34 @@ from mammoth.exceptions import (
     MammothValidationError,
 )
 from mammoth.helpers import parse_path
+from mammoth.models.automations import (
+    AlertType,
+    AutomationConditionMode,
+    AutomationConditionSpec,
+    AutomationConditionType,
+    AutomationPatchItem,
+    AutomationPatchOp,
+    AutomationPatchPath,
+    AutomationStatus,
+    AutomationTaskSpec,
+    AutomationTaskType,
+    ConditionDetailsSpec,
+    DataRefreshConfig,
+    FirstPullAt,
+    OnRefreshAction,
+    PatchAutomationDetails,
+    PullDataExecutionParams,
+    RruleFrequency,
+    RruleSpec,
+    ScheduleCreateSpec,
+    SchedulePatchPath,
+    SchedulePatchValue,
+    ScheduleStatus,
+    ScheduleType,
+    TaskDetailsSpec,
+    WorkItemName,
+    WorkItemSpec,
+)
 from mammoth.models.dashboards import (
     DashboardActionType,
     DashboardAuthType,
@@ -180,6 +209,35 @@ __all__ = [
     "DashboardPatchPath",
     "DashboardShareRole",
     "DashboardShareUser",
+    # Automation enums / models
+    "AutomationTaskType",
+    "AutomationConditionType",
+    "AutomationConditionMode",
+    "AutomationPatchOp",
+    "AutomationPatchPath",
+    "AutomationStatus",
+    "AlertType",
+    "AutomationTaskSpec",
+    "TaskDetailsSpec",
+    "DataRefreshConfig",
+    "AutomationConditionSpec",
+    "ConditionDetailsSpec",
+    "AutomationPatchItem",
+    "PatchAutomationDetails",
+    # Schedule enums / models (shared by AutomationsAPI + SchedulesAPI)
+    "RruleFrequency",
+    "ScheduleStatus",
+    "SchedulePatchPath",
+    "WorkItemName",
+    "ScheduleType",
+    "FirstPullAt",
+    "OnRefreshAction",
+    "RruleSpec",
+    "PullDataExecutionParams",
+    "WorkItemSpec",
+    "ScheduleCreateSpec",
+    "SchedulePatchValue",
+    "SchedulePatchItem",
     # External keys
     "ExternalKeyType",
     "ModelConfigSpec",

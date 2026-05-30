@@ -10,12 +10,41 @@ Tests every public method on every API sub-client:
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+from mammoth.api.automations import SchedulePatchItem
 from mammoth.client import MammothClient
 from mammoth.exceptions import MammothValidationError
+from mammoth.models.automations import (
+    AlertType,
+    AutomationConditionSpec,
+    AutomationConditionType,
+    AutomationPatchItem,
+    AutomationPatchOp,
+    AutomationPatchPath,
+    AutomationStatus,
+    AutomationTaskSpec,
+    AutomationTaskType,
+    ConditionDetailsSpec,
+    DataRefreshConfig,
+    FirstPullAt,
+    OnRefreshAction,
+    PatchAutomationDetails,
+    PullDataExecutionParams,
+    RruleFrequency,
+    RruleSpec,
+    ScheduleCreateSpec,
+    SchedulePatchPath,
+    SchedulePatchValue,
+    ScheduleStatus,
+    ScheduleType,
+    TaskDetailsSpec,
+    WorkItemName,
+    WorkItemSpec,
+)
 from mammoth.models.dashboards import (
     DashboardActionType,
     DashboardAuthType,
@@ -789,40 +818,314 @@ class TestDashboardsAPI:
 # ======================================================================
 
 
+_DT = datetime(2025, 1, 1, tzinfo=timezone.utc)
+
+_SCHEDULE_CREATE_SPEC = ScheduleCreateSpec(
+    rrule=RruleSpec(frequency=RruleFrequency.DAILY, start=_DT),
+    work_items=[
+        WorkItemSpec(
+            name=WorkItemName.PULL_CLOUD_DATA,
+            execution_params=PullDataExecutionParams(
+                schedule_type=ScheduleType.MOMENT,
+                first_pull_at=FirstPullAt.NOW,
+                on_refresh_action=OnRefreshAction.REPLACE,
+            ),
+            args=[10, 20],
+        )
+    ],
+)
+
+_SCHEDULE_CREATE_BODY = {
+    "rrule": {"frequency": "daily", "start": "2025-01-01T00:00:00+00:00"},
+    "work_items": [
+        {
+            "name": "pull_cloud_data",
+            "execution_params": {
+                "schedule_type": "moment",
+                "first_pull_at": "now",
+                "on_refresh_action": "replace",
+            },
+            "args": [10, 20],
+        }
+    ],
+}
+
+_SCHEDULE_PATCH_STATUS_ITEM = SchedulePatchItem(
+    op="replace",
+    path=SchedulePatchPath.STATUS,
+    value=ScheduleStatus.PAUSE,
+)
+
+_SCHEDULE_PATCH_RRULE_ITEM = SchedulePatchItem(
+    op="replace",
+    path=SchedulePatchPath.RRULE,
+    value=SchedulePatchValue(
+        rrule=RruleSpec(frequency=RruleFrequency.DAILY, start=_DT),
+        work_items=[
+            WorkItemSpec(
+                name=WorkItemName.PULL_CLOUD_DATA,
+                execution_params=PullDataExecutionParams(
+                    schedule_type=ScheduleType.MOMENT,
+                    first_pull_at=FirstPullAt.NOW,
+                    on_refresh_action=OnRefreshAction.REPLACE,
+                ),
+                args=[5],
+            )
+        ],
+    ),
+)
+
+_SCHEDULE_PATCH_RRULE_BODY = {
+    "patch": [
+        {
+            "op": "replace",
+            "path": "rrule",
+            "value": {
+                "rrule": {"frequency": "daily", "start": "2025-01-01T00:00:00+00:00"},
+                "work_items": [
+                    {
+                        "name": "pull_cloud_data",
+                        "execution_params": {
+                            "schedule_type": "moment",
+                            "first_pull_at": "now",
+                            "on_refresh_action": "replace",
+                        },
+                        "args": [5],
+                    }
+                ],
+            },
+        }
+    ]
+}
+
+
 class TestAutomationsAPI:
-    def test_list(self, client: MammothClient):
+    def test_list(self, client: MammothClient) -> None:
         client.automations.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/automations")
 
-    def test_create(self, client: MammothClient):
-        client.automations.create(config={"name": "Auto1"})
+    def test_create(self, client: MammothClient) -> None:
+        task = AutomationTaskSpec(
+            task_type=AutomationTaskType.RUN_DATA_RETRIEVAL,
+            details=TaskDetailsSpec(ds_details=[DataRefreshConfig(ds_id=42)]),
+        )
+        client.automations.create(
+            name="Nightly",
+            description="desc",
+            tasks=[task],
+        )
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/automations")
+        assert_json_body(
+            client._request_json,
+            {
+                "name": "Nightly",
+                "description": "desc",
+                "tasks": [
+                    {
+                        "task_type": "run_data_retrieval",
+                        "details": {"ds_details": [{"ds_id": 42}]},
+                    }
+                ],
+                "conditions": [],
+                "condition_mode": "and",
+            },
+        )
 
-    def test_get(self, client: MammothClient):
+    def test_create_empty_name_raises(self, client: MammothClient) -> None:
+        task = AutomationTaskSpec(
+            task_type=AutomationTaskType.RUN_DATA_RETRIEVAL,
+            details=TaskDetailsSpec(ds_details=[DataRefreshConfig(ds_id=1)]),
+        )
+        with pytest.raises(MammothValidationError):
+            client.automations.create(name="", description="d", tasks=[task])
+        client._request_json.assert_not_called()
+
+    def test_create_empty_tasks_raises(self, client: MammothClient) -> None:
+        with pytest.raises(MammothValidationError):
+            client.automations.create(name="A", description="d", tasks=[])
+        client._request_json.assert_not_called()
+
+    def test_create_task_missing_ds_details_raises(self, client: MammothClient) -> None:
+        task = AutomationTaskSpec(
+            task_type=AutomationTaskType.RUN_DATA_RETRIEVAL,
+            details=TaskDetailsSpec(),
+        )
+        with pytest.raises(MammothValidationError):
+            client.automations.create(name="A", description="d", tasks=[task])
+        client._request_json.assert_not_called()
+
+    def test_create_task_missing_alert_fields_raises(self, client: MammothClient) -> None:
+        task = AutomationTaskSpec(
+            task_type=AutomationTaskType.SEND_AN_ALERT,
+            details=TaskDetailsSpec(alert_type=AlertType.EMAIL),
+        )
+        with pytest.raises(MammothValidationError):
+            client.automations.create(name="A", description="d", tasks=[task])
+        client._request_json.assert_not_called()
+
+    def test_create_condition_at_specific_time_missing_interval_raises(
+        self, client: MammothClient
+    ) -> None:
+        task = AutomationTaskSpec(
+            task_type=AutomationTaskType.RUN_DATA_RETRIEVAL,
+            details=TaskDetailsSpec(ds_details=[DataRefreshConfig(ds_id=1)]),
+        )
+        cond = AutomationConditionSpec(
+            condition_type=AutomationConditionType.AT_SPECIFIC_TIME,
+            details=ConditionDetailsSpec(start_at=_DT),  # missing interval
+        )
+        with pytest.raises(MammothValidationError):
+            client.automations.create(name="A", description="d", tasks=[task], conditions=[cond])
+        client._request_json.assert_not_called()
+
+    def test_create_condition_by_month_day_out_of_range_raises(self, client: MammothClient) -> None:
+        task = AutomationTaskSpec(
+            task_type=AutomationTaskType.RUN_DATA_RETRIEVAL,
+            details=TaskDetailsSpec(ds_details=[DataRefreshConfig(ds_id=1)]),
+        )
+        cond = AutomationConditionSpec(
+            condition_type=AutomationConditionType.RUN_CONFIG,
+            details=ConditionDetailsSpec(by_month_day=[32]),
+        )
+        with pytest.raises(MammothValidationError):
+            client.automations.create(name="A", description="d", tasks=[task], conditions=[cond])
+        client._request_json.assert_not_called()
+
+    def test_get(self, client: MammothClient) -> None:
         client.automations.get(automation_id=10)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/automations/10")
 
-    def test_update(self, client: MammothClient):
-        client.automations.update(automation_id=10, config={"name": "Renamed"})
+    def test_update_command_run(self, client: MammothClient) -> None:
+        patch_item = AutomationPatchItem(
+            op=AutomationPatchOp.COMMAND, path=AutomationPatchPath.RUN, value={}
+        )
+        client.automations.update(automation_id=10, patch=[patch_item])
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/automations/10")
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "command", "path": "run", "value": {}}]},
+        )
 
-    def test_delete(self, client: MammothClient):
+    def test_update_status_suspend(self, client: MammothClient) -> None:
+        patch_item = AutomationPatchItem(
+            op=AutomationPatchOp.REPLACE,
+            path=AutomationPatchPath.STATUS,
+            value=AutomationStatus.SUSPEND.value,
+        )
+        client.automations.update(automation_id=10, patch=[patch_item])
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "replace", "path": "status", "value": "suspend"}]},
+        )
+
+    def test_update_details(self, client: MammothClient) -> None:
+        details = PatchAutomationDetails(name="Renamed")
+        patch_item = AutomationPatchItem(
+            op=AutomationPatchOp.REPLACE, path=AutomationPatchPath.DETAILS, value=details
+        )
+        client.automations.update(automation_id=10, patch=[patch_item])
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "replace", "path": "details", "value": {"name": "Renamed"}}]},
+        )
+
+    def test_update_invalid_id_raises(self, client: MammothClient) -> None:
+        patch_item = AutomationPatchItem(
+            op=AutomationPatchOp.COMMAND, path=AutomationPatchPath.RUN, value={}
+        )
+        with pytest.raises(MammothValidationError):
+            client.automations.update(automation_id=0, patch=[patch_item])
+        client._request_json.assert_not_called()
+
+    def test_update_empty_patch_raises(self, client: MammothClient) -> None:
+        with pytest.raises(MammothValidationError):
+            client.automations.update(automation_id=10, patch=[])
+        client._request_json.assert_not_called()
+
+    def test_update_command_wrong_path_raises(self, client: MammothClient) -> None:
+        patch_item = AutomationPatchItem(
+            op=AutomationPatchOp.COMMAND, path=AutomationPatchPath.STATUS, value={}
+        )
+        with pytest.raises(MammothValidationError):
+            client.automations.update(automation_id=10, patch=[patch_item])
+        client._request_json.assert_not_called()
+
+    def test_update_status_invalid_value_raises(self, client: MammothClient) -> None:
+        patch_item = AutomationPatchItem(
+            op=AutomationPatchOp.REPLACE,
+            path=AutomationPatchPath.STATUS,
+            value="active",
+        )
+        with pytest.raises(MammothValidationError):
+            client.automations.update(automation_id=10, patch=[patch_item])
+        client._request_json.assert_not_called()
+
+    def test_update_details_all_none_raises(self, client: MammothClient) -> None:
+        patch_item = AutomationPatchItem(
+            op=AutomationPatchOp.REPLACE,
+            path=AutomationPatchPath.DETAILS,
+            value=PatchAutomationDetails(),
+        )
+        with pytest.raises(MammothValidationError):
+            client.automations.update(automation_id=10, patch=[patch_item])
+        client._request_json.assert_not_called()
+
+    def test_delete(self, client: MammothClient) -> None:
         client.automations.delete(automation_id=10)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/automations/10")
 
-    def test_list_schedules(self, client: MammothClient):
+    def test_list_schedules(self, client: MammothClient) -> None:
         client.automations.list_schedules()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/schedules")
 
-    def test_create_schedule(self, client: MammothClient):
-        client.automations.create_schedule(config={"cron": "0 * * * *"})
+    def test_create_schedule(self, client: MammothClient) -> None:
+        client.automations.create_schedule(spec=_SCHEDULE_CREATE_SPEC)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/schedules")
+        assert_json_body(client._request_json, _SCHEDULE_CREATE_BODY)
 
-    def test_update_schedule(self, client: MammothClient):
-        client.automations.update_schedule(schedule_id=5, config={"cron": "0 0 * * *"})
+    def test_create_schedule_invalid_interval_raises(self, client: MammothClient) -> None:
+        spec = ScheduleCreateSpec(
+            rrule=RruleSpec(frequency=RruleFrequency.DAILY, start=_DT, interval=-1)
+        )
+        with pytest.raises(MammothValidationError):
+            client.automations.create_schedule(spec=spec)
+        client._request_json.assert_not_called()
+
+    def test_update_schedule(self, client: MammothClient) -> None:
+        client.automations.update_schedule(schedule_id=5, patch=[_SCHEDULE_PATCH_RRULE_ITEM])
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/schedules/5")
+        assert_json_body(client._request_json, _SCHEDULE_PATCH_RRULE_BODY)
 
-    def test_delete_schedule(self, client: MammothClient):
+    def test_update_schedule_status(self, client: MammothClient) -> None:
+        client.automations.update_schedule(schedule_id=5, patch=[_SCHEDULE_PATCH_STATUS_ITEM])
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "replace", "path": "status", "value": "pause"}]},
+        )
+
+    def test_update_schedule_invalid_id_raises(self, client: MammothClient) -> None:
+        with pytest.raises(MammothValidationError):
+            client.automations.update_schedule(schedule_id=0, patch=[_SCHEDULE_PATCH_STATUS_ITEM])
+        client._request_json.assert_not_called()
+
+    def test_update_schedule_empty_patch_raises(self, client: MammothClient) -> None:
+        with pytest.raises(MammothValidationError):
+            client.automations.update_schedule(schedule_id=5, patch=[])
+        client._request_json.assert_not_called()
+
+    def test_update_schedule_invalid_op_raises(self, client: MammothClient) -> None:
+        bad_item = SchedulePatchItem(op="add", path=SchedulePatchPath.STATUS, value="pause")
+        with pytest.raises(MammothValidationError):
+            client.automations.update_schedule(schedule_id=5, patch=[bad_item])
+        client._request_json.assert_not_called()
+
+    def test_update_schedule_status_invalid_value_raises(self, client: MammothClient) -> None:
+        bad_item = SchedulePatchItem(op="replace", path=SchedulePatchPath.STATUS, value="stop")
+        with pytest.raises(MammothValidationError):
+            client.automations.update_schedule(schedule_id=5, patch=[bad_item])
+        client._request_json.assert_not_called()
+
+    def test_delete_schedule(self, client: MammothClient) -> None:
         client.automations.delete_schedule(schedule_id=5)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/schedules/5")
 
@@ -833,23 +1136,75 @@ class TestAutomationsAPI:
 
 
 class TestSchedulesAPI:
-    def test_list(self, client: MammothClient):
+    def test_list(self, client: MammothClient) -> None:
         client.schedules.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/schedules")
 
-    def test_get(self, client: MammothClient):
+    def test_get(self, client: MammothClient) -> None:
         client.schedules.get(schedule_id=5)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/schedules/5")
 
-    def test_create(self, client: MammothClient):
-        client.schedules.create(config={"cron": "0 * * * *"})
+    def test_create(self, client: MammothClient) -> None:
+        """SchedulesAPI.create produces the same wire body as AutomationsAPI.create_schedule."""
+        client.schedules.create(spec=_SCHEDULE_CREATE_SPEC)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/schedules")
+        assert_json_body(client._request_json, _SCHEDULE_CREATE_BODY)
 
-    def test_update(self, client: MammothClient):
-        client.schedules.update(schedule_id=5, config={"cron": "0 0 * * *"})
+    def test_create_with_project_id(self, client: MammothClient) -> None:
+        client.schedules.create(spec=_SCHEDULE_CREATE_SPEC, project_id=99)
+        assert_called_with_method_and_endpoint(client._request_json, "POST", "/schedules")
+        assert_json_body(client._request_json, _SCHEDULE_CREATE_BODY)
+
+    def test_create_invalid_project_id_raises(self, client: MammothClient) -> None:
+        with pytest.raises(MammothValidationError):
+            client.schedules.create(spec=_SCHEDULE_CREATE_SPEC, project_id=0)
+        client._request_json.assert_not_called()
+
+    def test_create_invalid_interval_raises(self, client: MammothClient) -> None:
+        spec = ScheduleCreateSpec(
+            rrule=RruleSpec(frequency=RruleFrequency.HOURLY, start=_DT, interval=0)
+        )
+        with pytest.raises(MammothValidationError):
+            client.schedules.create(spec=spec)
+        client._request_json.assert_not_called()
+
+    def test_update(self, client: MammothClient) -> None:
+        """SchedulesAPI.update produces the same wire body as AutomationsAPI.update_schedule."""
+        client.schedules.update(schedule_id=5, patch=[_SCHEDULE_PATCH_RRULE_ITEM])
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/schedules/5")
+        assert_json_body(client._request_json, _SCHEDULE_PATCH_RRULE_BODY)
 
-    def test_delete(self, client: MammothClient):
+    def test_update_status(self, client: MammothClient) -> None:
+        client.schedules.update(schedule_id=5, patch=[_SCHEDULE_PATCH_STATUS_ITEM])
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "replace", "path": "status", "value": "pause"}]},
+        )
+
+    def test_update_invalid_id_raises(self, client: MammothClient) -> None:
+        with pytest.raises(MammothValidationError):
+            client.schedules.update(schedule_id=-1, patch=[_SCHEDULE_PATCH_STATUS_ITEM])
+        client._request_json.assert_not_called()
+
+    def test_update_invalid_project_id_raises(self, client: MammothClient) -> None:
+        with pytest.raises(MammothValidationError):
+            client.schedules.update(
+                schedule_id=5, patch=[_SCHEDULE_PATCH_STATUS_ITEM], project_id=0
+            )
+        client._request_json.assert_not_called()
+
+    def test_update_empty_patch_raises(self, client: MammothClient) -> None:
+        with pytest.raises(MammothValidationError):
+            client.schedules.update(schedule_id=5, patch=[])
+        client._request_json.assert_not_called()
+
+    def test_update_invalid_op_raises(self, client: MammothClient) -> None:
+        bad_item = SchedulePatchItem(op="remove", path=SchedulePatchPath.RRULE, value="pause")
+        with pytest.raises(MammothValidationError):
+            client.schedules.update(schedule_id=5, patch=[bad_item])
+        client._request_json.assert_not_called()
+
+    def test_delete(self, client: MammothClient) -> None:
         client.schedules.delete(schedule_id=5)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/schedules/5")
 
