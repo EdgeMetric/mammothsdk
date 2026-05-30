@@ -321,7 +321,7 @@ class TestAIJobWaiting:
         self.client._request_json = MagicMock(
             return_value={"job": {"id": 304, "status": "processing"}}
         )
-        self.client.ai.generate_data(dataview_id=20, config={"rows": 100})
+        self.client.ai.generate_data(dataview_id=20, prompt="Generate test data", no_of_rows=10)
         self.client.jobs.wait_for_job.assert_called_once()
 
     def test_query_gen_waits(self):

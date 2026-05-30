@@ -1,15 +1,22 @@
-"""
-Workspace API client for managing workspaces in Mammoth.
-"""
+"""Workspace API client for managing workspaces in Mammoth."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from mammoth.exceptions import MammothValidationError
+from mammoth.models.workspaces import UserRolePatchOp, WorkspacePatchOp
+
 if TYPE_CHECKING:
     from ..client import MammothClient
 
 _list = list  # Alias to avoid shadowing by method name
+
+# ── Validation error constants ────────────────────────────────────────────────
+
+ERR_WORKSPACE_PATCHES_EMPTY = "`patches` must be a non-empty list of patch operations."
+ERR_WORKSPACE_USER_ID_EMPTY = "`user_id` must be a non-empty string."
+ERR_WORKSPACE_USER_PATCHES_EMPTY = "`patches` must be a non-empty list of patch operations."
 
 
 class WorkspaceAPI:
@@ -51,18 +58,40 @@ class WorkspaceAPI:
         ws = workspace_id or self._ws()
         return self._client._request_json("GET", f"/workspaces/{ws}")
 
-    def update(self, config: dict[str, Any], workspace_id: int | None = None) -> dict[str, Any]:
-        """Update workspace settings.
+    def update(
+        self,
+        patches: _list[WorkspacePatchOp],
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Update workspace settings via JSON-patch operations.
+
+        The backend expects ``{"patches": [<ops>]}``.  Each op has:
+
+        - ``op``: ``"replace"`` (only supported op).
+        - ``path``: one of ``name``, ``metadata``, ``plan_id``, ``billing_cycle``.
+        - ``value``: type depends on path:
+
+          - ``name`` → ``str`` 1–50 chars
+          - ``metadata`` → ``dict``
+          - ``plan_id`` → ``int``
+          - ``billing_cycle`` → ``"monthly"``, ``"yearly"``, or ``"annual"``
 
         Args:
-            config: Patch operations for the workspace.
+            patches: Non-empty list of
+                :class:`~mammoth.models.workspaces.WorkspacePatchOp` instances.
             workspace_id: ID of the workspace (uses client default if not provided).
 
         Returns:
             Dict with updated workspace info.
+
+        Raises:
+            MammothValidationError: If ``patches`` is empty.
         """
+        if not patches:
+            raise MammothValidationError(ERR_WORKSPACE_PATCHES_EMPTY)
         ws = workspace_id or self._ws()
-        return self._client._request_json("PATCH", f"/workspaces/{ws}", json=config)
+        body = {"patches": [{"op": p.op, "path": p.path.value, "value": p.value} for p in patches]}
+        return self._client._request_json("PATCH", f"/workspaces/{ws}", json=body)
 
     def delete(self, workspace_id: int | None = None) -> dict[str, Any]:
         """Delete a workspace.
@@ -120,17 +149,36 @@ class WorkspaceAPI:
         return self._client._request_json("GET", f"/workspaces/{ws}/users/{user_id}")
 
     def update_user(
-        self, user_id: str, config: dict[str, Any], workspace_id: int | None = None
+        self,
+        user_id: str,
+        patches: _list[UserRolePatchOp],
+        workspace_id: int | None = None,
     ) -> dict[str, Any]:
-        """Update a user's settings in the workspace.
+        """Update a user's role in the workspace via JSON-patch operations.
+
+        The backend expects ``{"patches": [{"op": "replace", "path": "role",
+        "value": "<role>"}]}``.
+
+        Allowed role values (:class:`~mammoth.models.workspaces.WorkspaceRoleType`):
+        ``workspace_member``, ``workspace_admin``, ``workspace_owner``,
+        ``workspace_guest``.
 
         Args:
-            user_id: ID of the user.
-            config: Patch operations for the user.
+            user_id: Non-empty ID of the user to update.
+            patches: Non-empty list of
+                :class:`~mammoth.models.workspaces.UserRolePatchOp` instances.
             workspace_id: ID of the workspace (uses client default if not provided).
 
         Returns:
             Dict with updated user info.
+
+        Raises:
+            MammothValidationError: If ``user_id`` is empty or ``patches`` is empty.
         """
+        if not user_id:
+            raise MammothValidationError(ERR_WORKSPACE_USER_ID_EMPTY)
+        if not patches:
+            raise MammothValidationError(ERR_WORKSPACE_USER_PATCHES_EMPTY)
         ws = workspace_id or self._ws()
-        return self._client._request_json("PATCH", f"/workspaces/{ws}/users/{user_id}", json=config)
+        body = {"patches": [{"op": p.op, "path": p.path, "value": p.value.value} for p in patches]}
+        return self._client._request_json("PATCH", f"/workspaces/{ws}/users/{user_id}", json=body)

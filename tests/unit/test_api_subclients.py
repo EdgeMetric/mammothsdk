@@ -45,6 +45,7 @@ from mammoth.models.automations import (
     WorkItemName,
     WorkItemSpec,
 )
+from mammoth.models.connectors import DsConfigPatchOp, DsConfigPatchPath
 from mammoth.models.dashboards import (
     DashboardActionType,
     DashboardAuthType,
@@ -55,6 +56,13 @@ from mammoth.models.dashboards import (
     DashboardShareUser,
 )
 from mammoth.models.external_keys import ExternalKeyType, ModelConfigSpec
+from mammoth.models.workspaces import (
+    BillingCycle,
+    UserRolePatchOp,
+    WorkspacePatchOp,
+    WorkspacePatchPath,
+    WorkspaceRoleType,
+)
 
 # ── Shared Fixtures ──────────────────────────────────────────────
 
@@ -464,20 +472,52 @@ class TestConnectorsAPI:
         )
 
     def test_create_connection(self, client: MammothClient):
-        client.connectors.create_connection(connector_key="salesforce", config={"host": "x"})
+        client.connectors.create_connection(
+            connector_key="salesforce", config={"code": "oauth_code"}
+        )
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/connectors/salesforce/connections"
         )
+        assert_json_body(client._request_json, {"code": "oauth_code"})
+
+    def test_create_connection_forwards_config_unchanged(self, client: MammothClient):
+        creds = {
+            "hostname": "db.example.com",
+            "port": 5432,
+            "database": "prod",
+            "username": "u",
+            "password": "p",
+        }
+        client.connectors.create_connection(connector_key="postgres", config=creds)
+        assert_json_body(client._request_json, creds)
+
+    def test_create_connection_rejects_empty_config(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="config"):
+            client.connectors.create_connection(connector_key="postgres", config={})
+        client._request_json.assert_not_called()
 
     def test_get_connection(self, client: MammothClient):
         client.connectors.get_connection(connector_key="salesforce", connection_key="conn1")
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/connections/conn1")
 
-    def test_update_connection(self, client: MammothClient):
+    def test_update_connection_wraps_patch_envelope(self, client: MammothClient):
+        """PROD BUG FIX: SDK must wrap credentials in the patch envelope."""
+        creds = {"host": "new.db.example.com", "password": "newpass"}
         client.connectors.update_connection(
-            connector_key="salesforce", connection_key="conn1", config={"host": "y"}
+            connector_key="postgres", connection_key="conn1", credentials=creds
         )
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/connections/conn1")
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "replace", "path": "connection", "value": creds}]},
+        )
+
+    def test_update_connection_rejects_empty_credentials(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="credentials"):
+            client.connectors.update_connection(
+                connector_key="postgres", connection_key="conn1", credentials={}
+            )
+        client._request_json.assert_not_called()
 
     def test_delete_connection(self, client: MammothClient):
         client.connectors.delete_connection(connector_key="salesforce", connection_key="conn1")
@@ -489,13 +529,54 @@ class TestConnectorsAPI:
             client._request, "GET", "/connections/conn1/ds_configs"
         )
 
-    def test_create_ds_config(self, client: MammothClient):
+    def test_create_ds_config_with_query(self, client: MammothClient):
         client.connectors.create_ds_config(
-            connector_key="salesforce", connection_key="conn1", config={"table": "x"}
+            connector_key="postgres",
+            connection_key="conn1",
+            query="SELECT * FROM orders",
+            table="orders",
         )
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/connections/conn1/ds_configs"
         )
+        assert_json_body(
+            client._request_json,
+            {
+                "query": "SELECT * FROM orders",
+                "table": "orders",
+                "validate": True,
+                "data_sample": False,
+            },
+        )
+
+    def test_create_ds_config_with_file_source(self, client: MammothClient):
+        client.connectors.create_ds_config(
+            connector_key="sftp",
+            connection_key="conn1",
+            file_source="/data/report.csv",
+            data_sample=True,
+            validate=False,
+        )
+        assert_json_body(
+            client._request_json,
+            {"file_source": "/data/report.csv", "validate": False, "data_sample": True},
+        )
+
+    def test_create_ds_config_rejects_no_source(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="query"):
+            client.connectors.create_ds_config(connector_key="postgres", connection_key="conn1")
+        client._request_json.assert_not_called()
+
+    def test_create_ds_config_rejects_validate_xor(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="mutually exclusive"):
+            client.connectors.create_ds_config(
+                connector_key="postgres",
+                connection_key="conn1",
+                query="SELECT 1",
+                validate=True,
+                data_sample=True,
+            )
+        client._request_json.assert_not_called()
 
     def test_get_ds_config(self, client: MammothClient):
         client.connectors.get_ds_config(
@@ -503,14 +584,41 @@ class TestConnectorsAPI:
         )
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/ds_configs/dsc1")
 
-    def test_update_ds_config(self, client: MammothClient):
+    def test_update_ds_config_sends_patch_envelope(self, client: MammothClient):
+        op = DsConfigPatchOp(
+            op="replace",
+            path=DsConfigPatchPath.QUERY,
+            value={"query": "SELECT id FROM users", "ds_id": 10, "validate": True},
+        )
         client.connectors.update_ds_config(
-            connector_key="salesforce",
+            connector_key="postgres",
             connection_key="conn1",
             ds_config_key="dsc1",
-            config={"table": "y"},
+            patch=[op],
         )
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/ds_configs/dsc1")
+        assert_json_body(
+            client._request_json,
+            {
+                "patch": [
+                    {
+                        "op": "replace",
+                        "path": "query",
+                        "value": {"query": "SELECT id FROM users", "ds_id": 10, "validate": True},
+                    }
+                ]
+            },
+        )
+
+    def test_update_ds_config_rejects_empty_patch(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="patch"):
+            client.connectors.update_ds_config(
+                connector_key="postgres",
+                connection_key="conn1",
+                ds_config_key="dsc1",
+                patch=[],
+            )
+        client._request_json.assert_not_called()
 
     def test_delete_ds_config(self, client: MammothClient):
         client.connectors.delete_ds_config(
@@ -1223,17 +1331,83 @@ class TestBatchesAPI:
         client.batches.get(dataset_id=500, batch_id=10)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/batches/10")
 
-    def test_create(self, client: MammothClient):
-        client.batches.create(dataset_id=500, config={"name": "b1"})
+    def test_create_sends_correct_body(self, client: MammothClient):
+        client.batches.create(
+            dataset_id=500,
+            source_id=42,
+            mapping={"src_col": "dst_col"},
+        )
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/datasets/500/batches"
         )
+        assert_json_body(
+            client._request_json,
+            {
+                "source": "datasource",
+                "source_id": 42,
+                "mapping": {"src_col": "dst_col"},
+                "delete_source_ds": False,
+            },
+        )
 
-    def test_update(self, client: MammothClient):
-        client.batches.update(dataset_id=500, config={"name": "b1_updated"})
+    def test_create_with_optional_fields(self, client: MammothClient):
+        client.batches.create(
+            dataset_id=500,
+            source_id=42,
+            mapping={"a": "b"},
+            is_validation_required=True,
+            delete_source_ds=True,
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "source": "datasource",
+                "source_id": 42,
+                "mapping": {"a": "b"},
+                "is_validation_required": True,
+                "delete_source_ds": True,
+            },
+        )
+
+    def test_create_rejects_nonpositive_source_id(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="source_id"):
+            client.batches.create(dataset_id=500, source_id=0, mapping={"a": "b"})
+        client._request_json.assert_not_called()
+
+    def test_create_rejects_empty_mapping(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="mapping"):
+            client.batches.create(dataset_id=500, source_id=1, mapping={})
+        client._request_json.assert_not_called()
+
+    def test_update_wraps_patch_envelope(self, client: MammothClient):
+        """PROD BUG FIX: SDK must wrap patch ops in {"patch": [...]} envelope."""
+        patch_ops = [{"op": "replace", "value": {"approve": [101, 102]}}]
+        client.batches.update(dataset_id=500, patch=patch_ops)
         assert_called_with_method_and_endpoint(
             client._request_json, "PATCH", "/datasets/500/batches"
         )
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "replace", "value": {"approve": [101, 102]}}]},
+        )
+
+    def test_update_remove_op(self, client: MammothClient):
+        patch_ops = [{"op": "remove", "value": [101, 102]}]
+        client.batches.update(dataset_id=500, patch=patch_ops)
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "remove", "value": [101, 102]}]},
+        )
+
+    def test_update_rejects_empty_patch(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="patch"):
+            client.batches.update(dataset_id=500, patch=[])
+        client._request_json.assert_not_called()
+
+    def test_update_rejects_invalid_op(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="op"):
+            client.batches.update(dataset_id=500, patch=[{"op": "add", "value": [1]}])
+        client._request_json.assert_not_called()
 
     def test_delete(self, client: MammothClient):
         client.batches.delete(dataset_id=500, batch_id=10)
@@ -1526,9 +1700,45 @@ class TestWorkspaceAPI:
         client.workspaces.get()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/workspaces/1")
 
-    def test_update(self, client: MammothClient):
-        client.workspaces.update(config={"name": "New WS Name"})
+    def test_update_name(self, client: MammothClient):
+        op = WorkspacePatchOp(op="replace", path=WorkspacePatchPath.NAME, value="Acme Corp")
+        client.workspaces.update(patches=[op])
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/workspaces/1")
+        assert_json_body(
+            client._request_json,
+            {"patches": [{"op": "replace", "path": "name", "value": "Acme Corp"}]},
+        )
+
+    def test_update_billing_cycle(self, client: MammothClient):
+        op = WorkspacePatchOp(
+            op="replace", path=WorkspacePatchPath.BILLING_CYCLE, value=BillingCycle.YEARLY
+        )
+        client.workspaces.update(patches=[op])
+        assert_json_body(
+            client._request_json,
+            {"patches": [{"op": "replace", "path": "billing_cycle", "value": "yearly"}]},
+        )
+
+    def test_update_plan_id(self, client: MammothClient):
+        op = WorkspacePatchOp(op="replace", path=WorkspacePatchPath.PLAN_ID, value=3)
+        client.workspaces.update(patches=[op])
+        assert_json_body(
+            client._request_json,
+            {"patches": [{"op": "replace", "path": "plan_id", "value": 3}]},
+        )
+
+    def test_update_rejects_empty_patches(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="patches"):
+            client.workspaces.update(patches=[])
+        client._request_json.assert_not_called()
+
+    def test_update_rejects_name_too_long(self, client: MammothClient):
+        with pytest.raises(ValueError, match="name"):
+            WorkspacePatchOp(op="replace", path=WorkspacePatchPath.NAME, value="x" * 51)
+
+    def test_update_rejects_invalid_billing_cycle(self, client: MammothClient):
+        with pytest.raises(ValueError, match="billing_cycle"):
+            WorkspacePatchOp(op="replace", path=WorkspacePatchPath.BILLING_CYCLE, value="quarterly")
 
     def test_delete(self, client: MammothClient):
         client.workspaces.delete()
@@ -1548,9 +1758,29 @@ class TestWorkspaceAPI:
         client.workspaces.get_user(user_id="u1")
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/users/u1")
 
-    def test_update_user(self, client: MammothClient):
-        client.workspaces.update_user(user_id="u1", config={"role": "admin"})
+    def test_update_user_sends_patch_envelope(self, client: MammothClient):
+        op = UserRolePatchOp(op="replace", path="role", value=WorkspaceRoleType.WORKSPACE_ADMIN)
+        client.workspaces.update_user(user_id="u1", patches=[op])
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/users/u1")
+        assert_json_body(
+            client._request_json,
+            {"patches": [{"op": "replace", "path": "role", "value": "workspace_admin"}]},
+        )
+
+    def test_update_user_rejects_empty_user_id(self, client: MammothClient):
+        op = UserRolePatchOp(op="replace", path="role", value=WorkspaceRoleType.WORKSPACE_MEMBER)
+        with pytest.raises(MammothValidationError, match="user_id"):
+            client.workspaces.update_user(user_id="", patches=[op])
+        client._request_json.assert_not_called()
+
+    def test_update_user_rejects_empty_patches(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="patches"):
+            client.workspaces.update_user(user_id="u1", patches=[])
+        client._request_json.assert_not_called()
+
+    def test_update_user_rejects_invalid_role(self, client: MammothClient):
+        with pytest.raises(ValueError):
+            UserRolePatchOp(op="replace", path="role", value="admin")
 
 
 # ======================================================================
@@ -1563,9 +1793,54 @@ class TestAIAPI:
         client.ai.generate_profile(dataview_id=42, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/profile_generation")
 
-    def test_generate_data(self, client: MammothClient):
-        client.ai.generate_data(dataview_id=42, config={"rows": 100}, dataset_id=500)
+    def test_generate_data_sends_correct_body(self, client: MammothClient):
+        client.ai.generate_data(
+            dataview_id=42,
+            prompt="Generate realistic sales data",
+            no_of_rows=25,
+            dataset_id=500,
+        )
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/data/generate")
+        assert_json_body(
+            client._request_json,
+            {"prompt": "Generate realistic sales data", "no_of_rows": 25},
+        )
+
+    def test_generate_data_with_columns(self, client: MammothClient):
+        client.ai.generate_data(
+            dataview_id=42,
+            prompt="Generate sales data",
+            no_of_rows=5,
+            columns=["product", "revenue"],
+            dataset_id=500,
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "prompt": "Generate sales data",
+                "no_of_rows": 5,
+                "columns": ["product", "revenue"],
+            },
+        )
+
+    def test_generate_data_rejects_empty_prompt(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="prompt"):
+            client.ai.generate_data(dataview_id=42, prompt="", dataset_id=500)
+        client._request_json.assert_not_called()
+
+    def test_generate_data_rejects_rows_too_low(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="no_of_rows"):
+            client.ai.generate_data(
+                dataview_id=42, prompt="Generate data", no_of_rows=0, dataset_id=500
+            )
+        client._request_json.assert_not_called()
+
+    def test_generate_data_rejects_rows_too_high(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="no_of_rows"):
+            client.ai.generate_data(
+                dataview_id=42, prompt="Generate data", no_of_rows=101, dataset_id=500
+            )
+        client._request_json.assert_not_called()
 
     def test_get_data_gen_info(self, client: MammothClient):
         client.ai.get_data_gen_info(dataview_id=42, dataset_id=500)

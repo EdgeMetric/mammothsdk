@@ -1,13 +1,18 @@
-"""
-AI/LLM features API client for Mammoth.
-"""
+"""AI/LLM features API client for Mammoth."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from mammoth.exceptions import MammothValidationError
+
 if TYPE_CHECKING:
     from ..client import MammothClient
+
+# ── Validation error constants ────────────────────────────────────────────────
+
+ERR_GENAI_PROMPT_EMPTY = "`prompt` must be a non-empty string."
+ERR_GENAI_ROWS_RANGE = "`no_of_rows` must be between 1 and 100 (inclusive), got {0}."
 
 
 class AIAPI:
@@ -63,26 +68,44 @@ class AIAPI:
     def generate_data(
         self,
         dataview_id: int,
-        config: dict[str, Any],
+        prompt: str,
+        no_of_rows: int = 10,
+        columns: list[str] | None = None,
         dataset_id: int | None = None,
     ) -> dict[str, Any]:
         """Generate synthetic data for a dataview.
 
+        Corresponds to the backend ``GenAISpec``:
+        ``{prompt, no_of_rows (1–100), columns}``.
+
         Args:
             dataview_id: ID of the dataview.
-            config: Generation configuration (rows, columns, patterns).
+            prompt: Non-empty string describing what data to generate.
+            no_of_rows: Number of rows to generate (1–100, default 10).
+            columns: Optional list of column names to fill.
             dataset_id: ID of the dataset (auto-detected if not provided).
 
         Returns:
             Dict with generation result or job info.
+
+        Raises:
+            MammothValidationError: If ``prompt`` is empty or ``no_of_rows``
+                is outside the 1–100 range.
         """
+        if not prompt or not prompt.strip():
+            raise MammothValidationError(ERR_GENAI_PROMPT_EMPTY)
+        if not (1 <= no_of_rows <= 100):
+            raise MammothValidationError(ERR_GENAI_ROWS_RANGE.format(no_of_rows))
         ws = self._ws()
         proj = self._proj()
         ds = self._find_dataset(dataview_id, dataset_id)
+        body: dict[str, Any] = {"prompt": prompt, "no_of_rows": no_of_rows}
+        if columns is not None:
+            body["columns"] = columns
         response = self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/data/generate",
-            json=config,
+            json=body,
         )
         return self._client._wait_if_job(response)
 

@@ -89,6 +89,7 @@ from mammoth.models.automations import (
     WorkItemName,
     WorkItemSpec,
 )
+from mammoth.models.connectors import DsConfigPatchOp, DsConfigPatchPath
 from mammoth.models.dashboards import (
     DashboardActionType,
     DashboardAuthType,
@@ -143,6 +144,13 @@ from mammoth.models.pipeline import (
     WindowRange,
 )
 from mammoth.models.webhooks import WebhookMode
+from mammoth.models.workspaces import (
+    BillingCycle,
+    UserRolePatchOp,
+    WorkspacePatchOp,
+    WorkspacePatchPath,
+    WorkspaceRoleType,
+)
 from mammoth.view import View, ViewExport
 
 __version__ = "0.4.0"
@@ -238,6 +246,15 @@ __all__ = [
     "ScheduleCreateSpec",
     "SchedulePatchValue",
     "SchedulePatchItem",
+    # Connector patch models
+    "DsConfigPatchPath",
+    "DsConfigPatchOp",
+    # Workspace patch models
+    "BillingCycle",
+    "WorkspacePatchPath",
+    "WorkspacePatchOp",
+    "WorkspaceRoleType",
+    "UserRolePatchOp",
     # External keys
     "ExternalKeyType",
     "ModelConfigSpec",
