@@ -56,14 +56,16 @@ from mammoth._mixins import (
 )
 from mammoth._pure.builders import build_branch_out_params
 from mammoth.condition import CompoundCondition, Condition, NotCondition
-from mammoth.exceptions import MammothColumnError, MammothExportError
+from mammoth.exceptions import MammothColumnError, MammothExportError, MammothValidationError
 from mammoth.models.exports import (
     AddExportSpec,
     BigQueryExportType,
     ExportResult,
     ExportStatus,
     HandlerType,
+    HttpMethod,
     OdbcType,
+    RestAuthType,
     TriggerType,
 )
 from mammoth.models.jobs import JobResponse
@@ -80,6 +82,23 @@ ERR_EXPORT_DATASET_UNRESOLVED = (
     "Export for dataset {name!r} completed but its dataset id did not resolve "
     "before the timeout; the materialisation may still be in progress."
 )
+
+# Export-method argument validation (raised before any API call).
+ERR_EMAIL_NO_RECIPIENTS = "to_email requires at least one recipient in `emails`."
+ERR_SFTP_KEY_REQUIRED = (
+    "to_sftp with ssh_key_authentication=True requires a non-empty `private_key`."
+)
+ERR_BIGQUERY_UPSERT_KEYS = (
+    "to_bigquery with export_type=UPSERT requires at least one entry in `upsert_keys`."
+)
+ERR_REST_BATCH_SIZE = "to_rest_api `batch_size` must be between 1 and 10000 (got {value})."
+ERR_REST_TIMEOUT = "to_rest_api `timeout_seconds` must be between 5 and 300 (got {value})."
+
+# Inclusive bounds the REST-API handler accepts.
+_REST_BATCH_SIZE_MIN = 1
+_REST_BATCH_SIZE_MAX = 10000
+_REST_TIMEOUT_MIN = 5
+_REST_TIMEOUT_MAX = 300
 
 
 class _DraftContext:
@@ -972,7 +991,13 @@ class ViewExport:
 
         Returns:
             The created export trigger record or its tracking job.
+
+        Raises:
+            MammothValidationError: If key authentication is requested without a
+                ``private_key``.
         """
+        if ssh_key_authentication and not private_key:
+            raise MammothValidationError(ERR_SFTP_KEY_REQUIRED)
         target: dict[str, Any] = {
             "host": host,
             "port": port,
@@ -1015,7 +1040,12 @@ class ViewExport:
         Example::
 
             view.export.to_email(emails=["analyst@example.com"], subject="Q1")
+
+        Raises:
+            MammothValidationError: If *emails* is empty.
         """
+        if not emails:
+            raise MammothValidationError(ERR_EMAIL_NO_RECIPIENTS)
         target: dict[str, Any] = {"emails": emails}
         if subject:
             target["subject"] = subject
@@ -1144,7 +1174,13 @@ class ViewExport:
 
         Returns:
             The created export trigger record or its tracking job.
+
+        Raises:
+            MammothValidationError: If *export_type* is UPSERT but no
+                *upsert_keys* are given.
         """
+        if export_type is BigQueryExportType.UPSERT and not upsert_keys:
+            raise MammothValidationError(ERR_BIGQUERY_UPSERT_KEYS)
         target: dict[str, Any] = {
             "selected_profile": selected_profile,
             "selected_identity": selected_identity,
@@ -1409,8 +1445,8 @@ class ViewExport:
         self,
         base_url: str,
         endpoint_path: str,
-        auth_type: str = "none",
-        http_method: str = "POST",
+        auth_type: RestAuthType = RestAuthType.NONE,
+        http_method: HttpMethod = HttpMethod.POST,
         wrap_path: str = "records",
         batch_size: int = 1000,
         timeout_seconds: int = 30,
@@ -1429,12 +1465,13 @@ class ViewExport:
         Args:
             base_url: API base URL (http/https).
             endpoint_path: Path appended to *base_url*, e.g. ``"/v1/records"``.
-            auth_type: One of ``"none"``, ``"api_key"``, ``"bearer"``,
-                ``"basic"``, ``"oauth2_authorization_code"``.
-            http_method: ``"POST"`` (default), ``"PUT"``, or ``"PATCH"``.
+            auth_type: Authentication scheme (:class:`RestAuthType`); defaults to
+                ``RestAuthType.NONE``.
+            http_method: Request verb (:class:`HttpMethod`); defaults to
+                ``HttpMethod.POST``.
             wrap_path: Dot-path under which records are nested in the body
                 (default ``"records"``).
-            batch_size: Records per request (default 1000, max 10000).
+            batch_size: Records per request (default 1000, 1-10000).
             timeout_seconds: Per-request timeout, 5-300s (default 30).
             ssl_verify: Verify TLS certificates (default True).
             auth: Auth-type-specific secrets, merged flat into the request.
@@ -1452,12 +1489,20 @@ class ViewExport:
 
         Returns:
             The created export trigger record or its tracking job.
+
+        Raises:
+            MammothValidationError: If *batch_size* or *timeout_seconds* is
+                outside the accepted range.
         """
+        if not _REST_BATCH_SIZE_MIN <= batch_size <= _REST_BATCH_SIZE_MAX:
+            raise MammothValidationError(ERR_REST_BATCH_SIZE.format(value=batch_size))
+        if not _REST_TIMEOUT_MIN <= timeout_seconds <= _REST_TIMEOUT_MAX:
+            raise MammothValidationError(ERR_REST_TIMEOUT.format(value=timeout_seconds))
         target: dict[str, Any] = {
             "base_url": base_url,
             "endpoint_path": endpoint_path,
-            "auth_type": auth_type,
-            "http_method": http_method,
+            "auth_type": auth_type.value,
+            "http_method": http_method.value,
             "wrap_path": wrap_path,
             "batch_size": batch_size,
             "timeout_seconds": timeout_seconds,

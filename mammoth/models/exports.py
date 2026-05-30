@@ -60,6 +60,24 @@ class BigQueryExportType(str, Enum):
     UPSERT = "UPSERT"
 
 
+class HttpMethod(str, Enum):
+    """HTTP verbs accepted by the generic REST API export."""
+
+    POST = "POST"
+    PUT = "PUT"
+    PATCH = "PATCH"
+
+
+class RestAuthType(str, Enum):
+    """Authentication schemes accepted by the generic REST API export."""
+
+    NONE = "none"
+    API_KEY = "api_key"
+    BEARER = "bearer"
+    BASIC = "basic"
+    OAUTH2_AUTHORIZATION_CODE = "oauth2_authorization_code"
+
+
 class ExportStatus(str, Enum):
     """Status values for exports."""
 

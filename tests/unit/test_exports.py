@@ -9,15 +9,24 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from mammoth.condition import Condition
-from mammoth.exceptions import MammothExportError
+from mammoth.exceptions import MammothExportError, MammothValidationError
 from mammoth.models.exports import (
     BigQueryExportType,
     ExportStatus,
     HandlerType,
+    HttpMethod,
     OdbcType,
+    RestAuthType,
 )
 from mammoth.models.pipeline import ExportFileType, Operator, SaveAsDatasetMode
-from mammoth.view import View
+from mammoth.view import (
+    ERR_BIGQUERY_UPSERT_KEYS,
+    ERR_EMAIL_NO_RECIPIENTS,
+    ERR_REST_BATCH_SIZE,
+    ERR_REST_TIMEOUT,
+    ERR_SFTP_KEY_REQUIRED,
+    View,
+)
 
 # ── Fixtures ──────────────────────────────────────────────────
 
@@ -288,6 +297,16 @@ class TestToSftp:
         _, target, _ = export_view.export._captured[-1]
         assert target["port"] == 2222
 
+    def test_key_auth_without_private_key_rejected(self, export_view):
+        with pytest.raises(MammothValidationError) as exc:
+            export_view.export.to_sftp(
+                host="sftp.example.com",
+                username="u",
+                ssh_key_authentication=True,
+            )
+        assert exc.value.message == ERR_SFTP_KEY_REQUIRED
+        assert not export_view.export._captured
+
 
 class TestToEmail:
     def test_emits_emails_not_recipients(self, export_view):
@@ -313,6 +332,12 @@ class TestToEmail:
             "message": "See attached",
             "resource": "Sales",
         }
+
+    def test_empty_recipients_rejected(self, export_view):
+        with pytest.raises(MammothValidationError) as exc:
+            export_view.export.to_email(emails=[])
+        assert exc.value.message == ERR_EMAIL_NO_RECIPIENTS
+        assert not export_view.export._captured
 
 
 class TestToBigquery:
@@ -355,6 +380,17 @@ class TestToBigquery:
         _, target, _ = export_view.export._captured[-1]
         assert "upsertKeys" not in target
         assert "partition" not in target
+
+    def test_upsert_without_keys_rejected(self, export_view):
+        with pytest.raises(MammothValidationError) as exc:
+            export_view.export.to_bigquery(
+                selected_profile={},
+                selected_identity={},
+                table="t",
+                export_type=BigQueryExportType.UPSERT,
+            )
+        assert exc.value.message == ERR_BIGQUERY_UPSERT_KEYS
+        assert not export_view.export._captured
 
 
 class TestToElasticsearch:
@@ -529,7 +565,8 @@ class TestToRestApi:
         export_view.export.to_rest_api(
             base_url="https://api.x.com",
             endpoint_path="/v1/records",
-            auth_type="bearer",
+            auth_type=RestAuthType.BEARER,
+            http_method=HttpMethod.PUT,
             auth={"token": "t0ken"},
             headers={"X-Env": "prod"},
             query_params={"v": "2"},
@@ -538,10 +575,45 @@ class TestToRestApi:
         _, target, _ = export_view.export._captured[-1]
         # auth secrets are merged flat into the target, not nested.
         assert target["token"] == "t0ken"
+        # Enums serialise to their wire string values.
         assert target["auth_type"] == "bearer"
+        assert target["http_method"] == "PUT"
         assert target["default_headers"] == {"X-Env": "prod"}
         assert target["query_params"] == {"v": "2"}
         assert target["extra_body_fields"] == {"source": "mammoth"}
+
+    @pytest.mark.parametrize("bad_batch", [0, -1, 10001])
+    def test_rejects_out_of_range_batch_size(self, export_view, bad_batch):
+        with pytest.raises(MammothValidationError) as exc:
+            export_view.export.to_rest_api(
+                base_url="https://api.x.com",
+                endpoint_path="/v1/records",
+                batch_size=bad_batch,
+            )
+        assert exc.value.message == ERR_REST_BATCH_SIZE.format(value=bad_batch)
+        assert not export_view.export._captured  # never reached the API layer
+
+    @pytest.mark.parametrize("bad_timeout", [4, 0, 301])
+    def test_rejects_out_of_range_timeout(self, export_view, bad_timeout):
+        with pytest.raises(MammothValidationError) as exc:
+            export_view.export.to_rest_api(
+                base_url="https://api.x.com",
+                endpoint_path="/v1/records",
+                timeout_seconds=bad_timeout,
+            )
+        assert exc.value.message == ERR_REST_TIMEOUT.format(value=bad_timeout)
+        assert not export_view.export._captured
+
+    @pytest.mark.parametrize("edge_batch", [1, 10000])
+    def test_accepts_batch_size_bounds(self, export_view, edge_batch):
+        # Inclusive bounds must pass.
+        export_view.export.to_rest_api(
+            base_url="https://api.x.com",
+            endpoint_path="/v1/records",
+            batch_size=edge_batch,
+        )
+        _, target, _ = export_view.export._captured[-1]
+        assert target["batch_size"] == edge_batch
 
 
 class TestPublishToDb:
