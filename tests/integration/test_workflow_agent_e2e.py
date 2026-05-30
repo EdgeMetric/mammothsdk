@@ -25,6 +25,8 @@ from __future__ import annotations
 
 import contextlib
 import os
+from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 
@@ -71,25 +73,26 @@ def client() -> MammothClient:
 
 
 @pytest.fixture(scope="module")
-def dataset_id(client: MammothClient) -> int:
-    """Resolve a ready dataset to run e2e transforms against.
+def dataset_id(client: MammothClient) -> Iterator[int]:
+    """Provide a dataset with a hydrated view to run e2e transforms against.
 
-    Honors an explicit ``MAMMOTH_DATASET_ID`` when set; otherwise picks the
-    first ``ready`` dataset in ``MAMMOTH_PROJECT_ID``.  The dataset must already
-    exist (we do not upload one) so the test stays idempotent and safe to re-run.
-    ``datasets.list`` is project-scoped, so a project id is required.
+    Honors an explicit ``MAMMOTH_DATASET_ID`` when set; otherwise uploads a
+    small CSV and deletes it in teardown, so the test is self-contained and
+    safe to re-run without depending on pre-existing project data (the list
+    endpoint does not report a usable per-dataset ``status`` on this backend).
     """
     explicit = os.environ.get("MAMMOTH_DATASET_ID")
     if explicit:
-        return int(explicit)
-    project_id = int(os.environ["MAMMOTH_PROJECT_ID"])
-    resp = client.datasets.list(
-        workspace_id=int(os.environ["MAMMOTH_WORKSPACE_ID"]),
-        project_id=project_id,
-    )
-    datasets = [d for d in resp.get("datasets", []) if d.get("status") == "ready"]
-    assert datasets, "No ready datasets found in project — create one before running e2e tests"
-    return int(datasets[0]["id"])
+        yield int(explicit)
+        return
+    csv_path = Path(__file__).resolve().parent.parent.parent / "employee.csv"
+    ds_id = client.files.upload(str(csv_path))
+    assert isinstance(ds_id, int), f"upload did not return a single dataset id: {ds_id!r}"
+    try:
+        yield ds_id
+    finally:
+        with contextlib.suppress(Exception):
+            client.datasets.delete(ds_id)
 
 
 def _task_ids(view) -> set[int]:
@@ -115,7 +118,7 @@ def view(client: MammothClient, dataset_id: int):
     """
     explicit = os.environ.get("MAMMOTH_VIEW_ID")
     if explicit:
-        v = client.views.get(int(explicit), dataset_id)
+        v = client.views.get(int(explicit))
     else:
         candidates = [c for c in client.views.list(dataset_id=dataset_id) if c.display_names]
         assert candidates, f"No view with columns found on dataset {dataset_id}"
