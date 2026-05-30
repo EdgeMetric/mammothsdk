@@ -1796,4 +1796,4 @@ bridge = ["flask", "python-dotenv"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "987a620240724f4ea3689ce995d6b8aded4fd714e9df401e768f35a24dc61c39"
+content-hash = "f178c0db9b43cabf8f60baeb01abf51a2155c8c944844093cbf8dc22dca45c42"
