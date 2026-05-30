@@ -67,6 +67,36 @@ class Operator(str, Enum):
     IS_NOT_MAXVAL = "IS_NOT_MAXVAL"
     IS_MINVAL = "IS_MINVAL"
     IS_NOT_MINVAL = "IS_NOT_MINVAL"
+    IN_RANGE = "IN_RANGE"
+    ICONTAINS = "ICONTAINS"
+
+
+class DateFunction(str, Enum):
+    """Date-relative function operands for condition values.
+
+    Used when the comparison value should be a dynamic date/time function
+    rather than a literal. Pass a ``DateFunction`` as the ``value`` argument
+    with ``value_is_date_fn=True`` on a ``Condition``::
+
+        Condition("Order Date", Operator.GT, DateFunction.TODAY, value_is_date_fn=True)
+        Condition("Created", Operator.GTE, DateFunction.NOW, value_is_date_fn=True)
+        Condition("Date", Operator.EQ, DateFunction.MAX, value_is_date_fn=True)
+
+    Functions:
+        NOW — current timestamp (date + time precision).
+        TODAY — current date (date-only, no time component).
+        MAX — maximum value of the filtered column.
+        MIN — minimum value of the filtered column.
+        SYSTEM_DATE — system-configured date (passed as execution timestamp).
+        SYSTEM_TIME — system-configured timestamp (seconds precision).
+    """
+
+    NOW = "NOW"
+    TODAY = "TODAY"
+    MAX = "MAX"
+    MIN = "MIN"
+    SYSTEM_DATE = "SYSTEM_DATE"
+    SYSTEM_TIME = "SYSTEM_TIME"
 
 
 class ColumnType(str, Enum):

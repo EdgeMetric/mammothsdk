@@ -7,7 +7,7 @@ import warnings
 import pytest
 
 from mammoth.condition import CompoundCondition, Condition, NotCondition
-from mammoth.models.pipeline import Operator
+from mammoth.models.pipeline import DateFunction, Operator
 
 # ── Basic Condition ─────────────────────────────────────────────
 
@@ -603,3 +603,204 @@ class TestTextEqNeRemap:
         col_types = {"Date": "DATE"}
         result = c.build(col_map, col_types)
         assert result == {"col_d": {"EQ": {"VALUE": "2021-01-01"}}}
+
+
+# ── Part B: exact-shape regression tests for previously-untested operators ─────
+#
+# These operators work via the generic path but had no regression isolation.
+# Each test asserts the EXACT wire dict produced by Condition.build().
+
+
+class TestExistingOperatorsExactShape:
+    """Exact wire-dict assertions for operators that were previously untested."""
+
+    def test_not_contains_exact_wire(self):
+        """NOT_CONTAINS emits list-wrapped VALUE (same as CONTAINS)."""
+        c = Condition("Name", Operator.NOT_CONTAINS, "Smith")
+        result = c.build({"Name": "col_n"})
+        assert result == {"col_n": {"NOT_CONTAINS": {"VALUE": ["Smith"]}}}
+
+    def test_not_starts_with_exact_wire(self):
+        """NOT_STARTS_WITH emits single scalar VALUE."""
+        c = Condition("Name", Operator.NOT_STARTS_WITH, "A")
+        result = c.build({"Name": "col_n"})
+        assert result == {"col_n": {"NOT_STARTS_WITH": {"VALUE": "A"}}}
+
+    def test_not_ends_with_exact_wire(self):
+        """NOT_ENDS_WITH emits single scalar VALUE."""
+        c = Condition("Name", Operator.NOT_ENDS_WITH, "son")
+        result = c.build({"Name": "col_n"})
+        assert result == {"col_n": {"NOT_ENDS_WITH": {"VALUE": "son"}}}
+
+    def test_is_not_empty_exact_wire(self):
+        """IS_NOT_EMPTY emits boolean True (no value needed)."""
+        c = Condition("Notes", Operator.IS_NOT_EMPTY)
+        result = c.build({"Notes": "col_n"})
+        assert result == {"col_n": {"IS_NOT_EMPTY": True}}
+
+    def test_is_not_maxval_exact_wire(self):
+        """IS_NOT_MAXVAL emits boolean True."""
+        c = Condition("Sales", Operator.IS_NOT_MAXVAL)
+        result = c.build({"Sales": "col_s"})
+        assert result == {"col_s": {"IS_NOT_MAXVAL": True}}
+
+    def test_is_not_minval_exact_wire(self):
+        """IS_NOT_MINVAL emits boolean True."""
+        c = Condition("Sales", Operator.IS_NOT_MINVAL)
+        result = c.build({"Sales": "col_s"})
+        assert result == {"col_s": {"IS_NOT_MINVAL": True}}
+
+    def test_ne_non_text_exact_wire(self):
+        """Standalone NE on a non-text column emits {"VALUE": scalar}."""
+        c = Condition("Amount", Operator.NE, 42)
+        result = c.build({"Amount": "col_a"})
+        assert result == {"col_a": {"NE": {"VALUE": 42}}}
+
+    def test_lte_non_truncate_exact_wire(self):
+        """Standalone LTE (no truncate) emits {"VALUE": scalar}."""
+        c = Condition("Score", Operator.LTE, 100)
+        result = c.build({"Score": "col_s"})
+        assert result == {"col_s": {"LTE": {"VALUE": 100}}}
+
+
+# ── Part A: new capabilities — IN_RANGE, ICONTAINS, DateFunction ────────────
+
+
+class TestInRange:
+    """Exact wire shape and validation for the IN_RANGE operator.
+
+    Backend source: DBAdapter/DBAdapter/adapters/postgres/json2sql/where.py:887-904
+    Wire shape: {col: {"IN_RANGE": [{"VALUE": lower}, {"VALUE": upper}]}}
+    """
+
+    def test_in_range_exact_wire(self):
+        """IN_RANGE with numeric bounds emits correct 2-element list."""
+        c = Condition("Amount", Operator.IN_RANGE, [100, 500])
+        result = c.build({"Amount": "col_a"})
+        assert result == {"col_a": {"IN_RANGE": [{"VALUE": 100}, {"VALUE": 500}]}}
+
+    def test_in_range_float_bounds(self):
+        """IN_RANGE accepts float bounds."""
+        c = Condition("Score", Operator.IN_RANGE, [9.5, 10.0])
+        result = c.build({"Score": "col_s"})
+        assert result == {"col_s": {"IN_RANGE": [{"VALUE": 9.5}, {"VALUE": 10.0}]}}
+
+    def test_in_range_date_bounds(self):
+        """IN_RANGE with date string bounds emits correct wire shape."""
+        c = Condition("Date", Operator.IN_RANGE, ["2021-01-01", "2021-12-31"])
+        result = c.build({"Date": "col_d"})
+        assert result == {"col_d": {"IN_RANGE": [{"VALUE": "2021-01-01"}, {"VALUE": "2021-12-31"}]}}
+
+    def test_in_range_without_column_map(self):
+        """Column name passes through when no column_map provided."""
+        c = Condition("Revenue", Operator.IN_RANGE, [0, 1000])
+        result = c.build()
+        assert result == {"Revenue": {"IN_RANGE": [{"VALUE": 0}, {"VALUE": 1000}]}}
+
+    def test_in_range_not_a_list_raises(self):
+        """IN_RANGE rejects a non-list value."""
+        with pytest.raises(ValueError, match="list of exactly 2 bounds"):
+            Condition("Amount", Operator.IN_RANGE, 500)
+
+    def test_in_range_wrong_length_raises(self):
+        """IN_RANGE rejects a list that doesn't have exactly 2 elements."""
+        with pytest.raises(ValueError, match="exactly 2 bounds"):
+            Condition("Amount", Operator.IN_RANGE, [100, 200, 300])
+
+    def test_in_range_one_element_raises(self):
+        """IN_RANGE rejects a single-element list."""
+        with pytest.raises(ValueError, match="exactly 2 bounds"):
+            Condition("Amount", Operator.IN_RANGE, [100])
+
+
+class TestIcontains:
+    """Exact wire shape for the ICONTAINS operator.
+
+    Backend source: DBAdapter/DBAdapter/adapters/postgres/json2sql/where.py:711-719
+    Classification: SINGLE_OPERAND_TEXT_OPS (dba_const.py:448), not LIST_TEXT_OPS.
+    Wire shape: {col: {"ICONTAINS": {"VALUE": "search_string"}}}
+    """
+
+    def test_icontains_exact_wire(self):
+        """ICONTAINS emits single scalar VALUE (not a list)."""
+        c = Condition("City", Operator.ICONTAINS, "york")
+        result = c.build({"City": "col_c"})
+        assert result == {"col_c": {"ICONTAINS": {"VALUE": "york"}}}
+
+    def test_icontains_without_column_map(self):
+        """Column name passes through when no column_map provided."""
+        c = Condition("Name", Operator.ICONTAINS, "smith")
+        result = c.build()
+        assert result == {"Name": {"ICONTAINS": {"VALUE": "smith"}}}
+
+    def test_icontains_no_string_prop(self):
+        """ICONTAINS is inherently case-insensitive — STRING_PROP not needed."""
+        c = Condition("Name", Operator.ICONTAINS, "test")
+        result = c.build({"Name": "col_n"})
+        assert "STRING_PROP" not in result
+
+    def test_icontains_requires_value(self):
+        """ICONTAINS (non-null operator) raises without value."""
+        with pytest.raises(ValueError, match="requires a value"):
+            Condition("Name", Operator.ICONTAINS)
+
+
+class TestDateFunction:
+    """Exact wire shape for date-relative function operands.
+
+    Backend source: api/api/dataview/tests/test_condition_rule.py:873,899,937
+    Wire shape: {col: {op: {"VALUE": {"FUNCTION": "<fn>"}}}}
+    """
+
+    def test_date_fn_now_exact_wire(self):
+        """DateFunction.NOW emits FUNCTION:NOW inside VALUE."""
+        c = Condition("Created", Operator.GTE, DateFunction.NOW, value_is_date_fn=True)
+        result = c.build({"Created": "col_c"})
+        assert result == {"col_c": {"GTE": {"VALUE": {"FUNCTION": "NOW"}}}}
+
+    def test_date_fn_today_exact_wire(self):
+        """DateFunction.TODAY emits FUNCTION:TODAY inside VALUE."""
+        c = Condition("Order Date", Operator.GT, DateFunction.TODAY, value_is_date_fn=True)
+        result = c.build({"Order Date": "col_d"})
+        assert result == {"col_d": {"GT": {"VALUE": {"FUNCTION": "TODAY"}}}}
+
+    def test_date_fn_max_exact_wire(self):
+        """DateFunction.MAX emits FUNCTION:MAX inside VALUE."""
+        c = Condition("Date", Operator.EQ, DateFunction.MAX, value_is_date_fn=True)
+        result = c.build({"Date": "col_d"})
+        assert result == {"col_d": {"EQ": {"VALUE": {"FUNCTION": "MAX"}}}}
+
+    def test_date_fn_min_exact_wire(self):
+        """DateFunction.MIN emits FUNCTION:MIN inside VALUE."""
+        c = Condition("Date", Operator.LT, DateFunction.MIN, value_is_date_fn=True)
+        result = c.build({"Date": "col_d"})
+        assert result == {"col_d": {"LT": {"VALUE": {"FUNCTION": "MIN"}}}}
+
+    def test_date_fn_system_date_exact_wire(self):
+        """DateFunction.SYSTEM_DATE emits FUNCTION:SYSTEM_DATE inside VALUE."""
+        c = Condition("Date", Operator.LTE, DateFunction.SYSTEM_DATE, value_is_date_fn=True)
+        result = c.build({"Date": "col_d"})
+        assert result == {"col_d": {"LTE": {"VALUE": {"FUNCTION": "SYSTEM_DATE"}}}}
+
+    def test_date_fn_system_time_exact_wire(self):
+        """DateFunction.SYSTEM_TIME emits FUNCTION:SYSTEM_TIME inside VALUE."""
+        c = Condition("Timestamp", Operator.NE, DateFunction.SYSTEM_TIME, value_is_date_fn=True)
+        result = c.build({"Timestamp": "col_t"})
+        assert result == {"col_t": {"NE": {"VALUE": {"FUNCTION": "SYSTEM_TIME"}}}}
+
+    def test_date_fn_without_column_map(self):
+        """Column name passes through when no column_map provided."""
+        c = Condition("Date", Operator.GT, DateFunction.TODAY, value_is_date_fn=True)
+        result = c.build()
+        assert result == {"Date": {"GT": {"VALUE": {"FUNCTION": "TODAY"}}}}
+
+    def test_date_fn_string_value_passthrough(self):
+        """value_is_date_fn=True with a plain string emits the string as FUNCTION value."""
+        c = Condition("Date", Operator.GT, "NOW", value_is_date_fn=True)
+        result = c.build({"Date": "col_d"})
+        assert result == {"col_d": {"GT": {"VALUE": {"FUNCTION": "NOW"}}}}
+
+    def test_date_fn_requires_value(self):
+        """value_is_date_fn flag does not override the non-null operator check."""
+        with pytest.raises(ValueError, match="requires a value"):
+            Condition("Date", Operator.GT, value_is_date_fn=True)

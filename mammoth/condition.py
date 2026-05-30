@@ -6,7 +6,7 @@ Build filter conditions using Python's ``&`` (AND), ``|`` (OR), and ``~``
 
 Creating conditions::
 
-    from mammoth import Condition, Operator
+    from mammoth import Condition, Operator, DateFunction
 
     high_sales = Condition("Sales", Operator.GTE, 10000)
     west = Condition("Region", Operator.IN_LIST, ["West", "East"])
@@ -38,10 +38,17 @@ Conditions are resolved to Mammoth API format via ``build(column_map)``::
 
 Supported operators (from ``mammoth.Operator`` enum):
     Comparison: GT, LT, GTE, LTE, EQ, NE
+    Range: IN_RANGE (between two numeric/date bounds)
     List: IN_LIST, NOT_IN_LIST, CONTAINS, NOT_CONTAINS
-    String: STARTS_WITH, ENDS_WITH, NOT_STARTS_WITH, NOT_ENDS_WITH
+    String: STARTS_WITH, ENDS_WITH, NOT_STARTS_WITH, NOT_ENDS_WITH, ICONTAINS
     Null: IS_EMPTY, IS_NOT_EMPTY
     Aggregate: IS_MAXVAL, IS_NOT_MAXVAL, IS_MINVAL, IS_NOT_MINVAL
+
+Date-relative function operands (``DateFunction`` enum):
+    Pass a ``DateFunction`` as ``value`` with ``value_is_date_fn=True``::
+
+        Condition("Order Date", Operator.GT, DateFunction.TODAY, value_is_date_fn=True)
+        Condition("Date", Operator.EQ, DateFunction.MAX, value_is_date_fn=True)
 """
 
 from __future__ import annotations
@@ -68,6 +75,9 @@ _NULL_OPERATORS = frozenset(
     }
 )
 
+ERR_IN_RANGE_NOT_LIST = "IN_RANGE requires a list of exactly 2 bounds, got {value!r}."
+ERR_IN_RANGE_NOT_TWO = "IN_RANGE requires exactly 2 bounds, got {n}."
+
 
 class Condition:
     """Single column condition. Supports ``&`` (AND), ``|`` (OR), ``~`` (NOT).
@@ -76,10 +86,21 @@ class Condition:
         column: Display name of the column (e.g. "Sales", "Region").
         operator: Operator enum value (e.g. Operator.GTE, Operator.IN_LIST).
         value: Comparison value. Required for most operators, omit for IS_EMPTY.
+            For IN_RANGE, pass a 2-element list: ``[lower_bound, upper_bound]``.
+            For date-relative functions, pass a ``DateFunction`` with
+            ``value_is_date_fn=True``.
         case_sensitive: Controls string comparison case sensitivity.
             ``None`` (default) — don't emit STRING_PROP (backend default: case-sensitive).
             ``True`` — emit CASE-SENSITIVE.
             ``False`` — emit CASE-INSENSITIVE.
+        value_is_column: If ``True``, ``value`` names another column (column-to-column
+            comparison) rather than a literal.
+        component: Date component string (e.g. "year", "month") for date component
+            filtering.
+        truncate: Date truncation unit (e.g. "DAY", "MONTH") for truncated date
+            comparison.
+        value_is_date_fn: If ``True``, ``value`` is a ``DateFunction`` enum member and
+            is emitted as ``{"VALUE": {"FUNCTION": "<fn>"}}`` in the wire payload.
 
     Examples::
 
@@ -87,6 +108,12 @@ class Condition:
         Condition("Sales", Operator.GTE, 1000)
         Condition("Region", Operator.IN_LIST, ["West", "East"])
         Condition("Name", Operator.IS_NOT_EMPTY)
+
+        # Range filter (numeric or date, not TEXT)
+        Condition("Amount", Operator.IN_RANGE, [100, 500])
+
+        # Case-insensitive contains (always case-insensitive, no STRING_PROP needed)
+        Condition("City", Operator.ICONTAINS, "york")
 
         # Combine with & (AND), | (OR), ~ (NOT)
         Condition("Sales", Operator.GTE, 1000) & Condition("Region", Operator.EQ, "West")
@@ -104,8 +131,13 @@ class Condition:
         # Case-insensitive string matching
         Condition("City", Operator.EQ, "new york", case_sensitive=False)
 
+        # Date-relative function operand
+        Condition("Order Date", Operator.GT, DateFunction.TODAY, value_is_date_fn=True)
+        Condition("Date", Operator.GTE, DateFunction.NOW, value_is_date_fn=True)
+
     Raises:
-        ValueError: If column is empty or a non-null operator is used without a value.
+        ValueError: If column is empty, a non-null operator is used without a value,
+            or IN_RANGE is not given exactly 2 bounds.
     """
 
     def __init__(
@@ -117,6 +149,7 @@ class Condition:
         value_is_column: bool = False,
         component: str | None = None,
         truncate: str | None = None,
+        value_is_date_fn: bool = False,
     ) -> None:
         if not column or not isinstance(column, str):
             raise ValueError(f"column must be a non-empty string, got {column!r}")
@@ -128,6 +161,7 @@ class Condition:
         self.value_is_column = value_is_column
         self.component = component
         self.truncate = truncate
+        self.value_is_date_fn = value_is_date_fn
 
         # Validation: null operators with a value, non-null without
         if self.operator in _NULL_OPERATORS and value is not None:
@@ -139,6 +173,13 @@ class Condition:
             )
         elif self.operator not in _NULL_OPERATORS and value is None:
             raise ValueError(f"Operator {self.operator!r} requires a value, but none was provided.")
+
+        # Validation: IN_RANGE requires exactly 2 bounds
+        if self.operator == "IN_RANGE":
+            if not isinstance(value, list):
+                raise ValueError(ERR_IN_RANGE_NOT_LIST.format(value=value))
+            if len(value) != 2:
+                raise ValueError(ERR_IN_RANGE_NOT_TWO.format(n=len(value)))
 
     def __and__(self, other: ConditionType) -> CompoundCondition:
         """Combine with AND: cond1 & cond2."""
@@ -176,6 +217,12 @@ class Condition:
         if operator in _NULL_OPERATORS:
             return {internal_name: {operator: True}}
 
+        # IN_RANGE: 2-element list, each element wrapped as {"VALUE": bound}
+        # Wire: {col: {"IN_RANGE": [{"VALUE": lower}, {"VALUE": upper}]}}
+        if operator == "IN_RANGE":
+            lower, upper = self.value[0], self.value[1]
+            return {internal_name: {"IN_RANGE": [{"VALUE": lower}, {"VALUE": upper}]}}
+
         # List operators — also catches remapped EQ/NE
         if operator in ("IN_LIST", "NOT_IN_LIST", "CONTAINS", "NOT_CONTAINS"):
             val = self.value if isinstance(self.value, list) else [self.value]
@@ -185,6 +232,12 @@ class Condition:
         if self.value_is_column:
             resolved_val = column_map.get(self.value, self.value) if column_map else self.value
             return {internal_name: {operator: {"COLUMN": resolved_val}}}
+
+        # Date-relative function operand
+        # Wire: {col: {op: {"VALUE": {"FUNCTION": "NOW"}}}}
+        if self.value_is_date_fn:
+            fn_str = str(getattr(self.value, "value", self.value))
+            return {internal_name: {operator: {"VALUE": {"FUNCTION": fn_str}}}}
 
         # Date component wrapper
         if self.component is not None:
@@ -202,7 +255,7 @@ class Condition:
                 }
             }
 
-        # All other operators (comparison, string)
+        # All other operators (comparison, string, ICONTAINS)
         return {internal_name: {operator: {"VALUE": self.value}}}
 
     def _collect_case_sensitive(self) -> bool | None:
