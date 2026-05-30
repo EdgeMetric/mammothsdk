@@ -1,0 +1,7 @@
+{
+  "include": ["mammoth", "tests"],
+  "venvPath": ".",
+  "venv": "venv",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "error"
+}

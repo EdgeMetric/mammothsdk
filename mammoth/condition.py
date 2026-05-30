@@ -122,7 +122,7 @@ class Condition:
             raise ValueError(f"column must be a non-empty string, got {column!r}")
 
         self.column = column
-        self.operator: str = operator.value if hasattr(operator, "value") else str(operator)
+        self.operator: str = str(getattr(operator, "value", operator))
         self.value = value
         self.case_sensitive = case_sensitive
         self.value_is_column = value_is_column

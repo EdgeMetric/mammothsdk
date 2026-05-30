@@ -4,6 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from mammoth._pure.builders import (
+    build_bulk_replace_params,
+    build_replace_params,
+    build_split_params,
+    build_substring_params,
+    build_text_transform_params,
+)
 from mammoth.models.pipeline import (
     BulkReplaceMapping,
     SplitColumnSpec,
@@ -12,10 +19,13 @@ from mammoth.models.pipeline import (
 )
 
 if TYPE_CHECKING:
+    from mammoth._mixins._host import ViewHost
     from mammoth.condition import CompoundCondition, Condition, NotCondition
+else:
+    ViewHost = object
 
 
-class TextOpsMixin:
+class TextOpsMixin(ViewHost):
     """Mixin for text transformation operations on a View."""
 
     def text_transform(
@@ -47,18 +57,17 @@ class TextOpsMixin:
                 condition=Condition("Region", Operator.EQ, "West"),
             )
         """
-        tt_spec: dict[str, Any] = {
-            "SOURCE": self._resolve_columns(columns),
-            "TRIM": trim,
-        }
-        if case is not None:
-            tt_spec["CASE"] = case
-
-        spec: dict[str, Any] = {"TEXT_TRANSFORM": tt_spec}
-        if condition:
-            spec["CONDITION"] = self._build_condition(condition)
-
-        return self._add_task(spec)
+        return self._add_task(
+            build_text_transform_params(
+                columns,
+                self.columns,
+                self._internal_names,
+                case=case,
+                trim=trim,
+                condition=condition,
+                column_types=self.column_types,
+            )
+        )
 
     def replace_values(
         self,
@@ -90,18 +99,19 @@ class TextOpsMixin:
                 match_case=True, match_words=True,
             )
         """
-        replace_spec: dict[str, Any] = {
-            "SOURCE": self._resolve_columns(columns),
-            "VALUE_PAIR": [{"SEARCH_VALUE": find, "REPLACE_VALUE": replace}],
-            "MATCH_CASE": match_case,
-            "MATCH_WORDS": match_words,
-        }
-
-        spec: dict[str, Any] = {"REPLACE": replace_spec}
-        if condition:
-            spec["CONDITION"] = self._build_condition(condition)
-
-        return self._add_task(spec)
+        return self._add_task(
+            build_replace_params(
+                columns,
+                self.columns,
+                self._internal_names,
+                find=find,
+                replace=replace,
+                match_case=match_case,
+                match_words=match_words,
+                condition=condition,
+                column_types=self.column_types,
+            )
+        )
 
     def bulk_replace(
         self,
@@ -139,23 +149,19 @@ class TextOpsMixin:
                 ],
             )
         """
-        resolved_mapping = [BulkReplaceMapping(**m) if isinstance(m, dict) else m for m in mapping]
-        mapping_specs = [
-            {"SEARCH_VALUE": m.search, "REPLACE_VALUE": m.replace} for m in resolved_mapping
-        ]
-
-        replace_spec: dict[str, Any] = {
-            "SOURCE": self._resolve_columns(columns),
-            "MAPPING": mapping_specs,
-            "MATCH_CASE": match_case,
-            "MATCH_WORDS": match_words,
-        }
-
-        spec: dict[str, Any] = {"REPLACE": replace_spec}
-        if condition:
-            spec["CONDITION"] = self._build_condition(condition)
-
-        return self._add_task(spec)
+        resolved = [BulkReplaceMapping(**m) if isinstance(m, dict) else m for m in mapping]
+        return self._add_task(
+            build_bulk_replace_params(
+                columns,
+                self.columns,
+                self._internal_names,
+                resolved,
+                match_case=match_case,
+                match_words=match_words,
+                condition=condition,
+                column_types=self.column_types,
+            )
+        )
 
     def split_column(
         self,
@@ -189,19 +195,16 @@ class TextOpsMixin:
                 [SplitColumnSpec("First Name"), SplitColumnSpec("Last Name")],
             )
         """
-        resolved_cols = [
-            SplitColumnSpec(**nc) if isinstance(nc, dict) else nc for nc in new_columns
-        ]
-        as_columns = [self._build_as_column(nc.name, nc.type) for nc in resolved_cols]
-
+        resolved = [SplitColumnSpec(**nc) if isinstance(nc, dict) else nc for nc in new_columns]
         return self._add_task(
-            {
-                "SPLIT": {
-                    "SOURCE": self._resolve_column(column),
-                    "DELIMITER": delimiter,
-                    "AS": as_columns,
-                },
-            }
+            build_split_params(
+                column,
+                delimiter,
+                resolved,
+                self.columns,
+                self._internal_names,
+                self._next_internal_name,
+            )
         )
 
     def substring(
@@ -267,25 +270,20 @@ class TextOpsMixin:
             view.substring("Email", regex_pattern=r"@(.+)",
                            new_column="Domain")
         """
-        sub_spec: dict[str, Any] = {
-            "SOURCE": self._resolve_column(column),
-        }
-        if regex_pattern is not None:
-            sub_spec["REGEX"] = {"EXPRESSION": regex_pattern, "INVERT": regex_invert}
-        if direction is not None:
-            sub_spec["DIRECTION"] = direction
-        if num_char is not None:
-            sub_spec["NUM_CHAR"] = num_char
-        if char_position is not None:
-            sub_spec["CHAR_POSITION"] = char_position
-
-        if new_column:
-            sub_spec["AS"] = self._build_as_column(new_column, "TEXT")
-        elif existing_column:
-            sub_spec["DESTINATION"] = self._resolve_column(existing_column)
-
-        spec: dict[str, Any] = {"SUBSTRING": sub_spec}
-        if condition:
-            spec["CONDITION"] = self._build_condition(condition)
-
-        return self._add_task(spec)
+        return self._add_task(
+            build_substring_params(
+                column,
+                self.columns,
+                self._internal_names,
+                direction=direction,
+                num_char=num_char,
+                char_position=char_position,
+                regex_pattern=regex_pattern,
+                regex_invert=regex_invert,
+                new_column=new_column,
+                existing_column=existing_column,
+                condition=condition,
+                column_types=self.column_types,
+                name_gen=self._next_internal_name,
+            )
+        )

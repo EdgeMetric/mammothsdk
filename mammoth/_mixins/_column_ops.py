@@ -4,13 +4,23 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from mammoth._pure.builders import (
+    build_add_column_params,
+    build_combine_params,
+    build_convert_params,
+    build_copy_params,
+    build_delete_params,
+)
 from mammoth.models.pipeline import ColumnType, ConversionSpec, CopySpec
 
 if TYPE_CHECKING:
+    from mammoth._mixins._host import ViewHost
     from mammoth.condition import CompoundCondition, Condition, NotCondition
+else:
+    ViewHost = object
 
 
-class ColumnOpsMixin:
+class ColumnOpsMixin(ViewHost):
     """Mixin for column-level operations on a View."""
 
     def add_column(self, name: str, column_type: ColumnType = ColumnType.TEXT) -> dict[str, Any]:
@@ -29,17 +39,7 @@ class ColumnOpsMixin:
             view.add_column("Score", column_type=ColumnType.NUMERIC)
             view.add_column("Created", column_type=ColumnType.DATE)
         """
-        return self._add_task(
-            {
-                "ADD_COLUMN": [
-                    {
-                        "COLUMN": name,
-                        "TYPE": column_type,
-                        "INTERNAL_NAME": self._next_internal_name(),
-                    }
-                ],
-            }
-        )
+        return self._add_task(build_add_column_params(name, column_type, self._next_internal_name))
 
     def delete_columns(self, columns: list[str]) -> dict[str, Any]:
         """Remove one or more columns (DELETE task).
@@ -55,7 +55,7 @@ class ColumnOpsMixin:
             view.delete_columns(["Temp"])
             view.delete_columns(["Notes", "Internal ID", "Debug"])
         """
-        return self._add_task({"DELETE": self._resolve_columns(columns)})
+        return self._add_task(build_delete_params(columns, self.columns, self._internal_names))
 
     def copy_columns(self, copies: list[CopySpec | dict[str, Any]]) -> dict[str, Any]:
         """Duplicate columns (COPY task).
@@ -70,20 +70,16 @@ class ColumnOpsMixin:
         Returns:
             API response dict.
         """
-        resolved_copies = [CopySpec(**c) if isinstance(c, dict) else c for c in copies]
-        copy_items = []
-        for c in resolved_copies:
-            internal = self._next_internal_name()
-            as_name = c.as_name or f"{c.source} Copy"
-            item: dict[str, Any] = {
-                "SOURCE": self._resolve_column(c.source),
-                "AS": self._build_as_column(as_name, c.type, internal),
-            }
-            if c.condition is not None:
-                item["CONDITION"] = self._build_condition(c.condition)
-            copy_items.append(item)
-
-        return self._add_task({"COPY": copy_items, "VERSION": 2})
+        resolved = [CopySpec(**c) if isinstance(c, dict) else c for c in copies]
+        return self._add_task(
+            build_copy_params(
+                resolved,
+                self.columns,
+                self._internal_names,
+                self.column_types,
+                self._next_internal_name,
+            )
+        )
 
     def combine_columns(
         self,
@@ -124,24 +120,20 @@ class ColumnOpsMixin:
                 existing_column="Address", separator=", ",
             )
         """
-        source_specs: list[dict[str, str]] = []
-        for i, s in enumerate(sources):
-            source_specs.append({"COLUMN": self._resolve_column(s)})
-            if i < len(sources) - 1:
-                source_specs.append({"STRING": separator})
-
-        combine_spec: dict[str, Any] = {"SOURCE": source_specs}
-
-        if new_column:
-            combine_spec["AS"] = self._build_as_column(new_column, column_type)
-        elif existing_column:
-            combine_spec["DESTINATION"] = self._resolve_column(existing_column)
-
-        spec: dict[str, Any] = {"COMBINE": combine_spec}
-        if condition:
-            spec["CONDITION"] = self._build_condition(condition)
-
-        return self._add_task(spec)
+        return self._add_task(
+            build_combine_params(
+                sources,
+                self.columns,
+                self._internal_names,
+                new_column=new_column,
+                column_type=column_type,
+                existing_column=existing_column,
+                separator=separator,
+                condition=condition,
+                column_types=self.column_types,
+                name_gen=self._next_internal_name,
+            )
+        )
 
     def convert_type(self, conversions: list[ConversionSpec | dict[str, Any]]) -> dict[str, Any]:
         """Convert column data types (CONVERT task).
@@ -173,14 +165,4 @@ class ColumnOpsMixin:
             ])
         """
         resolved = [ConversionSpec(**c) if isinstance(c, dict) else c for c in conversions]
-        convert_items = []
-        for c in resolved:
-            item: dict[str, Any] = {
-                "SOURCE": self._resolve_column(c.column),
-                "TO_TYPE": c.to.value,
-            }
-            if c.format is not None:
-                item["FORMAT"] = c.format
-            convert_items.append(item)
-
-        return self._add_task({"CONVERT": convert_items})
+        return self._add_task(build_convert_params(resolved, self.columns, self._internal_names))

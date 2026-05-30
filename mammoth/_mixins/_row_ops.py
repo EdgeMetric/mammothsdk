@@ -2,12 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+from mammoth._pure.builders import (
+    build_discard_duplicates_params,
+    build_fill_params,
+    build_limit_params,
+    build_unnest_params,
+)
 from mammoth.models.pipeline import FillDirection, SortDirection
 
+if TYPE_CHECKING:
+    from mammoth._mixins._host import ViewHost
+else:
+    ViewHost = object
 
-class RowOpsMixin:
+
+class RowOpsMixin(ViewHost):
     """Mixin for row-level operations on a View."""
 
     def fill_missing(
@@ -47,16 +58,16 @@ class RowOpsMixin:
                 order_by=[["Date", SortDirection.ASC]],
             )
         """
-        fill_spec: dict[str, Any] = {
-            "COLUMN": self._resolve_column(column),
-            "WITH": direction,
-        }
-        if partition_by:
-            fill_spec["PARTITION_BY"] = self._resolve_column(partition_by)
-        if order_by:
-            fill_spec["ORDER_BY"] = self._resolve_order_by(order_by)
-
-        return self._add_task({"FILL": fill_spec})
+        return self._add_task(
+            build_fill_params(
+                column,
+                direction,
+                self.columns,
+                self._internal_names,
+                partition_by=partition_by,
+                order_by=order_by,
+            )
+        )
 
     def limit_rows(
         self,
@@ -85,11 +96,7 @@ class RowOpsMixin:
             view.limit_rows(10, order_by=[["Sales", SortDirection.DESC]])
             view.limit_rows(5, bottom=True)
         """
-        spec: dict[str, Any] = {"LIMIT": {"LIMIT": n, "BOTTOM": bottom}}
-        if order_by:
-            spec["ORDER_BY"] = self._resolve_order_by(order_by)
-
-        return self._add_task(spec)
+        return self._add_task(build_limit_params(n, self.columns, bottom=bottom, order_by=order_by))
 
     def discard_duplicates(
         self,
@@ -109,12 +116,8 @@ class RowOpsMixin:
             view.discard_duplicates()
             view.discard_duplicates(ignore_columns=["Notes", "Timestamp"])
         """
-        resolved = self._resolve_columns(ignore_columns) if ignore_columns else []
         return self._add_task(
-            {
-                "DISCARD_DUPLICATES": True,
-                "IGNORE_COLUMNS": resolved,
-            }
+            build_discard_duplicates_params(self.columns, self._internal_names, ignore_columns)
         )
 
     def unnest(
@@ -144,27 +147,13 @@ class RowOpsMixin:
             view.unnest(["Q1", "Q2", "Q3", "Q4"],
                         label_column="Quarter", value_column="Revenue")
         """
-        col_specs = []
-        for c in columns:
-            display = c
-            if c in self._internal_names:
-                for dname, iname in self.columns.items():
-                    if iname == c:
-                        display = dname
-                        break
-            col_specs.append(
-                {
-                    "COLUMN": self._resolve_column(c),
-                    "LABEL": display,
-                }
-            )
-
         return self._add_task(
-            {
-                "UNNEST": {
-                    "COLUMNS": col_specs,
-                    "LABEL": {"COLUMN": label_column, "TYPE": "TEXT"},
-                    "VALUE": {"COLUMN": value_column, "TYPE": "TEXT"},
-                },
-            }
+            build_unnest_params(
+                columns,
+                self.columns,
+                self._internal_names,
+                label_column=label_column,
+                value_column=value_column,
+                name_gen=self._next_internal_name,
+            )
         )

@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from mammoth._pure.builders import (
+    build_crosstab_params,
+    build_pivot_params,
+    build_window_params,
+)
 from mammoth.models.pipeline import (
     AggregationSpec,
     ColumnType,
@@ -14,21 +19,14 @@ from mammoth.models.pipeline import (
 )
 
 if TYPE_CHECKING:
+    from mammoth._mixins._host import ViewHost
     from mammoth.condition import CompoundCondition, Condition, NotCondition
+else:
+    ViewHost = object
 
 
-class AggregateOpsMixin:
+class AggregateOpsMixin(ViewHost):
     """Mixin for aggregation operations on a View."""
-
-    def _resolve_order_by(self, order_by: list[list[str | SortDirection]]) -> list[list[str]]:
-        """Resolve order_by specs, mapping display names to internal names."""
-        resolved: list[list[str]] = []
-        for ob in order_by:
-            col_name = str(ob[0])
-            col = self._resolve_column(col_name) if col_name in self.columns else col_name
-            direction = ob[1] if len(ob) > 1 else "ASC"
-            resolved.append([col, direction])
-        return resolved
 
     def pivot(
         self,
@@ -65,35 +63,17 @@ class AggregateOpsMixin:
                 )],
             )
         """
-        resolved_aggs = [AggregationSpec(**a) if isinstance(a, dict) else a for a in aggregations]
-        group_specs = []
-        for idx, g in enumerate(group_by):
-            group_specs.append(
-                {
-                    "COLUMN": self._resolve_column(g),
-                    "ORDER": idx,
-                }
+        resolved = [AggregationSpec(**a) if isinstance(a, dict) else a for a in aggregations]
+        return self._add_task(
+            build_pivot_params(
+                group_by,
+                resolved,
+                self.columns,
+                self._internal_names,
+                condition=condition,
+                column_types=self.column_types,
             )
-
-        select_specs = []
-        base_order = len(group_by)
-        for idx, agg in enumerate(resolved_aggs):
-            func_str = agg.function.value
-            sel: dict[str, Any] = {
-                "ORDER": base_order + idx,
-                "FUNCTION": func_str,
-                "COLUMN": self._resolve_column(agg.column),
-                "AS": agg.as_name or f"{func_str}_{agg.column}",
-            }
-            if agg.delimiter is not None:
-                sel["DELIMITER"] = agg.delimiter
-            select_specs.append(sel)
-
-        pivot_spec: dict[str, Any] = {"GROUP_BY": group_specs, "SELECT": select_specs}
-        if condition:
-            pivot_spec["CONDITION"] = self._build_condition(condition)
-
-        return self._add_task({"PIVOT": pivot_spec})
+        )
 
     def window(
         self,
@@ -133,29 +113,21 @@ class AggregateOpsMixin:
                 order_by=[["Sales", SortDirection.DESC]],
             )
         """
-        evaluate: dict[str, Any] = {"FUNCTION": function}
-        if column:
-            resolved = self._resolve_column(column)
-            evaluate["SOURCES"] = resolved
-            evaluate["ARGUMENTS"] = [resolved]
-
-        window_spec: dict[str, Any] = {
-            "EVALUATE": evaluate,
-            "RANGE": range_type,
-        }
-
-        if new_column:
-            window_spec["AS"] = self._build_as_column(new_column, column_type)
-        elif existing_column:
-            window_spec["DESTINATION"] = self._resolve_column(existing_column)
-
-        if partition_by:
-            window_spec["GROUP_BY"] = [{"COLUMN": self._resolve_column(p)} for p in partition_by]
-
-        if order_by:
-            window_spec["ORDER_BY"] = self._resolve_order_by(order_by)
-
-        return self._add_task({"WINDOW": window_spec})
+        return self._add_task(
+            build_window_params(
+                function,
+                self.columns,
+                self._internal_names,
+                column=column,
+                new_column=new_column,
+                column_type=column_type,
+                existing_column=existing_column,
+                partition_by=partition_by,
+                order_by=order_by,
+                range_type=range_type,
+                name_gen=self._next_internal_name,
+            )
+        )
 
     def crosstab(
         self,
@@ -197,27 +169,13 @@ class AggregateOpsMixin:
                 ),
             )
         """
-        func_str = select.function.value
-        select_spec: dict[str, Any] = {"FUNCTION": func_str}
-        if select.column is not None:
-            select_spec["COLUMN"] = self._resolve_column(select.column)
         return self._add_task(
-            {
-                "CROSSTAB": {
-                    "ROWS": [
-                        {
-                            "COLUMN": self._resolve_column(r),
-                            "TYPE": self.column_types.get(r, "TEXT"),
-                        }
-                        for r in rows
-                    ],
-                    "COLUMNS": [
-                        {
-                            "COLUMN": self._resolve_column(pivot_column),
-                            "TYPE": self.column_types.get(pivot_column, "TEXT"),
-                        }
-                    ],
-                    "SELECT": select_spec,
-                },
-            }
+            build_crosstab_params(
+                rows,
+                pivot_column,
+                select,
+                self.columns,
+                self._internal_names,
+                self.column_types,
+            )
         )

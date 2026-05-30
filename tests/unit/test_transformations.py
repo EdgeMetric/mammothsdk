@@ -181,7 +181,7 @@ class TestConvertType:
             ]
         )
         p = last_payload(mock_view)
-        assert p["CONVERT"][0]["FORMAT"] == "MM/DD/YYYY"
+        assert p["CONVERT"][0]["FORMAT"] == {"date_format": "MM/DD/YYYY"}
 
 
 # ── Filter operations ────────────────────────────────────────
