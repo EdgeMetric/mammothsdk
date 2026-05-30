@@ -32,7 +32,14 @@ import pytest
 
 from mammoth import MammothClient
 from mammoth.condition import Condition
-from mammoth.models.pipeline import ColumnType, FilterType, JsonType, Operator, TextCase
+from mammoth.models.pipeline import (
+    ColumnType,
+    ConversionSpec,
+    FilterType,
+    JsonType,
+    Operator,
+    TextCase,
+)
 
 # ── Env-var guards ────────────────────────────────────────────────────────────
 
@@ -163,7 +170,7 @@ class TestWorkflowAgentE2E:
         build_convert_params path.
         """
         col = view.display_names[0]
-        result = view.convert_type([{"column": col, "to": ColumnType.TEXT.value}])
+        result = view.convert_type([ConversionSpec(column=col, to=ColumnType.TEXT)])
         assert result is not None
 
     def test_text_transform_trim_upper(self, view):
@@ -278,7 +285,7 @@ class TestWorkflowAgentE2E:
     def test_tasks_are_recorded(self, view):
         """After applying at least one transform, list_tasks returns a non-empty list."""
         col = view.display_names[0]
-        view.convert_type([{"column": col, "to": "TEXT"}])
+        view.convert_type([ConversionSpec(column=col, to=ColumnType.TEXT)])
         tasks = view.list_tasks()
         assert isinstance(tasks, list)
         assert len(tasks) >= 1

@@ -116,7 +116,7 @@ class TextOpsMixin(ViewHost):
     def bulk_replace(
         self,
         columns: list[str],
-        mapping: list[BulkReplaceMapping | dict[str, Any]],
+        mapping: list[BulkReplaceMapping],
         match_case: bool = True,
         match_words: bool = False,
         condition: Condition | CompoundCondition | NotCondition | None = None,
@@ -127,11 +127,9 @@ class TextOpsMixin(ViewHost):
 
         Args:
             columns: Display names of columns to search in.
-            mapping: List of :class:`BulkReplaceMapping` objects or dicts
-                with matching keys (``search``, ``replace``)::
+            mapping: List of :class:`BulkReplaceMapping` objects::
 
                     [BulkReplaceMapping(search=["val1", "val2"], replace="replacement")]
-                    [{"search": ["val1", "val2"], "replace": "replacement"}]
 
             match_case: Case-sensitive matching (default True).
             match_words: Whole-word matching (default False).
@@ -149,13 +147,12 @@ class TextOpsMixin(ViewHost):
                 ],
             )
         """
-        resolved = [BulkReplaceMapping(**m) if isinstance(m, dict) else m for m in mapping]
         return self._add_task(
             build_bulk_replace_params(
                 columns,
                 self.columns,
                 self._internal_names,
-                resolved,
+                mapping,
                 match_case=match_case,
                 match_words=match_words,
                 condition=condition,
@@ -167,7 +164,7 @@ class TextOpsMixin(ViewHost):
         self,
         column: str,
         delimiter: str,
-        new_columns: list[SplitColumnSpec | dict[str, Any]],
+        new_columns: list[SplitColumnSpec],
     ) -> dict[str, Any]:
         """Split a column into multiple columns by delimiter (SPLIT task).
 
@@ -177,11 +174,9 @@ class TextOpsMixin(ViewHost):
         Args:
             column: Display name of column to split.
             delimiter: Delimiter string (e.g. ``" "``, ``","``).
-            new_columns: List of :class:`SplitColumnSpec` objects or dicts
-                with matching keys (``name``, ``type``)::
+            new_columns: List of :class:`SplitColumnSpec` objects::
 
                     [SplitColumnSpec("First"), SplitColumnSpec("Last")]
-                    [{"name": "First"}, {"name": "Last"}]
 
         Returns:
             API response dict.
@@ -195,12 +190,11 @@ class TextOpsMixin(ViewHost):
                 [SplitColumnSpec("First Name"), SplitColumnSpec("Last Name")],
             )
         """
-        resolved = [SplitColumnSpec(**nc) if isinstance(nc, dict) else nc for nc in new_columns]
         return self._add_task(
             build_split_params(
                 column,
                 delimiter,
-                resolved,
+                new_columns,
                 self.columns,
                 self._internal_names,
                 self._next_internal_name,

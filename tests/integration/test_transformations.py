@@ -10,7 +10,25 @@ Run:
 
 from __future__ import annotations
 
-from mammoth import Condition, Operator
+from mammoth import (
+    AggregateFunction,
+    AggregationSpec,
+    ColumnType,
+    Condition,
+    ConversionSpec,
+    CopySpec,
+    DateComponent,
+    DateDelta,
+    DateDiffUnit,
+    FillDirection,
+    Operator,
+    SetValue,
+    SortDirection,
+    SplitColumnSpec,
+    SubstringDirection,
+    TextCase,
+    WindowFunction,
+)
 
 # ═══════════════════════════════════════════════════════════════
 #  Phase 1: Upload & Dataset
@@ -88,7 +106,7 @@ class TestTransformations:
     # ── Column operations ─────────────────────────────────────
 
     def test_add_column(self, view):
-        result = view.add_column(name="new_col", column_type="TEXT")
+        result = view.add_column(name="new_col", column_type=ColumnType.TEXT)
         assert result is not None
 
     def test_delete_columns(self, view):
@@ -98,7 +116,7 @@ class TestTransformations:
     def test_copy_columns(self, view):
         result = view.copy_columns(
             [
-                {"source": "emp_id", "as": "emp_id_copy", "type": "TEXT"},
+                CopySpec(source="emp_id", as_name="emp_id_copy", type=ColumnType.TEXT),
             ]
         )
         assert result is not None
@@ -129,11 +147,11 @@ class TestTransformations:
     def test_set_values_new_column(self, view):
         result = view.set_values(
             new_column="salary_tier",
-            column_type="TEXT",
+            column_type=ColumnType.TEXT,
             values=[
-                {"value": "High", "condition": Condition("base_salary", Operator.GTE, 100000)},
-                {"value": "Medium", "condition": Condition("base_salary", Operator.GTE, 50000)},
-                {"value": "Low"},
+                SetValue("High", condition=Condition("base_salary", Operator.GTE, 100000)),
+                SetValue("Medium", condition=Condition("base_salary", Operator.GTE, 50000)),
+                SetValue("Low"),
             ],
         )
         assert result is not None
@@ -141,7 +159,7 @@ class TestTransformations:
     def test_set_values_existing_column(self, view):
         result = view.set_values(
             existing_column="employment_type",
-            values=[{"value": "Active"}],
+            values=[SetValue("Active")],
         )
         assert result is not None
 
@@ -164,7 +182,7 @@ class TestTransformations:
         assert result is not None
 
     def test_text_transform_upper(self, view):
-        result = view.text_transform(columns=["department"], case="UPPER")
+        result = view.text_transform(columns=["department"], case=TextCase.UPPER)
         assert result is not None
 
     def test_text_transform_trim(self, view):
@@ -176,8 +194,8 @@ class TestTransformations:
             column="full_name",
             delimiter=" ",
             new_columns=[
-                {"name": "First", "type": "TEXT"},
-                {"name": "Last", "type": "TEXT"},
+                SplitColumnSpec(name="First", type=ColumnType.TEXT),
+                SplitColumnSpec(name="Last", type=ColumnType.TEXT),
             ],
         )
         assert result is not None
@@ -185,7 +203,7 @@ class TestTransformations:
     def test_substring_start(self, view):
         result = view.substring(
             column="full_name",
-            direction="START",
+            direction=SubstringDirection.START,
             num_char=5,
             new_column="name_prefix",
         )
@@ -194,18 +212,14 @@ class TestTransformations:
     # ── Type conversion ───────────────────────────────────────
 
     def test_convert_type(self, view):
-        result = view.convert_type([{"column": "emp_id", "to": "TEXT"}])
+        result = view.convert_type([ConversionSpec(column="emp_id", to=ColumnType.TEXT)])
         assert result is not None
 
     # ── Math ──────────────────────────────────────────────────
 
     def test_math(self, view):
         result = view.math(
-            expression=[
-                {"TYPE": "COLUMN", "VALUE": "base_salary"},
-                {"TYPE": "OPERATOR", "VALUE": "*"},
-                {"TYPE": "COLUMN", "VALUE": "bonus_pct"},
-            ],
+            expression="base_salary * bonus_pct",
             new_column="bonus_amount",
         )
         assert result is not None
@@ -220,36 +234,36 @@ class TestTransformations:
     # ── Date operations ───────────────────────────────────────
 
     def test_extract_date_year(self, view):
-        view.convert_type([{"column": "joining_date", "to": "DATE"}])
+        view.convert_type([ConversionSpec(column="joining_date", to=ColumnType.DATE)])
         result = view.extract_date(
             column="joining_date",
-            component="year",
+            component=DateComponent.YEAR,
             new_column="join_year",
         )
         assert result is not None
 
     def test_extract_date_month(self, view):
-        view.convert_type([{"column": "joining_date", "to": "DATE"}])
+        view.convert_type([ConversionSpec(column="joining_date", to=ColumnType.DATE)])
         result = view.extract_date(
             column="joining_date",
-            component="month",
+            component=DateComponent.MONTH,
             new_column="join_month",
         )
         assert result is not None
 
     def test_increment_date(self, view):
-        view.convert_type([{"column": "joining_date", "to": "DATE"}])
+        view.convert_type([ConversionSpec(column="joining_date", to=ColumnType.DATE)])
         result = view.increment_date(
             column="joining_date",
-            delta={"DAY": 30},
+            delta=DateDelta(days=30),
             new_column="joining_plus_30",
         )
         assert result is not None
 
     def test_date_diff(self, view):
-        view.convert_type([{"column": "joining_date", "to": "DATE"}])
+        view.convert_type([ConversionSpec(column="joining_date", to=ColumnType.DATE)])
         result = view.date_diff(
-            component="DAY",
+            component=DateDiffUnit.DAY,
             start="joining_date",
             end="joining_date",
             new_column="zero_diff",
@@ -261,7 +275,7 @@ class TestTransformations:
     def test_fill_missing(self, view):
         result = view.fill_missing(
             column="exit_date",
-            direction="LAST_VALUE",
+            direction=FillDirection.LAST_VALUE,
         )
         assert result is not None
 
@@ -272,7 +286,7 @@ class TestTransformations:
     def test_limit_rows_with_order(self, view):
         result = view.limit_rows(
             n=5,
-            order_by=[["base_salary", "DESC"]],
+            order_by=[["base_salary", SortDirection.DESC]],
         )
         assert result is not None
 
@@ -290,7 +304,11 @@ class TestTransformations:
         result = view.pivot(
             group_by=["department"],
             aggregations=[
-                {"column": "base_salary", "function": "AVG", "as": "avg_salary"},
+                AggregationSpec(
+                    column="base_salary",
+                    function=AggregateFunction.AVG,
+                    as_name="avg_salary",
+                ),
             ],
         )
         assert result is not None
@@ -299,8 +317,16 @@ class TestTransformations:
         result = view.pivot(
             group_by=["department"],
             aggregations=[
-                {"column": "base_salary", "function": "SUM", "as": "total_salary"},
-                {"column": "base_salary", "function": "COUNT", "as": "headcount"},
+                AggregationSpec(
+                    column="base_salary",
+                    function=AggregateFunction.SUM,
+                    as_name="total_salary",
+                ),
+                AggregationSpec(
+                    column="base_salary",
+                    function=AggregateFunction.COUNT,
+                    as_name="headcount",
+                ),
             ],
         )
         assert result is not None
@@ -309,20 +335,20 @@ class TestTransformations:
 
     def test_window_row_number(self, view):
         result = view.window(
-            function="ROW_NUMBER",
+            function=WindowFunction.ROW_NUMBER,
             new_column="row_num",
             partition_by=["department"],
-            order_by=[["base_salary", "DESC"]],
+            order_by=[["base_salary", SortDirection.DESC]],
         )
         assert result is not None
 
     def test_window_sum(self, view):
         result = view.window(
-            function="SUM",
+            function=WindowFunction.SUM,
             column="base_salary",
             new_column="running_salary",
             partition_by=["department"],
-            order_by=[["base_salary", "ASC"]],
+            order_by=[["base_salary", SortDirection.ASC]],
         )
         assert result is not None
 
@@ -345,11 +371,7 @@ class TestMultiStepPipeline:
         r1 = view.filter_rows(Condition("department", Operator.EQ, "Engineering"))
         assert r1 is not None
         r2 = view.math(
-            expression=[
-                {"TYPE": "COLUMN", "VALUE": "base_salary"},
-                {"TYPE": "OPERATOR", "VALUE": "*"},
-                {"TYPE": "NUMBER", "VALUE": 1.1},
-            ],
+            expression="base_salary * 1.1",
             new_column="salary_with_raise",
         )
         assert r2 is not None
@@ -359,10 +381,10 @@ class TestMultiStepPipeline:
     def test_chain_add_set_delete(self, view):
         r1 = view.set_values(
             new_column="status_label",
-            column_type="TEXT",
+            column_type=ColumnType.TEXT,
             values=[
-                {"value": "Senior", "condition": Condition("base_salary", Operator.GTE, 100000)},
-                {"value": "Junior"},
+                SetValue("Senior", condition=Condition("base_salary", Operator.GTE, 100000)),
+                SetValue("Junior"),
             ],
         )
         assert r1 is not None

@@ -31,21 +31,19 @@ class AggregateOpsMixin(ViewHost):
     def pivot(
         self,
         group_by: list[str],
-        aggregations: list[AggregationSpec | dict[str, Any]],
+        aggregations: list[AggregationSpec],
         condition: Condition | CompoundCondition | NotCondition | None = None,
     ) -> dict[str, Any]:
         """Group / aggregate / pivot (PIVOT task).
 
         Args:
             group_by: List of display names to group by.
-            aggregations: List of :class:`AggregationSpec` objects or dicts
-                with matching keys (``column``, ``function``, ``as_name``)::
+            aggregations: List of :class:`AggregationSpec` objects::
 
                     [AggregationSpec(
                         column="Sales", function=AggregateFunction.SUM,
                         as_name="Total",
                     )]
-                    [{"column": "Sales", "function": "SUM", "as_name": "Total"}]
 
             condition: Condition to apply.
 
@@ -63,11 +61,10 @@ class AggregateOpsMixin(ViewHost):
                 )],
             )
         """
-        resolved = [AggregationSpec(**a) if isinstance(a, dict) else a for a in aggregations]
         return self._add_task(
             build_pivot_params(
                 group_by,
-                resolved,
+                aggregations,
                 self.columns,
                 self._internal_names,
                 condition=condition,

@@ -57,23 +57,20 @@ class ColumnOpsMixin(ViewHost):
         """
         return self._add_task(build_delete_params(columns, self.columns, self._internal_names))
 
-    def copy_columns(self, copies: list[CopySpec | dict[str, Any]]) -> dict[str, Any]:
+    def copy_columns(self, copies: list[CopySpec]) -> dict[str, Any]:
         """Duplicate columns (COPY task).
 
         Args:
-            copies: List of :class:`CopySpec` objects or dicts with
-                matching keys (``source``, ``as_name``, ``type``)::
+            copies: List of :class:`CopySpec` objects::
 
                     [CopySpec(source="Sales", as_name="Sales Copy")]
-                    [{"source": "Sales", "as_name": "Sales Copy"}]
 
         Returns:
             API response dict.
         """
-        resolved = [CopySpec(**c) if isinstance(c, dict) else c for c in copies]
         return self._add_task(
             build_copy_params(
-                resolved,
+                copies,
                 self.columns,
                 self._internal_names,
                 self.column_types,
@@ -135,15 +132,13 @@ class ColumnOpsMixin(ViewHost):
             )
         )
 
-    def convert_type(self, conversions: list[ConversionSpec | dict[str, Any]]) -> dict[str, Any]:
+    def convert_type(self, conversions: list[ConversionSpec]) -> dict[str, Any]:
         """Convert column data types (CONVERT task).
 
         Args:
-            conversions: List of :class:`ConversionSpec` objects or dicts with
-                matching keys (``column``, ``to``, ``format``)::
+            conversions: List of :class:`ConversionSpec` objects::
 
                     [ConversionSpec(column="Sales", to=ColumnType.NUMERIC)]
-                    [{"column": "Sales", "to": "NUMERIC"}]
 
         Returns:
             API response dict.
@@ -155,14 +150,10 @@ class ColumnOpsMixin(ViewHost):
             # Text to numeric
             view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
 
-            # Using plain dicts
-            view.convert_type([{"column": "Sales", "to": "NUMERIC"}])
-
             # Text to date (specify the source format)
             view.convert_type([
                 ConversionSpec(column="Order Date", to=ColumnType.DATE,
                                format="MM/DD/YYYY"),
             ])
         """
-        resolved = [ConversionSpec(**c) if isinstance(c, dict) else c for c in conversions]
-        return self._add_task(build_convert_params(resolved, self.columns, self._internal_names))
+        return self._add_task(build_convert_params(conversions, self.columns, self._internal_names))

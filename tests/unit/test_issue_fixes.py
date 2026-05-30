@@ -137,51 +137,29 @@ class TestViewsListDatasetId:
 # ── Fix 4: dict coercion ────────────────────────────────
 
 
-class TestDictCoercion:
-    def test_copy_columns_accepts_dicts(self, mock_view: View):
-        mock_view.copy_columns([{"source": "Sales", "as_name": "Sales Copy"}])
-        p = mock_view._captured_payloads[-1]  # type: ignore[attr-defined]
-        assert "COPY" in p
-        assert p["COPY"][0]["SOURCE"] == "column_aaa"
+class TestSpecInputs:
+    """Transform methods take strictly-typed spec objects (no dict/str coercion)."""
 
     def test_copy_columns_accepts_specs(self, mock_view: View):
         mock_view.copy_columns([CopySpec(source="Sales", as_name="Sales Copy")])
         p = mock_view._captured_payloads[-1]  # type: ignore[attr-defined]
         assert "COPY" in p
-
-    def test_convert_type_accepts_dicts(self, mock_view: View):
-        mock_view.convert_type([{"column": "Sales", "to": ColumnType.NUMERIC}])
-        p = mock_view._captured_payloads[-1]  # type: ignore[attr-defined]
-        assert "CONVERT" in p
-        assert p["CONVERT"][0]["SOURCE"] == "column_aaa"
+        assert p["COPY"][0]["SOURCE"] == "column_aaa"
 
     def test_convert_type_accepts_specs(self, mock_view: View):
         mock_view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
         p = mock_view._captured_payloads[-1]  # type: ignore[attr-defined]
         assert "CONVERT" in p
-
-    def test_bulk_replace_accepts_dicts(self, mock_view: View):
-        mock_view.bulk_replace(
-            columns=["Region"],
-            mapping=[{"search": ["West", "W"], "replace": "Western"}],
-        )
-        p = mock_view._captured_payloads[-1]  # type: ignore[attr-defined]
-        assert "REPLACE" in p
-        assert p["REPLACE"]["MAPPING"][0]["SEARCH_VALUE"] == ["West", "W"]
+        assert p["CONVERT"][0]["SOURCE"] == "column_aaa"
 
     def test_bulk_replace_accepts_specs(self, mock_view: View):
         mock_view.bulk_replace(
             columns=["Region"],
-            mapping=[BulkReplaceMapping(search=["West"], replace="Western")],
+            mapping=[BulkReplaceMapping(search=["West", "W"], replace="Western")],
         )
         p = mock_view._captured_payloads[-1]  # type: ignore[attr-defined]
         assert "REPLACE" in p
-
-    def test_split_column_accepts_dicts(self, mock_view: View):
-        mock_view.split_column("Region", "-", [{"name": "Part1"}, {"name": "Part2"}])
-        p = mock_view._captured_payloads[-1]  # type: ignore[attr-defined]
-        assert "SPLIT" in p
-        assert len(p["SPLIT"]["AS"]) == 2
+        assert p["REPLACE"]["MAPPING"][0]["SEARCH_VALUE"] == ["West", "W"]
 
     def test_split_column_accepts_specs(self, mock_view: View):
         mock_view.split_column(
@@ -191,17 +169,7 @@ class TestDictCoercion:
         )
         p = mock_view._captured_payloads[-1]  # type: ignore[attr-defined]
         assert "SPLIT" in p
-
-    def test_pivot_accepts_dicts(self, mock_view: View):
-        mock_view.pivot(
-            group_by=["Region"],
-            aggregations=[
-                {"column": "Sales", "function": AggregateFunction.SUM, "as_name": "Total"}
-            ],
-        )
-        p = mock_view._captured_payloads[-1]  # type: ignore[attr-defined]
-        assert "PIVOT" in p
-        assert p["PIVOT"]["SELECT"][0]["FUNCTION"] == "SUM"
+        assert len(p["SPLIT"]["AS"]) == 2
 
     def test_pivot_accepts_specs(self, mock_view: View):
         mock_view.pivot(
@@ -216,6 +184,7 @@ class TestDictCoercion:
         )
         p = mock_view._captured_payloads[-1]  # type: ignore[attr-defined]
         assert "PIVOT" in p
+        assert p["PIVOT"]["SELECT"][0]["FUNCTION"] == "SUM"
 
 
 # ── Fix 6a: datasets.browse removed ─────────────────────

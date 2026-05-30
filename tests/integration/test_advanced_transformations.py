@@ -11,7 +11,30 @@ from __future__ import annotations
 
 import pytest
 
-from mammoth import Condition, Operator
+from mammoth import (
+    AggregateFunction,
+    AggregationSpec,
+    BulkReplaceMapping,
+    ColumnType,
+    Condition,
+    ConversionSpec,
+    CopySpec,
+    CrosstabSpec,
+    DateComponent,
+    DateDelta,
+    DateDiffUnit,
+    FillDirection,
+    JoinKeySpec,
+    JoinSelectSpec,
+    JoinType,
+    Operator,
+    SetValue,
+    SortDirection,
+    SplitColumnSpec,
+    SubstringDirection,
+    TextCase,
+    WindowFunction,
+)
 
 # Fixtures adv_second_dataset_id, adv_second_view are defined in conftest.py
 
@@ -28,12 +51,12 @@ class TestAdvancedColumnOps:
         """Copy a column with a per-item condition (B3 feature)."""
         result = adv_view.copy_columns(
             [
-                {
-                    "source": "Department",
-                    "as": "dept_copy",
-                    "type": "TEXT",
-                    "condition": Condition("Transaction Type", Operator.EQ, "sale"),
-                },
+                CopySpec(
+                    source="Department",
+                    as_name="dept_copy",
+                    type=ColumnType.TEXT,
+                    condition=Condition("Transaction Type", Operator.EQ, "sale"),
+                ),
             ]
         )
         assert result is not None
@@ -57,11 +80,16 @@ class TestAdvancedColumnOps:
         )
         assert result is not None
 
-    def test_convert_type_numeric(self, adv_view):
-        """Convert text column to numeric."""
+    def test_convert_type_to_text(self, adv_view):
+        """Convert a numeric column to text (a real type change).
+
+        ``Quantity`` holds integer data, so the backend auto-types it NUMERIC on
+        upload; converting NUMERIC->NUMERIC is a rejected no-op.  Converting it
+        to TEXT is a genuine type change the backend accepts.
+        """
         result = adv_view.convert_type(
             [
-                {"column": "Quantity", "to": "NUMERIC"},
+                ConversionSpec(column="Quantity", to=ColumnType.TEXT),
             ]
         )
         assert result is not None
@@ -112,17 +140,11 @@ class TestAdvancedFilter:
         """Set values with multiple conditional tiers."""
         result = adv_view.set_values(
             new_column="price_tier",
-            column_type="TEXT",
+            column_type=ColumnType.TEXT,
             values=[
-                {
-                    "value": "Premium",
-                    "condition": Condition("Total", Operator.GTE, 50),
-                },
-                {
-                    "value": "Standard",
-                    "condition": Condition("Total", Operator.GTE, 10),
-                },
-                {"value": "Budget"},
+                SetValue("Premium", condition=Condition("Total", Operator.GTE, 50)),
+                SetValue("Standard", condition=Condition("Total", Operator.GTE, 10)),
+                SetValue("Budget"),
             ],
         )
         assert result is not None
@@ -131,16 +153,16 @@ class TestAdvancedFilter:
         """Set values with compound AND/OR in condition."""
         result = adv_view.set_values(
             new_column="flag",
-            column_type="TEXT",
+            column_type=ColumnType.TEXT,
             values=[
-                {
-                    "value": "HighValue",
-                    "condition": (
+                SetValue(
+                    "HighValue",
+                    condition=(
                         Condition("Total", Operator.GTE, 20)
                         & Condition("Transaction Type", Operator.EQ, "sale")
                     ),
-                },
-                {"value": "Other"},
+                ),
+                SetValue("Other"),
             ],
         )
         assert result is not None
@@ -159,18 +181,22 @@ class TestAdvancedText:
         result = adv_view.bulk_replace(
             columns=["Department"],
             mapping=[
-                {"search": ["ORDER", "service"], "replace": "Online"},
+                BulkReplaceMapping(search=["ORDER", "service"], replace="Online"),
             ],
         )
         assert result is not None
 
     def test_substring_left(self, adv_view):
-        """Substring from left direction."""
+        """Substring from left direction.
+
+        SUBSTRING needs a TEXT source; ``Transaction ID`` is integer data and
+        auto-types NUMERIC, so we use the TEXT ``Item Description`` column.
+        """
         result = adv_view.substring(
-            column="Transaction ID",
-            direction="LEFT",
+            column="Item Description",
+            direction=SubstringDirection.LEFT,
             char_position=6,
-            new_column="txn_prefix",
+            new_column="desc_prefix",
         )
         assert result is not None
 
@@ -178,7 +204,7 @@ class TestAdvancedText:
         """Substring first N chars."""
         result = adv_view.substring(
             column="Cashier",
-            direction="START",
+            direction=SubstringDirection.START,
             num_char=3,
             new_column="cashier_initials",
         )
@@ -190,8 +216,8 @@ class TestAdvancedText:
             column="Cashier",
             delimiter=" ",
             new_columns=[
-                {"name": "First", "type": "TEXT"},
-                {"name": "Last", "type": "TEXT"},
+                SplitColumnSpec(name="First", type=ColumnType.TEXT),
+                SplitColumnSpec(name="Last", type=ColumnType.TEXT),
             ],
         )
         assert result is not None
@@ -207,7 +233,7 @@ class TestAdvancedText:
 
     def test_text_transform_upper(self, adv_view):
         """Text transform to upper case."""
-        result = adv_view.text_transform(columns=["Department"], case="UPPER")
+        result = adv_view.text_transform(columns=["Department"], case=TextCase.UPPER)
         assert result is not None
 
 
@@ -259,53 +285,50 @@ class TestAdvancedMath:
 
 
 class TestAdvancedDate:
-    """Extract, increment, date diff on converted date columns."""
+    """Extract, increment, date diff on date columns.
 
-    def _convert_time(self, view):
-        """Helper: convert Time column to DATE type."""
-        view.convert_type([{"column": "Time", "to": "DATE"}])
+    ``Time`` is a timestamp, so the backend auto-types it DATE on upload; a
+    ``convert Time->DATE`` would be a rejected no-op, so we operate on it
+    directly.
+    """
 
     def test_extract_year_and_month(self, adv_view):
         """Extract year then month from date column."""
-        self._convert_time(adv_view)
         r1 = adv_view.extract_date(
             column="Time",
-            component="year",
+            component=DateComponent.YEAR,
             new_column="txn_year",
         )
         assert r1 is not None
         r2 = adv_view.extract_date(
             column="Time",
-            component="month",
+            component=DateComponent.MONTH,
             new_column="txn_month",
         )
         assert r2 is not None
 
     def test_extract_weekday(self, adv_view):
         """Extract weekday_text from date column."""
-        self._convert_time(adv_view)
         result = adv_view.extract_date(
             column="Time",
-            component="weekday_text",
+            component=DateComponent.WEEKDAY_TEXT,
             new_column="txn_weekday",
         )
         assert result is not None
 
     def test_increment_date(self, adv_view):
         """Increment date by multi-component delta."""
-        self._convert_time(adv_view)
         result = adv_view.increment_date(
             column="Time",
-            delta={"MONTH": 1, "DAY": 15},
+            delta=DateDelta(months=1, days=15),
             new_column="time_shifted",
         )
         assert result is not None
 
     def test_date_diff(self, adv_view):
         """Date diff on same column (zero diff, tests API acceptance)."""
-        self._convert_time(adv_view)
         result = adv_view.date_diff(
-            component="DAY",
+            component=DateDiffUnit.DAY,
             start="Time",
             end="Time",
             new_column="zero_diff",
@@ -326,8 +349,12 @@ class TestAdvancedAggregation:
         result = adv_view.pivot(
             group_by=["Department", "Transaction Type"],
             aggregations=[
-                {"column": "Total", "function": "SUM", "as": "total_sum"},
-                {"column": "Quantity", "function": "AVG", "as": "avg_qty"},
+                AggregationSpec(
+                    column="Total", function=AggregateFunction.SUM, as_name="total_sum"
+                ),
+                AggregationSpec(
+                    column="Quantity", function=AggregateFunction.AVG, as_name="avg_qty"
+                ),
             ],
         )
         assert result is not None
@@ -337,7 +364,9 @@ class TestAdvancedAggregation:
         result = adv_view.pivot(
             group_by=["Department"],
             aggregations=[
-                {"column": "Total", "function": "SUM", "as": "sale_total"},
+                AggregationSpec(
+                    column="Total", function=AggregateFunction.SUM, as_name="sale_total"
+                ),
             ],
             condition=Condition("Transaction Type", Operator.EQ, "sale"),
         )
@@ -348,12 +377,12 @@ class TestAdvancedAggregation:
         result = adv_view.pivot(
             group_by=["Department"],
             aggregations=[
-                {
-                    "column": "Cashier",
-                    "function": "CONCAT",
-                    "as": "all_cashiers",
-                    "delimiter": ", ",
-                },
+                AggregationSpec(
+                    column="Cashier",
+                    function=AggregateFunction.CONCAT,
+                    as_name="all_cashiers",
+                    delimiter=", ",
+                ),
             ],
         )
         assert result is not None
@@ -361,21 +390,21 @@ class TestAdvancedAggregation:
     def test_window_row_number(self, adv_view):
         """Window ROW_NUMBER partitioned and ordered."""
         result = adv_view.window(
-            function="ROW_NUMBER",
+            function=WindowFunction.ROW_NUMBER,
             new_column="row_num",
             partition_by=["Department"],
-            order_by=[["Total", "DESC"]],
+            order_by=[["Total", SortDirection.DESC]],
         )
         assert result is not None
 
     def test_window_sum_running(self, adv_view):
         """Window SUM with partition and order."""
         result = adv_view.window(
-            function="SUM",
+            function=WindowFunction.SUM,
             column="Total",
             new_column="running_total",
             partition_by=["Department"],
-            order_by=[["Transaction ID", "ASC"]],
+            order_by=[["Transaction ID", SortDirection.ASC]],
         )
         assert result is not None
 
@@ -385,7 +414,7 @@ class TestAdvancedAggregation:
         result = adv_view.crosstab(
             rows=["Department"],
             pivot_column="Transaction Type",
-            select={"function": "COUNT"},
+            select=CrosstabSpec(function=AggregateFunction.COUNT),
         )
         assert result is not None
 
@@ -395,7 +424,7 @@ class TestAdvancedAggregation:
         result = adv_view.crosstab(
             rows=["Department"],
             pivot_column="Transaction Type",
-            select={"function": "SUM", "column": "Total"},
+            select=CrosstabSpec(function=AggregateFunction.SUM, column="Total"),
         )
         assert result is not None
 
@@ -412,7 +441,7 @@ class TestAdvancedRowOps:
         """Fill missing with last value."""
         result = adv_view.fill_missing(
             column="Discount",
-            direction="LAST_VALUE",
+            direction=FillDirection.LAST_VALUE,
         )
         assert result is not None
 
@@ -420,7 +449,7 @@ class TestAdvancedRowOps:
         """Limit to top N rows with ordering."""
         result = adv_view.limit_rows(
             n=10,
-            order_by=[["Total", "DESC"]],
+            order_by=[["Total", SortDirection.DESC]],
         )
         assert result is not None
 
@@ -458,8 +487,8 @@ class TestJoin:
         """INNER join using View object (display name resolution)."""
         result = adv_view.join(
             foreign_view=adv_second_view,
-            join_type="INNER",
-            on=[{"left": "Cashier", "right": "full_name"}],
+            join_type=JoinType.INNER,
+            on=[JoinKeySpec(left="Cashier", right="full_name")],
             select=["department"],
         )
         assert result is not None
@@ -468,9 +497,9 @@ class TestJoin:
         """LEFT join — all rows from source preserved."""
         result = adv_view.join(
             foreign_view=adv_second_view,
-            join_type="LEFT",
-            on=[{"left": "Cashier", "right": "full_name"}],
-            select=[{"column": "base_salary", "alias": "cashier_salary"}],
+            join_type=JoinType.LEFT,
+            on=[JoinKeySpec(left="Cashier", right="full_name")],
+            select=[JoinSelectSpec(column="base_salary", alias="cashier_salary")],
         )
         assert result is not None
 
@@ -478,8 +507,8 @@ class TestJoin:
         """JOIN with column prefix to avoid name collisions."""
         result = adv_view.join(
             foreign_view=adv_second_view,
-            join_type="LEFT",
-            on=[{"left": "Cashier", "right": "full_name"}],
+            join_type=JoinType.LEFT,
+            on=[JoinKeySpec(left="Cashier", right="full_name")],
             select=["department", "designation"],
             column_prefix="emp_",
         )
@@ -496,7 +525,9 @@ class TestMultiStepPipeline:
 
     def test_five_step_chain(self, adv_view):
         """Chain: convert_type -> filter -> math -> set_values -> limit."""
-        r1 = adv_view.convert_type([{"column": "Quantity", "to": "NUMERIC"}])
+        # Transaction ID auto-types NUMERIC; -> TEXT is a real change (Quantity is
+        # already NUMERIC, so converting it would be a no-op ref_error).
+        r1 = adv_view.convert_type([ConversionSpec(column="Transaction ID", to=ColumnType.TEXT)])
         assert r1 is not None
 
         r2 = adv_view.filter_rows(Condition("Transaction Type", Operator.EQ, "sale"))
@@ -510,10 +541,10 @@ class TestMultiStepPipeline:
 
         r4 = adv_view.set_values(
             new_column="size",
-            column_type="TEXT",
+            column_type=ColumnType.TEXT,
             values=[
-                {"value": "Large", "condition": Condition("Quantity", Operator.GTE, 10)},
-                {"value": "Small"},
+                SetValue("Large", condition=Condition("Quantity", Operator.GTE, 10)),
+                SetValue("Small"),
             ],
         )
         assert r4 is not None
@@ -548,8 +579,8 @@ class TestMultiStepPipeline:
             column="Cashier",
             delimiter=" ",
             new_columns=[
-                {"name": "first_name", "type": "TEXT"},
-                {"name": "last_name", "type": "TEXT"},
+                SplitColumnSpec(name="first_name", type=ColumnType.TEXT),
+                SplitColumnSpec(name="last_name", type=ColumnType.TEXT),
             ],
         )
         assert r3 is not None
@@ -558,32 +589,30 @@ class TestMultiStepPipeline:
         assert len(tasks) >= 3
 
     def test_date_pipeline(self, adv_view):
-        """Chain: convert -> extract year -> extract month -> increment."""
-        adv_view.convert_type([{"column": "Time", "to": "DATE"}])
-
+        """Chain: extract year -> extract month -> increment (Time is already DATE)."""
         r1 = adv_view.extract_date(
             column="Time",
-            component="year",
+            component=DateComponent.YEAR,
             new_column="year",
         )
         assert r1 is not None
 
         r2 = adv_view.extract_date(
             column="Time",
-            component="month_text",
+            component=DateComponent.MONTH_TEXT,
             new_column="month_name",
         )
         assert r2 is not None
 
         r3 = adv_view.increment_date(
             column="Time",
-            delta={"DAY": 7},
+            delta=DateDelta(days=7),
             new_column="next_week",
         )
         assert r3 is not None
 
         tasks = adv_view.list_tasks()
-        assert len(tasks) >= 4
+        assert len(tasks) >= 3
 
 
 # ═══════════════════════════════════════════════════════════════

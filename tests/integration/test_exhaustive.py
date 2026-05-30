@@ -20,6 +20,7 @@ import pytest
 from mammoth import (
     AggregateFunction,
     AggregationSpec,
+    BulkReplaceMapping,
     ColumnType,
     CompoundCondition,
     Condition,
@@ -27,6 +28,7 @@ from mammoth import (
     CopySpec,
     CrosstabSpec,
     DateComponent,
+    DateDelta,
     DateDiffUnit,
     FillDirection,
     FilterType,
@@ -38,6 +40,7 @@ from mammoth import (
     Operator,
     SetValue,
     SortDirection,
+    SplitColumnSpec,
     SubstringDirection,
     TextCase,
     View,
@@ -307,7 +310,7 @@ class TestColumnOps:
     def test_copy_columns_typed(self, adv_view: View) -> None:
         result = adv_view.copy_columns(
             [
-                CopySpec(source="Department", as_name="dept_copy", type="TEXT"),
+                CopySpec(source="Department", as_name="dept_copy", type=ColumnType.TEXT),
             ]
         )
         assert result is not None
@@ -319,7 +322,7 @@ class TestColumnOps:
                 CopySpec(
                     source="Department",
                     as_name="dept_cond",
-                    type="TEXT",
+                    type=ColumnType.TEXT,
                     condition=Condition("Transaction Type", Operator.EQ, "sale"),
                 ),
             ]
@@ -358,7 +361,7 @@ class TestColumnOps:
     def test_convert_text_to_numeric(self, adv_view: View) -> None:
         result = adv_view.convert_type(
             [
-                ConversionSpec(column="Quantity", to="NUMERIC"),
+                ConversionSpec(column="Quantity", to=ColumnType.NUMERIC),
             ]
         )
         assert result is not None
@@ -367,7 +370,7 @@ class TestColumnOps:
     def test_convert_text_to_date_with_format(self, adv_view: View) -> None:
         result = adv_view.convert_type(
             [
-                ConversionSpec(column="Time", to="DATE"),
+                ConversionSpec(column="Time", to=ColumnType.DATE),
             ]
         )
         assert result is not None
@@ -376,8 +379,8 @@ class TestColumnOps:
     def test_convert_multiple_columns(self, adv_view: View) -> None:
         result = adv_view.convert_type(
             [
-                ConversionSpec(column="Quantity", to="NUMERIC"),
-                ConversionSpec(column="Price", to="NUMERIC"),
+                ConversionSpec(column="Quantity", to=ColumnType.NUMERIC),
+                ConversionSpec(column="Price", to=ColumnType.NUMERIC),
             ]
         )
         assert result is not None
@@ -588,7 +591,7 @@ class TestTextOps:
     def test_bulk_replace_single(self, adv_view: View) -> None:
         result = adv_view.bulk_replace(
             columns=["Department"],
-            mapping=[{"search": ["ORDER"], "replace": "Online"}],
+            mapping=[BulkReplaceMapping(search=["ORDER"], replace="Online")],
         )
         assert result is not None
 
@@ -596,8 +599,8 @@ class TestTextOps:
         result = adv_view.bulk_replace(
             columns=["Department"],
             mapping=[
-                {"search": ["ORDER"], "replace": "Online"},
-                {"search": ["KITCHEN"], "replace": "Food"},
+                BulkReplaceMapping(search=["ORDER"], replace="Online"),
+                BulkReplaceMapping(search=["KITCHEN"], replace="Food"),
             ],
         )
         assert result is not None
@@ -607,8 +610,8 @@ class TestTextOps:
             column="Cashier",
             delimiter=" ",
             new_columns=[
-                {"name": "First", "type": "TEXT"},
-                {"name": "Last", "type": "TEXT"},
+                SplitColumnSpec(name="First", type=ColumnType.TEXT),
+                SplitColumnSpec(name="Last", type=ColumnType.TEXT),
             ],
         )
         assert result is not None
@@ -667,8 +670,8 @@ class TestMathOps:
     def test_math_string_expression(self, adv_view: View) -> None:
         adv_view.convert_type(
             [
-                ConversionSpec(column="Price", to="NUMERIC"),
-                ConversionSpec(column="Tax", to="NUMERIC"),
+                ConversionSpec(column="Price", to=ColumnType.NUMERIC),
+                ConversionSpec(column="Tax", to=ColumnType.NUMERIC),
             ]
         )
         result = adv_view.math(expression="Price + Tax", new_column="price_plus_tax")
@@ -678,9 +681,9 @@ class TestMathOps:
     def test_math_parenthesized(self, adv_view: View) -> None:
         adv_view.convert_type(
             [
-                ConversionSpec(column="Price", to="NUMERIC"),
-                ConversionSpec(column="Tax", to="NUMERIC"),
-                ConversionSpec(column="Quantity", to="NUMERIC"),
+                ConversionSpec(column="Price", to=ColumnType.NUMERIC),
+                ConversionSpec(column="Tax", to=ColumnType.NUMERIC),
+                ConversionSpec(column="Quantity", to=ColumnType.NUMERIC),
             ]
         )
         result = adv_view.math(expression="(Price + Tax) * Quantity", new_column="total_calc")
@@ -688,7 +691,7 @@ class TestMathOps:
         assert "total_calc" in adv_view.display_names
 
     def test_math_with_literal(self, adv_view: View) -> None:
-        adv_view.convert_type([ConversionSpec(column="Price", to="NUMERIC")])
+        adv_view.convert_type([ConversionSpec(column="Price", to=ColumnType.NUMERIC)])
         result = adv_view.math(expression="Price * 1.1", new_column="price_110pct")
         assert result is not None
         assert "price_110pct" in adv_view.display_names
@@ -696,23 +699,19 @@ class TestMathOps:
     def test_math_raw_list(self, adv_view: View) -> None:
         adv_view.convert_type(
             [
-                ConversionSpec(column="Price", to="NUMERIC"),
-                ConversionSpec(column="Tax", to="NUMERIC"),
+                ConversionSpec(column="Price", to=ColumnType.NUMERIC),
+                ConversionSpec(column="Tax", to=ColumnType.NUMERIC),
             ]
         )
         result = adv_view.math(
-            expression=[
-                {"type": "COLUMN", "value": "Price"},
-                {"type": "OPERATOR", "value": "+"},
-                {"type": "COLUMN", "value": "Tax"},
-            ],
+            expression="Price + Tax",
             new_column="manual_sum",
         )
         assert result is not None
         assert "manual_sum" in adv_view.display_names
 
     def test_math_with_condition(self, adv_view: View) -> None:
-        adv_view.convert_type([ConversionSpec(column="Subtotal", to="NUMERIC")])
+        adv_view.convert_type([ConversionSpec(column="Subtotal", to=ColumnType.NUMERIC)])
         result = adv_view.math(
             expression="Subtotal * 0.05",
             new_column="extra_discount",
@@ -732,7 +731,7 @@ class TestDateOps:
 
     @staticmethod
     def _convert_time(view: View) -> None:
-        view.convert_type([ConversionSpec(column="Time", to="DATE")])
+        view.convert_type([ConversionSpec(column="Time", to=ColumnType.DATE)])
 
     def test_extract_year(self, adv_view: View) -> None:
         self._convert_time(adv_view)
@@ -812,7 +811,7 @@ class TestDateOps:
         self._convert_time(adv_view)
         result = adv_view.increment_date(
             column="Time",
-            delta={"DAY": 30},
+            delta=DateDelta(days=30),
             new_column="plus_30d",
         )
         assert result is not None
@@ -822,7 +821,7 @@ class TestDateOps:
         self._convert_time(adv_view)
         result = adv_view.increment_date(
             column="Time",
-            delta={"MONTH": 1, "DAY": 15},
+            delta=DateDelta(months=1, days=15),
             new_column="shifted",
         )
         assert result is not None
@@ -832,7 +831,7 @@ class TestDateOps:
         self._convert_time(adv_view)
         result = adv_view.increment_date(
             column="Time",
-            delta={"DAY": 7},
+            delta=DateDelta(days=7),
             new_column="cond_shifted",
             condition=Condition("Transaction Type", Operator.EQ, "sale"),
         )
@@ -1164,9 +1163,9 @@ class TestComplexPipeline:
     def test_etl_pipeline_15_steps(self, adv_view: View) -> None:
         """15-step ETL: convert, filter, text, combine, math, set, extract, window, copy, etc."""
         # 1. convert Quantity to NUMERIC
-        adv_view.convert_type([ConversionSpec(column="Quantity", to="NUMERIC")])
+        adv_view.convert_type([ConversionSpec(column="Quantity", to=ColumnType.NUMERIC)])
         # 2. convert Time to DATE
-        adv_view.convert_type([ConversionSpec(column="Time", to="DATE")])
+        adv_view.convert_type([ConversionSpec(column="Time", to=ColumnType.DATE)])
         # 3. filter sales only
         adv_view.filter_rows(Condition("Transaction Type", Operator.EQ, "sale"))
         # 4. text transform Department to UPPER
@@ -1178,7 +1177,7 @@ class TestComplexPipeline:
             new_column="cashier_dept",
         )
         # 6. math: Price * Quantity
-        adv_view.convert_type([ConversionSpec(column="Price", to="NUMERIC")])
+        adv_view.convert_type([ConversionSpec(column="Price", to=ColumnType.NUMERIC)])
         adv_view.math(expression="Price * Quantity", new_column="line_total")
         # 7. set_values 3-tier price band
         adv_view.set_values(
@@ -1223,7 +1222,7 @@ class TestComplexPipeline:
     def test_aggregation_pipeline_10_steps(self, adv_view: View) -> None:
         """10-step aggregation pipeline ending with pivot."""
         # 1. convert Quantity -> NUMERIC
-        adv_view.convert_type([ConversionSpec(column="Quantity", to="NUMERIC")])
+        adv_view.convert_type([ConversionSpec(column="Quantity", to=ColumnType.NUMERIC)])
         # 2. filter sales
         adv_view.filter_rows(Condition("Transaction Type", Operator.EQ, "sale"))
         # 3. text transform UPPER
@@ -1231,10 +1230,10 @@ class TestComplexPipeline:
         # 4. bulk replace departments
         adv_view.bulk_replace(
             columns=["Department"],
-            mapping=[{"search": ["ORDER", "KITCHEN"], "replace": "CONSOLIDATED"}],
+            mapping=[BulkReplaceMapping(search=["ORDER", "KITCHEN"], replace="CONSOLIDATED")],
         )
         # 5. math computed column
-        adv_view.convert_type([ConversionSpec(column="Price", to="NUMERIC")])
+        adv_view.convert_type([ConversionSpec(column="Price", to=ColumnType.NUMERIC)])
         adv_view.math(expression="Price * Quantity", new_column="line_total")
         # 6. set_values tier
         adv_view.set_values(
@@ -1269,7 +1268,7 @@ class TestComplexPipeline:
     def test_date_analytics_pipeline_12_steps(self, adv_view: View) -> None:
         """12-step date analytics pipeline."""
         # 1. convert Time to DATE
-        adv_view.convert_type([ConversionSpec(column="Time", to="DATE")])
+        adv_view.convert_type([ConversionSpec(column="Time", to=ColumnType.DATE)])
         # 2. extract year
         adv_view.extract_date(column="Time", component=DateComponent.YEAR, new_column="yr")
         # 3. extract month
@@ -1281,7 +1280,7 @@ class TestComplexPipeline:
             column="Time", component=DateComponent.WEEKDAY_TEXT, new_column="wkday"
         )
         # 6. increment +30 days
-        adv_view.increment_date(column="Time", delta={"DAY": 30}, new_column="plus30")
+        adv_view.increment_date(column="Time", delta=DateDelta(days=30), new_column="plus30")
         # 7. date_diff (same col = 0)
         adv_view.date_diff(
             component=DateDiffUnit.DAY,
@@ -1303,7 +1302,7 @@ class TestComplexPipeline:
             ],
         )
         # 10. math Price * 1.1
-        adv_view.convert_type([ConversionSpec(column="Price", to="NUMERIC")])
+        adv_view.convert_type([ConversionSpec(column="Price", to=ColumnType.NUMERIC)])
         adv_view.math(expression="Price * 1.1", new_column="adj_price")
         # 11. combine columns
         adv_view.combine_columns(
@@ -1324,8 +1323,8 @@ class TestComplexPipeline:
             column="Cashier",
             delimiter=" ",
             new_columns=[
-                {"name": "first_name", "type": "TEXT"},
-                {"name": "last_name", "type": "TEXT"},
+                SplitColumnSpec(name="first_name", type=ColumnType.TEXT),
+                SplitColumnSpec(name="last_name", type=ColumnType.TEXT),
             ],
         )
         # 2. combine first_name + Department
@@ -1362,7 +1361,7 @@ class TestComplexPipeline:
         # 8. bulk replace
         adv_view.bulk_replace(
             columns=["Department"],
-            mapping=[{"search": ["Order"], "replace": "Online"}],
+            mapping=[BulkReplaceMapping(search=["Order"], replace="Online")],
         )
         # 9. add column
         adv_view.add_column("notes", ColumnType.TEXT)
