@@ -34,7 +34,8 @@ Typical agent usage::
 from __future__ import annotations
 
 import uuid
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from mammoth._pure.resolve import (
@@ -46,6 +47,7 @@ from mammoth._pure.resolve import (
     resolve_order_by,
 )
 from mammoth.exceptions import MammothValidationError
+from mammoth.models.exports import AddExportSpec, HandlerType, TriggerType
 from mammoth.models.pipeline import (
     AggregateFunction,
     AggregationSpec,
@@ -1154,3 +1156,270 @@ def build_date_normalize_params(
     if formats:
         convert_item["FORMAT"] = {"date_format": formats[0]}
     return {"CONVERT": [convert_item]}
+
+
+# ---------------------------------------------------------------------------
+# Export + dashboard generation (pipeline-tail specs, not transform tasks)
+# ---------------------------------------------------------------------------
+
+_DASHBOARD_INTENT_MIN_LEN = 10
+
+# Default ports per SQL/transfer handler — emitted only when the caller omits port.
+_DB_EXPORT_REQUIRED = ("host", "username", "password", "database", "table")
+
+
+@dataclass(frozen=True)
+class _TargetContract:
+    """Declarative ``target_properties`` contract for one export handler.
+
+    Encodes the *correct* wire keys (the SDK's value-add: ftp uses ``domain`` /
+    ``directory`` / ``file``, email uses ``emails``, sftp uses ``directory`` — not
+    the ``host`` / ``path`` / ``recipients`` the older View methods sent). The
+    builder validates a caller's dict against this instead of guessing.
+    """
+
+    required: tuple[str, ...]
+    optional: tuple[str, ...] = ()
+    defaults: Mapping[str, Any] = field(default_factory=dict)
+    # bigquery / generic_rest_api carry open-ended (auth-/identity-specific) keys;
+    # those handlers opt out of the unknown-key check rather than enumerate them all.
+    allow_extra: bool = False
+
+
+_EXPORT_CONTRACTS: dict[HandlerType, _TargetContract] = {
+    HandlerType.POSTGRES: _TargetContract(_DB_EXPORT_REQUIRED, ("port",), {"port": 5432}),
+    HandlerType.MYSQL: _TargetContract(_DB_EXPORT_REQUIRED, ("port",), {"port": 3306}),
+    HandlerType.MSSQL: _TargetContract(_DB_EXPORT_REQUIRED, ("port",), {"port": 1433}),
+    HandlerType.REDSHIFT: _TargetContract(_DB_EXPORT_REQUIRED, ("port",), {"port": 5439}),
+    HandlerType.S3: _TargetContract(
+        ("file",), ("file_type", "include_hidden", "is_format_set", "use_format")
+    ),
+    HandlerType.EMAIL: _TargetContract(("emails",), ("message", "resource", "subject")),
+    HandlerType.FTP: _TargetContract(
+        ("domain", "username", "password", "directory", "file"), ("port",), {"port": 21}
+    ),
+    HandlerType.SFTP: _TargetContract(
+        ("host", "username"),
+        (
+            "port",
+            "password",
+            "directory",
+            "file_name",
+            "ssh_key_authentication",
+            "private_key",
+            "passphrase",
+            "randomize_file_name",
+        ),
+        {"port": 22},
+    ),
+    HandlerType.ELASTICSEARCH: _TargetContract(
+        ("host", "username", "password", "index", "connection"),
+        ("port", "chunksize"),
+        {"port": 9243, "chunksize": 200},
+    ),
+    HandlerType.AZURE_BLOB: _TargetContract(
+        ("storage_account_name", "tenant_id", "client_id", "client_secret", "container_name"),
+        ("folder_path", "file_name"),
+    ),
+    HandlerType.SHAREPOINT: _TargetContract(
+        ("tenant_id", "client_id", "client_secret", "site_url"),
+        ("document_library", "folder_path", "file_name"),
+    ),
+    HandlerType.ONEDRIVE: _TargetContract(
+        ("tenant_id", "client_id", "client_secret", "user_id"),
+        ("folder_path", "file_name"),
+    ),
+    HandlerType.BIGQUERY: _TargetContract(
+        ("selected_profile", "selected_identity", "table"),
+        ("exportType", "upsertKeys", "partition", "database", "host"),
+        allow_extra=True,
+    ),
+    HandlerType.GENERIC_REST_API_EXPORT: _TargetContract(
+        ("base_url", "endpoint_path"),
+        (
+            "auth_type",
+            "http_method",
+            "wrap_path",
+            "batch_size",
+            "timeout_seconds",
+            "rate_limit_requests_per_second",
+            "ssl_verify",
+            "default_headers",
+            "request_headers",
+            "query_params",
+            "extra_body_fields",
+        ),
+        allow_extra=True,
+    ),
+    HandlerType.PUBLISHDB: _TargetContract(
+        ("odbc_type", "table"), ("database", "project_id", "dataset")
+    ),
+    HandlerType.TABLEAU_SERVER: _TargetContract(
+        ("server_url", "token_name", "token_secret"),
+        ("site_name", "project_name", "datasource_name", "ca_bundle_path"),
+    ),
+}
+
+
+def _is_blank(value: Any) -> bool:
+    """A value counts as missing if it is None, blank/whitespace, or an empty collection."""
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    if isinstance(value, (list, tuple, set, dict)):
+        return len(value) == 0
+    return False
+
+
+def _coerce_handler(handler_type: HandlerType | str) -> HandlerType:
+    if isinstance(handler_type, HandlerType):
+        return handler_type
+    try:
+        return HandlerType(handler_type)
+    except ValueError:
+        raise MammothValidationError(
+            f"unknown export handler {handler_type!r}; expected one of "
+            f"{', '.join(sorted(h.value for h in HandlerType))}"
+        ) from None
+
+
+def _validate_target(
+    handler: HandlerType, contract: _TargetContract, target_properties: Mapping[str, Any]
+) -> dict[str, Any]:
+    target = dict(target_properties)
+    missing = [key for key in contract.required if _is_blank(target.get(key))]
+    if missing:
+        raise MammothValidationError(
+            f"export to {handler.value!r} requires {', '.join(missing)} in target_properties"
+        )
+    if not contract.allow_extra:
+        allowed = set(contract.required) | set(contract.optional) | set(contract.defaults)
+        unknown = sorted(key for key in target if key not in allowed)
+        if unknown:
+            raise MammothValidationError(
+                f"export to {handler.value!r} got unexpected target_properties keys: "
+                f"{', '.join(unknown)}; allowed: {', '.join(sorted(allowed))}"
+            )
+    for key, value in contract.defaults.items():
+        target.setdefault(key, value)
+    return target
+
+
+def build_export_spec(
+    handler_type: HandlerType | str,
+    target_properties: Mapping[str, Any],
+    *,
+    dataview_id: int,
+    run_immediately: bool = True,
+    end_of_pipeline: bool = True,
+    sequence: int | None = None,
+    trigger_id: int | None = None,
+    condition: Mapping[str, Any] | None = None,
+    additional_properties: Mapping[str, Any] | None = None,
+    validate_only: bool = False,
+) -> dict[str, Any]:
+    """Build the envelope for adding a pipeline export action to a View.
+
+    Validates *target_properties* against the destination's contract — every
+    required key present and non-empty, the correct key names used, and (for the
+    well-defined handlers) no stray keys — then applies any port/format defaults
+    and returns the dict ``ActionTriggerManager.add_action_trigger`` consumes.
+
+    Args:
+        handler_type: Destination handler (``HandlerType`` or its string value,
+            e.g. ``"mysql"``, ``"s3"``, ``"email"``).
+        target_properties: Destination configuration. Keys are handler-specific
+            (see the per-handler contracts); credentials are passed through here
+            and split into the encrypted trigger store by the backend.
+        dataview_id: The View to export from.
+        run_immediately: Execute the export as soon as it is added.
+        end_of_pipeline: Run after all transforms. Mutually exclusive with
+            *sequence* (provide one or the other, not both).
+        sequence: Pipeline position when not end-of-pipeline.
+        trigger_id: Existing trigger id when editing an export (None creates one).
+        condition: Optional row-filter condition; empty means no filter.
+        additional_properties: Optional handler metadata.
+        validate_only: Validate the config without writing data.
+
+    Returns:
+        The export envelope dict (``AddExportSpec.model_dump()`` shape).
+
+    Raises:
+        MammothValidationError: unknown handler, a missing/empty required key, an
+            unexpected key for a well-defined handler, or *sequence* combined with
+            *end_of_pipeline*.
+    """
+    handler = _coerce_handler(handler_type)
+    contract = _EXPORT_CONTRACTS.get(handler)
+    if contract is None:
+        supported = ", ".join(sorted(h.value for h in _EXPORT_CONTRACTS))
+        raise MammothValidationError(
+            f"export handler {handler.value!r} is not supported by build_export_spec; "
+            f"supported handlers: {supported}"
+        )
+    if sequence is not None and end_of_pipeline:
+        raise MammothValidationError(
+            "export accepts either end_of_pipeline=True or a sequence position, not both"
+        )
+    target = _validate_target(handler, contract, target_properties)
+    spec = AddExportSpec(
+        DATAVIEW_ID=dataview_id,
+        handler_type=handler,
+        trigger_type=TriggerType.PIPELINE,
+        target_properties=target,
+        additional_properties=dict(additional_properties or {}),
+        condition=dict(condition or {}),
+        run_immediately=run_immediately,
+        validate_only=validate_only,
+        end_of_pipeline=end_of_pipeline,
+        sequence=sequence,
+        TRIGGER_ID=trigger_id,
+    )
+    return spec.model_dump()
+
+
+def build_dashboard_gen_spec(
+    intent: str,
+    source: Sequence[int],
+    *,
+    enable_filters: bool = True,
+    enable_pages: bool = False,
+) -> dict[str, Any]:
+    """Build the spec for AI dashboard generation from one or more Views.
+
+    Args:
+        intent: Natural-language description of the dashboard to build. Must be at
+            least ``_DASHBOARD_INTENT_MIN_LEN`` characters (the backend rejects
+            shorter prompts).
+        source: View ids the dashboard draws from. Non-empty; every id positive.
+        enable_filters: Generate interactive filters (default True).
+        enable_pages: Generate multiple dashboard pages (default False).
+
+    Returns:
+        ``{"params": {"intent", "source", "enable_filters", "enable_pages"}}``.
+
+    Raises:
+        MammothValidationError: intent too short, empty source, or a non-positive
+            / non-integer source id.
+    """
+    if _is_blank(intent) or len(intent.strip()) < _DASHBOARD_INTENT_MIN_LEN:
+        raise MammothValidationError(
+            f"dashboard intent must be at least {_DASHBOARD_INTENT_MIN_LEN} characters"
+        )
+    source_ids = list(source)
+    if not source_ids:
+        raise MammothValidationError("dashboard source must list at least one View id")
+    bad = [s for s in source_ids if isinstance(s, bool) or not isinstance(s, int) or s <= 0]
+    if bad:
+        raise MammothValidationError(
+            f"dashboard source ids must be positive integers; got {bad}"
+        )
+    return {
+        "params": {
+            "intent": intent.strip(),
+            "source": source_ids,
+            "enable_filters": enable_filters,
+            "enable_pages": enable_pages,
+        }
+    }
