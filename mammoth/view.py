@@ -62,6 +62,7 @@ from mammoth.models.exports import (
     BigQueryExportType,
     ExportResult,
     ExportStatus,
+    ExportTargetKey,
     HandlerType,
     HttpMethod,
     OdbcType,
@@ -76,6 +77,7 @@ from mammoth.models.pipeline import (
 )
 
 _list = list  # Alias to avoid shadowing by method name
+_K = ExportTargetKey  # short alias for the export target_properties wire keys
 
 # Raised when a new internal-dataset export never exposes its dataset id in time.
 ERR_EXPORT_DATASET_UNRESOLVED = (
@@ -748,12 +750,12 @@ class ViewExport:
         return self._create_export(
             HandlerType.POSTGRES,
             {
-                "host": host,
-                "port": port,
-                "database": database,
-                "table": table,
-                "username": username,
-                "password": password,
+                _K.HOST: host,
+                _K.PORT: port,
+                _K.DATABASE: database,
+                _K.TABLE: table,
+                _K.USERNAME: username,
+                _K.PASSWORD: password,
             },
             **kwargs,
         )
@@ -788,12 +790,12 @@ class ViewExport:
         return self._create_export(
             HandlerType.MYSQL,
             {
-                "host": host,
-                "port": port,
-                "database": database,
-                "table": table,
-                "username": username,
-                "password": password,
+                _K.HOST: host,
+                _K.PORT: port,
+                _K.DATABASE: database,
+                _K.TABLE: table,
+                _K.USERNAME: username,
+                _K.PASSWORD: password,
             },
             **kwargs,
         )
@@ -830,11 +832,11 @@ class ViewExport:
         return self._create_export(
             HandlerType.S3,
             {
-                "file": file_name,
-                "file_type": file_type.value,
-                "include_hidden": include_hidden,
-                "is_format_set": True,
-                "use_format": True,
+                _K.FILE: file_name,
+                _K.FILE_TYPE: file_type.value,
+                _K.INCLUDE_HIDDEN: include_hidden,
+                _K.IS_FORMAT_SET: True,
+                _K.USE_FORMAT: True,
             },
             **kwargs,
         )
@@ -942,12 +944,12 @@ class ViewExport:
         return self._create_export(
             HandlerType.FTP,
             {
-                "domain": domain,
-                "port": port,
-                "directory": directory,
-                "file": file,
-                "username": username,
-                "password": password,
+                _K.DOMAIN: domain,
+                _K.PORT: port,
+                _K.DIRECTORY: directory,
+                _K.FILE: file,
+                _K.USERNAME: username,
+                _K.PASSWORD: password,
             },
             **kwargs,
         )
@@ -999,19 +1001,19 @@ class ViewExport:
         if ssh_key_authentication and not private_key:
             raise MammothValidationError(ERR_SFTP_KEY_REQUIRED)
         target: dict[str, Any] = {
-            "host": host,
-            "port": port,
-            "username": username,
-            "directory": directory,
-            "file_name": file_name,
-            "randomize_file_name": randomize_file_name,
-            "ssh_key_authentication": ssh_key_authentication,
+            _K.HOST: host,
+            _K.PORT: port,
+            _K.USERNAME: username,
+            _K.DIRECTORY: directory,
+            _K.FILE_NAME: file_name,
+            _K.RANDOMIZE_FILE_NAME: randomize_file_name,
+            _K.SSH_KEY_AUTHENTICATION: ssh_key_authentication,
         }
         if ssh_key_authentication:
-            target["private_key"] = private_key
-            target["passphrase"] = passphrase
+            target[_K.PRIVATE_KEY] = private_key
+            target[_K.PASSPHRASE] = passphrase
         else:
-            target["password"] = password
+            target[_K.PASSWORD] = password
         return self._create_export(HandlerType.SFTP, target, **kwargs)
 
     def to_email(
@@ -1046,13 +1048,13 @@ class ViewExport:
         """
         if not emails:
             raise MammothValidationError(ERR_EMAIL_NO_RECIPIENTS)
-        target: dict[str, Any] = {"emails": emails}
+        target: dict[str, Any] = {_K.EMAILS: emails}
         if subject:
-            target["subject"] = subject
+            target[_K.SUBJECT] = subject
         if message:
-            target["message"] = message
+            target[_K.MESSAGE] = message
         if resource:
-            target["resource"] = resource
+            target[_K.RESOURCE] = resource
         return self._create_export(HandlerType.EMAIL, target, **kwargs)
 
     def to_mssql(
@@ -1085,12 +1087,12 @@ class ViewExport:
         return self._create_export(
             HandlerType.MSSQL,
             {
-                "host": host,
-                "port": port,
-                "database": database,
-                "table": table,
-                "username": username,
-                "password": password,
+                _K.HOST: host,
+                _K.PORT: port,
+                _K.DATABASE: database,
+                _K.TABLE: table,
+                _K.USERNAME: username,
+                _K.PASSWORD: password,
             },
             **kwargs,
         )
@@ -1128,12 +1130,12 @@ class ViewExport:
         return self._create_export(
             HandlerType.REDSHIFT,
             {
-                "host": host,
-                "port": port,
-                "database": database,
-                "table": table,
-                "username": username,
-                "password": password,
+                _K.HOST: host,
+                _K.PORT: port,
+                _K.DATABASE: database,
+                _K.TABLE: table,
+                _K.USERNAME: username,
+                _K.PASSWORD: password,
             },
             **kwargs,
         )
@@ -1182,15 +1184,15 @@ class ViewExport:
         if export_type is BigQueryExportType.UPSERT and not upsert_keys:
             raise MammothValidationError(ERR_BIGQUERY_UPSERT_KEYS)
         target: dict[str, Any] = {
-            "selected_profile": selected_profile,
-            "selected_identity": selected_identity,
-            "table": table,
-            "exportType": export_type.value,
+            _K.SELECTED_PROFILE: selected_profile,
+            _K.SELECTED_IDENTITY: selected_identity,
+            _K.TABLE: table,
+            _K.EXPORT_TYPE: export_type.value,
         }
         if upsert_keys is not None:
-            target["upsertKeys"] = upsert_keys
+            target[_K.UPSERT_KEYS] = upsert_keys
         if partition is not None:
-            target["partition"] = partition
+            target[_K.PARTITION] = partition
         return self._create_export(HandlerType.BIGQUERY, target, **kwargs)
 
     def to_elasticsearch(
@@ -1225,13 +1227,13 @@ class ViewExport:
         return self._create_export(
             HandlerType.ELASTICSEARCH,
             {
-                "host": host,
-                "port": port,
-                "username": username,
-                "password": password,
-                "index": index,
-                "connection": connection,
-                "chunksize": chunksize,
+                _K.HOST: host,
+                _K.PORT: port,
+                _K.USERNAME: username,
+                _K.PASSWORD: password,
+                _K.INDEX: index,
+                _K.CONNECTION: connection,
+                _K.CHUNKSIZE: chunksize,
             },
             **kwargs,
         )
@@ -1266,16 +1268,16 @@ class ViewExport:
             The created export trigger record or its tracking job.
         """
         target: dict[str, Any] = {
-            "storage_account_name": storage_account_name,
-            "tenant_id": tenant_id,
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "container_name": container_name,
+            _K.STORAGE_ACCOUNT_NAME: storage_account_name,
+            _K.TENANT_ID: tenant_id,
+            _K.CLIENT_ID: client_id,
+            _K.CLIENT_SECRET: client_secret,
+            _K.CONTAINER_NAME: container_name,
         }
         if folder_path:
-            target["folder_path"] = folder_path
+            target[_K.FOLDER_PATH] = folder_path
         if file_name:
-            target["file_name"] = file_name
+            target[_K.FILE_NAME] = file_name
         return self._create_export(HandlerType.AZURE_BLOB, target, **kwargs)
 
     def to_sharepoint(
@@ -1308,16 +1310,16 @@ class ViewExport:
             The created export trigger record or its tracking job.
         """
         target: dict[str, Any] = {
-            "tenant_id": tenant_id,
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "site_url": site_url,
-            "document_library": document_library,
+            _K.TENANT_ID: tenant_id,
+            _K.CLIENT_ID: client_id,
+            _K.CLIENT_SECRET: client_secret,
+            _K.SITE_URL: site_url,
+            _K.DOCUMENT_LIBRARY: document_library,
         }
         if folder_path:
-            target["folder_path"] = folder_path
+            target[_K.FOLDER_PATH] = folder_path
         if file_name:
-            target["file_name"] = file_name
+            target[_K.FILE_NAME] = file_name
         return self._create_export(HandlerType.SHAREPOINT, target, **kwargs)
 
     def to_onedrive(
@@ -1348,15 +1350,15 @@ class ViewExport:
             The created export trigger record or its tracking job.
         """
         target: dict[str, Any] = {
-            "tenant_id": tenant_id,
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "user_id": user_id,
+            _K.TENANT_ID: tenant_id,
+            _K.CLIENT_ID: client_id,
+            _K.CLIENT_SECRET: client_secret,
+            _K.USER_ID: user_id,
         }
         if folder_path:
-            target["folder_path"] = folder_path
+            target[_K.FOLDER_PATH] = folder_path
         if file_name:
-            target["file_name"] = file_name
+            target[_K.FILE_NAME] = file_name
         return self._create_export(HandlerType.ONEDRIVE, target, **kwargs)
 
     def to_tableau(
@@ -1392,15 +1394,15 @@ class ViewExport:
             The created export trigger record or its tracking job.
         """
         target: dict[str, Any] = {
-            "server_url": server_url,
-            "token_name": token_name,
-            "token_secret": token_secret,
-            "site_name": site_name,
-            "project_name": project_name,
-            "datasource_name": datasource_name,
+            _K.SERVER_URL: server_url,
+            _K.TOKEN_NAME: token_name,
+            _K.TOKEN_SECRET: token_secret,
+            _K.SITE_NAME: site_name,
+            _K.PROJECT_NAME: project_name,
+            _K.DATASOURCE_NAME: datasource_name,
         }
         if ca_bundle_path:
-            target["ca_bundle_path"] = ca_bundle_path
+            target[_K.CA_BUNDLE_PATH] = ca_bundle_path
         return self._create_export(HandlerType.TABLEAU_SERVER, target, **kwargs)
 
     def to_powerbi(
@@ -1431,12 +1433,12 @@ class ViewExport:
         return self._create_export(
             HandlerType.POWERBI,
             {
-                "username": username,
-                "password": password,
+                _K.USERNAME: username,
+                _K.PASSWORD: password,
                 # Backend reads the camelCase key (powerbi.py:82,140).
-                "clientId": client_id,
-                "dataset": dataset,
-                "table": table,
+                _K.CLIENT_ID_CAMEL: client_id,
+                _K.DATASET: dataset,
+                _K.TABLE: table,
             },
             **kwargs,
         )
@@ -1499,23 +1501,23 @@ class ViewExport:
         if not _REST_TIMEOUT_MIN <= timeout_seconds <= _REST_TIMEOUT_MAX:
             raise MammothValidationError(ERR_REST_TIMEOUT.format(value=timeout_seconds))
         target: dict[str, Any] = {
-            "base_url": base_url,
-            "endpoint_path": endpoint_path,
-            "auth_type": auth_type.value,
-            "http_method": http_method.value,
-            "wrap_path": wrap_path,
-            "batch_size": batch_size,
-            "timeout_seconds": timeout_seconds,
-            "ssl_verify": ssl_verify,
+            _K.BASE_URL: base_url,
+            _K.ENDPOINT_PATH: endpoint_path,
+            _K.AUTH_TYPE: auth_type.value,
+            _K.HTTP_METHOD: http_method.value,
+            _K.WRAP_PATH: wrap_path,
+            _K.BATCH_SIZE: batch_size,
+            _K.TIMEOUT_SECONDS: timeout_seconds,
+            _K.SSL_VERIFY: ssl_verify,
         }
         if auth:
             target.update(auth)
         if headers is not None:
-            target["default_headers"] = headers
+            target[_K.DEFAULT_HEADERS] = headers
         if query_params is not None:
-            target["query_params"] = query_params
+            target[_K.QUERY_PARAMS] = query_params
         if extra_body_fields is not None:
-            target["extra_body_fields"] = extra_body_fields
+            target[_K.EXTRA_BODY_FIELDS] = extra_body_fields
         return self._create_export(HandlerType.GENERIC_REST_API_EXPORT, target, **kwargs)
 
     def publish_to_db(self, table: str, odbc_type: OdbcType = OdbcType.POSTGRES) -> dict[str, Any]:
@@ -1547,7 +1549,7 @@ class ViewExport:
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{self._view.dataset_id}"
             f"/dataviews/{self._view.id}/publish-to-db",
-            json={"odbc_type": odbc_type.value, "target_properties": {"table": table}},
+            json={_K.ODBC_TYPE: odbc_type.value, "target_properties": {_K.TABLE: table}},
         )
 
     def list(self) -> _list[dict[str, Any]]:

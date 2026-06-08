@@ -28,7 +28,12 @@ from mammoth._pure.resolve import (
 )
 from mammoth.condition import Condition
 from mammoth.exceptions import MammothColumnError, MammothValidationError
-from mammoth.models.exports import HandlerType
+from mammoth.models.exports import (
+    DashboardSpecKey,
+    ExportTargetKey,
+    HandlerType,
+    TriggerType,
+)
 from mammoth.models.pipeline import (
     AggregateFunction,
     AggregationSpec,
@@ -1146,12 +1151,16 @@ class TestDateNormalize:
             )
 
 
+# Short aliases keep the constant references readable in the dense asserts below.
+_K = ExportTargetKey
+_D = DashboardSpecKey
+
 _MYSQL_TARGET = {
-    "host": "db.example.com",
-    "username": "u",
-    "password": "p",
-    "database": "analytics",
-    "table": "sales",
+    _K.HOST: "db.example.com",
+    _K.USERNAME: "u",
+    _K.PASSWORD: "p",
+    _K.DATABASE: "analytics",
+    _K.TABLE: "sales",
 }
 
 
@@ -1160,57 +1169,61 @@ class TestExportSpec:
 
     Each assert checks the EMITTED dict (the shape add_action_trigger consumes),
     not just that the call succeeds. The bug-guard tests pin the corrected wire
-    keys (ftp domain/directory/file, email emails) the old View methods got wrong.
+    keys (ftp domain/directory/file, email emails) the old View methods got wrong;
+    those tests pass the *wrong* keys as raw literals on purpose — they encode the
+    bug being rejected, not a contract constant.
     """
 
     def test_mysql_envelope_exact(self) -> None:
-        spec = b.build_export_spec("mysql", _MYSQL_TARGET, dataview_id=42)
+        spec = b.build_export_spec(HandlerType.MYSQL, _MYSQL_TARGET, dataview_id=42)
         assert spec["DATAVIEW_ID"] == 42
-        assert spec["handler_type"] == "mysql"
-        assert spec["trigger_type"] == "pipeline"
+        assert spec["handler_type"] == HandlerType.MYSQL.value
+        assert spec["trigger_type"] == TriggerType.PIPELINE.value
         assert spec["run_immediately"] is True
         assert spec["end_of_pipeline"] is True
         assert spec["validate_only"] is False
         assert spec["sequence"] is None
         assert spec["TRIGGER_ID"] is None
         # port default injected; all creds carried through for backend-side split
-        assert spec["target_properties"] == {**_MYSQL_TARGET, "port": 3306}
+        assert spec["target_properties"] == {**_MYSQL_TARGET, _K.PORT: 3306}
 
     def test_db_handlers_get_distinct_default_ports(self) -> None:
         ports = {
-            "postgres": 5432,
-            "mysql": 3306,
-            "mssql": 1433,
-            "redshift": 5439,
+            HandlerType.POSTGRES: 5432,
+            HandlerType.MYSQL: 3306,
+            HandlerType.MSSQL: 1433,
+            HandlerType.REDSHIFT: 5439,
         }
         for handler, port in ports.items():
             spec = b.build_export_spec(handler, _MYSQL_TARGET, dataview_id=1)
-            assert spec["target_properties"]["port"] == port
+            assert spec["target_properties"][_K.PORT] == port
 
     def test_explicit_port_overrides_default(self) -> None:
-        spec = b.build_export_spec("mysql", {**_MYSQL_TARGET, "port": 3307}, dataview_id=1)
-        assert spec["target_properties"]["port"] == 3307
+        spec = b.build_export_spec(
+            HandlerType.MYSQL, {**_MYSQL_TARGET, _K.PORT: 3307}, dataview_id=1
+        )
+        assert spec["target_properties"][_K.PORT] == 3307
 
     def test_ftp_uses_domain_directory_file_not_host_path(self) -> None:
         spec = b.build_export_spec(
-            "ftp",
+            HandlerType.FTP,
             {
-                "domain": "ftp.x",
-                "username": "u",
-                "password": "p",
-                "directory": "/out",
-                "file": "data.csv",
+                _K.DOMAIN: "ftp.x",
+                _K.USERNAME: "u",
+                _K.PASSWORD: "p",
+                _K.DIRECTORY: "/out",
+                _K.FILE: "data.csv",
             },
             dataview_id=1,
         )
         tp = spec["target_properties"]
-        assert tp["domain"] == "ftp.x" and tp["directory"] == "/out" and tp["file"] == "data.csv"
-        assert tp["port"] == 21
+        assert tp[_K.DOMAIN] == "ftp.x" and tp[_K.DIRECTORY] == "/out" and tp[_K.FILE] == "data.csv"
+        assert tp[_K.PORT] == 21
         # the old wrong keys (host/path) are rejected — the correct ftp keys are
         # reported as missing rather than the bad payload shipping silently
         with pytest.raises(MammothValidationError, match="requires domain, directory, file"):
             b.build_export_spec(
-                "ftp",
+                HandlerType.FTP,
                 {"host": "ftp.x", "path": "/out/data.csv", "username": "u", "password": "p"},
                 dataview_id=1,
             )
@@ -1218,34 +1231,38 @@ class TestExportSpec:
     def test_stray_key_on_well_defined_handler_rejected(self) -> None:
         # all required present, but an unexpected key -> fail loud (not bigquery/rest)
         with pytest.raises(MammothValidationError, match="unexpected target_properties"):
-            b.build_export_spec("mysql", {**_MYSQL_TARGET, "bogus": 1}, dataview_id=1)
+            b.build_export_spec(HandlerType.MYSQL, {**_MYSQL_TARGET, "bogus": 1}, dataview_id=1)
 
     def test_email_requires_emails_not_recipients(self) -> None:
-        spec = b.build_export_spec("email", {"emails": ["a@x.io"]}, dataview_id=7)
-        assert spec["target_properties"]["emails"] == ["a@x.io"]
+        spec = b.build_export_spec(HandlerType.EMAIL, {_K.EMAILS: ["a@x.io"]}, dataview_id=7)
+        assert spec["target_properties"][_K.EMAILS] == ["a@x.io"]
         # 'recipients' was the old wrong key -> missing required 'emails'
         with pytest.raises(MammothValidationError, match="requires emails"):
-            b.build_export_spec("email", {"recipients": ["a@x.io"]}, dataview_id=7)
+            b.build_export_spec(HandlerType.EMAIL, {"recipients": ["a@x.io"]}, dataview_id=7)
 
     def test_empty_emails_list_counts_as_missing(self) -> None:
         with pytest.raises(MammothValidationError, match="requires emails"):
-            b.build_export_spec("email", {"emails": []}, dataview_id=7)
+            b.build_export_spec(HandlerType.EMAIL, {_K.EMAILS: []}, dataview_id=7)
 
     def test_s3_only_file_required_no_stray_defaults(self) -> None:
-        spec = b.build_export_spec("s3", {"file": "out.csv", "file_type": "csv"}, dataview_id=3)
-        assert spec["target_properties"] == {"file": "out.csv", "file_type": "csv"}
+        spec = b.build_export_spec(
+            HandlerType.S3, {_K.FILE: "out.csv", _K.FILE_TYPE: "csv"}, dataview_id=3
+        )
+        assert spec["target_properties"] == {_K.FILE: "out.csv", _K.FILE_TYPE: "csv"}
 
     def test_missing_required_key_named_in_error(self) -> None:
         with pytest.raises(MammothValidationError, match="password"):
             b.build_export_spec(
-                "postgres",
-                {"host": "h", "username": "u", "database": "d", "table": "t"},
+                HandlerType.POSTGRES,
+                {_K.HOST: "h", _K.USERNAME: "u", _K.DATABASE: "d", _K.TABLE: "t"},
                 dataview_id=1,
             )
 
     def test_blank_required_value_rejected(self) -> None:
         with pytest.raises(MammothValidationError, match="requires"):
-            b.build_export_spec("mysql", {**_MYSQL_TARGET, "password": "   "}, dataview_id=1)
+            b.build_export_spec(
+                HandlerType.MYSQL, {**_MYSQL_TARGET, _K.PASSWORD: "   "}, dataview_id=1
+            )
 
     def test_unknown_handler_string_raises(self) -> None:
         with pytest.raises(MammothValidationError, match="unknown export handler"):
@@ -1254,24 +1271,24 @@ class TestExportSpec:
     def test_known_but_unsupported_handler_raises(self) -> None:
         # powerbi is a real HandlerType but has no agent export contract
         with pytest.raises(MammothValidationError, match="not supported"):
-            b.build_export_spec("powerbi", {"x": 1}, dataview_id=1)
+            b.build_export_spec(HandlerType.POWERBI, {"x": 1}, dataview_id=1)
 
     def test_sequence_and_end_of_pipeline_mutually_exclusive(self) -> None:
         with pytest.raises(MammothValidationError, match="not both"):
-            b.build_export_spec("s3", {"file": "o.csv"}, dataview_id=1, sequence=2)
+            b.build_export_spec(HandlerType.S3, {_K.FILE: "o.csv"}, dataview_id=1, sequence=2)
         spec = b.build_export_spec(
-            "s3", {"file": "o.csv"}, dataview_id=1, sequence=2, end_of_pipeline=False
+            HandlerType.S3, {_K.FILE: "o.csv"}, dataview_id=1, sequence=2, end_of_pipeline=False
         )
         assert spec["sequence"] == 2 and spec["end_of_pipeline"] is False
 
     def test_bigquery_allows_open_ended_keys(self) -> None:
         spec = b.build_export_spec(
-            "bigquery",
+            HandlerType.BIGQUERY,
             {
-                "selected_profile": {"name": "p"},
-                "selected_identity": {"host": "x"},
-                "table": "t",
-                "exportType": "REPLACE",
+                _K.SELECTED_PROFILE: {"name": "p"},
+                _K.SELECTED_IDENTITY: {"host": "x"},
+                _K.TABLE: "t",
+                _K.EXPORT_TYPE: "REPLACE",
                 "some_future_key": 1,
             },
             dataview_id=9,
@@ -1279,11 +1296,11 @@ class TestExportSpec:
         assert spec["target_properties"]["some_future_key"] == 1
 
     def test_handler_enum_value_accepted(self) -> None:
-        spec = b.build_export_spec(HandlerType.S3, {"file": "o.csv"}, dataview_id=1)
-        assert spec["handler_type"] == "s3"
+        spec = b.build_export_spec(HandlerType.S3, {_K.FILE: "o.csv"}, dataview_id=1)
+        assert spec["handler_type"] == HandlerType.S3.value
 
     def test_condition_and_additional_default_empty(self) -> None:
-        spec = b.build_export_spec("s3", {"file": "o.csv"}, dataview_id=1)
+        spec = b.build_export_spec(HandlerType.S3, {_K.FILE: "o.csv"}, dataview_id=1)
         assert spec["condition"] == {}
         assert spec["additional_properties"] == {}
 
@@ -1294,11 +1311,11 @@ class TestDashboardGenSpec:
     def test_exact_envelope(self) -> None:
         spec = b.build_dashboard_gen_spec("Revenue by region over time", [42])
         assert spec == {
-            "params": {
-                "intent": "Revenue by region over time",
-                "source": [42],
-                "enable_filters": True,
-                "enable_pages": False,
+            _D.PARAMS: {
+                _D.INTENT: "Revenue by region over time",
+                _D.SOURCE: [42],
+                _D.ENABLE_FILTERS: True,
+                _D.ENABLE_PAGES: False,
             }
         }
 
@@ -1306,9 +1323,9 @@ class TestDashboardGenSpec:
         spec = b.build_dashboard_gen_spec(
             "Show me the sales trends", [1, 2], enable_filters=False, enable_pages=True
         )
-        assert spec["params"]["enable_filters"] is False
-        assert spec["params"]["enable_pages"] is True
-        assert spec["params"]["source"] == [1, 2]
+        assert spec[_D.PARAMS][_D.ENABLE_FILTERS] is False
+        assert spec[_D.PARAMS][_D.ENABLE_PAGES] is True
+        assert spec[_D.PARAMS][_D.SOURCE] == [1, 2]
 
     def test_short_intent_raises(self) -> None:
         with pytest.raises(MammothValidationError, match="at least 10"):
@@ -1333,4 +1350,4 @@ class TestDashboardGenSpec:
 
     def test_intent_is_stripped(self) -> None:
         spec = b.build_dashboard_gen_spec("   Revenue by region   ", [5])
-        assert spec["params"]["intent"] == "Revenue by region"
+        assert spec[_D.PARAMS][_D.INTENT] == "Revenue by region"
