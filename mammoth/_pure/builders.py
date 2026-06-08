@@ -67,6 +67,7 @@ from mammoth.models.pipeline import (
     JsonType,
     SaveAsDatasetMode,
     SetValue,
+    SmallLargeFunction,
     SplitColumnSpec,
     SubstringDirection,
     TextCase,
@@ -495,6 +496,95 @@ def build_increment_date_params(
     if built is not None:
         spec["CONDITION"] = built
     return spec
+
+
+# NumberFormat() defaults, emitted explicitly: the backend AsNewColumnLargeSmall
+# requires a FORMAT key and prod SMALL/LARGE tasks always carry a full format
+# block, so the populated default avoids any execution-time key lookups.
+_DEFAULT_NUMBER_FORMAT: dict[str, Any] = {
+    "comma_separated": False,
+    "currency_symbol": "",
+    "decimal_spec": 0,
+    "is_percentage": False,
+    "enabled": True,
+    "numtype": "float",
+}
+
+
+def build_small_large_params(
+    function: SmallLargeFunction,
+    values: Sequence[str | int | float],
+    index: int,
+    col_map: dict[str, str],
+    internal_names: list[str],
+    new_column: str | None = None,
+    existing_column: str | None = None,
+    column_type: ColumnType = ColumnType.NUMERIC,
+    number_format: dict[str, Any] | None = None,
+    name_gen: Callable[[], str] | None = None,
+) -> dict[str, Any]:
+    """Build a SMALL / LARGE task payload — the Nth smallest/largest value per row.
+
+    SMALL/LARGE scans a set of value sources (other columns and/or numeric
+    constants) on each row and writes the *index*-th smallest (SMALL) or largest
+    (LARGE) of them. ``index`` is 1-based: ``index=1`` is the most extreme value.
+
+    Args:
+        function: SMALL (nth smallest) or LARGE (nth largest).
+        values: The value sources to rank, in any order. A ``str`` is a column
+            (display name, resolved to its internal name); an ``int``/``float`` is
+            a numeric constant participating in the comparison.
+        index: 1-based rank to pick (1 = most extreme). Must be >= 1.
+        col_map: display-name -> internal-name mapping.
+        internal_names: all internal names (for pass-through resolution).
+        new_column: create a new column for the result (mutually exclusive with
+            *existing_column*).
+        existing_column: overwrite this existing column instead.
+        column_type: type of the result column when creating one (default NUMERIC).
+        number_format: optional NumberFormat override for a new column; defaults to
+            the standard numeric format.
+        name_gen: optional internal-name generator for the new column.
+
+    Returns:
+        ``{"SMALL"|"LARGE": {VALUES, INDEX, AS|DESTINATION}}``.
+
+    Raises:
+        MammothValidationError: empty *values*, *index* < 1, a value source that is
+            neither a column name nor a number, or a new/existing-column selection
+            that is not exactly one.
+    """
+    if not values:
+        raise MammothValidationError("small_large requires at least one value source")
+    if index < 1:
+        raise MammothValidationError(f"small_large index must be 1-based (>= 1), got {index}")
+    if bool(new_column) == bool(existing_column):
+        raise MammothValidationError(
+            "small_large requires exactly one of new_column or existing_column"
+        )
+
+    built_values: list[dict[str, Any]] = []
+    for value in values:
+        if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+            raise MammothValidationError(
+                "small_large value source must be a column name (str) or a numeric constant"
+            )
+        if isinstance(value, str):
+            built_values.append(
+                {"TYPE": "COLUMN", "VALUE": resolve_column(value, col_map, internal_names)}
+            )
+        else:
+            built_values.append({"TYPE": "NUMBER", "VALUE": value})
+
+    spec: dict[str, Any] = {"VALUES": built_values, "INDEX": index}
+    if new_column:
+        as_col = build_as_column(new_column, column_type.value, name_gen=name_gen)
+        as_col["FORMAT"] = (
+            number_format if number_format is not None else dict(_DEFAULT_NUMBER_FORMAT)
+        )
+        spec["AS"] = as_col
+    elif existing_column:
+        spec["DESTINATION"] = resolve_column(existing_column, col_map, internal_names)
+    return {function.value: spec}
 
 
 # ---------------------------------------------------------------------------
