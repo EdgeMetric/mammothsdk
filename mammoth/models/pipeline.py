@@ -242,6 +242,13 @@ class AggregateFunction(str, Enum):
     CONCAT = "CONCAT"
 
 
+class SmallLargeFunction(str, Enum):
+    """Nth-extreme selector for the SMALL / LARGE row operation."""
+
+    SMALL = "SMALL"
+    LARGE = "LARGE"
+
+
 class SaveAsDatasetMode(str, Enum):
     """Destination mode for a crosstab's output dataset (SAVE_AS_DS_MODE).
 

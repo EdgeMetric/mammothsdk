@@ -268,6 +268,7 @@ preview = view.preview_task({"MATH": {"EXPRESSION": [...]}})
 | `filter_rows()` | Filter rows by condition |
 | `set_values()` | Label/insert values with conditional logic |
 | `math()` | Arithmetic expressions |
+| `small_large()` | Nth smallest or largest value across columns/constants |
 | `join()` | Join with another view |
 | `pivot()` | Group by and aggregate |
 | `window()` | Window functions (rank, lag, running sum, etc.) |

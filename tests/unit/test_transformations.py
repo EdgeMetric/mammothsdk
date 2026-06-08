@@ -7,7 +7,10 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from mammoth.condition import Condition
+from mammoth.exceptions import MammothValidationError
 from mammoth.models.pipeline import (
     AggregateFunction,
     AggregationSpec,
@@ -28,6 +31,7 @@ from mammoth.models.pipeline import (
     JsonType,
     Operator,
     SetValue,
+    SmallLargeFunction,
     SortDirection,
     SplitColumnSpec,
     SubstringDirection,
@@ -351,6 +355,129 @@ class TestMath:
         assert expr[0] == {"TYPE": "COLUMN", "VALUE": "column_jkl1234567"}
         assert expr[1] == {"TYPE": "OPERATOR", "VALUE": "*"}
         assert expr[2] == {"TYPE": "COLUMN", "VALUE": "column_vwx1234567"}
+
+
+_DEFAULT_NUMBER_FORMAT = {
+    "comma_separated": False,
+    "currency_symbol": "",
+    "decimal_spec": 0,
+    "is_percentage": False,
+    "enabled": True,
+    "numtype": "float",
+}
+
+
+class TestSmallLarge:
+    def test_large_two_columns_one_constant_new_column(self, mock_view):
+        """LARGE: two columns + one numeric constant + index=1 → full AS dict."""
+        mock_view._next_internal_name = lambda: "gen_sl_001"
+        mock_view.small_large(
+            SmallLargeFunction.LARGE,
+            columns=["base_salary", "bonus_pct"],
+            index=1,
+            constants=[0.0],
+            new_column="Largest Value",
+        )
+        p = last_payload(mock_view)
+        assert "LARGE" in p
+        sl = p["LARGE"]
+        assert sl["VALUES"] == [
+            {"TYPE": "COLUMN", "VALUE": "column_jkl1234567"},
+            {"TYPE": "COLUMN", "VALUE": "column_vwx1234567"},
+            {"TYPE": "NUMBER", "VALUE": 0.0},
+        ]
+        assert sl["INDEX"] == 1
+        assert sl["AS"] == {
+            "COLUMN": "Largest Value",
+            "TYPE": "NUMERIC",
+            "INTERNAL_NAME": "gen_sl_001",
+            "FORMAT": _DEFAULT_NUMBER_FORMAT,
+        }
+        assert "DESTINATION" not in sl
+
+    def test_small_columns_only_existing_column(self, mock_view):
+        """SMALL: columns only + existing_column → DESTINATION, no AS."""
+        mock_view.small_large(
+            SmallLargeFunction.SMALL,
+            columns=["base_salary", "bonus_pct"],
+            existing_column="base_salary",
+        )
+        p = last_payload(mock_view)
+        assert "SMALL" in p
+        sl = p["SMALL"]
+        assert sl["VALUES"] == [
+            {"TYPE": "COLUMN", "VALUE": "column_jkl1234567"},
+            {"TYPE": "COLUMN", "VALUE": "column_vwx1234567"},
+        ]
+        assert sl["INDEX"] == 1
+        assert sl["DESTINATION"] == "column_jkl1234567"
+        assert "AS" not in sl
+
+    def test_error_empty_values(self, mock_view):
+        """Empty columns + no constants raises MammothValidationError."""
+        with pytest.raises(MammothValidationError, match="at least one value source"):
+            mock_view.small_large(
+                SmallLargeFunction.LARGE,
+                columns=[],
+                new_column="Result",
+            )
+
+    def test_error_index_zero(self, mock_view):
+        """index=0 raises MammothValidationError."""
+        with pytest.raises(MammothValidationError, match="1-based"):
+            mock_view.small_large(
+                SmallLargeFunction.LARGE,
+                columns=["base_salary"],
+                index=0,
+                new_column="Result",
+            )
+
+    def test_error_index_negative(self, mock_view):
+        """index=-1 raises MammothValidationError."""
+        with pytest.raises(MammothValidationError, match="1-based"):
+            mock_view.small_large(
+                SmallLargeFunction.SMALL,
+                columns=["base_salary"],
+                index=-1,
+                new_column="Result",
+            )
+
+    def test_error_both_new_and_existing_column(self, mock_view):
+        """Providing both new_column and existing_column raises MammothValidationError."""
+        with pytest.raises(MammothValidationError, match="exactly one"):
+            mock_view.small_large(
+                SmallLargeFunction.LARGE,
+                columns=["base_salary"],
+                new_column="New",
+                existing_column="bonus_pct",
+            )
+
+    def test_error_neither_new_nor_existing_column(self, mock_view):
+        """Providing neither new_column nor existing_column raises MammothValidationError."""
+        with pytest.raises(MammothValidationError, match="exactly one"):
+            mock_view.small_large(
+                SmallLargeFunction.LARGE,
+                columns=["base_salary"],
+            )
+
+    def test_error_bool_in_constants(self, mock_view):
+        """A bool in constants raises MammothValidationError (bool is not a number)."""
+        with pytest.raises(MammothValidationError, match="numeric constant"):
+            mock_view.small_large(
+                SmallLargeFunction.LARGE,
+                columns=["base_salary"],
+                constants=[True],  # type: ignore[list-item]
+                new_column="Result",
+            )
+
+    def test_error_dict_in_values(self, mock_view):
+        """A dict passed as a column name raises MammothValidationError."""
+        with pytest.raises(MammothValidationError, match="numeric constant"):
+            mock_view.small_large(
+                SmallLargeFunction.LARGE,
+                columns=[{"col": "base_salary"}],  # type: ignore[list-item]
+                new_column="Result",
+            )
 
 
 # ── Text operations ──────────────────────────────────────────
@@ -1256,6 +1383,14 @@ class TestPayloadSerialization:
         )
         json.dumps(last_payload(mock_view))
 
+    def test_small_large_function_serializes(self, mock_view):
+        mock_view.small_large(
+            SmallLargeFunction.LARGE,
+            columns=["base_salary"],
+            new_column="Max",
+        )
+        json.dumps(last_payload(mock_view))
+
 
 # ── Golden-reference tests ───────────────────────────────────
 # Validate exact key names and nesting match backend format.
@@ -1669,6 +1804,40 @@ class TestGoldenReference:
         inner = p["CONDITION"]["column_jkl1234567"]
         assert "EQ" in inner
         assert inner["EQ"]["VALUE"] == 50000
+
+    def test_golden_small_large_large_new_column(self, mock_view):
+        mock_view._next_internal_name = lambda: "gen_golden_sl"
+        mock_view.small_large(
+            SmallLargeFunction.LARGE,
+            columns=["base_salary", "bonus_pct"],
+            index=2,
+            constants=[100.0],
+            new_column="2nd Largest",
+        )
+        p = last_payload(mock_view)
+        sl = p["LARGE"]
+        assert sl["VALUES"] == [
+            {"TYPE": "COLUMN", "VALUE": "column_jkl1234567"},
+            {"TYPE": "COLUMN", "VALUE": "column_vwx1234567"},
+            {"TYPE": "NUMBER", "VALUE": 100.0},
+        ]
+        assert sl["INDEX"] == 2
+        assert sl["AS"]["COLUMN"] == "2nd Largest"
+        assert sl["AS"]["TYPE"] == "NUMERIC"
+        assert sl["AS"]["INTERNAL_NAME"] == "gen_golden_sl"
+        assert sl["AS"]["FORMAT"] == _DEFAULT_NUMBER_FORMAT
+
+    def test_golden_small_large_small_existing_column(self, mock_view):
+        mock_view.small_large(
+            SmallLargeFunction.SMALL,
+            columns=["base_salary", "bonus_pct"],
+            existing_column="bonus_pct",
+        )
+        p = last_payload(mock_view)
+        sl = p["SMALL"]
+        assert sl["DESTINATION"] == "column_vwx1234567"
+        assert "AS" not in sl
+        assert sl["VALUES"][0] == {"TYPE": "COLUMN", "VALUE": "column_jkl1234567"}
 
 
 # ── Param templates unit tests ───────────────────────────────
