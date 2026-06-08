@@ -38,6 +38,8 @@ Public API::
         build_gen_ai_params,
         build_date_normalize_params,
         build_sql_params,
+        build_export_spec,
+        build_dashboard_gen_spec,
     )
 """
 
