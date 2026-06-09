@@ -197,3 +197,96 @@ class PipelineExportsModificationResp(BaseModel):
 # What an export-creation call returns: either the saved trigger record
 # (synchronous handlers) or a tracking job (asynchronous handlers).
 ExportResult = PipelineExportsModificationResp | JobResponse
+
+
+class ExportTargetKey:
+    """Wire keys for export ``target_properties`` (the dict each handler reads).
+
+    Named constants so the per-handler contracts and builders never carry raw
+    string literals. Values are the exact backend keys — some are camelCase by
+    backend convention (BigQuery export type / upsert keys).
+    """
+
+    HOST = "host"
+    PORT = "port"
+    USERNAME = "username"
+    PASSWORD = "password"
+    DATABASE = "database"
+    TABLE = "table"
+    # s3 / file output
+    FILE = "file"
+    FILE_TYPE = "file_type"
+    INCLUDE_HIDDEN = "include_hidden"
+    IS_FORMAT_SET = "is_format_set"
+    USE_FORMAT = "use_format"
+    # email
+    EMAILS = "emails"
+    MESSAGE = "message"
+    RESOURCE = "resource"
+    SUBJECT = "subject"
+    # ftp
+    DOMAIN = "domain"
+    DIRECTORY = "directory"
+    # sftp
+    FILE_NAME = "file_name"
+    SSH_KEY_AUTHENTICATION = "ssh_key_authentication"
+    PRIVATE_KEY = "private_key"
+    PASSPHRASE = "passphrase"
+    RANDOMIZE_FILE_NAME = "randomize_file_name"
+    # elasticsearch
+    INDEX = "index"
+    CONNECTION = "connection"
+    CHUNKSIZE = "chunksize"
+    # azure blob / sharepoint / onedrive (MS Graph)
+    STORAGE_ACCOUNT_NAME = "storage_account_name"
+    TENANT_ID = "tenant_id"
+    CLIENT_ID = "client_id"
+    CLIENT_ID_CAMEL = "clientId"  # power bi backend reads camelCase (powerbi.py:82,140)
+    CLIENT_SECRET = "client_secret"
+    CONTAINER_NAME = "container_name"
+    FOLDER_PATH = "folder_path"
+    SITE_URL = "site_url"
+    DOCUMENT_LIBRARY = "document_library"
+    USER_ID = "user_id"
+    # bigquery
+    SELECTED_PROFILE = "selected_profile"
+    SELECTED_IDENTITY = "selected_identity"
+    EXPORT_TYPE = "exportType"
+    UPSERT_KEYS = "upsertKeys"
+    PARTITION = "partition"
+    # generic rest api
+    BASE_URL = "base_url"
+    ENDPOINT_PATH = "endpoint_path"
+    AUTH_TYPE = "auth_type"
+    HTTP_METHOD = "http_method"
+    WRAP_PATH = "wrap_path"
+    BATCH_SIZE = "batch_size"
+    TIMEOUT_SECONDS = "timeout_seconds"
+    RATE_LIMIT_RPS = "rate_limit_requests_per_second"
+    SSL_VERIFY = "ssl_verify"
+    DEFAULT_HEADERS = "default_headers"
+    REQUEST_HEADERS = "request_headers"
+    QUERY_PARAMS = "query_params"
+    EXTRA_BODY_FIELDS = "extra_body_fields"
+    # publishdb
+    ODBC_TYPE = "odbc_type"
+    PROJECT_ID = "project_id"
+    DATASET = "dataset"
+    # tableau server
+    SERVER_URL = "server_url"
+    TOKEN_NAME = "token_name"
+    TOKEN_SECRET = "token_secret"
+    SITE_NAME = "site_name"
+    PROJECT_NAME = "project_name"
+    DATASOURCE_NAME = "datasource_name"
+    CA_BUNDLE_PATH = "ca_bundle_path"
+
+
+class DashboardSpecKey:
+    """Wire keys for the AI dashboard-generation spec (``POST /dashboards`` body)."""
+
+    PARAMS = "params"
+    INTENT = "intent"
+    SOURCE = "source"
+    ENABLE_FILTERS = "enable_filters"
+    ENABLE_PAGES = "enable_pages"

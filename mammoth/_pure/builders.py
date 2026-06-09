@@ -47,7 +47,13 @@ from mammoth._pure.resolve import (
     resolve_order_by,
 )
 from mammoth.exceptions import MammothValidationError
-from mammoth.models.exports import AddExportSpec, HandlerType, TriggerType
+from mammoth.models.exports import (
+    AddExportSpec,
+    DashboardSpecKey,
+    ExportTargetKey,
+    HandlerType,
+    TriggerType,
+)
 from mammoth.models.pipeline import (
     AggregateFunction,
     AggregationSpec,
@@ -1165,7 +1171,8 @@ def build_date_normalize_params(
 _DASHBOARD_INTENT_MIN_LEN = 10
 
 # Default ports per SQL/transfer handler — emitted only when the caller omits port.
-_DB_EXPORT_REQUIRED = ("host", "username", "password", "database", "table")
+_K = ExportTargetKey
+_DB_EXPORT_REQUIRED = (_K.HOST, _K.USERNAME, _K.PASSWORD, _K.DATABASE, _K.TABLE)
 
 
 @dataclass(frozen=True)
@@ -1187,76 +1194,76 @@ class _TargetContract:
 
 
 _EXPORT_CONTRACTS: dict[HandlerType, _TargetContract] = {
-    HandlerType.POSTGRES: _TargetContract(_DB_EXPORT_REQUIRED, ("port",), {"port": 5432}),
-    HandlerType.MYSQL: _TargetContract(_DB_EXPORT_REQUIRED, ("port",), {"port": 3306}),
-    HandlerType.MSSQL: _TargetContract(_DB_EXPORT_REQUIRED, ("port",), {"port": 1433}),
-    HandlerType.REDSHIFT: _TargetContract(_DB_EXPORT_REQUIRED, ("port",), {"port": 5439}),
+    HandlerType.POSTGRES: _TargetContract(_DB_EXPORT_REQUIRED, (_K.PORT,), {_K.PORT: 5432}),
+    HandlerType.MYSQL: _TargetContract(_DB_EXPORT_REQUIRED, (_K.PORT,), {_K.PORT: 3306}),
+    HandlerType.MSSQL: _TargetContract(_DB_EXPORT_REQUIRED, (_K.PORT,), {_K.PORT: 1433}),
+    HandlerType.REDSHIFT: _TargetContract(_DB_EXPORT_REQUIRED, (_K.PORT,), {_K.PORT: 5439}),
     HandlerType.S3: _TargetContract(
-        ("file",), ("file_type", "include_hidden", "is_format_set", "use_format")
+        (_K.FILE,), (_K.FILE_TYPE, _K.INCLUDE_HIDDEN, _K.IS_FORMAT_SET, _K.USE_FORMAT)
     ),
-    HandlerType.EMAIL: _TargetContract(("emails",), ("message", "resource", "subject")),
+    HandlerType.EMAIL: _TargetContract((_K.EMAILS,), (_K.MESSAGE, _K.RESOURCE, _K.SUBJECT)),
     HandlerType.FTP: _TargetContract(
-        ("domain", "username", "password", "directory", "file"), ("port",), {"port": 21}
+        (_K.DOMAIN, _K.USERNAME, _K.PASSWORD, _K.DIRECTORY, _K.FILE), (_K.PORT,), {_K.PORT: 21}
     ),
     HandlerType.SFTP: _TargetContract(
-        ("host", "username"),
+        (_K.HOST, _K.USERNAME),
         (
-            "port",
-            "password",
-            "directory",
-            "file_name",
-            "ssh_key_authentication",
-            "private_key",
-            "passphrase",
-            "randomize_file_name",
+            _K.PORT,
+            _K.PASSWORD,
+            _K.DIRECTORY,
+            _K.FILE_NAME,
+            _K.SSH_KEY_AUTHENTICATION,
+            _K.PRIVATE_KEY,
+            _K.PASSPHRASE,
+            _K.RANDOMIZE_FILE_NAME,
         ),
-        {"port": 22},
+        {_K.PORT: 22},
     ),
     HandlerType.ELASTICSEARCH: _TargetContract(
-        ("host", "username", "password", "index", "connection"),
-        ("port", "chunksize"),
-        {"port": 9243, "chunksize": 200},
+        (_K.HOST, _K.USERNAME, _K.PASSWORD, _K.INDEX, _K.CONNECTION),
+        (_K.PORT, _K.CHUNKSIZE),
+        {_K.PORT: 9243, _K.CHUNKSIZE: 200},
     ),
     HandlerType.AZURE_BLOB: _TargetContract(
-        ("storage_account_name", "tenant_id", "client_id", "client_secret", "container_name"),
-        ("folder_path", "file_name"),
+        (_K.STORAGE_ACCOUNT_NAME, _K.TENANT_ID, _K.CLIENT_ID, _K.CLIENT_SECRET, _K.CONTAINER_NAME),
+        (_K.FOLDER_PATH, _K.FILE_NAME),
     ),
     HandlerType.SHAREPOINT: _TargetContract(
-        ("tenant_id", "client_id", "client_secret", "site_url"),
-        ("document_library", "folder_path", "file_name"),
+        (_K.TENANT_ID, _K.CLIENT_ID, _K.CLIENT_SECRET, _K.SITE_URL),
+        (_K.DOCUMENT_LIBRARY, _K.FOLDER_PATH, _K.FILE_NAME),
     ),
     HandlerType.ONEDRIVE: _TargetContract(
-        ("tenant_id", "client_id", "client_secret", "user_id"),
-        ("folder_path", "file_name"),
+        (_K.TENANT_ID, _K.CLIENT_ID, _K.CLIENT_SECRET, _K.USER_ID),
+        (_K.FOLDER_PATH, _K.FILE_NAME),
     ),
     HandlerType.BIGQUERY: _TargetContract(
-        ("selected_profile", "selected_identity", "table"),
-        ("exportType", "upsertKeys", "partition", "database", "host"),
+        (_K.SELECTED_PROFILE, _K.SELECTED_IDENTITY, _K.TABLE),
+        (_K.EXPORT_TYPE, _K.UPSERT_KEYS, _K.PARTITION, _K.DATABASE, _K.HOST),
         allow_extra=True,
     ),
     HandlerType.GENERIC_REST_API_EXPORT: _TargetContract(
-        ("base_url", "endpoint_path"),
+        (_K.BASE_URL, _K.ENDPOINT_PATH),
         (
-            "auth_type",
-            "http_method",
-            "wrap_path",
-            "batch_size",
-            "timeout_seconds",
-            "rate_limit_requests_per_second",
-            "ssl_verify",
-            "default_headers",
-            "request_headers",
-            "query_params",
-            "extra_body_fields",
+            _K.AUTH_TYPE,
+            _K.HTTP_METHOD,
+            _K.WRAP_PATH,
+            _K.BATCH_SIZE,
+            _K.TIMEOUT_SECONDS,
+            _K.RATE_LIMIT_RPS,
+            _K.SSL_VERIFY,
+            _K.DEFAULT_HEADERS,
+            _K.REQUEST_HEADERS,
+            _K.QUERY_PARAMS,
+            _K.EXTRA_BODY_FIELDS,
         ),
         allow_extra=True,
     ),
     HandlerType.PUBLISHDB: _TargetContract(
-        ("odbc_type", "table"), ("database", "project_id", "dataset")
+        (_K.ODBC_TYPE, _K.TABLE), (_K.DATABASE, _K.PROJECT_ID, _K.DATASET)
     ),
     HandlerType.TABLEAU_SERVER: _TargetContract(
-        ("server_url", "token_name", "token_secret"),
-        ("site_name", "project_name", "datasource_name", "ca_bundle_path"),
+        (_K.SERVER_URL, _K.TOKEN_NAME, _K.TOKEN_SECRET),
+        (_K.SITE_NAME, _K.PROJECT_NAME, _K.DATASOURCE_NAME, _K.CA_BUNDLE_PATH),
     ),
 }
 
@@ -1416,10 +1423,10 @@ def build_dashboard_gen_spec(
             f"dashboard source ids must be positive integers; got {bad}"
         )
     return {
-        "params": {
-            "intent": intent.strip(),
-            "source": source_ids,
-            "enable_filters": enable_filters,
-            "enable_pages": enable_pages,
+        DashboardSpecKey.PARAMS: {
+            DashboardSpecKey.INTENT: intent.strip(),
+            DashboardSpecKey.SOURCE: source_ids,
+            DashboardSpecKey.ENABLE_FILTERS: enable_filters,
+            DashboardSpecKey.ENABLE_PAGES: enable_pages,
         }
     }
