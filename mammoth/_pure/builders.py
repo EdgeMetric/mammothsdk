@@ -1126,9 +1126,19 @@ def build_gen_ai_params(
     return {"GEN_AI": gen_ai_spec}
 
 
-def build_sql_params(query: str) -> dict[str, Any]:
-    """Build a SQL (raw query) task payload."""
-    return {"SQL": {"USER_QUERY": query}}
+def build_sql_params(query: str, intent: str | None = None) -> dict[str, Any]:
+    """Build a SQL (raw query) task payload.
+
+    When ``intent`` is given — the plain-English request the query was generated
+    from — it is carried alongside the query under ``INTENT``, mirroring a
+    UI-authored SQL rule so the pipeline card can show the intent next to the
+    generated query. Omitted/empty intent yields a query-only payload (the prior
+    shape), keeping every existing caller unchanged.
+    """
+    sql: dict[str, str] = {"USER_QUERY": query}
+    if intent:
+        sql["INTENT"] = intent
+    return {"SQL": sql}
 
 
 # ---------------------------------------------------------------------------
