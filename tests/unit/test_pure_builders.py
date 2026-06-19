@@ -1123,6 +1123,16 @@ class TestAdvanced:
     def test_sql(self) -> None:
         assert b.build_sql_params("SELECT 1") == {"SQL": {"USER_QUERY": "SELECT 1"}}
 
+    def test_sql_carries_intent(self) -> None:
+        assert b.build_sql_params("SELECT 1", intent="get one") == {
+            "SQL": {"USER_QUERY": "SELECT 1", "INTENT": "get one"}
+        }
+
+    def test_sql_omits_empty_intent(self) -> None:
+        # None or "" must not add an INTENT key — keeps the prior query-only shape.
+        assert b.build_sql_params("SELECT 1", intent="") == {"SQL": {"USER_QUERY": "SELECT 1"}}
+        assert b.build_sql_params("SELECT 1", intent=None) == {"SQL": {"USER_QUERY": "SELECT 1"}}
+
 
 # ===============================================================
 # Date normalization
