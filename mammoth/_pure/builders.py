@@ -174,9 +174,13 @@ def build_combine_params(
     name_gen: Callable[[], str] | None = None,
 ) -> dict[str, Any]:
     """Build a COMBINE (concatenate columns) task payload."""
+    _lit = "__literal__:"
     source_specs: list[dict[str, str]] = []
     for i, s in enumerate(sources):
-        source_specs.append({"COLUMN": resolve_column(s, col_map, internal_names)})
+        if s.startswith(_lit):
+            source_specs.append({"STRING": s[len(_lit) :]})
+        else:
+            source_specs.append({"COLUMN": resolve_column(s, col_map, internal_names)})
         if i < len(sources) - 1 and separator:
             source_specs.append({"STRING": separator})
 
