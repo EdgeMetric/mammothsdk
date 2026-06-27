@@ -252,7 +252,10 @@ def build_set_params(
     for v in values:
         item: dict[str, Any] = {"PROVIDER_TYPE": "FIXED", "PROVIDER": v.value}
         if v.condition is not None:
-            item["CONDITION"] = build_condition(v.condition, col_map, column_types)
+            built_cond = build_condition(v.condition, col_map, column_types)
+            if isinstance(built_cond, dict):
+                built_cond["FILTER_TYPE"] = FilterType.SHOW.value
+            item["CONDITION"] = built_cond
         value_items.append(item)
 
     set_dict: dict[str, Any] = {"VALUES": value_items}
