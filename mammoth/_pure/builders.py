@@ -177,7 +177,7 @@ def build_combine_params(
     source_specs: list[dict[str, str]] = []
     for i, s in enumerate(sources):
         source_specs.append({"COLUMN": resolve_column(s, col_map, internal_names)})
-        if i < len(sources) - 1:
+        if i < len(sources) - 1 and separator:
             source_specs.append({"STRING": separator})
 
     combine_spec: dict[str, Any] = {"SOURCE": source_specs}
