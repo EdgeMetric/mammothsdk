@@ -449,6 +449,7 @@ _TEXT_DATE_COMPONENTS = frozenset(
         DateComponent.MONTH_TEXT.value,
         DateComponent.MONTH_DAY_YEAR_HOUR_MINUTE_SECOND.value,
         DateComponent.YEAR_MONTH_DAY_AS_DATE.value,
+        DateComponent.YEAR_MONTH_NUMBER.value,
     }
 )
 
