@@ -780,6 +780,7 @@ def build_window_params(
     order_by: OrderBy | None = None,
     range_type: WindowRange = WindowRange.UNBOUNDED,
     name_gen: Callable[[], str] | None = None,
+    limit: int | None = None,
 ) -> dict[str, Any]:
     """Build a WINDOW (window function) task payload."""
     evaluate: dict[str, Any] = {"FUNCTION": function.value}
@@ -799,6 +800,8 @@ def build_window_params(
         ]
     if order_by:
         window_spec["ORDER_BY"] = resolve_order_by(order_by, col_map)
+    if limit is not None:
+        window_spec["LIMIT"] = limit
     return {"WINDOW": window_spec}
 
 
