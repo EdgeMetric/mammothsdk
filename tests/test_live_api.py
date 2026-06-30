@@ -17,6 +17,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+pytestmark = pytest.mark.integration
+
 from mammoth import Condition, MammothClient, Operator
 
 # ── Config ────────────────────────────────────────────────────

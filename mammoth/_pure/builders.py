@@ -609,7 +609,7 @@ def build_small_large_params(
 
     spec: dict[str, Any] = {"VALUES": built_values, "INDEX": index}
     if new_column:
-        as_col = build_as_column(new_column, column_type.value, name_gen=name_gen)
+        as_col: dict[str, Any] = build_as_column(new_column, column_type.value, name_gen=name_gen)
         as_col["FORMAT"] = (
             number_format if number_format is not None else dict(_DEFAULT_NUMBER_FORMAT)
         )
