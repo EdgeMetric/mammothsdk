@@ -211,6 +211,38 @@ class TestColumnOps:
         assert "CONDITION" not in item
         assert spec["VERSION"] == 2
 
+    def test_copy_destination_resolves_internal_name(self) -> None:
+        copies = [CopySpec(source="Sales", destination="Region")]
+        spec = b.build_copy_params(copies, COLS, INTERNALS, TYPES, gen())
+        item = spec["COPY"][0]
+        assert item["SOURCE"] == "c1"
+        assert item["DESTINATION"] == "c2"
+        assert "AS" not in item
+        assert "CONDITION" not in item
+        assert spec["VERSION"] == 2
+
+    def test_copy_destination_with_condition(self) -> None:
+        copies = [CopySpec(source="Sales", destination="Region", condition=cond())]
+        spec = b.build_copy_params(copies, COLS, INTERNALS, TYPES, gen())
+        item = spec["COPY"][0]
+        assert item["SOURCE"] == "c1"
+        assert item["DESTINATION"] == "c2"
+        assert "AS" not in item
+        assert item["CONDITION"] == built_cond()
+
+    def test_copy_destination_passthrough_internal_name(self) -> None:
+        # destination given as an internal name (already resolved) passes through.
+        copies = [CopySpec(source="Sales", destination="c4")]
+        spec = b.build_copy_params(copies, COLS, INTERNALS, TYPES)
+        item = spec["COPY"][0]
+        assert item["DESTINATION"] == "c4"
+        assert "AS" not in item
+
+    def test_copy_as_name_and_destination_raises(self) -> None:
+        copies = [CopySpec(source="Sales", as_name="Sales Copy", destination="Region")]
+        with pytest.raises(ValueError, match="mutually exclusive"):
+            b.build_copy_params(copies, COLS, INTERNALS)
+
     def test_combine_new_column_with_condition(self) -> None:
         spec = b.build_combine_params(
             ["Region", "Notes"],
