@@ -132,13 +132,29 @@ def build_copy_params(
     """Build a COPY (duplicate columns) task payload (VERSION 2).
 
     Each copy carries its own optional CONDITION (backend per-item form).
+
+    Two destination modes per :class:`~mammoth.models.pipeline.CopySpec`:
+
+    * **AS** (default): ``as_name`` is set (or defaults to ``"<source> Copy"``).
+      The item emits ``{"SOURCE": ..., "AS": {...}}``.
+    * **DESTINATION**: ``destination`` is set to an existing column name.
+      The item emits ``{"SOURCE": ..., "DESTINATION": "<resolved_internal>"}``.
+
+    Setting both ``as_name`` and ``destination`` on the same spec raises
+    :exc:`ValueError`.
     """
     copy_items: list[dict[str, Any]] = []
     for c in copies:
-        item: dict[str, Any] = {
-            "SOURCE": resolve_column(c.source, col_map, internal_names),
-            "AS": build_as_column(c.as_name or f"{c.source} Copy", c.type, name_gen=name_gen),
-        }
+        if c.as_name is not None and c.destination is not None:
+            raise ValueError(
+                f"CopySpec for source '{c.source}': 'as_name' and 'destination' are mutually "
+                "exclusive — set one or the other, not both."
+            )
+        item: dict[str, Any] = {"SOURCE": resolve_column(c.source, col_map, internal_names)}
+        if c.destination is not None:
+            item["DESTINATION"] = resolve_column(c.destination, col_map, internal_names)
+        else:
+            item["AS"] = build_as_column(c.as_name or f"{c.source} Copy", c.type, name_gen=name_gen)
         if c.condition is not None:
             item["CONDITION"] = build_condition(c.condition, col_map, column_types)
         copy_items.append(item)
@@ -1429,9 +1445,7 @@ def build_dashboard_gen_spec(
         raise MammothValidationError("dashboard source must list at least one View id")
     bad = [s for s in source_ids if isinstance(s, bool) or not isinstance(s, int) or s <= 0]
     if bad:
-        raise MammothValidationError(
-            f"dashboard source ids must be positive integers; got {bad}"
-        )
+        raise MammothValidationError(f"dashboard source ids must be positive integers; got {bad}")
     return {
         DashboardSpecKey.PARAMS: {
             DashboardSpecKey.INTENT: intent.strip(),

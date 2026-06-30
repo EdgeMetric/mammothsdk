@@ -481,15 +481,32 @@ class DateDelta:
 class CopySpec:
     """Specification for a single column copy in :meth:`View.copy_columns`.
 
-    Example::
+    Two mutually exclusive destination modes:
 
+    * **AS** (new column): set *as_name* (and optionally *type*) to create a
+      brand-new column.  This is the default when neither field is set — the
+      backend will auto-name the new column ``"<source> Copy"``.
+    * **DESTINATION** (existing column): set *destination* to the display name
+      (or internal name) of an **existing** column whose values should be
+      replaced.  When *destination* is set, *as_name* and *type* are ignored
+      by the builder.
+
+    Providing **both** *as_name* and *destination* raises :exc:`ValueError`.
+
+    Examples::
+
+        # Copy into a brand-new column
         view.copy_columns([CopySpec(source="Sales", as_name="Sales Copy", type=ColumnType.NUMERIC)])
+
+        # Overwrite an existing column's values
+        view.copy_columns([CopySpec(source="Sales", destination="Sales Backup")])
     """
 
     source: str
     as_name: str | None = None
     type: ColumnType = ColumnType.TEXT
     condition: Condition | CompoundCondition | NotCondition | None = field(default=None)
+    destination: str | None = None
 
 
 @dataclass
