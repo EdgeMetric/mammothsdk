@@ -174,10 +174,14 @@ def build_combine_params(
     name_gen: Callable[[], str] | None = None,
 ) -> dict[str, Any]:
     """Build a COMBINE (concatenate columns) task payload."""
+    _lit = "__literal__:"
     source_specs: list[dict[str, str]] = []
     for i, s in enumerate(sources):
-        source_specs.append({"COLUMN": resolve_column(s, col_map, internal_names)})
-        if i < len(sources) - 1:
+        if s.startswith(_lit):
+            source_specs.append({"STRING": s[len(_lit) :]})
+        else:
+            source_specs.append({"COLUMN": resolve_column(s, col_map, internal_names)})
+        if i < len(sources) - 1 and separator:
             source_specs.append({"STRING": separator})
 
     combine_spec: dict[str, Any] = {"SOURCE": source_specs}
@@ -252,7 +256,10 @@ def build_set_params(
     for v in values:
         item: dict[str, Any] = {"PROVIDER_TYPE": "FIXED", "PROVIDER": v.value}
         if v.condition is not None:
-            item["CONDITION"] = build_condition(v.condition, col_map, column_types)
+            built_cond = build_condition(v.condition, col_map, column_types)
+            if isinstance(built_cond, dict):
+                built_cond["FILTER_TYPE"] = FilterType.SHOW.value
+            item["CONDITION"] = built_cond
         value_items.append(item)
 
     set_dict: dict[str, Any] = {"VALUES": value_items}
@@ -446,6 +453,7 @@ _TEXT_DATE_COMPONENTS = frozenset(
         DateComponent.MONTH_TEXT.value,
         DateComponent.MONTH_DAY_YEAR_HOUR_MINUTE_SECOND.value,
         DateComponent.YEAR_MONTH_DAY_AS_DATE.value,
+        DateComponent.YEAR_MONTH_NUMBER.value,
     }
 )
 
@@ -601,7 +609,7 @@ def build_small_large_params(
 
     spec: dict[str, Any] = {"VALUES": built_values, "INDEX": index}
     if new_column:
-        as_col = build_as_column(new_column, column_type.value, name_gen=name_gen)
+        as_col: dict[str, Any] = build_as_column(new_column, column_type.value, name_gen=name_gen)
         as_col["FORMAT"] = (
             number_format if number_format is not None else dict(_DEFAULT_NUMBER_FORMAT)
         )
@@ -776,6 +784,7 @@ def build_window_params(
     order_by: OrderBy | None = None,
     range_type: WindowRange = WindowRange.UNBOUNDED,
     name_gen: Callable[[], str] | None = None,
+    limit: int | None = None,
 ) -> dict[str, Any]:
     """Build a WINDOW (window function) task payload."""
     evaluate: dict[str, Any] = {"FUNCTION": function.value}
@@ -795,6 +804,8 @@ def build_window_params(
         ]
     if order_by:
         window_spec["ORDER_BY"] = resolve_order_by(order_by, col_map)
+    if limit is not None:
+        window_spec["LIMIT"] = limit
     return {"WINDOW": window_spec}
 
 

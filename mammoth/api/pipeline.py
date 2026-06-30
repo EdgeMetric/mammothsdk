@@ -97,7 +97,7 @@ class PipelineAPI:
                     project_id=project_id,
                 )
                 return dataset_id
-            except MammothAPIError, KeyError:
+            except (MammothAPIError, KeyError):
                 continue
 
         raise ValueError(f"Dataview {dataview_id} not found in any dataset in project {project_id}")

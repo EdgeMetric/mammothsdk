@@ -324,7 +324,7 @@ class TestFilterSet:
         assert spec == {
             "SET": {
                 "VALUES": [
-                    {"PROVIDER_TYPE": "FIXED", "PROVIDER": "High", "CONDITION": built_cond(10000)},
+                    {"PROVIDER_TYPE": "FIXED", "PROVIDER": "High", "CONDITION": {"FILTER_TYPE": "SHOW", **built_cond(10000)}},
                     {"PROVIDER_TYPE": "FIXED", "PROVIDER": "Low"},
                 ],
                 "AS": {"COLUMN": "Risk", "TYPE": "TEXT", "INTERNAL_NAME": "gen1"},

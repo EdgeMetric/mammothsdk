@@ -95,7 +95,7 @@ def _to_number(value: object) -> float | None:
     """Coerce a cell to float, or None if it isn't numeric (e.g. a text label)."""
     try:
         return float(value)  # type: ignore[arg-type]
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return None
 
 

@@ -163,6 +163,7 @@ class DateComponent(str, Enum):
     WEEKDAY_TEXT = "weekday_text"
     MONTH_TEXT = "month_text"
     YEAR_MONTH = "year_month"
+    YEAR_MONTH_NUMBER = "year_month_number"
     YEAR_WEEK = "year_week"
     YEAR_QUARTER = "year_quarter"
     MONTH_DAY = "month_day"

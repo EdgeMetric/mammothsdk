@@ -39,7 +39,7 @@ def _get_sig_params(func: Any) -> set[str]:
     """Get all param names (excluding self/cls) from a function signature."""
     try:
         sig = inspect.signature(func)
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return set()
     return {
         name
@@ -192,7 +192,7 @@ class TestDocstringArgsMatchSignature:
             pytest.skip("No Args section")
         try:
             sig = inspect.signature(method)
-        except ValueError, TypeError:
+        except (ValueError, TypeError):
             pytest.skip("Cannot inspect signature")
         doc_args = _parse_docstring_args(doc)
         for pname, param in sig.parameters.items():
