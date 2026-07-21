@@ -71,6 +71,12 @@ def _build_leaf(command_id: str, *, is_group_callback: bool = False) -> Callable
         no_input: bool = typer.Option(False, "--no-input", help="Never prompt; fail instead."),
         no_progress: bool = typer.Option(False, "--no-progress", help="Never render progress."),
         debug: bool = typer.Option(False, "--debug", help="Emit diagnostic detail to stderr."),
+        yes: bool = typer.Option(
+            False, "--yes", "-y", help="Confirm a mutation without prompting."
+        ),
+        confirm: str | None = typer.Option(
+            None, "--confirm", help="Exact target name required for high-impact actions."
+        ),
         input_file: str | None = typer.Option(
             None, "--input", help="Strict JSON/YAML request document, or '-' for stdin."
         ),
@@ -93,6 +99,8 @@ def _build_leaf(command_id: str, *, is_group_callback: bool = False) -> Callable
             no_input=no_input,
             no_progress=no_progress,
             debug=debug,
+            yes=yes,
+            confirm=confirm,
             input_file=input_file,
             input_format=input_format,
             extra_args=list(ctx.args),

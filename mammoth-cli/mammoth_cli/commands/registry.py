@@ -89,4 +89,11 @@ HANDLERS: dict[str, Handler] = {
     "project.resource-status": project_cmd.project_resource_status,
     "project.resource-dependencies": project_cmd.project_resource_dependencies,
     "project.publish-credentials": project_cmd.project_publish_credentials,
+    # project family (mutations)
+    "project.create": project_cmd.project_create,
+    "project.update": project_cmd.project_update,
+    "project.delete": project_cmd.project_delete,
+    "project.bulk-delete": project_cmd.project_bulk_delete,
+    "project.bulk-update": project_cmd.project_bulk_update,
+    "project.sample-flow": project_cmd.project_sample_flow,
 }

@@ -30,6 +30,8 @@ class Invocation:
     no_input: bool = False
     no_progress: bool = False
     debug: bool = False
+    yes: bool = False
+    confirm: str | None = None
     input_file: str | None = None
     input_format: str | None = None
     extra_args: list[str] = field(default_factory=list)

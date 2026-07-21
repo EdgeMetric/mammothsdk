@@ -90,6 +90,21 @@ def debug_option() -> bool:
     return cast(bool, typer.Option(False, "--debug", help="Emit diagnostic detail to stderr."))
 
 
+def yes_option() -> bool:
+    """Return the shared ``--yes`` confirmation-bypass option definition."""
+    return cast(
+        bool, typer.Option(False, "--yes", "-y", help="Confirm a mutation without prompting.")
+    )
+
+
+def confirm_option() -> str | None:
+    """Return the shared ``--confirm`` high-impact-target option definition."""
+    return cast(
+        str | None,
+        typer.Option(None, "--confirm", help="Exact target name required for high-impact actions."),
+    )
+
+
 def input_file_option() -> str | None:
     """Return the shared ``--input`` option definition."""
     return cast(
@@ -122,6 +137,8 @@ def make_invocation(
     debug: bool,
     input_file: str | None,
     input_format: str | None,
+    yes: bool = False,
+    confirm: str | None = None,
 ) -> Invocation:
     """Build an :class:`Invocation` from one bespoke command's global options.
 
@@ -157,6 +174,8 @@ def make_invocation(
         no_input=no_input,
         no_progress=no_progress,
         debug=debug,
+        yes=yes,
+        confirm=confirm,
         input_file=input_file,
         input_format=input_format,
     )
