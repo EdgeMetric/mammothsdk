@@ -18,6 +18,7 @@ from typing import Any
 
 from mammoth_cli import SCHEMA_VERSION, __version__
 from mammoth_cli.commands import capability as capability_cmd
+from mammoth_cli.commands import project as project_cmd
 from mammoth_cli.commands import schema as schema_cmd
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.runtime.invocation import Invocation
@@ -81,4 +82,11 @@ HANDLERS: dict[str, Handler] = {
     "capability.get": _capability_get,
     "schema.list": _schema_list,
     "schema.get": _schema_get,
+    # project family (read-only)
+    "project.list": project_cmd.project_list,
+    "project.get": project_cmd.project_get,
+    "project.pending-changes": project_cmd.project_pending_changes,
+    "project.resource-status": project_cmd.project_resource_status,
+    "project.resource-dependencies": project_cmd.project_resource_dependencies,
+    "project.publish-credentials": project_cmd.project_publish_credentials,
 }

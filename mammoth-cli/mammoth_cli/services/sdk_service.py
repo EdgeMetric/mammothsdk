@@ -14,6 +14,8 @@ from typing import Any
 from mammoth.client import MammothClient
 
 from mammoth_cli.context.resolver import ResolvedAuth
+from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.services.dispatch import resolve_sdk_method
 from mammoth_cli.services.mapping import map_sdk_exception
 
 
@@ -37,6 +39,35 @@ class SdkMammothService:
             base_url=auth.base_url,
             **kwargs,
         )
+
+    def call(self, sdk_symbol: str, /, **kwargs: Any) -> Any:
+        """Resolve and invoke the public SDK method named by ``sdk_symbol``.
+
+        Args:
+            sdk_symbol: The dotted symbol naming the backing public SDK method.
+            **kwargs: Keyword arguments forwarded to the method.
+
+        Returns:
+            The raw SDK return value.
+
+        Raises:
+            CliError: ``sdk_symbol_unresolved`` when no public method matches;
+                ``invalid_arguments`` when the supplied fields do not fit the
+                method signature; otherwise the mapped SDK exception.
+        """
+        method = resolve_sdk_method(self._client, sdk_symbol)
+        try:
+            return method(**kwargs)
+        except TypeError as exc:
+            raise CliError(
+                code="invalid_arguments",
+                message=f"The supplied fields do not fit '{sdk_symbol}'.",
+                exit_status=EXIT_USAGE,
+                hint="Check the command schema with 'mammoth schema get'.",
+                details={"reason": str(exc)},
+            ) from exc
+        except Exception as exc:
+            raise map_sdk_exception(exc) from exc
 
     def check_connection(self) -> dict[str, Any]:
         """Perform a lightweight authenticated call to verify credentials.

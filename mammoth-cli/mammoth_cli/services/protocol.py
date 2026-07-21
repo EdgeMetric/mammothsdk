@@ -14,6 +14,24 @@ from typing import Any, Protocol
 class MammothService(Protocol):
     """The typed operations the auth/project command families need."""
 
+    def call(self, sdk_symbol: str, /, **kwargs: Any) -> Any:
+        """Invoke the public SDK method named by ``sdk_symbol``.
+
+        This is the generic seam every manifest-driven command uses: the
+        command supplies the reviewed ``sdk_symbol`` and validated keyword
+        arguments, and the service resolves and calls the matching public
+        method, mapping any SDK exception to a stable
+        :class:`~mammoth_cli.errors.envelope.CliError`.
+
+        Args:
+            sdk_symbol: The dotted symbol naming the backing public SDK method.
+            **kwargs: Keyword arguments forwarded to the method.
+
+        Returns:
+            The raw SDK return value (typically a mapping).
+        """
+        ...
+
     def check_connection(self) -> dict[str, Any]:
         """Perform a lightweight authenticated call and return its raw result.
 

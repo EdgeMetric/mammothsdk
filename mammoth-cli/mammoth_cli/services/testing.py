@@ -27,6 +27,29 @@ class FakeMammothService:
     connection_ok: bool = True
     projects: list[dict[str, Any]] = field(default_factory=list)
     calls: list[str] = field(default_factory=list)
+    responses: dict[str, Any] = field(default_factory=dict)
+    call_log: list[tuple[str, dict[str, Any]]] = field(default_factory=list)
+
+    def call(self, sdk_symbol: str, /, **kwargs: Any) -> Any:
+        """Record the generic call and return a programmed response.
+
+        Args:
+            sdk_symbol: The symbol the handler dispatched to.
+            **kwargs: The keyword arguments the handler passed; recorded in
+                :attr:`call_log` so tests can assert exact field mapping.
+
+        Returns:
+            ``responses[sdk_symbol]`` if programmed (raised when it is an
+            exception), else an empty mapping.
+        """
+        self.calls.append(sdk_symbol)
+        self.call_log.append((sdk_symbol, dict(kwargs)))
+        if sdk_symbol in self.responses:
+            programmed = self.responses[sdk_symbol]
+            if isinstance(programmed, Exception):
+                raise programmed
+            return programmed
+        return {}
 
     def check_connection(self) -> dict[str, Any]:
         """Simulate a lightweight connection check."""
