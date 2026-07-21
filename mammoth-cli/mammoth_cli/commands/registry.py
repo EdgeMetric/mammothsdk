@@ -17,23 +17,33 @@ from collections.abc import Callable
 from typing import Any
 
 from mammoth_cli import SCHEMA_VERSION, __version__
+from mammoth_cli.commands import activity as activity_cmd
+from mammoth_cli.commands import addon as addon_cmd
+from mammoth_cli.commands import agent as agent_cmd
+from mammoth_cli.commands import ai as ai_cmd
 from mammoth_cli.commands import annotation as annotation_cmd
 from mammoth_cli.commands import automation as automation_cmd
 from mammoth_cli.commands import batch as batch_cmd
+from mammoth_cli.commands import billing as billing_cmd
 from mammoth_cli.commands import browse as browse_cmd
 from mammoth_cli.commands import capability as capability_cmd
+from mammoth_cli.commands import client_app as client_app_cmd
 from mammoth_cli.commands import connector as connector_cmd
 from mammoth_cli.commands import dashboard as dashboard_cmd
 from mammoth_cli.commands import data_app as data_app_cmd
 from mammoth_cli.commands import dataset as dataset_cmd
+from mammoth_cli.commands import external_key as external_key_cmd
 from mammoth_cli.commands import file as file_cmd
 from mammoth_cli.commands import folder as folder_cmd
 from mammoth_cli.commands import job as job_cmd
 from mammoth_cli.commands import notification as notification_cmd
 from mammoth_cli.commands import parameter as parameter_cmd
 from mammoth_cli.commands import project as project_cmd
+from mammoth_cli.commands import report as report_cmd
+from mammoth_cli.commands import schedule as schedule_cmd
 from mammoth_cli.commands import schema as schema_cmd
 from mammoth_cli.commands import snippet as snippet_cmd
+from mammoth_cli.commands import support as support_cmd
 from mammoth_cli.commands import template as template_cmd
 from mammoth_cli.commands import trash as trash_cmd
 from mammoth_cli.commands import user as user_cmd
@@ -334,4 +344,116 @@ HANDLERS: dict[str, Handler] = {
     "template.get": template_cmd.template_get,
     "template.list": template_cmd.template_list,
     "template.update": template_cmd.template_update,
+    # schedule family
+    "schedule.list": schedule_cmd.schedule_list,
+    "schedule.get": schedule_cmd.schedule_get,
+    "schedule.create": schedule_cmd.schedule_create,
+    "schedule.update": schedule_cmd.schedule_update,
+    "schedule.delete": schedule_cmd.schedule_delete,
+    # agent family
+    "agent.chat": agent_cmd.agent_chat,
+    "agent.session.delete": agent_cmd.agent_session_delete,
+    "agent.session.list": agent_cmd.agent_session_list,
+    "agent.session.messages": agent_cmd.agent_session_messages,
+    "agent.session.set-visibility": agent_cmd.agent_session_set_visibility,
+    # ai family
+    "ai.condition.generate": ai_cmd.ai_condition_generate,
+    "ai.expression.generate": ai_cmd.ai_expression_generate,
+    "ai.sql.generate": ai_cmd.ai_sql_generate,
+    "ai.suggestion.list": ai_cmd.ai_suggestion_list,
+    # addon family
+    "addon.connector.add": addon_cmd.addon_connector_add,
+    "addon.connector.remove": addon_cmd.addon_connector_remove,
+    "addon.list": addon_cmd.addon_list,
+    "addon.storage.add": addon_cmd.addon_storage_add,
+    "addon.storage.remove": addon_cmd.addon_storage_remove,
+    "addon.user.add": addon_cmd.addon_user_add,
+    "addon.user.remove": addon_cmd.addon_user_remove,
+    # external-key family
+    "external-key.create": external_key_cmd.external_key_create,
+    "external-key.delete": external_key_cmd.external_key_delete,
+    "external-key.get": external_key_cmd.external_key_get,
+    "external-key.list": external_key_cmd.external_key_list,
+    # client-app family
+    "client-app.create": client_app_cmd.client_app_create,
+    "client-app.delete": client_app_cmd.client_app_delete,
+    "client-app.get": client_app_cmd.client_app_get,
+    "client-app.list": client_app_cmd.client_app_list,
+    "client-app.update": client_app_cmd.client_app_update,
+    # report + activity families
+    "report.list": report_cmd.report_list,
+    "activity.list": activity_cmd.activity_list,
+    "activity.export": activity_cmd.activity_export,
+    # billing family
+    "billing.chargebee-plan": billing_cmd.billing_chargebee_plan,
+    "billing.hosted-page": billing_cmd.billing_hosted_page,
+    "billing.invoice.charge": billing_cmd.billing_invoice_charge,
+    "billing.invoice.get": billing_cmd.billing_invoice_get,
+    "billing.invoice.list": billing_cmd.billing_invoice_list,
+    "billing.stripe.cancel": billing_cmd.billing_stripe_cancel,
+    "billing.stripe.checkout-url": billing_cmd.billing_stripe_checkout_url,
+    "billing.stripe.create": billing_cmd.billing_stripe_create,
+    "billing.stripe.end-trial": billing_cmd.billing_stripe_end_trial,
+    "billing.stripe.get": billing_cmd.billing_stripe_get,
+    "billing.stripe.history": billing_cmd.billing_stripe_history,
+    "billing.stripe.payment-method.delete": billing_cmd.billing_stripe_payment_method_delete,
+    "billing.stripe.payment-method.list": billing_cmd.billing_stripe_payment_method_list,
+    "billing.stripe.payment-method.set-default": (
+        billing_cmd.billing_stripe_payment_method_set_default
+    ),
+    "billing.stripe.portal-url": billing_cmd.billing_stripe_portal_url,
+    "billing.stripe.preview-invoice": billing_cmd.billing_stripe_preview_invoice,
+    "billing.stripe.retry-payment": billing_cmd.billing_stripe_retry_payment,
+    "billing.stripe.status": billing_cmd.billing_stripe_status,
+    "billing.stripe.sync": billing_cmd.billing_stripe_sync,
+    "billing.stripe.upcoming-invoice": billing_cmd.billing_stripe_upcoming_invoice,
+    "billing.stripe.usage": billing_cmd.billing_stripe_usage,
+    "billing.subscription.get": billing_cmd.billing_subscription_get,
+    "billing.subscription.update": billing_cmd.billing_subscription_update,
+    # support family
+    "support.connector.create": support_cmd.support_connector_create,
+    "support.connector.delete": support_cmd.support_connector_delete,
+    "support.connector.list": support_cmd.support_connector_list,
+    "support.connector.update": support_cmd.support_connector_update,
+    "support.connector-profile.add-connector": support_cmd.support_connector_profile_add_connector,
+    "support.connector-profile.create": support_cmd.support_connector_profile_create,
+    "support.connector-profile.delete": support_cmd.support_connector_profile_delete,
+    "support.connector-profile.list": support_cmd.support_connector_profile_list,
+    "support.connector-profile.update": support_cmd.support_connector_profile_update,
+    "support.feature.create": support_cmd.support_feature_create,
+    "support.feature.delete": support_cmd.support_feature_delete,
+    "support.feature.list": support_cmd.support_feature_list,
+    "support.feature.update": support_cmd.support_feature_update,
+    "support.feature-profile.add-feature": support_cmd.support_feature_profile_add_feature,
+    "support.feature-profile.create": support_cmd.support_feature_profile_create,
+    "support.feature-profile.delete": support_cmd.support_feature_profile_delete,
+    "support.feature-profile.list": support_cmd.support_feature_profile_list,
+    "support.feature-profile.update": support_cmd.support_feature_profile_update,
+    "support.ownership.transfer": support_cmd.support_ownership_transfer,
+    "support.plan.archive": support_cmd.support_plan_archive,
+    "support.plan.chargebee-list": support_cmd.support_plan_chargebee_list,
+    "support.plan.create": support_cmd.support_plan_create,
+    "support.plan.delete": support_cmd.support_plan_delete,
+    "support.plan.get": support_cmd.support_plan_get,
+    "support.plan.list": support_cmd.support_plan_list,
+    "support.plan.self-serve-list": support_cmd.support_plan_self_serve_list,
+    "support.plan.update": support_cmd.support_plan_update,
+    "support.plan.update-storage-tiers": support_cmd.support_plan_update_storage_tiers,
+    "support.subscription.create": support_cmd.support_subscription_create,
+    "support.subscription.get": support_cmd.support_subscription_get,
+    "support.subscription.update": support_cmd.support_subscription_update,
+    "support.user.list-all": support_cmd.support_user_list_all,
+    "support.user.register": support_cmd.support_user_register,
+    "support.user.update": support_cmd.support_user_update,
+    "support.workspace.create": support_cmd.support_workspace_create,
+    "support.workspace.delete": support_cmd.support_workspace_delete,
+    "support.workspace.get": support_cmd.support_workspace_get,
+    "support.workspace.list": support_cmd.support_workspace_list,
+    "support.workspace.restore-access": support_cmd.support_workspace_restore_access,
+    "support.workspace.suspend-access": support_cmd.support_workspace_suspend_access,
+    "support.workspace.update": support_cmd.support_workspace_update,
+    "support.workspace.user.add": support_cmd.support_workspace_user_add,
+    "support.workspace.user.list": support_cmd.support_workspace_user_list,
+    "support.workspace.user.remove": support_cmd.support_workspace_user_remove,
+    "support.workspace.user.transfer": support_cmd.support_workspace_user_transfer,
 }
