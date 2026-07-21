@@ -10,6 +10,7 @@ repository = "https://github.com/EdgeMetric/mm-pysdk"
 packages = [{ include = "mammoth_cli" }]
 include = [
     "mammoth_cli/py.typed",
+    "mammoth_cli/bundled_skill/**/*",
     "spec/openapi/openapi.json",
     "spec/openapi/metadata.json",
     "spec/manifests/**/*",

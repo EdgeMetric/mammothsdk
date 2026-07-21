@@ -44,6 +44,7 @@ from mammoth_cli.commands import project as project_cmd
 from mammoth_cli.commands import report as report_cmd
 from mammoth_cli.commands import schedule as schedule_cmd
 from mammoth_cli.commands import schema as schema_cmd
+from mammoth_cli.commands import skill as skill_cmd
 from mammoth_cli.commands import snippet as snippet_cmd
 from mammoth_cli.commands import support as support_cmd
 from mammoth_cli.commands import template as template_cmd
@@ -115,6 +116,11 @@ HANDLERS: dict[str, Handler] = {
     "doctor": doctor_cmd.doctor,
     "completion.show": completion_cmd.completion_show,
     "completion.install": completion_cmd.completion_install,
+    "skill.install": skill_cmd.skill_install,
+    "skill.list": skill_cmd.skill_list,
+    "skill.path": skill_cmd.skill_path,
+    "skill.uninstall": skill_cmd.skill_uninstall,
+    "skill.update": skill_cmd.skill_update,
     "capability.list": _capability_list,
     "capability.get": _capability_get,
     "schema.list": _schema_list,
