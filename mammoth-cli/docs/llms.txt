@@ -1,0 +1,64 @@
+# mammoth-cli
+
+> Command-line interface for the Mammoth Analytics platform, built for autonomous agents: deterministic JSON output, promptless mode, and stable error envelopes.
+
+## Guides
+
+- [installation.md](docs/installation.md): Install the CLI and the agent skill.
+- [quickstart.md](docs/quickstart.md): Authenticate and run your first commands in five minutes.
+- [authentication.md](docs/authentication.md): Credentials, profiles, server prefixes, and project context.
+- [agents.md](docs/agents.md): Deterministic output, promptless mode, and CI patterns for agents.
+- [safety.md](docs/safety.md): Confirmation policies and safe mutation.
+- [troubleshooting.md](docs/troubleshooting.md): Exit codes, error envelopes, and recovery.
+- [upgrade.md](docs/upgrade.md): Update the CLI and skill.
+- [uninstall.md](docs/uninstall.md): Remove the CLI, skill, and configuration.
+- [command reference](docs/reference/commands.md): every command.
+- [agent skill](mammoth_cli/bundled_skill/mammoth-cli/SKILL.md): the installable skill.
+
+## Command families
+
+- `activity` (2 commands)
+- `addon` (7 commands)
+- `agent` (5 commands)
+- `ai` (4 commands)
+- `annotation` (5 commands)
+- `auth` (3 commands)
+- `automation` (7 commands)
+- `batch` (6 commands)
+- `billing` (23 commands)
+- `browse` (4 commands)
+- `capability` (2 commands)
+- `client-app` (5 commands)
+- `completion` (2 commands)
+- `config` (4 commands)
+- `connector` (22 commands)
+- `context` (3 commands)
+- `dashboard` (19 commands)
+- `data-app` (12 commands)
+- `dataset` (15 commands)
+- `doctor` (1 commands)
+- `external-key` (4 commands)
+- `file` (9 commands)
+- `folder` (9 commands)
+- `job` (4 commands)
+- `notification` (5 commands)
+- `parameter` (14 commands)
+- `project` (17 commands)
+- `report` (1 commands)
+- `schedule` (5 commands)
+- `schema` (2 commands)
+- `skill` (5 commands)
+- `snippet` (8 commands)
+- `support` (45 commands)
+- `template` (5 commands)
+- `trash` (3 commands)
+- `user` (8 commands)
+- `version` (1 commands)
+- `view` (96 commands)
+- `webhook` (7 commands)
+- `workflow` (16 commands)
+- `workspace` (20 commands)
+
+## Source
+
+- https://github.com/EdgeMetric/mm-pysdk
