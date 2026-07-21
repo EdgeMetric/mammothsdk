@@ -81,11 +81,11 @@ For every worker commit:
 
 ## Phase 0: Commit the specification
 
-- [ ] Review all plan documents.
-- [ ] Select Python 3.14.3 for primary development commands.
-- [ ] Confirm clean branch state.
-- [ ] Commit this plan set before feature code.
-- [ ] Record the commit in the audit ledger.
+- [x] Review all plan documents.
+- [x] Select Python 3.14.3 for primary development commands.
+- [x] Confirm clean branch state.
+- [x] Commit this plan set before feature code.
+- [x] Record the commit in the audit ledger.
 
 ## Phase 1: Inventory and red tests
 

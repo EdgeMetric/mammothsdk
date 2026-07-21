@@ -260,10 +260,11 @@ Append one row after each accepted change.
 
 | Date | Commit | Phase | Operations/commands | Tests | Reviewer notes |
 |---|---|---|---|---|---|
+| 2026-07-21 | `bb2557f` | Phase 0: audited plan | 376 OpenAPI inventory rows; 242 SDK inventory rows; command catalogs and implementation gates | Planning link, uniqueness, catalog-accounting, formatting, and secret-value scans passed | Primary self-review completed; implementation has not started |
 
 ## Open TODOs
 
-- [ ] Commit this plan set.
+- [x] Commit this plan set (`bb2557f`).
 - [ ] Create and review the OpenAPI disposition inventory.
 - [ ] Create and review the SDK method inventory.
 - [ ] Create exact command specifications.
