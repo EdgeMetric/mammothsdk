@@ -4,6 +4,23 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1]
+
+### Fixed
+- **`mammoth.__version__` now reports the correct version.** It was pinned at
+  `"0.4.0"` while `pyproject.toml` had moved to `0.5.0`, so the published 0.5.0
+  wheel reported the wrong version at runtime. Both places are now `0.5.1` and
+  kept in sync.
+
+## [0.5.0]
+
+### Added
+- **DSL engine — pure builders.** COMBINE literal string-prefix support, a
+  `limit` param on `build_window_params`, `DateComponent.YEAR_MONTH_NUMBER`
+  (produces TEXT output in EXTRACT_DATE), and `FILTER_TYPE=SHOW` on SET value
+  conditions. Export/dashboard builders now use `ExportTargetKey` /
+  `DashboardSpecKey` constants instead of hardcoded wire keys.
+
 ## [0.4.0]
 
 ### Added
