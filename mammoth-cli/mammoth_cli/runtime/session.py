@@ -38,7 +38,9 @@ def open_service(invocation: Invocation) -> Iterator[tuple[MammothService, Resol
             available or the endpoint cannot be resolved.
     """
     auth = resolve_auth(invocation)
-    service = factory.build_service(auth, timeout=invocation.timeout)
+    service = factory.build_service(
+        auth, timeout=invocation.timeout, project_id=resolved_project(invocation)
+    )
     try:
         yield service, auth
     finally:

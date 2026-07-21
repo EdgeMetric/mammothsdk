@@ -22,12 +22,21 @@ from mammoth_cli.services.mapping import map_sdk_exception
 class SdkMammothService:
     """Production :class:`~mammoth_cli.services.protocol.MammothService`."""
 
-    def __init__(self, auth: ResolvedAuth, *, timeout: float | None = None) -> None:
+    def __init__(
+        self,
+        auth: ResolvedAuth,
+        *,
+        timeout: float | None = None,
+        project_id: int | None = None,
+    ) -> None:
         """Build the service from resolved authentication.
 
         Args:
             auth: Resolved API key, secret, workspace id, and base url.
             timeout: Optional per-request timeout override, in seconds.
+            project_id: Active project id to bind on the client, so SDK methods
+                that read the client's project context (rather than taking an
+                explicit ``project_id`` argument) resolve to it.
         """
         kwargs: dict[str, Any] = {}
         if timeout is not None:
@@ -39,6 +48,8 @@ class SdkMammothService:
             base_url=auth.base_url,
             **kwargs,
         )
+        if project_id is not None:
+            self._client.set_project_id(project_id)
 
     def call(self, sdk_symbol: str, /, **kwargs: Any) -> Any:
         """Resolve and invoke the public SDK method named by ``sdk_symbol``.

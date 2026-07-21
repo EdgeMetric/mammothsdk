@@ -14,14 +14,18 @@ from mammoth_cli.services.protocol import MammothService
 from mammoth_cli.services.sdk_service import SdkMammothService
 
 
-def build_service(auth: ResolvedAuth, *, timeout: float | None = None) -> MammothService:
+def build_service(
+    auth: ResolvedAuth, *, timeout: float | None = None, project_id: int | None = None
+) -> MammothService:
     """Build the production SDK-backed service for ``auth``.
 
     Args:
         auth: Resolved credentials, workspace id, and base url.
         timeout: Optional per-request timeout override, in seconds.
+        project_id: Active project id to bind on the client for SDK methods
+            that read project context implicitly.
 
     Returns:
         A :class:`MammothService` implementation backed by ``MammothClient``.
     """
-    return SdkMammothService(auth, timeout=timeout)
+    return SdkMammothService(auth, timeout=timeout, project_id=project_id)

@@ -18,17 +18,27 @@ from typing import Any
 
 from mammoth_cli import SCHEMA_VERSION, __version__
 from mammoth_cli.commands import annotation as annotation_cmd
+from mammoth_cli.commands import automation as automation_cmd
 from mammoth_cli.commands import batch as batch_cmd
 from mammoth_cli.commands import browse as browse_cmd
 from mammoth_cli.commands import capability as capability_cmd
+from mammoth_cli.commands import connector as connector_cmd
+from mammoth_cli.commands import dashboard as dashboard_cmd
+from mammoth_cli.commands import data_app as data_app_cmd
 from mammoth_cli.commands import dataset as dataset_cmd
 from mammoth_cli.commands import file as file_cmd
 from mammoth_cli.commands import folder as folder_cmd
 from mammoth_cli.commands import job as job_cmd
 from mammoth_cli.commands import notification as notification_cmd
+from mammoth_cli.commands import parameter as parameter_cmd
 from mammoth_cli.commands import project as project_cmd
 from mammoth_cli.commands import schema as schema_cmd
+from mammoth_cli.commands import snippet as snippet_cmd
+from mammoth_cli.commands import template as template_cmd
 from mammoth_cli.commands import trash as trash_cmd
+from mammoth_cli.commands import user as user_cmd
+from mammoth_cli.commands import webhook as webhook_cmd
+from mammoth_cli.commands import workflow as workflow_cmd
 from mammoth_cli.commands import workspace as workspace_cmd
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.runtime.invocation import Invocation
@@ -196,4 +206,132 @@ HANDLERS: dict[str, Handler] = {
     "annotation.update": annotation_cmd.annotation_update,
     "annotation.delete": annotation_cmd.annotation_delete,
     "annotation.comment.add": annotation_cmd.annotation_comment_add,
+    # connector family
+    "connector.active": connector_cmd.connector_active,
+    "connector.ai.chat": connector_cmd.connector_ai_chat,
+    "connector.ai.history": connector_cmd.connector_ai_history,
+    "connector.ai.session.list": connector_cmd.connector_ai_session_list,
+    "connector.ai.session.messages": connector_cmd.connector_ai_session_messages,
+    "connector.ai.submit-column-selection": connector_cmd.connector_ai_submit_column_selection,
+    "connector.ai.submit-credentials": connector_cmd.connector_ai_submit_credentials,
+    "connector.connection.create": connector_cmd.connector_connection_create,
+    "connector.connection.delete": connector_cmd.connector_connection_delete,
+    "connector.connection.get": connector_cmd.connector_connection_get,
+    "connector.connection.list": connector_cmd.connector_connection_list,
+    "connector.connection.update": connector_cmd.connector_connection_update,
+    "connector.ds-config.create": connector_cmd.connector_ds_config_create,
+    "connector.ds-config.delete": connector_cmd.connector_ds_config_delete,
+    "connector.ds-config.delete-all": connector_cmd.connector_ds_config_delete_all,
+    "connector.ds-config.get": connector_cmd.connector_ds_config_get,
+    "connector.ds-config.list": connector_cmd.connector_ds_config_list,
+    "connector.ds-config.update": connector_cmd.connector_ds_config_update,
+    "connector.get": connector_cmd.connector_get,
+    "connector.list": connector_cmd.connector_list,
+    "connector.query.generate": connector_cmd.connector_query_generate,
+    "connector.query.status": connector_cmd.connector_query_status,
+    # dashboard family
+    "dashboard.action": dashboard_cmd.dashboard_action,
+    "dashboard.analytics": dashboard_cmd.dashboard_analytics,
+    "dashboard.cancel-generation": dashboard_cmd.dashboard_cancel_generation,
+    "dashboard.create": dashboard_cmd.dashboard_create,
+    "dashboard.data.draft": dashboard_cmd.dashboard_data_draft,
+    "dashboard.data.published": dashboard_cmd.dashboard_data_published,
+    "dashboard.delete": dashboard_cmd.dashboard_delete,
+    "dashboard.get": dashboard_cmd.dashboard_get,
+    "dashboard.get-by-url": dashboard_cmd.dashboard_get_by_url,
+    "dashboard.job-by-url": dashboard_cmd.dashboard_job_by_url,
+    "dashboard.list": dashboard_cmd.dashboard_list,
+    "dashboard.published-data-by-url": dashboard_cmd.dashboard_published_data_by_url,
+    "dashboard.restore": dashboard_cmd.dashboard_restore,
+    "dashboard.share": dashboard_cmd.dashboard_share,
+    "dashboard.source.list": dashboard_cmd.dashboard_source_list,
+    "dashboard.trash": dashboard_cmd.dashboard_trash,
+    "dashboard.update": dashboard_cmd.dashboard_update,
+    "dashboard.widget-data": dashboard_cmd.dashboard_widget_data,
+    "dashboard.widget-data-by-url": dashboard_cmd.dashboard_widget_data_by_url,
+    # workflow family
+    "workflow.block.add": workflow_cmd.workflow_block_add,
+    "workflow.block.auth": workflow_cmd.workflow_block_auth,
+    "workflow.block.config": workflow_cmd.workflow_block_config,
+    "workflow.block.type": workflow_cmd.workflow_block_type,
+    "workflow.canvas": workflow_cmd.workflow_canvas,
+    "workflow.cleanup": workflow_cmd.workflow_cleanup,
+    "workflow.create": workflow_cmd.workflow_create,
+    "workflow.delete": workflow_cmd.workflow_delete,
+    "workflow.from-template": workflow_cmd.workflow_from_template,
+    "workflow.get": workflow_cmd.workflow_get,
+    "workflow.graph": workflow_cmd.workflow_graph,
+    "workflow.list": workflow_cmd.workflow_list,
+    "workflow.update": workflow_cmd.workflow_update,
+    "workflow.workspace-datasets": workflow_cmd.workflow_workspace_datasets,
+    "workflow.workspace-exports": workflow_cmd.workflow_workspace_exports,
+    "workflow.workspace-sources": workflow_cmd.workflow_workspace_sources,
+    # parameter family
+    "parameter.create": parameter_cmd.parameter_create,
+    "parameter.delete": parameter_cmd.parameter_delete,
+    "parameter.dependencies": parameter_cmd.parameter_dependencies,
+    "parameter.duplicate": parameter_cmd.parameter_duplicate,
+    "parameter.get": parameter_cmd.parameter_get,
+    "parameter.group.create": parameter_cmd.parameter_group_create,
+    "parameter.group.delete": parameter_cmd.parameter_group_delete,
+    "parameter.group.list": parameter_cmd.parameter_group_list,
+    "parameter.group.reorder": parameter_cmd.parameter_group_reorder,
+    "parameter.group.update": parameter_cmd.parameter_group_update,
+    "parameter.list": parameter_cmd.parameter_list,
+    "parameter.rerun": parameter_cmd.parameter_rerun,
+    "parameter.rerun-all-stale": parameter_cmd.parameter_rerun_all_stale,
+    "parameter.update": parameter_cmd.parameter_update,
+    # data-app family
+    "data-app.active-job": data_app_cmd.data_app_active_job,
+    "data-app.create": data_app_cmd.data_app_create,
+    "data-app.delete": data_app_cmd.data_app_delete,
+    "data-app.get": data_app_cmd.data_app_get,
+    "data-app.job": data_app_cmd.data_app_job,
+    "data-app.list": data_app_cmd.data_app_list,
+    "data-app.pipeline-changes": data_app_cmd.data_app_pipeline_changes,
+    "data-app.share": data_app_cmd.data_app_share,
+    "data-app.update": data_app_cmd.data_app_update,
+    "data-app.upload": data_app_cmd.data_app_upload,
+    "data-app.user.list": data_app_cmd.data_app_user_list,
+    "data-app.user.remove": data_app_cmd.data_app_user_remove,
+    # snippet family
+    "snippet.create": snippet_cmd.snippet_create,
+    "snippet.delete": snippet_cmd.snippet_delete,
+    "snippet.dependencies": snippet_cmd.snippet_dependencies,
+    "snippet.duplicate": snippet_cmd.snippet_duplicate,
+    "snippet.get": snippet_cmd.snippet_get,
+    "snippet.list": snippet_cmd.snippet_list,
+    "snippet.rerun": snippet_cmd.snippet_rerun,
+    "snippet.update": snippet_cmd.snippet_update,
+    # user family
+    "user.avatar.delete": user_cmd.user_avatar_delete,
+    "user.avatar.upload": user_cmd.user_avatar_upload,
+    "user.change-password": user_cmd.user_change_password,
+    "user.delete-account": user_cmd.user_delete_account,
+    "user.get": user_cmd.user_get,
+    "user.preference.get": user_cmd.user_preference_get,
+    "user.preference.update": user_cmd.user_preference_update,
+    "user.update": user_cmd.user_update,
+    # automation family
+    "automation.list": automation_cmd.automation_list,
+    "automation.get": automation_cmd.automation_get,
+    "automation.trash": automation_cmd.automation_trash,
+    "automation.restore": automation_cmd.automation_restore,
+    "automation.delete": automation_cmd.automation_delete,
+    "automation.create": automation_cmd.automation_create,
+    "automation.update": automation_cmd.automation_update,
+    # webhook family
+    "webhook.create": webhook_cmd.webhook_create,
+    "webhook.delete": webhook_cmd.webhook_delete,
+    "webhook.get": webhook_cmd.webhook_get,
+    "webhook.list": webhook_cmd.webhook_list,
+    "webhook.send": webhook_cmd.webhook_send,
+    "webhook.send-get": webhook_cmd.webhook_send_get,
+    "webhook.update": webhook_cmd.webhook_update,
+    # template family
+    "template.create": template_cmd.template_create,
+    "template.delete": template_cmd.template_delete,
+    "template.get": template_cmd.template_get,
+    "template.list": template_cmd.template_list,
+    "template.update": template_cmd.template_update,
 }

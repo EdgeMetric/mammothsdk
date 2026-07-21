@@ -15,7 +15,9 @@ def fake_service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
     """Patch the single service-construction seam with a network-free fake."""
     service = FakeMammothService()
 
-    def _build(auth: Any, *, timeout: float | None = None) -> FakeMammothService:
+    def _build(
+        auth: Any, *, timeout: float | None = None, project_id: int | None = None
+    ) -> FakeMammothService:
         return service
 
     monkeypatch.setattr(service_factory, "build_service", _build)
