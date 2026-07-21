@@ -15,6 +15,7 @@ from mammoth.client import MammothClient
 
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.services.conditions import compile_condition
 from mammoth_cli.services.dispatch import resolve_sdk_method
 from mammoth_cli.services.mapping import map_sdk_exception
 
@@ -79,6 +80,59 @@ class SdkMammothService:
             ) from exc
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
+
+    def call_view(self, view_id: int, method: str, /, **kwargs: Any) -> Any:
+        """Resolve a View and invoke one of its public methods (or a property).
+
+        Args:
+            view_id: The dataview id to resolve into a View.
+            method: The public View method or property name.
+            **kwargs: Keyword arguments forwarded to the method; a ``condition``
+                spec is compiled to an SDK condition object first.
+
+        Returns:
+            The raw return value, or the property value for a non-callable
+            attribute such as ``is_draft_mode``.
+
+        Raises:
+            CliError: ``sdk_symbol_unresolved`` when the View has no such public
+                member; ``invalid_arguments`` when the fields do not fit the
+                method; ``invalid_condition`` for a bad condition spec;
+                otherwise the mapped SDK exception.
+        """
+        try:
+            view = self._client.get_view(view_id)
+        except Exception as exc:
+            raise map_sdk_exception(exc) from exc
+        if method.startswith("_"):
+            raise self._view_member_error(view_id, method)
+        attribute = getattr(view, method, None)
+        if attribute is None:
+            raise self._view_member_error(view_id, method)
+        if not callable(attribute):
+            return attribute
+        if "condition" in kwargs and kwargs["condition"] is not None:
+            kwargs["condition"] = compile_condition(kwargs["condition"])
+        try:
+            return attribute(**kwargs)
+        except TypeError as exc:
+            raise CliError(
+                code="invalid_arguments",
+                message=f"The supplied fields do not fit View.{method}.",
+                exit_status=EXIT_USAGE,
+                hint="Check the command schema with 'mammoth schema get'.",
+                details={"reason": str(exc)},
+            ) from exc
+        except Exception as exc:
+            raise map_sdk_exception(exc) from exc
+
+    @staticmethod
+    def _view_member_error(view_id: int, method: str) -> CliError:
+        return CliError(
+            code="sdk_symbol_unresolved",
+            message=f"View {view_id} has no public method '{method}'.",
+            exit_status=EXIT_USAGE,
+        )
 
     def check_connection(self) -> dict[str, Any]:
         """Perform a lightweight authenticated call to verify credentials.

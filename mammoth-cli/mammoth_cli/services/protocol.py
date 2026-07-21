@@ -32,6 +32,26 @@ class MammothService(Protocol):
         """
         ...
 
+    def call_view(self, view_id: int, method: str, /, **kwargs: Any) -> Any:
+        """Invoke a public method on a rich View object.
+
+        Resolves the dataview into a ``View`` (via the public client) and calls
+        the named public transformation/draft method. A ``condition`` keyword
+        holding a condition spec (mapping or list) is compiled to the SDK's
+        condition object inside the service, so command modules never import
+        the SDK's condition builder. A non-callable attribute (for example the
+        ``is_draft_mode`` property) is returned as-is.
+
+        Args:
+            view_id: The dataview id to resolve into a View.
+            method: The public View method (or property) name to invoke.
+            **kwargs: Keyword arguments forwarded to the method.
+
+        Returns:
+            The raw method return value (typically a job/result mapping).
+        """
+        ...
+
     def check_connection(self) -> dict[str, Any]:
         """Perform a lightweight authenticated call and return its raw result.
 

@@ -29,6 +29,30 @@ class FakeMammothService:
     calls: list[str] = field(default_factory=list)
     responses: dict[str, Any] = field(default_factory=dict)
     call_log: list[tuple[str, dict[str, Any]]] = field(default_factory=list)
+    view_responses: dict[tuple[int, str], Any] = field(default_factory=dict)
+    view_call_log: list[tuple[int, str, dict[str, Any]]] = field(default_factory=list)
+
+    def call_view(self, view_id: int, method: str, /, **kwargs: Any) -> Any:
+        """Record a View-method call and return a programmed response.
+
+        Args:
+            view_id: The dataview id the handler resolved.
+            method: The View method or property name the handler dispatched to.
+            **kwargs: The keyword arguments the handler passed; recorded in
+                :attr:`view_call_log`.
+
+        Returns:
+            ``view_responses[(view_id, method)]`` if programmed (raised when it
+            is an exception), else an empty mapping.
+        """
+        self.view_call_log.append((view_id, method, dict(kwargs)))
+        key = (view_id, method)
+        if key in self.view_responses:
+            programmed = self.view_responses[key]
+            if isinstance(programmed, Exception):
+                raise programmed
+            return programmed
+        return {}
 
     def call(self, sdk_symbol: str, /, **kwargs: Any) -> Any:
         """Record the generic call and return a programmed response.

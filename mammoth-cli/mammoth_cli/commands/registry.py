@@ -28,10 +28,12 @@ from mammoth_cli.commands import billing as billing_cmd
 from mammoth_cli.commands import browse as browse_cmd
 from mammoth_cli.commands import capability as capability_cmd
 from mammoth_cli.commands import client_app as client_app_cmd
+from mammoth_cli.commands import completion as completion_cmd
 from mammoth_cli.commands import connector as connector_cmd
 from mammoth_cli.commands import dashboard as dashboard_cmd
 from mammoth_cli.commands import data_app as data_app_cmd
 from mammoth_cli.commands import dataset as dataset_cmd
+from mammoth_cli.commands import doctor as doctor_cmd
 from mammoth_cli.commands import external_key as external_key_cmd
 from mammoth_cli.commands import file as file_cmd
 from mammoth_cli.commands import folder as folder_cmd
@@ -47,6 +49,8 @@ from mammoth_cli.commands import support as support_cmd
 from mammoth_cli.commands import template as template_cmd
 from mammoth_cli.commands import trash as trash_cmd
 from mammoth_cli.commands import user as user_cmd
+from mammoth_cli.commands import view as view_cmd
+from mammoth_cli.commands import view_ops as view_ops_cmd
 from mammoth_cli.commands import webhook as webhook_cmd
 from mammoth_cli.commands import workflow as workflow_cmd
 from mammoth_cli.commands import workspace as workspace_cmd
@@ -108,6 +112,9 @@ def _schema_get(invocation: Invocation) -> HandlerResult:
 
 HANDLERS: dict[str, Handler] = {
     "version": _version,
+    "doctor": doctor_cmd.doctor,
+    "completion.show": completion_cmd.completion_show,
+    "completion.install": completion_cmd.completion_install,
     "capability.list": _capability_list,
     "capability.get": _capability_get,
     "schema.list": _schema_list,
@@ -461,4 +468,102 @@ HANDLERS: dict[str, Handler] = {
     "support.workspace.user.list": support_cmd.support_workspace_user_list,
     "support.workspace.user.remove": support_cmd.support_workspace_user_remove,
     "support.workspace.user.transfer": support_cmd.support_workspace_user_transfer,
+    # view family (sub-client backed)
+    "view.list": view_cmd.view_list,
+    "view.bulk-delete": view_cmd.view_bulk_delete,
+    "view.active-user.list": view_cmd.view_active_user_list,
+    "view.active-user.mark": view_cmd.view_active_user_mark,
+    "view.parameter-context": view_cmd.view_parameter_context,
+    "view.preview": view_cmd.view_preview,
+    "view.restore": view_cmd.view_restore,
+    "view.trash": view_cmd.view_trash,
+    "view.update": view_cmd.view_update,
+    "view.data.get": view_cmd.view_data_get,
+    "view.data.query": view_cmd.view_data_query,
+    "view.conditional-format.create": view_cmd.view_conditional_format_create,
+    "view.conditional-format.delete-all": view_cmd.view_conditional_format_delete_all,
+    "view.conditional-format.list": view_cmd.view_conditional_format_list,
+    "view.conditional-format.update": view_cmd.view_conditional_format_update,
+    "view.checkpoint.create": view_cmd.view_checkpoint_create,
+    "view.checkpoint.delete": view_cmd.view_checkpoint_delete,
+    "view.checkpoint.get": view_cmd.view_checkpoint_get,
+    "view.checkpoint.list": view_cmd.view_checkpoint_list,
+    "view.checkpoint.update": view_cmd.view_checkpoint_update,
+    "view.data-check.create": view_cmd.view_data_check_create,
+    "view.data-check.delete": view_cmd.view_data_check_delete,
+    "view.data-check.get": view_cmd.view_data_check_get,
+    "view.data-check.list": view_cmd.view_data_check_list,
+    "view.data-check.update": view_cmd.view_data_check_update,
+    "view.derivative.create": view_cmd.view_derivative_create,
+    "view.derivative.data": view_cmd.view_derivative_data,
+    "view.derivative.delete": view_cmd.view_derivative_delete,
+    "view.derivative.list": view_cmd.view_derivative_list,
+    "view.derivative.update": view_cmd.view_derivative_update,
+    "view.version.apply": view_cmd.view_version_apply,
+    "view.version.delete": view_cmd.view_version_delete,
+    "view.version.get": view_cmd.view_version_get,
+    "view.version.list": view_cmd.view_version_list,
+    "view.version.update": view_cmd.view_version_update,
+    "view.ai.generate-data": view_cmd.view_ai_generate_data,
+    "view.ai.generation-info": view_cmd.view_ai_generation_info,
+    "view.ai.profile": view_cmd.view_ai_profile,
+    "view.draft.command": view_cmd.view_draft_command,
+    "view.pipeline.edit": view_cmd.view_pipeline_edit,
+    "view.pipeline.get": view_cmd.view_pipeline_get,
+    "view.pipeline.items": view_cmd.view_pipeline_items,
+    "view.pipeline.rerun": view_cmd.view_pipeline_rerun,
+    "view.pipeline.wait": view_cmd.view_pipeline_wait,
+    "view.task.add": view_cmd.view_task_add,
+    "view.task.delete": view_cmd.view_task_delete,
+    "view.task.get": view_cmd.view_task_get,
+    "view.task.list": view_cmd.view_task_list,
+    "view.task.preview": view_cmd.view_task_preview,
+    "view.task.update": view_cmd.view_task_update,
+    "view.export.create": view_cmd.view_export_create,
+    "view.export.csv": view_cmd.view_export_csv,
+    "view.export.delete": view_cmd.view_export_delete,
+    "view.export.get": view_cmd.view_export_get,
+    "view.export.list": view_cmd.view_export_list,
+    "view.export.publish-db": view_cmd.view_export_publish_db,
+    "view.export.publish-db-update": view_cmd.view_export_publish_db_update,
+    "view.export.update": view_cmd.view_export_update,
+    # view family (View-object: create/get/delete, draft, transforms)
+    "view.create": view_ops_cmd.view_create,
+    "view.get": view_ops_cmd.view_get,
+    "view.delete": view_ops_cmd.view_delete,
+    "view.draft.enter": view_ops_cmd.view_draft_enter,
+    "view.draft.status": view_ops_cmd.view_draft_status,
+    "view.draft.submit": view_ops_cmd.view_draft_submit,
+    "view.draft.discard": view_ops_cmd.view_draft_discard,
+    "view.draft.auto-run": view_ops_cmd.view_draft_auto_run,
+    "view.transform.add-column": view_ops_cmd.view_transform_add_column,
+    "view.transform.add-sql": view_ops_cmd.view_transform_add_sql,
+    "view.transform.ai": view_ops_cmd.view_transform_ai,
+    "view.transform.bulk-replace": view_ops_cmd.view_transform_bulk_replace,
+    "view.transform.combine-columns": view_ops_cmd.view_transform_combine_columns,
+    "view.transform.convert-type": view_ops_cmd.view_transform_convert_type,
+    "view.transform.copy-columns": view_ops_cmd.view_transform_copy_columns,
+    "view.transform.crosstab": view_ops_cmd.view_transform_crosstab,
+    "view.transform.date-diff": view_ops_cmd.view_transform_date_diff,
+    "view.transform.delete-columns": view_ops_cmd.view_transform_delete_columns,
+    "view.transform.discard-duplicates": view_ops_cmd.view_transform_discard_duplicates,
+    "view.transform.extract-date": view_ops_cmd.view_transform_extract_date,
+    "view.transform.fill-missing": view_ops_cmd.view_transform_fill_missing,
+    "view.transform.filter": view_ops_cmd.view_transform_filter,
+    "view.transform.generate-sql": view_ops_cmd.view_transform_generate_sql,
+    "view.transform.increment-date": view_ops_cmd.view_transform_increment_date,
+    "view.transform.join": view_ops_cmd.view_transform_join,
+    "view.transform.json-extract": view_ops_cmd.view_transform_json_extract,
+    "view.transform.limit-rows": view_ops_cmd.view_transform_limit_rows,
+    "view.transform.lookup": view_ops_cmd.view_transform_lookup,
+    "view.transform.math": view_ops_cmd.view_transform_math,
+    "view.transform.pivot": view_ops_cmd.view_transform_pivot,
+    "view.transform.replace": view_ops_cmd.view_transform_replace,
+    "view.transform.set-values": view_ops_cmd.view_transform_set_values,
+    "view.transform.small-large": view_ops_cmd.view_transform_small_large,
+    "view.transform.split": view_ops_cmd.view_transform_split,
+    "view.transform.substring": view_ops_cmd.view_transform_substring,
+    "view.transform.text": view_ops_cmd.view_transform_text,
+    "view.transform.unnest": view_ops_cmd.view_transform_unnest,
+    "view.transform.window": view_ops_cmd.view_transform_window,
 }
