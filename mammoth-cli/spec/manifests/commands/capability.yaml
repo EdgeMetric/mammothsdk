@@ -1,0 +1,68 @@
+manifest_schema_version: 1
+commands:
+- command_id: capability.get
+  command_path: capability get
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.commands.capability.get
+  sdk_conversion: Call mammoth_cli.commands.capability.get with validated request fields.
+  request_model: CapabilityGetRequest
+  result_model: CapabilityGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local manifest read.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth capability get --help
+  agent_example: mammoth capability get --output json --no-input
+  unit_tests:
+  - UT-CAPABILITY-GET
+  contract_tests:
+  - CT-CAPABILITY-GET-HUMAN
+  - CT-CAPABILITY-GET-JSON
+  - CT-CAPABILITY-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: capability.list
+  command_path: capability list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.commands.capability.list_
+  sdk_conversion: Call mammoth_cli.commands.capability.list_ with validated request fields.
+  request_model: CapabilityListRequest
+  result_model: CapabilityListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local manifest read.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth capability list --help
+  agent_example: mammoth capability list --output json --no-input
+  unit_tests:
+  - UT-CAPABILITY-LIST
+  contract_tests:
+  - CT-CAPABILITY-LIST-HUMAN
+  - CT-CAPABILITY-LIST-JSON
+  - CT-CAPABILITY-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

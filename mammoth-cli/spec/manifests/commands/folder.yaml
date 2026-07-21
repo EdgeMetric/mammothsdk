@@ -1,0 +1,310 @@
+manifest_schema_version: 1
+commands:
+- command_id: folder.bulk-delete
+  command_path: folder bulk-delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteFolders
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.folders.FoldersAPI.bulk_delete
+  sdk_conversion: Call mammoth.api.folders.FoldersAPI.bulk_delete with validated request fields.
+  request_model: FolderBulkDeleteRequest
+  result_model: FolderBulkDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-FOLDER-BULK-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth folder bulk-delete --help
+  agent_example: mammoth folder bulk-delete --output json --no-input
+  unit_tests:
+  - UT-FOLDER-BULK-DELETE
+  contract_tests:
+  - CT-FOLDER-BULK-DELETE-HUMAN
+  - CT-FOLDER-BULK-DELETE-JSON
+  - CT-FOLDER-BULK-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: folder.create
+  command_path: folder create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateFolder
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.folders.FoldersAPI.create
+  sdk_conversion: Call mammoth.api.folders.FoldersAPI.create with validated request fields.
+  request_model: FolderCreateRequest
+  result_model: FolderCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-FOLDER-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth folder create --help
+  agent_example: mammoth folder create --output json --no-input
+  unit_tests:
+  - UT-FOLDER-CREATE
+  contract_tests:
+  - CT-FOLDER-CREATE-HUMAN
+  - CT-FOLDER-CREATE-JSON
+  - CT-FOLDER-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: folder.delete
+  command_path: folder delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteFolder
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.folders.FoldersAPI.delete
+  sdk_conversion: Call mammoth.api.folders.FoldersAPI.delete with validated request fields.
+  request_model: FolderDeleteRequest
+  result_model: FolderDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-FOLDER-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth folder delete --help
+  agent_example: mammoth folder delete --output json --no-input
+  unit_tests:
+  - UT-FOLDER-DELETE
+  contract_tests:
+  - CT-FOLDER-DELETE-HUMAN
+  - CT-FOLDER-DELETE-JSON
+  - CT-FOLDER-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Sorted ID-set confirmation, plus exact project ID and phrase DELETE FOLDER CONTENTS
+    when removing contents.
+  reviewed_by: primary
+- command_id: folder.get
+  command_path: folder get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetFolder
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.folders.FoldersAPI.get
+  sdk_conversion: Call mammoth.api.folders.FoldersAPI.get with validated request fields.
+  request_model: FolderGetRequest
+  result_model: FolderGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-FOLDER-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth folder get --help
+  agent_example: mammoth folder get --output json --no-input
+  unit_tests:
+  - UT-FOLDER-GET
+  contract_tests:
+  - CT-FOLDER-GET-HUMAN
+  - CT-FOLDER-GET-JSON
+  - CT-FOLDER-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: folder.list
+  command_path: folder list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListFolders
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.folders.FoldersAPI.list
+  sdk_conversion: Call mammoth.api.folders.FoldersAPI.list with validated request fields.
+  request_model: FolderListRequest
+  result_model: FolderListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: offset
+  acceptance_evidence: live_read_only
+  live_test: LT-FOLDER-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth folder list --help
+  agent_example: mammoth folder list --output json --no-input
+  unit_tests:
+  - UT-FOLDER-LIST
+  contract_tests:
+  - CT-FOLDER-LIST-HUMAN
+  - CT-FOLDER-LIST-JSON
+  - CT-FOLDER-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: folder.move
+  command_path: folder move
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateFolderResources
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.folders.FoldersAPI.move
+  sdk_conversion: Call mammoth.api.folders.FoldersAPI.move with validated request fields.
+  request_model: FolderMoveRequest
+  result_model: FolderMoveResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-FOLDER-MOVE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth folder move --help
+  agent_example: mammoth folder move --output json --no-input
+  unit_tests:
+  - UT-FOLDER-MOVE
+  contract_tests:
+  - CT-FOLDER-MOVE-HUMAN
+  - CT-FOLDER-MOVE-JSON
+  - CT-FOLDER-MOVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'B05 FOLDER_MOVE_NO_WAIT: SDK returns ObjectJobSchema but exposes no public wait
+    method; do not advertise --wait/--no-wait.'
+  reviewed_by: primary
+- command_id: folder.root
+  command_path: folder root
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListFolders
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.folders.FoldersAPI.get_project_root
+  sdk_conversion: Call mammoth.api.folders.FoldersAPI.get_project_root with validated request fields.
+  request_model: FolderRootRequest
+  result_model: FolderRootResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-FOLDER-ROOT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth folder root --help
+  agent_example: mammoth folder root --output json --no-input
+  unit_tests:
+  - UT-FOLDER-ROOT
+  contract_tests:
+  - CT-FOLDER-ROOT-HUMAN
+  - CT-FOLDER-ROOT-JSON
+  - CT-FOLDER-ROOT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: folder.trash
+  command_path: folder trash
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - TrashFolder
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.folders.FoldersAPI.trash
+  sdk_conversion: Call mammoth.api.folders.FoldersAPI.trash with validated request fields.
+  request_model: FolderTrashRequest
+  result_model: FolderTrashResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-FOLDER-TRASH
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth folder trash --help
+  agent_example: mammoth folder trash --output json --no-input
+  unit_tests:
+  - UT-FOLDER-TRASH
+  contract_tests:
+  - CT-FOLDER-TRASH-HUMAN
+  - CT-FOLDER-TRASH-JSON
+  - CT-FOLDER-TRASH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: folder.update
+  command_path: folder update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateFolderDetails
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.folders.FoldersAPI.update
+  sdk_conversion: Call mammoth.api.folders.FoldersAPI.update with validated request fields.
+  request_model: FolderUpdateRequest
+  result_model: FolderUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-FOLDER-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth folder update --help
+  agent_example: mammoth folder update --output json --no-input
+  unit_tests:
+  - UT-FOLDER-UPDATE
+  contract_tests:
+  - CT-FOLDER-UPDATE-HUMAN
+  - CT-FOLDER-UPDATE-JSON
+  - CT-FOLDER-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

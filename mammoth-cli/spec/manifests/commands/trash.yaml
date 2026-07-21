@@ -1,0 +1,104 @@
+manifest_schema_version: 1
+commands:
+- command_id: trash.add
+  command_path: trash add
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - BulkTrash
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.trash.TrashAPI.add
+  sdk_conversion: Call mammoth.api.trash.TrashAPI.add with validated request fields.
+  request_model: TrashAddRequest
+  result_model: TrashAddResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-TRASH-ADD
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth trash add --help
+  agent_example: mammoth trash add --output json --no-input
+  unit_tests:
+  - UT-TRASH-ADD
+  contract_tests:
+  - CT-TRASH-ADD-HUMAN
+  - CT-TRASH-ADD-JSON
+  - CT-TRASH-ADD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: trash.list
+  command_path: trash list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListTrash
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.trash.TrashAPI.list
+  sdk_conversion: Call mammoth.api.trash.TrashAPI.list with validated request fields.
+  request_model: TrashListRequest
+  result_model: TrashListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-TRASH-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth trash list --help
+  agent_example: mammoth trash list --output json --no-input
+  unit_tests:
+  - UT-TRASH-LIST
+  contract_tests:
+  - CT-TRASH-LIST-HUMAN
+  - CT-TRASH-LIST-JSON
+  - CT-TRASH-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: trash.restore
+  command_path: trash restore
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - BulkRestore
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.trash.TrashAPI.restore
+  sdk_conversion: Call mammoth.api.trash.TrashAPI.restore with validated request fields.
+  request_model: TrashRestoreRequest
+  result_model: TrashRestoreResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-TRASH-RESTORE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth trash restore --help
+  agent_example: mammoth trash restore --output json --no-input
+  unit_tests:
+  - UT-TRASH-RESTORE
+  contract_tests:
+  - CT-TRASH-RESTORE-HUMAN
+  - CT-TRASH-RESTORE-JSON
+  - CT-TRASH-RESTORE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

@@ -1,0 +1,68 @@
+manifest_schema_version: 1
+commands:
+- command_id: schema.get
+  command_path: schema get
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.commands.schema.get
+  sdk_conversion: Call mammoth_cli.commands.schema.get with validated request fields.
+  request_model: SchemaGetRequest
+  result_model: SchemaGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local manifest read.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth schema get --help
+  agent_example: mammoth schema get --output json --no-input
+  unit_tests:
+  - UT-SCHEMA-GET
+  contract_tests:
+  - CT-SCHEMA-GET-HUMAN
+  - CT-SCHEMA-GET-JSON
+  - CT-SCHEMA-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: schema.list
+  command_path: schema list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.commands.schema.list_
+  sdk_conversion: Call mammoth_cli.commands.schema.list_ with validated request fields.
+  request_model: SchemaListRequest
+  result_model: SchemaListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local manifest read.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth schema list --help
+  agent_example: mammoth schema list --output json --no-input
+  unit_tests:
+  - UT-SCHEMA-LIST
+  contract_tests:
+  - CT-SCHEMA-LIST-HUMAN
+  - CT-SCHEMA-LIST-JSON
+  - CT-SCHEMA-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

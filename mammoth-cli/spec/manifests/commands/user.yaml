@@ -1,0 +1,279 @@
+manifest_schema_version: 1
+commands:
+- command_id: user.avatar.delete
+  command_path: user avatar delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteAvatar
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.users.UsersAPI.avatar_delete
+  sdk_conversion: Call mammoth.api.users.UsersAPI.avatar_delete with validated request fields.
+  request_model: UserAvatarDeleteRequest
+  result_model: UserAvatarDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth user avatar delete --help
+  agent_example: mammoth user avatar delete --output json --no-input
+  unit_tests:
+  - UT-USER-AVATAR-DELETE
+  contract_tests:
+  - CT-USER-AVATAR-DELETE-HUMAN
+  - CT-USER-AVATAR-DELETE-JSON
+  - CT-USER-AVATAR-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: user.avatar.upload
+  command_path: user avatar upload
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UploadProfilePic
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.users.UsersAPI.avatar_upload
+  sdk_conversion: Call mammoth.api.users.UsersAPI.avatar_upload with validated request fields.
+  request_model: UserAvatarUploadRequest
+  result_model: UserAvatarUploadResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth user avatar upload --help
+  agent_example: mammoth user avatar upload --output json --no-input
+  unit_tests:
+  - UT-USER-AVATAR-UPLOAD
+  contract_tests:
+  - CT-USER-AVATAR-UPLOAD-HUMAN
+  - CT-USER-AVATAR-UPLOAD-JSON
+  - CT-USER-AVATAR-UPLOAD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: user.change-password
+  command_path: user change-password
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateUser
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.change_password
+  sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.change_password with validated request
+    fields.
+  request_model: UserChangePasswordRequest
+  result_model: UserChangePasswordResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth user change-password --help
+  agent_example: mammoth user change-password --output json --no-input
+  unit_tests:
+  - UT-USER-CHANGE-PASSWORD
+  contract_tests:
+  - CT-USER-CHANGE-PASSWORD-HUMAN
+  - CT-USER-CHANGE-PASSWORD-JSON
+  - CT-USER-CHANGE-PASSWORD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'BLOCKED[B18 PASSWORD_ENDPOINT_UNSPECIFIED]: absent from public OpenAPI; remains
+    reserved and contract-only. Secrets use hidden prompt/permission-checked input/stdin, never normal
+    flags.'
+  reviewed_by: primary
+- command_id: user.delete-account
+  command_path: user delete-account
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteSelf
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.users.UsersAPI.delete_account
+  sdk_conversion: Call mammoth.api.users.UsersAPI.delete_account with validated request fields.
+  request_model: UserDeleteAccountRequest
+  result_model: UserDeleteAccountResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth user delete-account --help
+  agent_example: mammoth user delete-account --output json --no-input
+  unit_tests:
+  - UT-USER-DELETE-ACCOUNT
+  contract_tests:
+  - CT-USER-DELETE-ACCOUNT-HUMAN
+  - CT-USER-DELETE-ACCOUNT-JSON
+  - CT-USER-DELETE-ACCOUNT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: user.get
+  command_path: user get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetUserDetails
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.get
+  sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.get with validated request fields.
+  request_model: UserGetRequest
+  result_model: UserGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-USER-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth user get --help
+  agent_example: mammoth user get --output json --no-input
+  unit_tests:
+  - UT-USER-GET
+  contract_tests:
+  - CT-USER-GET-HUMAN
+  - CT-USER-GET-JSON
+  - CT-USER-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: user.preference.get
+  command_path: user preference get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetUserPreferences
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.get_preferences
+  sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.get_preferences with validated request
+    fields.
+  request_model: UserPreferenceGetRequest
+  result_model: UserPreferenceGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-USER-PREFERENCE-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth user preference get --help
+  agent_example: mammoth user preference get --output json --no-input
+  unit_tests:
+  - UT-USER-PREFERENCE-GET
+  contract_tests:
+  - CT-USER-PREFERENCE-GET-HUMAN
+  - CT-USER-PREFERENCE-GET-JSON
+  - CT-USER-PREFERENCE-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: user.preference.update
+  command_path: user preference update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateUserPreferences
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.update_preferences
+  sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.update_preferences with validated request
+    fields.
+  request_model: UserPreferenceUpdateRequest
+  result_model: UserPreferenceUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth user preference update --help
+  agent_example: mammoth user preference update --output json --no-input
+  unit_tests:
+  - UT-USER-PREFERENCE-UPDATE
+  contract_tests:
+  - CT-USER-PREFERENCE-UPDATE-HUMAN
+  - CT-USER-PREFERENCE-UPDATE-JSON
+  - CT-USER-PREFERENCE-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'BLOCKED[B17 VARIADIC_INPUT_UNTYPED]: **prefs is unconstrained; reserved, not registered.'
+  reviewed_by: primary
+- command_id: user.update
+  command_path: user update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateUser
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.update
+  sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.update with validated request fields.
+  request_model: UserUpdateRequest
+  result_model: UserUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth user update --help
+  agent_example: mammoth user update --output json --no-input
+  unit_tests:
+  - UT-USER-UPDATE
+  contract_tests:
+  - CT-USER-UPDATE-HUMAN
+  - CT-USER-UPDATE-JSON
+  - CT-USER-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'BLOCKED[B17 VARIADIC_INPUT_UNTYPED]: **fields is unconstrained; reserved, not registered.'
+  reviewed_by: primary

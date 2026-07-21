@@ -1,0 +1,239 @@
+manifest_schema_version: 1
+commands:
+- command_id: addon.connector.add
+  command_path: addon connector add
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddConnectorAddon
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.addons.AddonsAPI.add_connector
+  sdk_conversion: Call mammoth.api.addons.AddonsAPI.add_connector with validated request fields.
+  request_model: AddonConnectorAddRequest
+  result_model: AddonConnectorAddResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth addon connector add --help
+  agent_example: mammoth addon connector add --output json --no-input
+  unit_tests:
+  - UT-ADDON-CONNECTOR-ADD
+  contract_tests:
+  - CT-ADDON-CONNECTOR-ADD-HUMAN
+  - CT-ADDON-CONNECTOR-ADD-JSON
+  - CT-ADDON-CONNECTOR-ADD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: addon.connector.remove
+  command_path: addon connector remove
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RemoveConnectorAddon
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.addons.AddonsAPI.remove_connector
+  sdk_conversion: Call mammoth.api.addons.AddonsAPI.remove_connector with validated request fields.
+  request_model: AddonConnectorRemoveRequest
+  result_model: AddonConnectorRemoveResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth addon connector remove --help
+  agent_example: mammoth addon connector remove --output json --no-input
+  unit_tests:
+  - UT-ADDON-CONNECTOR-REMOVE
+  contract_tests:
+  - CT-ADDON-CONNECTOR-REMOVE-HUMAN
+  - CT-ADDON-CONNECTOR-REMOVE-JSON
+  - CT-ADDON-CONNECTOR-REMOVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: addon.list
+  command_path: addon list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.addons.AddonsAPI.list
+  sdk_conversion: Call mammoth.api.addons.AddonsAPI.list with validated request fields.
+  request_model: AddonListRequest
+  result_model: AddonListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-ADDON-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth addon list --help
+  agent_example: mammoth addon list --output json --no-input
+  unit_tests:
+  - UT-ADDON-LIST
+  contract_tests:
+  - CT-ADDON-LIST-HUMAN
+  - CT-ADDON-LIST-JSON
+  - CT-ADDON-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: addon.storage.add
+  command_path: addon storage add
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddStorageAddon
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.addons.AddonsAPI.add_storage
+  sdk_conversion: Call mammoth.api.addons.AddonsAPI.add_storage with validated request fields.
+  request_model: AddonStorageAddRequest
+  result_model: AddonStorageAddResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth addon storage add --help
+  agent_example: mammoth addon storage add --output json --no-input
+  unit_tests:
+  - UT-ADDON-STORAGE-ADD
+  contract_tests:
+  - CT-ADDON-STORAGE-ADD-HUMAN
+  - CT-ADDON-STORAGE-ADD-JSON
+  - CT-ADDON-STORAGE-ADD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: addon.storage.remove
+  command_path: addon storage remove
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RemoveStorageAddon
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.addons.AddonsAPI.remove_storage
+  sdk_conversion: Call mammoth.api.addons.AddonsAPI.remove_storage with validated request fields.
+  request_model: AddonStorageRemoveRequest
+  result_model: AddonStorageRemoveResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth addon storage remove --help
+  agent_example: mammoth addon storage remove --output json --no-input
+  unit_tests:
+  - UT-ADDON-STORAGE-REMOVE
+  contract_tests:
+  - CT-ADDON-STORAGE-REMOVE-HUMAN
+  - CT-ADDON-STORAGE-REMOVE-JSON
+  - CT-ADDON-STORAGE-REMOVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: addon.user.add
+  command_path: addon user add
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddUserSeatsAddon
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.addons.AddonsAPI.add_users
+  sdk_conversion: Call mammoth.api.addons.AddonsAPI.add_users with validated request fields.
+  request_model: AddonUserAddRequest
+  result_model: AddonUserAddResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth addon user add --help
+  agent_example: mammoth addon user add --output json --no-input
+  unit_tests:
+  - UT-ADDON-USER-ADD
+  contract_tests:
+  - CT-ADDON-USER-ADD-HUMAN
+  - CT-ADDON-USER-ADD-JSON
+  - CT-ADDON-USER-ADD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: addon.user.remove
+  command_path: addon user remove
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RemoveUserSeatsAddon
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.addons.AddonsAPI.remove_users
+  sdk_conversion: Call mammoth.api.addons.AddonsAPI.remove_users with validated request fields.
+  request_model: AddonUserRemoveRequest
+  result_model: AddonUserRemoveResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth addon user remove --help
+  agent_example: mammoth addon user remove --output json --no-input
+  unit_tests:
+  - UT-ADDON-USER-REMOVE
+  contract_tests:
+  - CT-ADDON-USER-REMOVE-HUMAN
+  - CT-ADDON-USER-REMOVE-JSON
+  - CT-ADDON-USER-REMOVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

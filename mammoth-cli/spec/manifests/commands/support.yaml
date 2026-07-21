@@ -1,0 +1,1540 @@
+manifest_schema_version: 1
+commands:
+- command_id: support.connector-profile.add-connector
+  command_path: support connector-profile add-connector
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddConnectorToProfile
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.connector_profile_add_connector
+  sdk_conversion: Call mammoth.api.support.SupportAPI.connector_profile_add_connector with validated request
+    fields.
+  request_model: SupportConnectorProfileAddConnectorRequest
+  result_model: SupportConnectorProfileAddConnectorResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support connector-profile add-connector --help
+  agent_example: mammoth support connector-profile add-connector --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-CONNECTOR-PROFILE-ADD-CONNECTOR
+  contract_tests:
+  - CT-SUPPORT-CONNECTOR-PROFILE-ADD-CONNECTOR-HUMAN
+  - CT-SUPPORT-CONNECTOR-PROFILE-ADD-CONNECTOR-JSON
+  - CT-SUPPORT-CONNECTOR-PROFILE-ADD-CONNECTOR-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.connector-profile.create
+  command_path: support connector-profile create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateConnectorProfile
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.connector_profile_create
+  sdk_conversion: Call mammoth.api.support.SupportAPI.connector_profile_create with validated request
+    fields.
+  request_model: SupportConnectorProfileCreateRequest
+  result_model: SupportConnectorProfileCreateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support connector-profile create --help
+  agent_example: mammoth support connector-profile create --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-CONNECTOR-PROFILE-CREATE
+  contract_tests:
+  - CT-SUPPORT-CONNECTOR-PROFILE-CREATE-HUMAN
+  - CT-SUPPORT-CONNECTOR-PROFILE-CREATE-JSON
+  - CT-SUPPORT-CONNECTOR-PROFILE-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.connector-profile.delete
+  command_path: support connector-profile delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteConnectorProfile
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.connector_profile_delete
+  sdk_conversion: Call mammoth.api.support.SupportAPI.connector_profile_delete with validated request
+    fields.
+  request_model: SupportConnectorProfileDeleteRequest
+  result_model: SupportConnectorProfileDeleteResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support connector-profile delete --help
+  agent_example: mammoth support connector-profile delete --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-CONNECTOR-PROFILE-DELETE
+  contract_tests:
+  - CT-SUPPORT-CONNECTOR-PROFILE-DELETE-HUMAN
+  - CT-SUPPORT-CONNECTOR-PROFILE-DELETE-JSON
+  - CT-SUPPORT-CONNECTOR-PROFILE-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.connector-profile.list
+  command_path: support connector-profile list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListConnectorProfiles
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.connector_profile_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.connector_profile_list with validated request fields.
+  request_model: SupportConnectorProfileListRequest
+  result_model: SupportConnectorProfileListResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support connector-profile list --help
+  agent_example: mammoth support connector-profile list --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-CONNECTOR-PROFILE-LIST
+  contract_tests:
+  - CT-SUPPORT-CONNECTOR-PROFILE-LIST-HUMAN
+  - CT-SUPPORT-CONNECTOR-PROFILE-LIST-JSON
+  - CT-SUPPORT-CONNECTOR-PROFILE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.connector-profile.update
+  command_path: support connector-profile update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateConnectorProfile
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.connector_profile_update
+  sdk_conversion: Call mammoth.api.support.SupportAPI.connector_profile_update with validated request
+    fields.
+  request_model: SupportConnectorProfileUpdateRequest
+  result_model: SupportConnectorProfileUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support connector-profile update --help
+  agent_example: mammoth support connector-profile update --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-CONNECTOR-PROFILE-UPDATE
+  contract_tests:
+  - CT-SUPPORT-CONNECTOR-PROFILE-UPDATE-HUMAN
+  - CT-SUPPORT-CONNECTOR-PROFILE-UPDATE-JSON
+  - CT-SUPPORT-CONNECTOR-PROFILE-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.connector.create
+  command_path: support connector create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateConnector
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.connector_create
+  sdk_conversion: Call mammoth.api.support.SupportAPI.connector_create with validated request fields.
+  request_model: SupportConnectorCreateRequest
+  result_model: SupportConnectorCreateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support connector create --help
+  agent_example: mammoth support connector create --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-CONNECTOR-CREATE
+  contract_tests:
+  - CT-SUPPORT-CONNECTOR-CREATE-HUMAN
+  - CT-SUPPORT-CONNECTOR-CREATE-JSON
+  - CT-SUPPORT-CONNECTOR-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.connector.delete
+  command_path: support connector delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteConnector
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.connector_delete
+  sdk_conversion: Call mammoth.api.support.SupportAPI.connector_delete with validated request fields.
+  request_model: SupportConnectorDeleteRequest
+  result_model: SupportConnectorDeleteResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support connector delete --help
+  agent_example: mammoth support connector delete --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-CONNECTOR-DELETE
+  contract_tests:
+  - CT-SUPPORT-CONNECTOR-DELETE-HUMAN
+  - CT-SUPPORT-CONNECTOR-DELETE-JSON
+  - CT-SUPPORT-CONNECTOR-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.connector.list
+  command_path: support connector list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListSubscriptionConnectors
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.connector_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.connector_list with validated request fields.
+  request_model: SupportConnectorListRequest
+  result_model: SupportConnectorListResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support connector list --help
+  agent_example: mammoth support connector list --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-CONNECTOR-LIST
+  contract_tests:
+  - CT-SUPPORT-CONNECTOR-LIST-HUMAN
+  - CT-SUPPORT-CONNECTOR-LIST-JSON
+  - CT-SUPPORT-CONNECTOR-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.connector.update
+  command_path: support connector update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateConnector
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.connector_update
+  sdk_conversion: Call mammoth.api.support.SupportAPI.connector_update with validated request fields.
+  request_model: SupportConnectorUpdateRequest
+  result_model: SupportConnectorUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support connector update --help
+  agent_example: mammoth support connector update --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-CONNECTOR-UPDATE
+  contract_tests:
+  - CT-SUPPORT-CONNECTOR-UPDATE-HUMAN
+  - CT-SUPPORT-CONNECTOR-UPDATE-JSON
+  - CT-SUPPORT-CONNECTOR-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.feature-profile.add-feature
+  command_path: support feature-profile add-feature
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddFeatureToProfile
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.feature_profile_add_feature
+  sdk_conversion: Call mammoth.api.support.SupportAPI.feature_profile_add_feature with validated request
+    fields.
+  request_model: SupportFeatureProfileAddFeatureRequest
+  result_model: SupportFeatureProfileAddFeatureResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support feature-profile add-feature --help
+  agent_example: mammoth support feature-profile add-feature --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-FEATURE-PROFILE-ADD-FEATURE
+  contract_tests:
+  - CT-SUPPORT-FEATURE-PROFILE-ADD-FEATURE-HUMAN
+  - CT-SUPPORT-FEATURE-PROFILE-ADD-FEATURE-JSON
+  - CT-SUPPORT-FEATURE-PROFILE-ADD-FEATURE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.feature-profile.create
+  command_path: support feature-profile create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateFeatureProfile
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.feature_profile_create
+  sdk_conversion: Call mammoth.api.support.SupportAPI.feature_profile_create with validated request fields.
+  request_model: SupportFeatureProfileCreateRequest
+  result_model: SupportFeatureProfileCreateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support feature-profile create --help
+  agent_example: mammoth support feature-profile create --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-FEATURE-PROFILE-CREATE
+  contract_tests:
+  - CT-SUPPORT-FEATURE-PROFILE-CREATE-HUMAN
+  - CT-SUPPORT-FEATURE-PROFILE-CREATE-JSON
+  - CT-SUPPORT-FEATURE-PROFILE-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.feature-profile.delete
+  command_path: support feature-profile delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteFeatureProfile
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.feature_profile_delete
+  sdk_conversion: Call mammoth.api.support.SupportAPI.feature_profile_delete with validated request fields.
+  request_model: SupportFeatureProfileDeleteRequest
+  result_model: SupportFeatureProfileDeleteResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support feature-profile delete --help
+  agent_example: mammoth support feature-profile delete --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-FEATURE-PROFILE-DELETE
+  contract_tests:
+  - CT-SUPPORT-FEATURE-PROFILE-DELETE-HUMAN
+  - CT-SUPPORT-FEATURE-PROFILE-DELETE-JSON
+  - CT-SUPPORT-FEATURE-PROFILE-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.feature-profile.list
+  command_path: support feature-profile list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListFeatureProfiles
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.feature_profile_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.feature_profile_list with validated request fields.
+  request_model: SupportFeatureProfileListRequest
+  result_model: SupportFeatureProfileListResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support feature-profile list --help
+  agent_example: mammoth support feature-profile list --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-FEATURE-PROFILE-LIST
+  contract_tests:
+  - CT-SUPPORT-FEATURE-PROFILE-LIST-HUMAN
+  - CT-SUPPORT-FEATURE-PROFILE-LIST-JSON
+  - CT-SUPPORT-FEATURE-PROFILE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.feature-profile.update
+  command_path: support feature-profile update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateFeatureProfile
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.feature_profile_update
+  sdk_conversion: Call mammoth.api.support.SupportAPI.feature_profile_update with validated request fields.
+  request_model: SupportFeatureProfileUpdateRequest
+  result_model: SupportFeatureProfileUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support feature-profile update --help
+  agent_example: mammoth support feature-profile update --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-FEATURE-PROFILE-UPDATE
+  contract_tests:
+  - CT-SUPPORT-FEATURE-PROFILE-UPDATE-HUMAN
+  - CT-SUPPORT-FEATURE-PROFILE-UPDATE-JSON
+  - CT-SUPPORT-FEATURE-PROFILE-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.feature.create
+  command_path: support feature create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateFeature
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.feature_create
+  sdk_conversion: Call mammoth.api.support.SupportAPI.feature_create with validated request fields.
+  request_model: SupportFeatureCreateRequest
+  result_model: SupportFeatureCreateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support feature create --help
+  agent_example: mammoth support feature create --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-FEATURE-CREATE
+  contract_tests:
+  - CT-SUPPORT-FEATURE-CREATE-HUMAN
+  - CT-SUPPORT-FEATURE-CREATE-JSON
+  - CT-SUPPORT-FEATURE-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.feature.delete
+  command_path: support feature delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteFeature
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.feature_delete
+  sdk_conversion: Call mammoth.api.support.SupportAPI.feature_delete with validated request fields.
+  request_model: SupportFeatureDeleteRequest
+  result_model: SupportFeatureDeleteResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support feature delete --help
+  agent_example: mammoth support feature delete --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-FEATURE-DELETE
+  contract_tests:
+  - CT-SUPPORT-FEATURE-DELETE-HUMAN
+  - CT-SUPPORT-FEATURE-DELETE-JSON
+  - CT-SUPPORT-FEATURE-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.feature.list
+  command_path: support feature list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListFeatures
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.feature_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.feature_list with validated request fields.
+  request_model: SupportFeatureListRequest
+  result_model: SupportFeatureListResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support feature list --help
+  agent_example: mammoth support feature list --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-FEATURE-LIST
+  contract_tests:
+  - CT-SUPPORT-FEATURE-LIST-HUMAN
+  - CT-SUPPORT-FEATURE-LIST-JSON
+  - CT-SUPPORT-FEATURE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.feature.update
+  command_path: support feature update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateFeature
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.feature_update
+  sdk_conversion: Call mammoth.api.support.SupportAPI.feature_update with validated request fields.
+  request_model: SupportFeatureUpdateRequest
+  result_model: SupportFeatureUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support feature update --help
+  agent_example: mammoth support feature update --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-FEATURE-UPDATE
+  contract_tests:
+  - CT-SUPPORT-FEATURE-UPDATE-HUMAN
+  - CT-SUPPORT-FEATURE-UPDATE-JSON
+  - CT-SUPPORT-FEATURE-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.ownership.transfer
+  command_path: support ownership transfer
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - TransferOwnerships
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.ownership_transfer
+  sdk_conversion: Call mammoth.api.support.SupportAPI.ownership_transfer with validated request fields.
+  request_model: SupportOwnershipTransferRequest
+  result_model: SupportOwnershipTransferResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support ownership transfer --help
+  agent_example: mammoth support ownership transfer --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-OWNERSHIP-TRANSFER
+  contract_tests:
+  - CT-SUPPORT-OWNERSHIP-TRANSFER-HUMAN
+  - CT-SUPPORT-OWNERSHIP-TRANSFER-JSON
+  - CT-SUPPORT-OWNERSHIP-TRANSFER-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.plan.archive
+  command_path: support plan archive
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ArchivePlan
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_archive
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_archive with validated request fields.
+  request_model: SupportPlanArchiveRequest
+  result_model: SupportPlanArchiveResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan archive --help
+  agent_example: mammoth support plan archive --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-PLAN-ARCHIVE
+  contract_tests:
+  - CT-SUPPORT-PLAN-ARCHIVE-HUMAN
+  - CT-SUPPORT-PLAN-ARCHIVE-JSON
+  - CT-SUPPORT-PLAN-ARCHIVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.plan.chargebee-list
+  command_path: support plan chargebee-list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPlans
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_chargebee_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_chargebee_list with validated request fields.
+  request_model: SupportPlanChargebeeListRequest
+  result_model: SupportPlanChargebeeListResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan chargebee-list --help
+  agent_example: mammoth support plan chargebee-list --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-PLAN-CHARGEBEE-LIST
+  contract_tests:
+  - CT-SUPPORT-PLAN-CHARGEBEE-LIST-HUMAN
+  - CT-SUPPORT-PLAN-CHARGEBEE-LIST-JSON
+  - CT-SUPPORT-PLAN-CHARGEBEE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.plan.create
+  command_path: support plan create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreatePlan
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_create
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_create with validated request fields.
+  request_model: SupportPlanCreateRequest
+  result_model: SupportPlanCreateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan create --help
+  agent_example: mammoth support plan create --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-PLAN-CREATE
+  contract_tests:
+  - CT-SUPPORT-PLAN-CREATE-HUMAN
+  - CT-SUPPORT-PLAN-CREATE-JSON
+  - CT-SUPPORT-PLAN-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.plan.delete
+  command_path: support plan delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeletePlan
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_delete
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_delete with validated request fields.
+  request_model: SupportPlanDeleteRequest
+  result_model: SupportPlanDeleteResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan delete --help
+  agent_example: mammoth support plan delete --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-PLAN-DELETE
+  contract_tests:
+  - CT-SUPPORT-PLAN-DELETE-HUMAN
+  - CT-SUPPORT-PLAN-DELETE-JSON
+  - CT-SUPPORT-PLAN-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.plan.get
+  command_path: support plan get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPlan
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_get
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_get with validated request fields.
+  request_model: SupportPlanGetRequest
+  result_model: SupportPlanGetResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan get --help
+  agent_example: mammoth support plan get --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-PLAN-GET
+  contract_tests:
+  - CT-SUPPORT-PLAN-GET-HUMAN
+  - CT-SUPPORT-PLAN-GET-JSON
+  - CT-SUPPORT-PLAN-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.plan.list
+  command_path: support plan list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListSubscriptionPlans
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_list with validated request fields.
+  request_model: SupportPlanListRequest
+  result_model: SupportPlanListResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan list --help
+  agent_example: mammoth support plan list --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-PLAN-LIST
+  contract_tests:
+  - CT-SUPPORT-PLAN-LIST-HUMAN
+  - CT-SUPPORT-PLAN-LIST-JSON
+  - CT-SUPPORT-PLAN-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.plan.self-serve-list
+  command_path: support plan self-serve-list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListSelfServePlans
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_self_serve_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_self_serve_list with validated request fields.
+  request_model: SupportPlanSelfServeListRequest
+  result_model: SupportPlanSelfServeListResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan self-serve-list --help
+  agent_example: mammoth support plan self-serve-list --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-PLAN-SELF-SERVE-LIST
+  contract_tests:
+  - CT-SUPPORT-PLAN-SELF-SERVE-LIST-HUMAN
+  - CT-SUPPORT-PLAN-SELF-SERVE-LIST-JSON
+  - CT-SUPPORT-PLAN-SELF-SERVE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.plan.update
+  command_path: support plan update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdatePlan
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_update
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_update with validated request fields.
+  request_model: SupportPlanUpdateRequest
+  result_model: SupportPlanUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan update --help
+  agent_example: mammoth support plan update --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-PLAN-UPDATE
+  contract_tests:
+  - CT-SUPPORT-PLAN-UPDATE-HUMAN
+  - CT-SUPPORT-PLAN-UPDATE-JSON
+  - CT-SUPPORT-PLAN-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.plan.update-storage-tiers
+  command_path: support plan update-storage-tiers
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateStorageTiers
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_update_storage_tiers
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_update_storage_tiers with validated request
+    fields.
+  request_model: SupportPlanUpdateStorageTiersRequest
+  result_model: SupportPlanUpdateStorageTiersResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan update-storage-tiers --help
+  agent_example: mammoth support plan update-storage-tiers --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-PLAN-UPDATE-STORAGE-TIERS
+  contract_tests:
+  - CT-SUPPORT-PLAN-UPDATE-STORAGE-TIERS-HUMAN
+  - CT-SUPPORT-PLAN-UPDATE-STORAGE-TIERS-JSON
+  - CT-SUPPORT-PLAN-UPDATE-STORAGE-TIERS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.subscription.create
+  command_path: support subscription create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RegisterSubscription
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.subscription_create
+  sdk_conversion: Call mammoth.api.support.SupportAPI.subscription_create with validated request fields.
+  request_model: SupportSubscriptionCreateRequest
+  result_model: SupportSubscriptionCreateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support subscription create --help
+  agent_example: mammoth support subscription create --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-SUBSCRIPTION-CREATE
+  contract_tests:
+  - CT-SUPPORT-SUBSCRIPTION-CREATE-HUMAN
+  - CT-SUPPORT-SUBSCRIPTION-CREATE-JSON
+  - CT-SUPPORT-SUBSCRIPTION-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.subscription.get
+  command_path: support subscription get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetSubscriptionDetail
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.subscription_get
+  sdk_conversion: Call mammoth.api.support.SupportAPI.subscription_get with validated request fields.
+  request_model: SupportSubscriptionGetRequest
+  result_model: SupportSubscriptionGetResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support subscription get --help
+  agent_example: mammoth support subscription get --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-SUBSCRIPTION-GET
+  contract_tests:
+  - CT-SUPPORT-SUBSCRIPTION-GET-HUMAN
+  - CT-SUPPORT-SUBSCRIPTION-GET-JSON
+  - CT-SUPPORT-SUBSCRIPTION-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.subscription.update
+  command_path: support subscription update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateSubscription
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.subscription_update
+  sdk_conversion: Call mammoth.api.support.SupportAPI.subscription_update with validated request fields.
+  request_model: SupportSubscriptionUpdateRequest
+  result_model: SupportSubscriptionUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support subscription update --help
+  agent_example: mammoth support subscription update --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-SUBSCRIPTION-UPDATE
+  contract_tests:
+  - CT-SUPPORT-SUBSCRIPTION-UPDATE-HUMAN
+  - CT-SUPPORT-SUBSCRIPTION-UPDATE-JSON
+  - CT-SUPPORT-SUBSCRIPTION-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.user.list-all
+  command_path: support user list-all
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListUsersOfWorkspaces
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.user_list_all
+  sdk_conversion: Call mammoth.api.support.SupportAPI.user_list_all with validated request fields.
+  request_model: SupportUserListAllRequest
+  result_model: SupportUserListAllResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support user list-all --help
+  agent_example: mammoth support user list-all --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-USER-LIST-ALL
+  contract_tests:
+  - CT-SUPPORT-USER-LIST-ALL-HUMAN
+  - CT-SUPPORT-USER-LIST-ALL-JSON
+  - CT-SUPPORT-USER-LIST-ALL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.user.register
+  command_path: support user register
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RegisterUser
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.user_register
+  sdk_conversion: Call mammoth.api.support.SupportAPI.user_register with validated request fields.
+  request_model: SupportUserRegisterRequest
+  result_model: SupportUserRegisterResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support user register --help
+  agent_example: mammoth support user register --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-USER-REGISTER
+  contract_tests:
+  - CT-SUPPORT-USER-REGISTER-HUMAN
+  - CT-SUPPORT-USER-REGISTER-JSON
+  - CT-SUPPORT-USER-REGISTER-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.user.update
+  command_path: support user update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateUserVerification
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.user_update
+  sdk_conversion: Call mammoth.api.support.SupportAPI.user_update with validated request fields.
+  request_model: SupportUserUpdateRequest
+  result_model: SupportUserUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support user update --help
+  agent_example: mammoth support user update --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-USER-UPDATE
+  contract_tests:
+  - CT-SUPPORT-USER-UPDATE-HUMAN
+  - CT-SUPPORT-USER-UPDATE-JSON
+  - CT-SUPPORT-USER-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.create
+  command_path: support workspace create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateWorkspaces
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_create
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_create with validated request fields.
+  request_model: SupportWorkspaceCreateRequest
+  result_model: SupportWorkspaceCreateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace create --help
+  agent_example: mammoth support workspace create --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-CREATE
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-CREATE-HUMAN
+  - CT-SUPPORT-WORKSPACE-CREATE-JSON
+  - CT-SUPPORT-WORKSPACE-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.delete
+  command_path: support workspace delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteWorkspace
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_delete
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_delete with validated request fields.
+  request_model: SupportWorkspaceDeleteRequest
+  result_model: SupportWorkspaceDeleteResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace delete --help
+  agent_example: mammoth support workspace delete --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-DELETE
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-DELETE-HUMAN
+  - CT-SUPPORT-WORKSPACE-DELETE-JSON
+  - CT-SUPPORT-WORKSPACE-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.get
+  command_path: support workspace get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetWorkspaceDetail
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_get
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_get with validated request fields.
+  request_model: SupportWorkspaceGetRequest
+  result_model: SupportWorkspaceGetResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace get --help
+  agent_example: mammoth support workspace get --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-GET
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-GET-HUMAN
+  - CT-SUPPORT-WORKSPACE-GET-JSON
+  - CT-SUPPORT-WORKSPACE-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.list
+  command_path: support workspace list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListWorkspaces
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_list with validated request fields.
+  request_model: SupportWorkspaceListRequest
+  result_model: SupportWorkspaceListResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace list --help
+  agent_example: mammoth support workspace list --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-LIST
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-LIST-HUMAN
+  - CT-SUPPORT-WORKSPACE-LIST-JSON
+  - CT-SUPPORT-WORKSPACE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.restore-access
+  command_path: support workspace restore-access
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RestoreWorkspaceAccess
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_restore_access
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_restore_access with validated request
+    fields.
+  request_model: SupportWorkspaceRestoreAccessRequest
+  result_model: SupportWorkspaceRestoreAccessResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace restore-access --help
+  agent_example: mammoth support workspace restore-access --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-RESTORE-ACCESS
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-RESTORE-ACCESS-HUMAN
+  - CT-SUPPORT-WORKSPACE-RESTORE-ACCESS-JSON
+  - CT-SUPPORT-WORKSPACE-RESTORE-ACCESS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.suspend-access
+  command_path: support workspace suspend-access
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SuspendWorkspaceAccess
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_suspend_access
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_suspend_access with validated request
+    fields.
+  request_model: SupportWorkspaceSuspendAccessRequest
+  result_model: SupportWorkspaceSuspendAccessResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace suspend-access --help
+  agent_example: mammoth support workspace suspend-access --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-SUSPEND-ACCESS
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-SUSPEND-ACCESS-HUMAN
+  - CT-SUPPORT-WORKSPACE-SUSPEND-ACCESS-JSON
+  - CT-SUPPORT-WORKSPACE-SUSPEND-ACCESS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.update
+  command_path: support workspace update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateWorkspaceDetail
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_update
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_update with validated request fields.
+  request_model: SupportWorkspaceUpdateRequest
+  result_model: SupportWorkspaceUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace update --help
+  agent_example: mammoth support workspace update --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-UPDATE
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-UPDATE-HUMAN
+  - CT-SUPPORT-WORKSPACE-UPDATE-JSON
+  - CT-SUPPORT-WORKSPACE-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.user.add
+  command_path: support workspace user add
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddUserToWorkspace
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_user_add
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_user_add with validated request fields.
+  request_model: SupportWorkspaceUserAddRequest
+  result_model: SupportWorkspaceUserAddResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace user add --help
+  agent_example: mammoth support workspace user add --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-USER-ADD
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-USER-ADD-HUMAN
+  - CT-SUPPORT-WORKSPACE-USER-ADD-JSON
+  - CT-SUPPORT-WORKSPACE-USER-ADD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.user.list
+  command_path: support workspace user list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetUserList
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_user_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_user_list with validated request fields.
+  request_model: SupportWorkspaceUserListRequest
+  result_model: SupportWorkspaceUserListResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace user list --help
+  agent_example: mammoth support workspace user list --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-USER-LIST
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-USER-LIST-HUMAN
+  - CT-SUPPORT-WORKSPACE-USER-LIST-JSON
+  - CT-SUPPORT-WORKSPACE-USER-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.user.remove
+  command_path: support workspace user remove
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RemoveWorkspaceUser
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_user_remove
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_user_remove with validated request fields.
+  request_model: SupportWorkspaceUserRemoveRequest
+  result_model: SupportWorkspaceUserRemoveResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace user remove --help
+  agent_example: mammoth support workspace user remove --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-USER-REMOVE
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-USER-REMOVE-HUMAN
+  - CT-SUPPORT-WORKSPACE-USER-REMOVE-JSON
+  - CT-SUPPORT-WORKSPACE-USER-REMOVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.user.transfer
+  command_path: support workspace user transfer
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - TransferUserRoles
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_user_transfer
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_user_transfer with validated request fields.
+  request_model: SupportWorkspaceUserTransferRequest
+  result_model: SupportWorkspaceUserTransferResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace user transfer --help
+  agent_example: mammoth support workspace user transfer --output json --no-input
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-USER-TRANSFER
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-USER-TRANSFER-HUMAN
+  - CT-SUPPORT-WORKSPACE-USER-TRANSFER-JSON
+  - CT-SUPPORT-WORKSPACE-USER-TRANSFER-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

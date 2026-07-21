@@ -1,0 +1,681 @@
+manifest_schema_version: 1
+commands:
+- command_id: workspace.accept-invite
+  command_path: workspace accept-invite
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AcceptInvite
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.accept_invite
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.accept_invite with validated request fields.
+  request_model: WorkspaceAcceptInviteRequest
+  result_model: WorkspaceAcceptInviteResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace accept-invite --help
+  agent_example: mammoth workspace accept-invite --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-ACCEPT-INVITE
+  contract_tests:
+  - CT-WORKSPACE-ACCEPT-INVITE-HUMAN
+  - CT-WORKSPACE-ACCEPT-INVITE-JSON
+  - CT-WORKSPACE-ACCEPT-INVITE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.app-usage
+  command_path: workspace app-usage
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetAppUsage
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.app_usage
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.app_usage with validated request fields.
+  request_model: WorkspaceAppUsageRequest
+  result_model: WorkspaceAppUsageResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKSPACE-APP-USAGE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace app-usage --help
+  agent_example: mammoth workspace app-usage --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-APP-USAGE
+  contract_tests:
+  - CT-WORKSPACE-APP-USAGE-HUMAN
+  - CT-WORKSPACE-APP-USAGE-JSON
+  - CT-WORKSPACE-APP-USAGE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.check-expression
+  command_path: workspace check-expression
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GenerateCheckExpression
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.check_expression
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.check_expression with validated request fields.
+  request_model: WorkspaceCheckExpressionRequest
+  result_model: WorkspaceCheckExpressionResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace check-expression --help
+  agent_example: mammoth workspace check-expression --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-CHECK-EXPRESSION
+  contract_tests:
+  - CT-WORKSPACE-CHECK-EXPRESSION-HUMAN
+  - CT-WORKSPACE-CHECK-EXPRESSION-JSON
+  - CT-WORKSPACE-CHECK-EXPRESSION-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.create
+  command_path: workspace create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateWorkspace
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.create
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.create with validated request fields.
+  request_model: WorkspaceCreateRequest
+  result_model: WorkspaceCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace create --help
+  agent_example: mammoth workspace create --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-CREATE
+  contract_tests:
+  - CT-WORKSPACE-CREATE-HUMAN
+  - CT-WORKSPACE-CREATE-JSON
+  - CT-WORKSPACE-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.delete
+  command_path: workspace delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteUserWorkspace
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspace.WorkspaceAPI.delete
+  sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.delete with validated request fields.
+  request_model: WorkspaceDeleteRequest
+  result_model: WorkspaceDeleteResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace delete --help
+  agent_example: mammoth workspace delete --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-DELETE
+  contract_tests:
+  - CT-WORKSPACE-DELETE-HUMAN
+  - CT-WORKSPACE-DELETE-JSON
+  - CT-WORKSPACE-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Exact immutable workspace-ID confirmation, not --yes alone.
+  reviewed_by: primary
+- command_id: workspace.get
+  command_path: workspace get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetWorkspace
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspace.WorkspaceAPI.get
+  sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.get with validated request fields.
+  request_model: WorkspaceGetRequest
+  result_model: WorkspaceGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKSPACE-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace get --help
+  agent_example: mammoth workspace get --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-GET
+  contract_tests:
+  - CT-WORKSPACE-GET-HUMAN
+  - CT-WORKSPACE-GET-JSON
+  - CT-WORKSPACE-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.list
+  command_path: workspace list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetWorkspaces
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspace.WorkspaceAPI.list
+  sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.list with validated request fields.
+  request_model: WorkspaceListRequest
+  result_model: WorkspaceListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKSPACE-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace list --help
+  agent_example: mammoth workspace list --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-LIST
+  contract_tests:
+  - CT-WORKSPACE-LIST-HUMAN
+  - CT-WORKSPACE-LIST-JSON
+  - CT-WORKSPACE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.llm-task
+  command_path: workspace llm-task
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RunLlmTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.llm_task
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.llm_task with validated request fields.
+  request_model: WorkspaceLlmTaskRequest
+  result_model: WorkspaceLlmTaskResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace llm-task --help
+  agent_example: mammoth workspace llm-task --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-LLM-TASK
+  contract_tests:
+  - CT-WORKSPACE-LLM-TASK-HUMAN
+  - CT-WORKSPACE-LLM-TASK-JSON
+  - CT-WORKSPACE-LLM-TASK-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.reactivate
+  command_path: workspace reactivate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ReactivateWorkspace
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspace.WorkspaceAPI.reactivate
+  sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.reactivate with validated request fields.
+  request_model: WorkspaceReactivateRequest
+  result_model: WorkspaceReactivateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace reactivate --help
+  agent_example: mammoth workspace reactivate --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-REACTIVATE
+  contract_tests:
+  - CT-WORKSPACE-REACTIVATE-HUMAN
+  - CT-WORKSPACE-REACTIVATE-JSON
+  - CT-WORKSPACE-REACTIVATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.segment.list
+  command_path: workspace segment list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetSegments
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.segment_list
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.segment_list with validated request fields.
+  request_model: WorkspaceSegmentListRequest
+  result_model: WorkspaceSegmentListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKSPACE-SEGMENT-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace segment list --help
+  agent_example: mammoth workspace segment list --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-SEGMENT-LIST
+  contract_tests:
+  - CT-WORKSPACE-SEGMENT-LIST-HUMAN
+  - CT-WORKSPACE-SEGMENT-LIST-JSON
+  - CT-WORKSPACE-SEGMENT-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.segment.update
+  command_path: workspace segment update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateSegments
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.segment_update
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.segment_update with validated request fields.
+  request_model: WorkspaceSegmentUpdateRequest
+  result_model: WorkspaceSegmentUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace segment update --help
+  agent_example: mammoth workspace segment update --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-SEGMENT-UPDATE
+  contract_tests:
+  - CT-WORKSPACE-SEGMENT-UPDATE-HUMAN
+  - CT-WORKSPACE-SEGMENT-UPDATE-JSON
+  - CT-WORKSPACE-SEGMENT-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.storage-breakdown
+  command_path: workspace storage-breakdown
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetStorageBreakdown
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.storage_breakdown
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.storage_breakdown with validated request fields.
+  request_model: WorkspaceStorageBreakdownRequest
+  result_model: WorkspaceStorageBreakdownResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKSPACE-STORAGE-BREAKDOWN
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace storage-breakdown --help
+  agent_example: mammoth workspace storage-breakdown --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-STORAGE-BREAKDOWN
+  contract_tests:
+  - CT-WORKSPACE-STORAGE-BREAKDOWN-HUMAN
+  - CT-WORKSPACE-STORAGE-BREAKDOWN-JSON
+  - CT-WORKSPACE-STORAGE-BREAKDOWN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.update
+  command_path: workspace update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateWorkspace
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspace.WorkspaceAPI.update
+  sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.update with validated request fields.
+  request_model: WorkspaceUpdateRequest
+  result_model: WorkspaceUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace update --help
+  agent_example: mammoth workspace update --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-UPDATE
+  contract_tests:
+  - CT-WORKSPACE-UPDATE-HUMAN
+  - CT-WORKSPACE-UPDATE-JSON
+  - CT-WORKSPACE-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.user.add
+  command_path: workspace user add
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddUserInWorkspace
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.user_add
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.user_add with validated request fields.
+  request_model: WorkspaceUserAddRequest
+  result_model: WorkspaceUserAddResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace user add --help
+  agent_example: mammoth workspace user add --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-USER-ADD
+  contract_tests:
+  - CT-WORKSPACE-USER-ADD-HUMAN
+  - CT-WORKSPACE-USER-ADD-JSON
+  - CT-WORKSPACE-USER-ADD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.user.get
+  command_path: workspace user get
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspace.WorkspaceAPI.get_user
+  sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.get_user with validated request fields.
+  request_model: WorkspaceUserGetRequest
+  result_model: WorkspaceUserGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKSPACE-USER-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace user get --help
+  agent_example: mammoth workspace user get --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-USER-GET
+  contract_tests:
+  - CT-WORKSPACE-USER-GET-HUMAN
+  - CT-WORKSPACE-USER-GET-JSON
+  - CT-WORKSPACE-USER-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.user.list
+  command_path: workspace user list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetUsersInWorkspace
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspace.WorkspaceAPI.list_users
+  sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.list_users with validated request fields.
+  request_model: WorkspaceUserListRequest
+  result_model: WorkspaceUserListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKSPACE-USER-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace user list --help
+  agent_example: mammoth workspace user list --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-USER-LIST
+  contract_tests:
+  - CT-WORKSPACE-USER-LIST-HUMAN
+  - CT-WORKSPACE-USER-LIST-JSON
+  - CT-WORKSPACE-USER-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.user.remove
+  command_path: workspace user remove
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RemoveUser
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.user_remove
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.user_remove with validated request fields.
+  request_model: WorkspaceUserRemoveRequest
+  result_model: WorkspaceUserRemoveResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace user remove --help
+  agent_example: mammoth workspace user remove --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-USER-REMOVE
+  contract_tests:
+  - CT-WORKSPACE-USER-REMOVE-HUMAN
+  - CT-WORKSPACE-USER-REMOVE-JSON
+  - CT-WORKSPACE-USER-REMOVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.user.remove-batch
+  command_path: workspace user remove-batch
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RemoveUserFromWorkspace
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.user_remove_batch
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.user_remove_batch with validated request fields.
+  request_model: WorkspaceUserRemoveBatchRequest
+  result_model: WorkspaceUserRemoveBatchResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace user remove-batch --help
+  agent_example: mammoth workspace user remove-batch --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-USER-REMOVE-BATCH
+  contract_tests:
+  - CT-WORKSPACE-USER-REMOVE-BATCH-HUMAN
+  - CT-WORKSPACE-USER-REMOVE-BATCH-JSON
+  - CT-WORKSPACE-USER-REMOVE-BATCH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.user.update
+  command_path: workspace user update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateUserInWorkspace
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspace.WorkspaceAPI.update_user
+  sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.update_user with validated request fields.
+  request_model: WorkspaceUserUpdateRequest
+  result_model: WorkspaceUserUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace user update --help
+  agent_example: mammoth workspace user update --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-USER-UPDATE
+  contract_tests:
+  - CT-WORKSPACE-USER-UPDATE-HUMAN
+  - CT-WORKSPACE-USER-UPDATE-JSON
+  - CT-WORKSPACE-USER-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Exact user-ID confirmation for owner/admin role changes.
+  reviewed_by: primary
+- command_id: workspace.user.update-batch
+  command_path: workspace user update-batch
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateUserToWorkspace
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.user_update_batch
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.user_update_batch with validated request fields.
+  request_model: WorkspaceUserUpdateBatchRequest
+  result_model: WorkspaceUserUpdateBatchResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace user update-batch --help
+  agent_example: mammoth workspace user update-batch --output json --no-input
+  unit_tests:
+  - UT-WORKSPACE-USER-UPDATE-BATCH
+  contract_tests:
+  - CT-WORKSPACE-USER-UPDATE-BATCH-HUMAN
+  - CT-WORKSPACE-USER-UPDATE-BATCH-JSON
+  - CT-WORKSPACE-USER-UPDATE-BATCH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

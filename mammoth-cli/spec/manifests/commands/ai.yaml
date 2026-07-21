@@ -1,0 +1,139 @@
+manifest_schema_version: 1
+commands:
+- command_id: ai.condition.generate
+  command_path: ai condition generate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GenerateCondition
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.ai.AIAPI.condition_generate
+  sdk_conversion: Call mammoth.api.ai.AIAPI.condition_generate with validated request fields.
+  request_model: AiConditionGenerateRequest
+  result_model: AiConditionGenerateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-AI-CONDITION-GENERATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth ai condition generate --help
+  agent_example: mammoth ai condition generate --output json --no-input
+  unit_tests:
+  - UT-AI-CONDITION-GENERATE
+  contract_tests:
+  - CT-AI-CONDITION-GENERATE-HUMAN
+  - CT-AI-CONDITION-GENERATE-JSON
+  - CT-AI-CONDITION-GENERATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: ai.expression.generate
+  command_path: ai expression generate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GenerateExpression
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.ai.AIAPI.expression_generate
+  sdk_conversion: Call mammoth.api.ai.AIAPI.expression_generate with validated request fields.
+  request_model: AiExpressionGenerateRequest
+  result_model: AiExpressionGenerateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-AI-EXPRESSION-GENERATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth ai expression generate --help
+  agent_example: mammoth ai expression generate --output json --no-input
+  unit_tests:
+  - UT-AI-EXPRESSION-GENERATE
+  contract_tests:
+  - CT-AI-EXPRESSION-GENERATE-HUMAN
+  - CT-AI-EXPRESSION-GENERATE-JSON
+  - CT-AI-EXPRESSION-GENERATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: ai.sql.generate
+  command_path: ai sql generate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GenerateSql
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.ai.AIAPI.generate_sql
+  sdk_conversion: Call mammoth.api.ai.AIAPI.generate_sql with validated request fields.
+  request_model: AiSqlGenerateRequest
+  result_model: AiSqlGenerateResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-AI-SQL-GENERATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth ai sql generate --help
+  agent_example: mammoth ai sql generate --output json --no-input
+  unit_tests:
+  - UT-AI-SQL-GENERATE
+  contract_tests:
+  - CT-AI-SQL-GENERATE-HUMAN
+  - CT-AI-SQL-GENERATE-JSON
+  - CT-AI-SQL-GENERATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Returns a query and metadata; differs from view transform generate-sql, which adds
+    and executes a pipeline task. Do not infer addon availability from an authorization error.
+  reviewed_by: primary
+- command_id: ai.suggestion.list
+  command_path: ai suggestion list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AiSuggestions
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.ai.AIAPI.get_suggestions
+  sdk_conversion: Call mammoth.api.ai.AIAPI.get_suggestions with validated request fields.
+  request_model: AiSuggestionListRequest
+  result_model: AiSuggestionListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-AI-SUGGESTION-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth ai suggestion list --help
+  agent_example: mammoth ai suggestion list --output json --no-input
+  unit_tests:
+  - UT-AI-SUGGESTION-LIST
+  contract_tests:
+  - CT-AI-SUGGESTION-LIST-HUMAN
+  - CT-AI-SUGGESTION-LIST-JSON
+  - CT-AI-SUGGESTION-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

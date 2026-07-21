@@ -1,0 +1,274 @@
+manifest_schema_version: 1
+commands:
+- command_id: snippet.create
+  command_path: snippet create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateSnippet
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.snippets.SnippetsAPI.create
+  sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.create with validated request fields.
+  request_model: SnippetCreateRequest
+  result_model: SnippetCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-SNIPPET-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth snippet create --help
+  agent_example: mammoth snippet create --output json --no-input
+  unit_tests:
+  - UT-SNIPPET-CREATE
+  contract_tests:
+  - CT-SNIPPET-CREATE-HUMAN
+  - CT-SNIPPET-CREATE-JSON
+  - CT-SNIPPET-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: snippet.delete
+  command_path: snippet delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteSnippet
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.snippets.SnippetsAPI.delete
+  sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.delete with validated request fields.
+  request_model: SnippetDeleteRequest
+  result_model: SnippetDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-SNIPPET-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth snippet delete --help
+  agent_example: mammoth snippet delete --output json --no-input
+  unit_tests:
+  - UT-SNIPPET-DELETE
+  contract_tests:
+  - CT-SNIPPET-DELETE-HUMAN
+  - CT-SNIPPET-DELETE-JSON
+  - CT-SNIPPET-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: snippet.dependencies
+  command_path: snippet dependencies
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetSnippetDependencies
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.snippets.SnippetsAPI.dependencies
+  sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.dependencies with validated request fields.
+  request_model: SnippetDependenciesRequest
+  result_model: SnippetDependenciesResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-SNIPPET-DEPENDENCIES
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth snippet dependencies --help
+  agent_example: mammoth snippet dependencies --output json --no-input
+  unit_tests:
+  - UT-SNIPPET-DEPENDENCIES
+  contract_tests:
+  - CT-SNIPPET-DEPENDENCIES-HUMAN
+  - CT-SNIPPET-DEPENDENCIES-JSON
+  - CT-SNIPPET-DEPENDENCIES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: snippet.duplicate
+  command_path: snippet duplicate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DuplicateSnippet
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.snippets.SnippetsAPI.duplicate
+  sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.duplicate with validated request fields.
+  request_model: SnippetDuplicateRequest
+  result_model: SnippetDuplicateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-SNIPPET-DUPLICATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth snippet duplicate --help
+  agent_example: mammoth snippet duplicate --output json --no-input
+  unit_tests:
+  - UT-SNIPPET-DUPLICATE
+  contract_tests:
+  - CT-SNIPPET-DUPLICATE-HUMAN
+  - CT-SNIPPET-DUPLICATE-JSON
+  - CT-SNIPPET-DUPLICATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: snippet.get
+  command_path: snippet get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetSnippetDetail
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.snippets.SnippetsAPI.get
+  sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.get with validated request fields.
+  request_model: SnippetGetRequest
+  result_model: SnippetGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-SNIPPET-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth snippet get --help
+  agent_example: mammoth snippet get --output json --no-input
+  unit_tests:
+  - UT-SNIPPET-GET
+  contract_tests:
+  - CT-SNIPPET-GET-HUMAN
+  - CT-SNIPPET-GET-JSON
+  - CT-SNIPPET-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: snippet.list
+  command_path: snippet list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListSnippets
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.snippets.SnippetsAPI.list
+  sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.list with validated request fields.
+  request_model: SnippetListRequest
+  result_model: SnippetListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-SNIPPET-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth snippet list --help
+  agent_example: mammoth snippet list --output json --no-input
+  unit_tests:
+  - UT-SNIPPET-LIST
+  contract_tests:
+  - CT-SNIPPET-LIST-HUMAN
+  - CT-SNIPPET-LIST-JSON
+  - CT-SNIPPET-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: snippet.rerun
+  command_path: snippet rerun
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RerunSnippet
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.snippets.SnippetsAPI.rerun
+  sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.rerun with validated request fields.
+  request_model: SnippetRerunRequest
+  result_model: SnippetRerunResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-SNIPPET-RERUN
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth snippet rerun --help
+  agent_example: mammoth snippet rerun --output json --no-input
+  unit_tests:
+  - UT-SNIPPET-RERUN
+  contract_tests:
+  - CT-SNIPPET-RERUN-HUMAN
+  - CT-SNIPPET-RERUN-JSON
+  - CT-SNIPPET-RERUN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: snippet.update
+  command_path: snippet update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateSnippet
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.snippets.SnippetsAPI.update
+  sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.update with validated request fields.
+  request_model: SnippetUpdateRequest
+  result_model: SnippetUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-SNIPPET-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth snippet update --help
+  agent_example: mammoth snippet update --output json --no-input
+  unit_tests:
+  - UT-SNIPPET-UPDATE
+  contract_tests:
+  - CT-SNIPPET-UPDATE-HUMAN
+  - CT-SNIPPET-UPDATE-JSON
+  - CT-SNIPPET-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

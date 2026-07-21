@@ -261,16 +261,42 @@ Append one row after each accepted change.
 | Date | Commit | Phase | Operations/commands | Tests | Reviewer notes |
 |---|---|---|---|---|---|
 | 2026-07-21 | `bb2557f` | Phase 0: audited plan | 376 OpenAPI inventory rows; 242 SDK inventory rows; command catalogs and implementation gates | Planning link, uniqueness, catalog-accounting, formatting, and secret-value scans passed | Primary self-review completed; implementation has not started |
+| 2026-07-21 | Phase 1 commit | Phase 1: parity freeze + red-first tests | `mammoth-cli/` package scaffold; pinned OpenAPI snapshot (376 ops); generated 376-op operation manifest (364 command, 11 protocol_only, 1 alias), 242-method SDK manifest (184 command, 54 alias, 4 reviewed SDK-only exemptions), 435 command records, schema-v1, parity report | 45 contract tests; 31 green (parity/schema/introspection/examples/source-guards), 14 red as expected (232 planned SDK symbols + 4 SDK-foundation gaps for Phase 2, 9 runtime tests for Phase 3). Reproducible build verified; strict mypy/ruff/black clean on package | Primary review complete; the red baseline is recorded in `spec/reports/expected-red-report.md`; no manifest/inventory defects |
+
+### Phase 1 evidence and decisions
+
+- Pinned OpenAPI SHA-256 `0c7c777f36cd81f48fe676c04f5cb06c74163081c0870c775a57da8dff4a5f04`
+  (234 paths, 376 operations, 770 schemas). This differs from the plan's earlier
+  `6b2c8647...` digest because the live generator is nondeterministic (examples,
+  a project-color default, parameter order, one description change). Path and
+  operation counts are stable at 234/376. Per the plan's snapshot-refresh process
+  the primary reviewed and pinned the exact fetched bytes; the difference is
+  examples/description noise, not a semantic contract change.
+- Primary dev interpreter is Python 3.14.3 (venv). Plan named 3.14.3; 3.14.4 is
+  also available. jsonschema and types-PyYAML added to CLI dev deps.
+- 11 protocol_only operations: health, unsubscribe, Stripe webhook, 3 Shopify
+  GDPR hooks, provider deauthorization, OAuth callback, mm-ue telemetry, and 2
+  published-dashboard viewer telemetry endpoints. Full list in the parity report.
+- 0 deprecated and 0 server_unavailable operations (no server evidence; a
+  permission error is never `server_unavailable`).
+- 4 reviewed SDK-only exemptions (no CLI command): `DatasetsAPI.bulk_delete`
+  (forbidden targetless bulk delete), `PipelineAPI.draft_mode` (typed draft seam
+  behind the draft verbs), `MammothClient.find_dataset_for_dataview` (private
+  resolver), `View.draft` (SDK-only compound context manager).
 
 ## Open TODOs
 
 - [x] Commit this plan set (`bb2557f`).
-- [ ] Create and review the OpenAPI disposition inventory.
-- [ ] Create and review the SDK method inventory.
-- [ ] Create exact command specifications.
-- [ ] Create red-first tests.
-- [ ] Resolve the mandatory SDK defect list.
-- [ ] Implement the CLI according to the runbook.
+- [x] Create and review the OpenAPI disposition inventory (`spec/manifests/openapi-operations.yaml`).
+- [x] Create and review the SDK method inventory (`spec/manifests/sdk-methods.yaml`).
+- [x] Create exact command specifications (`spec/manifests/commands/*.yaml`, 435 records).
+- [x] Create red-first tests (`mammoth-cli/tests/contract/`, expected red baseline saved).
+- [ ] Resolve the mandatory SDK defect list (Phase 2): public `close()`/context
+  manager, dataview->dataset resolver, server-backed draft state, typed
+  pagination, typed job start/wait, typed request/result models, typed export
+  destinations, secret metadata, atomic downloads, project lookup >100.
+- [ ] Implement the CLI runtime and command handlers (Phases 3-7).
+- [ ] Documentation, skill, installers, and final gates (Phases 8-10).
 - [ ] Keep this ledger current.
 
 ## Final audit template

@@ -1,0 +1,72 @@
+manifest_schema_version: 1
+commands:
+- command_id: activity.export
+  command_path: activity export
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExportActivityLogs
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.activity_logs.ActivityLogsAPI.export
+  sdk_conversion: Call mammoth.api.activity_logs.ActivityLogsAPI.export with validated request fields.
+  request_model: ActivityExportRequest
+  result_model: ActivityExportResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-ACTIVITY-EXPORT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth activity export --help
+  agent_example: mammoth activity export --output json --no-input
+  unit_tests:
+  - UT-ACTIVITY-EXPORT
+  contract_tests:
+  - CT-ACTIVITY-EXPORT-HUMAN
+  - CT-ACTIVITY-EXPORT-JSON
+  - CT-ACTIVITY-EXPORT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'BLOCKED[B19 ACTIVITY_EXPORT_UNTYPED_ASYNC]: format/filters/download response are
+    raw; reserved, not registered.'
+  reviewed_by: primary
+- command_id: activity.list
+  command_path: activity list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetActivityLogs
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.activity_logs.ActivityLogsAPI.list
+  sdk_conversion: Call mammoth.api.activity_logs.ActivityLogsAPI.list with validated request fields.
+  request_model: ActivityListRequest
+  result_model: ActivityListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: offset
+  acceptance_evidence: live_read_only
+  live_test: LT-ACTIVITY-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth activity list --help
+  agent_example: mammoth activity list --output json --no-input
+  unit_tests:
+  - UT-ACTIVITY-LIST
+  contract_tests:
+  - CT-ACTIVITY-LIST-HUMAN
+  - CT-ACTIVITY-LIST-JSON
+  - CT-ACTIVITY-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'BLOCKED[B17 VARIADIC_INPUT_UNTYPED]: **filters is unconstrained; reserved, not
+    registered.'
+  reviewed_by: primary

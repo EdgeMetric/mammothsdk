@@ -1,0 +1,167 @@
+manifest_schema_version: 1
+commands:
+- command_id: skill.install
+  command_path: skill install
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.skills.installer.install
+  sdk_conversion: Call mammoth_cli.skills.installer.install with validated request fields.
+  request_model: SkillInstallRequest
+  result_model: SkillInstallResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local agent-skill install.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth skill install --help
+  agent_example: mammoth skill install --output json --no-input
+  unit_tests:
+  - UT-SKILL-INSTALL
+  contract_tests:
+  - CT-SKILL-INSTALL-HUMAN
+  - CT-SKILL-INSTALL-JSON
+  - CT-SKILL-INSTALL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: skill.list
+  command_path: skill list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.skills.installer.list_
+  sdk_conversion: Call mammoth_cli.skills.installer.list_ with validated request fields.
+  request_model: SkillListRequest
+  result_model: SkillListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local agent-skill list.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth skill list --help
+  agent_example: mammoth skill list --output json --no-input
+  unit_tests:
+  - UT-SKILL-LIST
+  contract_tests:
+  - CT-SKILL-LIST-HUMAN
+  - CT-SKILL-LIST-JSON
+  - CT-SKILL-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: skill.path
+  command_path: skill path
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.skills.installer.path
+  sdk_conversion: Call mammoth_cli.skills.installer.path with validated request fields.
+  request_model: SkillPathRequest
+  result_model: SkillPathResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local agent-skill path.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth skill path --help
+  agent_example: mammoth skill path --output json --no-input
+  unit_tests:
+  - UT-SKILL-PATH
+  contract_tests:
+  - CT-SKILL-PATH-HUMAN
+  - CT-SKILL-PATH-JSON
+  - CT-SKILL-PATH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: skill.uninstall
+  command_path: skill uninstall
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.skills.installer.uninstall
+  sdk_conversion: Call mammoth_cli.skills.installer.uninstall with validated request fields.
+  request_model: SkillUninstallRequest
+  result_model: SkillUninstallResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local agent-skill uninstall.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth skill uninstall --help
+  agent_example: mammoth skill uninstall --output json --no-input
+  unit_tests:
+  - UT-SKILL-UNINSTALL
+  contract_tests:
+  - CT-SKILL-UNINSTALL-HUMAN
+  - CT-SKILL-UNINSTALL-JSON
+  - CT-SKILL-UNINSTALL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: skill.update
+  command_path: skill update
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.skills.installer.update
+  sdk_conversion: Call mammoth_cli.skills.installer.update with validated request fields.
+  request_model: SkillUpdateRequest
+  result_model: SkillUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local agent-skill update.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth skill update --help
+  agent_example: mammoth skill update --output json --no-input
+  unit_tests:
+  - UT-SKILL-UPDATE
+  contract_tests:
+  - CT-SKILL-UPDATE-HUMAN
+  - CT-SKILL-UPDATE-JSON
+  - CT-SKILL-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

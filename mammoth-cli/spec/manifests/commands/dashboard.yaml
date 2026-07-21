@@ -1,0 +1,653 @@
+manifest_schema_version: 1
+commands:
+- command_id: dashboard.action
+  command_path: dashboard action
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DashboardAction
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.action
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.action with validated request fields.
+  request_model: DashboardActionRequest
+  result_model: DashboardActionResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard action --help
+  agent_example: mammoth dashboard action --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-ACTION
+  contract_tests:
+  - CT-DASHBOARD-ACTION-HUMAN
+  - CT-DASHBOARD-ACTION-JSON
+  - CT-DASHBOARD-ACTION-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: B13 DASHBOARD_ASYNC_UNTYPED; publish/unpublish/delete-source require exact target
+    confirmation.
+  reviewed_by: primary
+- command_id: dashboard.analytics
+  command_path: dashboard analytics
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDashboardAnalytics
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get_analytics
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.get_analytics with validated request fields.
+  request_model: DashboardAnalyticsRequest
+  result_model: DashboardAnalyticsResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-ANALYTICS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard analytics --help
+  agent_example: mammoth dashboard analytics --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-ANALYTICS
+  contract_tests:
+  - CT-DASHBOARD-ANALYTICS-HUMAN
+  - CT-DASHBOARD-ANALYTICS-JSON
+  - CT-DASHBOARD-ANALYTICS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.cancel-generation
+  command_path: dashboard cancel-generation
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CancelDashboardGeneration
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.cancel_generation
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.cancel_generation with validated request fields.
+  request_model: DashboardCancelGenerationRequest
+  result_model: DashboardCancelGenerationResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DASHBOARD-CANCEL-GENERATION
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard cancel-generation --help
+  agent_example: mammoth dashboard cancel-generation --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-CANCEL-GENERATION
+  contract_tests:
+  - CT-DASHBOARD-CANCEL-GENERATION-HUMAN
+  - CT-DASHBOARD-CANCEL-GENERATION-JSON
+  - CT-DASHBOARD-CANCEL-GENERATION-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.create
+  command_path: dashboard create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GenerateDashboard
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.create with validated request fields.
+  request_model: DashboardCreateRequest
+  result_model: DashboardCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DASHBOARD-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard create --help
+  agent_example: mammoth dashboard create --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-CREATE
+  contract_tests:
+  - CT-DASHBOARD-CREATE-HUMAN
+  - CT-DASHBOARD-CREATE-JSON
+  - CT-DASHBOARD-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'B13 DASHBOARD_ASYNC_UNTYPED: no stable typed job or waiter exposed; keep returns_job,
+    do not claim completion.'
+  reviewed_by: primary
+- command_id: dashboard.data.draft
+  command_path: dashboard data draft
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDraftDataFromSql
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get_draft_data
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.get_draft_data with validated request fields.
+  request_model: DashboardDataDraftRequest
+  result_model: DashboardDataDraftResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-DATA-DRAFT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard data draft --help
+  agent_example: mammoth dashboard data draft --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-DATA-DRAFT
+  contract_tests:
+  - CT-DASHBOARD-DATA-DRAFT-HUMAN
+  - CT-DASHBOARD-DATA-DRAFT-JSON
+  - CT-DASHBOARD-DATA-DRAFT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.data.published
+  command_path: dashboard data published
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPublishDataFromSql
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get_publish_data
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.get_publish_data with validated request fields.
+  request_model: DashboardDataPublishedRequest
+  result_model: DashboardDataPublishedResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-DATA-PUBLISHED
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard data published --help
+  agent_example: mammoth dashboard data published --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-DATA-PUBLISHED
+  contract_tests:
+  - CT-DASHBOARD-DATA-PUBLISHED-HUMAN
+  - CT-DASHBOARD-DATA-PUBLISHED-JSON
+  - CT-DASHBOARD-DATA-PUBLISHED-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.delete
+  command_path: dashboard delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteDashboard
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.delete
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.delete with validated request fields.
+  request_model: DashboardDeleteRequest
+  result_model: DashboardDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DASHBOARD-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard delete --help
+  agent_example: mammoth dashboard delete --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-DELETE
+  contract_tests:
+  - CT-DASHBOARD-DELETE-HUMAN
+  - CT-DASHBOARD-DELETE-JSON
+  - CT-DASHBOARD-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Immutable dashboard-ID confirmation.
+  reviewed_by: primary
+- command_id: dashboard.get
+  command_path: dashboard get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDashboard
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.get with validated request fields.
+  request_model: DashboardGetRequest
+  result_model: DashboardGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard get --help
+  agent_example: mammoth dashboard get --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-GET
+  contract_tests:
+  - CT-DASHBOARD-GET-HUMAN
+  - CT-DASHBOARD-GET-JSON
+  - CT-DASHBOARD-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.get-by-url
+  command_path: dashboard get-by-url
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDashboardByUrl
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get_by_url
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.get_by_url with validated request fields.
+  request_model: DashboardGetByUrlRequest
+  result_model: DashboardGetByUrlResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-GET-BY-URL
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard get-by-url --help
+  agent_example: mammoth dashboard get-by-url --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-GET-BY-URL
+  contract_tests:
+  - CT-DASHBOARD-GET-BY-URL-HUMAN
+  - CT-DASHBOARD-GET-BY-URL-JSON
+  - CT-DASHBOARD-GET-BY-URL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: URL is a slug, not an arbitrary request URL.
+  reviewed_by: primary
+- command_id: dashboard.job-by-url
+  command_path: dashboard job-by-url
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDashboardJob
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.job_by_url
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.job_by_url with validated request fields.
+  request_model: DashboardJobByUrlRequest
+  result_model: DashboardJobByUrlResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-JOB-BY-URL
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard job-by-url --help
+  agent_example: mammoth dashboard job-by-url --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-JOB-BY-URL
+  contract_tests:
+  - CT-DASHBOARD-JOB-BY-URL-HUMAN
+  - CT-DASHBOARD-JOB-BY-URL-JSON
+  - CT-DASHBOARD-JOB-BY-URL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.list
+  command_path: dashboard list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListDashboard
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.list
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.list with validated request fields.
+  request_model: DashboardListRequest
+  result_model: DashboardListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard list --help
+  agent_example: mammoth dashboard list --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-LIST
+  contract_tests:
+  - CT-DASHBOARD-LIST-HUMAN
+  - CT-DASHBOARD-LIST-JSON
+  - CT-DASHBOARD-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.published-data-by-url
+  command_path: dashboard published-data-by-url
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPublishDataFromSqlByUrl
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_data_by_url
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.published_data_by_url with validated request
+    fields.
+  request_model: DashboardPublishedDataByUrlRequest
+  result_model: DashboardPublishedDataByUrlResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DASHBOARD-PUBLISHED-DATA-BY-URL
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard published-data-by-url --help
+  agent_example: mammoth dashboard published-data-by-url --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-PUBLISHED-DATA-BY-URL
+  contract_tests:
+  - CT-DASHBOARD-PUBLISHED-DATA-BY-URL-HUMAN
+  - CT-DASHBOARD-PUBLISHED-DATA-BY-URL-JSON
+  - CT-DASHBOARD-PUBLISHED-DATA-BY-URL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.restore
+  command_path: dashboard restore
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RestoreDashboard
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.restore
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.restore with validated request fields.
+  request_model: DashboardRestoreRequest
+  result_model: DashboardRestoreResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DASHBOARD-RESTORE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard restore --help
+  agent_example: mammoth dashboard restore --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-RESTORE
+  contract_tests:
+  - CT-DASHBOARD-RESTORE-HUMAN
+  - CT-DASHBOARD-RESTORE-JSON
+  - CT-DASHBOARD-RESTORE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.share
+  command_path: dashboard share
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ShareDashboard
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.share
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.share with validated request fields.
+  request_model: DashboardShareRequest
+  result_model: DashboardShareResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard share --help
+  agent_example: mammoth dashboard share --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-SHARE
+  contract_tests:
+  - CT-DASHBOARD-SHARE-HUMAN
+  - CT-DASHBOARD-SHARE-JSON
+  - CT-DASHBOARD-SHARE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'B14 DASHBOARD_PASSWORD_MISSING: password sharing is an enum value but the SDK signature
+    has no password input; type_of_auth=password blocked pending contract/repair.'
+  reviewed_by: primary
+- command_id: dashboard.source.list
+  command_path: dashboard source list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDashboardSources
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get_sources
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.get_sources with validated request fields.
+  request_model: DashboardSourceListRequest
+  result_model: DashboardSourceListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-SOURCE-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard source list --help
+  agent_example: mammoth dashboard source list --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-SOURCE-LIST
+  contract_tests:
+  - CT-DASHBOARD-SOURCE-LIST-HUMAN
+  - CT-DASHBOARD-SOURCE-LIST-JSON
+  - CT-DASHBOARD-SOURCE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'B04 SERVER_VARIANCE: documented as returning HTTP 500 on some servers.'
+  reviewed_by: primary
+- command_id: dashboard.trash
+  command_path: dashboard trash
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - TrashDashboard
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.trash
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.trash with validated request fields.
+  request_model: DashboardTrashRequest
+  result_model: DashboardTrashResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DASHBOARD-TRASH
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard trash --help
+  agent_example: mammoth dashboard trash --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-TRASH
+  contract_tests:
+  - CT-DASHBOARD-TRASH-HUMAN
+  - CT-DASHBOARD-TRASH-JSON
+  - CT-DASHBOARD-TRASH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.update
+  command_path: dashboard update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - EditDashboard
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.update
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.update with validated request fields.
+  request_model: DashboardUpdateRequest
+  result_model: DashboardUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DASHBOARD-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard update --help
+  agent_example: mammoth dashboard update --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-UPDATE
+  contract_tests:
+  - CT-DASHBOARD-UPDATE-HUMAN
+  - CT-DASHBOARD-UPDATE-JSON
+  - CT-DASHBOARD-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: B13.
+  reviewed_by: primary
+- command_id: dashboard.widget-data
+  command_path: dashboard widget-data
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - BulkWidgetData
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.widget_data
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.widget_data with validated request fields.
+  request_model: DashboardWidgetDataRequest
+  result_model: DashboardWidgetDataResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DASHBOARD-WIDGET-DATA
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard widget-data --help
+  agent_example: mammoth dashboard widget-data --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-WIDGET-DATA
+  contract_tests:
+  - CT-DASHBOARD-WIDGET-DATA-HUMAN
+  - CT-DASHBOARD-WIDGET-DATA-JSON
+  - CT-DASHBOARD-WIDGET-DATA-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.widget-data-by-url
+  command_path: dashboard widget-data-by-url
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - BulkWidgetDataByUrl
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.widget_data_by_url
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.widget_data_by_url with validated request
+    fields.
+  request_model: DashboardWidgetDataByUrlRequest
+  result_model: DashboardWidgetDataByUrlResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DASHBOARD-WIDGET-DATA-BY-URL
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard widget-data-by-url --help
+  agent_example: mammoth dashboard widget-data-by-url --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-WIDGET-DATA-BY-URL
+  contract_tests:
+  - CT-DASHBOARD-WIDGET-DATA-BY-URL-HUMAN
+  - CT-DASHBOARD-WIDGET-DATA-BY-URL-JSON
+  - CT-DASHBOARD-WIDGET-DATA-BY-URL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

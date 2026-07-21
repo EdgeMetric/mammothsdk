@@ -1,0 +1,515 @@
+manifest_schema_version: 1
+commands:
+- command_id: dataset.bulk-delete
+  command_path: dataset bulk-delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteDatasets
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.bulk_delete
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.bulk_delete with validated request fields.
+  request_model: DatasetBulkDeleteRequest
+  result_model: DatasetBulkDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-BULK-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset bulk-delete --help
+  agent_example: mammoth dataset bulk-delete --output json --no-input
+  unit_tests:
+  - UT-DATASET-BULK-DELETE
+  contract_tests:
+  - CT-DATASET-BULK-DELETE-HUMAN
+  - CT-DATASET-BULK-DELETE-JSON
+  - CT-DATASET-BULK-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.bulk-update
+  command_path: dataset bulk-update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateDatasets
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.bulk_update
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.bulk_update with validated request fields.
+  request_model: DatasetBulkUpdateRequest
+  result_model: DatasetBulkUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset bulk-update --help
+  agent_example: mammoth dataset bulk-update --output json --no-input
+  unit_tests:
+  - UT-DATASET-BULK-UPDATE
+  contract_tests:
+  - CT-DATASET-BULK-UPDATE-HUMAN
+  - CT-DATASET-BULK-UPDATE-JSON
+  - CT-DATASET-BULK-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: BLOCKED[B07 DATASET_PATCH_UNTYPED]; reserved, not registered.
+  reviewed_by: primary
+- command_id: dataset.create
+  command_path: dataset create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateDatasets
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.create
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.create with validated request fields.
+  request_model: DatasetCreateRequest
+  result_model: DatasetCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset create --help
+  agent_example: mammoth dataset create --output json --no-input
+  unit_tests:
+  - UT-DATASET-CREATE
+  contract_tests:
+  - CT-DATASET-CREATE-HUMAN
+  - CT-DATASET-CREATE-JSON
+  - CT-DATASET-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'BLOCKED[B06 DATASET_CREATE_UNTYPED_ASYNC]: creation type is a free string and dataset_spec
+    is arbitrary; reserved, not registered.'
+  reviewed_by: primary
+- command_id: dataset.create-from-pdf
+  command_path: dataset create-from-pdf
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateDatasetFromPdf
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.create_from_pdf
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.create_from_pdf with validated request fields.
+  request_model: DatasetCreateFromPdfRequest
+  result_model: DatasetCreateFromPdfResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-CREATE-FROM-PDF
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset create-from-pdf --help
+  agent_example: mammoth dataset create-from-pdf --output json --no-input
+  unit_tests:
+  - UT-DATASET-CREATE-FROM-PDF
+  contract_tests:
+  - CT-DATASET-CREATE-FROM-PDF-HUMAN
+  - CT-DATASET-CREATE-FROM-PDF-JSON
+  - CT-DATASET-CREATE-FROM-PDF-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.data
+  command_path: dataset data
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDatasetData
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_data
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.get_data with validated request fields.
+  request_model: DatasetDataRequest
+  result_model: DatasetDataResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATASET-DATA
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset data --help
+  agent_example: mammoth dataset data --output json --no-input
+  unit_tests:
+  - UT-DATASET-DATA
+  contract_tests:
+  - CT-DATASET-DATA-HUMAN
+  - CT-DATASET-DATA-JSON
+  - CT-DATASET-DATA-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.delete
+  command_path: dataset delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteDataset
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.delete
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.delete with validated request fields.
+  request_model: DatasetDeleteRequest
+  result_model: DatasetDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset delete --help
+  agent_example: mammoth dataset delete --output json --no-input
+  unit_tests:
+  - UT-DATASET-DELETE
+  contract_tests:
+  - CT-DATASET-DELETE-HUMAN
+  - CT-DATASET-DELETE-JSON
+  - CT-DATASET-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Immutable dataset-ID confirmation.
+  reviewed_by: primary
+- command_id: dataset.file-settings
+  command_path: dataset file-settings
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetFileSettings
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_file_settings
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.get_file_settings with validated request fields.
+  request_model: DatasetFileSettingsRequest
+  result_model: DatasetFileSettingsResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATASET-FILE-SETTINGS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset file-settings --help
+  agent_example: mammoth dataset file-settings --output json --no-input
+  unit_tests:
+  - UT-DATASET-FILE-SETTINGS
+  contract_tests:
+  - CT-DATASET-FILE-SETTINGS-HUMAN
+  - CT-DATASET-FILE-SETTINGS-JSON
+  - CT-DATASET-FILE-SETTINGS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.file-settings.undo
+  command_path: dataset file-settings undo
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UndoFileSettings
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.file_settings_undo
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.file_settings_undo with validated request fields.
+  request_model: DatasetFileSettingsUndoRequest
+  result_model: DatasetFileSettingsUndoResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-FILE-SETTINGS-UNDO
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset file-settings undo --help
+  agent_example: mammoth dataset file-settings undo --output json --no-input
+  unit_tests:
+  - UT-DATASET-FILE-SETTINGS-UNDO
+  contract_tests:
+  - CT-DATASET-FILE-SETTINGS-UNDO-HUMAN
+  - CT-DATASET-FILE-SETTINGS-UNDO-JSON
+  - CT-DATASET-FILE-SETTINGS-UNDO-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.file-settings.update
+  command_path: dataset file-settings update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateFileSettings
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.file_settings_update
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.file_settings_update with validated request fields.
+  request_model: DatasetFileSettingsUpdateRequest
+  result_model: DatasetFileSettingsUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-FILE-SETTINGS-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset file-settings update --help
+  agent_example: mammoth dataset file-settings update --output json --no-input
+  unit_tests:
+  - UT-DATASET-FILE-SETTINGS-UPDATE
+  contract_tests:
+  - CT-DATASET-FILE-SETTINGS-UPDATE-HUMAN
+  - CT-DATASET-FILE-SETTINGS-UPDATE-JSON
+  - CT-DATASET-FILE-SETTINGS-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.get
+  command_path: dataset get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDataset
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.get
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.get with validated request fields.
+  request_model: DatasetGetRequest
+  result_model: DatasetGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATASET-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset get --help
+  agent_example: mammoth dataset get --output json --no-input
+  unit_tests:
+  - UT-DATASET-GET
+  contract_tests:
+  - CT-DATASET-GET-HUMAN
+  - CT-DATASET-GET-JSON
+  - CT-DATASET-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.list
+  command_path: dataset list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDatasets
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.list
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.list with validated request fields.
+  request_model: DatasetListRequest
+  result_model: DatasetListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-DATASET-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset list --help
+  agent_example: mammoth dataset list --output json --no-input
+  unit_tests:
+  - UT-DATASET-LIST
+  contract_tests:
+  - CT-DATASET-LIST-HUMAN
+  - CT-DATASET-LIST-JSON
+  - CT-DATASET-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: B01.
+  reviewed_by: primary
+- command_id: dataset.rename
+  command_path: dataset rename
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateDataset
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.rename
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.rename with validated request fields.
+  request_model: DatasetRenameRequest
+  result_model: DatasetRenameResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-RENAME
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset rename --help
+  agent_example: mammoth dataset rename --output json --no-input
+  unit_tests:
+  - UT-DATASET-RENAME
+  contract_tests:
+  - CT-DATASET-RENAME-HUMAN
+  - CT-DATASET-RENAME-JSON
+  - CT-DATASET-RENAME-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Convenience alias implemented through DatasetsAPI.update but registered as its own
+    canonical command.
+  reviewed_by: primary
+- command_id: dataset.restore
+  command_path: dataset restore
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RestoreDataset
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.restore
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.restore with validated request fields.
+  request_model: DatasetRestoreRequest
+  result_model: DatasetRestoreResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-RESTORE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset restore --help
+  agent_example: mammoth dataset restore --output json --no-input
+  unit_tests:
+  - UT-DATASET-RESTORE
+  contract_tests:
+  - CT-DATASET-RESTORE-HUMAN
+  - CT-DATASET-RESTORE-JSON
+  - CT-DATASET-RESTORE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.trash
+  command_path: dataset trash
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - TrashDataset
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.trash
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.trash with validated request fields.
+  request_model: DatasetTrashRequest
+  result_model: DatasetTrashResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-TRASH
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset trash --help
+  agent_example: mammoth dataset trash --output json --no-input
+  unit_tests:
+  - UT-DATASET-TRASH
+  contract_tests:
+  - CT-DATASET-TRASH-HUMAN
+  - CT-DATASET-TRASH-JSON
+  - CT-DATASET-TRASH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.update
+  command_path: dataset update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateDataset
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.update
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.update with validated request fields.
+  request_model: DatasetUpdateRequest
+  result_model: DatasetUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset update --help
+  agent_example: mammoth dataset update --output json --no-input
+  unit_tests:
+  - UT-DATASET-UPDATE
+  contract_tests:
+  - CT-DATASET-UPDATE-HUMAN
+  - CT-DATASET-UPDATE-JSON
+  - CT-DATASET-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'BLOCKED[B07 DATASET_PATCH_UNTYPED]: raw patch operations include rename/refresh/column
+    changes/reattach/deletion; reserved, not registered.'
+  reviewed_by: primary

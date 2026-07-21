@@ -1,0 +1,101 @@
+manifest_schema_version: 1
+commands:
+- command_id: context.project.clear
+  command_path: context project clear
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.context.project.clear
+  sdk_conversion: Call mammoth_cli.context.project.clear with validated request fields.
+  request_model: ContextProjectClearRequest
+  result_model: ContextProjectClearResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local project context clear.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth context project clear --help
+  agent_example: mammoth context project clear --output json --no-input
+  unit_tests:
+  - UT-CONTEXT-PROJECT-CLEAR
+  contract_tests:
+  - CT-CONTEXT-PROJECT-CLEAR-HUMAN
+  - CT-CONTEXT-PROJECT-CLEAR-JSON
+  - CT-CONTEXT-PROJECT-CLEAR-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: context.project.status
+  command_path: context project status
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.context.project.status
+  sdk_conversion: Call mammoth_cli.context.project.status with validated request fields.
+  request_model: ContextProjectStatusRequest
+  result_model: ContextProjectStatusResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local project context read.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth context project status --help
+  agent_example: mammoth context project status --output json --no-input
+  unit_tests:
+  - UT-CONTEXT-PROJECT-STATUS
+  contract_tests:
+  - CT-CONTEXT-PROJECT-STATUS-HUMAN
+  - CT-CONTEXT-PROJECT-STATUS-JSON
+  - CT-CONTEXT-PROJECT-STATUS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: context.project.use
+  command_path: context project use
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.context.project.use
+  sdk_conversion: Call mammoth_cli.context.project.use with validated request fields.
+  request_model: ContextProjectUseRequest
+  result_model: ContextProjectUseResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local project context write.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth context project use --help
+  agent_example: mammoth context project use --output json --no-input
+  unit_tests:
+  - UT-CONTEXT-PROJECT-USE
+  contract_tests:
+  - CT-CONTEXT-PROJECT-USE-HUMAN
+  - CT-CONTEXT-PROJECT-USE-JSON
+  - CT-CONTEXT-PROJECT-USE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

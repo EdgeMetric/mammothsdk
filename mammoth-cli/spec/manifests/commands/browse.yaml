@@ -1,0 +1,139 @@
+manifest_schema_version: 1
+commands:
+- command_id: browse.folder
+  command_path: browse folder
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - BrowseFolderFolders
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.browse.BrowseAPI.folder_resources
+  sdk_conversion: Call mammoth.api.browse.BrowseAPI.folder_resources with validated request fields.
+  request_model: BrowseFolderRequest
+  result_model: BrowseFolderResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-BROWSE-FOLDER
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth browse folder --help
+  agent_example: mammoth browse folder --output json --no-input
+  unit_tests:
+  - UT-BROWSE-FOLDER
+  contract_tests:
+  - CT-BROWSE-FOLDER-HUMAN
+  - CT-BROWSE-FOLDER-JSON
+  - CT-BROWSE-FOLDER-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Validate level and add continuation only if proven.
+  reviewed_by: primary
+- command_id: browse.project
+  command_path: browse project
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - BrowseProjectProjects
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.projects.ProjectsAPI.browse
+  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.browse with validated request fields.
+  request_model: BrowseProjectRequest
+  result_model: BrowseProjectResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: offset
+  acceptance_evidence: live_read_only
+  live_test: LT-BROWSE-PROJECT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth browse project --help
+  agent_example: mammoth browse project --output json --no-input
+  unit_tests:
+  - UT-BROWSE-PROJECT
+  contract_tests:
+  - CT-BROWSE-PROJECT-HUMAN
+  - CT-BROWSE-PROJECT-JSON
+  - CT-BROWSE-PROJECT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'B04 SERVER_VARIANCE: documented as returning HTTP 500 on some servers; a 5xx response
+    is not server_unavailable.'
+  reviewed_by: primary
+- command_id: browse.root
+  command_path: browse root
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - BrowseResources
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.browse.BrowseAPI.root
+  sdk_conversion: Call mammoth.api.browse.BrowseAPI.root with validated request fields.
+  request_model: BrowseRootRequest
+  result_model: BrowseRootResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-BROWSE-ROOT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth browse root --help
+  agent_example: mammoth browse root --output json --no-input
+  unit_tests:
+  - UT-BROWSE-ROOT
+  contract_tests:
+  - CT-BROWSE-ROOT-HUMAN
+  - CT-BROWSE-ROOT-JSON
+  - CT-BROWSE-ROOT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: browse.workspace
+  command_path: browse workspace
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - BrowseWorkspaceWorkspaces
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.browse.BrowseAPI.workspace_resources
+  sdk_conversion: Call mammoth.api.browse.BrowseAPI.workspace_resources with validated request fields.
+  request_model: BrowseWorkspaceRequest
+  result_model: BrowseWorkspaceResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-BROWSE-WORKSPACE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth browse workspace --help
+  agent_example: mammoth browse workspace --output json --no-input
+  unit_tests:
+  - UT-BROWSE-WORKSPACE
+  contract_tests:
+  - CT-BROWSE-WORKSPACE-HUMAN
+  - CT-BROWSE-WORKSPACE-JSON
+  - CT-BROWSE-WORKSPACE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Validate level against the OpenAPI enum and report truncation.
+  reviewed_by: primary

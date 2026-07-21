@@ -1,0 +1,242 @@
+manifest_schema_version: 1
+commands:
+- command_id: webhook.create
+  command_path: webhook create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateAWebhook
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.webhooks.WebhooksAPI.create
+  sdk_conversion: Call mammoth.api.webhooks.WebhooksAPI.create with validated request fields.
+  request_model: WebhookCreateRequest
+  result_model: WebhookCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-WEBHOOK-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth webhook create --help
+  agent_example: mammoth webhook create --output json --no-input
+  unit_tests:
+  - UT-WEBHOOK-CREATE
+  contract_tests:
+  - CT-WEBHOOK-CREATE-HUMAN
+  - CT-WEBHOOK-CREATE-JSON
+  - CT-WEBHOOK-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Secure creation uses the secret-output rule (--secret-out/--show-secret).
+  reviewed_by: primary
+- command_id: webhook.delete
+  command_path: webhook delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteWebhook
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.webhooks.WebhooksAPI.delete
+  sdk_conversion: Call mammoth.api.webhooks.WebhooksAPI.delete with validated request fields.
+  request_model: WebhookDeleteRequest
+  result_model: WebhookDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-WEBHOOK-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth webhook delete --help
+  agent_example: mammoth webhook delete --output json --no-input
+  unit_tests:
+  - UT-WEBHOOK-DELETE
+  contract_tests:
+  - CT-WEBHOOK-DELETE-HUMAN
+  - CT-WEBHOOK-DELETE-JSON
+  - CT-WEBHOOK-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Resolve webhook before confirmation.
+  reviewed_by: primary
+- command_id: webhook.get
+  command_path: webhook get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetWebhookDetails
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.webhooks.WebhooksAPI.get
+  sdk_conversion: Call mammoth.api.webhooks.WebhooksAPI.get with validated request fields.
+  request_model: WebhookGetRequest
+  result_model: WebhookGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WEBHOOK-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth webhook get --help
+  agent_example: mammoth webhook get --output json --no-input
+  unit_tests:
+  - UT-WEBHOOK-GET
+  contract_tests:
+  - CT-WEBHOOK-GET-HUMAN
+  - CT-WEBHOOK-GET-JSON
+  - CT-WEBHOOK-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Redact secret.
+  reviewed_by: primary
+- command_id: webhook.list
+  command_path: webhook list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListWebhooks
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.webhooks.WebhooksAPI.list
+  sdk_conversion: Call mammoth.api.webhooks.WebhooksAPI.list with validated request fields.
+  request_model: WebhookListRequest
+  result_model: WebhookListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: offset
+  acceptance_evidence: live_read_only
+  live_test: LT-WEBHOOK-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth webhook list --help
+  agent_example: mammoth webhook list --output json --no-input
+  unit_tests:
+  - UT-WEBHOOK-LIST
+  contract_tests:
+  - CT-WEBHOOK-LIST-HUMAN
+  - CT-WEBHOOK-LIST-JSON
+  - CT-WEBHOOK-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Current SDK discards pagination metadata.
+  reviewed_by: primary
+- command_id: webhook.send
+  command_path: webhook send
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddDataToWebhook
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.webhooks.WebhooksAPI.send_data
+  sdk_conversion: Call mammoth.api.webhooks.WebhooksAPI.send_data with validated request fields.
+  request_model: WebhookSendRequest
+  result_model: WebhookSendResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-WEBHOOK-SEND
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth webhook send --help
+  agent_example: mammoth webhook send --output json --no-input
+  unit_tests:
+  - UT-WEBHOOK-SEND
+  contract_tests:
+  - CT-WEBHOOK-SEND-HUMAN
+  - CT-WEBHOOK-SEND-JSON
+  - CT-WEBHOOK-SEND-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Never retry; requires a disposable webhook and dataset fixture; current dataset
+    permission blocks live evidence.
+  reviewed_by: primary
+- command_id: webhook.send-get
+  command_path: webhook send-get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddDataToWebhookUsingGetMethod
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.webhooks.WebhooksAPI.send_data_get
+  sdk_conversion: Call mammoth.api.webhooks.WebhooksAPI.send_data_get with validated request fields.
+  request_model: WebhookSendGetRequest
+  result_model: WebhookSendGetResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-WEBHOOK-SEND-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth webhook send-get --help
+  agent_example: mammoth webhook send-get --output json --no-input
+  unit_tests:
+  - UT-WEBHOOK-SEND-GET
+  contract_tests:
+  - CT-WEBHOOK-SEND-GET-HUMAN
+  - CT-WEBHOOK-SEND-GET-JSON
+  - CT-WEBHOOK-SEND-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: webhook send-get is a mutation despite HTTP GET, and it is never retried. Reject
+    an empty query; never log the URI if the server treats it as a capability.
+  reviewed_by: primary
+- command_id: webhook.update
+  command_path: webhook update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateWebhookConfigurations
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.webhooks.WebhooksAPI.update
+  sdk_conversion: Call mammoth.api.webhooks.WebhooksAPI.update with validated request fields.
+  request_model: WebhookUpdateRequest
+  result_model: WebhookUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-WEBHOOK-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth webhook update --help
+  agent_example: mammoth webhook update --output json --no-input
+  unit_tests:
+  - UT-WEBHOOK-UPDATE
+  contract_tests:
+  - CT-WEBHOOK-UPDATE-HUMAN
+  - CT-WEBHOOK-UPDATE-JSON
+  - CT-WEBHOOK-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Reject an empty patch; a newly issued secret uses the secret-output rule.
+  reviewed_by: primary

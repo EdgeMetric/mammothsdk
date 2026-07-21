@@ -1,0 +1,68 @@
+manifest_schema_version: 1
+commands:
+- command_id: completion.install
+  command_path: completion install
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.commands.completion.install
+  sdk_conversion: Call mammoth_cli.commands.completion.install with validated request fields.
+  request_model: CompletionInstallRequest
+  result_model: CompletionInstallResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local shell completion install.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth completion install --help
+  agent_example: mammoth completion install --output json --no-input
+  unit_tests:
+  - UT-COMPLETION-INSTALL
+  contract_tests:
+  - CT-COMPLETION-INSTALL-HUMAN
+  - CT-COMPLETION-INSTALL-JSON
+  - CT-COMPLETION-INSTALL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: completion.show
+  command_path: completion show
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.commands.completion.show
+  sdk_conversion: Call mammoth_cli.commands.completion.show with validated request fields.
+  request_model: CompletionShowRequest
+  result_model: CompletionShowResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local shell completion output.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth completion show --help
+  agent_example: mammoth completion show --output json --no-input
+  unit_tests:
+  - UT-COMPLETION-SHOW
+  contract_tests:
+  - CT-COMPLETION-SHOW-HUMAN
+  - CT-COMPLETION-SHOW-JSON
+  - CT-COMPLETION-SHOW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

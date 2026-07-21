@@ -1,0 +1,35 @@
+manifest_schema_version: 1
+commands:
+- command_id: doctor
+  command_path: doctor
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.commands.doctor.run
+  sdk_conversion: Call mammoth_cli.commands.doctor.run with validated request fields.
+  request_model: DoctorRequest
+  result_model: DoctorResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Diagnostic; safe read-only checks.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth doctor --help
+  agent_example: mammoth doctor --output json --no-input
+  unit_tests:
+  - UT-DOCTOR
+  contract_tests:
+  - CT-DOCTOR-HUMAN
+  - CT-DOCTOR-JSON
+  - CT-DOCTOR-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

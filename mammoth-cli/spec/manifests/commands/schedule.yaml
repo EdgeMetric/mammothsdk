@@ -1,0 +1,172 @@
+manifest_schema_version: 1
+commands:
+- command_id: schedule.create
+  command_path: schedule create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateSchedule
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.schedules.SchedulesAPI.create
+  sdk_conversion: Call mammoth.api.schedules.SchedulesAPI.create with validated request fields.
+  request_model: ScheduleCreateRequest
+  result_model: ScheduleCreateResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth schedule create --help
+  agent_example: mammoth schedule create --output json --no-input
+  unit_tests:
+  - UT-SCHEDULE-CREATE
+  contract_tests:
+  - CT-SCHEDULE-CREATE-HUMAN
+  - CT-SCHEDULE-CREATE-JSON
+  - CT-SCHEDULE-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: schedule.delete
+  command_path: schedule delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteSchedule
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.schedules.SchedulesAPI.delete
+  sdk_conversion: Call mammoth.api.schedules.SchedulesAPI.delete with validated request fields.
+  request_model: ScheduleDeleteRequest
+  result_model: ScheduleDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-SCHEDULE-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth schedule delete --help
+  agent_example: mammoth schedule delete --output json --no-input
+  unit_tests:
+  - UT-SCHEDULE-DELETE
+  contract_tests:
+  - CT-SCHEDULE-DELETE-HUMAN
+  - CT-SCHEDULE-DELETE-JSON
+  - CT-SCHEDULE-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Immutable ID confirmation.
+  reviewed_by: primary
+- command_id: schedule.get
+  command_path: schedule get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetSchedule
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.schedules.SchedulesAPI.get
+  sdk_conversion: Call mammoth.api.schedules.SchedulesAPI.get with validated request fields.
+  request_model: ScheduleGetRequest
+  result_model: ScheduleGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-SCHEDULE-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth schedule get --help
+  agent_example: mammoth schedule get --output json --no-input
+  unit_tests:
+  - UT-SCHEDULE-GET
+  contract_tests:
+  - CT-SCHEDULE-GET-HUMAN
+  - CT-SCHEDULE-GET-JSON
+  - CT-SCHEDULE-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: schedule.list
+  command_path: schedule list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListSchedules
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.schedules.SchedulesAPI.list
+  sdk_conversion: Call mammoth.api.schedules.SchedulesAPI.list with validated request fields.
+  request_model: ScheduleListRequest
+  result_model: ScheduleListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: offset
+  acceptance_evidence: live_read_only
+  live_test: LT-SCHEDULE-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth schedule list --help
+  agent_example: mammoth schedule list --output json --no-input
+  unit_tests:
+  - UT-SCHEDULE-LIST
+  contract_tests:
+  - CT-SCHEDULE-LIST-HUMAN
+  - CT-SCHEDULE-LIST-JSON
+  - CT-SCHEDULE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'B04 SERVER_VARIANCE: schedule list may return 405.'
+  reviewed_by: primary
+- command_id: schedule.update
+  command_path: schedule update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PatchSchedule
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.schedules.SchedulesAPI.update
+  sdk_conversion: Call mammoth.api.schedules.SchedulesAPI.update with validated request fields.
+  request_model: ScheduleUpdateRequest
+  result_model: ScheduleUpdateResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth schedule update --help
+  agent_example: mammoth schedule update --output json --no-input
+  unit_tests:
+  - UT-SCHEDULE-UPDATE
+  contract_tests:
+  - CT-SCHEDULE-UPDATE-HUMAN
+  - CT-SCHEDULE-UPDATE-JSON
+  - CT-SCHEDULE-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: status=resume requires exact ID confirmation.
+  reviewed_by: primary
