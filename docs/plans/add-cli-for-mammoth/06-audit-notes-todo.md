@@ -212,10 +212,13 @@ documentation preferences.
   logs, snapshots, command lines, or artifacts.
 - Every recon and live-test run must create and use a new isolated project. It
   must not mutate an existing project.
-- Therefore the supplied credentials are verified for authentication and
-  project create/list/delete, but not for dataset creation, file upload, view
-  operations, or transformations. Do not claim that live bulk replace or the
-  full acceptance suite passed.
+- The supplied credentials are verified for authentication and project
+  create/list/delete. Dataset creation, file upload, view operations, and
+  transformations are authorized in the pre-existing provisioned project `180`
+  ("Test") but NOT in freshly API-created projects (project-scoped RBAC; see the
+  recon log and blockers). Run those families' live acceptance against `180`,
+  creating and cleaning up only own resources. Do not yet claim the full
+  acceptance suite passed until those handlers exist and their live tests run.
 - The reviewed planning appendices contain exactly 376 OpenAPI operation rows
   and 242 public SDK method rows. They are planning evidence; the generated
   pre-code manifests and their primary sign-off remain implementation work.
@@ -230,6 +233,8 @@ documentation preferences.
 | 2026-07-21 | `release`, workspace `4` | Connect, create/list/delete project | Passed; project/list response shapes recorded | Project `1193` | Deleted |
 | 2026-07-21 | `release`, workspace `4` | Create project, upload `employee.csv` | Upload not authorized | Project `1194` | Deleted |
 | 2026-07-21 | `release`, workspace `4` | Create project, create sketch dataset | Dataset create not authorized | Project `1195` | Deleted |
+| 2026-07-21 | `release`, ws `4`, project `180` ("Test") | Get project, list datasets, create + delete sketch dataset | All passed; dataset `2340` created and deleted | Dataset `2340` | Deleted |
+| 2026-07-21 | `release`, ws `4`, fresh project `1196` | Create project, create sketch dataset | Project create passed; dataset create returned `MammothAuthError: You are not authorized to perform this action` | Project `1196` | Deleted |
 
 ## Blockers before live acceptance
 
@@ -237,10 +242,29 @@ documentation preferences.
 - [x] Record the allowlisted test workspace ID as `4`.
 - [x] Record the test server prefix as `release`.
 - [x] Verify that the credentials can create and delete an isolated project.
-- [ ] Grant the test principal file-upload and dataset-creation access in
-  workspace `4`, or provide a disposable workspace with those permissions.
-- [ ] Re-run isolated dataset, view, query, pipeline, and bulk-replace recon
-  after the permission blocker is removed.
+- [x] Root-caused the earlier "dataset create not authorized" result on
+  2026-07-21. It is **project-scoped authorization**, not a principal-wide
+  limitation. Confirmed live: creating a sketch dataset in a freshly
+  API-created project (`1196`) returns `MammothAuthError` ("You are not
+  authorized to perform this action"), but the same operation with the same
+  credentials succeeds in the pre-existing provisioned project `180` ("Test").
+  The API principal that creates a project is not automatically granted
+  dataset-write authority on it (project-level RBAC / data-domain
+  provisioning). Both recon runs cleaned up fully (dataset `2340` and project
+  `1196` deleted; no leaks).
+- [x] Live target for dataset/view/pipeline/transformation acceptance is the
+  user-authorized pre-existing project `180` on `release` workspace `4`. Live
+  tests MUST create their own datasets/views inside `180` and delete only what
+  they create; they MUST NOT touch its pre-existing datasets ("Result Dataset",
+  "Multi-Store_Retail_Sales.csv", "Multi-Store_Retail_Sales.csv 2",
+  "Supply_Chain_Optimization.csv"). This is an explicit, user-authorized
+  exception to the "always create a new disposable project" rule, because the
+  principal cannot create datasets in self-created projects.
+- [ ] Re-run isolated dataset, view, query, pipeline, and bulk-replace live
+  acceptance against project `180` as each family's handlers land (Phases 4-7).
+- [ ] (Optional) Ask whether the principal can be granted dataset-create
+  authority on self-created projects, to restore the disposable-project
+  discipline. Not required while `180` is authorized.
 - [ ] Record available external export and connector fixtures.
 - [ ] Add dedicated disposable fixtures for billing, account, user, and
   external-destination tests if those tests are authorized.

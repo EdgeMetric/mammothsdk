@@ -14,19 +14,17 @@ positionals and options are added per family as each handler is implemented.
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Callable
 from typing import Any
 
 import typer
 
 from mammoth_cli import __version__
+from mammoth_cli.commands import BESPOKE
 from mammoth_cli.commands.registry import HANDLERS
-from mammoth_cli.errors.envelope import CliError, not_implemented_error
+from mammoth_cli.errors.envelope import not_implemented_error
 from mammoth_cli.manifest.loader import command_by_id, load_commands
-from mammoth_cli.output.envelope import Meta, Result
-from mammoth_cli.output.policy import resolve_policy
-from mammoth_cli.output.render import render
+from mammoth_cli.runtime import executor
 from mammoth_cli.runtime.invocation import Invocation
 
 OUTPUT_MODES = ("table", "json", "yaml", "ndjson", "plain")
@@ -107,38 +105,16 @@ def _build_leaf(command_id: str, *, is_group_callback: bool = False) -> Callable
 
 def _execute(invocation: Invocation) -> None:
     """Run one command: dispatch to its handler and render the envelope."""
-    record = command_by_id(invocation.command_id)
-    policy = resolve_policy(
-        output=invocation.output,
-        no_input=invocation.no_input,
-        no_progress=invocation.no_progress,
-        is_tty=sys.stdin.isatty(),
-        color=invocation.color,
-    )
-    try:
+
+    def producer() -> tuple[Any, dict[str, Any]]:
         handler = HANDLERS.get(invocation.command_id)
         if handler is None:
+            record = command_by_id(invocation.command_id)
             sdk_symbol = record.get("sdk_symbol", "") if record else ""
             raise not_implemented_error(invocation.command_id, sdk_symbol)
-        data, meta_extra = handler(invocation)
-        meta = Meta(command=invocation.command_id.replace(".", " "), **meta_extra)
-        envelope = Result(data=data, meta=meta).to_envelope()
-        render(envelope, output=invocation.output)
-    except CliError as error:
-        _render_error(error, policy.is_machine)
-        raise typer.Exit(error.exit_status) from None
+        return handler(invocation)
 
-
-def _render_error(error: CliError, machine: bool) -> None:
-    if machine:
-        render(error.to_envelope(), output="json", stream=sys.stderr)
-    else:
-        message = error.message
-        if error.hint:
-            message = f"{message}\n{error.hint}"
-        typer.echo(f"error [{error.code}]: {message}", err=True)
-        for command in error.recovery_commands:
-            typer.echo(f"  try: {command}", err=True)
+    executor.run(invocation.command_id, invocation.output, producer)
 
 
 def build_app() -> typer.Typer:
@@ -205,15 +181,19 @@ def build_app() -> typer.Typer:
         _group_for(tokens)
 
     # Register every non-container command as a leaf under its parent group.
+    # A command_id with a bespoke, fully-typed callback overrides the generic
+    # leaf at the same registered name and path; the manifest-driven surface
+    # is otherwise unchanged.
     for tokens, command_id in sorted(path_to_command.items()):
         if tokens in containers:
             continue
         record = command_by_id(command_id)
+        callback = BESPOKE.get(command_id) or _build_leaf(command_id)
         _group_for(tokens[:-1]).command(
             name=tokens[-1],
             help=(record or {}).get("known_restrictions") or None,
             context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
-        )(_build_leaf(command_id))
+        )(callback)
 
     return root
 
