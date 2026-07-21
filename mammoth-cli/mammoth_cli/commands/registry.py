@@ -126,6 +126,11 @@ HANDLERS: dict[str, Handler] = {
     "project.bulk-delete": project_cmd.project_bulk_delete,
     "project.bulk-update": project_cmd.project_bulk_update,
     "project.sample-flow": project_cmd.project_sample_flow,
+    "project.checkpoint.list": project_cmd.project_checkpoint_list,
+    "project.data-check.list": project_cmd.project_data_check_list,
+    "project.user.add": project_cmd.project_user_add,
+    "project.user.remove": project_cmd.project_user_remove,
+    "project.user.update": project_cmd.project_user_update,
     # folder family
     "folder.list": folder_cmd.folder_list,
     "folder.get": folder_cmd.folder_get,

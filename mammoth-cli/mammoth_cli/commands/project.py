@@ -240,3 +240,80 @@ def project_sample_flow(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+_LIST_FILTER_OPTIONAL = ("fields", "sort", "dataview_id", "sequence", "status")
+
+
+def _list_with_filters(invocation: Invocation) -> HandlerResult:
+    """Shared handler for a project-scoped list with the standard filters."""
+    project_id = _project_id(invocation)
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {"project_id": project_id}
+    for field in _LIST_FILTER_OPTIONAL:
+        if field in document:
+            kwargs[field] = document[field]
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def project_checkpoint_list(invocation: Invocation) -> HandlerResult:
+    """List a project's checkpoints, with optional filters from ``--input``."""
+    return _list_with_filters(invocation)
+
+
+def project_data_check_list(invocation: Invocation) -> HandlerResult:
+    """List a project's data checks, with optional filters from ``--input``."""
+    return _list_with_filters(invocation)
+
+
+def project_user_add(invocation: Invocation) -> HandlerResult:
+    """Add users to a project. High-impact: ``--yes --confirm PROJECT_ID``."""
+    project_id = _project_id(invocation)
+    document = invocation.load_input()
+    user_ids = _require_input_field(document, "user_ids")
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_CONFIRM_TARGET,
+        action=f"add users to project {project_id}",
+        target=str(project_id),
+    )
+    kwargs: dict[str, Any] = {"project_id": project_id, "user_ids": user_ids}
+    assert document is not None
+    if "role" in document:
+        kwargs["role"] = document["role"]
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def project_user_remove(invocation: Invocation) -> HandlerResult:
+    """Remove users from a project. High-impact: ``--yes --confirm PROJECT_ID``."""
+    project_id = _project_id(invocation)
+    document = invocation.load_input()
+    user_ids = _require_input_field(document, "user_ids")
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_CONFIRM_TARGET,
+        action=f"remove users from project {project_id}",
+        target=str(project_id),
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), project_id=project_id, user_ids=user_ids)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def project_user_update(invocation: Invocation) -> HandlerResult:
+    """Update a project member's role (``role`` required; ``user_id``/``invite_id``)."""
+    project_id = _project_id(invocation)
+    document = invocation.load_input()
+    role = _require_input_field(document, "role")
+    kwargs: dict[str, Any] = {"project_id": project_id, "role": role}
+    assert document is not None
+    for field in ("user_id", "invite_id"):
+        if field in document:
+            kwargs[field] = document[field]
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
