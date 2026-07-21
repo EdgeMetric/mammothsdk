@@ -18,6 +18,7 @@ from typing import Any
 
 from mammoth_cli import SCHEMA_VERSION, __version__
 from mammoth_cli.commands import capability as capability_cmd
+from mammoth_cli.commands import folder as folder_cmd
 from mammoth_cli.commands import project as project_cmd
 from mammoth_cli.commands import schema as schema_cmd
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
@@ -96,4 +97,14 @@ HANDLERS: dict[str, Handler] = {
     "project.bulk-delete": project_cmd.project_bulk_delete,
     "project.bulk-update": project_cmd.project_bulk_update,
     "project.sample-flow": project_cmd.project_sample_flow,
+    # folder family
+    "folder.list": folder_cmd.folder_list,
+    "folder.get": folder_cmd.folder_get,
+    "folder.root": folder_cmd.folder_root,
+    "folder.create": folder_cmd.folder_create,
+    "folder.update": folder_cmd.folder_update,
+    "folder.move": folder_cmd.folder_move,
+    "folder.trash": folder_cmd.folder_trash,
+    "folder.delete": folder_cmd.folder_delete,
+    "folder.bulk-delete": folder_cmd.folder_bulk_delete,
 }
