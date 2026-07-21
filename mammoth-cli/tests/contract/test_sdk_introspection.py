@@ -15,7 +15,7 @@ CLI_ROOT = Path(__file__).resolve().parent.parent.parent
 SCRIPTS = CLI_ROOT / "scripts"
 MANIFESTS = CLI_ROOT / "spec" / "manifests"
 
-EXPECTED_METHOD_COUNT = 242
+EXPECTED_METHOD_COUNT = 471
 
 
 def _introspection() -> dict:

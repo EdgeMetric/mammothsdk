@@ -439,6 +439,34 @@ class AutomationsAPI:
             f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}",
         )
 
+    def restore(self, automation_id: int) -> dict[str, Any]:
+        """Restore a trashed automation.
+
+        Args:
+            automation_id: ID of the automation.
+
+        Returns:
+            Dict with the restored automation info.
+        """
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}/restore",
+        )
+
+    def trash(self, automation_id: int) -> dict[str, Any]:
+        """Move an automation to trash.
+
+        Args:
+            automation_id: ID of the automation.
+
+        Returns:
+            Dict with the trashed automation info.
+        """
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}/trash",
+        )
+
     # ── Schedules ────────────────────────────────────────────────
 
     def list_schedules(self) -> _list[dict[str, Any]]:

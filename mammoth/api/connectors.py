@@ -416,6 +416,35 @@ class ConnectorsAPI:
             f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
         )
 
+    def ds_config_delete_all(
+        self,
+        connector_key: str,
+        connection_key: str,
+        config_ids: _list[str] | str,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Bulk-delete data source configurations for a connection.
+
+        Args:
+            connector_key: Key identifying the connector type.
+            connection_key: Key identifying the connection.
+            config_ids: List of data source config keys (or comma-separated
+                string) to delete.
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            Dict with deletion result.
+        """
+        ws = self._ws()
+        proj = self._proj(project_id)
+        ids_str = ",".join(config_ids) if isinstance(config_ids, _list) else config_ids
+        return self._client._request_json(
+            "DELETE",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}"
+            f"/connections/{connection_key}/ds_configs",
+            params={"config_ids": ids_str},
+        )
+
     def active_connectors(self) -> _list[dict[str, Any]]:
         """List active connectors with established connections.
 

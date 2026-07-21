@@ -32,6 +32,69 @@ class BrowseAPI:
             return proj
         raise ValueError("project_id must be set on the client using client.set_project_id()")
 
+    def root(
+        self,
+        fields: str | None = None,
+        name: str | None = None,
+        browse_type: str | None = None,
+        created_at: str | None = None,
+        updated_at: str | None = None,
+        sort: str | None = None,
+        offset: int | None = None,
+        limit: int | None = None,
+        ids: str | None = None,
+        include_hidden: bool | None = None,
+        level: int | None = None,
+        permissions: str | None = None,
+    ) -> dict[str, Any]:
+        """Browse resources across all workspaces the caller has access to.
+
+        This is the top-level, non-workspace-scoped browse endpoint (``/browse``).
+
+        Args:
+            fields: Comma-separated list of fields to include in the response.
+            name: Filter by resource name.
+            browse_type: Filter by resource type (e.g. "workspace", "project").
+            created_at: Filter by creation date.
+            updated_at: Filter by last-updated date.
+            sort: Sort order for results.
+            offset: Number of results to skip.
+            limit: Maximum number of results.
+            ids: Comma-separated list of resource IDs to filter by.
+            include_hidden: Whether to include hidden resources.
+            level: Depth of children to include.
+            permissions: Filter by permission level.
+
+        Returns:
+            Dict with browse resources.
+        """
+        params: dict[str, Any] = {}
+        if fields is not None:
+            params["fields"] = fields
+        if name is not None:
+            params["name"] = name
+        if browse_type is not None:
+            params["browse_type"] = browse_type
+        if created_at is not None:
+            params["created_at"] = created_at
+        if updated_at is not None:
+            params["updated_at"] = updated_at
+        if sort is not None:
+            params["sort"] = sort
+        if offset is not None:
+            params["offset"] = offset
+        if limit is not None:
+            params["limit"] = limit
+        if ids is not None:
+            params["ids"] = ids
+        if include_hidden is not None:
+            params["include_hidden"] = include_hidden
+        if level is not None:
+            params["level"] = level
+        if permissions is not None:
+            params["permissions"] = permissions
+        return self._client._request_json("GET", "/browse", params=params or None)
+
     def workspaces(self) -> dict[str, Any]:
         """Browse available workspaces.
 

@@ -33,27 +33,45 @@ import requests
 
 from mammoth.api.activity_logs import ActivityLogsAPI
 from mammoth.api.addons import AddonsAPI
+from mammoth.api.agents import AgentsAPI
 from mammoth.api.ai import AIAPI
+from mammoth.api.annotations import AnnotationsAPI
 from mammoth.api.automations import AutomationsAPI
 from mammoth.api.batches import BatchesAPI
+from mammoth.api.billing import BillingAPI
 from mammoth.api.browse import BrowseAPI
+from mammoth.api.checkpoints import CheckpointsAPI
 from mammoth.api.clientapps import ClientAppsAPI
+from mammoth.api.connector_ai import ConnectorAIAPI
 from mammoth.api.connectors import ConnectorsAPI
 from mammoth.api.dashboards import DashboardsAPI
+from mammoth.api.data_apps import DataAppsAPI
+from mammoth.api.data_checks import DataChecksAPI
 from mammoth.api.datasets import DatasetsAPI
 from mammoth.api.dataviews import DataviewsAPI
+from mammoth.api.derivatives import DerivativesAPI
 from mammoth.api.exports import ExportsAPI
 from mammoth.api.external_keys import ExternalKeysAPI
 from mammoth.api.files import FilesAPI
 from mammoth.api.folders import FoldersAPI
 from mammoth.api.jobs import JobsAPI
+from mammoth.api.notifications import NotificationsAPI
+from mammoth.api.parameters import ParametersAPI
 from mammoth.api.pipeline import PipelineAPI
+from mammoth.api.pipeline_versions import PipelineVersionsAPI
 from mammoth.api.projects import ProjectsAPI
 from mammoth.api.reports import ReportsAPI
 from mammoth.api.schedules import SchedulesAPI
+from mammoth.api.snippets import SnippetsAPI
+from mammoth.api.support import SupportAPI
+from mammoth.api.templates import TemplatesAPI
+from mammoth.api.trash import TrashAPI
 from mammoth.api.user_profile import UserProfileAPI
+from mammoth.api.users import UsersAPI
 from mammoth.api.webhooks import WebhooksAPI
+from mammoth.api.workflows import WorkflowsAPI
 from mammoth.api.workspace import WorkspaceAPI
+from mammoth.api.workspaces import WorkspacesAPI
 from mammoth.exceptions import MammothAPIError, MammothAuthError
 
 
@@ -274,6 +292,27 @@ class MammothClient:
         self.user_profile = UserProfileAPI(self)
         self.addons = AddonsAPI(self)
         self.reports = ReportsAPI(self)
+        self.agents = AgentsAPI(self)
+        self.annotations = AnnotationsAPI(self)
+        self.billing = BillingAPI(self)
+        self.checkpoints = CheckpointsAPI(self)
+        self.connector_ai = ConnectorAIAPI(self)
+        self.data_apps = DataAppsAPI(self)
+        self.data_checks = DataChecksAPI(self)
+        self.derivatives = DerivativesAPI(self)
+        self.notifications = NotificationsAPI(self)
+        self.parameters = ParametersAPI(self)
+        self.pipeline_versions = PipelineVersionsAPI(self)
+        self.snippets = SnippetsAPI(self)
+        self.support = SupportAPI(self)
+        self.templates = TemplatesAPI(self)
+        self.trash = TrashAPI(self)
+        self.users = UsersAPI(self)
+        self.workflows = WorkflowsAPI(self)
+        # ``workspaces`` (WorkspaceAPI) is the current-workspace CRUD seam kept
+        # for backward compatibility; ``workspace`` (WorkspacesAPI) exposes the
+        # workspace-collection, membership, invite, usage, and AI operations.
+        self.workspace = WorkspacesAPI(self)
 
     def find_dataset_for_dataview(self, dataview_id: int) -> int:
         """Find the parent dataset ID for a given dataview.

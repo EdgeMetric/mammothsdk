@@ -4,12 +4,20 @@ Projects API client for managing projects in Mammoth.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
+
+from ..exceptions import MammothValidationError
 
 if TYPE_CHECKING:
     from ..client import MammothClient
 
 _list = list  # Alias to avoid shadowing by method name
+
+ERR_PROJECT_ID_POSITIVE = "`project_id` must be a positive integer, got {0}."
+ERR_USER_OR_INVITE_ID_REQUIRED = (
+    "Exactly one of `user_id` or `invite_id` must be provided, got user_id={0!r}, "
+    "invite_id={1!r}."
+)
 
 
 class ProjectsAPI:
@@ -319,4 +327,282 @@ class ProjectsAPI:
             "GET",
             f"/workspaces/{ws}/projects/{project_id}/browse",
             params=params or None,
+        )
+
+    def checkpoint_list(
+        self,
+        project_id: int,
+        workspace_id: int | None = None,
+        fields: str | None = None,
+        sort: str | None = None,
+        dataview_id: int | None = None,
+        sequence: int | None = None,
+        status: str | None = None,
+    ) -> dict[str, Any]:
+        """List pipeline checkpoints across all dataviews in a project.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            fields: Fields to return (e.g., "__standard", "__full", "__min").
+            sort: Sort specification.
+            dataview_id: Filter to checkpoints for a specific dataview.
+            sequence: Filter by pipeline task sequence number.
+            status: Filter by checkpoint status.
+
+        Returns:
+            Dict with the checkpoints list.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        ws = workspace_id or self._ws()
+        params: dict[str, Any] = {}
+        if fields is not None:
+            params["fields"] = fields
+        if sort is not None:
+            params["sort"] = sort
+        if dataview_id is not None:
+            params["dataview_id"] = dataview_id
+        if sequence is not None:
+            params["sequence"] = sequence
+        if status is not None:
+            params["status"] = status
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{project_id}/checkpoints",
+            params=params or None,
+        )
+
+    def data_check_list(
+        self,
+        project_id: int,
+        workspace_id: int | None = None,
+        fields: str | None = None,
+        sort: str | None = None,
+        dataview_id: int | None = None,
+        sequence: int | None = None,
+        status: str | None = None,
+    ) -> dict[str, Any]:
+        """List data checks across all dataviews in a project.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            fields: Fields to return (e.g., "__standard", "__full", "__min").
+            sort: Sort specification.
+            dataview_id: Filter to data checks for a specific dataview.
+            sequence: Filter by pipeline task sequence number.
+            status: Filter by data check status.
+
+        Returns:
+            Dict with the data checks list.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        ws = workspace_id or self._ws()
+        params: dict[str, Any] = {}
+        if fields is not None:
+            params["fields"] = fields
+        if sort is not None:
+            params["sort"] = sort
+        if dataview_id is not None:
+            params["dataview_id"] = dataview_id
+        if sequence is not None:
+            params["sequence"] = sequence
+        if status is not None:
+            params["status"] = status
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{project_id}/data-checks",
+            params=params or None,
+        )
+
+    def pending_changes(
+        self,
+        project_id: int,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Get pending (uncommitted) changes for a project.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict describing the project's pending changes.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        ws = workspace_id or self._ws()
+        return self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{project_id}/pending-changes"
+        )
+
+    def publish_credentials(
+        self,
+        project_id: int,
+        odbc_type: Literal["postgres", "bigquery"],
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Get ODBC publish credentials for a project.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            odbc_type: ODBC connector type — "postgres" or "bigquery".
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict with the publish credentials.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        ws = workspace_id or self._ws()
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{project_id}/credentials",
+            params={"odbc_type": odbc_type},
+        )
+
+    def resource_dependencies(
+        self,
+        project_id: int,
+        resource_ids: _list[str],
+        is_recursive: bool | None = None,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Get the dependency graph for a set of resources in a project.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            resource_ids: Resource IDs to look up dependencies for.
+            is_recursive: Recursively traverse the dependency graph.
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict keyed by resource_id with each resource's dependency graph.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        ws = workspace_id or self._ws()
+        params: dict[str, Any] = {"resource_ids": ",".join(resource_ids)}
+        if is_recursive is not None:
+            params["is_recursive"] = is_recursive
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{project_id}/resource-dependencies",
+            params=params,
+        )
+
+    def resource_status(
+        self,
+        project_id: int,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Get resource status summary for a project.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict with the project's resource status summary.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        ws = workspace_id or self._ws()
+        return self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{project_id}/resource-status"
+        )
+
+    def sample_flow(
+        self,
+        project_id: int,
+        label_resource_id: int | None = None,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Create a sample flow: ingest a sample file into the project.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            label_resource_id: Parent folder resource ID to place the imported
+                file under (optional; defaults to the project root).
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict with the created sample file's name and ingestion job_id.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        ws = workspace_id or self._ws()
+        payload: dict[str, Any] = {}
+        if label_resource_id is not None:
+            payload["label_resource_id"] = label_resource_id
+        return self._client._request_json(
+            "POST", f"/workspaces/{ws}/projects/{project_id}/sample-flow", json=payload
+        )
+
+    def user_update(
+        self,
+        project_id: int,
+        role: Literal["project_admin", "project_analyst"],
+        user_id: int | None = None,
+        invite_id: int | None = None,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Update a project user's or pending invite's role.
+
+        Exactly one of *user_id* or *invite_id* must be given to identify the
+        target of the role change.
+
+        Args:
+            project_id: ID of the project (must be a positive integer).
+            role: New role — "project_admin" or "project_analyst".
+            user_id: ID of the existing project user to update.
+            invite_id: ID of the pending invite to update.
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            Dict with the update result.
+
+        Raises:
+            MammothValidationError: If project_id is not a positive integer, or
+                if *user_id* and *invite_id* are not given exactly one at a time.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        if (user_id is None) == (invite_id is None):
+            raise MammothValidationError(ERR_USER_OR_INVITE_ID_REQUIRED.format(user_id, invite_id))
+        ws = workspace_id or self._ws()
+        params: dict[str, Any] = {}
+        if user_id is not None:
+            params["user_id"] = user_id
+        if invite_id is not None:
+            params["invite_id"] = invite_id
+        payload = {"patch": [{"op": "replace", "path": "permissions", "value": role}]}
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{project_id}/users",
+            params=params,
+            json=payload,
         )

@@ -11,7 +11,12 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any
 
-from ..exceptions import MammothAPIError, MammothJobTimeoutError, MammothTransformError
+from ..exceptions import (
+    MammothAPIError,
+    MammothJobTimeoutError,
+    MammothTransformError,
+    MammothValidationError,
+)
 
 _list = list  # Alias to avoid shadowing by method name
 
@@ -21,6 +26,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 PIPELINE_TERMINAL_STATES = frozenset({"ready", "runtime_error", "ref_error"})
+
+ERR_FROM_SEQUENCE_NON_NEGATIVE = "`from_sequence` must be >= 0, got {0}."
 
 
 class PipelineAPI:
@@ -112,7 +119,7 @@ class PipelineAPI:
                     project_id=project_id,
                 )
                 return dataset_id
-            except MammothAPIError, KeyError:
+            except (MammothAPIError, KeyError):
                 continue
 
         raise ValueError(f"Dataview {dataview_id} not found in any dataset in project {project_id}")
@@ -438,3 +445,100 @@ class PipelineAPI:
 
             logger.debug("Pipeline state for dataview %d: %s — waiting...", dataview_id, state)
             time.sleep(poll_interval)
+
+    def command(
+        self, dataview_id: int, command: str, dataset_id: int | None = None
+    ) -> dict[str, Any]:
+        """Execute a draft-mode command on a dataview's pipeline.
+
+        This wraps the OpenAPI ``ExecutePipelineDraftCommand`` operation, which
+        is the same ``.../draft-mode`` endpoint used by :meth:`draft_mode`.
+
+        Args:
+            dataview_id: ID of the dataview.
+            command: Draft mode command ("enter", "exit", "submit", "discard").
+            dataset_id: Dataset ID (auto-detected if not provided).
+
+        Returns:
+            Draft mode state dict.
+        """
+        return self.draft_mode(dataview_id, command, dataset_id)
+
+    def items(
+        self,
+        dataview_id: int,
+        dataset_id: int | None = None,
+        fields: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+        sort: str | None = None,
+        sequence: int | None = None,
+        status: str | None = None,
+    ) -> dict[str, Any]:
+        """Get pipeline items (tasks and exports, interleaved) for a dataview.
+
+        Args:
+            dataview_id: ID of the dataview.
+            dataset_id: Dataset ID (auto-detected if not provided).
+            fields: Fields to return (e.g., "__standard", "__full", "__min").
+            limit: Maximum number of results.
+            offset: Number of results to skip.
+            sort: Sort specification.
+            sequence: Filter to a specific pipeline task sequence number.
+            status: Filter by item status.
+
+        Returns:
+            Dict with the pipeline items list.
+        """
+        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
+        params: dict[str, Any] = {}
+        if fields is not None:
+            params["fields"] = fields
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if sort is not None:
+            params["sort"] = sort
+        if sequence is not None:
+            params["sequence"] = sequence
+        if status is not None:
+            params["status"] = status
+        return self._client._request_json(
+            "GET", f"{self._base_url(ws, proj, ds, dv)}/items", params=params or None
+        )
+
+    def rerun(
+        self,
+        dataview_id: int,
+        from_sequence: int | None = None,
+        dataset_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Rerun the pipeline starting from a specific task sequence.
+
+        Useful for rerunning a stale pipeline from the step where a parameter
+        is used, instead of rerunning the whole pipeline from scratch.
+
+        Args:
+            dataview_id: ID of the dataview.
+            from_sequence: Task sequence number to start the rerun from (>= 0).
+                If not provided, the server reruns from step 0 (the full
+                pipeline).
+            dataset_id: Dataset ID (auto-detected if not provided).
+
+        Returns:
+            Dict with the rerun job info.
+
+        Raises:
+            MammothValidationError: If from_sequence is negative.
+        """
+        if from_sequence is not None and from_sequence < 0:
+            raise MammothValidationError(ERR_FROM_SEQUENCE_NON_NEGATIVE.format(from_sequence))
+        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
+        body: dict[str, Any] = {}
+        if from_sequence is not None:
+            body["from_sequence"] = from_sequence
+        response = self._client._request_json(
+            "POST", f"{self._base_url(ws, proj, ds, dv)}/rerun", json=body
+        )
+        return self._client._wait_if_job(response)

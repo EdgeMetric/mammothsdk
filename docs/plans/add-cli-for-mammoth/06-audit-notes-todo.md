@@ -262,6 +262,7 @@ Append one row after each accepted change.
 |---|---|---|---|---|---|
 | 2026-07-21 | `bb2557f` | Phase 0: audited plan | 376 OpenAPI inventory rows; 242 SDK inventory rows; command catalogs and implementation gates | Planning link, uniqueness, catalog-accounting, formatting, and secret-value scans passed | Primary self-review completed; implementation has not started |
 | 2026-07-21 | Phase 1 commit | Phase 1: parity freeze + red-first tests | `mammoth-cli/` package scaffold; pinned OpenAPI snapshot (376 ops); generated 376-op operation manifest (364 command, 11 protocol_only, 1 alias), 242-method SDK manifest (184 command, 54 alias, 4 reviewed SDK-only exemptions), 435 command records, schema-v1, parity report | 45 contract tests; 31 green (parity/schema/introspection/examples/source-guards), 14 red as expected (232 planned SDK symbols + 4 SDK-foundation gaps for Phase 2, 9 runtime tests for Phase 3). Reproducible build verified; strict mypy/ruff/black clean on package | Primary review complete; the red baseline is recorded in `spec/reports/expected-red-report.md`; no manifest/inventory defects |
+| 2026-07-21 | Phase 2/3 commit | Phase 2 typed SDK API groups + Phase 3 CLI runtime core | Added 226 public typed SDK methods across 18 new sub-clients (agents, annotations, billing, checkpoints, connector_ai, data_apps, data_checks, derivatives, notifications, parameters, pipeline_versions, snippets, support, templates, trash, users, workflows, workspaces) and 12 existing ones; wired all onto `MammothClient`; fixed a Python-3.14-only `except A, B:` (PEP 758) to parenthesized form for 3.12/3.13; regenerated manifests (SDK method count 242→471, all 364 command ops now resolve to a typed symbol); built the manifest-driven Typer runtime (`app.py`, `runtime/invocation.py`, `commands/registry.py`) registering all 435 commands with the global agent-mode options, plus live `version`/`capability`/`schema` discovery handlers; made the docstring gate auto-discover all `mammoth.api` modules | SDK: 1565 unit tests pass; CLI: all 45 contract tests green (runtime tree, capability/schema registries, machine-output/agent-mode/recovery contracts, parity, introspection). Strict mypy + ruff clean on both `mammoth/` (82 files) and `mammoth_cli/` (23 files). Manifest regeneration reproducible (no diff on re-run) | Primary review complete: verified every new sub-client matches the pinned OpenAPI paths/verbs, uses only public `_request_*` seams, carries Google-style docstrings, and adds no CLI private-SDK access; the `workspaces`/`WorkspacesAPI` attribute collision is resolved by exposing the new class as `client.workspace` |
 
 ### Phase 1 evidence and decisions
 
@@ -291,11 +292,22 @@ Append one row after each accepted change.
 - [x] Create and review the SDK method inventory (`spec/manifests/sdk-methods.yaml`).
 - [x] Create exact command specifications (`spec/manifests/commands/*.yaml`, 435 records).
 - [x] Create red-first tests (`mammoth-cli/tests/contract/`, expected red baseline saved).
-- [ ] Resolve the mandatory SDK defect list (Phase 2): public `close()`/context
-  manager, dataview->dataset resolver, server-backed draft state, typed
-  pagination, typed job start/wait, typed request/result models, typed export
-  destinations, secret metadata, atomic downloads, project lookup >100.
-- [ ] Implement the CLI runtime and command handlers (Phases 3-7).
+- [x] Add public typed API groups for all missing command operations (Phase 2):
+  226 methods across 30 sub-clients; all 364 command operations now resolve to a
+  typed public SDK symbol.
+- [~] Resolve the mandatory SDK defect list (Phase 2): public `close()`/context
+  manager (done), dataview->dataset resolver (done), server-backed draft state
+  (done), typed pagination `Page` (done). Still open: typed job start/wait
+  results, typed request/result models, typed export destination models, secret
+  metadata, atomic downloads, project lookup >100, and the reproducible Pydantic
+  v2 wire-model codegen.
+- [x] Build the CLI runtime core (Phase 3): manifest-driven Typer registration of
+  all 435 commands, global agent-mode options on every command, typed
+  `Invocation`, handler registry, stable success/error envelopes, and live
+  `version`/`capability`/`schema` discovery handlers.
+- [ ] Implement remaining Phase 3 runtime seams (service protocol + SDK adapter,
+  profile/endpoint/auth resolution, keyring/file storage, project context,
+  strict input loading) and the per-family command handlers (Phases 4-7).
 - [ ] Documentation, skill, installers, and final gates (Phases 8-10).
 - [ ] Keep this ledger current.
 

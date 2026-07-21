@@ -34,6 +34,7 @@ ERR_AUTO_SYNC_NEEDS_ENABLED = "`auto-sync` action requires `params_enabled` (boo
 ERR_AUTO_PUBLISH_NEEDS_ENABLED = "`auto-publish` action requires `params_enabled` (bool)."
 ERR_DELETE_SOURCE_NEEDS_VIEW_ID = "`delete-source` action requires `params_view_id` (int > 0)."
 ERR_VIEW_ID_POSITIVE = "`params_view_id` must be a positive integer, got {0}."
+ERR_JOB_ID_POSITIVE = "`job_id` must be a positive integer, got {0}."
 
 _INTENT_MIN_LEN = 10
 
@@ -332,6 +333,118 @@ class DashboardsAPI:
             f"/dashboards/{dashboard_id}/getPublishData",
             json={"sql": sql},
         )
+
+    def cancel_generation(self, dashboard_id: int) -> dict[str, Any]:
+        """Cancel an in-progress AI dashboard generation.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+
+        Returns:
+            Dict with cancellation result.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        if dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        return self._client._request_json("POST", f"/dashboards/{dashboard_id}/cancel-generation")
+
+    def job_by_url(self, url: str, job_id: int) -> dict[str, Any]:
+        """Get the status/result of an async dashboard job, addressed by URL slug.
+
+        Args:
+            url: Dashboard URL slug.
+            job_id: ID of the job (must be > 0).
+
+        Returns:
+            Dict with job status/result.
+
+        Raises:
+            MammothValidationError: If *job_id* ≤ 0.
+        """
+        if job_id <= 0:
+            raise MammothValidationError(ERR_JOB_ID_POSITIVE.format(job_id))
+        return self._client._request_json("GET", f"/dashboards/url/{url}/jobs/{job_id}")
+
+    def published_data_by_url(self, url: str, body: dict[str, Any]) -> dict[str, Any]:
+        """Get published dashboard widget data via SQL, addressed by URL slug.
+
+        Args:
+            url: Dashboard URL slug.
+            body: Widget data request payload (``WidgetDataSpec``), e.g.
+                ``{"params": {"widget_id": ..., "global_filters": {...},
+                "drilldown_filters": {...}}}``.
+
+        Returns:
+            Dict with query results (may include a job ID for async execution).
+        """
+        return self._client._request_json(
+            "POST", f"/dashboards/url/{url}/getPublishData", json=body
+        )
+
+    def restore(self, dashboard_id: int) -> dict[str, Any]:
+        """Restore a trashed dashboard.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+
+        Returns:
+            Dict with restore result.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        if dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        return self._client._request_json("POST", f"/dashboards/{dashboard_id}/restore")
+
+    def trash(self, dashboard_id: int) -> dict[str, Any]:
+        """Move a dashboard to trash.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+
+        Returns:
+            Dict with trash result.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        if dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        return self._client._request_json("POST", f"/dashboards/{dashboard_id}/trash")
+
+    def widget_data(self, dashboard_id: int, body: dict[str, Any]) -> dict[str, Any]:
+        """Get data for multiple dashboard widgets in bulk.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            body: Bulk widget data request payload (``BulkWidgetDataSpec``).
+
+        Returns:
+            Dict with per-widget data results.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* ≤ 0.
+        """
+        if dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        return self._client._request_json(
+            "POST", f"/dashboards/{dashboard_id}/widgets/data", json=body
+        )
+
+    def widget_data_by_url(self, url: str, body: dict[str, Any]) -> dict[str, Any]:
+        """Get data for multiple dashboard widgets in bulk, addressed by URL slug.
+
+        Args:
+            url: Dashboard URL slug.
+            body: Bulk widget data request payload (``BulkWidgetDataSpec``).
+
+        Returns:
+            Dict with per-widget data results.
+        """
+        return self._client._request_json("POST", f"/dashboards/url/{url}/widgets/data", json=body)
 
 
 # ── Private helpers ───────────────────────────────────────────────────────────
