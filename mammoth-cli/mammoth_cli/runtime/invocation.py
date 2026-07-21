@@ -9,6 +9,9 @@ is the single, typed input a handler receives; handlers never read
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
+
+from mammoth_cli.runtime.input_loader import load_input_document
 
 
 @dataclass(frozen=True)
@@ -35,3 +38,16 @@ class Invocation:
     def command_path(self) -> str:
         """The space-separated command path (for envelope meta)."""
         return self.command_id.replace(".", " ")
+
+    def load_input(self) -> dict[str, Any] | None:
+        """Load and validate this invocation's ``--input`` request document.
+
+        Returns:
+            The parsed request mapping, or None when no ``--input`` was given.
+
+        Raises:
+            CliError: When the document is missing, undeclared, unparseable, or
+                not a mapping (see
+                :func:`mammoth_cli.runtime.input_loader.load_input_document`).
+        """
+        return load_input_document(self.input_file, self.input_format)
