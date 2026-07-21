@@ -99,7 +99,7 @@ class ViewsResource:
         """
         from mammoth.view import View
 
-        dataset_id = self._client.pipeline._find_dataset_for_dataview(view_id)
+        dataset_id = self._client.pipeline.find_dataset_for_dataview(view_id)
 
         data = self._client.dataviews.get(
             dataset_id=dataset_id,
@@ -165,7 +165,7 @@ class ViewsResource:
         Returns:
             Dict with deletion result.
         """
-        dataset_id = self._client.pipeline._find_dataset_for_dataview(view_id)
+        dataset_id = self._client.pipeline.find_dataset_for_dataview(view_id)
         return self._client.dataviews.delete(dataset_id=dataset_id, dataview_id=view_id)
 
     def bulk_delete(self, view_ids: _list[int]) -> dict[str, Any]:
@@ -177,7 +177,7 @@ class ViewsResource:
         Returns:
             Dict with bulk deletion result.
         """
-        dataset_id = self._client.pipeline._find_dataset_for_dataview(view_ids[0])
+        dataset_id = self._client.pipeline.find_dataset_for_dataview(view_ids[0])
         return self._client.dataviews.bulk_delete(dataset_id=dataset_id, dataview_ids=view_ids)
 
 
@@ -294,7 +294,7 @@ class MammothClient:
 
             dataset_id = client.find_dataset_for_dataview(1039)
         """
-        return self.pipeline._find_dataset_for_dataview(dataview_id)
+        return self.pipeline.find_dataset_for_dataview(dataview_id)
 
     def _request(
         self,
@@ -568,6 +568,17 @@ class MammothClient:
             dataset_name, target_ds_id=target_ds_id, column_mapping=column_mapping, **kwargs
         )
 
+    def close(self) -> None:
+        """Close the owned HTTP session.
+
+        Safe to call more than once. After a CLI command completes, the caller
+        closes the client deterministically instead of relying on interpreter
+        shutdown.
+        """
+        session = getattr(self, "session", None)
+        if session is not None:
+            session.close()
+
     def __enter__(self) -> MammothClient:
         """Context manager entry."""
         return self
@@ -579,8 +590,7 @@ class MammothClient:
         exc_tb: Any,
     ) -> None:
         """Context manager exit."""
-        if self.session:
-            self.session.close()
+        self.close()
 
 
 # Type alias for forward references

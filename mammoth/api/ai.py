@@ -40,7 +40,7 @@ class AIAPI:
         """Find dataset for a dataview."""
         if dataset_id is not None:
             return dataset_id
-        return self._client.pipeline._find_dataset_for_dataview(dataview_id)
+        return self._client.pipeline.find_dataset_for_dataview(dataview_id)
 
     def generate_profile(
         self,

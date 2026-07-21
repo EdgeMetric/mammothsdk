@@ -54,6 +54,21 @@ class PipelineAPI:
 
         return workspace_id, project_id, dataset_id, dataview_id
 
+    def find_dataset_for_dataview(self, dataview_id: int) -> int:
+        """Public typed resolver: find the dataset that contains a dataview.
+
+        This is the supported public seam for dataview-to-dataset resolution.
+        Callers must not reach into the private ``_find_dataset_for_dataview``
+        helper across sub-clients.
+
+        Args:
+            dataview_id: ID of the dataview to resolve.
+
+        Returns:
+            The dataset_id that contains this dataview.
+        """
+        return self._find_dataset_for_dataview(dataview_id)
+
     def _find_dataset_for_dataview(self, dataview_id: int) -> int:
         """Find which dataset contains the specified dataview.
 
@@ -97,7 +112,7 @@ class PipelineAPI:
                     project_id=project_id,
                 )
                 return dataset_id
-            except (MammothAPIError, KeyError):
+            except MammothAPIError, KeyError:
                 continue
 
         raise ValueError(f"Dataview {dataview_id} not found in any dataset in project {project_id}")
@@ -313,6 +328,38 @@ class PipelineAPI:
             json={"draft_operation": command},
         )
         return self._client._wait_if_job(response)
+
+    def get_draft_status(self, dataview_id: int, dataset_id: int | None = None) -> dict[str, Any]:
+        """Read server-backed draft state for a dataview pipeline.
+
+        Draft state must be read from the server so it is consistent across
+        separate processes. This reads the current pipeline and reports whether
+        the dataview is in draft mode, using the server's own pipeline state
+        rather than any process-local flag.
+
+        Args:
+            dataview_id: ID of the dataview.
+            dataset_id: Dataset ID (auto-detected if not provided).
+
+        Returns:
+            A dict with ``dataview_id``, ``is_draft``, and the raw pipeline
+            ``draft`` section when the server provides one.
+        """
+        pipeline = self.get_pipeline(dataview_id, dataset_id)
+        draft_section = pipeline.get("draft")
+        if draft_section is None:
+            draft_section = pipeline.get("draft_mode")
+        is_draft = bool(
+            pipeline.get("is_draft")
+            or pipeline.get("in_draft_mode")
+            or (isinstance(draft_section, dict) and draft_section.get("active"))
+            or (isinstance(draft_section, dict) and draft_section.get("is_draft"))
+        )
+        return {
+            "dataview_id": dataview_id,
+            "is_draft": is_draft,
+            "draft": draft_section,
+        }
 
     def edit_pipeline(
         self,

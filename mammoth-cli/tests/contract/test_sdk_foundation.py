@@ -21,12 +21,13 @@ def test_client_has_public_close_and_context_manager() -> None:
 
 
 def test_public_dataview_to_dataset_resolver_exists() -> None:
+    from mammoth.api.pipeline import PipelineAPI
     from mammoth.client import MammothClient
 
-    resolver = getattr(MammothClient, "resolve_dataset_for_view", None)
-    assert resolver is not None and callable(
-        resolver
-    ), "a public typed dataview->dataset resolver must exist"
+    # A public typed resolver on both the client and the pipeline sub-client,
+    # so public view conveniences never reach a private cross-subclient helper.
+    assert callable(getattr(MammothClient, "find_dataset_for_dataview", None))
+    assert callable(getattr(PipelineAPI, "find_dataset_for_dataview", None))
 
 
 def test_draft_state_survives_process_boundaries() -> None:

@@ -40,10 +40,10 @@ class ExportsAPI:
     def _find_dataset_for_dataview(self, dataview_id: int) -> int:
         """Find which dataset contains the specified dataview.
 
-        Delegates to PipelineAPI._find_dataset_for_dataview to avoid
+        Delegates to the public PipelineAPI.find_dataset_for_dataview to avoid
         duplicating the dataset-scanning logic.
         """
-        return self._client.pipeline._find_dataset_for_dataview(dataview_id)
+        return self._client.pipeline.find_dataset_for_dataview(dataview_id)
 
     def list(
         self,
@@ -140,7 +140,7 @@ class ExportsAPI:
                 )
 
         if dataset_id is None:
-            dataset_id = self._client.pipeline._find_dataset_for_dataview(dataview_id)
+            dataset_id = self._client.pipeline.find_dataset_for_dataview(dataview_id)
 
         response = self._client._request_json(
             "POST",
