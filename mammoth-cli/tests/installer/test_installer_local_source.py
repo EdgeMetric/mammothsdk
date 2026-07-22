@@ -19,6 +19,7 @@ from __future__ import annotations
 import shutil
 import stat
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -52,6 +53,11 @@ def _write_uv_stub(directory: Path, log_file: Path, bin_dir: Path) -> None:
 
 
 @pytest.mark.skipif(_SH is None, reason="POSIX sh not available")
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="the POSIX .sh --local flow defers to the .ps1 installer on Windows; "
+    "Windows install is covered by the PowerShell installer tests",
+)
 def test_local_source_builds_both_wheels_and_installs_online(tmp_path: Path) -> None:
     """--local builds the SDK + CLI wheels, then installs ONLINE via --find-links.
 
