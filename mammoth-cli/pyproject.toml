@@ -11,9 +11,13 @@ packages = [{ include = "mammoth_cli" }]
 include = [
     "mammoth_cli/py.typed",
     "mammoth_cli/bundled_skill/**/*",
-    "spec/openapi/openapi.json",
-    "spec/openapi/metadata.json",
-    "spec/manifests/**/*",
+    # The reviewed spec data lives beside the package in the repo. Poetry only
+    # ships sibling-of-package files in the wheel when the wheel format is
+    # requested explicitly; without this the installed CLI can build no command
+    # tree (only --version works) because the manifests are absent.
+    { path = "spec/openapi/openapi.json", format = ["sdist", "wheel"] },
+    { path = "spec/openapi/metadata.json", format = ["sdist", "wheel"] },
+    { path = "spec/manifests/**/*", format = ["sdist", "wheel"] },
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
