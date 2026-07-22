@@ -119,7 +119,18 @@ class PipelineAPI:
                     project_id=project_id,
                 )
                 return dataset_id
-            except (MammothAPIError, KeyError):
+            except MammothAPIError as exc:
+                # Only a proven 404 means "this dataset does not contain the
+                # dataview" — a genuine miss we keep scanning past. Any other
+                # status (401/403/429/5xx) is a real failure that must
+                # propagate with its correct classification instead of being
+                # swallowed and misreported as a generic not-found.
+                if exc.status_code == 404:
+                    continue
+                raise
+            except KeyError:
+                # A missing dict key while reading the response is a local
+                # miss for this dataset; keep scanning the remaining datasets.
                 continue
 
         raise ValueError(f"Dataview {dataview_id} not found in any dataset in project {project_id}")
@@ -178,8 +189,14 @@ class PipelineAPI:
                     dataset_ids.extend(
                         self._collect_dataset_ids(sub_children, project_id, workspace_id)
                     )
-                except MammothAPIError:
-                    continue
+                except MammothAPIError as exc:
+                    # A vanished or inaccessible-as-missing folder (404) is
+                    # safely skippable. Auth, rate-limit, and server errors
+                    # (401/403/429/5xx) must propagate so resolution is not
+                    # silently narrowed and misreported as a not-found.
+                    if exc.status_code == 404:
+                        continue
+                    raise
 
         return dataset_ids
 

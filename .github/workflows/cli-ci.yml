@@ -61,11 +61,41 @@ jobs:
       - name: Mypy (strict)
         run: poetry run mypy mammoth_cli/
 
-      - name: Unit and contract tests
-        run: poetry run pytest tests/unit tests/contract -q -p no:cacheprovider -m "not live"
+      - name: Unit, contract, and installer tests
+        run: poetry run pytest tests/unit tests/contract tests/installer -q -p no:cacheprovider -m "not live"
 
       - name: Packaging tests (build + wheel/sdist + reproducibility)
         run: poetry run pytest tests/packaging -q -p no:cacheprovider
+
+  installer-windows:
+    name: installer (windows, pwsh)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Install in-repo SDK (editable)
+        run: poetry run pip install -e ..
+
+      # Exercise the PowerShell installer's failure contract on a real Windows
+      # runner: a stubbed `mammoth` that fails `skill install` must make the
+      # installer exit nonzero. pwsh is present on windows-latest, so the
+      # guarded ps1 test runs here. No network or admin required.
+      - name: Installer contract tests (pwsh)
+        run: poetry run pytest tests/installer -q -p no:cacheprovider -m "not live"
 
   docs:
     name: docs (generation, STE, Vale, links)

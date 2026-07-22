@@ -120,17 +120,22 @@ def _load_login_document(path_or_dash: str, input_format: str | None) -> dict[st
         text = path.read_text(encoding="utf-8")
         fmt = input_format or _format_from_suffix(path)
 
-    if fmt == "json":
-        loaded = json.loads(text)
-    elif fmt == "yaml":
-        loaded = yaml.safe_load(text)
-    else:
+    if fmt not in ("json", "yaml"):
         raise CliError(
             code="invalid_input_format",
             message=f"'{fmt}' is not a supported input format.",
             exit_status=EXIT_USAGE,
             hint="Use json or yaml.",
         )
+    try:
+        loaded = json.loads(text) if fmt == "json" else yaml.safe_load(text)
+    except (json.JSONDecodeError, yaml.YAMLError) as exc:
+        raise CliError(
+            code="invalid_input_document",
+            message=f"The login document is not valid {fmt}.",
+            exit_status=EXIT_USAGE,
+            hint="Provide a well-formed JSON or YAML object.",
+        ) from exc
     if not isinstance(loaded, dict):
         raise CliError(
             code="invalid_input_document",
@@ -189,7 +194,17 @@ def _read_env_login() -> tuple[str, str, int | None, str | None]:
             message="MAMMOTH_API_KEY and MAMMOTH_API_SECRET must be set for --from-env.",
             exit_status=EXIT_USAGE,
         )
-    workspace_id = int(workspace_raw) if workspace_raw else None
+    workspace_id: int | None = None
+    if workspace_raw:
+        try:
+            workspace_id = int(workspace_raw)
+        except ValueError as exc:
+            raise CliError(
+                code="invalid_workspace_id",
+                message="MAMMOTH_WORKSPACE_ID must be an integer.",
+                exit_status=EXIT_USAGE,
+                hint="Set MAMMOTH_WORKSPACE_ID to a numeric workspace id.",
+            ) from exc
     return api_key, api_secret, workspace_id, server_prefix
 
 

@@ -127,9 +127,14 @@ modify_path() {
 install_skills() {
     exe="$BIN_DIR/mammoth"
     [ -x "$exe" ] || exe="mammoth"
-    "$exe" skill install --output json --no-input >/dev/null 2>&1 \
-        && log "installed the agent skill for all agents (user scope)" \
-        || log "warning: skill install did not complete; run 'mammoth skill install' manually"
+    # A failed skill install must fail the installer: do NOT downgrade it to a
+    # warning. Use an explicit if/else so the failure branch calls die (exit 1)
+    # rather than a `&& ... || ...` chain that would swallow the nonzero status.
+    if "$exe" skill install --output json --no-input >/dev/null 2>&1; then
+        log "installed the agent skill for all agents (user scope)"
+    else
+        die "skill install did not complete; run 'mammoth skill install' manually"
+    fi
 }
 
 main() {

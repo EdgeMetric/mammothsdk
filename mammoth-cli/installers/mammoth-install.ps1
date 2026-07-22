@@ -89,8 +89,14 @@ function Set-UserPath($binDir) {
 function Install-Skills($binDir) {
     $exe = Join-Path $binDir "mammoth.exe"
     if (-not (Test-Path $exe)) { $exe = "mammoth" }
-    try { & $exe skill install --output json --no-input | Out-Null; Write-Log "installed the agent skill (user scope)" }
-    catch { Write-Log "warning: skill install did not complete; run 'mammoth skill install' manually" }
+    # A native exe's nonzero exit is NOT a terminating error, so the catch alone
+    # never fires for a failed skill install. Inspect $LASTEXITCODE explicitly,
+    # mirroring Install-Cli, so a failed skill install fails the installer. The
+    # catch is retained for true terminating errors (e.g. exe not found).
+    try { & $exe skill install --output json --no-input | Out-Null }
+    catch { Die "skill install did not complete; run 'mammoth skill install' manually" }
+    if ($LASTEXITCODE -ne 0) { Die "skill install did not complete; run 'mammoth skill install' manually" }
+    Write-Log "installed the agent skill (user scope)"
 }
 
 $binDir = $null

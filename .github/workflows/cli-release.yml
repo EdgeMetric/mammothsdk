@@ -77,7 +77,7 @@ jobs:
           set -eu
           poetry run ruff check mammoth_cli/ tests/ scripts/
           poetry run mypy mammoth_cli/
-          poetry run pytest tests/unit tests/contract tests/packaging -q -p no:cacheprovider -m "not live"
+          poetry run pytest tests/unit tests/contract tests/installer tests/packaging -q -p no:cacheprovider -m "not live"
 
       - name: Build reproducible distribution
         env:
