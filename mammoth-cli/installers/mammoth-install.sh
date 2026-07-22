@@ -8,11 +8,16 @@
 #
 # Usage:
 #   mammoth-install.sh [--version X.Y.Z] [--cli-only | --skills-only]
-#                      [--no-modify-path] [--noninteractive] [--help]
+#                      [--local[=DIR]] [--no-modify-path] [--noninteractive]
+#                      [--help]
 #
 # The versioned release embeds an exact --version default. A checksum- and
 # Sigstore-verified flow is documented in the release notes; this script is the
 # convenience path.
+#
+# --local builds the CLI and its mammoth-io SDK dependency from this source
+# checkout and installs them from a local wheelhouse, so no package index is
+# contacted. DIR defaults to the mammoth-cli directory this script ships in.
 
 set -eu
 
@@ -22,6 +27,8 @@ INSTALL_CLI=1
 INSTALL_SKILLS=1
 MODIFY_PATH=1
 NONINTERACTIVE=0
+LOCAL_SOURCE=0
+LOCAL_DIR=""
 VERSION="__CLI_VERSION__" # replaced at release build; empty/placeholder = latest published
 
 log() { printf '%s\n' "mammoth-install: $1" >&2; }
@@ -38,6 +45,8 @@ while [ $# -gt 0 ]; do
         --version=*) VERSION="${1#*=}" ;;
         --cli-only) INSTALL_SKILLS=0 ;;
         --skills-only) INSTALL_CLI=0 ;;
+        --local) LOCAL_SOURCE=1 ;;
+        --local=*) LOCAL_SOURCE=1; LOCAL_DIR="${1#*=}" ;;
         --no-modify-path) MODIFY_PATH=0 ;;
         --noninteractive|--yes|-y) NONINTERACTIVE=1 ;;
         --help|-h) usage ;;
@@ -96,6 +105,11 @@ ensure_uv() {
 }
 
 # --- CLI install ------------------------------------------------------------
+resolve_bin_dir() {
+    BIN_DIR="$("$UV_BIN" tool dir --bin 2>/dev/null || true)"
+    [ -n "$BIN_DIR" ] || BIN_DIR="$HOME/.local/bin"
+}
+
 install_cli() {
     if [ -n "$VERSION" ] && [ "$VERSION" != "__CLI_VERSION__" ]; then
         spec="$CLI_PACKAGE==$VERSION"
@@ -104,8 +118,34 @@ install_cli() {
     fi
     log "installing $spec with uv"
     "$UV_BIN" tool install --force "$spec" || die "uv tool install failed for $spec"
-    BIN_DIR="$("$UV_BIN" tool dir --bin 2>/dev/null || true)"
-    [ -n "$BIN_DIR" ] || BIN_DIR="$HOME/.local/bin"
+    resolve_bin_dir
+}
+
+# Build the CLI and its mammoth-io SDK dependency from this source checkout and
+# install them from a local wheelhouse, so no package index is contacted. This
+# is the offline / no-PyPI path for using the CLI straight from the repository.
+install_cli_local() {
+    script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+    cli_dir="${LOCAL_DIR:-$(CDPATH= cd -- "$script_dir/.." && pwd)}"
+    [ -f "$cli_dir/pyproject.toml" ] || die "no CLI project at '$cli_dir' (pass --local=DIR)"
+    # The mammoth-io SDK is the repository root that contains the CLI directory.
+    sdk_dir="$(CDPATH= cd -- "$cli_dir/.." && pwd)"
+    [ -f "$sdk_dir/pyproject.toml" ] || die "no mammoth-io SDK project at '$sdk_dir'"
+
+    wheelhouse="$(mktemp -d "${TMPDIR:-/tmp}/mammoth-wheelhouse.XXXXXX")" \
+        || die "could not create a temporary wheelhouse"
+    log "building mammoth-io and $CLI_PACKAGE wheels from $sdk_dir"
+    "$UV_BIN" build --wheel --out-dir "$wheelhouse" "$sdk_dir" \
+        || die "failed to build the mammoth-io SDK wheel"
+    "$UV_BIN" build --wheel --out-dir "$wheelhouse" "$cli_dir" \
+        || die "failed to build the $CLI_PACKAGE wheel"
+    log "installing $CLI_PACKAGE from the local wheelhouse (no index)"
+    # --find-links points resolution at the local wheels; --no-index keeps it
+    # fully offline so the mammoth-io dependency resolves from the built wheel.
+    "$UV_BIN" tool install --force --no-index --find-links "$wheelhouse" "$CLI_PACKAGE" \
+        || die "uv tool install failed from the local wheelhouse"
+    rm -rf "$wheelhouse"
+    resolve_bin_dir
 }
 
 # --- PATH handling ----------------------------------------------------------
@@ -141,7 +181,11 @@ main() {
     if [ "$INSTALL_CLI" -eq 1 ]; then
         detect_platform
         ensure_uv
-        install_cli
+        if [ "$LOCAL_SOURCE" -eq 1 ]; then
+            install_cli_local
+        else
+            install_cli
+        fi
         modify_path
     else
         BIN_DIR="$($(command -v uv || echo uv) tool dir --bin 2>/dev/null || echo "$HOME/.local/bin")"
