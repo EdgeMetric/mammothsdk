@@ -88,7 +88,7 @@ jobs:
         run: |
           $env:PATH = (($env:PATH -split ';') | Where-Object { $_ -and -not (Test-Path -LiteralPath (Join-Path $_ 'uv.exe')) }) -join ';'
           if (Get-Command uv -ErrorAction SilentlyContinue) { throw 'failed to create a uv-free Windows PATH' }
-          ./installers/mammoth-install.ps1 -CliOnly -NoModifyPath -NonInteractive
+          ./installers/mammoth-install.ps1 -BootstrapUvOnly -NoModifyPath -NonInteractive
           $uv = Join-Path $env:USERPROFILE '.local\bin\uv.exe'
           if (-not (Test-Path -LiteralPath $uv)) { throw 'installer did not bootstrap uv at the clean-user location' }
           & $uv --version

@@ -23,6 +23,10 @@
 
 .PARAMETER NonInteractive
     Never prompt.
+
+.PARAMETER BootstrapUvOnly
+    Ensure the pinned uv executable is available, then exit. Intended for
+    installation diagnostics and clean-machine verification.
 #>
 [CmdletBinding()]
 param(
@@ -30,7 +34,8 @@ param(
     [switch]$CliOnly,
     [switch]$SkillsOnly,
     [switch]$NoModifyPath,
-    [switch]$NonInteractive
+    [switch]$NonInteractive,
+    [switch]$BootstrapUvOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -41,6 +46,9 @@ function Write-Log($msg) { Write-Host "mammoth-install: $msg" }
 function Die($msg) { Write-Error "mammoth-install: error: $msg"; exit 1 }
 
 if ($CliOnly -and $SkillsOnly) { Die "-CliOnly and -SkillsOnly are mutually exclusive" }
+if ($BootstrapUvOnly -and ($CliOnly -or $SkillsOnly)) {
+    Die "-BootstrapUvOnly cannot be combined with -CliOnly or -SkillsOnly"
+}
 $installCli = -not $SkillsOnly
 $installSkills = -not $CliOnly
 
@@ -103,6 +111,13 @@ function Install-Skills($binDir) {
     catch { Die "skill install did not complete; run 'mammoth skill install' manually" }
     if ($LASTEXITCODE -ne 0) { Die "skill install did not complete; run 'mammoth skill install' manually" }
     Write-Log "installed the agent skill (user scope)"
+}
+
+if ($BootstrapUvOnly) {
+    Test-Platform | Out-Null
+    $uvBin = Get-Uv
+    Write-Log "uv is available at $uvBin"
+    exit 0
 }
 
 $binDir = $null
