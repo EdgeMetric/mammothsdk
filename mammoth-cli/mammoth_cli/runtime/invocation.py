@@ -35,7 +35,25 @@ class Invocation:
     confirm: str | None = None
     input_file: str | None = None
     input_format: str | None = None
+    positionals: dict[str, Any] = field(default_factory=dict)
     extra_args: list[str] = field(default_factory=list)
+
+    def positional(self, name: str) -> Any:
+        """Return a resolved positional's value, or None when it was omitted.
+
+        The value has already been parsed off the command line (or supplied by a
+        test), keyed by the positional's declared
+        :attr:`mammoth_cli.services.positionals.PositionalSpec.name`. Handlers
+        read positionals through this accessor instead of indexing
+        ``extra_args`` so the declared spec is the single source of truth.
+
+        Args:
+            name: The positional's snake_case name.
+
+        Returns:
+            The positional value, or None when it was not supplied.
+        """
+        return self.positionals.get(name)
 
     @property
     def command_path(self) -> str:

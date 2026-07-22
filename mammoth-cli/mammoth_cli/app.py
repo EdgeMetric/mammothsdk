@@ -14,9 +14,10 @@ positionals and options are added per family as each handler is implemented.
 
 from __future__ import annotations
 
+import inspect
 from collections.abc import Callable
 from functools import cache
-from typing import Any
+from typing import Annotated, Any
 
 import typer
 
@@ -29,6 +30,7 @@ from mammoth_cli.output.policy import COLOR_MODES, VALID_OUTPUTS
 from mammoth_cli.runtime import executor, validate
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.strict import validate_extra_args
+from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
 
 OUTPUT_MODES = VALID_OUTPUTS
 
@@ -39,76 +41,203 @@ def _version_callback(value: bool) -> None:
         raise typer.Exit(0)
 
 
+def _shared_option_params() -> list[inspect.Parameter]:
+    """Build the global-option parameters shared by every command.
+
+    These are the machine-output and agent-mode options every command exposes.
+    They are declared once, as :class:`inspect.Parameter`s, so a dynamically
+    synthesized command signature can splice them in after any positionals while
+    keeping the option contract in exactly one place.
+    """
+    p = inspect.Parameter
+
+    def opt(name: str, default: Any, annotation: Any) -> inspect.Parameter:
+        return p(name, p.POSITIONAL_OR_KEYWORD, default=default, annotation=annotation)
+
+    return [
+        opt(
+            "output",
+            "table",
+            Annotated[
+                str,
+                typer.Option(
+                    "--output", "-o", help="Output format.", metavar="|".join(OUTPUT_MODES)
+                ),
+            ],
+        ),
+        opt(
+            "profile",
+            None,
+            Annotated[str | None, typer.Option("--profile", help="Credential profile name.")],
+        ),
+        opt(
+            "project",
+            None,
+            Annotated[int | None, typer.Option("--project", help="Active project id override.")],
+        ),
+        opt(
+            "base_url",
+            None,
+            Annotated[
+                str | None,
+                typer.Option("--base-url", help="Expert runtime API base-url override."),
+            ],
+        ),
+        opt(
+            "timeout",
+            None,
+            Annotated[float | None, typer.Option("--timeout", help="Per-request timeout seconds.")],
+        ),
+        opt(
+            "job_timeout",
+            None,
+            Annotated[
+                float | None, typer.Option("--job-timeout", help="Job wait timeout seconds.")
+            ],
+        ),
+        opt(
+            "pipeline_timeout",
+            None,
+            Annotated[
+                float | None,
+                typer.Option("--pipeline-timeout", help="Pipeline wait timeout seconds."),
+            ],
+        ),
+        opt(
+            "color",
+            "auto",
+            Annotated[
+                str, typer.Option("--color", help="Color policy.", metavar="|".join(COLOR_MODES))
+            ],
+        ),
+        opt(
+            "no_input",
+            False,
+            Annotated[bool, typer.Option("--no-input", help="Never prompt; fail instead.")],
+        ),
+        opt(
+            "no_progress",
+            False,
+            Annotated[bool, typer.Option("--no-progress", help="Never render progress.")],
+        ),
+        opt(
+            "debug",
+            False,
+            Annotated[bool, typer.Option("--debug", help="Emit diagnostic detail to stderr.")],
+        ),
+        opt(
+            "yes",
+            False,
+            Annotated[
+                bool, typer.Option("--yes", "-y", help="Confirm a mutation without prompting.")
+            ],
+        ),
+        opt(
+            "confirm",
+            None,
+            Annotated[
+                str | None,
+                typer.Option(
+                    "--confirm", help="Exact target name required for high-impact actions."
+                ),
+            ],
+        ),
+        opt(
+            "input_file",
+            None,
+            Annotated[
+                str | None,
+                typer.Option(
+                    "--input", help="Strict JSON/YAML request document, or '-' for stdin."
+                ),
+            ],
+        ),
+        opt(
+            "input_format",
+            None,
+            Annotated[
+                str | None,
+                typer.Option("--input-format", help="Required for stdin: json or yaml."),
+            ],
+        ),
+    ]
+
+
+_SHARED_OPTION_PARAMS = _shared_option_params()
+
+
+def _positional_param(spec: PositionalSpec) -> inspect.Parameter:
+    """Build a Typer ``Argument`` parameter for one positional spec.
+
+    The argument is declared optional at the Typer layer (default ``None``)
+    regardless of ``spec.required`` so a missing or malformed value flows to the
+    handler, which raises the stable ``CliError`` envelope. This preserves the
+    machine error contract (a missing required positional still returns the JSON
+    error envelope with the same code and exit status) while surfacing the
+    argument in ``--help`` and routing the parsed value into ``Invocation``.
+    """
+    return inspect.Parameter(
+        spec.name,
+        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        default=None,
+        annotation=Annotated[str | None, typer.Argument(help=spec.help, metavar=spec.metavar)],
+    )
+
+
 def _build_leaf(command_id: str, *, is_group_callback: bool = False) -> Callable[..., None]:
     """Return a Typer callback bound to one manifest command id.
 
-    Each callback shares the same global-option signature so ``--help`` for any
-    command advertises the machine-output and agent-mode contract. When
-    ``is_group_callback`` is set the command sits at a node that also has
-    subcommands; the callback then only runs when no subcommand is invoked.
-    """
+    Every callback shares the same global-option signature so ``--help`` for any
+    command advertises the machine-output and agent-mode contract, and declares
+    one native Typer ``Argument`` per positional derived for the command (see
+    :func:`mammoth_cli.services.positionals.resolve_positionals`), so its
+    ``--help`` shows an Arguments panel and the parsed values route into
+    :attr:`Invocation.positionals` — a single, code-derived source of truth for
+    the command's positional shape.
 
-    def leaf(
-        ctx: typer.Context,
-        output: str = typer.Option(
-            "table", "--output", "-o", help="Output format.", metavar="|".join(OUTPUT_MODES)
-        ),
-        profile: str | None = typer.Option(None, "--profile", help="Credential profile name."),
-        project: int | None = typer.Option(None, "--project", help="Active project id override."),
-        base_url: str | None = typer.Option(
-            None, "--base-url", help="Expert runtime API base-url override."
-        ),
-        timeout: float | None = typer.Option(
-            None, "--timeout", help="Per-request timeout seconds."
-        ),
-        job_timeout: float | None = typer.Option(
-            None, "--job-timeout", help="Job wait timeout seconds."
-        ),
-        pipeline_timeout: float | None = typer.Option(
-            None, "--pipeline-timeout", help="Pipeline wait timeout seconds."
-        ),
-        color: str = typer.Option(
-            "auto", "--color", help="Color policy.", metavar="|".join(COLOR_MODES)
-        ),
-        no_input: bool = typer.Option(False, "--no-input", help="Never prompt; fail instead."),
-        no_progress: bool = typer.Option(False, "--no-progress", help="Never render progress."),
-        debug: bool = typer.Option(False, "--debug", help="Emit diagnostic detail to stderr."),
-        yes: bool = typer.Option(
-            False, "--yes", "-y", help="Confirm a mutation without prompting."
-        ),
-        confirm: str | None = typer.Option(
-            None, "--confirm", help="Exact target name required for high-impact actions."
-        ),
-        input_file: str | None = typer.Option(
-            None, "--input", help="Strict JSON/YAML request document, or '-' for stdin."
-        ),
-        input_format: str | None = typer.Option(
-            None, "--input-format", help="Required for stdin: json or yaml."
-        ),
-    ) -> None:
+    The parsed positionals are also mirrored, in declared order, into
+    :attr:`Invocation.extra_args` ahead of any genuine surplus tokens. Handlers
+    may read them positionally (``extra_args``) or by name
+    (:meth:`Invocation.positional`); both views come from the same declaration,
+    so they cannot drift, and the surplus/id checks in
+    :mod:`mammoth_cli.runtime.strict` and :mod:`mammoth_cli.runtime.validate`
+    (which align a command's derived positionals against ``extra_args``) keep
+    working unchanged.
+
+    When ``is_group_callback`` is set the command sits at a node that also has
+    subcommands; the callback then only runs when no subcommand is invoked and
+    declares no positionals.
+    """
+    positionals: tuple[PositionalSpec, ...] = (
+        () if is_group_callback else resolve_positionals(command_id)
+    )
+    positional_names = tuple(spec.name for spec in positionals)
+
+    def leaf(**params: Any) -> None:
+        ctx: typer.Context = params.pop("ctx")
         if is_group_callback and ctx.invoked_subcommand is not None:
             return
+        resolved = {name: params.pop(name) for name in positional_names}
+        present = {name: value for name, value in resolved.items() if value is not None}
+        # Mirror the bound positionals (in declared order) into extra_args ahead
+        # of any genuine surplus tokens, so handlers reading extra_args by index
+        # and the derived-positional surplus/id checks both keep working.
+        mirrored = [str(resolved[name]) for name in positional_names if resolved[name] is not None]
         invocation = Invocation(
             command_id=command_id,
-            output=output,
-            profile=profile,
-            project=project,
-            base_url=base_url,
-            timeout=timeout,
-            job_timeout=job_timeout,
-            pipeline_timeout=pipeline_timeout,
-            color=color,
-            no_input=no_input,
-            no_progress=no_progress,
-            debug=debug,
-            yes=yes,
-            confirm=confirm,
-            input_file=input_file,
-            input_format=input_format,
-            extra_args=list(ctx.args),
+            positionals=present,
+            extra_args=[*mirrored, *ctx.args],
+            **params,
         )
         _execute(invocation)
 
+    signature_params = [
+        inspect.Parameter("ctx", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=typer.Context),
+        *(_positional_param(spec) for spec in positionals),
+        *_SHARED_OPTION_PARAMS,
+    ]
+    leaf.__signature__ = inspect.Signature(signature_params)  # type: ignore[attr-defined]
+    leaf.__annotations__ = {param.name: param.annotation for param in signature_params}
     leaf.__name__ = "cmd_" + command_id.replace(".", "_").replace("-", "_")
     return leaf
 
