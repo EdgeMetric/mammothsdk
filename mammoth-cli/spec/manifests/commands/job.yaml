@@ -1,0 +1,139 @@
+manifest_schema_version: 1
+commands:
+- command_id: job.get
+  command_path: job get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetJob
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.jobs.JobsAPI.get_job
+  sdk_conversion: Call mammoth.api.jobs.JobsAPI.get_job with validated request fields.
+  request_model: JobGetRequest
+  result_model: JobGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-JOB-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth job get --help
+  agent_example: mammoth job get --output json --no-input
+  unit_tests:
+  - UT-JOB-GET
+  contract_tests:
+  - CT-JOB-GET-HUMAN
+  - CT-JOB-GET-JSON
+  - CT-JOB-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: timeout parameter on current get_job is unused and stays visible only for public
+    compatibility.
+  reviewed_by: primary
+- command_id: job.get-many
+  command_path: job get-many
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetJobs
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.jobs.JobsAPI.get_jobs
+  sdk_conversion: Call mammoth.api.jobs.JobsAPI.get_jobs with validated request fields.
+  request_model: JobGetManyRequest
+  result_model: JobGetManyResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-JOB-GET-MANY
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth job get-many --help
+  agent_example: mammoth job get-many --output json --no-input
+  unit_tests:
+  - UT-JOB-GET-MANY
+  contract_tests:
+  - CT-JOB-GET-MANY-HUMAN
+  - CT-JOB-GET-MANY-JSON
+  - CT-JOB-GET-MANY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: CLI accepts repeatable positive integers, not comma strings.
+  reviewed_by: primary
+- command_id: job.wait
+  command_path: job wait
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetJob
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.jobs.JobsAPI.wait_for_job
+  sdk_conversion: Call mammoth.api.jobs.JobsAPI.wait_for_job with validated request fields.
+  request_model: JobWaitRequest
+  result_model: JobWaitResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-JOB-WAIT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth job wait --help
+  agent_example: mammoth job wait --output json --no-input
+  unit_tests:
+  - UT-JOB-WAIT
+  contract_tests:
+  - CT-JOB-WAIT-HUMAN
+  - CT-JOB-WAIT-JSON
+  - CT-JOB-WAIT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: job.wait-many
+  command_path: job wait-many
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetJobs
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.jobs.JobsAPI.wait_for_jobs
+  sdk_conversion: Call mammoth.api.jobs.JobsAPI.wait_for_jobs with validated request fields.
+  request_model: JobWaitManyRequest
+  result_model: JobWaitManyResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-JOB-WAIT-MANY
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth job wait-many --help
+  agent_example: mammoth job wait-many --output json --no-input
+  unit_tests:
+  - UT-JOB-WAIT-MANY
+  contract_tests:
+  - CT-JOB-WAIT-MANY-HUMAN
+  - CT-JOB-WAIT-MANY-JSON
+  - CT-JOB-WAIT-MANY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Reject empty IDs; do not succeed when the server omits a requested job.
+  reviewed_by: primary

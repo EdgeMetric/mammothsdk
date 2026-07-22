@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 ERR_GENAI_PROMPT_EMPTY = "`prompt` must be a non-empty string."
 ERR_GENAI_ROWS_RANGE = "`no_of_rows` must be between 1 and 100 (inclusive), got {0}."
+ERR_EXPRESSION_MODE_INVALID = "`mode` must be 'math' or 'metric', got {0!r}."
 
 
 class AIAPI:
@@ -40,7 +41,7 @@ class AIAPI:
         """Find dataset for a dataview."""
         if dataset_id is not None:
             return dataset_id
-        return self._client.pipeline._find_dataset_for_dataview(dataview_id)
+        return self._client.pipeline.find_dataset_for_dataview(dataview_id)
 
     def generate_profile(
         self,
@@ -194,5 +195,115 @@ class AIAPI:
             "POST",
             f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/chat",
             json={"prompt": prompt},
+        )
+        return self._client._wait_if_job(response)
+
+    def status(
+        self,
+        connector_key: str,
+        connection_key: str,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Get the status of an AI chat session for a connector connection.
+
+        Args:
+            connector_key: Key identifying the connector type.
+            connection_key: Key identifying the connection.
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            Dict with chat status information.
+        """
+        ws = self._ws()
+        proj = project_id if project_id is not None else self._proj()
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}"
+            f"/connections/{connection_key}/chat",
+        )
+
+    def condition_generate(
+        self,
+        intent: str,
+        dataset_id: int,
+        dataview_id: int | None = None,
+        sequence_number: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Generate a filter condition from a natural language intent.
+
+        Corresponds to the backend ``ConditionGenerationSpec``:
+        ``{params: {intent, sequence_number}}``.
+
+        Args:
+            intent: Natural language description of the desired condition.
+            dataset_id: ID of the dataset to generate the condition against.
+            dataview_id: Optional ID of the dataview for column context.
+            sequence_number: Optional sequence order in the pipeline.
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            Dict with the generated condition.
+        """
+        ws = self._ws()
+        proj = project_id if project_id is not None else self._proj()
+        params: dict[str, Any] = {"dataset_id": dataset_id}
+        if dataview_id is not None:
+            params["dataview_id"] = dataview_id
+        body_params: dict[str, Any] = {"intent": intent}
+        if sequence_number is not None:
+            body_params["sequence_number"] = sequence_number
+        response = self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/sql_generation/condition",
+            params=params,
+            json={"params": body_params},
+        )
+        return self._client._wait_if_job(response)
+
+    def expression_generate(
+        self,
+        intent: str,
+        mode: str,
+        dataset_id: int,
+        dataview_id: int | None = None,
+        sequence_number: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Generate a math/metric expression from a natural language intent.
+
+        Corresponds to the backend ``ExpressionGenerationSpec``:
+        ``{params: {intent, mode, sequence_number}}``.
+
+        Args:
+            intent: Natural language description of the desired expression.
+            mode: ``"math"`` for a row-level numeric expression, or ``"metric"``
+                for an aggregate 1-row-1-column expression.
+            dataset_id: ID of the dataset to generate the expression against.
+            dataview_id: Optional ID of the dataview for column context.
+            sequence_number: Optional sequence order in the pipeline.
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            Dict with the generated expression.
+
+        Raises:
+            MammothValidationError: If ``mode`` is not ``"math"`` or ``"metric"``.
+        """
+        if mode not in ("math", "metric"):
+            raise MammothValidationError(ERR_EXPRESSION_MODE_INVALID.format(mode))
+        ws = self._ws()
+        proj = project_id if project_id is not None else self._proj()
+        params: dict[str, Any] = {"dataset_id": dataset_id}
+        if dataview_id is not None:
+            params["dataview_id"] = dataview_id
+        body_params: dict[str, Any] = {"intent": intent, "mode": mode}
+        if sequence_number is not None:
+            body_params["sequence_number"] = sequence_number
+        response = self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/sql_generation/expression",
+            params=params,
+            json={"params": body_params},
         )
         return self._client._wait_if_job(response)

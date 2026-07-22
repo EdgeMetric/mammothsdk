@@ -1,0 +1,13 @@
+# Derived, regenerable artifacts (rebuild with scripts/).
+spec/openapi/projection.json
+spec/manifests/_sdk_introspection.json
+
+# Build and cache
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+__pycache__/
+.coverage

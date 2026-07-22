@@ -1,0 +1,19 @@
+extends: substitution
+message: "Use '%s' instead of '%s' (Mammoth STE approved term)."
+level: error
+ignorecase: true
+action:
+  name: replace
+swap:
+  utilize: use
+  utilise: use
+  leverage: use
+  commence: start
+  terminate: stop
+  in order to: to
+  prior to: before
+  subsequent to: after
+  in the event that: if
+  a number of: several
+  perform a login: log in
+  perform a deletion of: delete

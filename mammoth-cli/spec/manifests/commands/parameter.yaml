@@ -1,0 +1,478 @@
+manifest_schema_version: 1
+commands:
+- command_id: parameter.create
+  command_path: parameter create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateParameter
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.parameters.ParametersAPI.create
+  sdk_conversion: Call mammoth.api.parameters.ParametersAPI.create with validated request fields.
+  request_model: ParameterCreateRequest
+  result_model: ParameterCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-PARAMETER-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth parameter create --help
+  agent_example: mammoth parameter create --output json --no-input
+  unit_tests:
+  - UT-PARAMETER-CREATE
+  contract_tests:
+  - CT-PARAMETER-CREATE-HUMAN
+  - CT-PARAMETER-CREATE-JSON
+  - CT-PARAMETER-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: parameter.delete
+  command_path: parameter delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteParameter
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.parameters.ParametersAPI.delete
+  sdk_conversion: Call mammoth.api.parameters.ParametersAPI.delete with validated request fields.
+  request_model: ParameterDeleteRequest
+  result_model: ParameterDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-PARAMETER-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth parameter delete --help
+  agent_example: mammoth parameter delete --output json --no-input
+  unit_tests:
+  - UT-PARAMETER-DELETE
+  contract_tests:
+  - CT-PARAMETER-DELETE-HUMAN
+  - CT-PARAMETER-DELETE-JSON
+  - CT-PARAMETER-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: parameter.dependencies
+  command_path: parameter dependencies
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetParameterDependencies
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.parameters.ParametersAPI.dependencies
+  sdk_conversion: Call mammoth.api.parameters.ParametersAPI.dependencies with validated request fields.
+  request_model: ParameterDependenciesRequest
+  result_model: ParameterDependenciesResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-PARAMETER-DEPENDENCIES
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth parameter dependencies --help
+  agent_example: mammoth parameter dependencies --output json --no-input
+  unit_tests:
+  - UT-PARAMETER-DEPENDENCIES
+  contract_tests:
+  - CT-PARAMETER-DEPENDENCIES-HUMAN
+  - CT-PARAMETER-DEPENDENCIES-JSON
+  - CT-PARAMETER-DEPENDENCIES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: parameter.duplicate
+  command_path: parameter duplicate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DuplicateParameter
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.parameters.ParametersAPI.duplicate
+  sdk_conversion: Call mammoth.api.parameters.ParametersAPI.duplicate with validated request fields.
+  request_model: ParameterDuplicateRequest
+  result_model: ParameterDuplicateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-PARAMETER-DUPLICATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth parameter duplicate --help
+  agent_example: mammoth parameter duplicate --output json --no-input
+  unit_tests:
+  - UT-PARAMETER-DUPLICATE
+  contract_tests:
+  - CT-PARAMETER-DUPLICATE-HUMAN
+  - CT-PARAMETER-DUPLICATE-JSON
+  - CT-PARAMETER-DUPLICATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: parameter.get
+  command_path: parameter get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetParameterDetail
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.parameters.ParametersAPI.get
+  sdk_conversion: Call mammoth.api.parameters.ParametersAPI.get with validated request fields.
+  request_model: ParameterGetRequest
+  result_model: ParameterGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-PARAMETER-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth parameter get --help
+  agent_example: mammoth parameter get --output json --no-input
+  unit_tests:
+  - UT-PARAMETER-GET
+  contract_tests:
+  - CT-PARAMETER-GET-HUMAN
+  - CT-PARAMETER-GET-JSON
+  - CT-PARAMETER-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: parameter.group.create
+  command_path: parameter group create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateGroup
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.parameters.ParametersAPI.group_create
+  sdk_conversion: Call mammoth.api.parameters.ParametersAPI.group_create with validated request fields.
+  request_model: ParameterGroupCreateRequest
+  result_model: ParameterGroupCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-PARAMETER-GROUP-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth parameter group create --help
+  agent_example: mammoth parameter group create --output json --no-input
+  unit_tests:
+  - UT-PARAMETER-GROUP-CREATE
+  contract_tests:
+  - CT-PARAMETER-GROUP-CREATE-HUMAN
+  - CT-PARAMETER-GROUP-CREATE-JSON
+  - CT-PARAMETER-GROUP-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: parameter.group.delete
+  command_path: parameter group delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteGroup
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.parameters.ParametersAPI.group_delete
+  sdk_conversion: Call mammoth.api.parameters.ParametersAPI.group_delete with validated request fields.
+  request_model: ParameterGroupDeleteRequest
+  result_model: ParameterGroupDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-PARAMETER-GROUP-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth parameter group delete --help
+  agent_example: mammoth parameter group delete --output json --no-input
+  unit_tests:
+  - UT-PARAMETER-GROUP-DELETE
+  contract_tests:
+  - CT-PARAMETER-GROUP-DELETE-HUMAN
+  - CT-PARAMETER-GROUP-DELETE-JSON
+  - CT-PARAMETER-GROUP-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: parameter.group.list
+  command_path: parameter group list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListGroups
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.parameters.ParametersAPI.group_list
+  sdk_conversion: Call mammoth.api.parameters.ParametersAPI.group_list with validated request fields.
+  request_model: ParameterGroupListRequest
+  result_model: ParameterGroupListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-PARAMETER-GROUP-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth parameter group list --help
+  agent_example: mammoth parameter group list --output json --no-input
+  unit_tests:
+  - UT-PARAMETER-GROUP-LIST
+  contract_tests:
+  - CT-PARAMETER-GROUP-LIST-HUMAN
+  - CT-PARAMETER-GROUP-LIST-JSON
+  - CT-PARAMETER-GROUP-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: parameter.group.reorder
+  command_path: parameter group reorder
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ReorderGroups
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.parameters.ParametersAPI.group_reorder
+  sdk_conversion: Call mammoth.api.parameters.ParametersAPI.group_reorder with validated request fields.
+  request_model: ParameterGroupReorderRequest
+  result_model: ParameterGroupReorderResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-PARAMETER-GROUP-REORDER
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth parameter group reorder --help
+  agent_example: mammoth parameter group reorder --output json --no-input
+  unit_tests:
+  - UT-PARAMETER-GROUP-REORDER
+  contract_tests:
+  - CT-PARAMETER-GROUP-REORDER-HUMAN
+  - CT-PARAMETER-GROUP-REORDER-JSON
+  - CT-PARAMETER-GROUP-REORDER-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: parameter.group.update
+  command_path: parameter group update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateGroup
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.parameters.ParametersAPI.group_update
+  sdk_conversion: Call mammoth.api.parameters.ParametersAPI.group_update with validated request fields.
+  request_model: ParameterGroupUpdateRequest
+  result_model: ParameterGroupUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-PARAMETER-GROUP-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth parameter group update --help
+  agent_example: mammoth parameter group update --output json --no-input
+  unit_tests:
+  - UT-PARAMETER-GROUP-UPDATE
+  contract_tests:
+  - CT-PARAMETER-GROUP-UPDATE-HUMAN
+  - CT-PARAMETER-GROUP-UPDATE-JSON
+  - CT-PARAMETER-GROUP-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: parameter.list
+  command_path: parameter list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListParameters
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.parameters.ParametersAPI.list
+  sdk_conversion: Call mammoth.api.parameters.ParametersAPI.list with validated request fields.
+  request_model: ParameterListRequest
+  result_model: ParameterListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-PARAMETER-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth parameter list --help
+  agent_example: mammoth parameter list --output json --no-input
+  unit_tests:
+  - UT-PARAMETER-LIST
+  contract_tests:
+  - CT-PARAMETER-LIST-HUMAN
+  - CT-PARAMETER-LIST-JSON
+  - CT-PARAMETER-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: parameter.rerun
+  command_path: parameter rerun
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RerunParameter
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.parameters.ParametersAPI.rerun
+  sdk_conversion: Call mammoth.api.parameters.ParametersAPI.rerun with validated request fields.
+  request_model: ParameterRerunRequest
+  result_model: ParameterRerunResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-PARAMETER-RERUN
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth parameter rerun --help
+  agent_example: mammoth parameter rerun --output json --no-input
+  unit_tests:
+  - UT-PARAMETER-RERUN
+  contract_tests:
+  - CT-PARAMETER-RERUN-HUMAN
+  - CT-PARAMETER-RERUN-JSON
+  - CT-PARAMETER-RERUN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: parameter.rerun-all-stale
+  command_path: parameter rerun-all-stale
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RerunAllStale
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.parameters.ParametersAPI.rerun_all_stale
+  sdk_conversion: Call mammoth.api.parameters.ParametersAPI.rerun_all_stale with validated request fields.
+  request_model: ParameterRerunAllStaleRequest
+  result_model: ParameterRerunAllStaleResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-PARAMETER-RERUN-ALL-STALE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth parameter rerun-all-stale --help
+  agent_example: mammoth parameter rerun-all-stale --output json --no-input
+  unit_tests:
+  - UT-PARAMETER-RERUN-ALL-STALE
+  contract_tests:
+  - CT-PARAMETER-RERUN-ALL-STALE-HUMAN
+  - CT-PARAMETER-RERUN-ALL-STALE-JSON
+  - CT-PARAMETER-RERUN-ALL-STALE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: parameter.update
+  command_path: parameter update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateParameter
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.parameters.ParametersAPI.update
+  sdk_conversion: Call mammoth.api.parameters.ParametersAPI.update with validated request fields.
+  request_model: ParameterUpdateRequest
+  result_model: ParameterUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-PARAMETER-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth parameter update --help
+  agent_example: mammoth parameter update --output json --no-input
+  unit_tests:
+  - UT-PARAMETER-UPDATE
+  contract_tests:
+  - CT-PARAMETER-UPDATE-HUMAN
+  - CT-PARAMETER-UPDATE-JSON
+  - CT-PARAMETER-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

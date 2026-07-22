@@ -1,0 +1,541 @@
+#!/usr/bin/env python3
+"""Reviewed disposition and command mapping for all 376 OpenAPI operations.
+
+The primary agent owns every decision here. The rule engine derives a proposed
+command id from the operation's path and method; the explicit ``OVERRIDES`` and
+``PROTOCOL_ONLY`` tables record the primary's reviewed decisions where rules are
+insufficient. A test asserts every operation resolves to exactly one reviewed
+disposition.
+
+Dispositions:
+- ``command``      user/admin can initiate it.
+- ``alias``        another command has identical behavior.
+- ``protocol_only``inbound webhook, callback, telemetry, or health probe.
+- ``server_unavailable`` documented but unavailable (requires server evidence).
+- ``deprecated``   deprecated by the OpenAPI document.
+"""
+
+from __future__ import annotations
+
+import re
+
+REVIEWER = "primary"
+
+# --- Protocol-only operations (not meaningful CLI actions) -----------------
+# Reviewed 2026-07-21 from the pinned snapshot: webhooks, OAuth/browser
+# callbacks, telemetry events, and the health probe.
+PROTOCOL_ONLY: dict[str, str] = {
+    "HealthCheck": "Health probe, not a user command.",
+    "UnsubscribeMessaging": "Email unsubscribe browser link, not an API action.",
+    "HandleStripeWebhook": "Inbound Stripe provider webhook.",
+    "ShopifyDataRequest": "Shopify GDPR privacy webhook.",
+    "ShopifyCustomerRedact": "Shopify GDPR privacy webhook.",
+    "ShopifyShopRedact": "Shopify GDPR privacy webhook.",
+    "DeleteUserData": "Provider deauthorization callback.",
+    "OauthCallback": "OAuth2 authorization-code browser callback.",
+    "Create": "Mammoth user-event telemetry ingest (mm-ue).",
+    "TrackHeartbeat": "Published-dashboard viewer telemetry.",
+    "TrackView": "Published-dashboard viewer telemetry.",
+}
+
+# --- Operations that alias another command (identical behavior) ------------
+OP_ALIAS: dict[str, str] = {
+    # POST body variant of the GET dataview-data read.
+    "GetDataviewDataPost": "view.data.get",
+}
+
+# --- Explicit reviewed command ids by operationId --------------------------
+# Only operations whose command id the rule engine cannot derive correctly.
+OVERRIDES: dict[str, str] = {
+    # Invitations and self / user account.
+    "AcceptInvite": "workspace.accept-invite",
+    "GetUserDetails": "user.get",
+    "UpdateUser": "user.update",
+    "DeleteSelf": "user.delete-account",
+    "DeleteAvatar": "user.avatar.delete",
+    "UploadProfilePic": "user.avatar.upload",
+    "GetUserPreferences": "user.preference.get",
+    "UpdateUserPreferences": "user.preference.update",
+    # Agents (AI chat).
+    "AgentChat": "agent.chat",
+    "ListAgentSessions": "agent.session.list",
+    "DeleteAgentSession": "agent.session.delete",
+    "SetAgentSessionVisibility": "agent.session.set-visibility",
+    "GetAgentSessionMessages": "agent.session.messages",
+    # Browse scopes.
+    "BrowseResources": "browse.root",
+    "BrowseWorkspaceWorkspaces": "browse.workspace",
+    "BrowseProjectProjects": "browse.project",
+    "BrowseFolderFolders": "browse.folder",
+    # Jobs.
+    "GetJobs": "job.get-many",
+    "GetJob": "job.get",
+    # Notifications.
+    "GetAllNotifications": "notification.list",
+    "EditNotifications": "notification.update-batch",
+    "DeleteNotifications": "notification.delete-batch",
+    "EditNotification": "notification.update",
+    "DeleteNotification": "notification.delete",
+    # Reports and usage.
+    "GetReports": "report.list",
+    "GetAppUsage": "workspace.app-usage",
+    "GetStorageBreakdown": "workspace.storage-breakdown",
+    "GetSegments": "workspace.segment.list",
+    "UpdateSegments": "workspace.segment.update",
+    "RunLlmTask": "workspace.llm-task",
+    "GenerateCheckExpression": "workspace.check-expression",
+    # Workspaces + users.
+    "GetWorkspaces": "workspace.list",
+    "CreateWorkspace": "workspace.create",
+    "GetWorkspace": "workspace.get",
+    "UpdateWorkspace": "workspace.update",
+    "DeleteUserWorkspace": "workspace.delete",
+    "ReactivateWorkspace": "workspace.reactivate",
+    "GetUsersInWorkspace": "workspace.user.list",
+    "AddUserInWorkspace": "workspace.user.add",
+    "UpdateUserToWorkspace": "workspace.user.update-batch",
+    "RemoveUserFromWorkspace": "workspace.user.remove-batch",
+    "UpdateUserInWorkspace": "workspace.user.update",
+    "RemoveUser": "workspace.user.remove",
+    "GetActiveConnectors": "connector.active",
+    "GetConnector": "connector.get",
+    "ListWorkspaceConnectors": "connector.list",
+    # Addons.
+    "AddConnectorAddon": "addon.connector.add",
+    "RemoveConnectorAddon": "addon.connector.remove",
+    "AddStorageAddon": "addon.storage.add",
+    "RemoveStorageAddon": "addon.storage.remove",
+    "AddUserSeatsAddon": "addon.user.add",
+    "RemoveUserSeatsAddon": "addon.user.remove",
+    # Client apps + external keys.
+    "ListApps": "client-app.list",
+    "CreateApp": "client-app.create",
+    "AppDetails": "client-app.get",
+    "UpdateApp": "client-app.update",
+    "DeleteApp": "client-app.delete",
+    "GetKeysByWorkspaceId": "external-key.list",
+    "AddExternalKey": "external-key.create",
+    "GetExternalKey": "external-key.get",
+    "DeleteExternalKey": "external-key.delete",
+    # Activity logs.
+    "GetActivityLogs": "activity.list",
+    "ExportActivityLogs": "activity.export",
+    # Chargebee / billing v1 + invoices + Stripe subscription.
+    "GetChargebeePlan": "billing.chargebee-plan",
+    "GetWkspSubscriptionDetail": "billing.subscription.get",
+    "UpdateSubscriptionDetail": "billing.subscription.update",
+    "FetchHostedPage": "billing.hosted-page",
+    "ListInvoices": "billing.invoice.list",
+    "GetInvoice": "billing.invoice.get",
+    "ChargeWorkspaceInvoices": "billing.invoice.charge",
+    "GetWorkspaceSubscription": "billing.stripe.get",
+    "CreateWorkspaceSubscription": "billing.stripe.create",
+    "GetWorkspaceBillingHistory": "billing.stripe.history",
+    "CancelWorkspaceSubscription": "billing.stripe.cancel",
+    "CreateCheckoutUrl": "billing.stripe.checkout-url",
+    "CreateCustomerPortalUrl": "billing.stripe.portal-url",
+    "EndTrialAndStartSubscription": "billing.stripe.end-trial",
+    "GetPaymentMethods": "billing.stripe.payment-method.list",
+    "SetDefaultPaymentMethod": "billing.stripe.payment-method.set-default",
+    "DeletePaymentMethod": "billing.stripe.payment-method.delete",
+    "PreviewInvoice": "billing.stripe.preview-invoice",
+    "RetryPayment": "billing.stripe.retry-payment",
+    "GetWorkspaceSubscriptionStatus": "billing.stripe.status",
+    "SyncSubscription": "billing.stripe.sync",
+    "GetUpcomingInvoice": "billing.stripe.upcoming-invoice",
+    "GetWorkspaceUsage": "billing.stripe.usage",
+    # Support (support/* administration).
+    "GetPlans": "support.plan.chargebee-list",
+    "UpdateUserVerification": "support.user.update",
+    "RegisterUser": "support.user.register",
+    "ListWorkspaces": "support.workspace.list",
+    "CreateWorkspaces": "support.workspace.create",
+    "DeleteWorkspace": "support.workspace.delete",
+    "GetWorkspaceDetail": "support.workspace.get",
+    "UpdateWorkspaceDetail": "support.workspace.update",
+    "RestoreWorkspaceAccess": "support.workspace.restore-access",
+    "SuspendWorkspaceAccess": "support.workspace.suspend-access",
+    "GetSubscriptionDetail": "support.subscription.get",
+    "UpdateSubscription": "support.subscription.update",
+    "RegisterSubscription": "support.subscription.create",
+    "GetUserList": "support.workspace.user.list",
+    "TransferUserRoles": "support.workspace.user.transfer",
+    "AddUserToWorkspace": "support.workspace.user.add",
+    "RemoveWorkspaceUser": "support.workspace.user.remove",
+    "ListUsersOfWorkspaces": "support.user.list-all",
+    "TransferOwnerships": "support.ownership.transfer",
+    # Subscription admin (connector/feature profiles, plans).
+    "ListConnectorProfiles": "support.connector-profile.list",
+    "CreateConnectorProfile": "support.connector-profile.create",
+    "DeleteConnectorProfile": "support.connector-profile.delete",
+    "UpdateConnectorProfile": "support.connector-profile.update",
+    "AddConnectorToProfile": "support.connector-profile.add-connector",
+    "ListSubscriptionConnectors": "support.connector.list",
+    "CreateConnector": "support.connector.create",
+    "DeleteConnector": "support.connector.delete",
+    "UpdateConnector": "support.connector.update",
+    "ListFeatureProfiles": "support.feature-profile.list",
+    "CreateFeatureProfile": "support.feature-profile.create",
+    "DeleteFeatureProfile": "support.feature-profile.delete",
+    "UpdateFeatureProfile": "support.feature-profile.update",
+    "AddFeatureToProfile": "support.feature-profile.add-feature",
+    "ListFeatures": "support.feature.list",
+    "CreateFeature": "support.feature.create",
+    "DeleteFeature": "support.feature.delete",
+    "UpdateFeature": "support.feature.update",
+    "ListSubscriptionPlans": "support.plan.list",
+    "CreatePlan": "support.plan.create",
+    "DeletePlan": "support.plan.delete",
+    "GetPlan": "support.plan.get",
+    "UpdatePlan": "support.plan.update",
+    "ArchivePlan": "support.plan.archive",
+    "UpdateStorageTiers": "support.plan.update-storage-tiers",
+    "ListSelfServePlans": "support.plan.self-serve-list",
+    # Dashboards.
+    "ListDashboard": "dashboard.list",
+    "GenerateDashboard": "dashboard.create",
+    "GetDashboardSources": "dashboard.source.list",
+    "GetDashboardByUrl": "dashboard.get-by-url",
+    "GetPublishDataFromSqlByUrl": "dashboard.published-data-by-url",
+    "GetDashboardJob": "dashboard.job-by-url",
+    "BulkWidgetDataByUrl": "dashboard.widget-data-by-url",
+    "DeleteDashboard": "dashboard.delete",
+    "GetDashboard": "dashboard.get",
+    "EditDashboard": "dashboard.update",
+    "DashboardAction": "dashboard.action",
+    "GetDashboardAnalytics": "dashboard.analytics",
+    "CancelDashboardGeneration": "dashboard.cancel-generation",
+    "GetDraftDataFromSql": "dashboard.data.draft",
+    "GetPublishDataFromSql": "dashboard.data.published",
+    "RestoreDashboard": "dashboard.restore",
+    "ShareDashboard": "dashboard.share",
+    "TrashDashboard": "dashboard.trash",
+    "BulkWidgetData": "dashboard.widget-data",
+    # Data apps.
+    "ListDataApps": "data-app.list",
+    "CreateDataApp": "data-app.create",
+    "DeleteDataAppEndpoint": "data-app.delete",
+    "GetDataAppDetails": "data-app.get",
+    "GetDataAppActiveJob": "data-app.active-job",
+    "UploadToDataApp": "data-app.upload",
+    "GetDataAppJob": "data-app.job",
+    "GetPipelineChanges": "data-app.pipeline-changes",
+    "UpdateDataApp": "data-app.update",
+    "ShareDataApp": "data-app.share",
+    "RemoveSharedUser": "data-app.user.remove",
+    "ListSharedUsers": "data-app.user.list",
+    # Projects.
+    "GetProject": "project.list",
+    "CreateProject": "project.create",
+    "DeleteProjects": "project.bulk-delete",
+    "UpdateProjects": "project.bulk-update",
+    "DeleteProject": "project.delete",
+    "UpdateProject": "project.update",
+    "AddUserProject": "project.user.add",
+    "RemoveUserProject": "project.user.remove",
+    "UpdateUserProject": "project.user.update",
+    "GetPendingChanges": "project.pending-changes",
+    "GetResourceDependencies": "project.resource-dependencies",
+    "GetResourceStatus": "project.resource-status",
+    "CreateSampleFlow": "project.sample-flow",
+    "GetProjectCheckpoints": "project.checkpoint.list",
+    "GetProjectDataChecks": "project.data-check.list",
+    "GetPublishCredentials": "project.publish-credentials",
+    # AI connector chat.
+    "Chat": "connector.ai.chat",
+    "SubmitColumnSelection": "connector.ai.submit-column-selection",
+    "SubmitCredentials": "connector.ai.submit-credentials",
+    "GetChatHistory": "connector.ai.history",
+    "ListSessions": "connector.ai.session.list",
+    "GetSessionMessages": "connector.ai.session.messages",
+    # Annotations.
+    "ListAnnotations": "annotation.list",
+    "CreateAnnotation": "annotation.create",
+    "DeleteAnnotation": "annotation.delete",
+    "PatchAnnotation": "annotation.update",
+    "AddComment": "annotation.comment.add",
+    # Automations + schedules.
+    "GetList": "automation.list",
+    "CreateAutomation": "automation.create",
+    "DeleteAutomation": "automation.delete",
+    "GetAutomation": "automation.get",
+    "UpdateAutomation": "automation.update",
+    "RestoreAutomation": "automation.restore",
+    "TrashAutomation": "automation.trash",
+    "ListSchedules": "schedule.list",
+    "CreateSchedule": "schedule.create",
+    "DeleteSchedule": "schedule.delete",
+    "GetSchedule": "schedule.get",
+    "PatchSchedule": "schedule.update",
+    # Connections + ds-config + query-gen.
+    "ListConnections": "connector.connection.list",
+    "SaveConnection": "connector.connection.create",
+    "DeleteConnection": "connector.connection.delete",
+    "GetConnection": "connector.connection.get",
+    "UpdateConnection": "connector.connection.update",
+    "GetChatStatus": "connector.query.status",
+    "GetQuerySuggestion": "connector.query.generate",
+    "DeleteDsConfigs": "connector.ds-config.delete-all",
+    "ListDsConfigs": "connector.ds-config.list",
+    "ValidateAndGetDsConfig": "connector.ds-config.create",
+    "DeleteDsConfig": "connector.ds-config.delete",
+    "GetDsConfig": "connector.ds-config.get",
+    "UpdateDsConfigs": "connector.ds-config.update",
+    # Datasets.
+    "GetDatasets": "dataset.list",
+    "CreateDatasets": "dataset.create",
+    "DeleteDatasets": "dataset.bulk-delete",
+    "UpdateDatasets": "dataset.bulk-update",
+    "CreateDatasetFromPdf": "dataset.create-from-pdf",
+    "DeleteDataset": "dataset.delete",
+    "GetDataset": "dataset.get",
+    "UpdateDataset": "dataset.update",
+    "GetDatasetData": "dataset.data",
+    "RestoreDataset": "dataset.restore",
+    "TrashDataset": "dataset.trash",
+    "GetFileSettings": "dataset.file-settings",
+    "UpdateFileSettings": "dataset.file-settings.update",
+    "UndoFileSettings": "dataset.file-settings.undo",
+    # Batches.
+    "GetBatches": "batch.list",
+    "CreateBatch": "batch.create",
+    "DeleteBatches": "batch.bulk-delete",
+    "UpdateBatches": "batch.update",
+    "DeleteBatch": "batch.delete",
+    "GetBatch": "batch.get",
+    # Dataviews / views.
+    "ListDataviews": "view.list",
+    "AddDataview": "view.create",
+    "DeleteMultipleDataviews": "view.bulk-delete",
+    "DeleteDataview": "view.delete",
+    "GetDataviewInformationIndividual": "view.get",
+    "Patch": "view.update",
+    "GetActiveUsers": "view.active-user.list",
+    "MarkActiveUser": "view.active-user.mark",
+    "GetConditionalFormat": "view.conditional-format.list",
+    "CreateConditionalFormat": "view.conditional-format.create",
+    "UpdateConditionalFormat": "view.conditional-format.update",
+    "DeleteConditionalFormat": "view.conditional-format.delete-all",
+    "GetDataviewData": "view.data.get",
+    "ExecuteVolatileQuery": "view.data.query",
+    "GetValidationInfo": "view.ai.generation-info",
+    "Preview": "view.ai.generate-data",
+    "GenerateProfile": "view.ai.profile",
+    "ListDerivatives": "view.derivative.list",
+    "CreateDerivative": "view.derivative.create",
+    "DeleteDerivative": "view.derivative.delete",
+    "EditDerivative": "view.derivative.update",
+    "FetchDerivativeData": "view.derivative.data",
+    "ExecutePipelineDraftCommand": "view.draft.command",
+    "GetParameterContext": "view.parameter-context",
+    "GetDataviewPreview": "view.preview",
+    "RestoreDataview": "view.restore",
+    "TrashDataview": "view.trash",
+    "UpdatePublishToDb": "view.export.publish-db-update",
+    "CreatePublishToDb": "view.export.publish-db",
+    # Pipeline.
+    "GetPipeline": "view.pipeline.get",
+    "EditPipeline": "view.pipeline.edit",
+    "GetPipelineItems": "view.pipeline.items",
+    "RerunFromSequence": "view.pipeline.rerun",
+    "GetPipelineTasks": "view.task.list",
+    "AddTask": "view.task.add",
+    "DeleteTask": "view.task.delete",
+    "GetPipelineTask": "view.task.get",
+    "EditTask": "view.task.update",
+    "GetTaskPreview": "view.task.preview",
+    "GetPipelineCheckpoints": "view.checkpoint.list",
+    "AddCheckpoint": "view.checkpoint.create",
+    "DeleteCheckpoint": "view.checkpoint.delete",
+    "GetPipelineCheckpoint": "view.checkpoint.get",
+    "EditPatches": "view.checkpoint.update",
+    "GetPipelineDataChecks": "view.data-check.list",
+    "AddDataCheck": "view.data-check.create",
+    "DeleteDataCheck": "view.data-check.delete",
+    "GetPipelineDataCheck": "view.data-check.get",
+    "EditDatacheck": "view.data-check.update",
+    "GetPipelineExports": "view.export.list",
+    "AddExport": "view.export.create",
+    "DeleteExport": "view.export.delete",
+    "GetPipelineExport": "view.export.get",
+    "EditExport": "view.export.update",
+    "GetPipelineVersions": "view.version.list",
+    "DeletePipelineVersion": "view.version.delete",
+    "GetPipelineVersion": "view.version.get",
+    "EditPipelineVersion": "view.version.update",
+    "ApplyPipelineVersion": "view.version.apply",
+    # SQL generation (AI).
+    "GenerateSql": "ai.sql.generate",
+    "GenerateCondition": "ai.condition.generate",
+    "GenerateExpression": "ai.expression.generate",
+    "AiSuggestions": "ai.suggestion.list",
+    # Files.
+    "ListFiles": "file.list",
+    "CreateFileDataset": "file.upload",
+    "DeleteFiles": "file.bulk-delete",
+    "DeleteFile": "file.delete",
+    "GetFileDetails": "file.get",
+    "UpdateFileConfigs": "file.update",
+    # Folders.
+    "ListFolders": "folder.list",
+    "CreateFolder": "folder.create",
+    "DeleteFolders": "folder.bulk-delete",
+    "UpdateFolderResources": "folder.move",
+    "DeleteFolder": "folder.delete",
+    "GetFolder": "folder.get",
+    "UpdateFolderDetails": "folder.update",
+    "TrashFolder": "folder.trash",
+    # Trash.
+    "ListTrash": "trash.list",
+    "BulkTrash": "trash.add",
+    "BulkRestore": "trash.restore",
+    # Webhooks.
+    "ListWebhooks": "webhook.list",
+    "CreateAWebhook": "webhook.create",
+    "DeleteWebhook": "webhook.delete",
+    "GetWebhookDetails": "webhook.get",
+    "UpdateWebhookConfigurations": "webhook.update",
+    "AddDataToWebhook": "webhook.send",
+    "AddDataToWebhookUsingGetMethod": "webhook.send-get",
+    # Workflows + blocks + templates.
+    "ListWorkflows": "workflow.list",
+    "CreateWorkflow": "workflow.create",
+    "CleanupGhostWorkflows": "workflow.cleanup",
+    "InstantiateFromTemplate": "workflow.from-template",
+    "GetProjectWorkflowGraph": "workflow.graph",
+    "ListWorkspaceDatasets": "workflow.workspace-datasets",
+    "ListWorkspaceExports": "workflow.workspace-exports",
+    "ListWorkspaceSources": "workflow.workspace-sources",
+    "DeleteWorkflow": "workflow.delete",
+    "GetWorkflow": "workflow.get",
+    "UpdateWorkflow": "workflow.update",
+    "AddSkeletonBlock": "workflow.block.add",
+    "PatchBlockAuth": "workflow.block.auth",
+    "PromoteSkeletonBlock": "workflow.block.config",
+    "PatchBlockType": "workflow.block.type",
+    "UpdateCanvasState": "workflow.canvas",
+    "ListTemplates": "template.list",
+    "CreateTemplate": "template.create",
+    "DeleteTemplate": "template.delete",
+    "GetTemplate": "template.get",
+    "UpdateTemplate": "template.update",
+    # Parameters + groups.
+    "ListParameters": "parameter.list",
+    "CreateParameter": "parameter.create",
+    "ListGroups": "parameter.group.list",
+    "CreateGroup": "parameter.group.create",
+    "ReorderGroups": "parameter.group.reorder",
+    "DeleteGroup": "parameter.group.delete",
+    "UpdateGroup": "parameter.group.update",
+    "RerunAllStale": "parameter.rerun-all-stale",
+    "DeleteParameter": "parameter.delete",
+    "GetParameterDetail": "parameter.get",
+    "UpdateParameter": "parameter.update",
+    "GetParameterDependencies": "parameter.dependencies",
+    "DuplicateParameter": "parameter.duplicate",
+    "RerunParameter": "parameter.rerun",
+    # Snippets.
+    "ListSnippets": "snippet.list",
+    "CreateSnippet": "snippet.create",
+    "DeleteSnippet": "snippet.delete",
+    "GetSnippetDetail": "snippet.get",
+    "UpdateSnippet": "snippet.update",
+    "GetSnippetDependencies": "snippet.dependencies",
+    "DuplicateSnippet": "snippet.duplicate",
+    "RerunSnippet": "snippet.rerun",
+}
+
+
+def command_for(operation_id: str) -> str | None:
+    """Return the reviewed command id for an operationId, or None if not command."""
+    if operation_id in PROTOCOL_ONLY or operation_id in OP_ALIAS:
+        return None
+    return OVERRIDES.get(operation_id)
+
+
+def disposition_for(operation_id: str) -> tuple[str, str | None, str | None, str]:
+    """Return (disposition, canonical_command, alias_of, reason)."""
+    if operation_id in PROTOCOL_ONLY:
+        return "protocol_only", None, None, PROTOCOL_ONLY[operation_id]
+    if operation_id in OP_ALIAS:
+        return "alias", None, OP_ALIAS[operation_id], "Identical behavior to the aliased command."
+    command = OVERRIDES.get(operation_id)
+    if command:
+        return "command", command, None, "User-initiated production operation."
+    return "command", None, None, "UNMAPPED"
+
+
+_WORD = re.compile(r"[^a-z0-9]+")
+
+# Planned SDK API location per command prefix (longest match wins). Phase 2 adds
+# these public typed SDK methods; until then they resolve as "unknown", which is
+# the intended red-first state.
+_PLANNED_PREFIX: list[tuple[str, str, str]] = [
+    ("view.derivative", "derivatives", "DerivativesAPI"),
+    ("view.checkpoint", "checkpoints", "CheckpointsAPI"),
+    ("view.version", "pipeline_versions", "PipelineVersionsAPI"),
+    ("view.data-check", "data_checks", "DataChecksAPI"),
+    ("view.export", "exports", "ExportsAPI"),
+    ("view.conditional-format", "conditional_formats", "ConditionalFormatsAPI"),
+    ("view.task", "pipeline", "PipelineAPI"),
+    ("view.pipeline", "pipeline", "PipelineAPI"),
+    ("view.draft", "pipeline", "PipelineAPI"),
+    ("view.ai", "ai", "AIAPI"),
+    ("view.data", "dataviews", "DataviewsAPI"),
+    ("view.active-user", "dataviews", "DataviewsAPI"),
+    ("view", "dataviews", "DataviewsAPI"),
+    ("connector.ai", "connector_ai", "ConnectorAIAPI"),
+    ("connector.query", "ai", "AIAPI"),
+    ("connector", "connectors", "ConnectorsAPI"),
+    ("project", "projects", "ProjectsAPI"),
+    ("folder", "folders", "FoldersAPI"),
+    ("dataset", "datasets", "DatasetsAPI"),
+    ("file", "files", "FilesAPI"),
+    ("batch", "batches", "BatchesAPI"),
+    ("workspace", "workspaces", "WorkspacesAPI"),
+    ("user", "users", "UsersAPI"),
+    ("billing", "billing", "BillingAPI"),
+    ("support", "support", "SupportAPI"),
+    ("schedule", "automations", "AutomationsAPI"),
+    ("automation", "automations", "AutomationsAPI"),
+    ("webhook", "webhooks", "WebhooksAPI"),
+    ("agent", "agents", "AgentsAPI"),
+    ("report", "reports", "ReportsAPI"),
+    ("addon", "addons", "AddonsAPI"),
+    ("external-key", "external_keys", "ExternalKeysAPI"),
+    ("client-app", "clientapps", "ClientAppsAPI"),
+    ("activity", "activity_logs", "ActivityLogsAPI"),
+    ("annotation", "annotations", "AnnotationsAPI"),
+    ("notification", "notifications", "NotificationsAPI"),
+    ("parameter", "parameters", "ParametersAPI"),
+    ("snippet", "snippets", "SnippetsAPI"),
+    ("data-app", "data_apps", "DataAppsAPI"),
+    ("dashboard", "dashboards", "DashboardsAPI"),
+    ("template", "templates", "TemplatesAPI"),
+    ("workflow", "workflows", "WorkflowsAPI"),
+    ("trash", "trash", "TrashAPI"),
+    ("browse", "browse", "BrowseAPI"),
+    ("ai", "ai", "AIAPI"),
+    ("job", "jobs", "JobsAPI"),
+]
+
+
+def planned_symbol(command_id: str) -> str:
+    """Return the planned public SDK symbol for a not-yet-implemented command."""
+    for prefix, module, cls in _PLANNED_PREFIX:
+        if command_id == prefix or command_id.startswith(prefix + "."):
+            rest = command_id[len(prefix) :].lstrip(".")
+            method = rest.replace(".", "_").replace("-", "_") or "run"
+            return f"mammoth.api.{module}.{cls}.{method}"
+    method = command_id.split(".", 1)[-1].replace(".", "_").replace("-", "_")
+    return f"mammoth.api._planned.PlannedAPI.{method}"
+
+
+def all_operation_ids_covered(operation_ids: list[str]) -> list[str]:
+    """Return operationIds with no reviewed disposition."""
+    missing = []
+    for oid in operation_ids:
+        disp, cmd, alias, reason = disposition_for(oid)
+        if disp == "command" and not cmd:
+            missing.append(oid)
+    return missing

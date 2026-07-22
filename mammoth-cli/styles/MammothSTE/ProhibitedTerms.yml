@@ -1,0 +1,14 @@
+extends: existence
+message: "Remove '%s': avoid vague or subjective wording in Mammoth STE."
+level: error
+ignorecase: true
+tokens:
+  - obviously
+  - simply
+  - just
+  - easy
+  - easily
+  - trivial
+  - of course
+  - please note
+  - as you know

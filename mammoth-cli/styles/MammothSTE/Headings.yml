@@ -1,0 +1,22 @@
+extends: capitalization
+message: "Use sentence-style capitalization for headings (Mammoth STE): '%s'."
+level: warning
+scope: heading
+match: $sentence
+indicators:
+  - ":"
+exceptions:
+  - Mammoth
+  - CLI
+  - Codex
+  - Cursor
+  - Claude
+  - Python
+  - JSON
+  - YAML
+  - NDJSON
+  - API
+  - PyPI
+  - STE
+  - PATH
+  - OS

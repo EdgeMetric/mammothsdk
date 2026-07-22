@@ -1,0 +1,107 @@
+name: CLI CI
+
+# Continuous integration for the mammoth-cli package. This workflow only reads
+# the repository; it never publishes, tags, or creates a release. Release is a
+# separate, tag-triggered, authorized workflow.
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mammoth-cli/**"
+      - "mammoth/**"
+      - ".github/workflows/cli-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "mammoth-cli/**"
+      - "mammoth/**"
+      - ".github/workflows/cli-ci.yml"
+
+defaults:
+  run:
+    working-directory: mammoth-cli
+
+jobs:
+  test:
+    name: test (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Ruff (lint)
+        run: poetry run ruff check mammoth_cli/ tests/ scripts/
+
+      - name: Mypy (strict)
+        run: poetry run mypy mammoth_cli/
+
+      - name: Unit and contract tests
+        run: poetry run pytest tests/unit tests/contract -q -p no:cacheprovider -m "not live"
+
+      - name: Packaging tests (build + wheel/sdist + reproducibility)
+        run: poetry run pytest tests/packaging -q -p no:cacheprovider
+
+  docs:
+    name: docs (generation, STE, Vale, links)
+    runs-on: ubuntu-latest
+    env:
+      VALE_VERSION: 3.15.1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Install Vale (pinned)
+        working-directory: .
+        run: |
+          set -eu
+          url="https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz"
+          tmp="$(mktemp -d)"
+          curl -fsSL "$url" -o "$tmp/vale.tar.gz"
+          tar -xzf "$tmp/vale.tar.gz" -C "$tmp"
+          sudo install -m 0755 "$tmp/vale" /usr/local/bin/vale
+          vale --version
+
+      - name: Documentation generation drift
+        run: poetry run python scripts/gen_docs.py --check
+
+      - name: Sentence-length checker (STE)
+        run: poetry run python scripts/check_ste.py docs/*.md
+
+      - name: Vale house style
+        run: vale docs/
+
+      - name: Link validation
+        run: poetry run python scripts/check_links.py docs

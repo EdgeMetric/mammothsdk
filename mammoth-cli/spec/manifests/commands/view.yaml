@@ -1,0 +1,3293 @@
+manifest_schema_version: 1
+commands:
+- command_id: view.active-user.list
+  command_path: view active-user list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetActiveUsers
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.active_users
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.active_users with validated request fields.
+  request_model: ViewActiveUserListRequest
+  result_model: ViewActiveUserListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-ACTIVE-USER-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view active-user list --help
+  agent_example: mammoth view active-user list --output json --no-input
+  unit_tests:
+  - UT-VIEW-ACTIVE-USER-LIST
+  contract_tests:
+  - CT-VIEW-ACTIVE-USER-LIST-HUMAN
+  - CT-VIEW-ACTIVE-USER-LIST-JSON
+  - CT-VIEW-ACTIVE-USER-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.active-user.mark
+  command_path: view active-user mark
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - MarkActiveUser
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.mark_active
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.mark_active with validated request fields.
+  request_model: ViewActiveUserMarkRequest
+  result_model: ViewActiveUserMarkResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-ACTIVE-USER-MARK
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view active-user mark --help
+  agent_example: mammoth view active-user mark --output json --no-input
+  unit_tests:
+  - UT-VIEW-ACTIVE-USER-MARK
+  contract_tests:
+  - CT-VIEW-ACTIVE-USER-MARK-HUMAN
+  - CT-VIEW-ACTIVE-USER-MARK-JSON
+  - CT-VIEW-ACTIVE-USER-MARK-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.ai.generate-data
+  command_path: view ai generate-data
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - Preview
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.ai.AIAPI.generate_data
+  sdk_conversion: Call mammoth.api.ai.AIAPI.generate_data with validated request fields.
+  request_model: ViewAiGenerateDataRequest
+  result_model: ViewAiGenerateDataResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-AI-GENERATE-DATA
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view ai generate-data --help
+  agent_example: mammoth view ai generate-data --output json --no-input
+  unit_tests:
+  - UT-VIEW-AI-GENERATE-DATA
+  contract_tests:
+  - CT-VIEW-AI-GENERATE-DATA-HUMAN
+  - CT-VIEW-AI-GENERATE-DATA-JSON
+  - CT-VIEW-AI-GENERATE-DATA-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Preview operation per the pinned OpenAPI document; must not claim that it writes
+    generated rows to the view. Rows accepted 1-100.
+  reviewed_by: primary
+- command_id: view.ai.generation-info
+  command_path: view ai generation-info
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetValidationInfo
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.ai.AIAPI.get_data_gen_info
+  sdk_conversion: Call mammoth.api.ai.AIAPI.get_data_gen_info with validated request fields.
+  request_model: ViewAiGenerationInfoRequest
+  result_model: ViewAiGenerationInfoResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-AI-GENERATION-INFO
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view ai generation-info --help
+  agent_example: mammoth view ai generation-info --output json --no-input
+  unit_tests:
+  - UT-VIEW-AI-GENERATION-INFO
+  contract_tests:
+  - CT-VIEW-AI-GENERATION-INFO-HUMAN
+  - CT-VIEW-AI-GENERATION-INFO-JSON
+  - CT-VIEW-AI-GENERATION-INFO-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.ai.profile
+  command_path: view ai profile
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GenerateProfile
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.ai.AIAPI.generate_profile
+  sdk_conversion: Call mammoth.api.ai.AIAPI.generate_profile with validated request fields.
+  request_model: ViewAiProfileRequest
+  result_model: ViewAiProfileResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-AI-PROFILE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view ai profile --help
+  agent_example: mammoth view ai profile --output json --no-input
+  unit_tests:
+  - UT-VIEW-AI-PROFILE
+  contract_tests:
+  - CT-VIEW-AI-PROFILE-HUMAN
+  - CT-VIEW-AI-PROFILE-JSON
+  - CT-VIEW-AI-PROFILE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.bulk-delete
+  command_path: view bulk-delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteMultipleDataviews
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.bulk_delete
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.bulk_delete with validated request fields.
+  request_model: ViewBulkDeleteRequest
+  result_model: ViewBulkDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-BULK-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view bulk-delete --help
+  agent_example: mammoth view bulk-delete --output json --no-input
+  unit_tests:
+  - UT-VIEW-BULK-DELETE
+  contract_tests:
+  - CT-VIEW-BULK-DELETE-HUMAN
+  - CT-VIEW-BULK-DELETE-JSON
+  - CT-VIEW-BULK-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.checkpoint.create
+  command_path: view checkpoint create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddCheckpoint
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.create
+  sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.create with validated request fields.
+  request_model: ViewCheckpointCreateRequest
+  result_model: ViewCheckpointCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-CHECKPOINT-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view checkpoint create --help
+  agent_example: mammoth view checkpoint create --output json --no-input
+  unit_tests:
+  - UT-VIEW-CHECKPOINT-CREATE
+  contract_tests:
+  - CT-VIEW-CHECKPOINT-CREATE-HUMAN
+  - CT-VIEW-CHECKPOINT-CREATE-JSON
+  - CT-VIEW-CHECKPOINT-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.checkpoint.delete
+  command_path: view checkpoint delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteCheckpoint
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.delete
+  sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.delete with validated request fields.
+  request_model: ViewCheckpointDeleteRequest
+  result_model: ViewCheckpointDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-CHECKPOINT-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view checkpoint delete --help
+  agent_example: mammoth view checkpoint delete --output json --no-input
+  unit_tests:
+  - UT-VIEW-CHECKPOINT-DELETE
+  contract_tests:
+  - CT-VIEW-CHECKPOINT-DELETE-HUMAN
+  - CT-VIEW-CHECKPOINT-DELETE-JSON
+  - CT-VIEW-CHECKPOINT-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.checkpoint.get
+  command_path: view checkpoint get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPipelineCheckpoint
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.get
+  sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.get with validated request fields.
+  request_model: ViewCheckpointGetRequest
+  result_model: ViewCheckpointGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-CHECKPOINT-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view checkpoint get --help
+  agent_example: mammoth view checkpoint get --output json --no-input
+  unit_tests:
+  - UT-VIEW-CHECKPOINT-GET
+  contract_tests:
+  - CT-VIEW-CHECKPOINT-GET-HUMAN
+  - CT-VIEW-CHECKPOINT-GET-JSON
+  - CT-VIEW-CHECKPOINT-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.checkpoint.list
+  command_path: view checkpoint list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPipelineCheckpoints
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.list
+  sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.list with validated request fields.
+  request_model: ViewCheckpointListRequest
+  result_model: ViewCheckpointListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-CHECKPOINT-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view checkpoint list --help
+  agent_example: mammoth view checkpoint list --output json --no-input
+  unit_tests:
+  - UT-VIEW-CHECKPOINT-LIST
+  contract_tests:
+  - CT-VIEW-CHECKPOINT-LIST-HUMAN
+  - CT-VIEW-CHECKPOINT-LIST-JSON
+  - CT-VIEW-CHECKPOINT-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.checkpoint.update
+  command_path: view checkpoint update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - EditPatches
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.update
+  sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.update with validated request fields.
+  request_model: ViewCheckpointUpdateRequest
+  result_model: ViewCheckpointUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-CHECKPOINT-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view checkpoint update --help
+  agent_example: mammoth view checkpoint update --output json --no-input
+  unit_tests:
+  - UT-VIEW-CHECKPOINT-UPDATE
+  contract_tests:
+  - CT-VIEW-CHECKPOINT-UPDATE-HUMAN
+  - CT-VIEW-CHECKPOINT-UPDATE-JSON
+  - CT-VIEW-CHECKPOINT-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.conditional-format.create
+  command_path: view conditional-format create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateConditionalFormat
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_create
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_create with validated request
+    fields.
+  request_model: ViewConditionalFormatCreateRequest
+  result_model: ViewConditionalFormatCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-CONDITIONAL-FORMAT-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view conditional-format create --help
+  agent_example: mammoth view conditional-format create --output json --no-input
+  unit_tests:
+  - UT-VIEW-CONDITIONAL-FORMAT-CREATE
+  contract_tests:
+  - CT-VIEW-CONDITIONAL-FORMAT-CREATE-HUMAN
+  - CT-VIEW-CONDITIONAL-FORMAT-CREATE-JSON
+  - CT-VIEW-CONDITIONAL-FORMAT-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'BLOCKED[B09 DATAVIEW_INPUT_UNTYPED]: rule is an arbitrary dictionary; reserved,
+    not registered.'
+  reviewed_by: primary
+- command_id: view.conditional-format.delete-all
+  command_path: view conditional-format delete-all
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteConditionalFormat
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_delete
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_delete with validated request
+    fields.
+  request_model: ViewConditionalFormatDeleteAllRequest
+  result_model: ViewConditionalFormatDeleteAllResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-CONDITIONAL-FORMAT-DELETE-ALL
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view conditional-format delete-all --help
+  agent_example: mammoth view conditional-format delete-all --output json --no-input
+  unit_tests:
+  - UT-VIEW-CONDITIONAL-FORMAT-DELETE-ALL
+  contract_tests:
+  - CT-VIEW-CONDITIONAL-FORMAT-DELETE-ALL-HUMAN
+  - CT-VIEW-CONDITIONAL-FORMAT-DELETE-ALL-JSON
+  - CT-VIEW-CONDITIONAL-FORMAT-DELETE-ALL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Exact phrase DELETE ALL CONDITIONAL FORMATS required.
+  reviewed_by: primary
+- command_id: view.conditional-format.list
+  command_path: view conditional-format list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetConditionalFormat
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_list
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_list with validated request
+    fields.
+  request_model: ViewConditionalFormatListRequest
+  result_model: ViewConditionalFormatListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-CONDITIONAL-FORMAT-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view conditional-format list --help
+  agent_example: mammoth view conditional-format list --output json --no-input
+  unit_tests:
+  - UT-VIEW-CONDITIONAL-FORMAT-LIST
+  contract_tests:
+  - CT-VIEW-CONDITIONAL-FORMAT-LIST-HUMAN
+  - CT-VIEW-CONDITIONAL-FORMAT-LIST-JSON
+  - CT-VIEW-CONDITIONAL-FORMAT-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.conditional-format.update
+  command_path: view conditional-format update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateConditionalFormat
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_update
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_update with validated request
+    fields.
+  request_model: ViewConditionalFormatUpdateRequest
+  result_model: ViewConditionalFormatUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-CONDITIONAL-FORMAT-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view conditional-format update --help
+  agent_example: mammoth view conditional-format update --output json --no-input
+  unit_tests:
+  - UT-VIEW-CONDITIONAL-FORMAT-UPDATE
+  contract_tests:
+  - CT-VIEW-CONDITIONAL-FORMAT-UPDATE-HUMAN
+  - CT-VIEW-CONDITIONAL-FORMAT-UPDATE-JSON
+  - CT-VIEW-CONDITIONAL-FORMAT-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: BLOCKED[B09 DATAVIEW_INPUT_UNTYPED]; reserved, not registered.
+  reviewed_by: primary
+- command_id: view.create
+  command_path: view create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddDataview
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.client.ViewsResource.create
+  sdk_conversion: Call mammoth.client.ViewsResource.create with validated request fields.
+  request_model: ViewCreateRequest
+  result_model: ViewCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view create --help
+  agent_example: mammoth view create --output json --no-input
+  unit_tests:
+  - UT-VIEW-CREATE
+  contract_tests:
+  - CT-VIEW-CREATE-HUMAN
+  - CT-VIEW-CREATE-JSON
+  - CT-VIEW-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.data-check.create
+  command_path: view data-check create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddDataCheck
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_checks.DataChecksAPI.create
+  sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.create with validated request fields.
+  request_model: ViewDataCheckCreateRequest
+  result_model: ViewDataCheckCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-DATA-CHECK-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view data-check create --help
+  agent_example: mammoth view data-check create --output json --no-input
+  unit_tests:
+  - UT-VIEW-DATA-CHECK-CREATE
+  contract_tests:
+  - CT-VIEW-DATA-CHECK-CREATE-HUMAN
+  - CT-VIEW-DATA-CHECK-CREATE-JSON
+  - CT-VIEW-DATA-CHECK-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.data-check.delete
+  command_path: view data-check delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteDataCheck
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_checks.DataChecksAPI.delete
+  sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.delete with validated request fields.
+  request_model: ViewDataCheckDeleteRequest
+  result_model: ViewDataCheckDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-DATA-CHECK-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view data-check delete --help
+  agent_example: mammoth view data-check delete --output json --no-input
+  unit_tests:
+  - UT-VIEW-DATA-CHECK-DELETE
+  contract_tests:
+  - CT-VIEW-DATA-CHECK-DELETE-HUMAN
+  - CT-VIEW-DATA-CHECK-DELETE-JSON
+  - CT-VIEW-DATA-CHECK-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.data-check.get
+  command_path: view data-check get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPipelineDataCheck
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_checks.DataChecksAPI.get
+  sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.get with validated request fields.
+  request_model: ViewDataCheckGetRequest
+  result_model: ViewDataCheckGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-DATA-CHECK-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view data-check get --help
+  agent_example: mammoth view data-check get --output json --no-input
+  unit_tests:
+  - UT-VIEW-DATA-CHECK-GET
+  contract_tests:
+  - CT-VIEW-DATA-CHECK-GET-HUMAN
+  - CT-VIEW-DATA-CHECK-GET-JSON
+  - CT-VIEW-DATA-CHECK-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.data-check.list
+  command_path: view data-check list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPipelineDataChecks
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_checks.DataChecksAPI.list
+  sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.list with validated request fields.
+  request_model: ViewDataCheckListRequest
+  result_model: ViewDataCheckListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-DATA-CHECK-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view data-check list --help
+  agent_example: mammoth view data-check list --output json --no-input
+  unit_tests:
+  - UT-VIEW-DATA-CHECK-LIST
+  contract_tests:
+  - CT-VIEW-DATA-CHECK-LIST-HUMAN
+  - CT-VIEW-DATA-CHECK-LIST-JSON
+  - CT-VIEW-DATA-CHECK-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.data-check.update
+  command_path: view data-check update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - EditDatacheck
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_checks.DataChecksAPI.update
+  sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.update with validated request fields.
+  request_model: ViewDataCheckUpdateRequest
+  result_model: ViewDataCheckUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-DATA-CHECK-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view data-check update --help
+  agent_example: mammoth view data-check update --output json --no-input
+  unit_tests:
+  - UT-VIEW-DATA-CHECK-UPDATE
+  contract_tests:
+  - CT-VIEW-DATA-CHECK-UPDATE-HUMAN
+  - CT-VIEW-DATA-CHECK-UPDATE-JSON
+  - CT-VIEW-DATA-CHECK-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.data.get
+  command_path: view data get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDataviewData
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.get_data
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.get_data with validated request fields.
+  request_model: ViewDataGetRequest
+  result_model: ViewDataGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-DATA-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view data get --help
+  agent_example: mammoth view data get --output json --no-input
+  unit_tests:
+  - UT-VIEW-DATA-GET
+  contract_tests:
+  - CT-VIEW-DATA-GET-HUMAN
+  - CT-VIEW-DATA-GET-JSON
+  - CT-VIEW-DATA-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.data.query
+  command_path: view data query
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExecuteVolatileQuery
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.query_data
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.query_data with validated request fields.
+  request_model: ViewDataQueryRequest
+  result_model: ViewDataQueryResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: offset
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-DATA-QUERY
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view data query --help
+  agent_example: mammoth view data query --output json --no-input
+  unit_tests:
+  - UT-VIEW-DATA-QUERY
+  contract_tests:
+  - CT-VIEW-DATA-QUERY-HUMAN
+  - CT-VIEW-DATA-QUERY-JSON
+  - CT-VIEW-DATA-QUERY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'B11 QUERY_OFFSET_SEMANTICS: one-indexed (offset=1) with no proven continuation;
+    --all is blocked.'
+  reviewed_by: primary
+- command_id: view.delete
+  command_path: view delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteDataview
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.client.ViewsResource.delete
+  sdk_conversion: Call mammoth.client.ViewsResource.delete with validated request fields.
+  request_model: ViewDeleteRequest
+  result_model: ViewDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view delete --help
+  agent_example: mammoth view delete --output json --no-input
+  unit_tests:
+  - UT-VIEW-DELETE
+  contract_tests:
+  - CT-VIEW-DELETE-HUMAN
+  - CT-VIEW-DELETE-JSON
+  - CT-VIEW-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Immutable view-ID confirmation. BLOCKED[B10 VIEW_DATASET_RESOLUTION].
+  reviewed_by: primary
+- command_id: view.derivative.create
+  command_path: view derivative create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateDerivative
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.derivatives.DerivativesAPI.create
+  sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.create with validated request fields.
+  request_model: ViewDerivativeCreateRequest
+  result_model: ViewDerivativeCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-DERIVATIVE-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view derivative create --help
+  agent_example: mammoth view derivative create --output json --no-input
+  unit_tests:
+  - UT-VIEW-DERIVATIVE-CREATE
+  contract_tests:
+  - CT-VIEW-DERIVATIVE-CREATE-HUMAN
+  - CT-VIEW-DERIVATIVE-CREATE-JSON
+  - CT-VIEW-DERIVATIVE-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.derivative.data
+  command_path: view derivative data
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - FetchDerivativeData
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.derivatives.DerivativesAPI.data
+  sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.data with validated request fields.
+  request_model: ViewDerivativeDataRequest
+  result_model: ViewDerivativeDataResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-DERIVATIVE-DATA
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view derivative data --help
+  agent_example: mammoth view derivative data --output json --no-input
+  unit_tests:
+  - UT-VIEW-DERIVATIVE-DATA
+  contract_tests:
+  - CT-VIEW-DERIVATIVE-DATA-HUMAN
+  - CT-VIEW-DERIVATIVE-DATA-JSON
+  - CT-VIEW-DERIVATIVE-DATA-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.derivative.delete
+  command_path: view derivative delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteDerivative
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.derivatives.DerivativesAPI.delete
+  sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.delete with validated request fields.
+  request_model: ViewDerivativeDeleteRequest
+  result_model: ViewDerivativeDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-DERIVATIVE-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view derivative delete --help
+  agent_example: mammoth view derivative delete --output json --no-input
+  unit_tests:
+  - UT-VIEW-DERIVATIVE-DELETE
+  contract_tests:
+  - CT-VIEW-DERIVATIVE-DELETE-HUMAN
+  - CT-VIEW-DERIVATIVE-DELETE-JSON
+  - CT-VIEW-DERIVATIVE-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.derivative.list
+  command_path: view derivative list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListDerivatives
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.derivatives.DerivativesAPI.list
+  sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.list with validated request fields.
+  request_model: ViewDerivativeListRequest
+  result_model: ViewDerivativeListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-DERIVATIVE-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view derivative list --help
+  agent_example: mammoth view derivative list --output json --no-input
+  unit_tests:
+  - UT-VIEW-DERIVATIVE-LIST
+  contract_tests:
+  - CT-VIEW-DERIVATIVE-LIST-HUMAN
+  - CT-VIEW-DERIVATIVE-LIST-JSON
+  - CT-VIEW-DERIVATIVE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.derivative.update
+  command_path: view derivative update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - EditDerivative
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.derivatives.DerivativesAPI.update
+  sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.update with validated request fields.
+  request_model: ViewDerivativeUpdateRequest
+  result_model: ViewDerivativeUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-DERIVATIVE-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view derivative update --help
+  agent_example: mammoth view derivative update --output json --no-input
+  unit_tests:
+  - UT-VIEW-DERIVATIVE-UPDATE
+  contract_tests:
+  - CT-VIEW-DERIVATIVE-UPDATE-HUMAN
+  - CT-VIEW-DERIVATIVE-UPDATE-JSON
+  - CT-VIEW-DERIVATIVE-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.draft.auto-run
+  command_path: view draft auto-run
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExecutePipelineDraftCommand
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.view.View.set_auto_run
+  sdk_conversion: Call mammoth.view.View.set_auto_run with validated request fields.
+  request_model: ViewDraftAutoRunRequest
+  result_model: ViewDraftAutoRunResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-DRAFT-AUTO-RUN
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view draft auto-run --help
+  agent_example: mammoth view draft auto-run --output json --no-input
+  unit_tests:
+  - UT-VIEW-DRAFT-AUTO-RUN
+  contract_tests:
+  - CT-VIEW-DRAFT-AUTO-RUN-HUMAN
+  - CT-VIEW-DRAFT-AUTO-RUN-JSON
+  - CT-VIEW-DRAFT-AUTO-RUN-ERROR
+  draft_test: LT-VIEW-DRAFT-AUTO-RUN-DRAFT
+  undo_test: LT-VIEW-DRAFT-AUTO-RUN-UNDO
+  known_restrictions: Requires exactly one of --enabled/--disabled, no implicit default.
+  reviewed_by: primary
+- command_id: view.draft.command
+  command_path: view draft command
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExecutePipelineDraftCommand
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.command
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.command with validated request fields.
+  request_model: ViewDraftCommandRequest
+  result_model: ViewDraftCommandResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-DRAFT-COMMAND
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view draft command --help
+  agent_example: mammoth view draft command --output json --no-input
+  unit_tests:
+  - UT-VIEW-DRAFT-COMMAND
+  contract_tests:
+  - CT-VIEW-DRAFT-COMMAND-HUMAN
+  - CT-VIEW-DRAFT-COMMAND-JSON
+  - CT-VIEW-DRAFT-COMMAND-ERROR
+  draft_test: LT-VIEW-DRAFT-COMMAND-DRAFT
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.draft.discard
+  command_path: view draft discard
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExecutePipelineDraftCommand
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.view.View.discard_draft
+  sdk_conversion: Call mammoth.view.View.discard_draft with validated request fields.
+  request_model: ViewDraftDiscardRequest
+  result_model: ViewDraftDiscardResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-DRAFT-DISCARD
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view draft discard --help
+  agent_example: mammoth view draft discard --output json --no-input
+  unit_tests:
+  - UT-VIEW-DRAFT-DISCARD
+  contract_tests:
+  - CT-VIEW-DRAFT-DISCARD-HUMAN
+  - CT-VIEW-DRAFT-DISCARD-JSON
+  - CT-VIEW-DRAFT-DISCARD-ERROR
+  draft_test: LT-VIEW-DRAFT-DISCARD-DRAFT
+  undo_test: null
+  known_restrictions: Prompt or --yes because queued tasks are deleted.
+  reviewed_by: primary
+- command_id: view.draft.enter
+  command_path: view draft enter
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExecutePipelineDraftCommand
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.view.View.enter_draft_mode
+  sdk_conversion: Call mammoth.view.View.enter_draft_mode with validated request fields.
+  request_model: ViewDraftEnterRequest
+  result_model: ViewDraftEnterResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-DRAFT-ENTER
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view draft enter --help
+  agent_example: mammoth view draft enter --output json --no-input
+  unit_tests:
+  - UT-VIEW-DRAFT-ENTER
+  contract_tests:
+  - CT-VIEW-DRAFT-ENTER-HUMAN
+  - CT-VIEW-DRAFT-ENTER-JSON
+  - CT-VIEW-DRAFT-ENTER-ERROR
+  draft_test: LT-VIEW-DRAFT-ENTER-DRAFT
+  undo_test: LT-VIEW-DRAFT-ENTER-UNDO
+  known_restrictions: Idempotent only when server state proves it is already active.
+  reviewed_by: primary
+- command_id: view.draft.status
+  command_path: view draft status
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExecutePipelineDraftCommand
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.view.View.is_draft_mode
+  sdk_conversion: Call mammoth.view.View.is_draft_mode with validated request fields.
+  request_model: ViewDraftStatusRequest
+  result_model: ViewDraftStatusResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-DRAFT-STATUS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view draft status --help
+  agent_example: mammoth view draft status --output json --no-input
+  unit_tests:
+  - UT-VIEW-DRAFT-STATUS
+  contract_tests:
+  - CT-VIEW-DRAFT-STATUS-HUMAN
+  - CT-VIEW-DRAFT-STATUS-JSON
+  - CT-VIEW-DRAFT-STATUS-ERROR
+  draft_test: LT-VIEW-DRAFT-STATUS-DRAFT
+  undo_test: null
+  known_restrictions: Property; never read process-local state, always server-backed.
+  reviewed_by: primary
+- command_id: view.draft.submit
+  command_path: view draft submit
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExecutePipelineDraftCommand
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.view.View.submit_draft
+  sdk_conversion: Call mammoth.view.View.submit_draft with validated request fields.
+  request_model: ViewDraftSubmitRequest
+  result_model: ViewDraftSubmitResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-DRAFT-SUBMIT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view draft submit --help
+  agent_example: mammoth view draft submit --output json --no-input
+  unit_tests:
+  - UT-VIEW-DRAFT-SUBMIT
+  contract_tests:
+  - CT-VIEW-DRAFT-SUBMIT-HUMAN
+  - CT-VIEW-DRAFT-SUBMIT-JSON
+  - CT-VIEW-DRAFT-SUBMIT-ERROR
+  draft_test: LT-VIEW-DRAFT-SUBMIT-DRAFT
+  undo_test: LT-VIEW-DRAFT-SUBMIT-UNDO
+  known_restrictions: Requires server draft state before mutation.
+  reviewed_by: primary
+- command_id: view.export.create
+  command_path: view export create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddExport
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.create
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.create with validated request fields.
+  request_model: ViewExportCreateRequest
+  result_model: ViewExportCreateResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export create --help
+  agent_example: mammoth view export create --output json --no-input
+  unit_tests:
+  - UT-VIEW-EXPORT-CREATE
+  contract_tests:
+  - CT-VIEW-EXPORT-CREATE-HUMAN
+  - CT-VIEW-EXPORT-CREATE-JSON
+  - CT-VIEW-EXPORT-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Replace open destination dictionaries with the typed destination union.
+  reviewed_by: primary
+- command_id: view.export.csv
+  command_path: view export csv
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddExport
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.to_csv
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.to_csv with validated request fields.
+  request_model: ViewExportCsvRequest
+  result_model: ViewExportCsvResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-EXPORT-CSV
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export csv --help
+  agent_example: mammoth view export csv --output json --no-input
+  unit_tests:
+  - UT-VIEW-EXPORT-CSV
+  contract_tests:
+  - CT-VIEW-EXPORT-CSV-HUMAN
+  - CT-VIEW-EXPORT-CSV-JSON
+  - CT-VIEW-EXPORT-CSV-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: SDK target for view export csv VIEW_ID; uses partial file, fsync, atomic rename,
+    and explicit --overwrite. Live dataset permission is currently blocked.
+  reviewed_by: primary
+- command_id: view.export.delete
+  command_path: view export delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteExport
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.delete
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.delete with validated request fields.
+  request_model: ViewExportDeleteRequest
+  result_model: ViewExportDeleteResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export delete --help
+  agent_example: mammoth view export delete --output json --no-input
+  unit_tests:
+  - UT-VIEW-EXPORT-DELETE
+  contract_tests:
+  - CT-VIEW-EXPORT-DELETE-HUMAN
+  - CT-VIEW-EXPORT-DELETE-JSON
+  - CT-VIEW-EXPORT-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.export.get
+  command_path: view export get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPipelineExport
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.get
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.get with validated request fields.
+  request_model: ViewExportGetRequest
+  result_model: ViewExportGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-EXPORT-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export get --help
+  agent_example: mammoth view export get --output json --no-input
+  unit_tests:
+  - UT-VIEW-EXPORT-GET
+  contract_tests:
+  - CT-VIEW-EXPORT-GET-HUMAN
+  - CT-VIEW-EXPORT-GET-JSON
+  - CT-VIEW-EXPORT-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.export.list
+  command_path: view export list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPipelineExports
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.list
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.list with validated request fields.
+  request_model: ViewExportListRequest
+  result_model: ViewExportListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: offset
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-EXPORT-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export list --help
+  agent_example: mammoth view export list --output json --no-input
+  unit_tests:
+  - UT-VIEW-EXPORT-LIST
+  contract_tests:
+  - CT-VIEW-EXPORT-LIST-HUMAN
+  - CT-VIEW-EXPORT-LIST-JSON
+  - CT-VIEW-EXPORT-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Fix the wire key audit for current 'reorderd' field spelling.
+  reviewed_by: primary
+- command_id: view.export.publish-db
+  command_path: view export publish-db
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreatePublishToDb
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.publish_db
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.publish_db with validated request fields.
+  request_model: ViewExportPublishDbRequest
+  result_model: ViewExportPublishDbResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export publish-db --help
+  agent_example: mammoth view export publish-db --output json --no-input
+  unit_tests:
+  - UT-VIEW-EXPORT-PUBLISH-DB
+  contract_tests:
+  - CT-VIEW-EXPORT-PUBLISH-DB-HUMAN
+  - CT-VIEW-EXPORT-PUBLISH-DB-JSON
+  - CT-VIEW-EXPORT-PUBLISH-DB-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.export.publish-db-update
+  command_path: view export publish-db-update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdatePublishToDb
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.publish_db_update
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.publish_db_update with validated request fields.
+  request_model: ViewExportPublishDbUpdateRequest
+  result_model: ViewExportPublishDbUpdateResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export publish-db-update --help
+  agent_example: mammoth view export publish-db-update --output json --no-input
+  unit_tests:
+  - UT-VIEW-EXPORT-PUBLISH-DB-UPDATE
+  contract_tests:
+  - CT-VIEW-EXPORT-PUBLISH-DB-UPDATE-HUMAN
+  - CT-VIEW-EXPORT-PUBLISH-DB-UPDATE-JSON
+  - CT-VIEW-EXPORT-PUBLISH-DB-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.export.update
+  command_path: view export update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - EditExport
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.update
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.update with validated request fields.
+  request_model: ViewExportUpdateRequest
+  result_model: ViewExportUpdateResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export update --help
+  agent_example: mammoth view export update --output json --no-input
+  unit_tests:
+  - UT-VIEW-EXPORT-UPDATE
+  contract_tests:
+  - CT-VIEW-EXPORT-UPDATE-HUMAN
+  - CT-VIEW-EXPORT-UPDATE-JSON
+  - CT-VIEW-EXPORT-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.get
+  command_path: view get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDataviewInformationIndividual
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.client.ViewsResource.get
+  sdk_conversion: Call mammoth.client.ViewsResource.get with validated request fields.
+  request_model: ViewGetRequest
+  result_model: ViewGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view get --help
+  agent_example: mammoth view get --output json --no-input
+  unit_tests:
+  - UT-VIEW-GET
+  contract_tests:
+  - CT-VIEW-GET-HUMAN
+  - CT-VIEW-GET-JSON
+  - CT-VIEW-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'BLOCKED[B10 VIEW_DATASET_RESOLUTION]: calls the private pipeline discovery helper.'
+  reviewed_by: primary
+- command_id: view.list
+  command_path: view list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListDataviews
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.list
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.list with validated request fields.
+  request_model: ViewListRequest
+  result_model: ViewListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view list --help
+  agent_example: mammoth view list --output json --no-input
+  unit_tests:
+  - UT-VIEW-LIST
+  contract_tests:
+  - CT-VIEW-LIST-HUMAN
+  - CT-VIEW-LIST-JSON
+  - CT-VIEW-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: B01.
+  reviewed_by: primary
+- command_id: view.parameter-context
+  command_path: view parameter-context
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetParameterContext
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.parameter_context
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.parameter_context with validated request fields.
+  request_model: ViewParameterContextRequest
+  result_model: ViewParameterContextResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-PARAMETER-CONTEXT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view parameter-context --help
+  agent_example: mammoth view parameter-context --output json --no-input
+  unit_tests:
+  - UT-VIEW-PARAMETER-CONTEXT
+  contract_tests:
+  - CT-VIEW-PARAMETER-CONTEXT-HUMAN
+  - CT-VIEW-PARAMETER-CONTEXT-JSON
+  - CT-VIEW-PARAMETER-CONTEXT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.pipeline.edit
+  command_path: view pipeline edit
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - EditPipeline
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.edit_pipeline
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.edit_pipeline with validated request fields.
+  request_model: ViewPipelineEditRequest
+  result_model: ViewPipelineEditResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-PIPELINE-EDIT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view pipeline edit --help
+  agent_example: mammoth view pipeline edit --output json --no-input
+  unit_tests:
+  - UT-VIEW-PIPELINE-EDIT
+  contract_tests:
+  - CT-VIEW-PIPELINE-EDIT-HUMAN
+  - CT-VIEW-PIPELINE-EDIT-JSON
+  - CT-VIEW-PIPELINE-EDIT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Strict nonempty patches; each allowed path has a discriminated model and its own
+    safety class (operation-dependent).
+  reviewed_by: primary
+- command_id: view.pipeline.get
+  command_path: view pipeline get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPipeline
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.get_pipeline
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.get_pipeline with validated request fields.
+  request_model: ViewPipelineGetRequest
+  result_model: ViewPipelineGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-PIPELINE-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view pipeline get --help
+  agent_example: mammoth view pipeline get --output json --no-input
+  unit_tests:
+  - UT-VIEW-PIPELINE-GET
+  contract_tests:
+  - CT-VIEW-PIPELINE-GET-HUMAN
+  - CT-VIEW-PIPELINE-GET-JSON
+  - CT-VIEW-PIPELINE-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.pipeline.items
+  command_path: view pipeline items
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPipelineItems
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.items
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.items with validated request fields.
+  request_model: ViewPipelineItemsRequest
+  result_model: ViewPipelineItemsResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-PIPELINE-ITEMS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view pipeline items --help
+  agent_example: mammoth view pipeline items --output json --no-input
+  unit_tests:
+  - UT-VIEW-PIPELINE-ITEMS
+  contract_tests:
+  - CT-VIEW-PIPELINE-ITEMS-HUMAN
+  - CT-VIEW-PIPELINE-ITEMS-JSON
+  - CT-VIEW-PIPELINE-ITEMS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.pipeline.rerun
+  command_path: view pipeline rerun
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RerunFromSequence
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.rerun
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.rerun with validated request fields.
+  request_model: ViewPipelineRerunRequest
+  result_model: ViewPipelineRerunResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-PIPELINE-RERUN
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view pipeline rerun --help
+  agent_example: mammoth view pipeline rerun --output json --no-input
+  unit_tests:
+  - UT-VIEW-PIPELINE-RERUN
+  contract_tests:
+  - CT-VIEW-PIPELINE-RERUN-HUMAN
+  - CT-VIEW-PIPELINE-RERUN-JSON
+  - CT-VIEW-PIPELINE-RERUN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.pipeline.wait
+  command_path: view pipeline wait
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.wait_for_pipeline
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.wait_for_pipeline with validated request fields.
+  request_model: ViewPipelineWaitRequest
+  result_model: ViewPipelineWaitResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-PIPELINE-WAIT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view pipeline wait --help
+  agent_example: mammoth view pipeline wait --output json --no-input
+  unit_tests:
+  - UT-VIEW-PIPELINE-WAIT
+  contract_tests:
+  - CT-VIEW-PIPELINE-WAIT-HUMAN
+  - CT-VIEW-PIPELINE-WAIT-JSON
+  - CT-VIEW-PIPELINE-WAIT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Global --pipeline-timeout supplies timeout; do not expose poll_interval in v1.
+  reviewed_by: primary
+- command_id: view.preview
+  command_path: view preview
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDataviewPreview
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.preview
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.preview with validated request fields.
+  request_model: ViewPreviewRequest
+  result_model: ViewPreviewResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-PREVIEW
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view preview --help
+  agent_example: mammoth view preview --output json --no-input
+  unit_tests:
+  - UT-VIEW-PREVIEW
+  contract_tests:
+  - CT-VIEW-PREVIEW-HUMAN
+  - CT-VIEW-PREVIEW-JSON
+  - CT-VIEW-PREVIEW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.restore
+  command_path: view restore
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RestoreDataview
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.restore
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.restore with validated request fields.
+  request_model: ViewRestoreRequest
+  result_model: ViewRestoreResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-RESTORE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view restore --help
+  agent_example: mammoth view restore --output json --no-input
+  unit_tests:
+  - UT-VIEW-RESTORE
+  contract_tests:
+  - CT-VIEW-RESTORE-HUMAN
+  - CT-VIEW-RESTORE-JSON
+  - CT-VIEW-RESTORE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.task.add
+  command_path: view task add
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.add_task
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.add_task with validated request fields.
+  request_model: ViewTaskAddRequest
+  result_model: ViewTaskAddResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TASK-ADD
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view task add --help
+  agent_example: mammoth view task add --output json --no-input
+  unit_tests:
+  - UT-VIEW-TASK-ADD
+  contract_tests:
+  - CT-VIEW-TASK-ADD-HUMAN
+  - CT-VIEW-TASK-ADD-JSON
+  - CT-VIEW-TASK-ADD-ERROR
+  draft_test: null
+  undo_test: LT-VIEW-TASK-ADD-UNDO
+  known_restrictions: Strict task discriminated union only.
+  reviewed_by: primary
+- command_id: view.task.delete
+  command_path: view task delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.delete_task
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.delete_task with validated request fields.
+  request_model: ViewTaskDeleteRequest
+  result_model: ViewTaskDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TASK-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view task delete --help
+  agent_example: mammoth view task delete --output json --no-input
+  unit_tests:
+  - UT-VIEW-TASK-DELETE
+  contract_tests:
+  - CT-VIEW-TASK-DELETE-HUMAN
+  - CT-VIEW-TASK-DELETE-JSON
+  - CT-VIEW-TASK-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Prompt or --yes.
+  reviewed_by: primary
+- command_id: view.task.get
+  command_path: view task get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPipelineTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.get_task
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.get_task with validated request fields.
+  request_model: ViewTaskGetRequest
+  result_model: ViewTaskGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-TASK-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view task get --help
+  agent_example: mammoth view task get --output json --no-input
+  unit_tests:
+  - UT-VIEW-TASK-GET
+  contract_tests:
+  - CT-VIEW-TASK-GET-HUMAN
+  - CT-VIEW-TASK-GET-JSON
+  - CT-VIEW-TASK-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.task.list
+  command_path: view task list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPipelineTasks
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.list_tasks
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.list_tasks with validated request fields.
+  request_model: ViewTaskListRequest
+  result_model: ViewTaskListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-TASK-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view task list --help
+  agent_example: mammoth view task list --output json --no-input
+  unit_tests:
+  - UT-VIEW-TASK-LIST
+  contract_tests:
+  - CT-VIEW-TASK-LIST-HUMAN
+  - CT-VIEW-TASK-LIST-JSON
+  - CT-VIEW-TASK-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: single_page until B5; no --all until continuation is proven.
+  reviewed_by: primary
+- command_id: view.task.preview
+  command_path: view task preview
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetTaskPreview
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.preview_task
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.preview_task with validated request fields.
+  request_model: ViewTaskPreviewRequest
+  result_model: ViewTaskPreviewResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-TASK-PREVIEW
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view task preview --help
+  agent_example: mammoth view task preview --output json --no-input
+  unit_tests:
+  - UT-VIEW-TASK-PREVIEW
+  contract_tests:
+  - CT-VIEW-TASK-PREVIEW-HUMAN
+  - CT-VIEW-TASK-PREVIEW-JSON
+  - CT-VIEW-TASK-PREVIEW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.task.update
+  command_path: view task update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - EditTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.update_task
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.update_task with validated request fields.
+  request_model: ViewTaskUpdateRequest
+  result_model: ViewTaskUpdateResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TASK-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view task update --help
+  agent_example: mammoth view task update --output json --no-input
+  unit_tests:
+  - UT-VIEW-TASK-UPDATE
+  contract_tests:
+  - CT-VIEW-TASK-UPDATE-HUMAN
+  - CT-VIEW-TASK-UPDATE-JSON
+  - CT-VIEW-TASK-UPDATE-ERROR
+  draft_test: null
+  undo_test: LT-VIEW-TASK-UPDATE-UNDO
+  known_restrictions: Strict replacement task union.
+  reviewed_by: primary
+- command_id: view.transform.add-column
+  command_path: view transform add-column
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.add_column
+  sdk_conversion: Call mammoth._mixins._column_ops.ColumnOpsMixin.add_column with validated request fields.
+  request_model: ViewTransformAddColumnRequest
+  result_model: ViewTransformAddColumnResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-ADD-COLUMN
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform add-column --help
+  agent_example: mammoth view transform add-column --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-ADD-COLUMN
+  contract_tests:
+  - CT-VIEW-TRANSFORM-ADD-COLUMN-HUMAN
+  - CT-VIEW-TRANSFORM-ADD-COLUMN-JSON
+  - CT-VIEW-TRANSFORM-ADD-COLUMN-ERROR
+  draft_test: LT-VIEW-TRANSFORM-ADD-COLUMN-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-ADD-COLUMN-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.add-sql
+  command_path: view transform add-sql
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
+  sdk_conversion: Call mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql with validated request fields.
+  request_model: ViewTransformAddSqlRequest
+  result_model: ViewTransformAddSqlResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-ADD-SQL
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform add-sql --help
+  agent_example: mammoth view transform add-sql --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-ADD-SQL
+  contract_tests:
+  - CT-VIEW-TRANSFORM-ADD-SQL-HUMAN
+  - CT-VIEW-TRANSFORM-ADD-SQL-JSON
+  - CT-VIEW-TRANSFORM-ADD-SQL-ERROR
+  draft_test: LT-VIEW-TRANSFORM-ADD-SQL-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-ADD-SQL-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.ai
+  command_path: view transform ai
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.gen_ai
+  sdk_conversion: Call mammoth._mixins._advanced_ops.AdvancedOpsMixin.gen_ai with validated request fields.
+  request_model: ViewTransformAiRequest
+  result_model: ViewTransformAiResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-AI
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform ai --help
+  agent_example: mammoth view transform ai --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-AI
+  contract_tests:
+  - CT-VIEW-TRANSFORM-AI-HUMAN
+  - CT-VIEW-TRANSFORM-AI-JSON
+  - CT-VIEW-TRANSFORM-AI-ERROR
+  draft_test: LT-VIEW-TRANSFORM-AI-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-AI-UNDO
+  known_restrictions: Standard transformation policy; record addon and data-processing notice in help
+    (data can be processed by an AI feature).
+  reviewed_by: primary
+- command_id: view.transform.bulk-replace
+  command_path: view transform bulk-replace
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._text_ops.TextOpsMixin.bulk_replace
+  sdk_conversion: Call mammoth._mixins._text_ops.TextOpsMixin.bulk_replace with validated request fields.
+  request_model: ViewTransformBulkReplaceRequest
+  result_model: ViewTransformBulkReplaceResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-BULK-REPLACE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform bulk-replace --help
+  agent_example: mammoth view transform bulk-replace --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-BULK-REPLACE
+  contract_tests:
+  - CT-VIEW-TRANSFORM-BULK-REPLACE-HUMAN
+  - CT-VIEW-TRANSFORM-BULK-REPLACE-JSON
+  - CT-VIEW-TRANSFORM-BULK-REPLACE-ERROR
+  draft_test: LT-VIEW-TRANSFORM-BULK-REPLACE-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-BULK-REPLACE-UNDO
+  known_restrictions: Complete flags/defaults/result/draft/undo/live contract is specified in plan 02's
+    'Complete bulk-replace command contract'; this appendix does not narrow or replace it.
+  reviewed_by: primary
+- command_id: view.transform.combine-columns
+  command_path: view transform combine-columns
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.combine_columns
+  sdk_conversion: Call mammoth._mixins._column_ops.ColumnOpsMixin.combine_columns with validated request
+    fields.
+  request_model: ViewTransformCombineColumnsRequest
+  result_model: ViewTransformCombineColumnsResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-COMBINE-COLUMNS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform combine-columns --help
+  agent_example: mammoth view transform combine-columns --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-COMBINE-COLUMNS
+  contract_tests:
+  - CT-VIEW-TRANSFORM-COMBINE-COLUMNS-HUMAN
+  - CT-VIEW-TRANSFORM-COMBINE-COLUMNS-JSON
+  - CT-VIEW-TRANSFORM-COMBINE-COLUMNS-ERROR
+  draft_test: LT-VIEW-TRANSFORM-COMBINE-COLUMNS-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-COMBINE-COLUMNS-UNDO
+  known_restrictions: 'Standard transformation policy; reject the SDK''s undocumented __literal__: source
+    escape at the CLI boundary.'
+  reviewed_by: primary
+- command_id: view.transform.convert-type
+  command_path: view transform convert-type
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.convert_type
+  sdk_conversion: Call mammoth._mixins._column_ops.ColumnOpsMixin.convert_type with validated request
+    fields.
+  request_model: ViewTransformConvertTypeRequest
+  result_model: ViewTransformConvertTypeResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-CONVERT-TYPE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform convert-type --help
+  agent_example: mammoth view transform convert-type --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-CONVERT-TYPE
+  contract_tests:
+  - CT-VIEW-TRANSFORM-CONVERT-TYPE-HUMAN
+  - CT-VIEW-TRANSFORM-CONVERT-TYPE-JSON
+  - CT-VIEW-TRANSFORM-CONVERT-TYPE-ERROR
+  draft_test: LT-VIEW-TRANSFORM-CONVERT-TYPE-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-CONVERT-TYPE-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.copy-columns
+  command_path: view transform copy-columns
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.copy_columns
+  sdk_conversion: Call mammoth._mixins._column_ops.ColumnOpsMixin.copy_columns with validated request
+    fields.
+  request_model: ViewTransformCopyColumnsRequest
+  result_model: ViewTransformCopyColumnsResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-COPY-COLUMNS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform copy-columns --help
+  agent_example: mammoth view transform copy-columns --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-COPY-COLUMNS
+  contract_tests:
+  - CT-VIEW-TRANSFORM-COPY-COLUMNS-HUMAN
+  - CT-VIEW-TRANSFORM-COPY-COLUMNS-JSON
+  - CT-VIEW-TRANSFORM-COPY-COLUMNS-ERROR
+  draft_test: LT-VIEW-TRANSFORM-COPY-COLUMNS-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-COPY-COLUMNS-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.crosstab
+  command_path: view transform crosstab
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._aggregate_ops.AggregateOpsMixin.crosstab
+  sdk_conversion: Call mammoth._mixins._aggregate_ops.AggregateOpsMixin.crosstab with validated request
+    fields.
+  request_model: ViewTransformCrosstabRequest
+  result_model: ViewTransformCrosstabResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-CROSSTAB
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform crosstab --help
+  agent_example: mammoth view transform crosstab --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-CROSSTAB
+  contract_tests:
+  - CT-VIEW-TRANSFORM-CROSSTAB-HUMAN
+  - CT-VIEW-TRANSFORM-CROSSTAB-JSON
+  - CT-VIEW-TRANSFORM-CROSSTAB-ERROR
+  draft_test: LT-VIEW-TRANSFORM-CROSSTAB-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-CROSSTAB-UNDO
+  known_restrictions: 'Dynamic safety class: new target needs no confirmation, append needs --yes, replacing
+    an existing target needs --yes --confirm TARGET_DS_ID.'
+  reviewed_by: primary
+- command_id: view.transform.date-diff
+  command_path: view transform date-diff
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._date_ops.DateOpsMixin.date_diff
+  sdk_conversion: Call mammoth._mixins._date_ops.DateOpsMixin.date_diff with validated request fields.
+  request_model: ViewTransformDateDiffRequest
+  result_model: ViewTransformDateDiffResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-DATE-DIFF
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform date-diff --help
+  agent_example: mammoth view transform date-diff --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-DATE-DIFF
+  contract_tests:
+  - CT-VIEW-TRANSFORM-DATE-DIFF-HUMAN
+  - CT-VIEW-TRANSFORM-DATE-DIFF-JSON
+  - CT-VIEW-TRANSFORM-DATE-DIFF-ERROR
+  draft_test: LT-VIEW-TRANSFORM-DATE-DIFF-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-DATE-DIFF-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.delete-columns
+  command_path: view transform delete-columns
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.delete_columns
+  sdk_conversion: Call mammoth._mixins._column_ops.ColumnOpsMixin.delete_columns with validated request
+    fields.
+  request_model: ViewTransformDeleteColumnsRequest
+  result_model: ViewTransformDeleteColumnsResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-DELETE-COLUMNS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform delete-columns --help
+  agent_example: mammoth view transform delete-columns --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-DELETE-COLUMNS
+  contract_tests:
+  - CT-VIEW-TRANSFORM-DELETE-COLUMNS-HUMAN
+  - CT-VIEW-TRANSFORM-DELETE-COLUMNS-JSON
+  - CT-VIEW-TRANSFORM-DELETE-COLUMNS-ERROR
+  draft_test: LT-VIEW-TRANSFORM-DELETE-COLUMNS-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-DELETE-COLUMNS-UNDO
+  known_restrictions: Standard transformation policy; task deletion restores columns only when the task
+    ID is stable.
+  reviewed_by: primary
+- command_id: view.transform.discard-duplicates
+  command_path: view transform discard-duplicates
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.discard_duplicates
+  sdk_conversion: Call mammoth._mixins._row_ops.RowOpsMixin.discard_duplicates with validated request
+    fields.
+  request_model: ViewTransformDiscardDuplicatesRequest
+  result_model: ViewTransformDiscardDuplicatesResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-DISCARD-DUPLICATES
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform discard-duplicates --help
+  agent_example: mammoth view transform discard-duplicates --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-DISCARD-DUPLICATES
+  contract_tests:
+  - CT-VIEW-TRANSFORM-DISCARD-DUPLICATES-HUMAN
+  - CT-VIEW-TRANSFORM-DISCARD-DUPLICATES-JSON
+  - CT-VIEW-TRANSFORM-DISCARD-DUPLICATES-ERROR
+  draft_test: LT-VIEW-TRANSFORM-DISCARD-DUPLICATES-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-DISCARD-DUPLICATES-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.extract-date
+  command_path: view transform extract-date
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._date_ops.DateOpsMixin.extract_date
+  sdk_conversion: Call mammoth._mixins._date_ops.DateOpsMixin.extract_date with validated request fields.
+  request_model: ViewTransformExtractDateRequest
+  result_model: ViewTransformExtractDateResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-EXTRACT-DATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform extract-date --help
+  agent_example: mammoth view transform extract-date --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-EXTRACT-DATE
+  contract_tests:
+  - CT-VIEW-TRANSFORM-EXTRACT-DATE-HUMAN
+  - CT-VIEW-TRANSFORM-EXTRACT-DATE-JSON
+  - CT-VIEW-TRANSFORM-EXTRACT-DATE-ERROR
+  draft_test: LT-VIEW-TRANSFORM-EXTRACT-DATE-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-EXTRACT-DATE-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.fill-missing
+  command_path: view transform fill-missing
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.fill_missing
+  sdk_conversion: Call mammoth._mixins._row_ops.RowOpsMixin.fill_missing with validated request fields.
+  request_model: ViewTransformFillMissingRequest
+  result_model: ViewTransformFillMissingResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-FILL-MISSING
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform fill-missing --help
+  agent_example: mammoth view transform fill-missing --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-FILL-MISSING
+  contract_tests:
+  - CT-VIEW-TRANSFORM-FILL-MISSING-HUMAN
+  - CT-VIEW-TRANSFORM-FILL-MISSING-JSON
+  - CT-VIEW-TRANSFORM-FILL-MISSING-ERROR
+  draft_test: LT-VIEW-TRANSFORM-FILL-MISSING-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-FILL-MISSING-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.filter
+  command_path: view transform filter
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._filter_ops.FilterOpsMixin.filter_rows
+  sdk_conversion: Call mammoth._mixins._filter_ops.FilterOpsMixin.filter_rows with validated request fields.
+  request_model: ViewTransformFilterRequest
+  result_model: ViewTransformFilterResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-FILTER
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform filter --help
+  agent_example: mammoth view transform filter --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-FILTER
+  contract_tests:
+  - CT-VIEW-TRANSFORM-FILTER-HUMAN
+  - CT-VIEW-TRANSFORM-FILTER-JSON
+  - CT-VIEW-TRANSFORM-FILTER-ERROR
+  draft_test: LT-VIEW-TRANSFORM-FILTER-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-FILTER-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.generate-sql
+  command_path: view transform generate-sql
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.generate_sql
+  sdk_conversion: Call mammoth._mixins._advanced_ops.AdvancedOpsMixin.generate_sql with validated request
+    fields.
+  request_model: ViewTransformGenerateSqlRequest
+  result_model: ViewTransformGenerateSqlResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-GENERATE-SQL
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform generate-sql --help
+  agent_example: mammoth view transform generate-sql --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-GENERATE-SQL
+  contract_tests:
+  - CT-VIEW-TRANSFORM-GENERATE-SQL-HUMAN
+  - CT-VIEW-TRANSFORM-GENERATE-SQL-JSON
+  - CT-VIEW-TRANSFORM-GENERATE-SQL-ERROR
+  draft_test: LT-VIEW-TRANSFORM-GENERATE-SQL-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-GENERATE-SQL-UNDO
+  known_restrictions: Adds and executes a SQL task; it is not a read-only generator. Differs from ai sql
+    generate (AIAPI.generate_sql), which only returns a query.
+  reviewed_by: primary
+- command_id: view.transform.increment-date
+  command_path: view transform increment-date
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._date_ops.DateOpsMixin.increment_date
+  sdk_conversion: Call mammoth._mixins._date_ops.DateOpsMixin.increment_date with validated request fields.
+  request_model: ViewTransformIncrementDateRequest
+  result_model: ViewTransformIncrementDateResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-INCREMENT-DATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform increment-date --help
+  agent_example: mammoth view transform increment-date --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-INCREMENT-DATE
+  contract_tests:
+  - CT-VIEW-TRANSFORM-INCREMENT-DATE-HUMAN
+  - CT-VIEW-TRANSFORM-INCREMENT-DATE-JSON
+  - CT-VIEW-TRANSFORM-INCREMENT-DATE-ERROR
+  draft_test: LT-VIEW-TRANSFORM-INCREMENT-DATE-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-INCREMENT-DATE-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.join
+  command_path: view transform join
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.join
+  sdk_conversion: Call mammoth._mixins._advanced_ops.AdvancedOpsMixin.join with validated request fields.
+  request_model: ViewTransformJoinRequest
+  result_model: ViewTransformJoinResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-JOIN
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform join --help
+  agent_example: mammoth view transform join --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-JOIN
+  contract_tests:
+  - CT-VIEW-TRANSFORM-JOIN-HUMAN
+  - CT-VIEW-TRANSFORM-JOIN-JSON
+  - CT-VIEW-TRANSFORM-JOIN-ERROR
+  draft_test: LT-VIEW-TRANSFORM-JOIN-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-JOIN-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.json-extract
+  command_path: view transform json-extract
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.json_extract
+  sdk_conversion: Call mammoth._mixins._advanced_ops.AdvancedOpsMixin.json_extract with validated request
+    fields.
+  request_model: ViewTransformJsonExtractRequest
+  result_model: ViewTransformJsonExtractResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-JSON-EXTRACT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform json-extract --help
+  agent_example: mammoth view transform json-extract --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-JSON-EXTRACT
+  contract_tests:
+  - CT-VIEW-TRANSFORM-JSON-EXTRACT-HUMAN
+  - CT-VIEW-TRANSFORM-JSON-EXTRACT-JSON
+  - CT-VIEW-TRANSFORM-JSON-EXTRACT-ERROR
+  draft_test: LT-VIEW-TRANSFORM-JSON-EXTRACT-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-JSON-EXTRACT-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.limit-rows
+  command_path: view transform limit-rows
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.limit_rows
+  sdk_conversion: Call mammoth._mixins._row_ops.RowOpsMixin.limit_rows with validated request fields.
+  request_model: ViewTransformLimitRowsRequest
+  result_model: ViewTransformLimitRowsResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-LIMIT-ROWS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform limit-rows --help
+  agent_example: mammoth view transform limit-rows --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-LIMIT-ROWS
+  contract_tests:
+  - CT-VIEW-TRANSFORM-LIMIT-ROWS-HUMAN
+  - CT-VIEW-TRANSFORM-LIMIT-ROWS-JSON
+  - CT-VIEW-TRANSFORM-LIMIT-ROWS-ERROR
+  draft_test: LT-VIEW-TRANSFORM-LIMIT-ROWS-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-LIMIT-ROWS-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.lookup
+  command_path: view transform lookup
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.lookup
+  sdk_conversion: Call mammoth._mixins._advanced_ops.AdvancedOpsMixin.lookup with validated request fields.
+  request_model: ViewTransformLookupRequest
+  result_model: ViewTransformLookupResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-LOOKUP
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform lookup --help
+  agent_example: mammoth view transform lookup --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-LOOKUP
+  contract_tests:
+  - CT-VIEW-TRANSFORM-LOOKUP-HUMAN
+  - CT-VIEW-TRANSFORM-LOOKUP-JSON
+  - CT-VIEW-TRANSFORM-LOOKUP-ERROR
+  draft_test: LT-VIEW-TRANSFORM-LOOKUP-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-LOOKUP-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.math
+  command_path: view transform math
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._math_ops.MathOpsMixin.math
+  sdk_conversion: Call mammoth._mixins._math_ops.MathOpsMixin.math with validated request fields.
+  request_model: ViewTransformMathRequest
+  result_model: ViewTransformMathResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-MATH
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform math --help
+  agent_example: mammoth view transform math --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-MATH
+  contract_tests:
+  - CT-VIEW-TRANSFORM-MATH-HUMAN
+  - CT-VIEW-TRANSFORM-MATH-JSON
+  - CT-VIEW-TRANSFORM-MATH-ERROR
+  draft_test: LT-VIEW-TRANSFORM-MATH-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-MATH-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.pivot
+  command_path: view transform pivot
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._aggregate_ops.AggregateOpsMixin.pivot
+  sdk_conversion: Call mammoth._mixins._aggregate_ops.AggregateOpsMixin.pivot with validated request fields.
+  request_model: ViewTransformPivotRequest
+  result_model: ViewTransformPivotResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-PIVOT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform pivot --help
+  agent_example: mammoth view transform pivot --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-PIVOT
+  contract_tests:
+  - CT-VIEW-TRANSFORM-PIVOT-HUMAN
+  - CT-VIEW-TRANSFORM-PIVOT-JSON
+  - CT-VIEW-TRANSFORM-PIVOT-ERROR
+  draft_test: LT-VIEW-TRANSFORM-PIVOT-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-PIVOT-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.replace
+  command_path: view transform replace
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._text_ops.TextOpsMixin.replace_values
+  sdk_conversion: Call mammoth._mixins._text_ops.TextOpsMixin.replace_values with validated request fields.
+  request_model: ViewTransformReplaceRequest
+  result_model: ViewTransformReplaceResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-REPLACE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform replace --help
+  agent_example: mammoth view transform replace --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-REPLACE
+  contract_tests:
+  - CT-VIEW-TRANSFORM-REPLACE-HUMAN
+  - CT-VIEW-TRANSFORM-REPLACE-JSON
+  - CT-VIEW-TRANSFORM-REPLACE-ERROR
+  draft_test: LT-VIEW-TRANSFORM-REPLACE-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-REPLACE-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.set-values
+  command_path: view transform set-values
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._filter_ops.FilterOpsMixin.set_values
+  sdk_conversion: Call mammoth._mixins._filter_ops.FilterOpsMixin.set_values with validated request fields.
+  request_model: ViewTransformSetValuesRequest
+  result_model: ViewTransformSetValuesResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-SET-VALUES
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform set-values --help
+  agent_example: mammoth view transform set-values --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-SET-VALUES
+  contract_tests:
+  - CT-VIEW-TRANSFORM-SET-VALUES-HUMAN
+  - CT-VIEW-TRANSFORM-SET-VALUES-JSON
+  - CT-VIEW-TRANSFORM-SET-VALUES-ERROR
+  draft_test: LT-VIEW-TRANSFORM-SET-VALUES-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-SET-VALUES-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.small-large
+  command_path: view transform small-large
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._math_ops.MathOpsMixin.small_large
+  sdk_conversion: Call mammoth._mixins._math_ops.MathOpsMixin.small_large with validated request fields.
+  request_model: ViewTransformSmallLargeRequest
+  result_model: ViewTransformSmallLargeResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-SMALL-LARGE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform small-large --help
+  agent_example: mammoth view transform small-large --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-SMALL-LARGE
+  contract_tests:
+  - CT-VIEW-TRANSFORM-SMALL-LARGE-HUMAN
+  - CT-VIEW-TRANSFORM-SMALL-LARGE-JSON
+  - CT-VIEW-TRANSFORM-SMALL-LARGE-ERROR
+  draft_test: LT-VIEW-TRANSFORM-SMALL-LARGE-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-SMALL-LARGE-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.split
+  command_path: view transform split
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._text_ops.TextOpsMixin.split_column
+  sdk_conversion: Call mammoth._mixins._text_ops.TextOpsMixin.split_column with validated request fields.
+  request_model: ViewTransformSplitRequest
+  result_model: ViewTransformSplitResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-SPLIT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform split --help
+  agent_example: mammoth view transform split --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-SPLIT
+  contract_tests:
+  - CT-VIEW-TRANSFORM-SPLIT-HUMAN
+  - CT-VIEW-TRANSFORM-SPLIT-JSON
+  - CT-VIEW-TRANSFORM-SPLIT-ERROR
+  draft_test: LT-VIEW-TRANSFORM-SPLIT-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-SPLIT-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.substring
+  command_path: view transform substring
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._text_ops.TextOpsMixin.substring
+  sdk_conversion: Call mammoth._mixins._text_ops.TextOpsMixin.substring with validated request fields.
+  request_model: ViewTransformSubstringRequest
+  result_model: ViewTransformSubstringResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-SUBSTRING
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform substring --help
+  agent_example: mammoth view transform substring --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-SUBSTRING
+  contract_tests:
+  - CT-VIEW-TRANSFORM-SUBSTRING-HUMAN
+  - CT-VIEW-TRANSFORM-SUBSTRING-JSON
+  - CT-VIEW-TRANSFORM-SUBSTRING-ERROR
+  draft_test: LT-VIEW-TRANSFORM-SUBSTRING-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-SUBSTRING-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.text
+  command_path: view transform text
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._text_ops.TextOpsMixin.text_transform
+  sdk_conversion: Call mammoth._mixins._text_ops.TextOpsMixin.text_transform with validated request fields.
+  request_model: ViewTransformTextRequest
+  result_model: ViewTransformTextResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-TEXT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform text --help
+  agent_example: mammoth view transform text --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-TEXT
+  contract_tests:
+  - CT-VIEW-TRANSFORM-TEXT-HUMAN
+  - CT-VIEW-TRANSFORM-TEXT-JSON
+  - CT-VIEW-TRANSFORM-TEXT-ERROR
+  draft_test: LT-VIEW-TRANSFORM-TEXT-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-TEXT-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.unnest
+  command_path: view transform unnest
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.unnest
+  sdk_conversion: Call mammoth._mixins._row_ops.RowOpsMixin.unnest with validated request fields.
+  request_model: ViewTransformUnnestRequest
+  result_model: ViewTransformUnnestResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-UNNEST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform unnest --help
+  agent_example: mammoth view transform unnest --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-UNNEST
+  contract_tests:
+  - CT-VIEW-TRANSFORM-UNNEST-HUMAN
+  - CT-VIEW-TRANSFORM-UNNEST-JSON
+  - CT-VIEW-TRANSFORM-UNNEST-ERROR
+  draft_test: LT-VIEW-TRANSFORM-UNNEST-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-UNNEST-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.window
+  command_path: view transform window
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals: []
+  options: []
+  sdk_symbol: mammoth._mixins._aggregate_ops.AggregateOpsMixin.window
+  sdk_conversion: Call mammoth._mixins._aggregate_ops.AggregateOpsMixin.window with validated request
+    fields.
+  request_model: ViewTransformWindowRequest
+  result_model: ViewTransformWindowResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-WINDOW
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform window --help
+  agent_example: mammoth view transform window --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRANSFORM-WINDOW
+  contract_tests:
+  - CT-VIEW-TRANSFORM-WINDOW-HUMAN
+  - CT-VIEW-TRANSFORM-WINDOW-JSON
+  - CT-VIEW-TRANSFORM-WINDOW-ERROR
+  draft_test: LT-VIEW-TRANSFORM-WINDOW-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-WINDOW-UNDO
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.trash
+  command_path: view trash
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - TrashDataview
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.trash
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.trash with validated request fields.
+  request_model: ViewTrashRequest
+  result_model: ViewTrashResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRASH
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view trash --help
+  agent_example: mammoth view trash --output json --no-input
+  unit_tests:
+  - UT-VIEW-TRASH
+  contract_tests:
+  - CT-VIEW-TRASH-HUMAN
+  - CT-VIEW-TRASH-JSON
+  - CT-VIEW-TRASH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.update
+  command_path: view update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - Patch
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.update
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.update with validated request fields.
+  request_model: ViewUpdateRequest
+  result_model: ViewUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view update --help
+  agent_example: mammoth view update --output json --no-input
+  unit_tests:
+  - UT-VIEW-UPDATE
+  contract_tests:
+  - CT-VIEW-UPDATE-HUMAN
+  - CT-VIEW-UPDATE-JSON
+  - CT-VIEW-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'BLOCKED[B09 DATAVIEW_INPUT_UNTYPED]: patch_data is an arbitrary dictionary; reserved,
+    not registered.'
+  reviewed_by: primary
+- command_id: view.version.apply
+  command_path: view version apply
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ApplyPipelineVersion
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.apply
+  sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.apply with validated request
+    fields.
+  request_model: ViewVersionApplyRequest
+  result_model: ViewVersionApplyResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-VERSION-APPLY
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view version apply --help
+  agent_example: mammoth view version apply --output json --no-input
+  unit_tests:
+  - UT-VIEW-VERSION-APPLY
+  contract_tests:
+  - CT-VIEW-VERSION-APPLY-HUMAN
+  - CT-VIEW-VERSION-APPLY-JSON
+  - CT-VIEW-VERSION-APPLY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.version.delete
+  command_path: view version delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeletePipelineVersion
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.delete
+  sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.delete with validated request
+    fields.
+  request_model: ViewVersionDeleteRequest
+  result_model: ViewVersionDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-VERSION-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view version delete --help
+  agent_example: mammoth view version delete --output json --no-input
+  unit_tests:
+  - UT-VIEW-VERSION-DELETE
+  contract_tests:
+  - CT-VIEW-VERSION-DELETE-HUMAN
+  - CT-VIEW-VERSION-DELETE-JSON
+  - CT-VIEW-VERSION-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.version.get
+  command_path: view version get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPipelineVersion
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.get
+  sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.get with validated request fields.
+  request_model: ViewVersionGetRequest
+  result_model: ViewVersionGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-VERSION-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view version get --help
+  agent_example: mammoth view version get --output json --no-input
+  unit_tests:
+  - UT-VIEW-VERSION-GET
+  contract_tests:
+  - CT-VIEW-VERSION-GET-HUMAN
+  - CT-VIEW-VERSION-GET-JSON
+  - CT-VIEW-VERSION-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.version.list
+  command_path: view version list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPipelineVersions
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.list
+  sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.list with validated request fields.
+  request_model: ViewVersionListRequest
+  result_model: ViewVersionListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-VERSION-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view version list --help
+  agent_example: mammoth view version list --output json --no-input
+  unit_tests:
+  - UT-VIEW-VERSION-LIST
+  contract_tests:
+  - CT-VIEW-VERSION-LIST-HUMAN
+  - CT-VIEW-VERSION-LIST-JSON
+  - CT-VIEW-VERSION-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.version.update
+  command_path: view version update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - EditPipelineVersion
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.update
+  sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.update with validated request
+    fields.
+  request_model: ViewVersionUpdateRequest
+  result_model: ViewVersionUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-VERSION-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view version update --help
+  agent_example: mammoth view version update --output json --no-input
+  unit_tests:
+  - UT-VIEW-VERSION-UPDATE
+  contract_tests:
+  - CT-VIEW-VERSION-UPDATE-HUMAN
+  - CT-VIEW-VERSION-UPDATE-JSON
+  - CT-VIEW-VERSION-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

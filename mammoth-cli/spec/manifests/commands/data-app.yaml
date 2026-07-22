@@ -1,0 +1,410 @@
+manifest_schema_version: 1
+commands:
+- command_id: data-app.active-job
+  command_path: data-app active-job
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDataAppActiveJob
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_apps.DataAppsAPI.active_job
+  sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.active_job with validated request fields.
+  request_model: DataAppActiveJobRequest
+  result_model: DataAppActiveJobResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATA-APP-ACTIVE-JOB
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth data-app active-job --help
+  agent_example: mammoth data-app active-job --output json --no-input
+  unit_tests:
+  - UT-DATA-APP-ACTIVE-JOB
+  contract_tests:
+  - CT-DATA-APP-ACTIVE-JOB-HUMAN
+  - CT-DATA-APP-ACTIVE-JOB-JSON
+  - CT-DATA-APP-ACTIVE-JOB-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: data-app.create
+  command_path: data-app create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateDataApp
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_apps.DataAppsAPI.create
+  sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.create with validated request fields.
+  request_model: DataAppCreateRequest
+  result_model: DataAppCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATA-APP-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth data-app create --help
+  agent_example: mammoth data-app create --output json --no-input
+  unit_tests:
+  - UT-DATA-APP-CREATE
+  contract_tests:
+  - CT-DATA-APP-CREATE-HUMAN
+  - CT-DATA-APP-CREATE-JSON
+  - CT-DATA-APP-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: data-app.delete
+  command_path: data-app delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteDataAppEndpoint
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_apps.DataAppsAPI.delete
+  sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.delete with validated request fields.
+  request_model: DataAppDeleteRequest
+  result_model: DataAppDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATA-APP-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth data-app delete --help
+  agent_example: mammoth data-app delete --output json --no-input
+  unit_tests:
+  - UT-DATA-APP-DELETE
+  contract_tests:
+  - CT-DATA-APP-DELETE-HUMAN
+  - CT-DATA-APP-DELETE-JSON
+  - CT-DATA-APP-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: data-app.get
+  command_path: data-app get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDataAppDetails
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_apps.DataAppsAPI.get
+  sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.get with validated request fields.
+  request_model: DataAppGetRequest
+  result_model: DataAppGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATA-APP-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth data-app get --help
+  agent_example: mammoth data-app get --output json --no-input
+  unit_tests:
+  - UT-DATA-APP-GET
+  contract_tests:
+  - CT-DATA-APP-GET-HUMAN
+  - CT-DATA-APP-GET-JSON
+  - CT-DATA-APP-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: data-app.job
+  command_path: data-app job
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDataAppJob
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_apps.DataAppsAPI.job
+  sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.job with validated request fields.
+  request_model: DataAppJobRequest
+  result_model: DataAppJobResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATA-APP-JOB
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth data-app job --help
+  agent_example: mammoth data-app job --output json --no-input
+  unit_tests:
+  - UT-DATA-APP-JOB
+  contract_tests:
+  - CT-DATA-APP-JOB-HUMAN
+  - CT-DATA-APP-JOB-JSON
+  - CT-DATA-APP-JOB-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: data-app.list
+  command_path: data-app list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListDataApps
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_apps.DataAppsAPI.list
+  sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.list with validated request fields.
+  request_model: DataAppListRequest
+  result_model: DataAppListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-DATA-APP-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth data-app list --help
+  agent_example: mammoth data-app list --output json --no-input
+  unit_tests:
+  - UT-DATA-APP-LIST
+  contract_tests:
+  - CT-DATA-APP-LIST-HUMAN
+  - CT-DATA-APP-LIST-JSON
+  - CT-DATA-APP-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: data-app.pipeline-changes
+  command_path: data-app pipeline-changes
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPipelineChanges
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_apps.DataAppsAPI.pipeline_changes
+  sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.pipeline_changes with validated request fields.
+  request_model: DataAppPipelineChangesRequest
+  result_model: DataAppPipelineChangesResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATA-APP-PIPELINE-CHANGES
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth data-app pipeline-changes --help
+  agent_example: mammoth data-app pipeline-changes --output json --no-input
+  unit_tests:
+  - UT-DATA-APP-PIPELINE-CHANGES
+  contract_tests:
+  - CT-DATA-APP-PIPELINE-CHANGES-HUMAN
+  - CT-DATA-APP-PIPELINE-CHANGES-JSON
+  - CT-DATA-APP-PIPELINE-CHANGES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: data-app.share
+  command_path: data-app share
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ShareDataApp
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_apps.DataAppsAPI.share
+  sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.share with validated request fields.
+  request_model: DataAppShareRequest
+  result_model: DataAppShareResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATA-APP-SHARE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth data-app share --help
+  agent_example: mammoth data-app share --output json --no-input
+  unit_tests:
+  - UT-DATA-APP-SHARE
+  contract_tests:
+  - CT-DATA-APP-SHARE-HUMAN
+  - CT-DATA-APP-SHARE-JSON
+  - CT-DATA-APP-SHARE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: data-app.update
+  command_path: data-app update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateDataApp
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_apps.DataAppsAPI.update
+  sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.update with validated request fields.
+  request_model: DataAppUpdateRequest
+  result_model: DataAppUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATA-APP-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth data-app update --help
+  agent_example: mammoth data-app update --output json --no-input
+  unit_tests:
+  - UT-DATA-APP-UPDATE
+  contract_tests:
+  - CT-DATA-APP-UPDATE-HUMAN
+  - CT-DATA-APP-UPDATE-JSON
+  - CT-DATA-APP-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: data-app.upload
+  command_path: data-app upload
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UploadToDataApp
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_apps.DataAppsAPI.upload
+  sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.upload with validated request fields.
+  request_model: DataAppUploadRequest
+  result_model: DataAppUploadResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATA-APP-UPLOAD
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth data-app upload --help
+  agent_example: mammoth data-app upload --output json --no-input
+  unit_tests:
+  - UT-DATA-APP-UPLOAD
+  contract_tests:
+  - CT-DATA-APP-UPLOAD-HUMAN
+  - CT-DATA-APP-UPLOAD-JSON
+  - CT-DATA-APP-UPLOAD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: data-app.user.list
+  command_path: data-app user list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListSharedUsers
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_apps.DataAppsAPI.user_list
+  sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.user_list with validated request fields.
+  request_model: DataAppUserListRequest
+  result_model: DataAppUserListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-DATA-APP-USER-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth data-app user list --help
+  agent_example: mammoth data-app user list --output json --no-input
+  unit_tests:
+  - UT-DATA-APP-USER-LIST
+  contract_tests:
+  - CT-DATA-APP-USER-LIST-HUMAN
+  - CT-DATA-APP-USER-LIST-JSON
+  - CT-DATA-APP-USER-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: data-app.user.remove
+  command_path: data-app user remove
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RemoveSharedUser
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.data_apps.DataAppsAPI.user_remove
+  sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.user_remove with validated request fields.
+  request_model: DataAppUserRemoveRequest
+  result_model: DataAppUserRemoveResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATA-APP-USER-REMOVE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth data-app user remove --help
+  agent_example: mammoth data-app user remove --output json --no-input
+  unit_tests:
+  - UT-DATA-APP-USER-REMOVE
+  contract_tests:
+  - CT-DATA-APP-USER-REMOVE-HUMAN
+  - CT-DATA-APP-USER-REMOVE-JSON
+  - CT-DATA-APP-USER-REMOVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

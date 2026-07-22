@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mammoth.io/cli/spec/manifests/schema-v1.json",
+  "title": "Mammoth CLI parity manifest schema v1",
+  "description": "Validates the OpenAPI operation, SDK method, and command-spec manifests. Rejects unknown fields and unresolved markers.",
+  "manifest_schema_version": 1,
+  "$defs": {
+    "no_placeholder": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "pattern": "(?i)^(tbd|todo|unknown|xxx|\\?\\?\\?)$"
+      }
+    },
+    "disposition": {
+      "enum": ["command", "alias", "protocol_only", "deprecated", "server_unavailable"]
+    },
+    "mutation_class": {
+      "enum": ["read", "benign_mutation", "reversible_pipeline", "destructive", "high_impact", "external_effect"]
+    },
+    "confirmation": {
+      "enum": ["none", "prompt_or_yes", "confirm_target", "yes_always", "workspace_confirm"]
+    },
+    "wait_policy": {
+      "enum": ["always_wait", "start_or_wait", "returns_job", "not_async"]
+    },
+    "pagination_policy": {
+      "enum": ["none", "offset", "cursor", "single_page"]
+    },
+    "acceptance_evidence": {
+      "enum": [
+        "live_disposable_project",
+        "live_dedicated_external_fixture",
+        "live_read_only",
+        "contract_only_high_impact",
+        "server_unavailable"
+      ]
+    },
+    "operation_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity",
+        "method",
+        "path",
+        "operation_id",
+        "tags",
+        "summary",
+        "security",
+        "disposition",
+        "disposition_reason",
+        "reviewed_by"
+      ],
+      "properties": {
+        "identity": {"$ref": "#/$defs/no_placeholder"},
+        "method": {"enum": ["GET", "PUT", "POST", "DELETE", "OPTIONS", "HEAD", "PATCH", "TRACE"]},
+        "path": {"$ref": "#/$defs/no_placeholder"},
+        "operation_id": {"type": ["string", "null"]},
+        "tags": {"type": "array", "items": {"type": "string"}},
+        "summary": {"type": "string"},
+        "security": {"type": "array", "items": {"type": "string"}},
+        "request_schema": {"type": ["string", "null"]},
+        "response_schemas": {"type": "array", "items": {"type": "string"}},
+        "deprecated": {"type": "boolean"},
+        "disposition": {"$ref": "#/$defs/disposition"},
+        "disposition_reason": {"$ref": "#/$defs/no_placeholder"},
+        "canonical_command": {"type": ["string", "null"]},
+        "alias_of": {"type": ["string", "null"]},
+        "sdk_symbol": {"type": ["string", "null"]},
+        "reviewed_by": {"$ref": "#/$defs/no_placeholder"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"disposition": {"const": "command"}}},
+          "then": {"required": ["canonical_command", "sdk_symbol"], "properties": {"canonical_command": {"$ref": "#/$defs/no_placeholder"}, "sdk_symbol": {"$ref": "#/$defs/no_placeholder"}}}
+        },
+        {
+          "if": {"properties": {"disposition": {"const": "alias"}}},
+          "then": {"required": ["alias_of"], "properties": {"alias_of": {"$ref": "#/$defs/no_placeholder"}}}
+        }
+      ]
+    },
+    "sdk_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sdk_symbol",
+        "implementation_origin",
+        "signature",
+        "canonical_command",
+        "alias_of",
+        "no_command_reason",
+        "reviewed_by"
+      ],
+      "properties": {
+        "sdk_symbol": {"$ref": "#/$defs/no_placeholder"},
+        "implementation_origin": {"$ref": "#/$defs/no_placeholder"},
+        "signature": {"$ref": "#/$defs/no_placeholder"},
+        "openapi_operation_ids": {"type": "array", "items": {"type": "string"}},
+        "canonical_command": {"type": ["string", "null"]},
+        "alias_of": {"type": ["string", "null"]},
+        "no_command_reason": {"type": ["string", "null"]},
+        "mutation_class": {"oneOf": [{"$ref": "#/$defs/mutation_class"}, {"type": "null"}]},
+        "wait_policy": {"oneOf": [{"$ref": "#/$defs/wait_policy"}, {"type": "null"}]},
+        "pagination_policy": {"oneOf": [{"$ref": "#/$defs/pagination_policy"}, {"type": "null"}]},
+        "secret_fields": {"type": "array", "items": {"type": "string"}},
+        "reviewed_by": {"$ref": "#/$defs/no_placeholder"}
+      },
+      "anyOf": [
+        {"properties": {"canonical_command": {"$ref": "#/$defs/no_placeholder"}}, "required": ["canonical_command"]},
+        {"properties": {"alias_of": {"$ref": "#/$defs/no_placeholder"}}, "required": ["alias_of"]},
+        {"properties": {"no_command_reason": {"$ref": "#/$defs/no_placeholder"}}, "required": ["no_command_reason"]}
+      ]
+    },
+    "option_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type", "cardinality", "required"],
+      "properties": {
+        "name": {"$ref": "#/$defs/no_placeholder"},
+        "negative_name": {"type": ["string", "null"]},
+        "type": {"$ref": "#/$defs/no_placeholder"},
+        "cardinality": {"enum": ["single", "multiple"]},
+        "default": {},
+        "required": {"type": "boolean"},
+        "env": {"type": ["string", "null"]},
+        "secret": {"type": "boolean"},
+        "document_conflict": {"type": ["string", "null"]},
+        "help": {"type": "string"}
+      }
+    },
+    "command_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command_id",
+        "command_path",
+        "disposition",
+        "sdk_symbol",
+        "sdk_conversion",
+        "request_model",
+        "result_model",
+        "mutation_class",
+        "confirmation",
+        "wait_policy",
+        "pagination_policy",
+        "acceptance_evidence",
+        "human_example",
+        "agent_example",
+        "unit_tests",
+        "contract_tests",
+        "reviewed_by"
+      ],
+      "properties": {
+        "command_id": {"$ref": "#/$defs/no_placeholder"},
+        "command_path": {"$ref": "#/$defs/no_placeholder"},
+        "disposition": {"enum": ["command", "alias"]},
+        "alias_of": {"type": ["string", "null"]},
+        "operation_ids": {"type": "array", "items": {"type": "string"}},
+        "positionals": {"type": "array", "items": {"$ref": "#/$defs/no_placeholder"}},
+        "options": {"type": "array", "items": {"$ref": "#/$defs/option_record"}},
+        "sdk_symbol": {"$ref": "#/$defs/no_placeholder"},
+        "sdk_conversion": {"$ref": "#/$defs/no_placeholder"},
+        "request_model": {"$ref": "#/$defs/no_placeholder"},
+        "result_model": {"$ref": "#/$defs/no_placeholder"},
+        "mutation_class": {"$ref": "#/$defs/mutation_class"},
+        "confirmation": {"$ref": "#/$defs/confirmation"},
+        "wait_policy": {"$ref": "#/$defs/wait_policy"},
+        "pagination_policy": {"$ref": "#/$defs/pagination_policy"},
+        "acceptance_evidence": {"$ref": "#/$defs/acceptance_evidence"},
+        "live_test": {"type": ["string", "null"]},
+        "live_exemption_reason": {"type": ["string", "null"]},
+        "contract_fixture": {"type": ["string", "null"]},
+        "required_fixture_guard": {"type": ["string", "null"]},
+        "secret_fields": {"type": "array", "items": {"type": "string"}},
+        "human_example": {"$ref": "#/$defs/no_placeholder"},
+        "agent_example": {"$ref": "#/$defs/no_placeholder"},
+        "unit_tests": {"type": "array", "items": {"$ref": "#/$defs/no_placeholder"}, "minItems": 1},
+        "contract_tests": {"type": "array", "items": {"$ref": "#/$defs/no_placeholder"}, "minItems": 1},
+        "draft_test": {"type": ["string", "null"]},
+        "undo_test": {"type": ["string", "null"]},
+        "known_restrictions": {"type": ["string", "null"]},
+        "reviewed_by": {"$ref": "#/$defs/no_placeholder"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"disposition": {"const": "alias"}}},
+          "then": {"required": ["alias_of"], "properties": {"alias_of": {"$ref": "#/$defs/no_placeholder"}}}
+        },
+        {
+          "if": {"not": {"properties": {"acceptance_evidence": {"enum": ["live_disposable_project", "live_dedicated_external_fixture", "live_read_only"]}}}},
+          "then": {"required": ["live_exemption_reason"], "properties": {"live_exemption_reason": {"$ref": "#/$defs/no_placeholder"}}}
+        }
+      ]
+    }
+  }
+}

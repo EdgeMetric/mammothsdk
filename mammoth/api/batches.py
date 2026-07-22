@@ -220,3 +220,31 @@ class BatchesAPI:
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches/{batch_id}",
         )
+
+    def bulk_delete(
+        self,
+        dataset_id: int,
+        ids: _list[int] | str | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Bulk-delete batches for a dataset.
+
+        Args:
+            dataset_id: ID of the dataset.
+            ids: Optional list of batch IDs (or comma-separated string) to
+                delete. If omitted, all batches for the dataset are deleted.
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            Dict with deletion result.
+        """
+        ws = self._ws()
+        proj = self._proj(project_id)
+        params: dict[str, Any] = {}
+        if ids is not None:
+            params["ids"] = ",".join(str(i) for i in ids) if isinstance(ids, _list) else ids
+        return self._client._request_json(
+            "DELETE",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches",
+            params=params or None,
+        )

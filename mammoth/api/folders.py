@@ -9,10 +9,13 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from ..client import MammothClient
 
+from ..exceptions import MammothValidationError
 from ..models.folders import BulkFolderPatchRequest, CreateFolder, FolderSchema, FoldersList
-from ..models.jobs import ObjectJobSchema
+from ..models.jobs import JobResponse, ObjectJobSchema
 
 _list = list  # Alias to avoid shadowing by method name
+
+ERR_FOLDER_ID_POSITIVE = "`folder_id` must be a positive integer, got {0}."
 
 
 class FoldersAPI:
@@ -227,3 +230,133 @@ class FoldersAPI:
             json=move_request.model_dump(exclude_none=True),
         )
         return ObjectJobSchema(**response)
+
+    def bulk_delete(
+        self,
+        folder_ids: _list[int] | None = None,
+        check_dependency: bool | None = None,
+        remove_contents: bool | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> None:
+        """Bulk delete folders, matching the ``DeleteFolders`` operation directly.
+
+        Unlike :meth:`delete`, every query parameter here is optional — omitting
+        ``folder_ids`` lets the server apply its own default deletion scope.
+
+        Args:
+            folder_ids: Folder IDs to delete (optional).
+            check_dependency: Whether to check for dependencies before deleting.
+            remove_contents: Whether to remove folder contents before deleting.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            None.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        params: dict[str, Any] = {}
+        if folder_ids is not None:
+            params["ids"] = ",".join(str(fid) for fid in folder_ids)
+        if check_dependency is not None:
+            params["check_dependency"] = check_dependency
+        if remove_contents is not None:
+            params["remove_contents"] = remove_contents
+        self._client._request_json(
+            "DELETE", f"/workspaces/{ws}/projects/{proj}/folders", params=params or None
+        )
+
+    def get(
+        self,
+        folder_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+        fields: str | None = None,
+    ) -> FolderSchema:
+        """Get a single folder by ID.
+
+        Args:
+            folder_id: ID of the folder (must be a positive integer).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+            fields: Fields to return (e.g., "__standard", "__full", "__min").
+
+        Returns:
+            FolderSchema with the folder's details.
+
+        Raises:
+            MammothValidationError: If folder_id is not a positive integer.
+        """
+        if folder_id <= 0:
+            raise MammothValidationError(ERR_FOLDER_ID_POSITIVE.format(folder_id))
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        params: dict[str, Any] = {}
+        if fields:
+            params["fields"] = fields
+        response = self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/folders/{folder_id}",
+            params=params or None,
+        )
+        return FolderSchema(**response.get("folder", response))
+
+    def trash(
+        self,
+        folder_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> JobResponse:
+        """Trash a folder's contents and hard-delete the now-empty folder.
+
+        Args:
+            folder_id: ID of the folder to trash (must be a positive integer).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            JobResponse with job information for the trash operation.
+
+        Raises:
+            MammothValidationError: If folder_id is not a positive integer.
+        """
+        if folder_id <= 0:
+            raise MammothValidationError(ERR_FOLDER_ID_POSITIVE.format(folder_id))
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        response = self._client._request_json(
+            "POST", f"/workspaces/{ws}/projects/{proj}/folders/{folder_id}/trash"
+        )
+        return JobResponse(**response)
+
+    def update(
+        self,
+        folder_id: int,
+        name: str,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> FolderSchema:
+        """Update folder details (currently supports renaming only).
+
+        Args:
+            folder_id: ID of the folder to update (must be a positive integer).
+            name: New name for the folder.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            FolderSchema with the updated folder details.
+
+        Raises:
+            MammothValidationError: If folder_id is not a positive integer.
+        """
+        if folder_id <= 0:
+            raise MammothValidationError(ERR_FOLDER_ID_POSITIVE.format(folder_id))
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        payload = {"patch": [{"op": "replace", "path": "name", "value": name}]}
+        response = self._client._request_json(
+            "PATCH", f"/workspaces/{ws}/projects/{proj}/folders/{folder_id}", json=payload
+        )
+        return FolderSchema(**response.get("folder", response))

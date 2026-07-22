@@ -1,0 +1,36 @@
+manifest_schema_version: 1
+commands:
+- command_id: report.list
+  command_path: report list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetReports
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.reports.ReportsAPI.list
+  sdk_conversion: Call mammoth.api.reports.ReportsAPI.list with validated request fields.
+  request_model: ReportListRequest
+  result_model: ReportListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: offset
+  acceptance_evidence: live_read_only
+  live_test: LT-REPORT-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth report list --help
+  agent_example: mammoth report list --output json --no-input
+  unit_tests:
+  - UT-REPORT-LIST
+  contract_tests:
+  - CT-REPORT-LIST-HUMAN
+  - CT-REPORT-LIST-JSON
+  - CT-REPORT-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

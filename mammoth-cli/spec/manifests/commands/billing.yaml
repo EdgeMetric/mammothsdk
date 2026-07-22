@@ -1,0 +1,787 @@
+manifest_schema_version: 1
+commands:
+- command_id: billing.chargebee-plan
+  command_path: billing chargebee-plan
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetChargebeePlan
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.chargebee_plan
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.chargebee_plan with validated request fields.
+  request_model: BillingChargebeePlanRequest
+  result_model: BillingChargebeePlanResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing chargebee-plan --help
+  agent_example: mammoth billing chargebee-plan --output json --no-input
+  unit_tests:
+  - UT-BILLING-CHARGEBEE-PLAN
+  contract_tests:
+  - CT-BILLING-CHARGEBEE-PLAN-HUMAN
+  - CT-BILLING-CHARGEBEE-PLAN-JSON
+  - CT-BILLING-CHARGEBEE-PLAN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.hosted-page
+  command_path: billing hosted-page
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - FetchHostedPage
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.hosted_page
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.hosted_page with validated request fields.
+  request_model: BillingHostedPageRequest
+  result_model: BillingHostedPageResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing hosted-page --help
+  agent_example: mammoth billing hosted-page --output json --no-input
+  unit_tests:
+  - UT-BILLING-HOSTED-PAGE
+  contract_tests:
+  - CT-BILLING-HOSTED-PAGE-HUMAN
+  - CT-BILLING-HOSTED-PAGE-JSON
+  - CT-BILLING-HOSTED-PAGE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.invoice.charge
+  command_path: billing invoice charge
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ChargeWorkspaceInvoices
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.invoice_charge
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.invoice_charge with validated request fields.
+  request_model: BillingInvoiceChargeRequest
+  result_model: BillingInvoiceChargeResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing invoice charge --help
+  agent_example: mammoth billing invoice charge --output json --no-input
+  unit_tests:
+  - UT-BILLING-INVOICE-CHARGE
+  contract_tests:
+  - CT-BILLING-INVOICE-CHARGE-HUMAN
+  - CT-BILLING-INVOICE-CHARGE-JSON
+  - CT-BILLING-INVOICE-CHARGE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.invoice.get
+  command_path: billing invoice get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetInvoice
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.invoice_get
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.invoice_get with validated request fields.
+  request_model: BillingInvoiceGetRequest
+  result_model: BillingInvoiceGetResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing invoice get --help
+  agent_example: mammoth billing invoice get --output json --no-input
+  unit_tests:
+  - UT-BILLING-INVOICE-GET
+  contract_tests:
+  - CT-BILLING-INVOICE-GET-HUMAN
+  - CT-BILLING-INVOICE-GET-JSON
+  - CT-BILLING-INVOICE-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.invoice.list
+  command_path: billing invoice list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListInvoices
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.invoice_list
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.invoice_list with validated request fields.
+  request_model: BillingInvoiceListRequest
+  result_model: BillingInvoiceListResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing invoice list --help
+  agent_example: mammoth billing invoice list --output json --no-input
+  unit_tests:
+  - UT-BILLING-INVOICE-LIST
+  contract_tests:
+  - CT-BILLING-INVOICE-LIST-HUMAN
+  - CT-BILLING-INVOICE-LIST-JSON
+  - CT-BILLING-INVOICE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.cancel
+  command_path: billing stripe cancel
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CancelWorkspaceSubscription
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_cancel
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_cancel with validated request fields.
+  request_model: BillingStripeCancelRequest
+  result_model: BillingStripeCancelResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe cancel --help
+  agent_example: mammoth billing stripe cancel --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-CANCEL
+  contract_tests:
+  - CT-BILLING-STRIPE-CANCEL-HUMAN
+  - CT-BILLING-STRIPE-CANCEL-JSON
+  - CT-BILLING-STRIPE-CANCEL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.checkout-url
+  command_path: billing stripe checkout-url
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateCheckoutUrl
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_checkout_url
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_checkout_url with validated request fields.
+  request_model: BillingStripeCheckoutUrlRequest
+  result_model: BillingStripeCheckoutUrlResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe checkout-url --help
+  agent_example: mammoth billing stripe checkout-url --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-CHECKOUT-URL
+  contract_tests:
+  - CT-BILLING-STRIPE-CHECKOUT-URL-HUMAN
+  - CT-BILLING-STRIPE-CHECKOUT-URL-JSON
+  - CT-BILLING-STRIPE-CHECKOUT-URL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.create
+  command_path: billing stripe create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateWorkspaceSubscription
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_create
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_create with validated request fields.
+  request_model: BillingStripeCreateRequest
+  result_model: BillingStripeCreateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe create --help
+  agent_example: mammoth billing stripe create --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-CREATE
+  contract_tests:
+  - CT-BILLING-STRIPE-CREATE-HUMAN
+  - CT-BILLING-STRIPE-CREATE-JSON
+  - CT-BILLING-STRIPE-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.end-trial
+  command_path: billing stripe end-trial
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - EndTrialAndStartSubscription
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_end_trial
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_end_trial with validated request fields.
+  request_model: BillingStripeEndTrialRequest
+  result_model: BillingStripeEndTrialResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe end-trial --help
+  agent_example: mammoth billing stripe end-trial --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-END-TRIAL
+  contract_tests:
+  - CT-BILLING-STRIPE-END-TRIAL-HUMAN
+  - CT-BILLING-STRIPE-END-TRIAL-JSON
+  - CT-BILLING-STRIPE-END-TRIAL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.get
+  command_path: billing stripe get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetWorkspaceSubscription
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_get
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_get with validated request fields.
+  request_model: BillingStripeGetRequest
+  result_model: BillingStripeGetResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe get --help
+  agent_example: mammoth billing stripe get --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-GET
+  contract_tests:
+  - CT-BILLING-STRIPE-GET-HUMAN
+  - CT-BILLING-STRIPE-GET-JSON
+  - CT-BILLING-STRIPE-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.history
+  command_path: billing stripe history
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetWorkspaceBillingHistory
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_history
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_history with validated request fields.
+  request_model: BillingStripeHistoryRequest
+  result_model: BillingStripeHistoryResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe history --help
+  agent_example: mammoth billing stripe history --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-HISTORY
+  contract_tests:
+  - CT-BILLING-STRIPE-HISTORY-HUMAN
+  - CT-BILLING-STRIPE-HISTORY-JSON
+  - CT-BILLING-STRIPE-HISTORY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.payment-method.delete
+  command_path: billing stripe payment-method delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeletePaymentMethod
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_payment_method_delete
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_payment_method_delete with validated request
+    fields.
+  request_model: BillingStripePaymentMethodDeleteRequest
+  result_model: BillingStripePaymentMethodDeleteResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe payment-method delete --help
+  agent_example: mammoth billing stripe payment-method delete --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-PAYMENT-METHOD-DELETE
+  contract_tests:
+  - CT-BILLING-STRIPE-PAYMENT-METHOD-DELETE-HUMAN
+  - CT-BILLING-STRIPE-PAYMENT-METHOD-DELETE-JSON
+  - CT-BILLING-STRIPE-PAYMENT-METHOD-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.payment-method.list
+  command_path: billing stripe payment-method list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetPaymentMethods
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_payment_method_list
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_payment_method_list with validated request
+    fields.
+  request_model: BillingStripePaymentMethodListRequest
+  result_model: BillingStripePaymentMethodListResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe payment-method list --help
+  agent_example: mammoth billing stripe payment-method list --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-PAYMENT-METHOD-LIST
+  contract_tests:
+  - CT-BILLING-STRIPE-PAYMENT-METHOD-LIST-HUMAN
+  - CT-BILLING-STRIPE-PAYMENT-METHOD-LIST-JSON
+  - CT-BILLING-STRIPE-PAYMENT-METHOD-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.payment-method.set-default
+  command_path: billing stripe payment-method set-default
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SetDefaultPaymentMethod
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_payment_method_set_default
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_payment_method_set_default with validated
+    request fields.
+  request_model: BillingStripePaymentMethodSetDefaultRequest
+  result_model: BillingStripePaymentMethodSetDefaultResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe payment-method set-default --help
+  agent_example: mammoth billing stripe payment-method set-default --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-PAYMENT-METHOD-SET-DEFAULT
+  contract_tests:
+  - CT-BILLING-STRIPE-PAYMENT-METHOD-SET-DEFAULT-HUMAN
+  - CT-BILLING-STRIPE-PAYMENT-METHOD-SET-DEFAULT-JSON
+  - CT-BILLING-STRIPE-PAYMENT-METHOD-SET-DEFAULT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.portal-url
+  command_path: billing stripe portal-url
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateCustomerPortalUrl
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_portal_url
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_portal_url with validated request fields.
+  request_model: BillingStripePortalUrlRequest
+  result_model: BillingStripePortalUrlResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe portal-url --help
+  agent_example: mammoth billing stripe portal-url --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-PORTAL-URL
+  contract_tests:
+  - CT-BILLING-STRIPE-PORTAL-URL-HUMAN
+  - CT-BILLING-STRIPE-PORTAL-URL-JSON
+  - CT-BILLING-STRIPE-PORTAL-URL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.preview-invoice
+  command_path: billing stripe preview-invoice
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PreviewInvoice
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_preview_invoice
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_preview_invoice with validated request fields.
+  request_model: BillingStripePreviewInvoiceRequest
+  result_model: BillingStripePreviewInvoiceResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe preview-invoice --help
+  agent_example: mammoth billing stripe preview-invoice --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-PREVIEW-INVOICE
+  contract_tests:
+  - CT-BILLING-STRIPE-PREVIEW-INVOICE-HUMAN
+  - CT-BILLING-STRIPE-PREVIEW-INVOICE-JSON
+  - CT-BILLING-STRIPE-PREVIEW-INVOICE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.retry-payment
+  command_path: billing stripe retry-payment
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RetryPayment
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_retry_payment
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_retry_payment with validated request fields.
+  request_model: BillingStripeRetryPaymentRequest
+  result_model: BillingStripeRetryPaymentResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe retry-payment --help
+  agent_example: mammoth billing stripe retry-payment --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-RETRY-PAYMENT
+  contract_tests:
+  - CT-BILLING-STRIPE-RETRY-PAYMENT-HUMAN
+  - CT-BILLING-STRIPE-RETRY-PAYMENT-JSON
+  - CT-BILLING-STRIPE-RETRY-PAYMENT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.status
+  command_path: billing stripe status
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetWorkspaceSubscriptionStatus
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_status
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_status with validated request fields.
+  request_model: BillingStripeStatusRequest
+  result_model: BillingStripeStatusResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe status --help
+  agent_example: mammoth billing stripe status --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-STATUS
+  contract_tests:
+  - CT-BILLING-STRIPE-STATUS-HUMAN
+  - CT-BILLING-STRIPE-STATUS-JSON
+  - CT-BILLING-STRIPE-STATUS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.sync
+  command_path: billing stripe sync
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SyncSubscription
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_sync
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_sync with validated request fields.
+  request_model: BillingStripeSyncRequest
+  result_model: BillingStripeSyncResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe sync --help
+  agent_example: mammoth billing stripe sync --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-SYNC
+  contract_tests:
+  - CT-BILLING-STRIPE-SYNC-HUMAN
+  - CT-BILLING-STRIPE-SYNC-JSON
+  - CT-BILLING-STRIPE-SYNC-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.upcoming-invoice
+  command_path: billing stripe upcoming-invoice
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetUpcomingInvoice
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_upcoming_invoice
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_upcoming_invoice with validated request fields.
+  request_model: BillingStripeUpcomingInvoiceRequest
+  result_model: BillingStripeUpcomingInvoiceResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe upcoming-invoice --help
+  agent_example: mammoth billing stripe upcoming-invoice --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-UPCOMING-INVOICE
+  contract_tests:
+  - CT-BILLING-STRIPE-UPCOMING-INVOICE-HUMAN
+  - CT-BILLING-STRIPE-UPCOMING-INVOICE-JSON
+  - CT-BILLING-STRIPE-UPCOMING-INVOICE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.stripe.usage
+  command_path: billing stripe usage
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetWorkspaceUsage
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_usage
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_usage with validated request fields.
+  request_model: BillingStripeUsageRequest
+  result_model: BillingStripeUsageResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe usage --help
+  agent_example: mammoth billing stripe usage --output json --no-input
+  unit_tests:
+  - UT-BILLING-STRIPE-USAGE
+  contract_tests:
+  - CT-BILLING-STRIPE-USAGE-HUMAN
+  - CT-BILLING-STRIPE-USAGE-JSON
+  - CT-BILLING-STRIPE-USAGE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.subscription.get
+  command_path: billing subscription get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetWkspSubscriptionDetail
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.subscription_get
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.subscription_get with validated request fields.
+  request_model: BillingSubscriptionGetRequest
+  result_model: BillingSubscriptionGetResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing subscription get --help
+  agent_example: mammoth billing subscription get --output json --no-input
+  unit_tests:
+  - UT-BILLING-SUBSCRIPTION-GET
+  contract_tests:
+  - CT-BILLING-SUBSCRIPTION-GET-HUMAN
+  - CT-BILLING-SUBSCRIPTION-GET-JSON
+  - CT-BILLING-SUBSCRIPTION-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: billing.subscription.update
+  command_path: billing subscription update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateSubscriptionDetail
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.subscription_update
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.subscription_update with validated request fields.
+  request_model: BillingSubscriptionUpdateRequest
+  result_model: BillingSubscriptionUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing subscription update --help
+  agent_example: mammoth billing subscription update --output json --no-input
+  unit_tests:
+  - UT-BILLING-SUBSCRIPTION-UPDATE
+  contract_tests:
+  - CT-BILLING-SUBSCRIPTION-UPDATE-HUMAN
+  - CT-BILLING-SUBSCRIPTION-UPDATE-JSON
+  - CT-BILLING-SUBSCRIPTION-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

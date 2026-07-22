@@ -1,0 +1,172 @@
+manifest_schema_version: 1
+commands:
+- command_id: annotation.comment.add
+  command_path: annotation comment add
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddComment
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.annotations.AnnotationsAPI.comment_add
+  sdk_conversion: Call mammoth.api.annotations.AnnotationsAPI.comment_add with validated request fields.
+  request_model: AnnotationCommentAddRequest
+  result_model: AnnotationCommentAddResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-ANNOTATION-COMMENT-ADD
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth annotation comment add --help
+  agent_example: mammoth annotation comment add --output json --no-input
+  unit_tests:
+  - UT-ANNOTATION-COMMENT-ADD
+  contract_tests:
+  - CT-ANNOTATION-COMMENT-ADD-HUMAN
+  - CT-ANNOTATION-COMMENT-ADD-JSON
+  - CT-ANNOTATION-COMMENT-ADD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: annotation.create
+  command_path: annotation create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateAnnotation
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.annotations.AnnotationsAPI.create
+  sdk_conversion: Call mammoth.api.annotations.AnnotationsAPI.create with validated request fields.
+  request_model: AnnotationCreateRequest
+  result_model: AnnotationCreateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-ANNOTATION-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth annotation create --help
+  agent_example: mammoth annotation create --output json --no-input
+  unit_tests:
+  - UT-ANNOTATION-CREATE
+  contract_tests:
+  - CT-ANNOTATION-CREATE-HUMAN
+  - CT-ANNOTATION-CREATE-JSON
+  - CT-ANNOTATION-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: annotation.delete
+  command_path: annotation delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteAnnotation
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.annotations.AnnotationsAPI.delete
+  sdk_conversion: Call mammoth.api.annotations.AnnotationsAPI.delete with validated request fields.
+  request_model: AnnotationDeleteRequest
+  result_model: AnnotationDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-ANNOTATION-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth annotation delete --help
+  agent_example: mammoth annotation delete --output json --no-input
+  unit_tests:
+  - UT-ANNOTATION-DELETE
+  contract_tests:
+  - CT-ANNOTATION-DELETE-HUMAN
+  - CT-ANNOTATION-DELETE-JSON
+  - CT-ANNOTATION-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: annotation.list
+  command_path: annotation list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAnnotations
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.annotations.AnnotationsAPI.list
+  sdk_conversion: Call mammoth.api.annotations.AnnotationsAPI.list with validated request fields.
+  request_model: AnnotationListRequest
+  result_model: AnnotationListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-ANNOTATION-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth annotation list --help
+  agent_example: mammoth annotation list --output json --no-input
+  unit_tests:
+  - UT-ANNOTATION-LIST
+  contract_tests:
+  - CT-ANNOTATION-LIST-HUMAN
+  - CT-ANNOTATION-LIST-JSON
+  - CT-ANNOTATION-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: annotation.update
+  command_path: annotation update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PatchAnnotation
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.annotations.AnnotationsAPI.update
+  sdk_conversion: Call mammoth.api.annotations.AnnotationsAPI.update with validated request fields.
+  request_model: AnnotationUpdateRequest
+  result_model: AnnotationUpdateResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-ANNOTATION-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth annotation update --help
+  agent_example: mammoth annotation update --output json --no-input
+  unit_tests:
+  - UT-ANNOTATION-UPDATE
+  contract_tests:
+  - CT-ANNOTATION-UPDATE-HUMAN
+  - CT-ANNOTATION-UPDATE-JSON
+  - CT-ANNOTATION-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

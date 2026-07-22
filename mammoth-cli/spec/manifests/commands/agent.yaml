@@ -1,0 +1,172 @@
+manifest_schema_version: 1
+commands:
+- command_id: agent.chat
+  command_path: agent chat
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AgentChat
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.chat
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.chat with validated request fields.
+  request_model: AgentChatRequest
+  result_model: AgentChatResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-AGENT-CHAT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent chat --help
+  agent_example: mammoth agent chat --output json --no-input
+  unit_tests:
+  - UT-AGENT-CHAT
+  contract_tests:
+  - CT-AGENT-CHAT-HUMAN
+  - CT-AGENT-CHAT-JSON
+  - CT-AGENT-CHAT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: agent.session.delete
+  command_path: agent session delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteAgentSession
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.session_delete
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.session_delete with validated request fields.
+  request_model: AgentSessionDeleteRequest
+  result_model: AgentSessionDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-AGENT-SESSION-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent session delete --help
+  agent_example: mammoth agent session delete --output json --no-input
+  unit_tests:
+  - UT-AGENT-SESSION-DELETE
+  contract_tests:
+  - CT-AGENT-SESSION-DELETE-HUMAN
+  - CT-AGENT-SESSION-DELETE-JSON
+  - CT-AGENT-SESSION-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: agent.session.list
+  command_path: agent session list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentSessions
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.session_list
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.session_list with validated request fields.
+  request_model: AgentSessionListRequest
+  result_model: AgentSessionListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-AGENT-SESSION-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent session list --help
+  agent_example: mammoth agent session list --output json --no-input
+  unit_tests:
+  - UT-AGENT-SESSION-LIST
+  contract_tests:
+  - CT-AGENT-SESSION-LIST-HUMAN
+  - CT-AGENT-SESSION-LIST-JSON
+  - CT-AGENT-SESSION-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: agent.session.messages
+  command_path: agent session messages
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetAgentSessionMessages
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.session_messages
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.session_messages with validated request fields.
+  request_model: AgentSessionMessagesRequest
+  result_model: AgentSessionMessagesResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-AGENT-SESSION-MESSAGES
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent session messages --help
+  agent_example: mammoth agent session messages --output json --no-input
+  unit_tests:
+  - UT-AGENT-SESSION-MESSAGES
+  contract_tests:
+  - CT-AGENT-SESSION-MESSAGES-HUMAN
+  - CT-AGENT-SESSION-MESSAGES-JSON
+  - CT-AGENT-SESSION-MESSAGES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: agent.session.set-visibility
+  command_path: agent session set-visibility
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SetAgentSessionVisibility
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.session_set_visibility
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.session_set_visibility with validated request fields.
+  request_model: AgentSessionSetVisibilityRequest
+  result_model: AgentSessionSetVisibilityResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-AGENT-SESSION-SET-VISIBILITY
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent session set-visibility --help
+  agent_example: mammoth agent session set-visibility --output json --no-input
+  unit_tests:
+  - UT-AGENT-SESSION-SET-VISIBILITY
+  contract_tests:
+  - CT-AGENT-SESSION-SET-VISIBILITY-HUMAN
+  - CT-AGENT-SESSION-SET-VISIBILITY-JSON
+  - CT-AGENT-SESSION-SET-VISIBILITY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

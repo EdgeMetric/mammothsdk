@@ -6,10 +6,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from mammoth.exceptions import MammothValidationError
+
 if TYPE_CHECKING:
     from ..client import MammothClient
 
 _list = list  # Alias to avoid shadowing by method name
+
+ERR_DATAVIEW_ID_POSITIVE = "`dataview_id` must be a positive integer, got {0}."
 
 
 class DataviewsAPI:
@@ -472,4 +476,138 @@ class DataviewsAPI:
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/draft-mode",
             json={"draft_operation": command},
+        )
+
+    def parameter_context(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Get the parameter context available to a dataview's pipeline.
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview (must be > 0).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with the available parameter context.
+
+        Raises:
+            MammothValidationError: If *dataview_id* ≤ 0.
+        """
+        if dataview_id <= 0:
+            raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
+        ws = workspace_id or self._ws()
+        proj = project_id or self._proj()
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}"
+            "/parameter-context",
+        )
+
+    def preview(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        rows: int | None = None,
+        cols: int | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Get a lightweight preview of a dataview's data.
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview (must be > 0).
+            rows: Maximum number of rows to include in the preview (optional).
+            cols: Maximum number of columns to include in the preview (optional).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with the preview data.
+
+        Raises:
+            MammothValidationError: If *dataview_id* ≤ 0.
+        """
+        if dataview_id <= 0:
+            raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
+        ws = workspace_id or self._ws()
+        proj = project_id or self._proj()
+        params: dict[str, Any] = {}
+        if rows is not None:
+            params["rows"] = rows
+        if cols is not None:
+            params["cols"] = cols
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}"
+            "/preview",
+            params=params or None,
+        )
+
+    def restore(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Restore a trashed dataview.
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview (must be > 0).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with restore result.
+
+        Raises:
+            MammothValidationError: If *dataview_id* ≤ 0.
+        """
+        if dataview_id <= 0:
+            raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
+        ws = workspace_id or self._ws()
+        proj = project_id or self._proj()
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}"
+            "/restore",
+        )
+
+    def trash(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Move a dataview to trash.
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview (must be > 0).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with trash result.
+
+        Raises:
+            MammothValidationError: If *dataview_id* ≤ 0.
+        """
+        if dataview_id <= 0:
+            raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
+        ws = workspace_id or self._ws()
+        proj = project_id or self._proj()
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}"
+            "/trash",
         )

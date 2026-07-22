@@ -1,0 +1,756 @@
+manifest_schema_version: 1
+commands:
+- command_id: connector.active
+  command_path: connector active
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetActiveConnectors
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.active_connectors
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.active_connectors with validated request fields.
+  request_model: ConnectorActiveRequest
+  result_model: ConnectorActiveResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-ACTIVE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector active --help
+  agent_example: mammoth connector active --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-ACTIVE
+  contract_tests:
+  - CT-CONNECTOR-ACTIVE-HUMAN
+  - CT-CONNECTOR-ACTIVE-JSON
+  - CT-CONNECTOR-ACTIVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: connector.ai.chat
+  command_path: connector ai chat
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - Chat
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connector_ai.ConnectorAIAPI.chat
+  sdk_conversion: Call mammoth.api.connector_ai.ConnectorAIAPI.chat with validated request fields.
+  request_model: ConnectorAiChatRequest
+  result_model: ConnectorAiChatResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-CONNECTOR-AI-CHAT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector ai chat --help
+  agent_example: mammoth connector ai chat --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-AI-CHAT
+  contract_tests:
+  - CT-CONNECTOR-AI-CHAT-HUMAN
+  - CT-CONNECTOR-AI-CHAT-JSON
+  - CT-CONNECTOR-AI-CHAT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: connector.ai.history
+  command_path: connector ai history
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetChatHistory
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connector_ai.ConnectorAIAPI.history
+  sdk_conversion: Call mammoth.api.connector_ai.ConnectorAIAPI.history with validated request fields.
+  request_model: ConnectorAiHistoryRequest
+  result_model: ConnectorAiHistoryResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-AI-HISTORY
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector ai history --help
+  agent_example: mammoth connector ai history --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-AI-HISTORY
+  contract_tests:
+  - CT-CONNECTOR-AI-HISTORY-HUMAN
+  - CT-CONNECTOR-AI-HISTORY-JSON
+  - CT-CONNECTOR-AI-HISTORY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: connector.ai.session.list
+  command_path: connector ai session list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListSessions
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connector_ai.ConnectorAIAPI.session_list
+  sdk_conversion: Call mammoth.api.connector_ai.ConnectorAIAPI.session_list with validated request fields.
+  request_model: ConnectorAiSessionListRequest
+  result_model: ConnectorAiSessionListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-AI-SESSION-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector ai session list --help
+  agent_example: mammoth connector ai session list --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-AI-SESSION-LIST
+  contract_tests:
+  - CT-CONNECTOR-AI-SESSION-LIST-HUMAN
+  - CT-CONNECTOR-AI-SESSION-LIST-JSON
+  - CT-CONNECTOR-AI-SESSION-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: connector.ai.session.messages
+  command_path: connector ai session messages
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetSessionMessages
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connector_ai.ConnectorAIAPI.session_messages
+  sdk_conversion: Call mammoth.api.connector_ai.ConnectorAIAPI.session_messages with validated request
+    fields.
+  request_model: ConnectorAiSessionMessagesRequest
+  result_model: ConnectorAiSessionMessagesResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-AI-SESSION-MESSAGES
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector ai session messages --help
+  agent_example: mammoth connector ai session messages --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-AI-SESSION-MESSAGES
+  contract_tests:
+  - CT-CONNECTOR-AI-SESSION-MESSAGES-HUMAN
+  - CT-CONNECTOR-AI-SESSION-MESSAGES-JSON
+  - CT-CONNECTOR-AI-SESSION-MESSAGES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: connector.ai.submit-column-selection
+  command_path: connector ai submit-column-selection
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SubmitColumnSelection
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connector_ai.ConnectorAIAPI.submit_column_selection
+  sdk_conversion: Call mammoth.api.connector_ai.ConnectorAIAPI.submit_column_selection with validated
+    request fields.
+  request_model: ConnectorAiSubmitColumnSelectionRequest
+  result_model: ConnectorAiSubmitColumnSelectionResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-CONNECTOR-AI-SUBMIT-COLUMN-SELECTION
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector ai submit-column-selection --help
+  agent_example: mammoth connector ai submit-column-selection --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-AI-SUBMIT-COLUMN-SELECTION
+  contract_tests:
+  - CT-CONNECTOR-AI-SUBMIT-COLUMN-SELECTION-HUMAN
+  - CT-CONNECTOR-AI-SUBMIT-COLUMN-SELECTION-JSON
+  - CT-CONNECTOR-AI-SUBMIT-COLUMN-SELECTION-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: connector.ai.submit-credentials
+  command_path: connector ai submit-credentials
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SubmitCredentials
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connector_ai.ConnectorAIAPI.submit_credentials
+  sdk_conversion: Call mammoth.api.connector_ai.ConnectorAIAPI.submit_credentials with validated request
+    fields.
+  request_model: ConnectorAiSubmitCredentialsRequest
+  result_model: ConnectorAiSubmitCredentialsResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-CONNECTOR-AI-SUBMIT-CREDENTIALS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector ai submit-credentials --help
+  agent_example: mammoth connector ai submit-credentials --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-AI-SUBMIT-CREDENTIALS
+  contract_tests:
+  - CT-CONNECTOR-AI-SUBMIT-CREDENTIALS-HUMAN
+  - CT-CONNECTOR-AI-SUBMIT-CREDENTIALS-JSON
+  - CT-CONNECTOR-AI-SUBMIT-CREDENTIALS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: connector.connection.create
+  command_path: connector connection create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SaveConnection
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.create_connection
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.create_connection with validated request fields.
+  request_model: ConnectorConnectionCreateRequest
+  result_model: ConnectorConnectionCreateResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector connection create --help
+  agent_example: mammoth connector connection create --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-CONNECTION-CREATE
+  contract_tests:
+  - CT-CONNECTOR-CONNECTION-CREATE-HUMAN
+  - CT-CONNECTOR-CONNECTION-CREATE-JSON
+  - CT-CONNECTOR-CONNECTION-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Fixture required; connection documents are discriminated by connector_key.
+  reviewed_by: primary
+- command_id: connector.connection.delete
+  command_path: connector connection delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteConnection
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.delete_connection
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.delete_connection with validated request fields.
+  request_model: ConnectorConnectionDeleteRequest
+  result_model: ConnectorConnectionDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-CONNECTOR-CONNECTION-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector connection delete --help
+  agent_example: mammoth connector connection delete --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-CONNECTION-DELETE
+  contract_tests:
+  - CT-CONNECTOR-CONNECTION-DELETE-HUMAN
+  - CT-CONNECTOR-CONNECTION-DELETE-JSON
+  - CT-CONNECTOR-CONNECTION-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Resolve immutable key before confirmation; fixture required.
+  reviewed_by: primary
+- command_id: connector.connection.get
+  command_path: connector connection get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetConnection
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.get_connection
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.get_connection with validated request fields.
+  request_model: ConnectorConnectionGetRequest
+  result_model: ConnectorConnectionGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-CONNECTION-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector connection get --help
+  agent_example: mammoth connector connection get --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-CONNECTION-GET
+  contract_tests:
+  - CT-CONNECTOR-CONNECTION-GET-HUMAN
+  - CT-CONNECTOR-CONNECTION-GET-JSON
+  - CT-CONNECTOR-CONNECTION-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Redact returned config; fixture required.
+  reviewed_by: primary
+- command_id: connector.connection.list
+  command_path: connector connection list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListConnections
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.list_connections
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.list_connections with validated request fields.
+  request_model: ConnectorConnectionListRequest
+  result_model: ConnectorConnectionListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-CONNECTION-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector connection list --help
+  agent_example: mammoth connector connection list --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-CONNECTION-LIST
+  contract_tests:
+  - CT-CONNECTOR-CONNECTION-LIST-HUMAN
+  - CT-CONNECTOR-CONNECTION-LIST-JSON
+  - CT-CONNECTOR-CONNECTION-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Dedicated connector fixture required for live acceptance.
+  reviewed_by: primary
+- command_id: connector.connection.update
+  command_path: connector connection update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateConnection
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.update_connection
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.update_connection with validated request fields.
+  request_model: ConnectorConnectionUpdateRequest
+  result_model: ConnectorConnectionUpdateResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector connection update --help
+  agent_example: mammoth connector connection update --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-CONNECTION-UPDATE
+  contract_tests:
+  - CT-CONNECTOR-CONNECTION-UPDATE-HUMAN
+  - CT-CONNECTOR-CONNECTION-UPDATE-JSON
+  - CT-CONNECTOR-CONNECTION-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Require --yes if validation contacts the destination; fixture required.
+  reviewed_by: primary
+- command_id: connector.ds-config.create
+  command_path: connector ds-config create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ValidateAndGetDsConfig
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.create_ds_config
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.create_ds_config with validated request fields.
+  request_model: ConnectorDsConfigCreateRequest
+  result_model: ConnectorDsConfigCreateResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector ds-config create --help
+  agent_example: mammoth connector ds-config create --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-DS-CONFIG-CREATE
+  contract_tests:
+  - CT-CONNECTOR-DS-CONFIG-CREATE-HUMAN
+  - CT-CONNECTOR-DS-CONFIG-CREATE-JSON
+  - CT-CONNECTOR-DS-CONFIG-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Require exactly one source and reject validate && data_sample; fixture required.
+  reviewed_by: primary
+- command_id: connector.ds-config.delete
+  command_path: connector ds-config delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteDsConfig
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.delete_ds_config
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.delete_ds_config with validated request fields.
+  request_model: ConnectorDsConfigDeleteRequest
+  result_model: ConnectorDsConfigDeleteResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-CONNECTOR-DS-CONFIG-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector ds-config delete --help
+  agent_example: mammoth connector ds-config delete --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-DS-CONFIG-DELETE
+  contract_tests:
+  - CT-CONNECTOR-DS-CONFIG-DELETE-HUMAN
+  - CT-CONNECTOR-DS-CONFIG-DELETE-JSON
+  - CT-CONNECTOR-DS-CONFIG-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Resolve immutable key before confirmation; fixture required.
+  reviewed_by: primary
+- command_id: connector.ds-config.delete-all
+  command_path: connector ds-config delete-all
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteDsConfigs
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.ds_config_delete_all
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.ds_config_delete_all with validated request
+    fields.
+  request_model: ConnectorDsConfigDeleteAllRequest
+  result_model: ConnectorDsConfigDeleteAllResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-CONNECTOR-DS-CONFIG-DELETE-ALL
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector ds-config delete-all --help
+  agent_example: mammoth connector ds-config delete-all --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-DS-CONFIG-DELETE-ALL
+  contract_tests:
+  - CT-CONNECTOR-DS-CONFIG-DELETE-ALL-HUMAN
+  - CT-CONNECTOR-DS-CONFIG-DELETE-ALL-JSON
+  - CT-CONNECTOR-DS-CONFIG-DELETE-ALL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: connector.ds-config.get
+  command_path: connector ds-config get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDsConfig
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.get_ds_config
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.get_ds_config with validated request fields.
+  request_model: ConnectorDsConfigGetRequest
+  result_model: ConnectorDsConfigGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-DS-CONFIG-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector ds-config get --help
+  agent_example: mammoth connector ds-config get --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-DS-CONFIG-GET
+  contract_tests:
+  - CT-CONNECTOR-DS-CONFIG-GET-HUMAN
+  - CT-CONNECTOR-DS-CONFIG-GET-JSON
+  - CT-CONNECTOR-DS-CONFIG-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Fixture required.
+  reviewed_by: primary
+- command_id: connector.ds-config.list
+  command_path: connector ds-config list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListDsConfigs
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.list_ds_configs
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.list_ds_configs with validated request fields.
+  request_model: ConnectorDsConfigListRequest
+  result_model: ConnectorDsConfigListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-DS-CONFIG-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector ds-config list --help
+  agent_example: mammoth connector ds-config list --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-DS-CONFIG-LIST
+  contract_tests:
+  - CT-CONNECTOR-DS-CONFIG-LIST-HUMAN
+  - CT-CONNECTOR-DS-CONFIG-LIST-JSON
+  - CT-CONNECTOR-DS-CONFIG-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Redact nested configuration; fixture required.
+  reviewed_by: primary
+- command_id: connector.ds-config.update
+  command_path: connector ds-config update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateDsConfigs
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.update_ds_config
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.update_ds_config with validated request fields.
+  request_model: ConnectorDsConfigUpdateRequest
+  result_model: ConnectorDsConfigUpdateResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector ds-config update --help
+  agent_example: mammoth connector ds-config update --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-DS-CONFIG-UPDATE
+  contract_tests:
+  - CT-CONNECTOR-DS-CONFIG-UPDATE-HUMAN
+  - CT-CONNECTOR-DS-CONFIG-UPDATE-JSON
+  - CT-CONNECTOR-DS-CONFIG-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Only query has current server support; other enum paths remain blocked pending successful
+    server evidence. Fixture required.
+  reviewed_by: primary
+- command_id: connector.get
+  command_path: connector get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetConnector
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.get
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.get with validated request fields.
+  request_model: ConnectorGetRequest
+  result_model: ConnectorGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector get --help
+  agent_example: mammoth connector get --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-GET
+  contract_tests:
+  - CT-CONNECTOR-GET-HUMAN
+  - CT-CONNECTOR-GET-JSON
+  - CT-CONNECTOR-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: connector.list
+  command_path: connector list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListWorkspaceConnectors
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.list
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.list with validated request fields.
+  request_model: ConnectorListRequest
+  result_model: ConnectorListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector list --help
+  agent_example: mammoth connector list --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-LIST
+  contract_tests:
+  - CT-CONNECTOR-LIST-HUMAN
+  - CT-CONNECTOR-LIST-JSON
+  - CT-CONNECTOR-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: connector.query.generate
+  command_path: connector query generate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetQuerySuggestion
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.ai.AIAPI.query_gen
+  sdk_conversion: Call mammoth.api.ai.AIAPI.query_gen with validated request fields.
+  request_model: ConnectorQueryGenerateRequest
+  result_model: ConnectorQueryGenerateResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-QUERY-GENERATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector query generate --help
+  agent_example: mammoth connector query generate --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-QUERY-GENERATE
+  contract_tests:
+  - CT-CONNECTOR-QUERY-GENERATE-HUMAN
+  - CT-CONNECTOR-QUERY-GENERATE-JSON
+  - CT-CONNECTOR-QUERY-GENERATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Keys are nonempty and cannot contain '/'. Requires a dedicated connector fixture
+    (live_dedicated_external_fixture); never send a live connector query without that fixture.
+  reviewed_by: primary
+- command_id: connector.query.status
+  command_path: connector query status
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetChatStatus
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.ai.AIAPI.status
+  sdk_conversion: Call mammoth.api.ai.AIAPI.status with validated request fields.
+  request_model: ConnectorQueryStatusRequest
+  result_model: ConnectorQueryStatusResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-QUERY-STATUS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector query status --help
+  agent_example: mammoth connector query status --output json --no-input
+  unit_tests:
+  - UT-CONNECTOR-QUERY-STATUS
+  contract_tests:
+  - CT-CONNECTOR-QUERY-STATUS-HUMAN
+  - CT-CONNECTOR-QUERY-STATUS-JSON
+  - CT-CONNECTOR-QUERY-STATUS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

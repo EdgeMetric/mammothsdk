@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import importlib
 import inspect
+import pkgutil
 import re
 from typing import Any
 
@@ -336,31 +337,15 @@ def test_exception_has_docstring(exc_cls: type):
 # ── API sub-client docstrings ────────────────────────────────────
 
 
-_API_MODULES = [
-    "mammoth.api.activity_logs",
-    "mammoth.api.addons",
-    "mammoth.api.ai",
-    "mammoth.api.automations",
-    "mammoth.api.batches",
-    "mammoth.api.browse",
-    "mammoth.api.clientapps",
-    "mammoth.api.connectors",
-    "mammoth.api.dashboards",
-    "mammoth.api.datasets",
-    "mammoth.api.dataviews",
-    "mammoth.api.exports",
-    "mammoth.api.external_keys",
-    "mammoth.api.files",
-    "mammoth.api.folders",
-    "mammoth.api.jobs",
-    "mammoth.api.pipeline",
-    "mammoth.api.projects",
-    "mammoth.api.reports",
-    "mammoth.api.schedules",
-    "mammoth.api.user_profile",
-    "mammoth.api.webhooks",
-    "mammoth.api.workspace",
-]
+# Auto-discover every module under ``mammoth.api`` so new sub-clients are
+# always covered by the docstring convention gate without manual upkeep.
+import mammoth.api as _api_pkg  # noqa: E402
+
+_API_MODULES = sorted(
+    f"mammoth.api.{_info.name}"
+    for _info in pkgutil.iter_modules(_api_pkg.__path__)
+    if not _info.name.startswith("_")
+)
 
 _API_CLASSES: list[tuple[str, type]] = []
 for _mod_name in _API_MODULES:

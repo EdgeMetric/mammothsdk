@@ -1,0 +1,101 @@
+manifest_schema_version: 1
+commands:
+- command_id: auth.login
+  command_path: auth login
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.context.auth.login
+  sdk_conversion: Call mammoth_cli.context.auth.login with validated request fields.
+  request_model: AuthLoginRequest
+  result_model: AuthLoginResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local credential storage; no mutating server call.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth auth login --help
+  agent_example: mammoth auth login --output json --no-input
+  unit_tests:
+  - UT-AUTH-LOGIN
+  contract_tests:
+  - CT-AUTH-LOGIN-HUMAN
+  - CT-AUTH-LOGIN-JSON
+  - CT-AUTH-LOGIN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: auth.logout
+  command_path: auth logout
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.context.auth.logout
+  sdk_conversion: Call mammoth_cli.context.auth.logout with validated request fields.
+  request_model: AuthLogoutRequest
+  result_model: AuthLogoutResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local credential removal.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth auth logout --help
+  agent_example: mammoth auth logout --output json --no-input
+  unit_tests:
+  - UT-AUTH-LOGOUT
+  contract_tests:
+  - CT-AUTH-LOGOUT-HUMAN
+  - CT-AUTH-LOGOUT-JSON
+  - CT-AUTH-LOGOUT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: auth.status
+  command_path: auth status
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.context.auth.status
+  sdk_conversion: Call mammoth_cli.context.auth.status with validated request fields.
+  request_model: AuthStatusRequest
+  result_model: AuthStatusResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local credential status.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth auth status --help
+  agent_example: mammoth auth status --output json --no-input
+  unit_tests:
+  - UT-AUTH-STATUS
+  contract_tests:
+  - CT-AUTH-STATUS-HUMAN
+  - CT-AUTH-STATUS-JSON
+  - CT-AUTH-STATUS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

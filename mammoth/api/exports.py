@@ -12,16 +12,23 @@ import requests
 if TYPE_CHECKING:
     from ..client import MammothClient
 
+from ..exceptions import MammothValidationError
 from ..models.exports import (
     AddExportSpec,
     ExportStatus,
     HandlerType,
+    OdbcType,
     PipelineExportsModificationResp,
     PipelineExportsPaginated,
     TriggerType,
 )
 from ..models.jobs import JobResponse
 from .jobs import JobsAPI
+
+ERR_DATAVIEW_ID_POSITIVE = "`dataview_id` must be a positive integer, got {0}."
+ERR_EXPORT_ID_POSITIVE = "`export_id` must be a positive integer, got {0}."
+
+_list = list  # Alias to avoid shadowing by method name
 
 
 class ExportsAPI:
@@ -40,10 +47,10 @@ class ExportsAPI:
     def _find_dataset_for_dataview(self, dataview_id: int) -> int:
         """Find which dataset contains the specified dataview.
 
-        Delegates to PipelineAPI._find_dataset_for_dataview to avoid
+        Delegates to the public PipelineAPI.find_dataset_for_dataview to avoid
         duplicating the dataset-scanning logic.
         """
-        return self._client.pipeline._find_dataset_for_dataview(dataview_id)
+        return self._client.pipeline.find_dataset_for_dataview(dataview_id)
 
     def list(
         self,
@@ -140,7 +147,7 @@ class ExportsAPI:
                 )
 
         if dataset_id is None:
-            dataset_id = self._client.pipeline._find_dataset_for_dataview(dataview_id)
+            dataset_id = self._client.pipeline.find_dataset_for_dataview(dataview_id)
 
         response = self._client._request_json(
             "POST",
@@ -151,6 +158,250 @@ class ExportsAPI:
         if "job" in response:
             return JobResponse(**response)
         return PipelineExportsModificationResp(**response)
+
+    def get(
+        self,
+        dataview_id: int,
+        export_id: int,
+        fields: str | None = None,
+        dataset_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Get a single pipeline export.
+
+        Args:
+            dataview_id: ID of the dataview (must be > 0).
+            export_id: ID of the export (must be > 0).
+            fields: Comma-separated fields to return, or one of the presets
+                ``"__full"``, ``"__standard"``, ``"__min"`` (optional).
+            dataset_id: ID of the dataset (auto-detected if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with export details.
+
+        Raises:
+            MammothValidationError: If *dataview_id* or *export_id* ≤ 0.
+        """
+        if dataview_id <= 0:
+            raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
+        if export_id <= 0:
+            raise MammothValidationError(ERR_EXPORT_ID_POSITIVE.format(export_id))
+
+        workspace_id = self._client.workspace_id
+        if project_id is None:
+            project_id = getattr(self._client, "project_id", None)
+            if project_id is None:
+                raise ValueError(
+                    "project_id must be provided either to the method or set on the client"
+                )
+        if dataset_id is None:
+            dataset_id = self._find_dataset_for_dataview(dataview_id)
+
+        params: dict[str, Any] = {}
+        if fields is not None:
+            params["fields"] = fields
+
+        return self._client._request_json(
+            "GET",
+            f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}"
+            f"/dataviews/{dataview_id}/pipeline/exports/{export_id}",
+            params=params or None,
+        )
+
+    def update(
+        self,
+        dataview_id: int,
+        export_id: int,
+        patches: _list[dict[str, Any]],
+        skip_validation: bool | None = None,
+        dataset_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Edit a pipeline export via patch operations.
+
+        Args:
+            dataview_id: ID of the dataview (must be > 0).
+            export_id: ID of the export (must be > 0).
+            patches: List of patch operation dicts, e.g.
+                ``[{"op": "command", "path": "suspend", "value": None}]``.
+            skip_validation: Skip server-side validation of the patch (optional).
+            dataset_id: ID of the dataset (auto-detected if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with the updated export, or an empty dict if the server
+            returns no content.
+
+        Raises:
+            MammothValidationError: If *dataview_id* or *export_id* ≤ 0.
+        """
+        if dataview_id <= 0:
+            raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
+        if export_id <= 0:
+            raise MammothValidationError(ERR_EXPORT_ID_POSITIVE.format(export_id))
+
+        workspace_id = self._client.workspace_id
+        if project_id is None:
+            project_id = getattr(self._client, "project_id", None)
+            if project_id is None:
+                raise ValueError(
+                    "project_id must be provided either to the method or set on the client"
+                )
+        if dataset_id is None:
+            dataset_id = self._find_dataset_for_dataview(dataview_id)
+
+        params: dict[str, Any] = {}
+        if skip_validation is not None:
+            params["skip_validation"] = skip_validation
+
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}"
+            f"/dataviews/{dataview_id}/pipeline/exports/{export_id}",
+            json={"patches": patches},
+            params=params or None,
+        )
+
+    def delete(
+        self,
+        dataview_id: int,
+        export_id: int,
+        skip_validation: bool | None = None,
+        dataset_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Delete a pipeline export.
+
+        Args:
+            dataview_id: ID of the dataview (must be > 0).
+            export_id: ID of the export (must be > 0).
+            skip_validation: Skip server-side validation of the deletion (optional).
+            dataset_id: ID of the dataset (auto-detected if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with the deletion result, or an empty dict if the server
+            returns no content.
+
+        Raises:
+            MammothValidationError: If *dataview_id* or *export_id* ≤ 0.
+        """
+        if dataview_id <= 0:
+            raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
+        if export_id <= 0:
+            raise MammothValidationError(ERR_EXPORT_ID_POSITIVE.format(export_id))
+
+        workspace_id = self._client.workspace_id
+        if project_id is None:
+            project_id = getattr(self._client, "project_id", None)
+            if project_id is None:
+                raise ValueError(
+                    "project_id must be provided either to the method or set on the client"
+                )
+        if dataset_id is None:
+            dataset_id = self._find_dataset_for_dataview(dataview_id)
+
+        params: dict[str, Any] = {}
+        if skip_validation is not None:
+            params["skip_validation"] = skip_validation
+
+        return self._client._request_json(
+            "DELETE",
+            f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}"
+            f"/dataviews/{dataview_id}/pipeline/exports/{export_id}",
+            params=params or None,
+        )
+
+    def publish_db(
+        self,
+        dataview_id: int,
+        odbc_type: OdbcType,
+        target_properties: dict[str, Any],
+        dataset_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Create a publish-to-database subscription for a dataview.
+
+        Args:
+            dataview_id: ID of the dataview (must be > 0).
+            odbc_type: Managed-connection type of the destination database.
+            target_properties: Destination properties, e.g. ``{"table": "my_table"}``.
+            dataset_id: ID of the dataset (auto-detected if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with the created publish-to-db job/result.
+
+        Raises:
+            MammothValidationError: If *dataview_id* ≤ 0.
+        """
+        if dataview_id <= 0:
+            raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
+
+        workspace_id = self._client.workspace_id
+        if project_id is None:
+            project_id = getattr(self._client, "project_id", None)
+            if project_id is None:
+                raise ValueError(
+                    "project_id must be provided either to the method or set on the client"
+                )
+        if dataset_id is None:
+            dataset_id = self._find_dataset_for_dataview(dataview_id)
+
+        body: dict[str, Any] = {
+            "odbc_type": odbc_type.value,
+            "target_properties": target_properties,
+        }
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}"
+            f"/dataviews/{dataview_id}/publish-to-db",
+            json=body,
+        )
+
+    def publish_db_update(
+        self,
+        dataview_id: int,
+        patch: _list[dict[str, Any]],
+        dataset_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Update a dataview's publish-to-database subscription via patch operations.
+
+        Args:
+            dataview_id: ID of the dataview (must be > 0).
+            patch: List of patch operation dicts, e.g.
+                ``[{"op": "replace", "path": "credentials",
+                "value": {"odbc_type": "postgres"}}]``.
+            dataset_id: ID of the dataset (auto-detected if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with the updated publish-to-db job/result.
+
+        Raises:
+            MammothValidationError: If *dataview_id* ≤ 0.
+        """
+        if dataview_id <= 0:
+            raise MammothValidationError(ERR_DATAVIEW_ID_POSITIVE.format(dataview_id))
+
+        workspace_id = self._client.workspace_id
+        if project_id is None:
+            project_id = getattr(self._client, "project_id", None)
+            if project_id is None:
+                raise ValueError(
+                    "project_id must be provided either to the method or set on the client"
+                )
+        if dataset_id is None:
+            dataset_id = self._find_dataset_for_dataview(dataview_id)
+
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}"
+            f"/dataviews/{dataview_id}/publish-to-db",
+            json={"patch": patch},
+        )
 
     def to_s3(
         self,

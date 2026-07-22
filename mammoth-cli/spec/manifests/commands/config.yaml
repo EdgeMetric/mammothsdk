@@ -1,0 +1,134 @@
+manifest_schema_version: 1
+commands:
+- command_id: config.get
+  command_path: config get
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.context.config.get
+  sdk_conversion: Call mammoth_cli.context.config.get with validated request fields.
+  request_model: ConfigGetRequest
+  result_model: ConfigGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local configuration read.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth config get --help
+  agent_example: mammoth config get --output json --no-input
+  unit_tests:
+  - UT-CONFIG-GET
+  contract_tests:
+  - CT-CONFIG-GET-HUMAN
+  - CT-CONFIG-GET-JSON
+  - CT-CONFIG-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: config.list
+  command_path: config list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.context.config.list
+  sdk_conversion: Call mammoth_cli.context.config.list with validated request fields.
+  request_model: ConfigListRequest
+  result_model: ConfigListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local configuration read.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth config list --help
+  agent_example: mammoth config list --output json --no-input
+  unit_tests:
+  - UT-CONFIG-LIST
+  contract_tests:
+  - CT-CONFIG-LIST-HUMAN
+  - CT-CONFIG-LIST-JSON
+  - CT-CONFIG-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: config.path
+  command_path: config path
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.context.config.path
+  sdk_conversion: Call mammoth_cli.context.config.path with validated request fields.
+  request_model: ConfigPathRequest
+  result_model: ConfigPathResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local configuration path.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth config path --help
+  agent_example: mammoth config path --output json --no-input
+  unit_tests:
+  - UT-CONFIG-PATH
+  contract_tests:
+  - CT-CONFIG-PATH-HUMAN
+  - CT-CONFIG-PATH-JSON
+  - CT-CONFIG-PATH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: config.set
+  command_path: config set
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.context.config.set
+  sdk_conversion: Call mammoth_cli.context.config.set with validated request fields.
+  request_model: ConfigSetRequest
+  result_model: ConfigSetResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local configuration write.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth config set --help
+  agent_example: mammoth config set --output json --no-input
+  unit_tests:
+  - UT-CONFIG-SET
+  contract_tests:
+  - CT-CONFIG-SET-HUMAN
+  - CT-CONFIG-SET-JSON
+  - CT-CONFIG-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
