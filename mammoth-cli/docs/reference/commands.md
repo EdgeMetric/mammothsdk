@@ -2388,7 +2388,7 @@ Total commands: 435.
 
 - Mutation class: `read`
 - Confirmation: `none`
-- Backing SDK: `mammoth.view.View.is_draft_mode`
+- Backing SDK: `mammoth.api.pipeline.PipelineAPI.get_draft_status`
 - Agent example: `mammoth view draft status --output json --no-input`
 
 ### `mammoth view draft submit`

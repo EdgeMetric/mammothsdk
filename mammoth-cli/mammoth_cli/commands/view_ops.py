@@ -139,9 +139,7 @@ def view_get(invocation: Invocation) -> HandlerResult:
 def view_delete(invocation: Invocation) -> HandlerResult:
     """Permanently delete one view by id. Prompt or ``--yes`` required."""
     view_id = _view_id(invocation)
-    enforce_confirmation(
-        invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete view {view_id}"
-    )
+    enforce_confirmation(invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete view {view_id}")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), view_id=view_id)
     return data, _meta(invocation, auth.workspace_id)
@@ -157,9 +155,16 @@ def view_draft_enter(invocation: Invocation) -> HandlerResult:
 
 
 def view_draft_status(invocation: Invocation) -> HandlerResult:
-    """Report whether a view's pipeline is currently in draft mode."""
+    """Report whether a view's pipeline is currently in draft mode.
+
+    Draft state is read from the server (``PipelineAPI.get_draft_status``) so it
+    is correct across processes, rather than from a process-local flag that a
+    freshly resolved view would always report as ``False``.
+    """
     view_id = _view_id(invocation)
-    return _dispatch_view(invocation, view_id, "is_draft_mode")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), dataview_id=view_id)
+    return data, _meta(invocation, auth.workspace_id)
 
 
 def view_draft_submit(invocation: Invocation) -> HandlerResult:
@@ -280,9 +285,7 @@ def view_transform_crosstab(invocation: Invocation) -> HandlerResult:
         "select": select,
         "dataset_name": dataset_name,
     }
-    _forward_optional(
-        document, kwargs, ("save_as_mode", "target_ds_id", "condition", "timeout")
-    )
+    _forward_optional(document, kwargs, ("save_as_mode", "target_ds_id", "condition", "timeout"))
     return _dispatch_view(invocation, view_id, "crosstab", **kwargs)
 
 
@@ -493,9 +496,7 @@ def view_transform_small_large(invocation: Invocation) -> HandlerResult:
     columns = _require_field(document, "columns")
     assert document is not None
     kwargs: dict[str, Any] = {"function": function, "columns": columns}
-    _forward_optional(
-        document, kwargs, ("index", "constants", "new_column", "existing_column")
-    )
+    _forward_optional(document, kwargs, ("index", "constants", "new_column", "existing_column"))
     return _dispatch_view(invocation, view_id, "small_large", **kwargs)
 
 

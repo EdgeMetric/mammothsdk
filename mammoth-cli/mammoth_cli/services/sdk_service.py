@@ -15,7 +15,8 @@ from mammoth.client import MammothClient
 
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
-from mammoth_cli.services.conditions import compile_condition
+from mammoth_cli.services.coerce import coerce_arguments
+from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dispatch import resolve_sdk_method
 from mammoth_cli.services.mapping import map_sdk_exception
 
@@ -111,8 +112,18 @@ class SdkMammothService:
             raise self._view_member_error(view_id, method)
         if not callable(attribute):
             return attribute
-        if "condition" in kwargs and kwargs["condition"] is not None:
-            kwargs["condition"] = compile_condition(kwargs["condition"])
+        try:
+            kwargs = coerce_arguments(attribute, kwargs)
+        except (ValueError, TypeError) as exc:
+            raise CliError(
+                code="invalid_arguments",
+                message=f"The supplied fields do not fit View.{method}.",
+                exit_status=EXIT_USAGE,
+                hint="Check the command schema with 'mammoth schema get'.",
+                details={"reason": str(exc)},
+            ) from exc
+        if kwargs.get(CONDITION_KWARG) is not None:
+            kwargs[CONDITION_KWARG] = compile_condition(kwargs[CONDITION_KWARG])
         try:
             return attribute(**kwargs)
         except TypeError as exc:

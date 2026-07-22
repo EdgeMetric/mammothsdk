@@ -1137,8 +1137,9 @@ commands:
   - ExecutePipelineDraftCommand
   positionals: []
   options: []
-  sdk_symbol: mammoth.view.View.is_draft_mode
-  sdk_conversion: Call mammoth.view.View.is_draft_mode with validated request fields.
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.get_draft_status
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.get_draft_status with the
+    dataview id to read server-backed draft state (never a process-local flag).
   request_model: ViewDraftStatusRequest
   result_model: ViewDraftStatusResult
   mutation_class: read

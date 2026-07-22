@@ -22,6 +22,10 @@ from mammoth.condition import CompoundCondition, Condition, NotCondition
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 
+#: The View-method keyword whose value is a condition spec compiled by
+#: :func:`compile_condition` rather than coerced by type hints.
+CONDITION_KWARG = "condition"
+
 _ConditionResult = Condition | CompoundCondition | NotCondition
 _LEAF_FIELDS = {
     "column",

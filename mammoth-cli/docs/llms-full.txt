@@ -773,7 +773,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
   example: mammoth view draft discard --output json --no-input
 - `mammoth view draft enter` [reversible_pipeline/none] -> mammoth.view.View.enter_draft_mode
   example: mammoth view draft enter --output json --no-input
-- `mammoth view draft status` [read/none] -> mammoth.view.View.is_draft_mode
+- `mammoth view draft status` [read/none] -> mammoth.api.pipeline.PipelineAPI.get_draft_status
   example: mammoth view draft status --output json --no-input
 - `mammoth view draft submit` [reversible_pipeline/none] -> mammoth.view.View.submit_draft
   example: mammoth view draft submit --output json --no-input
