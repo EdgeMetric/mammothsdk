@@ -16,7 +16,12 @@ def fake_service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
     service = FakeMammothService()
 
     def _build(
-        auth: Any, *, timeout: float | None = None, project_id: int | None = None
+        auth: Any,
+        *,
+        timeout: float | None = None,
+        job_timeout: float | None = None,
+        pipeline_timeout: float | None = None,
+        project_id: int | None = None,
     ) -> FakeMammothService:
         return service
 

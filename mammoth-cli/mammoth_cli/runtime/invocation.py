@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from mammoth_cli.runtime.input_loader import load_input_document
+from mammoth_cli.runtime.strict import validate_input_fields
 
 
 @dataclass(frozen=True)
@@ -50,6 +51,10 @@ class Invocation:
         Raises:
             CliError: When the document is missing, undeclared, unparseable, or
                 not a mapping (see
-                :func:`mammoth_cli.runtime.input_loader.load_input_document`).
+                :func:`mammoth_cli.runtime.input_loader.load_input_document`),
+                or ``unknown_input_field`` when it carries a key the command's
+                backing method cannot accept.
         """
-        return load_input_document(self.input_file, self.input_format)
+        document = load_input_document(self.input_file, self.input_format)
+        validate_input_fields(self.command_id, document)
+        return document
