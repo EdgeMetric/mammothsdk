@@ -24,10 +24,11 @@ from mammoth_cli.commands import BESPOKE
 from mammoth_cli.commands.registry import HANDLERS
 from mammoth_cli.errors.envelope import not_implemented_error
 from mammoth_cli.manifest.loader import command_by_id, load_commands
+from mammoth_cli.output.policy import VALID_OUTPUTS
 from mammoth_cli.runtime import executor
 from mammoth_cli.runtime.invocation import Invocation
 
-OUTPUT_MODES = ("table", "json", "yaml", "ndjson", "plain")
+OUTPUT_MODES = VALID_OUTPUTS
 COLOR_MODES = ("auto", "always", "never")
 
 

@@ -12,6 +12,10 @@ from dataclasses import dataclass
 
 MACHINE_OUTPUTS = {"json", "ndjson"}
 
+#: Every output mode the renderer supports. The tuple order is the order shown
+#: in ``--output`` help and error hints.
+VALID_OUTPUTS = ("table", "json", "yaml", "ndjson", "plain")
+
 
 @dataclass(frozen=True)
 class OutputPolicy:

@@ -29,6 +29,8 @@ class SdkMammothService:
         auth: ResolvedAuth,
         *,
         timeout: float | None = None,
+        job_timeout: float | None = None,
+        pipeline_timeout: float | None = None,
         project_id: int | None = None,
     ) -> None:
         """Build the service from resolved authentication.
@@ -36,6 +38,10 @@ class SdkMammothService:
         Args:
             auth: Resolved API key, secret, workspace id, and base url.
             timeout: Optional per-request timeout override, in seconds.
+            job_timeout: Optional job-wait timeout override, in seconds; bound
+                on the client so async job waits honor it.
+            pipeline_timeout: Optional pipeline-readiness timeout override, in
+                seconds; bound on the client so pipeline waits honor it.
             project_id: Active project id to bind on the client, so SDK methods
                 that read the client's project context (rather than taking an
                 explicit ``project_id`` argument) resolve to it.
@@ -43,6 +49,10 @@ class SdkMammothService:
         kwargs: dict[str, Any] = {}
         if timeout is not None:
             kwargs["timeout"] = int(timeout)
+        if job_timeout is not None:
+            kwargs["job_timeout"] = int(job_timeout)
+        if pipeline_timeout is not None:
+            kwargs["pipeline_timeout"] = int(pipeline_timeout)
         self._client = MammothClient(
             api_key=auth.api_key,
             api_secret=auth.api_secret,
