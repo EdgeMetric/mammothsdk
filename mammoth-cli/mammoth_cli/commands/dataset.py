@@ -213,7 +213,14 @@ def dataset_create_from_pdf(invocation: Invocation) -> HandlerResult:
     """Create dataset(s) from tables extracted out of a PDF file."""
     project_id = require_project(invocation)
     document = invocation.load_input()
-    file_object_id = _require_field(document, "file_object_id")
+    file_object_id = invocation.positional("file_object_id")
+    if file_object_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="This command requires a file object id argument.",
+            exit_status=EXIT_USAGE,
+        )
+    file_object_id = int(file_object_id)
     file_name = _require_field(document, "file_name")
     kwargs: dict[str, Any] = {
         "file_object_id": file_object_id,

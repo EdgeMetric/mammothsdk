@@ -9,7 +9,11 @@ placeholder empty list); and one complete, runnable example command line.
 
 from __future__ import annotations
 
-from mammoth_cli.commands.schema import get_schema
+import json
+import shlex
+
+from mammoth_cli.commands.schema import get_schema, runnable_example
+from mammoth_cli.services.positionals import positionals_for
 
 _BULK_REPLACE = "view.transform.bulk-replace"
 _TEXT_TRANSFORM = "view.transform.text"
@@ -54,6 +58,9 @@ def test_bulk_replace_exposes_the_typed_mapping_structure() -> None:
     assert schema is not None
     fields = {field["name"]: field for field in schema["accepted_fields"]}
     assert fields["mapping"]["type"] == "list[BulkReplaceMapping]"
+    item = fields["mapping"]["schema"]["items"]
+    assert item["required"] == ["search", "replace"]
+    assert item["properties"]["search"]["items"]["type"] == "string"
 
 
 def test_bulk_replace_runnable_example_includes_the_positional_and_input() -> None:
@@ -64,6 +71,9 @@ def test_bulk_replace_runnable_example_includes_the_positional_and_input() -> No
     assert example.startswith("mammoth view transform bulk-replace 123 ")
     assert "--input" in example
     assert "--output json --no-input" in example
+    tokens = shlex.split(example)
+    document = json.loads(tokens[tokens.index("--input") + 1])
+    assert document["mapping"] == [{"search": ["example"], "replace": "example"}]
 
 
 def test_optional_positional_command_has_no_required_positional_in_example() -> None:
@@ -73,7 +83,45 @@ def test_optional_positional_command_has_no_required_positional_in_example() -> 
     positionals = schema["positionals"]
     assert len(positionals) == 1
     assert positionals[0]["required"] is False
+    assert all(field["name"] != "project_id" for field in schema["accepted_fields"])
+    assert "project_id" not in schema["runnable_example"]
+
+
+def test_fallback_positional_is_accepted_but_not_duplicated_in_example() -> None:
+    schema = get_schema("project.create")
+    assert schema is not None
+    assert "name" in {field["name"] for field in schema["accepted_fields"]}
+    tokens = shlex.split(schema["runnable_example"])
+    assert tokens[:4] == ["mammoth", "project", "create", "example"]
+    assert "--input" not in tokens
 
 
 def test_unknown_command_returns_none() -> None:
     assert get_schema("nope.nope") is None
+
+
+def test_build_time_example_uses_explicit_operation_ids_not_generated_manifest(
+    monkeypatch,
+) -> None:
+    """A clean manifest build cannot read the output it is in the middle of creating."""
+    monkeypatch.setattr(
+        "mammoth_cli.services.openapi_types.command_by_id",
+        lambda _command_id: (_ for _ in ()).throw(AssertionError("manifest lookup")),
+    )
+    monkeypatch.setattr(
+        "mammoth_cli.commands.schema.resolve_positionals",
+        lambda _command_id: (_ for _ in ()).throw(AssertionError("manifest lookup")),
+    )
+    record = {
+        "command_id": "dashboard.context.create",
+        "command_path": "dashboard context create",
+        "operation_ids": ["CreateContext"],
+    }
+    example = runnable_example(
+        record,
+        "mammoth.api.dashboards.DashboardsAPI.context_create",
+        positionals_for(record["command_id"], None),
+    )
+    assert example is not None
+    document = json.loads(shlex.split(example)[5])
+    assert document == {"body": {"params": {"name": "example"}}}

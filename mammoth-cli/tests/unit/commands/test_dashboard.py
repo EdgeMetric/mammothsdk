@@ -155,7 +155,7 @@ def test_data_published_forwards_dashboard_id_and_sql(
 def test_job_by_url_requires_job_id(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         dashboard_cmd.dashboard_job_by_url(_inv("dashboard.job-by-url", extra_args=["slug"]))
-    assert excinfo.value.code == "missing_field"
+    assert excinfo.value.code == "missing_argument"
     assert fake_service.call_log == []
 
 
@@ -165,13 +165,8 @@ def test_job_by_url_without_url_is_usage_error(fake_service: FakeMammothService)
     assert excinfo.value.code == "missing_argument"
 
 
-def test_job_by_url_forwards_url_and_job_id(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write_doc(tmp_path, {"job_id": 55})
-    dashboard_cmd.dashboard_job_by_url(
-        _inv("dashboard.job-by-url", extra_args=["slug"], input_file=doc)
-    )
+def test_job_by_url_forwards_url_and_job_id(fake_service: FakeMammothService) -> None:
+    dashboard_cmd.dashboard_job_by_url(_inv("dashboard.job-by-url", extra_args=["slug", "55"]))
     assert fake_service.call_log == [(_JOB_BY_URL, {"url": "slug", "job_id": 55})]
 
 
@@ -189,13 +184,12 @@ def test_published_data_by_url_requires_body(fake_service: FakeMammothService) -
 def test_published_data_by_url_forwards_url_and_body(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write_doc(tmp_path, {"body": {"filters": []}})
+    body = {"params": {"widget_id": "00000000-0000-4000-8000-000000000001"}}
+    doc = _write_doc(tmp_path, {"body": body})
     dashboard_cmd.dashboard_published_data_by_url(
         _inv("dashboard.published-data-by-url", extra_args=["slug"], input_file=doc)
     )
-    assert fake_service.call_log == [
-        (_PUBLISHED_DATA_BY_URL, {"url": "slug", "body": {"filters": []}})
-    ]
+    assert fake_service.call_log == [(_PUBLISHED_DATA_BY_URL, {"url": "slug", "body": body})]
 
 
 # --- dashboard widget-data / widget-data-by-url -----------------------------
@@ -210,11 +204,12 @@ def test_widget_data_requires_body(fake_service: FakeMammothService) -> None:
 def test_widget_data_forwards_dashboard_id_and_body(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write_doc(tmp_path, {"body": {"widget_id": 1}})
+    body = {"params": {"widgets": [{"widget_id": "00000000-0000-4000-8000-000000000001"}]}}
+    doc = _write_doc(tmp_path, {"body": body})
     dashboard_cmd.dashboard_widget_data(
         _inv("dashboard.widget-data", extra_args=["7"], input_file=doc)
     )
-    assert fake_service.call_log == [(_WIDGET_DATA, {"dashboard_id": 7, "body": {"widget_id": 1}})]
+    assert fake_service.call_log == [(_WIDGET_DATA, {"dashboard_id": 7, "body": body})]
 
 
 def test_widget_data_by_url_requires_body(fake_service: FakeMammothService) -> None:
@@ -228,13 +223,12 @@ def test_widget_data_by_url_requires_body(fake_service: FakeMammothService) -> N
 def test_widget_data_by_url_forwards_url_and_body(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write_doc(tmp_path, {"body": {"widget_id": 2}})
+    body = {"params": {"widgets": [{"widget_id": "00000000-0000-4000-8000-000000000002"}]}}
+    doc = _write_doc(tmp_path, {"body": body})
     dashboard_cmd.dashboard_widget_data_by_url(
         _inv("dashboard.widget-data-by-url", extra_args=["slug"], input_file=doc)
     )
-    assert fake_service.call_log == [
-        (_WIDGET_DATA_BY_URL, {"url": "slug", "body": {"widget_id": 2}})
-    ]
+    assert fake_service.call_log == [(_WIDGET_DATA_BY_URL, {"url": "slug", "body": body})]
 
 
 # --- dashboard source list ---------------------------------------------------
@@ -304,11 +298,10 @@ def test_update_requires_patch(fake_service: FakeMammothService) -> None:
 def test_update_forwards_dashboard_id_and_patch(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write_doc(tmp_path, {"patch": [{"op": "replace", "path": "/name", "value": "X"}]})
+    patch = [{"op": "replace", "path": "title", "value": "X"}]
+    doc = _write_doc(tmp_path, {"patch": patch})
     dashboard_cmd.dashboard_update(_inv("dashboard.update", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
-        (_UPDATE, {"dashboard_id": 7, "patch": [{"op": "replace", "path": "/name", "value": "X"}]})
-    ]
+    assert fake_service.call_log == [(_UPDATE, {"dashboard_id": 7, "patch": patch})]
 
 
 # --- dashboard action ----------------------------------------------------------
@@ -324,7 +317,7 @@ def test_action_requires_action_field(fake_service: FakeMammothService) -> None:
 def test_action_blocked_without_confirmation(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write_doc(tmp_path, {"action": "publish"})
+    doc = _write_doc(tmp_path, {"action": "publish-data"})
     with pytest.raises(CliError) as excinfo:
         dashboard_cmd.dashboard_action(
             _inv("dashboard.action", extra_args=["7"], input_file=doc, output="json")
@@ -336,7 +329,9 @@ def test_action_blocked_without_confirmation(
 def test_action_proceeds_with_yes_and_forwards_optional_params(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write_doc(tmp_path, {"action": "publish", "params_enabled": True, "params_view_id": 3})
+    doc = _write_doc(
+        tmp_path, {"action": "publish-data", "params_enabled": True, "params_view_id": 3}
+    )
     dashboard_cmd.dashboard_action(
         _inv("dashboard.action", extra_args=["7"], input_file=doc, yes=True)
     )
@@ -345,7 +340,7 @@ def test_action_proceeds_with_yes_and_forwards_optional_params(
             _ACTION,
             {
                 "dashboard_id": 7,
-                "action": "publish",
+                "action": "publish-data",
                 "params_enabled": True,
                 "params_view_id": 3,
             },
@@ -366,7 +361,7 @@ def test_share_requires_type_of_auth(fake_service: FakeMammothService) -> None:
 def test_share_blocked_without_confirmation(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write_doc(tmp_path, {"type_of_auth": "everyone"})
+    doc = _write_doc(tmp_path, {"type_of_auth": "public"})
     with pytest.raises(CliError) as excinfo:
         dashboard_cmd.dashboard_share(
             _inv("dashboard.share", extra_args=["7"], input_file=doc, output="json")
@@ -378,9 +373,7 @@ def test_share_blocked_without_confirmation(
 def test_share_proceeds_with_yes_and_forwards_users(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write_doc(
-        tmp_path, {"type_of_auth": "restricted", "users": [{"email": "a@example.com"}]}
-    )
+    doc = _write_doc(tmp_path, {"type_of_auth": "mammoth", "users": [{"email": "a@example.com"}]})
     dashboard_cmd.dashboard_share(
         _inv("dashboard.share", extra_args=["7"], input_file=doc, yes=True)
     )
@@ -389,7 +382,7 @@ def test_share_proceeds_with_yes_and_forwards_users(
             _SHARE,
             {
                 "dashboard_id": 7,
-                "type_of_auth": "restricted",
+                "type_of_auth": "mammoth",
                 "users": [{"email": "a@example.com"}],
             },
         )

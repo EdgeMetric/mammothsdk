@@ -20,6 +20,7 @@ Usage::
 
     python scripts/sync_openapi.py            # fetch, write snapshot + projection
     python scripts/sync_openapi.py --check    # re-project committed snapshot only
+    python scripts/sync_openapi.py --check-live  # opt-in operation inventory drift check
 """
 
 from __future__ import annotations
@@ -49,6 +50,24 @@ def count_operations(document: dict[str, Any]) -> int:
         for method in path_item
         if method.lower() in HTTP_METHODS
     )
+
+
+def operation_inventory(document: dict[str, Any]) -> set[str]:
+    """Return the stable method-and-path operation inventory."""
+    return {
+        f"{method.upper()} {path}"
+        for path, path_item in document.get("paths", {}).items()
+        for method in path_item
+        if method.lower() in HTTP_METHODS
+    }
+
+
+def fetch_document() -> tuple[bytes, dict[str, Any]]:
+    """Fetch and decode the production document from the fixed source URL."""
+    request = urllib.request.Request(SOURCE_URL, headers={"User-Agent": "mammoth-cli-sync/0.1"})
+    with urllib.request.urlopen(request, timeout=60) as response:  # noqa: S310 (fixed https host)
+        raw = response.read()
+    return raw, json.loads(raw)
 
 
 def _strip_examples(node: Any) -> Any:
@@ -92,10 +111,7 @@ def write_json(path: Path, data: Any) -> None:
 
 
 def fetch() -> None:
-    request = urllib.request.Request(SOURCE_URL, headers={"User-Agent": "mammoth-cli-sync/0.1"})
-    with urllib.request.urlopen(request, timeout=60) as response:  # noqa: S310 (fixed https host)
-        raw = response.read()
-    document = json.loads(raw)
+    raw, document = fetch_document()
     digest = hashlib.sha256(raw).hexdigest()
 
     SPEC_DIR.mkdir(parents=True, exist_ok=True)
@@ -134,12 +150,43 @@ def check() -> int:
     return 0
 
 
+def check_live() -> int:
+    """Compare only stable operation identities with production.
+
+    This is intentionally opt-in rather than part of ordinary CI: network
+    availability must not make the deterministic contract suite flaky.
+    """
+    committed = json.loads(SNAPSHOT_PATH.read_text(encoding="utf-8"))
+    _, live = fetch_document()
+    committed_ops = operation_inventory(committed)
+    live_ops = operation_inventory(live)
+    added = sorted(live_ops - committed_ops)
+    removed = sorted(committed_ops - live_ops)
+    if not added and not removed:
+        print(f"live inventory matches snapshot: operations={len(live_ops)}")
+        return 0
+    print("live OpenAPI operation inventory differs from the pinned snapshot", file=sys.stderr)
+    for identity in added:
+        print(f"+ {identity}", file=sys.stderr)
+    for identity in removed:
+        print(f"- {identity}", file=sys.stderr)
+    return 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true", help="re-project committed snapshot only")
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--check", action="store_true", help="re-project committed snapshot only")
+    modes.add_argument(
+        "--check-live",
+        action="store_true",
+        help="opt-in comparison of live and pinned operation identities",
+    )
     args = parser.parse_args()
     if args.check:
         return check()
+    if args.check_live:
+        return check_live()
     fetch()
     return 0
 

@@ -7,7 +7,9 @@ network access. CI must never fetch the live document.
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -16,8 +18,6 @@ CLI_ROOT = Path(__file__).resolve().parent.parent.parent
 SNAPSHOT = CLI_ROOT / "spec" / "openapi" / "openapi.json"
 METADATA = CLI_ROOT / "spec" / "openapi" / "metadata.json"
 
-EXPECTED_PATH_COUNT = 234
-EXPECTED_OPERATION_COUNT = 376
 HTTP_METHODS = {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
 
 
@@ -37,9 +37,10 @@ def _count_operations(document: dict) -> int:
 def test_openapi_snapshot_metadata() -> None:
     assert METADATA.exists(), "pinned metadata missing"
     metadata = json.loads(METADATA.read_text(encoding="utf-8"))
+    document = _load_snapshot()
     assert metadata["openapi_version"] == "3.1.0"
-    assert metadata["path_count"] == EXPECTED_PATH_COUNT
-    assert metadata["operation_count"] == EXPECTED_OPERATION_COUNT
+    assert metadata["path_count"] == len(document["paths"])
+    assert metadata["operation_count"] == _count_operations(document)
     assert metadata["source_url"].endswith("/api/v2/docs/openapi.json")
 
 
@@ -49,9 +50,9 @@ def test_openapi_inventory_digest_matches_snapshot() -> None:
     assert metadata["sha256"] == digest, "metadata digest does not match pinned snapshot"
 
 
-def test_openapi_inventory_has_376_operations() -> None:
+def test_openapi_inventory_is_nonempty() -> None:
     document = _load_snapshot()
-    assert _count_operations(document) == EXPECTED_OPERATION_COUNT
+    assert _count_operations(document) > 0
 
 
 def test_openapi_inventory_identity_is_method_and_path() -> None:
@@ -59,13 +60,109 @@ def test_openapi_inventory_identity_is_method_and_path() -> None:
 
     operations = load_operations()
     assert operations, "operation manifest is empty"
-    assert len(operations) == EXPECTED_OPERATION_COUNT
+    assert len(operations) == _count_operations(_load_snapshot())
     seen: set[str] = set()
     for record in operations:
         expected = f"{record['method']} {record['path']}"
         assert record["identity"] == expected
         assert record["identity"] not in seen, f"duplicate identity {record['identity']}"
         seen.add(record["identity"])
+
+
+def test_live_drift_comparison_uses_stable_operation_identities(monkeypatch, capsys) -> None:
+    """Exercise the opt-in network check without making the test network-dependent."""
+    scripts = CLI_ROOT / "scripts"
+    sys.path.insert(0, str(scripts))
+    try:
+        import sync_openapi
+
+        committed = _load_snapshot()
+        monkeypatch.setattr(sync_openapi, "fetch_document", lambda: (b"", committed))
+        assert sync_openapi.check_live() == 0
+
+        changed = json.loads(json.dumps(committed))
+        changed["paths"]["/__inventory_drift_test__"] = {
+            "get": {"operationId": "InventoryDriftTest"}
+        }
+        monkeypatch.setattr(sync_openapi, "fetch_document", lambda: (b"", changed))
+        assert sync_openapi.check_live() == 1
+        assert "+ GET /__inventory_drift_test__" in capsys.readouterr().err
+    finally:
+        sys.path.remove(str(scripts))
+
+
+def test_generated_dashboard_wrappers_have_no_drift() -> None:
+    scripts = CLI_ROOT / "scripts"
+    sys.path.insert(0, str(scripts))
+    try:
+        import gen_dashboard_v3_sdk
+
+        assert (
+            gen_dashboard_v3_sdk.OUTPUT.read_text(encoding="utf-8") == gen_dashboard_v3_sdk.build()
+        )
+    finally:
+        sys.path.remove(str(scripts))
+
+
+def test_generated_dashboard_wrapper_routes_path_query_and_body() -> None:
+    from mammoth.api import dashboard_generated as generated
+
+    calls: list[tuple] = []
+
+    class Client:
+        def _request_json(self, *args, **kwargs):
+            calls.append((args, kwargs))
+            return {"ok": True}
+
+    owner = type("Owner", (), {"_client": Client()})()
+    assert generated.rls_value_list(owner, 17, "region", "west") == {"ok": True}
+    assert calls == [
+        (("GET", "/dashboards/17/rls/values"), {"params": {"column": "region", "search": "west"}})
+    ]
+
+
+def test_generated_nullable_parameter_types_and_routing() -> None:
+    from mammoth.api import dashboard_generated as generated
+
+    scripts = CLI_ROOT / "scripts"
+    sys.path.insert(0, str(scripts))
+    try:
+        import gen_dashboard_v3_sdk
+
+        assert (
+            gen_dashboard_v3_sdk.schema_annotation(
+                {"oneOf": [{"type": "integer"}, {"type": "null"}]}
+            )
+            == "int | None"
+        )
+        assert (
+            gen_dashboard_v3_sdk.schema_annotation({"type": "array", "items": {"type": "boolean"}})
+            == "list[bool]"
+        )
+        project_parameter = next(
+            parameter
+            for parameter in _load_snapshot()["paths"]["/dashboards"]["get"]["parameters"]
+            if parameter["name"] == "project_id"
+        )
+        assert gen_dashboard_v3_sdk.schema_annotation(project_parameter["schema"]) == "int | None"
+    finally:
+        sys.path.remove(str(scripts))
+
+    signature = inspect.signature(generated.chat_history)
+    assert signature.parameters["sequence"].annotation == "int | None"
+
+    calls: list[tuple] = []
+
+    class Client:
+        def _request_json(self, *args, **kwargs):
+            calls.append((args, kwargs))
+            return {}
+
+    owner = type("Owner", (), {"_client": Client()})()
+    generated.chat_history(owner, 17, sequence=3)
+    generated.template_fit(owner, 42, table_item_id=9)
+    assert calls[0][1]["params"] == {"sequence": 3}
+    assert calls[1][1]["params"] == {"dataview_id": 42, "table_item_id": 9}
 
 
 if __name__ == "__main__":

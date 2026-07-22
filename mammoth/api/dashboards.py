@@ -59,13 +59,14 @@ class DashboardsAPI:
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def list(self) -> _list[dict[str, Any]]:
+    def list(self, project_id: int | None = None) -> _list[dict[str, Any]]:
         """List all dashboards.
 
         Returns:
             List of dashboard dicts.
         """
-        response = self._client._request_json("GET", "/dashboards")
+        params = {"project_id": project_id} if project_id is not None else None
+        response = self._client._request_json("GET", "/dashboards", params=params)
         return response.get("dashboards", response if isinstance(response, _list) else [])
 
     def create(
@@ -463,3 +464,12 @@ def _validate_patch_item(item: DashboardPatchItem) -> None:
     elif item.path is DashboardPatchPath.THEME:
         if not isinstance(item.value, str):
             raise MammothValidationError(ERR_THEME_VALUE_NOT_STR)
+
+
+# Generated from the pinned production OpenAPI operation inventory. Keeping
+# these as ordinary functions preserves inspectable typed signatures for SDK
+# users and the CLI schema builder while avoiding hand-maintained route drift.
+from mammoth.api import dashboard_generated as _generated  # noqa: E402
+
+for _method_name in _generated.GENERATED_METHODS:
+    setattr(DashboardsAPI, _method_name, getattr(_generated, _method_name))

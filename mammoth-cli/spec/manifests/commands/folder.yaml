@@ -57,7 +57,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth folder create --help
-  agent_example: mammoth folder create --output json --no-input
+  agent_example: 'mammoth folder create --input ''{"name": "example"}'' --output json --no-input'
   unit_tests:
   - UT-FOLDER-CREATE
   contract_tests:
@@ -91,7 +91,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth folder delete --help
-  agent_example: mammoth folder delete --output json --no-input
+  agent_example: 'mammoth folder delete --input ''{"folder_ids": [1]}'' --output json --no-input'
   unit_tests:
   - UT-FOLDER-DELETE
   contract_tests:
@@ -200,7 +200,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth folder move --help
-  agent_example: mammoth folder move --output json --no-input
+  agent_example: 'mammoth folder move --input ''{"resource_ids": ["example"]}'' --output json --no-input'
   unit_tests:
   - UT-FOLDER-MOVE
   contract_tests:
@@ -315,7 +315,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth folder update FOLDER_ID --help
-  agent_example: mammoth folder update 123 --output json --no-input
+  agent_example: 'mammoth folder update 123 --input ''{"name": "example"}'' --output json --no-input'
   unit_tests:
   - UT-FOLDER-UPDATE
   contract_tests:

@@ -57,7 +57,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing hosted-page --help
-  agent_example: mammoth billing hosted-page --output json --no-input
+  agent_example: 'mammoth billing hosted-page --input ''{"object_type": "example"}'' --output json --no-input'
   unit_tests:
   - UT-BILLING-HOSTED-PAGE
   contract_tests:
@@ -233,7 +233,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe checkout-url --help
-  agent_example: mammoth billing stripe checkout-url --output json --no-input
+  agent_example: 'mammoth billing stripe checkout-url --input ''{"success_url": "example", "cancel_url":
+    "example"}'' --output json --no-input'
   unit_tests:
   - UT-BILLING-STRIPE-CHECKOUT-URL
   contract_tests:
@@ -394,7 +395,7 @@ commands:
   - DeletePaymentMethod
   positionals:
   - name: payment_method_id
-    type: int
+    type: str
     required: true
     metavar: PAYMENT_METHOD_ID
     falls_back_to_field: null
@@ -416,7 +417,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe payment-method delete PAYMENT_METHOD_ID --help
-  agent_example: mammoth billing stripe payment-method delete 123 --output json --no-input
+  agent_example: mammoth billing stripe payment-method delete example --output json --no-input
   unit_tests:
   - UT-BILLING-STRIPE-PAYMENT-METHOD-DELETE
   contract_tests:
@@ -470,7 +471,7 @@ commands:
   - SetDefaultPaymentMethod
   positionals:
   - name: payment_method_id
-    type: int
+    type: str
     required: true
     metavar: PAYMENT_METHOD_ID
     falls_back_to_field: null
@@ -492,7 +493,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe payment-method set-default PAYMENT_METHOD_ID --help
-  agent_example: mammoth billing stripe payment-method set-default 123 --output json --no-input
+  agent_example: mammoth billing stripe payment-method set-default example --output json --no-input
   unit_tests:
   - UT-BILLING-STRIPE-PAYMENT-METHOD-SET-DEFAULT
   contract_tests:
@@ -798,7 +799,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing subscription update --help
-  agent_example: mammoth billing subscription update --output json --no-input
+  agent_example: 'mammoth billing subscription update --input ''{"patch": [{"example": "example"}]}''
+    --output json --no-input'
   unit_tests:
   - UT-BILLING-SUBSCRIPTION-UPDATE
   contract_tests:

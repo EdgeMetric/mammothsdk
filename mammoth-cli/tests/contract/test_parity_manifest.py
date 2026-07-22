@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 
+from mammoth_cli.commands.schema import runnable_example
 from mammoth_cli.manifest.loader import (
     load_commands,
     load_operations,
@@ -153,16 +154,14 @@ def test_agent_examples_use_concrete_positional_samples_in_declared_order() -> N
         if record.get("disposition") == "alias":
             continue
         positionals = positionals_for(record["command_id"], record.get("sdk_symbol"))
-        command_prefix = ["mammoth", *shlex.split(record["command_path"])]
-        tokens = shlex.split(record["agent_example"])
-        assert tokens[: len(command_prefix)] == command_prefix, record["command_id"]
-        example_tokens = tokens[len(command_prefix) :]
-        assert example_tokens == [
-            *("123" if positional.type is int else "example" for positional in positionals),
-            "--output",
-            "json",
-            "--no-input",
-        ], record["command_id"]
+        canonical = runnable_example(record, record.get("sdk_symbol"), positionals)
+        if canonical is None:
+            # Local auth/config/context commands intentionally have no SDK
+            # signature; their examples are covered by the general example
+            # shape tests rather than the SDK-derived generator.
+            continue
+        assert record["agent_example"] == canonical, record["command_id"]
+        example_tokens = shlex.split(canonical)
         assert not {positional.metavar for positional in positionals}.intersection(
             example_tokens
         ), record["command_id"]

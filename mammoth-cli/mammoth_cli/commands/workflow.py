@@ -221,20 +221,24 @@ def workflow_delete(invocation: Invocation) -> HandlerResult:
 def workflow_from_template(invocation: Invocation) -> HandlerResult:
     """Instantiate a workflow from a workspace template.
 
-    The new workflow's name comes from a positional argument or the
-    ``workflow_name`` input field; ``template_id`` is a required input field.
+    ``template_id`` is positional; the new workflow name is an input field.
     """
     project_id = require_project(invocation)
     document = invocation.load_input() or {}
-    workflow_name = _string_positional(invocation) or document.get("workflow_name")
+    workflow_name = document.get("workflow_name")
     if not workflow_name:
         raise CliError(
             code=CODE_MISSING_ARGUMENT,
             message="A workflow name is required.",
             exit_status=EXIT_USAGE,
-            hint="Pass the name as a positional argument or a 'workflow_name' input field.",
+            hint="Pass 'workflow_name' via --input.",
         )
-    template_id = _require_field(document, "template_id")
+    template_id = invocation.positional("template_id")
+    if template_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT, message="A template id is required.", exit_status=EXIT_USAGE
+        )
+    template_id = int(template_id)
     kwargs: dict[str, Any] = {
         "template_id": template_id,
         "workflow_name": workflow_name,

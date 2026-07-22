@@ -110,3 +110,42 @@ def test_unaffected_field_types_pass_through_unchanged() -> None:
     validate_input_fields(_BULK_REPLACE, document)
     assert document["columns"] == ["Item"]
     assert document["match_case"] is True
+
+
+@pytest.mark.parametrize(
+    ("command_id", "document"),
+    [
+        ("project.bulk-delete", {"project_ids": ["abc"]}),
+        (_BULK_REPLACE, {"columns": "not-a-list", "mapping": []}),
+        (_BULK_REPLACE, {"columns": ["Item"], "mapping": "not-a-list"}),
+        (_SKILL_INSTALL, {"agents": "codex"}),
+    ],
+)
+def test_recursive_collection_validation_rejects_malformed_values(
+    command_id: str, document: dict[str, object]
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields(command_id, document)
+    assert excinfo.value.code == "invalid_input_field_type"
+
+
+def test_nested_dataclass_requires_and_validates_members() -> None:
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields(
+            _BULK_REPLACE,
+            {"columns": ["Item"], "mapping": [{"search": [], "replace": 42}]},
+        )
+    assert excinfo.value.code == "invalid_input_field_type"
+    assert "mapping[0].replace" in excinfo.value.message
+
+
+def test_positional_resource_id_is_not_accepted_again_in_input() -> None:
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields(_PROJECT_DELETE, {"project_id": 1})
+    assert excinfo.value.code == "unknown_input_field"
+
+
+def test_fallback_positional_field_remains_valid_structured_input() -> None:
+    document = {"name": "Input-only project"}
+    validate_input_fields("project.create", document)
+    assert document == {"name": "Input-only project"}

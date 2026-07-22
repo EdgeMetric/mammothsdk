@@ -132,12 +132,13 @@ def notification_list(invocation: Invocation) -> HandlerResult:
     """List notifications in the active workspace, optionally filtered."""
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {}
+    if invocation.project is not None:
+        kwargs["project_id"] = invocation.project
     _forward_optional(
         document,
         kwargs,
         (
             "fields",
-            "project_id",
             "last_updated_at__gte",
             "status",
             "is_read",

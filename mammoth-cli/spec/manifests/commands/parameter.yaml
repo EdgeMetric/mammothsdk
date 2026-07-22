@@ -23,7 +23,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter create --help
-  agent_example: mammoth parameter create --output json --no-input
+  agent_example: 'mammoth parameter create --input ''{"name": "example", "param_type": "example", "value":
+    "example"}'' --output json --no-input'
   unit_tests:
   - UT-PARAMETER-CREATE
   contract_tests:
@@ -217,7 +218,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter group create --help
-  agent_example: mammoth parameter group create --output json --no-input
+  agent_example: 'mammoth parameter group create --input ''{"name": "example"}'' --output json --no-input'
   unit_tests:
   - UT-PARAMETER-GROUP-CREATE
   contract_tests:
@@ -325,7 +326,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter group reorder --help
-  agent_example: mammoth parameter group reorder --output json --no-input
+  agent_example: 'mammoth parameter group reorder --input ''{"order": [1]}'' --output json --no-input'
   unit_tests:
   - UT-PARAMETER-GROUP-REORDER
   contract_tests:

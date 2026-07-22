@@ -23,7 +23,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth external-key create --help
-  agent_example: mammoth external-key create --output json --no-input
+  agent_example: 'mammoth external-key create --input ''{"key_type": "open_ai", "key_name": "example",
+    "secure_key": "example"}'' --output json --no-input'
   unit_tests:
   - UT-EXTERNAL-KEY-CREATE
   contract_tests:

@@ -62,9 +62,15 @@ function Get-Uv {
     catch { Die "could not download uv (offline or proxy failure). Install uv manually, then re-run." }
     $env:UV_NO_MODIFY_PATH = "1"
     & ([scriptblock]::Create($script))
-    $uv = Get-Command uv -ErrorAction SilentlyContinue
-    if (-not $uv) { Die "uv was not installed where expected" }
-    return $uv.Source
+    $candidates = @(
+        (Join-Path $env:USERPROFILE ".local\bin\uv.exe"),
+        (Join-Path $env:USERPROFILE ".cargo\bin\uv.exe"),
+        (Join-Path $env:LOCALAPPDATA "uv\bin\uv.exe")
+    )
+    foreach ($candidate in $candidates) {
+        if (Test-Path -LiteralPath $candidate) { return $candidate }
+    }
+    Die "uv was installed but its executable could not be located"
 }
 
 function Install-Cli($uvBin) {

@@ -31,7 +31,7 @@ from mammoth_cli.services.argspec import arg_spec
 
 # Field names that identify a resource (and so become a positional locator).
 _IDENTITY_SUFFIXES = ("_id", "_key")
-_IDENTITY_NAMES = ("id", "key")
+_IDENTITY_NAMES = ("id", "key", "url")
 
 # Fields that are always sourced from a global option or resolved context, never
 # a positional. ``project_id`` comes from ``--project`` or the active project for
@@ -156,8 +156,12 @@ def _is_identity_name(name: str) -> bool:
     return name in _IDENTITY_NAMES or name.endswith(_IDENTITY_SUFFIXES)
 
 
-def _identity_type(name: str) -> type[int] | type[str]:
-    """The scalar an identity field parses to (``int`` for ids, ``str`` for keys)."""
+def _identity_type(name: str, annotation: Any) -> type[int] | type[str]:
+    """Return the declared scalar type, falling back only when unresolved."""
+    if annotation is int:
+        return int
+    if annotation is str:
+        return str
     if name == "id" or name.endswith("_id"):
         return int
     return str
@@ -169,6 +173,8 @@ def _identity_help(name: str) -> str:
         return "Identifier of the resource."
     if name == "key":
         return "Key identifying the resource."
+    if name == "url":
+        return "URL slug identifying the resource."
     if name.endswith("_id"):
         return f"ID of the {name[:-3].replace('_', ' ')}."
     return f"Key identifying the {name[:-4].replace('_', ' ')}."
@@ -210,7 +216,7 @@ def derive_positionals(command_id: str, sdk_symbol: str) -> tuple[PositionalSpec
         positionals.append(
             PositionalSpec(
                 name=field.name,
-                type=_identity_type(field.name),
+                type=_identity_type(field.name, field.annotation),
                 required=True,
                 help=_identity_help(field.name),
             )

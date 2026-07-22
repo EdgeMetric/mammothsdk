@@ -152,8 +152,9 @@ def test_session_list_never_forwards_workspace_id(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"workspace_id": 999, "limit": 10})
-    agent_cmd.agent_session_list(_inv("agent.session.list", input_file=doc))
-    assert fake_service.call_log == [(_SESSION_LIST, {"limit": 10})]
+    with pytest.raises(CliError) as excinfo:
+        agent_cmd.agent_session_list(_inv("agent.session.list", input_file=doc))
+    assert excinfo.value.code == "unknown_input_field"
 
 
 # --- agent session messages -----------------------------------------------------

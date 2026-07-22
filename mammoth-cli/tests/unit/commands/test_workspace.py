@@ -91,9 +91,10 @@ def test_check_expression_requires_body(fake_service: FakeMammothService) -> Non
 
 
 def test_check_expression_forwards_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"body": {"expression": "1+1"}})
+    body = {"intent": "validate 1+1"}
+    doc = _write(tmp_path, {"body": body})
     workspace_cmd.workspace_check_expression(_inv("workspace.check-expression", input_file=doc))
-    assert fake_service.call_log == [(_CHECK_EXPRESSION, {"body": {"expression": "1+1"}})]
+    assert fake_service.call_log == [(_CHECK_EXPRESSION, {"body": body})]
 
 
 # --- create --------------------------------------------------------------------
@@ -409,7 +410,10 @@ def test_user_update_requires_patches(fake_service: FakeMammothService) -> None:
 def test_user_update_requires_confirm_target_matching_user_id(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"patches": [{"op": "replace", "path": "role", "value": "x"}]})
+    doc = _write(
+        tmp_path,
+        {"patches": [{"op": "replace", "path": "role", "value": "workspace_member"}]},
+    )
     with pytest.raises(CliError) as excinfo:
         workspace_cmd.workspace_user_update(
             _inv(
@@ -427,7 +431,10 @@ def test_user_update_requires_confirm_target_matching_user_id(
 def test_user_update_proceeds_with_matching_target(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"patches": [{"op": "replace", "path": "role", "value": "x"}]})
+    doc = _write(
+        tmp_path,
+        {"patches": [{"op": "replace", "path": "role", "value": "workspace_member"}]},
+    )
     workspace_cmd.workspace_user_update(
         _inv(
             "workspace.user.update",
@@ -440,7 +447,10 @@ def test_user_update_proceeds_with_matching_target(
     assert fake_service.call_log == [
         (
             _USER_UPDATE,
-            {"user_id": "u1", "patches": [{"op": "replace", "path": "role", "value": "x"}]},
+            {
+                "user_id": "u1",
+                "patches": [{"op": "replace", "path": "role", "value": "workspace_member"}],
+            },
         )
     ]
 

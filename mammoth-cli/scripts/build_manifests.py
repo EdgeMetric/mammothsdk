@@ -181,6 +181,14 @@ def build_command_record(
         "known_restrictions": (catalog or {}).get("notes"),
         "reviewed_by": REVIEWER,
     }
+    # This is the same recursive, shell-safe example used by schema discovery;
+    # keeping it here prevents manifests and generated docs from carrying a
+    # syntactically valid but semantically incomplete invocation.
+    from mammoth_cli.commands.schema import runnable_example
+
+    record["agent_example"] = (
+        runnable_example(record, sdk_symbol, positionals) or record["agent_example"]
+    )
     if command_id.startswith("view.transform.") or command_id.startswith("view.draft."):
         record["draft_test"] = f"LT-{op_token}-DRAFT"
     if mutation == "reversible_pipeline":

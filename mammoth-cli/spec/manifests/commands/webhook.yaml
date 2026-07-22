@@ -171,7 +171,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth webhook send --help
-  agent_example: mammoth webhook send --output json --no-input
+  agent_example: 'mammoth webhook send --input ''{"webhook_uri": "example", "data": {"example": "example"}}''
+    --output json --no-input'
   unit_tests:
   - UT-WEBHOOK-SEND
   contract_tests:
@@ -206,7 +207,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth webhook send-get --help
-  agent_example: mammoth webhook send-get --output json --no-input
+  agent_example: 'mammoth webhook send-get --input ''{"webhook_uri": "example"}'' --output json --no-input'
   unit_tests:
   - UT-WEBHOOK-SEND-GET
   contract_tests:

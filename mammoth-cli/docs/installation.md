@@ -4,6 +4,22 @@
 
 ## Recommended: uv tool
 
+Linux/macOS quick install:
+
+```sh
+curl -fsSL https://github.com/EdgeMetric/mm-pysdk/releases/latest/download/mammoth-install.sh | sh
+```
+
+Windows PowerShell quick install:
+
+```powershell
+irm https://github.com/EdgeMetric/mm-pysdk/releases/latest/download/mammoth-install.ps1 | iex
+```
+
+These one-line commands execute downloaded code. For a verified install,
+download the installer and `SHA256SUMS` first, verify its SHA-256 entry and the
+Sigstore bundle attached to the release, inspect the script, then execute it.
+
 ```bash
 uv tool install mammoth-cli
 mammoth --version

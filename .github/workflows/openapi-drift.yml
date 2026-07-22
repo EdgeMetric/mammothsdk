@@ -1,0 +1,31 @@
+name: OpenAPI inventory drift
+
+# Production drift is checked out-of-band so network availability never makes
+# the deterministic pull-request gate flaky. A failure means the pinned
+# method/path inventory must be reviewed and refreshed.
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: "23 2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: openapi-inventory-drift
+  cancel-in-progress: true
+
+jobs:
+  compare-live-inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: mammoth-cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compare pinned and production operation inventories
+        run: python scripts/sync_openapi.py --check-live

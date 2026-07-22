@@ -23,7 +23,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent chat --help
-  agent_example: mammoth agent chat --output json --no-input
+  agent_example: 'mammoth agent chat --input ''{"message": "example", "scope": {"example": "example"}}''
+    --output json --no-input'
   unit_tests:
   - UT-AGENT-CHAT
   contract_tests:
@@ -42,7 +43,7 @@ commands:
   - DeleteAgentSession
   positionals:
   - name: session_id
-    type: int
+    type: str
     required: true
     metavar: SESSION_ID
     falls_back_to_field: null
@@ -63,7 +64,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent session delete SESSION_ID --help
-  agent_example: mammoth agent session delete 123 --output json --no-input
+  agent_example: mammoth agent session delete example --output json --no-input
   unit_tests:
   - UT-AGENT-SESSION-DELETE
   contract_tests:
@@ -116,7 +117,7 @@ commands:
   - GetAgentSessionMessages
   positionals:
   - name: session_id
-    type: int
+    type: str
     required: true
     metavar: SESSION_ID
     falls_back_to_field: null
@@ -137,7 +138,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent session messages SESSION_ID --help
-  agent_example: mammoth agent session messages 123 --output json --no-input
+  agent_example: mammoth agent session messages example --output json --no-input
   unit_tests:
   - UT-AGENT-SESSION-MESSAGES
   contract_tests:
@@ -156,7 +157,7 @@ commands:
   - SetAgentSessionVisibility
   positionals:
   - name: session_id
-    type: int
+    type: str
     required: true
     metavar: SESSION_ID
     falls_back_to_field: null
@@ -177,7 +178,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent session set-visibility SESSION_ID --help
-  agent_example: mammoth agent session set-visibility 123 --output json --no-input
+  agent_example: 'mammoth agent session set-visibility example --input ''{"visibility": "example"}'' --output
+    json --no-input'
   unit_tests:
   - UT-AGENT-SESSION-SET-VISIBILITY
   contract_tests:

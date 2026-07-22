@@ -23,7 +23,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file bulk-delete --help
-  agent_example: mammoth file bulk-delete --output json --no-input
+  agent_example: 'mammoth file bulk-delete --input ''{"file_ids": [1]}'' --output json --no-input'
   unit_tests:
   - UT-FILE-BULK-DELETE
   contract_tests:
@@ -104,7 +104,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file extract-sheets FILE_ID --help
-  agent_example: mammoth file extract-sheets 123 --output json --no-input
+  agent_example: 'mammoth file extract-sheets 123 --input ''{"sheets": ["example"]}'' --output json --no-input'
   unit_tests:
   - UT-FILE-EXTRACT-SHEETS
   contract_tests:
@@ -218,7 +218,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file set-password FILE_ID --help
-  agent_example: mammoth file set-password 123 --output json --no-input
+  agent_example: 'mammoth file set-password 123 --input ''{"password": "example"}'' --output json --no-input'
   unit_tests:
   - UT-FILE-SET-PASSWORD
   contract_tests:
@@ -258,7 +258,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file update FILE_ID --help
-  agent_example: mammoth file update 123 --output json --no-input
+  agent_example: 'mammoth file update 123 --input ''{"patch_request": {"patch": [{"op": "replace", "path":
+    "extract_sheets", "value": "example"}]}}'' --output json --no-input'
   unit_tests:
   - UT-FILE-UPDATE
   contract_tests:
@@ -327,7 +328,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file upload-folder --help
-  agent_example: mammoth file upload-folder --output json --no-input
+  agent_example: 'mammoth file upload-folder --input ''{"folder_path": "example"}'' --output json --no-input'
   unit_tests:
   - UT-FILE-UPLOAD-FOLDER
   contract_tests:

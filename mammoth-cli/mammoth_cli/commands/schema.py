@@ -15,12 +15,14 @@ and an ``--input`` document combine.
 from __future__ import annotations
 
 import json
-import typing
+import shlex
 from typing import Any
 
 from mammoth_cli.manifest.loader import command_by_id, load_commands
 from mammoth_cli.services.argspec import FieldSpec, arg_spec
+from mammoth_cli.services.openapi_types import openapi_body_schema_for, sample_from_schema
 from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
+from mammoth_cli.services.type_system import is_opaque_mapping, json_schema, sample_value
 
 _OUTPUT_JSON_NO_INPUT = ("--output", "json", "--no-input")
 
@@ -43,6 +45,10 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
     spec = arg_spec(str(symbol))
     if spec is None or spec.accepts_extra:
         return None
+    excluded = _externally_supplied_fields(record["command_id"])
+    body_schema = openapi_body_schema_for(
+        tuple(str(item) for item in record.get("operation_ids", []))
+    )
     return [
         {
             "name": field.name,
@@ -50,9 +56,29 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
             "required": field.required,
             "enum": field.enum_values,
             "default": field.default_value if field.has_default else None,
+            "schema": (
+                body_schema
+                if field.name == "body"
+                and is_opaque_mapping(field.annotation)
+                and body_schema is not None
+                else json_schema(field.annotation)
+            ),
         }
         for field in spec.fields
+        if field.name not in excluded
     ]
+
+
+def _externally_supplied_fields(command_id: str) -> frozenset[str]:
+    """Fields supplied by positionals or authenticated CLI context."""
+    return frozenset(
+        {"project_id", "workspace_id"}
+        | {
+            item.name
+            for item in resolve_positionals(command_id)
+            if item.falls_back_to_field is None
+        }
+    )
 
 
 def _positionals(command_id: str) -> list[dict[str, Any]]:
@@ -67,31 +93,14 @@ def _sample_positional_value(spec: PositionalSpec) -> Any:
 
 def _sample_field_value(field: FieldSpec) -> Any:
     """A representative JSON value for one accepted field's type."""
-    enum_values = field.enum_values
-    if enum_values:
-        return enum_values[0]
-    target = field.resolved_type
-    if target is bool:
-        return True
-    if target is int:
-        return 1
-    if target is float:
-        return 1.0
-    if target is str:
-        return "example"
-    origin = typing.get_origin(target) if target is not None else None
-    if origin in (list, typing.List):  # noqa: UP006 - runtime origin comparison
-        args = typing.get_args(target)
-        inner = args[0] if args else None
-        if inner is str:
-            return ["example"]
-        return []
-    if origin in (dict, typing.Dict):  # noqa: UP006 - runtime origin comparison
-        return {}
-    return None
+    return sample_value(field.annotation)
 
 
-def _runnable_example(record: dict[str, Any], symbol: str | None) -> str | None:
+def runnable_example(
+    record: dict[str, Any],
+    symbol: str | None,
+    positionals: tuple[PositionalSpec, ...] | None = None,
+) -> str | None:
     """Build one complete, copy-pasteable command line for this command.
 
     Args:
@@ -108,24 +117,82 @@ def _runnable_example(record: dict[str, Any], symbol: str | None) -> str | None:
     spec = arg_spec(symbol)
     if spec is None:
         return None
-    positionals = resolve_positionals(record["command_id"])
+    if positionals is None:
+        positionals = resolve_positionals(record["command_id"])
     tokens: list[str] = ["mammoth", *record["command_path"].split()]
     tokens.extend(str(_sample_positional_value(p)) for p in positionals)
-    required = [field for field in spec.fields if field.required]
+    excluded = frozenset({"project_id", "workspace_id"} | {item.name for item in positionals})
+    required = [field for field in spec.fields if field.required and field.name not in excluded]
     if required:
-        document = {field.name: _sample_field_value(field) for field in required}
+        body_schema = openapi_body_schema_for(
+            tuple(str(item) for item in record.get("operation_ids", []))
+        )
+        document = {
+            field.name: (
+                sample_from_schema(body_schema)
+                if field.name == "body"
+                and is_opaque_mapping(field.annotation)
+                and body_schema is not None
+                else _sample_field_value(field)
+            )
+            for field in required
+        }
         tokens.extend(["--input", json.dumps(document)])
     tokens.extend(_OUTPUT_JSON_NO_INPUT)
-    return " ".join(tokens)
+    return shlex.join(tokens)
 
 
 def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
     """Shared enrichment fields for both the listing and single-command views."""
     symbol = record.get("sdk_symbol")
+    accepted = _accepted_fields(record)
+    input_schema = None
+    if accepted is not None:
+        definitions: dict[str, Any] = {}
+        properties: dict[str, Any] = {}
+        for field in accepted:
+            field_schema = dict(field["schema"])
+            prefix = f"{field['name']}__"
+
+            def namespace_refs(value: Any, namespace: str = prefix) -> Any:
+                if isinstance(value, dict):
+                    return {
+                        key: (
+                            item.replace("#/$defs/", f"#/$defs/{namespace}")
+                            if key == "$ref" and isinstance(item, str)
+                            else namespace_refs(item)
+                        )
+                        for key, item in value.items()
+                    }
+                if isinstance(value, list):
+                    return [namespace_refs(item) for item in value]
+                return value
+
+            def hoist_definitions(value: Any, namespace: str = prefix) -> Any:
+                if isinstance(value, dict):
+                    result = dict(value)
+                    nested = result.pop("$defs", {})
+                    for name, definition in nested.items():
+                        definitions[f"{namespace}{name}"] = hoist_definitions(definition)
+                    return {key: hoist_definitions(item) for key, item in result.items()}
+                if isinstance(value, list):
+                    return [hoist_definitions(item) for item in value]
+                return value
+
+            properties[field["name"]] = hoist_definitions(namespace_refs(field_schema))
+        input_schema = {
+            "type": "object",
+            "properties": properties,
+            "required": [field["name"] for field in accepted if field["required"]],
+            "additionalProperties": False,
+        }
+        if definitions:
+            input_schema["$defs"] = definitions
     return {
         "positionals": _positionals(record["command_id"]),
-        "accepted_fields": _accepted_fields(record),
-        "runnable_example": _runnable_example(record, str(symbol) if symbol else None),
+        "accepted_fields": accepted,
+        "input_schema": input_schema,
+        "runnable_example": runnable_example(record, str(symbol) if symbol else None),
     }
 
 

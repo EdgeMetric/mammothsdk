@@ -16,6 +16,8 @@ asserts the online one instead.
 
 from __future__ import annotations
 
+import json
+import os
 import shutil
 import stat
 import subprocess
@@ -29,6 +31,7 @@ pytestmark = pytest.mark.subprocess
 _HERE = Path(__file__).resolve()
 _INSTALLER_SH = _HERE.parents[2] / "installers" / "mammoth-install.sh"
 _SH = shutil.which("sh")
+_UV = shutil.which("uv")
 
 
 def _write_uv_stub(directory: Path, log_file: Path, bin_dir: Path) -> None:
@@ -43,8 +46,16 @@ def _write_uv_stub(directory: Path, log_file: Path, bin_dir: Path) -> None:
     stub.write_text(
         "#!/bin/sh\n"
         f'printf "%s\\n" "$*" >> "{log_file}"\n'
-        'if [ "$1" = "tool" ] && [ "$2" = "dir" ]; then\n'
+        'if [ "$1" = "build" ]; then\n'
+        '    project="${5##*/}"\n'
+        '    if [ "$project" = "mammoth-cli" ]; then\n'
+        '        touch "$4/mammoth_cli-0.6.0-py3-none-any.whl"\n'
+        '    else touch "$4/mammoth_io-0.6.0-py3-none-any.whl"; fi\n'
+        "fi\n"
+        'if [ "$1" = "tool" ] && [ "$2" = "dir" ] && [ "$3" = "--bin" ]; then\n'
         f'    printf "%s\\n" "{bin_dir}"\n'
+        'elif [ "$1" = "tool" ] && [ "$2" = "dir" ]; then\n'
+        f'    printf "%s\\n" "{bin_dir.parent}"\n'
         "fi\n"
         "exit 0\n",
         encoding="utf-8",
@@ -73,6 +84,10 @@ def test_local_source_builds_both_wheels_and_installs_online(tmp_path: Path) -> 
     home.mkdir(parents=True, exist_ok=True)
     log_file = tmp_path / "uv.log"
     _write_uv_stub(stub_dir, log_file, home / ".local" / "bin")
+    tool_python = home / ".local" / "mammoth-cli" / "bin" / "python"
+    tool_python.parent.mkdir(parents=True)
+    tool_python.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    tool_python.chmod(tool_python.stat().st_mode | stat.S_IEXEC)
 
     result = subprocess.run(
         [_SH, str(_INSTALLER_SH), "--local", "--cli-only"],
@@ -89,9 +104,47 @@ def test_local_source_builds_both_wheels_and_installs_online(tmp_path: Path) -> 
     assert len(build_lines) == 2, f"expected 2 uv build calls, got: {build_lines}"
     install_lines = [line for line in log.splitlines() if line.startswith("tool install")]
     assert install_lines, "expected a 'uv tool install' call"
+    assert any("mammoth_cli-0.6.0-py3-none-any.whl" in line for line in install_lines)
     assert any(
-        "--find-links" in line for line in install_lines
-    ), f"install must point at the local wheelhouse: {install_lines}"
+        "--with" in line and "mammoth_io-0.6.0-py3-none-any.whl" in line for line in install_lines
+    )
     assert not any(
         "--no-index" in line for line in install_lines
     ), f"install must stay online (no --no-index) so deps resolve from PyPI: {install_lines}"
+
+
+@pytest.mark.skipif(_SH is None or _UV is None, reason="real sh and uv are required")
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX installer test")
+def test_local_source_installs_exact_local_distributions(tmp_path: Path) -> None:
+    """Use real uv and inspect the isolated tool environment, including wheel origins."""
+    home = tmp_path / "home"
+    tool_dir = tmp_path / "tools"
+    bin_dir = tmp_path / "bin"
+    home.mkdir()
+    env = {
+        **dict(os.environ),
+        "HOME": str(home),
+        "UV_TOOL_DIR": str(tool_dir),
+        "UV_TOOL_BIN_DIR": str(bin_dir),
+        "PATH": f"{Path(_UV).parent}:/usr/bin:/bin",
+    }
+    result = subprocess.run(
+        [_SH, str(_INSTALLER_SH), "--local", "--cli-only", "--no-modify-path"],
+        capture_output=True,
+        text=True,
+        timeout=300,
+        env=env,
+    )
+    assert result.returncode == 0, f"stdout={result.stdout!r} stderr={result.stderr!r}"
+    python = tool_dir / "mammoth-cli" / "bin" / "python"
+    code = """import importlib.metadata as m, json
+for name in ('mammoth-cli', 'mammoth-io'):
+ d=m.distribution(name)
+ print(json.dumps([name,d.version,json.loads(d.read_text('direct_url.json'))['url']]))
+"""
+    records = [
+        json.loads(line)
+        for line in subprocess.check_output([python, "-c", code], text=True).splitlines()
+    ]
+    assert {record[0] for record in records} == {"mammoth-cli", "mammoth-io"}
+    assert all(record[2].startswith("file://") and record[2].endswith(".whl") for record in records)

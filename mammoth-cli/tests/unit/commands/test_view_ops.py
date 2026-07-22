@@ -205,7 +205,7 @@ def test_transform_bulk_replace_forwards_optional(
         tmp_path,
         {
             "columns": ["a"],
-            "mapping": [{"find": "x", "replace": "y"}],
+            "mapping": [{"search": ["x"], "replace": "y"}],
             "match_case": True,
             "condition": {"column": "a", "operator": "EQ", "value": 1},
         },
@@ -219,7 +219,7 @@ def test_transform_bulk_replace_forwards_optional(
             "bulk_replace",
             {
                 "columns": ["a"],
-                "mapping": [{"find": "x", "replace": "y"}],
+                "mapping": [{"search": ["x"], "replace": "y"}],
                 "match_case": True,
                 "condition": {"column": "a", "operator": "EQ", "value": 1},
             },
@@ -256,12 +256,12 @@ def test_transform_convert_type_requires_conversions(fake_service: FakeMammothSe
 
 
 def test_transform_convert_type_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"conversions": [{"column": "a", "column_type": "NUMERIC"}]})
+    doc = _write(tmp_path, {"conversions": [{"column": "a", "to": "NUMERIC"}]})
     view_ops_cmd.view_transform_convert_type(
         _inv("view.transform.convert-type", extra_args=["3"], input_file=doc)
     )
     assert fake_service.view_call_log == [
-        (3, "convert_type", {"conversions": [{"column": "a", "column_type": "NUMERIC"}]})
+        (3, "convert_type", {"conversions": [{"column": "a", "to": "NUMERIC"}]})
     ]
 
 
@@ -274,12 +274,12 @@ def test_transform_copy_columns_requires_copies(fake_service: FakeMammothService
 
 
 def test_transform_copy_columns_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"copies": [{"source": "a", "new_column": "a2"}]})
+    doc = _write(tmp_path, {"copies": [{"source": "a", "as_name": "a2"}]})
     view_ops_cmd.view_transform_copy_columns(
         _inv("view.transform.copy-columns", extra_args=["3"], input_file=doc)
     )
     assert fake_service.view_call_log == [
-        (3, "copy_columns", {"copies": [{"source": "a", "new_column": "a2"}]})
+        (3, "copy_columns", {"copies": [{"source": "a", "as_name": "a2"}]})
     ]
 
 
@@ -329,7 +329,7 @@ def test_transform_date_diff_requires_component(fake_service: FakeMammothService
 def test_transform_date_diff_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"component": "DAYS", "start": "a", "end": "b", "new_column": "diff"})
+    doc = _write(tmp_path, {"component": "DAY", "start": "a", "end": "b", "new_column": "diff"})
     view_ops_cmd.view_transform_date_diff(
         _inv("view.transform.date-diff", extra_args=["3"], input_file=doc)
     )
@@ -337,7 +337,7 @@ def test_transform_date_diff_forwards_optional(
         (
             3,
             "date_diff",
-            {"component": "DAYS", "start": "a", "end": "b", "new_column": "diff"},
+            {"component": "DAY", "start": "a", "end": "b", "new_column": "diff"},
         )
     ]
 
@@ -388,12 +388,12 @@ def test_transform_extract_date_requires_component(fake_service: FakeMammothServ
 def test_transform_extract_date_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"column": "a", "component": "YEAR", "new_column": "yr"})
+    doc = _write(tmp_path, {"column": "a", "component": "year", "new_column": "yr"})
     view_ops_cmd.view_transform_extract_date(
         _inv("view.transform.extract-date", extra_args=["3"], input_file=doc)
     )
     assert fake_service.view_call_log == [
-        (3, "extract_date", {"column": "a", "component": "YEAR", "new_column": "yr"})
+        (3, "extract_date", {"column": "a", "component": "year", "new_column": "yr"})
     ]
 
 
@@ -408,12 +408,12 @@ def test_transform_fill_missing_requires_direction(fake_service: FakeMammothServ
 def test_transform_fill_missing_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"column": "a", "direction": "DOWN", "partition_by": "b"})
+    doc = _write(tmp_path, {"column": "a", "direction": "LAST_VALUE", "partition_by": "b"})
     view_ops_cmd.view_transform_fill_missing(
         _inv("view.transform.fill-missing", extra_args=["3"], input_file=doc)
     )
     assert fake_service.view_call_log == [
-        (3, "fill_missing", {"column": "a", "direction": "DOWN", "partition_by": "b"})
+        (3, "fill_missing", {"column": "a", "direction": "LAST_VALUE", "partition_by": "b"})
     ]
 
 
@@ -430,7 +430,7 @@ def test_transform_filter_forwards_optional(
         tmp_path,
         {
             "condition": {"column": "a", "operator": "EQ", "value": 1},
-            "filter_type": "HIDE",
+            "filter_type": "REMOVE",
         },
     )
     view_ops_cmd.view_transform_filter(
@@ -442,7 +442,7 @@ def test_transform_filter_forwards_optional(
             "filter_rows",
             {
                 "condition": {"column": "a", "operator": "EQ", "value": 1},
-                "filter_type": "HIDE",
+                "filter_type": "REMOVE",
             },
         )
     ]

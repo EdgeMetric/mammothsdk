@@ -80,6 +80,15 @@ _EXPORT_PUBLISH_DB = "mammoth.api.exports.ExportsAPI.publish_db"
 _EXPORT_PUBLISH_DB_UPDATE = "mammoth.api.exports.ExportsAPI.publish_db_update"
 _EXPORT_UPDATE = "mammoth.api.exports.ExportsAPI.update"
 
+_VALID_EXPORT_SPEC = {
+    "DATAVIEW_ID": 7,
+    "handler_type": "csv_file",
+    "trigger_type": "none",
+    "target_properties": {},
+    "additional_properties": {},
+    "run_immediately": True,
+}
+
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -403,14 +412,15 @@ def test_checkpoint_create_requires_body(fake_service: FakeMammothService) -> No
 
 
 def test_checkpoint_create_passes_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"body": {"name": "cp1"}})
+    body = {"checkpoint_name": "cp1", "checkpoint_type": "alert"}
+    doc = _doc(tmp_path, {"body": body})
     view_cmd.view_checkpoint_create(
         _inv("view.checkpoint.create", project=180, extra_args=["9", "7"], input_file=doc)
     )
     assert fake_service.call_log == [
         (
             _CKPT_CREATE,
-            {"dataset_id": 9, "dataview_id": 7, "body": {"name": "cp1"}, "project_id": 180},
+            {"dataset_id": 9, "dataview_id": 7, "body": body, "project_id": 180},
         )
     ]
 
@@ -499,7 +509,8 @@ def test_checkpoint_update_requires_body(fake_service: FakeMammothService) -> No
 
 
 def test_checkpoint_update_passes_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"body": {"name": "cp2"}})
+    body = {"patches": [{"op": "replace", "path": "approve"}]}
+    doc = _doc(tmp_path, {"body": body})
     view_cmd.view_checkpoint_update(
         _inv("view.checkpoint.update", project=180, extra_args=["9", "7", "3"], input_file=doc)
     )
@@ -510,7 +521,7 @@ def test_checkpoint_update_passes_body(fake_service: FakeMammothService, tmp_pat
                 "dataset_id": 9,
                 "dataview_id": 7,
                 "checkpoint_id": 3,
-                "body": {"name": "cp2"},
+                "body": body,
                 "project_id": 180,
             },
         )
@@ -529,14 +540,18 @@ def test_data_check_create_requires_body(fake_service: FakeMammothService) -> No
 
 
 def test_data_check_create_passes_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"body": {"rule": "not_null"}})
+    body = {
+        "name": "not null",
+        "checks": [{"check_type": "null_percentage", "config": {"column": "a", "condition": "lt"}}],
+    }
+    doc = _doc(tmp_path, {"body": body})
     view_cmd.view_data_check_create(
         _inv("view.data-check.create", project=180, extra_args=["9", "7"], input_file=doc)
     )
     assert fake_service.call_log == [
         (
             _DC_CREATE,
-            {"dataset_id": 9, "dataview_id": 7, "body": {"rule": "not_null"}, "project_id": 180},
+            {"dataset_id": 9, "dataview_id": 7, "body": body, "project_id": 180},
         )
     ]
 
@@ -594,7 +609,8 @@ def test_data_check_update_requires_body(fake_service: FakeMammothService) -> No
 
 
 def test_data_check_update_passes_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"body": {"rule": "unique"}})
+    body = {"patches": [{"op": "replace", "path": "enable"}]}
+    doc = _doc(tmp_path, {"body": body})
     view_cmd.view_data_check_update(
         _inv("view.data-check.update", project=180, extra_args=["9", "7", "3"], input_file=doc)
     )
@@ -605,7 +621,7 @@ def test_data_check_update_passes_body(fake_service: FakeMammothService, tmp_pat
                 "dataset_id": 9,
                 "dataview_id": 7,
                 "data_check_id": 3,
-                "body": {"rule": "unique"},
+                "body": body,
                 "project_id": 180,
             },
         )
@@ -624,14 +640,22 @@ def test_derivative_create_requires_body(fake_service: FakeMammothService) -> No
 
 
 def test_derivative_create_passes_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"body": {"kind": "chart"}})
+    body = {
+        "param": {
+            "METRIC": {
+                "AS": "Total",
+                "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "a", "FUNCTION": "SUM"}}],
+            }
+        }
+    }
+    doc = _doc(tmp_path, {"body": body})
     view_cmd.view_derivative_create(
         _inv("view.derivative.create", project=180, extra_args=["9", "7"], input_file=doc)
     )
     assert fake_service.call_log == [
         (
             _DERIV_CREATE,
-            {"dataset_id": 9, "dataview_id": 7, "body": {"kind": "chart"}, "project_id": 180},
+            {"dataset_id": 9, "dataview_id": 7, "body": body, "project_id": 180},
         )
     ]
 
@@ -697,7 +721,23 @@ def test_derivative_update_requires_body(fake_service: FakeMammothService) -> No
 
 
 def test_derivative_update_passes_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"body": {"kind": "table"}})
+    body = {
+        "patches": [
+            {
+                "op": "replace",
+                "path": "param",
+                "value": {
+                    "METRIC": {
+                        "AS": "Total",
+                        "EXPRESSION": [
+                            {"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "a", "FUNCTION": "SUM"}}
+                        ],
+                    }
+                },
+            }
+        ]
+    }
+    doc = _doc(tmp_path, {"body": body})
     view_cmd.view_derivative_update(
         _inv("view.derivative.update", project=180, extra_args=["9", "7", "3"], input_file=doc)
     )
@@ -708,7 +748,7 @@ def test_derivative_update_passes_body(fake_service: FakeMammothService, tmp_pat
                 "dataset_id": 9,
                 "dataview_id": 7,
                 "derivative_id": 3,
-                "body": {"kind": "table"},
+                "body": body,
                 "project_id": 180,
             },
         )
@@ -795,7 +835,8 @@ def test_version_update_requires_body(fake_service: FakeMammothService) -> None:
 
 
 def test_version_update_passes_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"body": {"name": "v2"}})
+    body = {"patches": [{"op": "replace", "path": "name"}]}
+    doc = _doc(tmp_path, {"body": body})
     view_cmd.view_version_update(
         _inv("view.version.update", project=180, extra_args=["9", "7", "3"], input_file=doc)
     )
@@ -806,7 +847,7 @@ def test_version_update_passes_body(fake_service: FakeMammothService, tmp_path: 
                 "dataset_id": 9,
                 "dataview_id": 7,
                 "version_id": 3,
-                "body": {"name": "v2"},
+                "body": body,
                 "project_id": 180,
             },
         )
@@ -1052,7 +1093,7 @@ def test_export_create_requires_export_spec(fake_service: FakeMammothService) ->
 def test_export_create_blocked_without_confirmation(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _doc(tmp_path, {"export_spec": {"type": "csv"}})
+    doc = _doc(tmp_path, {"export_spec": _VALID_EXPORT_SPEC})
     with pytest.raises(CliError) as excinfo:
         view_cmd.view_export_create(
             _inv(
@@ -1068,7 +1109,7 @@ def test_export_create_blocked_without_confirmation(
 
 
 def test_export_create_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"export_spec": {"type": "csv"}, "dataset_id": 9})
+    doc = _doc(tmp_path, {"export_spec": _VALID_EXPORT_SPEC, "dataset_id": 9})
     view_cmd.view_export_create(
         _inv("view.export.create", project=180, extra_args=["7"], input_file=doc, yes=True)
     )
@@ -1077,7 +1118,7 @@ def test_export_create_proceeds_with_yes(fake_service: FakeMammothService, tmp_p
             _EXPORT_CREATE,
             {
                 "dataview_id": 7,
-                "export_spec": {"type": "csv"},
+                "export_spec": _VALID_EXPORT_SPEC,
                 "project_id": 180,
                 "dataset_id": 9,
             },
@@ -1129,10 +1170,10 @@ def test_export_list_passes_dataview_id_no_project(fake_service: FakeMammothServ
 
 
 def test_export_list_forwards_filters(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"limit": 10, "offset": 0, "status": "done"})
+    doc = _doc(tmp_path, {"limit": 10, "offset": 0, "status": "executed"})
     view_cmd.view_export_list(_inv("view.export.list", extra_args=["7"], input_file=doc))
     assert fake_service.call_log == [
-        (_EXPORT_LIST, {"dataview_id": 7, "limit": 10, "offset": 0, "status": "done"})
+        (_EXPORT_LIST, {"dataview_id": 7, "limit": 10, "offset": 0, "status": "executed"})
     ]
 
 

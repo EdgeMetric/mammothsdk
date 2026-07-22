@@ -96,7 +96,10 @@ def test_create_requires_spec(fake_service: FakeMammothService) -> None:
 def test_create_blocked_without_confirmation(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    input_file = _write(tmp_path, {"spec": {"rrule": {"frequency": "daily"}}})
+    input_file = _write(
+        tmp_path,
+        {"spec": {"rrule": {"frequency": "daily", "start": "2026-01-01T00:00:00Z"}}},
+    )
     with pytest.raises(CliError) as excinfo:
         schedule_cmd.schedule_create(
             _inv("schedule.create", project=180, input_file=input_file, output="json")
@@ -106,7 +109,7 @@ def test_create_blocked_without_confirmation(
 
 
 def test_create_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    spec = {"rrule": {"frequency": "daily"}}
+    spec = {"rrule": {"frequency": "daily", "start": "2026-01-01T00:00:00Z"}}
     input_file = _write(tmp_path, {"spec": spec})
     schedule_cmd.schedule_create(
         _inv("schedule.create", project=180, input_file=input_file, yes=True)

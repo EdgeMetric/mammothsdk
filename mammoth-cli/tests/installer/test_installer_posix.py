@@ -102,9 +102,9 @@ def test_mingw_msys_cygwin_defers_to_powershell_installer(kernel: str) -> None:
             timeout=30,
             env={"PATH": f"{stub_dir}:/usr/bin:/bin", "HOME": str(home)},
         )
-        assert result.returncode == 0, (
-            f"must not fail the job on {kernel}; stdout={result.stdout!r} stderr={result.stderr!r}"
-        )
+        assert (
+            result.returncode == 0
+        ), f"must not fail the job on {kernel}; stdout={result.stdout!r} stderr={result.stderr!r}"
         assert "mammoth-install.ps1" in result.stderr
 
 
@@ -120,3 +120,15 @@ def test_powershell_installer_declares_contract() -> None:
     )
     for token in tokens:
         assert token in ps1
+
+
+def test_powershell_clean_bootstrap_locates_uv_without_path_mutation() -> None:
+    ps1 = _INSTALLER.with_name("mammoth-install.ps1").read_text(encoding="utf-8")
+    bootstrap = ps1.split("function Install-Cli", 1)[0]
+    assert '$env:UV_NO_MODIFY_PATH = "1"' in bootstrap
+    assert 'Join-Path $env:USERPROFILE ".local\\bin\\uv.exe"' in bootstrap
+    assert "Test-Path -LiteralPath $candidate" in bootstrap
+    # A fresh install cannot be rediscovered with Get-Command because PATH was
+    # intentionally left untouched.
+    after_installer = bootstrap.split("& ([scriptblock]::Create($script))", 1)[1]
+    assert "Get-Command uv" not in after_installer

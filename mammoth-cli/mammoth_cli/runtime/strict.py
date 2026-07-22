@@ -33,8 +33,10 @@ from typing import Any
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.manifest.loader import command_by_id
-from mammoth_cli.services.argspec import FieldSpec, arg_spec, unwrap_optional
+from mammoth_cli.services.argspec import FieldSpec, arg_spec
+from mammoth_cli.services.openapi_types import openapi_body_schema
 from mammoth_cli.services.positionals import resolve_positionals
+from mammoth_cli.services.type_system import TypeValidationError, is_opaque_mapping, validate_value
 
 _OPTION_PREFIX = "-"
 
@@ -160,25 +162,33 @@ def _coerce_float(value: Any, *, command_id: str, field: str) -> float:
 def _coerce_document_fields(
     command_id: str, document: dict[str, Any], fields_by_name: dict[str, FieldSpec]
 ) -> None:
-    """Coerce each recognized ``--input`` field to its annotated scalar type, in place.
-
-    Only ``bool``/``int``/``float`` (optionally ``Optional[...]``-wrapped)
-    fields are coerced; everything else (``str``, lists, dataclasses, enums,
-    unannotated fields) is left untouched, since it either needs no coercion
-    or is already coerced at the SDK call boundary (see
-    :mod:`mammoth_cli.services.coerce`).
-    """
+    """Recursively validate/coerce recognized fields in place."""
     for key in document:
         field = fields_by_name.get(key)
         if field is None:
             continue
-        target = unwrap_optional(field.annotation)
-        if target is bool:
-            document[key] = _coerce_bool(document[key], command_id=command_id, field=key)
-        elif target is int:
-            document[key] = _coerce_int(document[key], command_id=command_id, field=key)
-        elif target is float:
-            document[key] = _coerce_float(document[key], command_id=command_id, field=key)
+        if (
+            key == "body"
+            and is_opaque_mapping(field.annotation)
+            and (body_schema := openapi_body_schema(command_id)) is not None
+        ):
+            from jsonschema import ValidationError, validate  # type: ignore[import-untyped]
+
+            try:
+                validate(document[key], body_schema)
+            except ValidationError as error:
+                path = ".".join(str(part) for part in error.absolute_path)
+                field_path = f"body.{path}" if path else "body"
+                raise _invalid_field_type_error(
+                    command_id, field_path, error.instance, error.message
+                ) from None
+            continue
+        try:
+            document[key] = validate_value(document[key], field.annotation, key)
+        except TypeValidationError as error:
+            raise _invalid_field_type_error(
+                command_id, error.path, error.value, error.expected
+            ) from None
 
 
 def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> None:
@@ -210,7 +220,14 @@ def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> N
     spec = arg_spec(symbol)
     if spec is None or spec.accepts_extra:
         return
-    fields_by_name = {field.name: field for field in spec.fields}
+    externally_supplied = {"project_id", "workspace_id"} | {
+        positional.name
+        for positional in resolve_positionals(command_id)
+        if positional.falls_back_to_field is None
+    }
+    fields_by_name = {
+        field.name: field for field in spec.fields if field.name not in externally_supplied
+    }
     unknown = sorted(key for key in document if key not in fields_by_name)
     if unknown:
         raise CliError(

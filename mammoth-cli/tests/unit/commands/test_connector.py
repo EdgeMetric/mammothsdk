@@ -100,11 +100,10 @@ def test_ai_chat_requires_body(fake_service: FakeMammothService) -> None:
 
 
 def test_ai_chat_dispatches(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"body": {"message": "connect postgres"}})
+    body = {"messages": [{"role": "user", "content": "connect postgres"}]}
+    doc = _write(tmp_path, {"body": body})
     connector_cmd.connector_ai_chat(_inv("connector.ai.chat", project=180, input_file=doc))
-    assert fake_service.call_log == [
-        (_AI_CHAT, {"body": {"message": "connect postgres"}, "project_id": 180})
-    ]
+    assert fake_service.call_log == [(_AI_CHAT, {"body": body, "project_id": 180})]
 
 
 # --- ai history --------------------------------------------------------------------
@@ -183,12 +182,13 @@ def test_ai_submit_column_selection_requires_body(fake_service: FakeMammothServi
 def test_ai_submit_column_selection_dispatches(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"body": {"columns": ["a", "b"]}})
+    body = {"selected_columns": ["a", "b"], "session_id": "s1"}
+    doc = _write(tmp_path, {"body": body})
     connector_cmd.connector_ai_submit_column_selection(
         _inv("connector.ai.submit-column-selection", project=180, input_file=doc)
     )
     assert fake_service.call_log == [
-        (_AI_SUBMIT_COLUMN_SELECTION, {"body": {"columns": ["a", "b"]}, "project_id": 180})
+        (_AI_SUBMIT_COLUMN_SELECTION, {"body": body, "project_id": 180})
     ]
 
 
@@ -204,14 +204,15 @@ def test_ai_submit_credentials_requires_body(fake_service: FakeMammothService) -
 
 
 def test_ai_submit_credentials_dispatches(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"body": {"username": "u", "password": "p"}})
+    body = {"credentials": {"username": "u", "password": "p"}, "session_id": "s1"}
+    doc = _write(tmp_path, {"body": body})
     connector_cmd.connector_ai_submit_credentials(
         _inv("connector.ai.submit-credentials", project=180, input_file=doc)
     )
     assert fake_service.call_log == [
         (
             _AI_SUBMIT_CREDENTIALS,
-            {"body": {"username": "u", "password": "p"}, "project_id": 180},
+            {"body": body, "project_id": 180},
         )
     ]
 

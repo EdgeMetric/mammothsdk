@@ -219,10 +219,10 @@ def test_create_forwards_folder_resource_id(
 def test_create_from_pdf_requires_file_name(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    input_file = _write(tmp_path, {"file_object_id": 9})
+    input_file = _write(tmp_path, {})
     with pytest.raises(CliError) as excinfo:
         dataset_cmd.dataset_create_from_pdf(
-            _inv("dataset.create-from-pdf", project=180, input_file=input_file)
+            _inv("dataset.create-from-pdf", project=180, extra_args=["9"], input_file=input_file)
         )
     assert excinfo.value.code == "missing_field"
 
@@ -233,14 +233,13 @@ def test_create_from_pdf_forwards_optional_fields(
     input_file = _write(
         tmp_path,
         {
-            "file_object_id": 9,
             "file_name": "tables.pdf",
             "table_list": [0, 1],
             "delete_file_after_extract": True,
         },
     )
     dataset_cmd.dataset_create_from_pdf(
-        _inv("dataset.create-from-pdf", project=180, input_file=input_file)
+        _inv("dataset.create-from-pdf", project=180, extra_args=["9"], input_file=input_file)
     )
     assert fake_service.call_log == [
         (

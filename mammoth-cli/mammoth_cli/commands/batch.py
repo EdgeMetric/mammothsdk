@@ -128,7 +128,14 @@ def batch_create(invocation: Invocation) -> HandlerResult:
     project_id = require_project(invocation)
     dataset_id = _require_int_positional_at(invocation, 0, "dataset id")
     document = invocation.load_input()
-    source_id = _require_field(document, "source_id")
+    source_id = invocation.positional("source_id")
+    if source_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="This command requires a source id argument.",
+            exit_status=EXIT_USAGE,
+        )
+    source_id = int(source_id)
     mapping = _require_field(document, "mapping")
     kwargs: dict[str, Any] = {
         "dataset_id": dataset_id,

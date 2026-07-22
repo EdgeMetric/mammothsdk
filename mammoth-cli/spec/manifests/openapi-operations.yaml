@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-operation_count: 376
+operation_count: 445
 operations:
 - identity: POST /accept-invite
   method: POST
@@ -216,12 +216,54 @@ operations:
   request_schema: null
   response_schemas:
   - ShareDashboardHtmlType
+  - V3DashboardMetaType
   deprecated: false
   disposition: command
   disposition_reason: User-initiated production operation.
   canonical_command: dashboard.get-by-url
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get_by_url
+  reviewed_by: primary
+- identity: GET /dashboards/url/{url}/canvas
+  method: GET
+  path: /dashboards/url/{url}/canvas
+  operation_id: GetCanvasPublished
+  tags:
+  - Dashboard v3
+  summary: Published viewer canvas
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - CanvasResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.published.canvas
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_canvas
+  reviewed_by: primary
+- identity: POST /dashboards/url/{url}/data
+  method: POST
+  path: /dashboards/url/{url}/data
+  operation_id: DescriptorDataByUrl
+  tags:
+  - Dashboard v3
+  summary: Descriptor data for a published dashboard
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: DescriptorDataSpec
+  response_schemas:
+  - ObjectJobSchema
+  - JobResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.published.data
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_data
   reviewed_by: primary
 - identity: POST /dashboards/url/{url}/getPublishData
   method: POST
@@ -266,6 +308,84 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.job_by_url
   reviewed_by: primary
+- identity: GET /dashboards/url/{url}/og-card
+  method: GET
+  path: /dashboards/url/{url}/og-card
+  operation_id: OgCardByUrl
+  tags:
+  - Dashboard v3
+  summary: Published dashboard's link-unfurl OG card (baked PNG)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.published.og-card
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_og_card
+  reviewed_by: primary
+- identity: POST /dashboards/url/{url}/pdf
+  method: POST
+  path: /dashboards/url/{url}/pdf
+  operation_id: ExportPdfByUrl
+  tags:
+  - Dashboard v3
+  summary: Kick a published-dashboard PDF export
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: PdfExportSpec
+  response_schemas:
+  - ObjectJobSchema
+  - JobResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.published.pdf.export
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_pdf_export
+  reviewed_by: primary
+- identity: GET /dashboards/url/{url}/pdf/{job_id}
+  method: GET
+  path: /dashboards/url/{url}/pdf/{job_id}
+  operation_id: GetPdfArtifactByUrl
+  tags:
+  - Dashboard v3
+  summary: Download a completed published PDF export
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.published.pdf-artifact
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_pdf_artifact
+  reviewed_by: primary
+- identity: GET /dashboards/url/{url}/share
+  method: GET
+  path: /dashboards/url/{url}/share
+  operation_id: SharePageByUrl
+  tags:
+  - Dashboard v3
+  summary: Published dashboard's link-unfurl share page (crawler-facing HTML)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.published.share-page
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_share_page
+  reviewed_by: primary
 - identity: POST /dashboards/url/{url}/track-heartbeat
   method: POST
   path: /dashboards/url/{url}/track-heartbeat
@@ -305,6 +425,46 @@ operations:
   alias_of: null
   sdk_symbol: null
   reviewed_by: primary
+- identity: POST /dashboards/url/{url}/video
+  method: POST
+  path: /dashboards/url/{url}/video
+  operation_id: ExportVideoByUrl
+  tags:
+  - Dashboard v3
+  summary: Kick a motion-story video export (published view)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - ObjectJobSchema
+  - JobResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.published.video.export
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_video_export
+  reviewed_by: primary
+- identity: GET /dashboards/url/{url}/video.mp4
+  method: GET
+  path: /dashboards/url/{url}/video.mp4
+  operation_id: VideoByUrl
+  tags:
+  - Dashboard v3
+  summary: Stream a published motion-story video (Range-enabled)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.published.video-artifact
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_video_artifact
+  reviewed_by: primary
 - identity: POST /dashboards/url/{url}/widgets/data
   method: POST
   path: /dashboards/url/{url}/widgets/data
@@ -325,6 +485,609 @@ operations:
   canonical_command: dashboard.widget-data-by-url
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.widget_data_by_url
+  reviewed_by: primary
+- identity: GET /dashboards/v3/contexts
+  method: GET
+  path: /dashboards/v3/contexts
+  operation_id: ListContexts
+  tags:
+  - Dashboard v3 Surfaces
+  summary: The workspace's contexts
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - ContextListResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.context.list
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_list
+  reviewed_by: primary
+- identity: POST /dashboards/v3/contexts
+  method: POST
+  path: /dashboards/v3/contexts
+  operation_id: CreateContext
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Create a context
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: ContextSpec
+  response_schemas:
+  - ContextResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.context.create
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_create
+  reviewed_by: primary
+- identity: DELETE /dashboards/v3/contexts/{context_id}
+  method: DELETE
+  path: /dashboards/v3/contexts/{context_id}
+  operation_id: DeleteContext
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Delete a context
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - OkResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.context.delete
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_delete
+  reviewed_by: primary
+- identity: PUT /dashboards/v3/contexts/{context_id}
+  method: PUT
+  path: /dashboards/v3/contexts/{context_id}
+  operation_id: UpdateContext
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Update a context
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: ContextSpec
+  response_schemas:
+  - ContextResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.context.update
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_update
+  reviewed_by: primary
+- identity: POST /dashboards/v3/generate
+  method: POST
+  path: /dashboards/v3/generate
+  operation_id: GenerateDashboardV3
+  tags:
+  - Dashboard v3
+  summary: Generate a v3 dashboard
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: GenerateDashboardV3Spec
+  response_schemas:
+  - ObjectJobSchema
+  - JobResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.v3.generate
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.v3_generate
+  reviewed_by: primary
+- identity: GET /dashboards/v3/signatures
+  method: GET
+  path: /dashboards/v3/signatures
+  operation_id: ListSignatures
+  tags:
+  - Dashboard v3 Surfaces
+  summary: The workspace's signatures
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - SignatureListResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.signature.list
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.signature_list
+  reviewed_by: primary
+- identity: POST /dashboards/v3/signatures
+  method: POST
+  path: /dashboards/v3/signatures
+  operation_id: CreateSignature
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Create a signature
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: SignatureSpec
+  response_schemas:
+  - SignatureResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.signature.create
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.signature_create
+  reviewed_by: primary
+- identity: DELETE /dashboards/v3/signatures/{signature_id}
+  method: DELETE
+  path: /dashboards/v3/signatures/{signature_id}
+  operation_id: DeleteSignature
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Delete a signature
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - OkResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.signature.delete
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.signature_delete
+  reviewed_by: primary
+- identity: PUT /dashboards/v3/signatures/{signature_id}
+  method: PUT
+  path: /dashboards/v3/signatures/{signature_id}
+  operation_id: UpdateSignature
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Update a signature
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: SignatureSpec
+  response_schemas:
+  - SignatureResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.signature.update
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.signature_update
+  reviewed_by: primary
+- identity: GET /dashboards/v3/styles/custom
+  method: GET
+  path: /dashboards/v3/styles/custom
+  operation_id: ListCustomStyles
+  tags:
+  - Dashboard v3 Surfaces
+  summary: The workspace's custom styles
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - StyleListResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.style.custom.list
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_custom_list
+  reviewed_by: primary
+- identity: POST /dashboards/v3/styles/custom
+  method: POST
+  path: /dashboards/v3/styles/custom
+  operation_id: CreateCustomStyle
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Create a custom style
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: CustomStyleSpec
+  response_schemas:
+  - StyleResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.style.custom.create
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_custom_create
+  reviewed_by: primary
+- identity: DELETE /dashboards/v3/styles/custom/{style_id}
+  method: DELETE
+  path: /dashboards/v3/styles/custom/{style_id}
+  operation_id: DeleteCustomStyle
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Delete a custom style
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - OkResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.style.custom.delete
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_custom_delete
+  reviewed_by: primary
+- identity: PUT /dashboards/v3/styles/custom/{style_id}
+  method: PUT
+  path: /dashboards/v3/styles/custom/{style_id}
+  operation_id: UpdateCustomStyle
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Update a custom style
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: CustomStyleSpec
+  response_schemas:
+  - StyleResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.style.custom.update
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_custom_update
+  reviewed_by: primary
+- identity: GET /dashboards/v3/styles/default
+  method: GET
+  path: /dashboards/v3/styles/default
+  operation_id: GetDefaultStyle
+  tags:
+  - Dashboard v3 Surfaces
+  summary: The workspace default style id
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - DefaultStyleResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.style.default.get
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_default_get
+  reviewed_by: primary
+- identity: PUT /dashboards/v3/styles/default
+  method: PUT
+  path: /dashboards/v3/styles/default
+  operation_id: SetDefaultStyle
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Set the workspace default style id
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: DefaultStyleSpec
+  response_schemas:
+  - DefaultStyleResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.style.default.set
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_default_set
+  reviewed_by: primary
+- identity: POST /dashboards/v3/styles/derive
+  method: POST
+  path: /dashboards/v3/styles/derive
+  operation_id: DeriveStyle
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Derive a full Style bundle from signals
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: DeriveStyleSpec
+  response_schemas:
+  - DeriveStyleResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.style.derive
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_derive
+  reviewed_by: primary
+- identity: POST /dashboards/v3/styles/extract-brand
+  method: POST
+  path: /dashboards/v3/styles/extract-brand
+  operation_id: ExtractBrand
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Kick a brand extraction from a URL
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: ExtractBrandSpec
+  response_schemas:
+  - ObjectJobSchema
+  - JobResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.style.extract-brand
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_extract_brand
+  reviewed_by: primary
+- identity: GET /dashboards/v3/styles/presets
+  method: GET
+  path: /dashboards/v3/styles/presets
+  operation_id: ListStylePresets
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Style presets (stock + custom)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - StylePresetsResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.style.preset.list
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_preset_list
+  reviewed_by: primary
+- identity: GET /dashboards/v3/styles/tokens
+  method: GET
+  path: /dashboards/v3/styles/tokens
+  operation_id: GetStyleTokens
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Full Style bundle by id (stock or custom)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - StyleTokensResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.style.token.list
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_token_list
+  reviewed_by: primary
+- identity: GET /dashboards/v3/suggestions
+  method: GET
+  path: /dashboards/v3/suggestions
+  operation_id: DashboardSuggestions
+  tags:
+  - Dashboard v3
+  summary: Data-grounded starting points for the create screen
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - DashboardSuggestionsResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.suggestion.list
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.suggestion_list
+  reviewed_by: primary
+- identity: GET /dashboards/v3/templates
+  method: GET
+  path: /dashboards/v3/templates
+  operation_id: DashboardV3ListTemplates
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Curated template catalog
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - TemplateListResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.template.list
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_list
+  reviewed_by: primary
+- identity: POST /dashboards/v3/templates
+  method: POST
+  path: /dashboards/v3/templates
+  operation_id: SaveTemplate
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Save a dashboard as a workspace template
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: SaveTemplateSpec
+  response_schemas:
+  - TemplateDetailResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.template.create
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_create
+  reviewed_by: primary
+- identity: POST /dashboards/v3/templates/apply
+  method: POST
+  path: /dashboards/v3/templates/apply
+  operation_id: ApplyTemplate
+  tags:
+  - Dashboard v3
+  summary: Apply a template to a target dataset
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: ApplyTemplateSpec
+  response_schemas:
+  - ObjectJobSchema
+  - JobResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.template.apply
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_apply
+  reviewed_by: primary
+- identity: GET /dashboards/v3/templates/fit
+  method: GET
+  path: /dashboards/v3/templates/fit
+  operation_id: FitTemplates
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Fit-score the whole catalog against one dataset
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - TemplateFitResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.template.fit
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_fit
+  reviewed_by: primary
+- identity: POST /dashboards/v3/templates/preview
+  method: POST
+  path: /dashboards/v3/templates/preview
+  operation_id: PreviewTemplate
+  tags:
+  - Dashboard v3
+  summary: Preview a template mapping applied to a target dataset
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: PreviewTemplateSpec
+  response_schemas:
+  - PreviewTemplateResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.template.preview
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_preview
+  reviewed_by: primary
+- identity: POST /dashboards/v3/templates/resolve-mapping
+  method: POST
+  path: /dashboards/v3/templates/resolve-mapping
+  operation_id: ResolveTemplateMapping
+  tags:
+  - Dashboard v3
+  summary: Propose a template mapping onto a target dataset
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: ResolveTemplateMappingSpec
+  response_schemas:
+  - ResolveTemplateMappingResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.template.resolve-mapping
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_resolve_mapping
+  reviewed_by: primary
+- identity: DELETE /dashboards/v3/templates/{template_id}
+  method: DELETE
+  path: /dashboards/v3/templates/{template_id}
+  operation_id: DashboardV3DeleteTemplate
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Delete a saved workspace template
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - OkResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.template.delete
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_delete
+  reviewed_by: primary
+- identity: GET /dashboards/v3/templates/{template_id}
+  method: GET
+  path: /dashboards/v3/templates/{template_id}
+  operation_id: DashboardV3GetTemplate
+  tags:
+  - Dashboard v3 Surfaces
+  summary: One template's metadata + self-fit recipe
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - TemplateDetailResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.template.get
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_get
+  reviewed_by: primary
+- identity: PATCH /dashboards/v3/templates/{template_id}
+  method: PATCH
+  path: /dashboards/v3/templates/{template_id}
+  operation_id: RenameTemplate
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Rename a saved workspace template
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: RenameTemplateSpec
+  response_schemas:
+  - TemplateDetailResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.template.rename
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_rename
+  reviewed_by: primary
+- identity: POST /dashboards/v3/{dashboard_id}/duplicate
+  method: POST
+  path: /dashboards/v3/{dashboard_id}/duplicate
+  operation_id: DuplicateDashboard
+  tags:
+  - Dashboard v3
+  summary: Duplicate a v3 dashboard
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - DuplicateDashboardResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.duplicate
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.duplicate
   reviewed_by: primary
 - identity: DELETE /dashboards/{dashboard_id}
   method: DELETE
@@ -359,6 +1122,7 @@ operations:
   response_schemas:
   - CreatorDashboardHtmlType
   - ShareDashboardHtmlType
+  - V3DashboardMetaType
   deprecated: false
   disposition: command
   disposition_reason: User-initiated production operation.
@@ -444,6 +1208,149 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.cancel_generation
   reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/canvas
+  method: GET
+  path: /dashboards/{dashboard_id}/canvas
+  operation_id: GetCanvasDraft
+  tags:
+  - Dashboard v3
+  summary: Editor canvas (draft)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - CanvasResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.canvas.get
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.canvas_get
+  reviewed_by: primary
+- identity: PUT /dashboards/{dashboard_id}/canvas
+  method: PUT
+  path: /dashboards/{dashboard_id}/canvas
+  operation_id: SaveCanvas
+  tags:
+  - Dashboard v3
+  summary: Save the canvas (append a draft version)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: SaveCanvasSpec
+  response_schemas:
+  - SaveCanvasResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.canvas.save
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.canvas_save
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/canvas/restore
+  method: POST
+  path: /dashboards/{dashboard_id}/canvas/restore
+  operation_id: RestoreCanvas
+  tags:
+  - Dashboard v3
+  summary: Undo / redo / revert the canvas to a target version
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: RestoreCanvasSpec
+  response_schemas:
+  - ObjectJobSchema
+  - JobResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.canvas.restore
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.canvas_restore
+  reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/chat
+  method: GET
+  path: /dashboards/{dashboard_id}/chat
+  operation_id: DashboardV3ChatHistory
+  tags:
+  - Dashboard v3
+  summary: Editor chat transcript
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - mmai_dashboards_v3_schema_ChatHistoryResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.chat.history
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chat_history
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/chat
+  method: POST
+  path: /dashboards/{dashboard_id}/chat
+  operation_id: ChatEdit
+  tags:
+  - Dashboard v3
+  summary: One chat-edit turn
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: ChatEditSpec
+  response_schemas:
+  - ObjectJobSchema
+  - JobResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.chat.edit
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chat_edit
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/data
+  method: POST
+  path: /dashboards/{dashboard_id}/data
+  operation_id: DescriptorData
+  tags:
+  - Dashboard v3
+  summary: Descriptor data — future-request
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: DescriptorDataSpec
+  response_schemas:
+  - ObjectJobSchema
+  - JobResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.descriptor-data
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.descriptor_data
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/figure-intent
+  method: POST
+  path: /dashboards/{dashboard_id}/figure-intent
+  operation_id: FigureIntent
+  tags:
+  - Dashboard v3
+  summary: Resolve an AI-add figure from an intent
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: FigureIntentSpec
+  response_schemas:
+  - FigureIntentResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.figure-intent
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.figure_intent
+  reviewed_by: primary
 - identity: POST /dashboards/{dashboard_id}/getDraftData
   method: POST
   path: /dashboards/{dashboard_id}/getDraftData
@@ -488,6 +1395,365 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get_publish_data
   reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/og-card
+  method: GET
+  path: /dashboards/{dashboard_id}/og-card
+  operation_id: OgCard
+  tags:
+  - Dashboard v3
+  summary: Dashboard card thumbnail (draft or published PNG)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.og-card
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.og_card
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/pdf
+  method: POST
+  path: /dashboards/{dashboard_id}/pdf
+  operation_id: ExportPdf
+  tags:
+  - Dashboard v3
+  summary: Kick a draft-dashboard PDF export
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: PdfExportSpec
+  response_schemas:
+  - ObjectJobSchema
+  - JobResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.pdf.export
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.pdf_export
+  reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/pdf/{job_id}
+  method: GET
+  path: /dashboards/{dashboard_id}/pdf/{job_id}
+  operation_id: GetPdfArtifact
+  tags:
+  - Dashboard v3
+  summary: Download a completed draft PDF export
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.pdf-artifact
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.pdf_artifact
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/plan-page
+  method: POST
+  path: /dashboards/{dashboard_id}/plan-page
+  operation_id: PlanPage
+  tags:
+  - Dashboard v3
+  summary: Compose a new page from an intent
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: PlanPageSpec
+  response_schemas:
+  - PlanPageResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.page.plan
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.page_plan
+  reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/qa/sessions
+  method: GET
+  path: /dashboards/{dashboard_id}/qa/sessions
+  operation_id: DashboardV3ListSessions
+  tags:
+  - Dashboard v3 Q&A
+  summary: List Q&A sessions
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - SessionListResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.qa.session.list
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_list
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/qa/sessions
+  method: POST
+  path: /dashboards/{dashboard_id}/qa/sessions
+  operation_id: CreateSession
+  tags:
+  - Dashboard v3 Q&A
+  summary: Create a Q&A session
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: CreateSessionSpec
+  response_schemas:
+  - SessionResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.qa.session.create
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_create
+  reviewed_by: primary
+- identity: DELETE /dashboards/{dashboard_id}/qa/sessions/{session_id}
+  method: DELETE
+  path: /dashboards/{dashboard_id}/qa/sessions/{session_id}
+  operation_id: DashboardV3DeleteSession
+  tags:
+  - Dashboard v3 Q&A
+  summary: Delete a Q&A session (owner only)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.qa.session.delete
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_delete
+  reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/qa/sessions/{session_id}
+  method: GET
+  path: /dashboards/{dashboard_id}/qa/sessions/{session_id}
+  operation_id: GetSession
+  tags:
+  - Dashboard v3 Q&A
+  summary: Read a Q&A session (replayable — carries baked answers)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - SessionResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.qa.session.get
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_get
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/qa/sessions/{session_id}/ask
+  method: POST
+  path: /dashboards/{dashboard_id}/qa/sessions/{session_id}/ask
+  operation_id: Ask
+  tags:
+  - Dashboard v3 Q&A
+  summary: One Q&A ask turn (async)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: AskSpec
+  response_schemas:
+  - ObjectJobSchema
+  - JobResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.qa.ask
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_ask
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/qa/sessions/{session_id}/comments
+  method: POST
+  path: /dashboards/{dashboard_id}/qa/sessions/{session_id}/comments
+  operation_id: DashboardV3AddComment
+  tags:
+  - Dashboard v3 Q&A
+  summary: Comment on a shared Q&A session
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: CommentSpec
+  response_schemas:
+  - SessionResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.qa.comment.create
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_comment_create
+  reviewed_by: primary
+- identity: DELETE /dashboards/{dashboard_id}/qa/sessions/{session_id}/comments/{comment_id}
+  method: DELETE
+  path: /dashboards/{dashboard_id}/qa/sessions/{session_id}/comments/{comment_id}
+  operation_id: DeleteComment
+  tags:
+  - Dashboard v3 Q&A
+  summary: Delete a comment (author or session owner)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - SessionResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.qa.comment.delete
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_comment_delete
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/qa/sessions/{session_id}/fork
+  method: POST
+  path: /dashboards/{dashboard_id}/qa/sessions/{session_id}/fork
+  operation_id: ForkSession
+  tags:
+  - Dashboard v3 Q&A
+  summary: Fork a shared Q&A session into a private copy
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - SessionResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.qa.session.fork
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_fork
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/qa/sessions/{session_id}/messages/{message_id}/feedback
+  method: POST
+  path: /dashboards/{dashboard_id}/qa/sessions/{session_id}/messages/{message_id}/feedback
+  operation_id: DashboardV3QaFeedback
+  tags:
+  - Dashboard v3 Q&A
+  summary: Rate an assistant answer (up/down; null clears)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: FeedbackSpec
+  response_schemas:
+  - SessionResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.qa.feedback
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_feedback
+  reviewed_by: primary
+- identity: PUT /dashboards/{dashboard_id}/qa/sessions/{session_id}/title
+  method: PUT
+  path: /dashboards/{dashboard_id}/qa/sessions/{session_id}/title
+  operation_id: RenameSession
+  tags:
+  - Dashboard v3 Q&A
+  summary: Rename a Q&A session (owner only)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: RenameSessionSpec
+  response_schemas:
+  - SessionResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.qa.session.rename
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_rename
+  reviewed_by: primary
+- identity: PUT /dashboards/{dashboard_id}/qa/sessions/{session_id}/visibility
+  method: PUT
+  path: /dashboards/{dashboard_id}/qa/sessions/{session_id}/visibility
+  operation_id: DashboardV3SetVisibility
+  tags:
+  - Dashboard v3 Q&A
+  summary: Share/unshare a Q&A session (owner only)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: VisibilitySpec
+  response_schemas:
+  - SessionResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.qa.session.set-visibility
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_set_visibility
+  reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/qa/settings
+  method: GET
+  path: /dashboards/{dashboard_id}/qa/settings
+  operation_id: DashboardV3GetQaSettings
+  tags:
+  - Dashboard v3 Q&A
+  summary: This dashboard's Q&A settings
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - QaSettingsResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.qa.settings.get
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_settings_get
+  reviewed_by: primary
+- identity: PUT /dashboards/{dashboard_id}/qa/settings
+  method: PUT
+  path: /dashboards/{dashboard_id}/qa/settings
+  operation_id: DashboardV3SetQaSettings
+  tags:
+  - Dashboard v3 Q&A
+  summary: Update this dashboard's Q&A settings (editors only)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: QaSettingsSpec
+  response_schemas:
+  - QaSettingsResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.qa.settings.set
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_settings_set
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/query
+  method: POST
+  path: /dashboards/{dashboard_id}/query
+  operation_id: AdhocQuery
+  tags:
+  - Dashboard v3
+  summary: Editor ad-hoc descriptor query
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: AdhocQuerySpec
+  response_schemas:
+  - AdhocQueryResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.query
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.query
+  reviewed_by: primary
 - identity: POST /dashboards/{dashboard_id}/restore
   method: POST
   path: /dashboards/{dashboard_id}/restore
@@ -507,6 +1773,85 @@ operations:
   canonical_command: dashboard.restore
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.restore
+  reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/rls/assignments
+  method: GET
+  path: /dashboards/{dashboard_id}/rls/assignments
+  operation_id: ListRlsAssignments
+  tags:
+  - Dashboard
+  summary: List RLS viewer assignments
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - RlsAssignmentsResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.rls.assignment.list
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rls_assignment_list
+  reviewed_by: primary
+- identity: PUT /dashboards/{dashboard_id}/rls/assignments
+  method: PUT
+  path: /dashboards/{dashboard_id}/rls/assignments
+  operation_id: SetRlsAssignments
+  tags:
+  - Dashboard
+  summary: Replace RLS viewer assignments
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: RlsAssignmentsSpec
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.rls.assignment.set
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rls_assignment_set
+  reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/rls/columns
+  method: GET
+  path: /dashboards/{dashboard_id}/rls/columns
+  operation_id: GetRlsColumns
+  tags:
+  - Dashboard
+  summary: Candidate columns for the RLS filter
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - RlsColumnsResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.rls.column.list
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rls_column_list
+  reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/rls/values
+  method: GET
+  path: /dashboards/{dashboard_id}/rls/values
+  operation_id: GetRlsDistinctValues
+  tags:
+  - Dashboard
+  summary: Distinct values for an RLS filter column
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - RlsDistinctValuesResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.rls.value.list
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rls_value_list
   reviewed_by: primary
 - identity: POST /dashboards/{dashboard_id}/share
   method: POST
@@ -546,6 +1891,46 @@ operations:
   canonical_command: dashboard.trash
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.trash
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/video
+  method: POST
+  path: /dashboards/{dashboard_id}/video
+  operation_id: ExportVideo
+  tags:
+  - Dashboard v3
+  summary: Kick a motion-story video export
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas:
+  - ObjectJobSchema
+  - JobResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.video.export
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.video_export
+  reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/video-state
+  method: GET
+  path: /dashboards/{dashboard_id}/video-state
+  operation_id: GetVideoState
+  tags:
+  - Dashboard v3
+  summary: Motion-story video export state (never kicks a render)
+  security:
+  - apiKey
+  - apiSecret
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.video-state
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.video_state
   reviewed_by: primary
 - identity: POST /dashboards/{dashboard_id}/widgets/data
   method: POST
@@ -3268,7 +4653,7 @@ operations:
   - apiSecret
   request_schema: null
   response_schemas:
-  - ChatHistoryResponse
+  - ai_connector_chat_schema_ChatHistoryResponse
   deprecated: false
   disposition: command
   disposition_reason: User-initiated production operation.

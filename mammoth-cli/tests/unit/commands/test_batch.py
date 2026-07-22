@@ -97,23 +97,25 @@ def test_create_requires_source_id(fake_service: FakeMammothService, tmp_path: P
         batch_cmd.batch_create(
             _inv("batch.create", project=180, extra_args=["9"], input_file=str(doc))
         )
-    assert excinfo.value.code == "missing_field"
+    assert excinfo.value.code == "missing_argument"
 
 
 def test_create_requires_mapping(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"source_id": 5}), encoding="utf-8")
+    doc.write_text(json.dumps({}), encoding="utf-8")
     with pytest.raises(CliError) as excinfo:
         batch_cmd.batch_create(
-            _inv("batch.create", project=180, extra_args=["9"], input_file=str(doc))
+            _inv("batch.create", project=180, extra_args=["9", "5"], input_file=str(doc))
         )
     assert excinfo.value.code == "missing_field"
 
 
 def test_create_passes_required_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"source_id": 5, "mapping": {"a": "b"}}), encoding="utf-8")
-    batch_cmd.batch_create(_inv("batch.create", project=180, extra_args=["9"], input_file=str(doc)))
+    doc.write_text(json.dumps({"mapping": {"a": "b"}}), encoding="utf-8")
+    batch_cmd.batch_create(
+        _inv("batch.create", project=180, extra_args=["9", "5"], input_file=str(doc))
+    )
     assert fake_service.call_log == [
         (
             _CREATE,
@@ -132,7 +134,6 @@ def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_p
     doc.write_text(
         json.dumps(
             {
-                "source_id": 5,
                 "mapping": {"a": "b"},
                 "new_ds_params": {"name": "n"},
                 "is_validation_required": True,
@@ -142,7 +143,9 @@ def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_p
         ),
         encoding="utf-8",
     )
-    batch_cmd.batch_create(_inv("batch.create", project=180, extra_args=["9"], input_file=str(doc)))
+    batch_cmd.batch_create(
+        _inv("batch.create", project=180, extra_args=["9", "5"], input_file=str(doc))
+    )
     assert fake_service.call_log == [
         (
             _CREATE,

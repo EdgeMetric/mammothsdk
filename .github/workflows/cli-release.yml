@@ -192,6 +192,14 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          body: |
+            ## Quick install
+
+            Linux/macOS: `curl -fsSL https://github.com/EdgeMetric/mm-pysdk/releases/download/${{ github.ref_name }}/mammoth-install.sh | sh`
+
+            Windows PowerShell: `irm https://github.com/EdgeMetric/mm-pysdk/releases/download/${{ github.ref_name }}/mammoth-install.ps1 | iex`
+
+            Piping downloaded code directly to a shell is convenient but does not verify it first. For a verified install, download the installer, `SHA256SUMS`, and `SHA256SUMS.sigstore.json`, then run `cosign verify-blob --bundle SHA256SUMS.sigstore.json SHA256SUMS` and `sha256sum --check --ignore-missing SHA256SUMS`. Inspect the verified installer before executing the local file. On Windows, compare `(Get-FileHash .\mammoth-install.ps1 -Algorithm SHA256).Hash` with its `SHA256SUMS` entry after verifying the Sigstore bundle.
           fail_on_unmatched_files: true
           files: |
             release-assets/mammoth_cli-*.whl

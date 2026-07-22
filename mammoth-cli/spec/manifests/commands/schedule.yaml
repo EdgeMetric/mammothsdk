@@ -23,7 +23,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth schedule create --help
-  agent_example: mammoth schedule create --output json --no-input
+  agent_example: 'mammoth schedule create --input ''{"spec": {"rrule": {"frequency": "minutely", "start":
+    "2026-01-01T00:00:00Z"}}}'' --output json --no-input'
   unit_tests:
   - UT-SCHEDULE-CREATE
   contract_tests:
@@ -177,7 +178,10 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth schedule update SCHEDULE_ID --help
-  agent_example: mammoth schedule update 123 --output json --no-input
+  agent_example: 'mammoth schedule update 123 --input ''{"patch": [{"op": "replace", "path": "rrule",
+    "value": {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}, "work_items": [{"name":
+    "pull_cloud_data", "execution_params": {"schedule_type": "moment", "first_pull_at": "now", "on_refresh_action":
+    "replace"}, "args": [1]}]}}]}'' --output json --no-input'
   unit_tests:
   - UT-SCHEDULE-UPDATE
   contract_tests:

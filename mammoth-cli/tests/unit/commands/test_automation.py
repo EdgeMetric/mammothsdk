@@ -101,7 +101,7 @@ def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
 
 
 def test_create_requires_name(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write_doc(tmp_path, {"description": "d", "tasks": [{"task_type": "x"}]})
+    doc = _write_doc(tmp_path, {"description": "d", "tasks": [{"task_type": "run_data_retrieval"}]})
     with pytest.raises(CliError) as excinfo:
         automation_cmd.automation_create(_inv("automation.create", input_file=doc, yes=True))
     assert excinfo.value.code == "missing_argument"
@@ -109,7 +109,7 @@ def test_create_requires_name(fake_service: FakeMammothService, tmp_path: Path) 
 
 
 def test_create_requires_description(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write_doc(tmp_path, {"name": "Nightly", "tasks": [{"task_type": "x"}]})
+    doc = _write_doc(tmp_path, {"name": "Nightly", "tasks": [{"task_type": "run_data_retrieval"}]})
     with pytest.raises(CliError) as excinfo:
         automation_cmd.automation_create(_inv("automation.create", input_file=doc, yes=True))
     assert excinfo.value.code == "missing_field"
@@ -128,7 +128,12 @@ def test_create_blocked_without_confirmation(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write_doc(
-        tmp_path, {"name": "Nightly", "description": "d", "tasks": [{"task_type": "x"}]}
+        tmp_path,
+        {
+            "name": "Nightly",
+            "description": "d",
+            "tasks": [{"task_type": "run_data_retrieval"}],
+        },
     )
     with pytest.raises(CliError) as excinfo:
         automation_cmd.automation_create(_inv("automation.create", input_file=doc, output="json"))
@@ -137,12 +142,19 @@ def test_create_blocked_without_confirmation(
 
 
 def test_create_uses_positional_name(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write_doc(tmp_path, {"description": "d", "tasks": [{"task_type": "x"}]})
+    doc = _write_doc(tmp_path, {"description": "d", "tasks": [{"task_type": "run_data_retrieval"}]})
     automation_cmd.automation_create(
         _inv("automation.create", extra_args=["Nightly"], input_file=doc, yes=True)
     )
     assert fake_service.call_log == [
-        (_CREATE, {"name": "Nightly", "description": "d", "tasks": [{"task_type": "x"}]})
+        (
+            _CREATE,
+            {
+                "name": "Nightly",
+                "description": "d",
+                "tasks": [{"task_type": "run_data_retrieval"}],
+            },
+        )
     ]
 
 
@@ -154,8 +166,8 @@ def test_create_forwards_conditions_and_mode(
         {
             "name": "Nightly",
             "description": "d",
-            "tasks": [{"task_type": "x"}],
-            "conditions": [{"condition_type": "y"}],
+            "tasks": [{"task_type": "run_data_retrieval"}],
+            "conditions": [{"condition_type": "at_specific_time", "details": {"interval": None}}],
             "condition_mode": "or",
         },
     )
@@ -166,8 +178,10 @@ def test_create_forwards_conditions_and_mode(
             {
                 "name": "Nightly",
                 "description": "d",
-                "tasks": [{"task_type": "x"}],
-                "conditions": [{"condition_type": "y"}],
+                "tasks": [{"task_type": "run_data_retrieval"}],
+                "conditions": [
+                    {"condition_type": "at_specific_time", "details": {"interval": None}}
+                ],
                 "condition_mode": "or",
             },
         )

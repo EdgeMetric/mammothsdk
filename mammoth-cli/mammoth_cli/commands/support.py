@@ -216,10 +216,16 @@ def support_connector_profile_delete(invocation: Invocation) -> HandlerResult:
 def support_connector_profile_add_connector(invocation: Invocation) -> HandlerResult:
     """Add a connector to a connector profile. Profile id is positional."""
     profile_id = _require_int_positional(invocation, "profile id")
-    document = invocation.load_input()
-    connector_id = _require_field(document, "connector_id")
+    document = invocation.load_input() or {}
+    connector_id = invocation.positional("connector_id")
+    if connector_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="A connector id is required.",
+            exit_status=EXIT_USAGE,
+        )
+    connector_id = int(connector_id)
     kwargs: dict[str, Any] = {"profile_id": profile_id, "connector_id": connector_id}
-    assert document is not None
     _forward_optional(document, kwargs, ("price_per_month", "enabled"))
     _confirm(
         invocation,
@@ -324,10 +330,14 @@ def support_feature_profile_delete(invocation: Invocation) -> HandlerResult:
 def support_feature_profile_add_feature(invocation: Invocation) -> HandlerResult:
     """Add a feature to a feature profile. Profile id is positional."""
     profile_id = _require_int_positional(invocation, "profile id")
-    document = invocation.load_input()
-    feature_id = _require_field(document, "feature_id")
+    document = invocation.load_input() or {}
+    feature_id = invocation.positional("feature_id")
+    if feature_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT, message="A feature id is required.", exit_status=EXIT_USAGE
+        )
+    feature_id = int(feature_id)
     kwargs: dict[str, Any] = {"profile_id": profile_id, "feature_id": feature_id}
-    assert document is not None
     _forward_optional(document, kwargs, ("price_per_month", "enabled", "value"))
     _confirm(
         invocation,
@@ -345,10 +355,14 @@ def support_feature_profile_add_feature(invocation: Invocation) -> HandlerResult
 def support_ownership_transfer(invocation: Invocation) -> HandlerResult:
     """Transfer ownership of a workspace. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input()
-    user_id = _require_field(document, "user_id")
+    document = invocation.load_input() or {}
+    user_id = invocation.positional("user_id")
+    if user_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT, message="A user id is required.", exit_status=EXIT_USAGE
+        )
+    user_id = int(user_id)
     kwargs: dict[str, Any] = {"workspace_id": workspace_id, "user_id": user_id}
-    assert document is not None
     _forward_optional(document, kwargs, ("new_role", "remove_role"))
     _confirm(
         invocation,
@@ -461,7 +475,7 @@ def support_plan_delete(invocation: Invocation) -> HandlerResult:
 def support_plan_update_storage_tiers(invocation: Invocation) -> HandlerResult:
     """Replace a plan's storage pricing tiers. Plan id is positional."""
     plan_id = _require_int_positional(invocation, "plan id")
-    document = invocation.load_input()
+    document = invocation.load_input() or {}
     storage_tiers = _require_field(document, "storage_tiers")
     _confirm(invocation, action=f"update storage tiers for plan {plan_id}", target=str(plan_id))
     with open_service(invocation) as (service, auth):
@@ -500,10 +514,14 @@ def support_subscription_get(invocation: Invocation) -> HandlerResult:
 def support_subscription_create(invocation: Invocation) -> HandlerResult:
     """Register a workspace's Chargebee subscription. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input()
-    plan_id = _require_field(document, "plan_id")
+    document = invocation.load_input() or {}
+    plan_id = invocation.positional("plan_id")
+    if plan_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT, message="A plan id is required.", exit_status=EXIT_USAGE
+        )
+    plan_id = str(plan_id)
     kwargs: dict[str, Any] = {"workspace_id": workspace_id, "plan_id": plan_id}
-    assert document is not None
     _forward_optional(
         document, kwargs, ("customer_id", "first_name", "last_name", "email", "company_name")
     )
@@ -520,8 +538,15 @@ def support_subscription_create(invocation: Invocation) -> HandlerResult:
 def support_subscription_update(invocation: Invocation) -> HandlerResult:
     """Update a workspace's Chargebee subscription id. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input()
-    subscription_id = _require_field(document, "subscription_id")
+    invocation.load_input()
+    subscription_id = invocation.positional("subscription_id")
+    if subscription_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="A subscription id is required.",
+            exit_status=EXIT_USAGE,
+        )
+    subscription_id = str(subscription_id)
     _confirm(
         invocation,
         action=f"update subscription for workspace {workspace_id}",
@@ -734,8 +759,13 @@ def support_workspace_user_add(invocation: Invocation) -> HandlerResult:
 def support_workspace_user_remove(invocation: Invocation) -> HandlerResult:
     """Remove a user from a workspace. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input()
-    user_id = _require_field(document, "user_id")
+    invocation.load_input()
+    user_id = invocation.positional("user_id")
+    if user_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT, message="A user id is required.", exit_status=EXIT_USAGE
+        )
+    user_id = int(user_id)
     _confirm(
         invocation,
         action=f"remove user from workspace {workspace_id}",
@@ -750,7 +780,12 @@ def support_workspace_user_transfer(invocation: Invocation) -> HandlerResult:
     """Transfer/change a user's role within a workspace. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
     document = invocation.load_input()
-    user_id = _require_field(document, "user_id")
+    user_id = invocation.positional("user_id")
+    if user_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT, message="A user id is required.", exit_status=EXIT_USAGE
+        )
+    user_id = int(user_id)
     role = _require_field(document, "role")
     kwargs: dict[str, Any] = {"workspace_id": workspace_id, "user_id": user_id, "role": role}
     assert document is not None

@@ -23,7 +23,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth ai condition generate --help
-  agent_example: mammoth ai condition generate --output json --no-input
+  agent_example: 'mammoth ai condition generate --input ''{"intent": "example", "dataset_id": 1}'' --output
+    json --no-input'
   unit_tests:
   - UT-AI-CONDITION-GENERATE
   contract_tests:
@@ -57,7 +58,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth ai expression generate --help
-  agent_example: mammoth ai expression generate --output json --no-input
+  agent_example: 'mammoth ai expression generate --input ''{"intent": "example", "mode": "example", "dataset_id":
+    1}'' --output json --no-input'
   unit_tests:
   - UT-AI-EXPRESSION-GENERATE
   contract_tests:
@@ -91,7 +93,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth ai sql generate --help
-  agent_example: mammoth ai sql generate --output json --no-input
+  agent_example: 'mammoth ai sql generate --input ''{"intent": "example"}'' --output json --no-input'
   unit_tests:
   - UT-AI-SQL-GENERATE
   contract_tests:

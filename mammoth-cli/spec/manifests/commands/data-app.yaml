@@ -63,7 +63,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app create --help
-  agent_example: mammoth data-app create --output json --no-input
+  agent_example: 'mammoth data-app create --input ''{"body": {"automation_id": 1, "dashboard_ids": [1],
+    "name": "example", "project_id": 1}}'' --output json --no-input'
   unit_tests:
   - UT-DATA-APP-CREATE
   contract_tests:
@@ -303,7 +304,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app share DATA_APP_ID --help
-  agent_example: mammoth data-app share 123 --output json --no-input
+  agent_example: 'mammoth data-app share 123 --input ''{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}''
+    --output json --no-input'
   unit_tests:
   - UT-DATA-APP-SHARE
   contract_tests:
@@ -343,7 +345,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app update DATA_APP_ID --help
-  agent_example: mammoth data-app update 123 --output json --no-input
+  agent_example: 'mammoth data-app update 123 --input ''{"body": {"params": {"name": "example"}}}'' --output
+    json --no-input'
   unit_tests:
   - UT-DATA-APP-UPDATE
   contract_tests:
@@ -383,7 +386,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app upload DATA_APP_ID --help
-  agent_example: mammoth data-app upload 123 --output json --no-input
+  agent_example: 'mammoth data-app upload 123 --input ''{"file": "example"}'' --output json --no-input'
   unit_tests:
   - UT-DATA-APP-UPLOAD
   contract_tests:
@@ -463,7 +466,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app user remove DATA_APP_ID --help
-  agent_example: mammoth data-app user remove 123 --output json --no-input
+  agent_example: 'mammoth data-app user remove 123 --input ''{"email": "example"}'' --output json --no-input'
   unit_tests:
   - UT-DATA-APP-USER-REMOVE
   contract_tests:

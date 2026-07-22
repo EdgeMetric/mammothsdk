@@ -54,6 +54,101 @@ def test_project_list_full_stack(
     assert envelope["data"]["projects"] == [{"id": 7, "name": "Demo"}]
 
 
+def test_generated_dashboard_path_query_full_stack(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory, tmp_path: Any
+) -> None:
+    api = _bind_real_service(monkeypatch, real_service)
+    api.on("GET", r"/dashboards/17/rls/values$", body={"values": ["west"]})
+    doc = tmp_path / "rls.json"
+    doc.write_text(json.dumps({"column": "region", "search": "west"}), encoding="utf-8")
+
+    result = make_runner().invoke(
+        [
+            "dashboard",
+            "rls",
+            "value",
+            "list",
+            "17",
+            "--input",
+            str(doc),
+            "--output",
+            "json",
+            "--no-input",
+        ],
+        env=_ENV,
+    )
+
+    assert result.exit_code == 0, result.output
+    request = api.last()
+    assert request.path.endswith("/dashboards/17/rls/values")
+    assert request.query == {"column": ["region"], "search": ["west"]}
+
+
+def test_dashboard_list_nullable_project_query_full_stack(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    api = _bind_real_service(monkeypatch, real_service, project_id=42)
+    api.on("GET", r"/dashboards$", body={"dashboards": []})
+
+    result = make_runner().invoke(
+        ["dashboard", "list", "--project", "42", "--output", "json", "--no-input"],
+        env=_ENV,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert api.last().query == {"project_id": ["42"]}
+
+
+def test_generated_dashboard_body_full_stack(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory, tmp_path: Any
+) -> None:
+    api = _bind_real_service(monkeypatch, real_service)
+    api.on("POST", r"/dashboards/v3/contexts$", body={"id": "ctx-1"})
+    doc = tmp_path / "context.json"
+    body = {"params": {"name": "Revenue", "type": "analyst"}}
+    doc.write_text(json.dumps({"body": body}), encoding="utf-8")
+
+    result = make_runner().invoke(
+        [
+            "dashboard",
+            "context",
+            "create",
+            "--input",
+            str(doc),
+            "--output",
+            "json",
+            "--no-input",
+        ],
+        env=_ENV,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert api.last().json_body == body
+
+
+def test_generated_dashboard_delete_requires_confirmation_and_routes(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    api = _bind_real_service(monkeypatch, real_service)
+    api.on("DELETE", r"/dashboards/v3/contexts/abc$", body={})
+    argv = [
+        "dashboard",
+        "context",
+        "delete",
+        "abc",
+        "--output",
+        "json",
+        "--no-input",
+    ]
+    refused = make_runner().invoke(argv, env=_ENV)
+    assert refused.exit_code != 0
+    assert not api.requests
+
+    accepted = make_runner().invoke([*argv, "--yes"], env=_ENV)
+    assert accepted.exit_code == 0, accepted.output
+    assert api.last().path.endswith("/dashboards/v3/contexts/abc")
+
+
 def test_view_transform_full_stack(
     monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory, tmp_path: Any
 ) -> None:

@@ -43,6 +43,30 @@ def test_command_paths_match_manifest_exactly() -> None:
     assert not extra, f"registered commands missing from manifest: {sorted(extra)[:20]}"
 
 
+def test_every_remote_command_has_a_runtime_handler() -> None:
+    """A reviewed API command must never fall through to not_implemented."""
+    from mammoth_cli.commands.registry import HANDLERS
+
+    local_commands = {
+        "auth.login",
+        "auth.logout",
+        "auth.status",
+        "config.get",
+        "config.list",
+        "config.path",
+        "config.set",
+        "context.project.clear",
+        "context.project.status",
+        "context.project.use",
+    }
+    remote = {
+        record["command_id"]
+        for record in load_commands()
+        if record.get("disposition") != "alias" and record["command_id"] not in local_commands
+    }
+    assert remote <= HANDLERS.keys(), sorted(remote - HANDLERS.keys())
+
+
 def test_capability_registry_matches_manifests() -> None:
     caps = importlib.import_module("mammoth_cli.commands.capability")
     listing = {entry["operation_id"] for entry in caps.capability_entries()}

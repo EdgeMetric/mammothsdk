@@ -84,11 +84,10 @@ def test_update_requires_patch_request(fake_service: FakeMammothService) -> None
 
 def test_update_forwards_patch_request(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"patch_request": {"patch": [{"name": "n"}]}}), encoding="utf-8")
+    patch_request = {"patch": [{"op": "replace", "path": "password", "value": "secret"}]}
+    doc.write_text(json.dumps({"patch_request": patch_request}), encoding="utf-8")
     file_cmd.file_update(_inv("file.update", extra_args=["7"], input_file=str(doc)))
-    assert fake_service.call_log == [
-        (_UPDATE, {"file_id": 7, "patch_request": {"patch": [{"name": "n"}]}})
-    ]
+    assert fake_service.call_log == [(_UPDATE, {"file_id": 7, "patch_request": patch_request})]
 
 
 def test_set_password_requires_password(fake_service: FakeMammothService) -> None:

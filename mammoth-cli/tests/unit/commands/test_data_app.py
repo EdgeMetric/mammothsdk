@@ -97,9 +97,10 @@ def test_create_requires_body(fake_service: FakeMammothService) -> None:
 
 
 def test_create_forwards_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"body": {"name": "My App"}})
+    body = {"automation_id": 1, "dashboard_ids": [2], "name": "My App", "project_id": 180}
+    doc = _write(tmp_path, {"body": body})
     data_app_cmd.data_app_create(_inv("data-app.create", input_file=doc))
-    assert fake_service.call_log == [(_CREATE, {"body": {"name": "My App"}})]
+    assert fake_service.call_log == [(_CREATE, {"body": body})]
 
 
 # --- data-app update -----------------------------------------------------
@@ -119,9 +120,10 @@ def test_update_without_id_is_usage_error(fake_service: FakeMammothService) -> N
 
 
 def test_update_forwards_id_and_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"body": {"name": "New name"}})
+    body = {"params": {"name": "New name"}}
+    doc = _write(tmp_path, {"body": body})
     data_app_cmd.data_app_update(_inv("data-app.update", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [(_UPDATE, {"data_app_id": 7, "body": {"name": "New name"}})]
+    assert fake_service.call_log == [(_UPDATE, {"data_app_id": 7, "body": body})]
 
 
 # --- data-app delete -------------------------------------------------------
@@ -224,11 +226,10 @@ def test_share_without_id_is_usage_error(fake_service: FakeMammothService) -> No
 
 
 def test_share_forwards_id_and_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"body": {"email": "a@b.com", "role": "viewer"}})
+    body = {"params": {"auth": {"type_of_auth": "mammoth"}}}
+    doc = _write(tmp_path, {"body": body})
     data_app_cmd.data_app_share(_inv("data-app.share", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
-        (_SHARE, {"data_app_id": 7, "body": {"email": "a@b.com", "role": "viewer"}})
-    ]
+    assert fake_service.call_log == [(_SHARE, {"data_app_id": 7, "body": body})]
 
 
 # --- data-app upload ---------------------------------------------------------

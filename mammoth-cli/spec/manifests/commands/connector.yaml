@@ -57,7 +57,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ai chat --help
-  agent_example: mammoth connector ai chat --output json --no-input
+  agent_example: 'mammoth connector ai chat --input ''{"body": {"messages": [{"content": "example", "role":
+    "user"}]}}'' --output json --no-input'
   unit_tests:
   - UT-CONNECTOR-AI-CHAT
   contract_tests:
@@ -207,7 +208,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ai submit-column-selection --help
-  agent_example: mammoth connector ai submit-column-selection --output json --no-input
+  agent_example: 'mammoth connector ai submit-column-selection --input ''{"body": {"selected_columns":
+    ["example"], "session_id": "example"}}'' --output json --no-input'
   unit_tests:
   - UT-CONNECTOR-AI-SUBMIT-COLUMN-SELECTION
   contract_tests:
@@ -242,7 +244,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ai submit-credentials --help
-  agent_example: mammoth connector ai submit-credentials --output json --no-input
+  agent_example: 'mammoth connector ai submit-credentials --input ''{"body": {"credentials": {}, "session_id":
+    "example"}}'' --output json --no-input'
   unit_tests:
   - UT-CONNECTOR-AI-SUBMIT-CREDENTIALS
   contract_tests:
@@ -282,7 +285,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector connection create CONNECTOR_KEY --help
-  agent_example: mammoth connector connection create example --output json --no-input
+  agent_example: 'mammoth connector connection create example --input ''{"config": {"example": "example"}}''
+    --output json --no-input'
   unit_tests:
   - UT-CONNECTOR-CONNECTION-CREATE
   contract_tests:
@@ -460,7 +464,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector connection update CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector connection update example example --output json --no-input
+  agent_example: 'mammoth connector connection update example example --input ''{"credentials": {"example":
+    "example"}}'' --output json --no-input'
   unit_tests:
   - UT-CONNECTOR-CONNECTION-UPDATE
   contract_tests:
@@ -605,7 +610,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ds-config delete-all CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector ds-config delete-all example example --output json --no-input
+  agent_example: 'mammoth connector ds-config delete-all example example --input ''{"config_ids": ["example"]}''
+    --output json --no-input'
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-DELETE-ALL
   contract_tests:
@@ -755,7 +761,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector ds-config update CONNECTOR_KEY CONNECTION_KEY DS_CONFIG_KEY --help
-  agent_example: mammoth connector ds-config update example example example --output json --no-input
+  agent_example: 'mammoth connector ds-config update example example example --input ''{"patch": [{"op":
+    "replace", "path": "query", "value": "example"}]}'' --output json --no-input'
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-UPDATE
   contract_tests:
@@ -876,7 +883,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector query generate CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector query generate example example --output json --no-input
+  agent_example: 'mammoth connector query generate example example --input ''{"prompt": "example"}'' --output
+    json --no-input'
   unit_tests:
   - UT-CONNECTOR-QUERY-GENERATE
   contract_tests:

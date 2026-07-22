@@ -83,6 +83,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Clean PowerShell uv bootstrap
+        shell: pwsh
+        run: |
+          $env:PATH = (($env:PATH -split ';') | Where-Object { $_ -and -not (Test-Path -LiteralPath (Join-Path $_ 'uv.exe')) }) -join ';'
+          if (Get-Command uv -ErrorAction SilentlyContinue) { throw 'failed to create a uv-free Windows PATH' }
+          ./installers/mammoth-install.ps1 -CliOnly -NoModifyPath -NonInteractive
+          $uv = Join-Path $env:USERPROFILE '.local\bin\uv.exe'
+          if (-not (Test-Path -LiteralPath $uv)) { throw 'installer did not bootstrap uv at the clean-user location' }
+          & $uv --version
+
       - name: Set up Python 3.13
         uses: actions/setup-python@v5
         with:
@@ -97,8 +107,6 @@ jobs:
           pip install -e ..
           pip install -e .
           pip install $(python -c "import tomllib; g = tomllib.load(open('pyproject.toml', 'rb'))['tool']['poetry']['group']['dev']['dependencies']; print(' '.join(k for k in g if k.lower() != 'python'))")
-          # Provide uv so the installer uses it from PATH instead of downloading.
-          pip install uv
 
       # Exercise the PowerShell installer's failure contract on a real Windows
       # runner: a stubbed `mammoth` that fails `skill install` must make the

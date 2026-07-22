@@ -186,28 +186,26 @@ def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
 def test_from_template_requires_workflow_name(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    input_file = _write(tmp_path, {"template_id": 3})
+    input_file = _write(tmp_path, {})
     with pytest.raises(CliError) as excinfo:
         workflow_cmd.workflow_from_template(
-            _inv("workflow.from-template", project=180, input_file=input_file)
+            _inv("workflow.from-template", project=180, extra_args=["3"], input_file=input_file)
         )
     assert excinfo.value.code == "missing_argument"
 
 
 def test_from_template_requires_template_id(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        workflow_cmd.workflow_from_template(
-            _inv("workflow.from-template", project=180, extra_args=["Copy"])
-        )
-    assert excinfo.value.code == "missing_field"
+        workflow_cmd.workflow_from_template(_inv("workflow.from-template", project=180))
+    assert excinfo.value.code == "missing_argument"
 
 
 def test_from_template_uses_positional_name_and_input_template_id(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    input_file = _write(tmp_path, {"template_id": 3})
+    input_file = _write(tmp_path, {"workflow_name": "Copy"})
     workflow_cmd.workflow_from_template(
-        _inv("workflow.from-template", project=180, extra_args=["Copy"], input_file=input_file)
+        _inv("workflow.from-template", project=180, extra_args=["3"], input_file=input_file)
     )
     assert fake_service.call_log == [
         (_FROM_TEMPLATE, {"template_id": 3, "workflow_name": "Copy", "project_id": 180})
@@ -217,9 +215,9 @@ def test_from_template_uses_positional_name_and_input_template_id(
 def test_from_template_name_from_input_field(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    input_file = _write(tmp_path, {"template_id": 3, "workflow_name": "Copy"})
+    input_file = _write(tmp_path, {"workflow_name": "Copy"})
     workflow_cmd.workflow_from_template(
-        _inv("workflow.from-template", project=180, input_file=input_file)
+        _inv("workflow.from-template", project=180, extra_args=["3"], input_file=input_file)
     )
     assert fake_service.call_log == [
         (_FROM_TEMPLATE, {"template_id": 3, "workflow_name": "Copy", "project_id": 180})

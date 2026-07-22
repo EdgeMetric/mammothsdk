@@ -53,7 +53,17 @@ class Invocation:
         Returns:
             The positional value, or None when it was not supplied.
         """
-        return self.positionals.get(name)
+        if name in self.positionals:
+            return self.positionals[name]
+        # Direct handler unit tests and incremental callers may still construct
+        # Invocation with the legacy ordered list. Resolve that list through the
+        # declarative positional catalog instead of making handlers know indexes.
+        from mammoth_cli.services.positionals import resolve_positionals
+
+        for index, spec in enumerate(resolve_positionals(self.command_id)):
+            if spec.name == name and index < len(self.extra_args):
+                return self.extra_args[index]
+        return None
 
     @property
     def command_path(self) -> str:

@@ -63,6 +63,8 @@ def _resolve_format(input_file: str, input_format: str | None) -> str:
         return normalized
     if input_file == STDIN_SENTINEL:
         raise _format_required_error("standard input")
+    if input_file.lstrip().startswith("{"):
+        return _JSON_FORMAT
     suffix = Path(input_file).suffix.lower()
     resolved = _EXTENSION_FORMATS.get(suffix)
     if resolved is None:
@@ -73,6 +75,8 @@ def _resolve_format(input_file: str, input_format: str | None) -> str:
 def _read_text(input_file: str) -> str:
     if input_file == STDIN_SENTINEL:
         return sys.stdin.read()
+    if input_file.lstrip().startswith("{"):
+        return input_file
     path = Path(input_file)
     try:
         return path.read_text(encoding="utf-8")
@@ -109,8 +113,8 @@ def load_input_document(input_file: str | None, input_format: str | None) -> dic
     """Load and validate a structured request document.
 
     Args:
-        input_file: The ``--input`` value: a filesystem path, ``"-"`` for
-            standard input, or None when no document was requested.
+        input_file: The ``--input`` value: inline JSON, a filesystem path,
+            ``"-"`` for standard input, or None when no document was requested.
         input_format: The ``--input-format`` value (``"json"`` or ``"yaml"``),
             or None to infer from the file extension. Required for stdin.
 

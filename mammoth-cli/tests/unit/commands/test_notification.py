@@ -50,7 +50,6 @@ def test_list_forwards_optional_filters(fake_service: FakeMammothService, tmp_pa
         tmp_path,
         {
             "fields": "id,status",
-            "project_id": 180,
             "status": "unread",
             "is_read": False,
             "notification_scope": "workspace",
@@ -59,7 +58,7 @@ def test_list_forwards_optional_filters(fake_service: FakeMammothService, tmp_pa
             "sort": "-created_at",
         },
     )
-    notification_cmd.notification_list(_inv("notification.list", input_file=doc))
+    notification_cmd.notification_list(_inv("notification.list", project=180, input_file=doc))
     assert fake_service.call_log == [
         (
             _LIST,
@@ -79,8 +78,9 @@ def test_list_forwards_optional_filters(fake_service: FakeMammothService, tmp_pa
 
 def test_list_never_forwards_workspace_id(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write_doc(tmp_path, {"workspace_id": 999, "status": "read"})
-    notification_cmd.notification_list(_inv("notification.list", input_file=doc))
-    assert fake_service.call_log == [(_LIST, {"status": "read"})]
+    with pytest.raises(CliError) as excinfo:
+        notification_cmd.notification_list(_inv("notification.list", input_file=doc))
+    assert excinfo.value.code == "unknown_input_field"
 
 
 # --- notification update ------------------------------------------------
@@ -134,10 +134,11 @@ def test_update_batch_forwards_patch_only(fake_service: FakeMammothService, tmp_
         tmp_path,
         {"patch": [{"op": "replace", "path": "/is_read", "value": True}], "workspace_id": 4},
     )
-    notification_cmd.notification_update_batch(_inv("notification.update-batch", input_file=doc))
-    assert fake_service.call_log == [
-        (_UPDATE_BATCH, {"patch": [{"op": "replace", "path": "/is_read", "value": True}]})
-    ]
+    with pytest.raises(CliError) as excinfo:
+        notification_cmd.notification_update_batch(
+            _inv("notification.update-batch", input_file=doc)
+        )
+    assert excinfo.value.code == "unknown_input_field"
 
 
 # --- notification delete -------------------------------------------------
@@ -195,12 +196,11 @@ def test_delete_batch_proceeds_with_filter_only_and_no_workspace_id(
     doc = _write_doc(
         tmp_path, {"last_updated_at__lt": "2026-01-01", "is_read": True, "workspace_id": 4}
     )
-    notification_cmd.notification_delete_batch(
-        _inv("notification.delete-batch", input_file=doc, yes=True)
-    )
-    assert fake_service.call_log == [
-        (_DELETE_BATCH, {"last_updated_at__lt": "2026-01-01", "is_read": True})
-    ]
+    with pytest.raises(CliError) as excinfo:
+        notification_cmd.notification_delete_batch(
+            _inv("notification.delete-batch", input_file=doc, yes=True)
+        )
+    assert excinfo.value.code == "unknown_input_field"
 
 
 def test_delete_batch_with_no_input_still_requires_confirmation(

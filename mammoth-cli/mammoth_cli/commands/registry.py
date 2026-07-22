@@ -56,6 +56,7 @@ from mammoth_cli.commands import webhook as webhook_cmd
 from mammoth_cli.commands import workflow as workflow_cmd
 from mammoth_cli.commands import workspace as workspace_cmd
 from mammoth_cli.errors.envelope import CODE_MISSING_ARGUMENT, EXIT_USAGE, CliError
+from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.runtime.invocation import Invocation
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -573,3 +574,14 @@ HANDLERS: dict[str, Handler] = {
     "view.transform.unnest": view_ops_cmd.view_transform_unnest,
     "view.transform.window": view_ops_cmd.view_transform_window,
 }
+
+# Dashboard operations generated from the reviewed OpenAPI inventory share one
+# manifest-driven handler. Existing authored handlers remain authoritative.
+from mammoth.api.dashboard_generated import GENERATED_METHODS  # noqa: E402
+
+_GENERATED_DASHBOARD_SYMBOLS = {
+    f"mammoth.api.dashboards.DashboardsAPI.{method}" for method in GENERATED_METHODS
+}
+for _record in load_commands():
+    if _record.get("sdk_symbol") in _GENERATED_DASHBOARD_SYMBOLS:
+        HANDLERS.setdefault(str(_record["command_id"]), dashboard_cmd.generated_dashboard)

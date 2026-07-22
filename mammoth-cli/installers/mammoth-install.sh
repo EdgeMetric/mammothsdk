@@ -161,10 +161,49 @@ install_cli_local() {
     # mammoth-cli resolve to what was just built here, in addition to (not
     # instead of) the default index -- deliberately no --no-index, so every
     # other runtime dependency still resolves normally from PyPI.
-    "$UV_BIN" tool install --force --find-links "$wheelhouse" "$CLI_PACKAGE" \
+    cli_wheel="$(find "$wheelhouse" -maxdepth 1 -type f -name 'mammoth_cli-*.whl' | head -n 1)"
+    sdk_wheel="$(find "$wheelhouse" -maxdepth 1 -type f -name 'mammoth_io-*.whl' | head -n 1)"
+    [ -n "$cli_wheel" ] && [ -n "$sdk_wheel" ] || die "built wheel artifacts were not found"
+    # Install the exact CLI artifact and explicitly inject the exact SDK
+    # artifact. PyPI remains enabled only for their third-party dependencies;
+    # it cannot substitute either monorepo distribution.
+    "$UV_BIN" tool install --force "$cli_wheel" --with "$sdk_wheel" \
         || die "uv tool install failed from the local wheelhouse"
-    rm -rf "$wheelhouse"
     resolve_bin_dir
+    tool_root="$("$UV_BIN" tool dir 2>/dev/null)"
+    tool_python="$tool_root/$CLI_PACKAGE/bin/python"
+    [ -x "$tool_python" ] || die "could not locate the installed CLI environment"
+    "$tool_python" - "$cli_wheel" "$sdk_wheel" <<'PY' || die "installed local distributions failed verification"
+import importlib.metadata as md
+import json
+import pathlib
+import re
+import sys
+import urllib.parse
+
+def wheel_version(path):
+    match = re.match(r"[^-]+-([^-]+)-", pathlib.Path(path).name)
+    if not match:
+        raise SystemExit(f"unrecognized wheel name: {path}")
+    return match.group(1)
+
+expected = {"mammoth-cli": wheel_version(sys.argv[1]), "mammoth-io": wheel_version(sys.argv[2])}
+for distribution, version in expected.items():
+    installed = md.distribution(distribution)
+    actual = installed.version
+    if actual != version:
+        raise SystemExit(f"{distribution}: installed {actual}, expected local wheel {version}")
+    direct_url = json.loads(installed.read_text("direct_url.json") or "{}")
+    expected_wheel = pathlib.Path(sys.argv[1 if distribution == "mammoth-cli" else 2]).resolve()
+    actual_url = direct_url.get("url", "")
+    parsed = urllib.parse.urlparse(actual_url)
+    if parsed.scheme != "file":
+        raise SystemExit(f"{distribution}: installed source is not a file URL: {actual_url!r}")
+    actual_wheel = pathlib.Path(urllib.parse.unquote(parsed.path)).resolve()
+    if actual_wheel != expected_wheel:
+        raise SystemExit(f"{distribution}: installed source is not {expected_wheel}: {actual_url!r}")
+PY
+    rm -rf "$wheelhouse"
 }
 
 # --- PATH handling ----------------------------------------------------------

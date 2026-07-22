@@ -64,7 +64,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth job get-many --help
-  agent_example: mammoth job get-many --output json --no-input
+  agent_example: 'mammoth job get-many --input ''{"job_ids": [1]}'' --output json --no-input'
   unit_tests:
   - UT-JOB-GET-MANY
   contract_tests:
@@ -138,7 +138,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth job wait-many --help
-  agent_example: mammoth job wait-many --output json --no-input
+  agent_example: 'mammoth job wait-many --input ''{"job_ids": [1]}'' --output json --no-input'
   unit_tests:
   - UT-JOB-WAIT-MANY
   contract_tests:
