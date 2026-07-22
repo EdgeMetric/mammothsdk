@@ -15,6 +15,7 @@ positionals and options are added per family as each handler is implemented.
 from __future__ import annotations
 
 from collections.abc import Callable
+from functools import cache
 from typing import Any
 
 import typer
@@ -25,7 +26,7 @@ from mammoth_cli.commands.registry import HANDLERS
 from mammoth_cli.errors.envelope import not_implemented_error
 from mammoth_cli.manifest.loader import command_by_id, load_commands
 from mammoth_cli.output.policy import COLOR_MODES, VALID_OUTPUTS
-from mammoth_cli.runtime import executor
+from mammoth_cli.runtime import executor, validate
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.strict import validate_extra_args
 
@@ -116,7 +117,9 @@ def _execute(invocation: Invocation) -> None:
     """Run one command: dispatch to its handler and render the envelope."""
 
     def producer() -> tuple[Any, dict[str, Any]]:
+        validate.validate_invocation(invocation)
         validate_extra_args(invocation.command_id, invocation.extra_args)
+        validate.validate_positional_ids(invocation.command_id, invocation.extra_args)
         handler = HANDLERS.get(invocation.command_id)
         if handler is None:
             record = command_by_id(invocation.command_id)
@@ -232,6 +235,58 @@ def registered_command_paths() -> set[str]:
 
     walk(build_app(), ())
     return paths
+
+
+@cache
+def _root_click_command() -> Any:
+    """Build (once) and cache the fully resolved Click command tree.
+
+    ``typer.main.get_command`` walks and converts every registered Typer
+    sub-app into its Click representation; over the full manifest-driven tree
+    that is expensive enough that recomputing it per lookup made a full sweep
+    over every command (see the contract test) take minutes. Cached because
+    the tree is fixed for the process lifetime (:data:`app` is built once at
+    import time).
+    """
+    return typer.main.get_command(app)
+
+
+def command_option_names(command_path: str) -> set[str]:
+    """Return every declared option flag for one registered command path.
+
+    Walks the built Click command tree by ``command_path`` tokens (for example
+    ``"view transform bulk-replace"``) and collects each parameter's option
+    strings (``"--output"``, ``"-o"``, ...). This is a structural check: it
+    reads the already-parsed command declaration, so it is fast and immune to
+    the rendered-width and terminal-detection nondeterminism of asserting on
+    rendered ``--help`` text. Command nodes are walked duck-typed (via their
+    ``commands`` mapping) rather than by an ``isinstance`` check against
+    ``click``'s public types, since Typer's pinned version resolves its command
+    tree through its own vendored click fork (``typer._click``), whose classes
+    are not the public ``click`` package's.
+
+    Args:
+        command_path: The space-separated manifest command path.
+
+    Returns:
+        The union of every parameter's primary and secondary option strings
+        declared on that command (or group callback).
+
+    Raises:
+        ValueError: When ``command_path`` does not resolve to a registered
+            command.
+    """
+    command: Any = _root_click_command()
+    for token in command_path.split():
+        subcommands: dict[str, Any] | None = getattr(command, "commands", None)
+        if subcommands is None or token not in subcommands:
+            raise ValueError(f"'{command_path}' is not a registered command path.")
+        command = subcommands[token]
+    names: set[str] = set()
+    for param in command.params:
+        names.update(getattr(param, "opts", ()))
+        names.update(getattr(param, "secondary_opts", ()))
+    return names
 
 
 app = build_app()

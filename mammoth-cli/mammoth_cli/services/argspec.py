@@ -4,12 +4,13 @@ Each reviewed command names the public SDK method that backs it
 (``record["sdk_symbol"]``). That method's real signature is the authoritative,
 always-current description of what the command accepts — no second copy to
 drift. This module resolves the symbol to its callable and turns the signature
-into an :class:`ArgSpec`, which three call sites share:
+into an :class:`ArgSpec`, which several call sites share:
 
 * command schema discovery, so ``mammoth schema get`` reports the real accepted
-  fields instead of an empty list;
+  fields (name, type, enum values, default) instead of an empty list;
 * strict ``--input`` validation, so an unknown or misspelled document key is
-  rejected instead of being silently dropped;
+  rejected instead of being silently dropped, and a present field is coerced
+  to its annotated scalar type instead of reaching the SDK as a raw string;
 * the argument validator, so a stray option or surplus positional is refused
   rather than ignored.
 
@@ -19,18 +20,72 @@ member, mirroring :mod:`mammoth_cli.services.dispatch`.
 
 from __future__ import annotations
 
+import enum
 import importlib
 import inspect
+import types
+import typing
 from dataclasses import dataclass
 from functools import cache
+from typing import Any, get_args, get_origin
+
+# Sentinel distinguishing "no default value" from a real default of ``None``.
+_NO_DEFAULT = object()
 
 
 @dataclass(frozen=True)
 class FieldSpec:
-    """One argument a command's backing SDK method accepts."""
+    """One argument a command's backing SDK method accepts.
+
+    Attributes:
+        name: The parameter name.
+        required: Whether the method declares no default for it.
+        annotation: The parameter's resolved real type (not a stringified
+            forward reference), or None when it has no annotation or the
+            method's hints could not be resolved at all.
+        default: The parameter's default value, or the module's "no default"
+            sentinel; use :attr:`has_default` rather than comparing directly.
+    """
 
     name: str
     required: bool
+    annotation: Any = None
+    default: Any = _NO_DEFAULT
+
+    @property
+    def has_default(self) -> bool:
+        """Whether this field carries a default value."""
+        return self.default is not _NO_DEFAULT
+
+    @property
+    def resolved_type(self) -> Any:
+        """This field's annotation with an ``Optional[...]`` wrapper removed."""
+        return unwrap_optional(self.annotation)
+
+    @property
+    def type_name(self) -> str:
+        """A short display name for the field's type, for schema discovery."""
+        return render_type_name(self.resolved_type)
+
+    @property
+    def enum_values(self) -> list[str] | None:
+        """The member values, if this field's type is a string enum."""
+        target = self.resolved_type
+        if isinstance(target, type) and issubclass(target, enum.Enum):
+            return [member.value for member in target]
+        return None
+
+    @property
+    def default_value(self) -> Any:
+        """A JSON-safe rendering of this field's default, or None when absent."""
+        if not self.has_default:
+            return None
+        value = self.default
+        if isinstance(value, enum.Enum):
+            return value.value
+        if value is None or isinstance(value, (bool, int, float, str, list, dict)):
+            return value
+        return str(value)
 
 
 @dataclass(frozen=True)
@@ -55,6 +110,52 @@ class ArgSpec:
     def required_names(self) -> tuple[str, ...]:
         """The declared field names that have no default, in signature order."""
         return tuple(field.name for field in self.fields if field.required)
+
+
+def unwrap_optional(annotation: Any) -> Any:
+    """Return the non-``None`` member of an ``Optional[...]``/``X | None`` union.
+
+    Args:
+        annotation: A resolved type annotation, or None.
+
+    Returns:
+        The inner type when ``annotation`` is a two-member union with
+        ``NoneType`` as one member; otherwise ``annotation`` unchanged.
+    """
+    if annotation is None:
+        return None
+    origin = get_origin(annotation)
+    if origin in (typing.Union, types.UnionType):
+        members = [arg for arg in get_args(annotation) if arg is not type(None)]
+        if len(members) == 1:
+            return members[0]
+    return annotation
+
+
+def render_type_name(annotation: Any) -> str:
+    """Render a resolved (``Optional``-unwrapped) annotation as a short name.
+
+    Args:
+        annotation: A resolved type, or None.
+
+    Returns:
+        A display string such as ``"int"``, ``"bool"``, ``"BulkReplaceMapping"``,
+        or ``"list[BulkReplaceMapping]"``; ``"any"`` when nothing is known.
+    """
+    if annotation is None or annotation is Any:
+        return "any"
+    origin = get_origin(annotation)
+    if origin in (list, typing.List):  # noqa: UP006 - runtime origin comparison
+        args = get_args(annotation)
+        return f"list[{render_type_name(args[0])}]" if args else "list"
+    if origin in (dict, typing.Dict):  # noqa: UP006 - runtime origin comparison
+        args = get_args(annotation)
+        if len(args) == 2:
+            return f"dict[{render_type_name(args[0])}, {render_type_name(args[1])}]"
+        return "dict"
+    if isinstance(annotation, type):
+        return annotation.__name__
+    return str(annotation)
 
 
 def _resolve_callable(sdk_symbol: str) -> object | None:
@@ -93,6 +194,52 @@ def _resolve_callable(sdk_symbol: str) -> object | None:
 
 
 @cache
+def _sdk_type_namespace() -> dict[str, Any]:
+    """Return SDK types needed to resolve annotations hidden behind ``TYPE_CHECKING``.
+
+    Several SDK modules (the ``View`` mixins in particular) import their
+    annotated types (``Condition``, the ``mammoth.models.pipeline`` dataclasses
+    and enums, ``View`` itself) only under ``TYPE_CHECKING``, so those names are
+    absent from a method's own ``__globals__`` at runtime and
+    :func:`typing.get_type_hints` cannot resolve them unaided. This supplies
+    them as an explicit namespace, mirroring
+    :func:`mammoth_cli.services.coerce._sdk_type_namespace`.
+    """
+    from mammoth import condition as _condition_module
+    from mammoth import view as _view_module
+    from mammoth.models import pipeline as _pipeline_module
+
+    namespace: dict[str, Any] = {}
+    for module in (_pipeline_module, _condition_module, _view_module):
+        for name in dir(module):
+            if not name.startswith("_"):
+                namespace[name] = getattr(module, name)
+    return namespace
+
+
+@cache
+def _type_hints(sdk_symbol: str) -> dict[str, Any]:
+    """Return the resolved type hints for a command's backing method.
+
+    Args:
+        sdk_symbol: The command's reviewed ``sdk_symbol``.
+
+    Returns:
+        A mapping of parameter name to resolved type. Empty (never raises) when
+        the symbol does not resolve or its annotations cannot be resolved even
+        with the SDK type namespace, so callers degrade to "no type known"
+        rather than crashing on an exotic or unresolvable forward reference.
+    """
+    target = _resolve_callable(sdk_symbol)
+    if target is None or not callable(target):
+        return {}
+    try:
+        return typing.get_type_hints(target, localns=_sdk_type_namespace())
+    except Exception:  # noqa: BLE001 - deliberately broad, see docstring
+        return {}
+
+
+@cache
 def arg_spec(sdk_symbol: str) -> ArgSpec | None:
     """Return the :class:`ArgSpec` for a command's backing SDK method.
 
@@ -112,6 +259,7 @@ def arg_spec(sdk_symbol: str) -> ArgSpec | None:
     except (TypeError, ValueError):
         return None
 
+    hints = _type_hints(sdk_symbol)
     fields: list[FieldSpec] = []
     accepts_extra = False
     for name, parameter in signature.parameters.items():
@@ -122,7 +270,17 @@ def arg_spec(sdk_symbol: str) -> ArgSpec | None:
             continue
         if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
             continue
-        fields.append(FieldSpec(name=name, required=parameter.default is inspect.Parameter.empty))
+        default = (
+            parameter.default if parameter.default is not inspect.Parameter.empty else _NO_DEFAULT
+        )
+        fields.append(
+            FieldSpec(
+                name=name,
+                required=parameter.default is inspect.Parameter.empty,
+                annotation=hints.get(name),
+                default=default,
+            )
+        )
     return ArgSpec(fields=tuple(fields), accepts_extra=accepts_extra)
 
 

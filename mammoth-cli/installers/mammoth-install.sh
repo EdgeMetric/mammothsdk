@@ -16,8 +16,12 @@
 # convenience path.
 #
 # --local builds the CLI and its mammoth-io SDK dependency from this source
-# checkout and installs them from a local wheelhouse, so no package index is
-# contacted. DIR defaults to the mammoth-cli directory this script ships in.
+# checkout and installs ONLINE: the two monorepo wheels resolve from a local
+# wheelhouse (--find-links) while every other runtime dependency (typer, rich,
+# platformdirs, ...) still resolves normally from PyPI. This is NOT an offline
+# installer -- a clean machine has no cached copies of those third-party
+# packages, so a plain --no-index install cannot resolve them. DIR defaults to
+# the mammoth-cli directory this script ships in.
 
 set -eu
 
@@ -64,6 +68,16 @@ detect_platform() {
     case "$os" in
         Linux) platform_os="linux" ;;
         Darwin) platform_os="macos" ;;
+        MINGW*|MSYS*|CYGWIN*)
+            # git-bash/MSYS2/Cygwin on Windows report a *_NT uname here. This is
+            # not an unsupported platform, just the wrong installer: defer to
+            # the native PowerShell installer instead of aborting. Exit 0 (not
+            # a failure) so a CI job or script that runs this by mistake on
+            # Windows does not fail — it is simply the wrong entry point.
+            log "Windows detected via '$os' (git-bash/MSYS/Cygwin)."
+            log "Use the PowerShell installer instead: mammoth-install.ps1"
+            exit 0
+            ;;
         *) die "unsupported OS '$os'. Install manually: uv tool install $CLI_PACKAGE" ;;
     esac
     case "$arch" in
@@ -121,9 +135,12 @@ install_cli() {
     resolve_bin_dir
 }
 
-# Build the CLI and its mammoth-io SDK dependency from this source checkout and
-# install them from a local wheelhouse, so no package index is contacted. This
-# is the offline / no-PyPI path for using the CLI straight from the repository.
+# Build the CLI and its mammoth-io SDK dependency from this source checkout,
+# then install ONLINE: --find-links makes the two just-built wheels resolvable
+# while uv still consults PyPI (the default index) for every other runtime
+# dependency. There is no offline mode here -- a clean machine has none of
+# typer/rich/platformdirs/etc. cached, so --no-index would leave them
+# unresolvable.
 install_cli_local() {
     script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
     cli_dir="${LOCAL_DIR:-$(CDPATH= cd -- "$script_dir/.." && pwd)}"
@@ -139,10 +156,12 @@ install_cli_local() {
         || die "failed to build the mammoth-io SDK wheel"
     "$UV_BIN" build --wheel --out-dir "$wheelhouse" "$cli_dir" \
         || die "failed to build the $CLI_PACKAGE wheel"
-    log "installing $CLI_PACKAGE from the local wheelhouse (no index)"
-    # --find-links points resolution at the local wheels; --no-index keeps it
-    # fully offline so the mammoth-io dependency resolves from the built wheel.
-    "$UV_BIN" tool install --force --no-index --find-links "$wheelhouse" "$CLI_PACKAGE" \
+    log "installing $CLI_PACKAGE online (mammoth-io/$CLI_PACKAGE from the local wheelhouse, other deps from PyPI)"
+    # --find-links adds the local wheels as an extra source so mammoth-io and
+    # mammoth-cli resolve to what was just built here, in addition to (not
+    # instead of) the default index -- deliberately no --no-index, so every
+    # other runtime dependency still resolves normally from PyPI.
+    "$UV_BIN" tool install --force --find-links "$wheelhouse" "$CLI_PACKAGE" \
         || die "uv tool install failed from the local wheelhouse"
     rm -rf "$wheelhouse"
     resolve_bin_dir

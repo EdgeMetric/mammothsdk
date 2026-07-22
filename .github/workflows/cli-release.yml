@@ -36,6 +36,39 @@ jobs:
         with:
           python-version: "3.14"
 
+      # R12 release-ordering gate: the CLI declares `mammoth-io>=0.6.0,<0.7`
+      # (see pyproject.toml), but the SDK and CLI publish from independent,
+      # tag-triggered workflows (sdk-release.yml / cli-release.yml). Nothing
+      # else stops a maintainer from tagging cli-vX before sdk-vX has actually
+      # published, which would ship a CLI wheel whose SDK dependency cannot
+      # resolve. Fail fast, before any build or publish step runs, if the
+      # exact range the CLI requires does not currently resolve on PyPI.
+      #
+      # This step only reads PyPI (`pip download` into a throwaway, discarded
+      # directory) — it never installs into this job's environment, never
+      # publishes, and never tags. `pip install --dry-run` was considered
+      # instead, but it reports "already satisfied" against whatever is
+      # already installed in the job's environment rather than checking PyPI,
+      # which would make the gate a no-op whenever the SDK happens to be
+      # preinstalled (e.g. editable). `pip download` always resolves against
+      # the index, so it has no such false-positive path.
+      - name: Gate — required mammoth-io version must resolve on PyPI
+        run: |
+          set -eu
+          python -m pip install --upgrade pip --quiet
+          spec="$(python -c "
+          import tomllib
+          d = tomllib.load(open('pyproject.toml', 'rb'))
+          print(d['tool']['poetry']['dependencies']['mammoth-io'])
+          ")"
+          echo "required mammoth-io spec: $spec"
+          gate_dir="$(mktemp -d)"
+          if ! python -m pip download "mammoth-io$spec" --no-deps -d "$gate_dir"; then
+            echo "::error::mammoth-io$spec does not resolve on PyPI yet. Publish/tag the sdk-v release first (see sdk-release.yml); this cli-v release is halted until it does."
+            exit 1
+          fi
+          rm -rf "$gate_dir"
+
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:

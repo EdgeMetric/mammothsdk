@@ -29,6 +29,14 @@ PIPELINE_TERMINAL_STATES = frozenset({"ready", "runtime_error", "ref_error"})
 
 ERR_FROM_SEQUENCE_NON_NEGATIVE = "`from_sequence` must be >= 0, got {0}."
 
+# OpenAPI `dataview_pipeline_consts_PipelineDraftMode` enum values (pinned in
+# `mammoth-cli/spec/openapi/openapi.json`) for which the dataview IS in draft.
+# "clean" = draft with no unsaved changes yet; "dirty" = unsaved changes
+# pending. "off" (or the field being null/absent) means NOT in draft.
+DRAFT_MODE_CLEAN = "clean"
+DRAFT_MODE_DIRTY = "dirty"
+DRAFT_MODE_ACTIVE_VALUES = frozenset({DRAFT_MODE_CLEAN, DRAFT_MODE_DIRTY})
+
 
 class PipelineAPI:
     """Low-level HTTP client for pipeline task endpoints.
@@ -374,10 +382,11 @@ class PipelineAPI:
         if draft_section is None:
             draft_section = pipeline.get("draft_mode")
         is_draft = bool(
-            pipeline.get("is_draft")
-            or pipeline.get("in_draft_mode")
+            (isinstance(draft_section, str) and draft_section in DRAFT_MODE_ACTIVE_VALUES)
             or (isinstance(draft_section, dict) and draft_section.get("active"))
             or (isinstance(draft_section, dict) and draft_section.get("is_draft"))
+            or pipeline.get("is_draft")
+            or pipeline.get("in_draft_mode")
         )
         return {
             "dataview_id": dataview_id,

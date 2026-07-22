@@ -59,13 +59,26 @@ def test_schema_registry_matches_request_models() -> None:
     assert listing == manifest
 
 
-def test_every_command_supports_json_no_input() -> None:
-    runner = importlib.import_module("mammoth_cli.testing").make_runner()
+def test_every_command_declares_output_and_no_input_options() -> None:
+    """Every non-alias command declares the global ``--output``/``--no-input`` options.
+
+    Structural check on the built Click command tree (each command's declared
+    ``click.Parameter.opts``), not on rendered ``--help`` text: asserting on
+    rendered Rich help is sensitive to terminal width/detection and is slow
+    (a full CliRunner invocation per command); this walks the already-built
+    command objects Click parsed at import time, which is fast and immune to
+    rendering nondeterminism.
+    """
+    app_module = _app_module()
+    command_option_names = getattr(app_module, "command_option_names", None)
+    if command_option_names is None:
+        pytest.fail("app.command_option_names is not implemented yet")
     for record in load_commands():
         if record.get("disposition") == "alias":
             continue
-        result = runner.invoke_help(record["command_path"])
-        assert "--output" in result and "--no-input" in result, record["command_id"]
+        opts = command_option_names(record["command_path"])
+        assert "--output" in opts, record["command_id"]
+        assert "--no-input" in opts, record["command_id"]
 
 
 def test_machine_stdout_contains_data_only() -> None:

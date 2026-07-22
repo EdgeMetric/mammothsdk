@@ -27,7 +27,17 @@ from mammoth import condition as _condition_module
 from mammoth import view as _view_module
 from mammoth.models import pipeline as _pipeline_module
 
-from mammoth_cli.services.conditions import CONDITION_KWARG
+from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
+
+#: The SDK condition types a ``condition``-shaped union field may name. A
+#: dict value against one of these members is a condition spec, not a
+#: dataclass, so it must be compiled via :func:`compile_condition` rather
+#: than routed through the generic dataclass/enum coercion below.
+_CONDITION_TYPES = (
+    _condition_module.Condition,
+    _condition_module.CompoundCondition,
+    _condition_module.NotCondition,
+)
 
 
 @lru_cache(maxsize=1)
@@ -113,6 +123,11 @@ def _coerce(value: Any, annotation: Any) -> Any:
 def _coerce_union(value: Any, args: tuple[Any, ...]) -> Any:
     """Coerce a value against a union, preferring the member its shape fits."""
     members = [arg for arg in args if arg is not type(None)]
+    # A dict against a Condition-family member is a condition spec, compiled
+    # through the same path the top-level `condition` kwarg uses -- not a
+    # dataclass and not left as a raw dict.
+    if isinstance(value, dict) and any(member in _CONDITION_TYPES for member in members):
+        return compile_condition(value)
     # A dict fits a dataclass member; a string fits an enum member.
     if isinstance(value, dict):
         for member in members:
@@ -121,7 +136,16 @@ def _coerce_union(value: Any, args: tuple[Any, ...]) -> Any:
     if isinstance(value, str):
         for member in members:
             if isinstance(member, type) and issubclass(member, enum.Enum):
-                return member(value)
+                try:
+                    return member(value)
+                except ValueError:
+                    continue
+        # No enum member accepted the string. If a plain `str` is itself a
+        # permitted union member (e.g. `str | SortDirection`), the value is
+        # legitimately a non-enum string (a column name, say) -- pass it
+        # through unchanged instead of raising on the last enum tried.
+        if str in members:
+            return value
     # Otherwise try each member; the first that changes the value wins.
     for member in members:
         coerced = _coerce(value, member)
@@ -133,7 +157,7 @@ def _coerce_union(value: Any, args: tuple[Any, ...]) -> Any:
 def _coerce_dataclass(value: dict[str, Any], dataclass_type: Any) -> Any:
     """Build ``dataclass_type`` from a dict, coercing each declared field."""
     try:
-        field_hints = get_type_hints(dataclass_type)
+        field_hints = get_type_hints(dataclass_type, localns=_sdk_type_namespace())
     except Exception:  # pragma: no cover - defensive
         field_hints = {}
     field_names = {field.name for field in fields(dataclass_type)}

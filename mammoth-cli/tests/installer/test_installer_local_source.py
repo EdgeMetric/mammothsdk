@@ -1,11 +1,17 @@
-"""Real (unmocked) tests for the ``--local`` no-index install path.
+"""Real (unmocked) tests for the ``--local`` install path.
 
 These run the actual installer script against a *stubbed* ``uv`` on an isolated
 ``PATH``: no network, no real build, no real install. The stub records every
-``uv`` invocation so the test can assert the offline contract — the SDK and CLI
-wheels are both built from the source checkout and installed from the local
-wheelhouse with ``--no-index`` — which is what lets a user install and use the
-CLI with no package index configured.
+``uv`` invocation so the test can assert the ONLINE contract (R10/R11) — the
+SDK and CLI wheels are both built from the source checkout and installed via
+``--find-links`` (so mammoth-io/mammoth-cli resolve to those local wheels)
+while ``--no-index`` is deliberately absent, so every other runtime dependency
+(typer, rich, platformdirs, ...) still resolves from PyPI. A prior version of
+this installer used ``--no-index``, but that is unresolvable on a clean
+machine: third-party deps are not in the local wheelhouse and are not cached,
+so a real offline install could never succeed. This test previously asserted
+that always-broken offline contract with an always-pass ``uv`` stub; it now
+asserts the online one instead.
 """
 
 from __future__ import annotations
@@ -46,8 +52,15 @@ def _write_uv_stub(directory: Path, log_file: Path, bin_dir: Path) -> None:
 
 
 @pytest.mark.skipif(_SH is None, reason="POSIX sh not available")
-def test_local_source_builds_both_wheels_and_installs_offline(tmp_path: Path) -> None:
-    """--local builds the SDK + CLI wheels and installs them with --no-index."""
+def test_local_source_builds_both_wheels_and_installs_online(tmp_path: Path) -> None:
+    """--local builds the SDK + CLI wheels, then installs ONLINE via --find-links.
+
+    ``--no-index`` must NOT be present: third-party runtime deps (typer, rich,
+    platformdirs, ...) are not in the local wheelhouse, so a real --no-index
+    install can never resolve them on a clean machine. Only mammoth-io and
+    mammoth-cli should come from the local wheelhouse; everything else must
+    still be resolvable from the default index (PyPI).
+    """
     assert _SH is not None
     stub_dir = tmp_path / "bin"
     home = tmp_path / "home"
@@ -71,5 +84,8 @@ def test_local_source_builds_both_wheels_and_installs_offline(tmp_path: Path) ->
     install_lines = [line for line in log.splitlines() if line.startswith("tool install")]
     assert install_lines, "expected a 'uv tool install' call"
     assert any(
-        "--no-index" in line and "--find-links" in line for line in install_lines
-    ), f"install must be offline via wheelhouse: {install_lines}"
+        "--find-links" in line for line in install_lines
+    ), f"install must point at the local wheelhouse: {install_lines}"
+    assert not any(
+        "--no-index" in line for line in install_lines
+    ), f"install must stay online (no --no-index) so deps resolve from PyPI: {install_lines}"
