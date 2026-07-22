@@ -20,17 +20,22 @@ With uv:
 uv tool uninstall mammoth-cli
 ```
 
+With pipx:
+
+```bash
+pipx uninstall mammoth-cli
+```
+
 With pip:
 
 ```bash
 python -m pip uninstall mammoth-cli
 ```
 
-The released installer also supports
-`mammoth self uninstall [--keep-skills] [--keep-config] --yes`, which removes
-only files whose current digest matches the ownership record, reports modified
-files, never removes a user-provided uv, and removes a PATH entry only when the
-ownership record proves the installer added it.
+Remove the agent skill separately with `mammoth skill uninstall` (see above),
+because the tool uninstall step removes only the CLI. The installer does not
+edit your PATH beyond adding the tool directory; remove that line from your
+shell profile if you no longer need it.
 
 ## Remove configuration
 
