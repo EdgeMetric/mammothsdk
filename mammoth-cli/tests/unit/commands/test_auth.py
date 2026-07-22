@@ -166,6 +166,7 @@ def test_login_prompt_path_when_interactive(
     # Force a genuinely interactive policy regardless of the ambient CI-like
     # sandbox environment this test happens to run in.
     monkeypatch.delenv("CI", raising=False)
+    monkeypatch.setenv("TERM", "xterm")
     monkeypatch.setattr(auth_cmd.sys.stdin, "isatty", lambda: True)
     monkeypatch.setattr(auth_cmd.typer, "prompt", lambda text, hide_input=False: "prompted-" + text)
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)

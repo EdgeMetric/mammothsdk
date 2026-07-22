@@ -87,4 +87,6 @@ markers = [
     "live: guarded live tests that require a dedicated test tenant (deselect with -m 'not live')",
     "subprocess: tests that spawn the installed executable or module entry point",
 ]
-addopts = "-m 'not live'"
+# Import test files by their full paths so equally named realcode and unit
+# modules can be collected together by the documented ``pytest tests/`` command.
+addopts = "--import-mode=importlib -m 'not live'"

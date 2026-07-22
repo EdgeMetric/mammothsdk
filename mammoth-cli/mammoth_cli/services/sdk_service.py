@@ -97,6 +97,13 @@ class SdkMammothService:
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
+    def wait_if_job(self, response: Any) -> Any:
+        """Wait for a recognized job response using the client's configured timeout."""
+        try:
+            return self._client.wait_if_job(response)
+        except Exception as exc:
+            raise map_sdk_exception(exc) from exc
+
     def call_view(self, view_id: int, method: str, /, **kwargs: Any) -> Any:
         """Resolve a View and invoke one of its public methods (or a property).
 

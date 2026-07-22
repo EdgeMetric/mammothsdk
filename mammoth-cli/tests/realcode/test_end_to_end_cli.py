@@ -58,7 +58,11 @@ def test_generated_dashboard_path_query_full_stack(
     monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory, tmp_path: Any
 ) -> None:
     api = _bind_real_service(monkeypatch, real_service)
-    api.on("GET", r"/dashboards/17/rls/values$", body={"values": ["west"]})
+    api.on(
+        "GET",
+        r"/dashboards/17/rls/values$",
+        body={"column": "region", "total": 1, "values": ["west"]},
+    )
     doc = tmp_path / "rls.json"
     doc.write_text(json.dumps({"column": "region", "search": "west"}), encoding="utf-8")
 
@@ -103,7 +107,7 @@ def test_generated_dashboard_body_full_stack(
     monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory, tmp_path: Any
 ) -> None:
     api = _bind_real_service(monkeypatch, real_service)
-    api.on("POST", r"/dashboards/v3/contexts$", body={"id": "ctx-1"})
+    api.on("POST", r"/dashboards/v3/contexts$", body={"context": {"id": "ctx-1"}})
     doc = tmp_path / "context.json"
     body = {"params": {"name": "Revenue", "type": "analyst"}}
     doc.write_text(json.dumps({"body": body}), encoding="utf-8")
@@ -126,11 +130,67 @@ def test_generated_dashboard_body_full_stack(
     assert api.last().json_body == body
 
 
+def test_generated_dashboard_async_result_waits_for_job(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory, tmp_path: Any
+) -> None:
+    from mammoth.api.jobs import JobsAPI
+
+    observed_timeouts: list[int | None] = []
+    real_wait = JobsAPI.wait_for_job
+
+    def recording_wait(
+        self: JobsAPI, job_id: int, timeout: int | None = None, poll_interval: int = 2
+    ) -> dict[str, Any]:
+        observed_timeouts.append(timeout)
+        return real_wait(self, job_id, timeout, poll_interval)
+
+    monkeypatch.setattr(JobsAPI, "wait_for_job", recording_wait)
+    service, api = real_service()
+
+    def build_with_cli_timeouts(*_args: Any, **kwargs: Any) -> Any:
+        service._client.job_timeout = kwargs["job_timeout"]
+        return service
+
+    monkeypatch.setattr(factory, "build_service", build_with_cli_timeouts)
+    api.on("POST", r"/dashboards/v3/generate$", status=202, body={"job_id": 91})
+    api.on(
+        "GET",
+        r"/jobs/91$",
+        body={"id": 91, "status": "success", "response": {"dashboard_id": 73}},
+    )
+    doc = tmp_path / "generate.json"
+    doc.write_text(
+        json.dumps({"body": {"params": {"dataview_id": 1, "intent": "Revenue by quarter"}}}),
+        encoding="utf-8",
+    )
+
+    result = make_runner().invoke(
+        [
+            "dashboard",
+            "v3",
+            "generate",
+            "--input",
+            str(doc),
+            "--output",
+            "json",
+            "--no-input",
+            "--job-timeout",
+            "7",
+        ],
+        env=_ENV,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert [request.method for request in api.requests] == ["POST", "GET"]
+    assert observed_timeouts == [7]
+    assert json.loads(result.output)["data"] == {"dashboard_id": 73}
+
+
 def test_generated_dashboard_delete_requires_confirmation_and_routes(
     monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
 ) -> None:
     api = _bind_real_service(monkeypatch, real_service)
-    api.on("DELETE", r"/dashboards/v3/contexts/abc$", body={})
+    api.on("DELETE", r"/dashboards/v3/contexts/abc$", body={"ok": True})
     argv = [
         "dashboard",
         "context",

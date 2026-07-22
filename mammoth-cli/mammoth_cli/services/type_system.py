@@ -32,6 +32,13 @@ class TypeValidationError(ValueError):
         super().__init__(f"{path} must be {expected}, got {value!r}")
 
 
+def _is_resource_id_path(path: str) -> bool:
+    """Whether ``path`` names one resource ID or an item in an ID collection."""
+    leaf = path.rsplit(".", 1)[-1]
+    name, bracket, _index = leaf.partition("[")
+    return name.endswith("_id") or (bool(bracket) and name.endswith("_ids"))
+
+
 def is_opaque_mapping(annotation: Any) -> bool:
     """Whether an annotation is an unstructured JSON mapping needing OpenAPI detail."""
     origin = get_origin(annotation)
@@ -102,7 +109,7 @@ def _condition_schema() -> dict[str, Any]:
     }
 
 
-def json_schema(annotation: Any) -> dict[str, Any]:
+def json_schema(annotation: Any, field_name: str | None = None) -> dict[str, Any]:
     """Describe an annotation as recursive, JSON-Schema-like data."""
     if annotation is None or annotation is Any:
         return {}
@@ -111,9 +118,19 @@ def json_schema(annotation: Any) -> dict[str, Any]:
     origin = get_origin(annotation)
     args = get_args(annotation)
     if origin in _UNIONS:
-        return {"anyOf": [json_schema(member) for member in args]}
+        return {"anyOf": [json_schema(member, field_name) for member in args]}
     if origin in (list, typing.List):  # noqa: UP006
-        return {"type": "array", "items": json_schema(args[0]) if args else {}}
+        array_schema: dict[str, Any] = {
+            "type": "array",
+            "items": (
+                json_schema(args[0], field_name.removesuffix("s") if field_name else None)
+                if args
+                else {}
+            ),
+        }
+        if field_name and field_name.endswith("_ids"):
+            array_schema["minItems"] = 1
+        return array_schema
     if origin in (dict, typing.Dict):  # noqa: UP006
         return {
             "type": "object",
@@ -131,26 +148,32 @@ def json_schema(annotation: Any) -> dict[str, Any]:
         properties: dict[str, Any] = {}
         required: list[str] = []
         for field in fields(annotation):
-            properties[field.name] = json_schema(hints.get(field.name, Any))
+            properties[field.name] = json_schema(hints.get(field.name, Any), field.name)
             if field.default is MISSING and field.default_factory is MISSING:
                 required.append(field.name)
-        result: dict[str, Any] = {
+        dataclass_schema: dict[str, Any] = {
             "type": "object",
             "title": getattr(annotation, "__name__", str(annotation)),
             "properties": properties,
             "additionalProperties": False,
         }
         if required:
-            result["required"] = required
-        result["example"] = sample_value(annotation)
-        return result
+            dataclass_schema["required"] = required
+        dataclass_schema["example"] = sample_value(annotation)
+        return dataclass_schema
     if isinstance(annotation, type) and issubclass(annotation, BaseModel):
-        result = annotation.model_json_schema()
-        result["example"] = sample_value(annotation)
-        return result
+        model_schema = annotation.model_json_schema()
+        model_schema["example"] = sample_value(annotation)
+        return model_schema
     scalar = {str: "string", bool: "boolean", int: "integer", float: "number"}.get(annotation)
     if scalar:
-        return {"type": scalar, "example": sample_value(annotation)}
+        scalar_schema: dict[str, Any] = {
+            "type": scalar,
+            "example": sample_value(annotation),
+        }
+        if annotation is int and field_name and field_name.endswith("_id"):
+            scalar_schema["minimum"] = 1
+        return scalar_schema
     if annotation is Path or (isinstance(annotation, type) and issubclass(annotation, Path)):
         return {"type": "string", "format": "path", "example": "example.csv"}
     return {"title": render_type_name(annotation)}
@@ -220,12 +243,16 @@ def validate_value(value: Any, annotation: Any, path: str) -> Any:
                 return validate_value(value, member, path)
             except TypeValidationError as error:
                 errors.append(error)
-        raise TypeValidationError(path, render_type_name(annotation), value) from (
-            errors[-1] if errors else None
-        )
+        # Preserve the most specific branch error (normally a nested member
+        # path) instead of replacing it with an opaque top-level union error.
+        if errors:
+            raise errors[0]
+        raise TypeValidationError(path, render_type_name(annotation), value)
     if origin in (list, typing.List):  # noqa: UP006
         if not isinstance(value, list):
             raise TypeValidationError(path, "array", value)
+        if path.rsplit(".", 1)[-1].endswith("_ids") and not value:
+            raise TypeValidationError(path, "non-empty array of positive resource IDs", value)
         inner = args[0] if args else Any
         return [validate_value(item, inner, f"{path}[{index}]") for index, item in enumerate(value)]
     if origin in (dict, typing.Dict):  # noqa: UP006
@@ -294,12 +321,21 @@ def validate_value(value: Any, annotation: Any, path: str) -> Any:
         if isinstance(value, bool):
             raise TypeValidationError(path, "integer", value)
         if isinstance(value, int):
-            return value
+            coerced_int = value
+            if _is_resource_id_path(path) and coerced_int <= 0:
+                raise TypeValidationError(path, "positive resource ID", value)
+            return coerced_int
         if isinstance(value, float) and value.is_integer():
-            return int(value)
+            coerced_int = int(value)
+            if _is_resource_id_path(path) and coerced_int <= 0:
+                raise TypeValidationError(path, "positive resource ID", value)
+            return coerced_int
         if isinstance(value, str):
             try:
-                return int(value.strip())
+                coerced_int = int(value.strip())
+                if _is_resource_id_path(path) and coerced_int <= 0:
+                    raise TypeValidationError(path, "positive resource ID", value)
+                return coerced_int
             except ValueError:
                 pass
         raise TypeValidationError(path, "integer", value)

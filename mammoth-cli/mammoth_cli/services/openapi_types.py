@@ -102,7 +102,9 @@ def sample_from_schema(schema: dict[str, Any]) -> Any:
     ) -> Any:
         if "const" in node:
             return node["const"]
-        if "default" in node:
+        # Optional fields commonly carry a JSON-Schema ``null`` default. A
+        # runnable example should still exercise the non-null schema branch.
+        if node.get("default") is not None:
             return node["default"]
         if "enum" in node and node["enum"]:
             return node["enum"][0]

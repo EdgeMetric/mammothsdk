@@ -149,3 +149,39 @@ def test_fallback_positional_field_remains_valid_structured_input() -> None:
     document = {"name": "Input-only project"}
     validate_input_fields("project.create", document)
     assert document == {"name": "Input-only project"}
+
+
+@pytest.mark.parametrize(
+    ("command_id", "document", "path"),
+    [
+        ("project.bulk-delete", {"project_ids": []}, "project_ids"),
+        ("project.bulk-delete", {"project_ids": [-1, 2]}, "project_ids[0]"),
+        ("project.bulk-delete", {"project_ids": [1, 0]}, "project_ids[1]"),
+        ("job.get-many", {"job_ids": []}, "job_ids"),
+        ("job.get-many", {"job_ids": [0]}, "job_ids[0]"),
+    ],
+)
+def test_resource_id_collections_are_non_empty_and_positive(
+    command_id: str, document: dict[str, object], path: str
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields(command_id, document)
+    assert excinfo.value.code == "invalid_input_field_type"
+    assert path in excinfo.value.message
+
+
+@pytest.mark.parametrize(
+    ("command_id", "field"),
+    [
+        ("skill.install", "home"),
+        ("skill.install", "cwd"),
+        ("skill.install", "timestamp"),
+        ("skill.update", "timestamp"),
+        ("skill.path", "home"),
+        ("job.get", "timeout"),
+    ],
+)
+def test_handler_ignored_or_replaced_fields_are_rejected(command_id: str, field: str) -> None:
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields(command_id, {field: "ignored"})
+    assert excinfo.value.code == "unknown_input_field"

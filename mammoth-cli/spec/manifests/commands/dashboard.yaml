@@ -103,9 +103,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-CANCEL-GENERATION
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -183,9 +184,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-CANVAS-RESTORE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -224,9 +226,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-CANVAS-SAVE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -265,9 +268,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-CHAT-EDIT
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -340,9 +344,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-CONTEXT-CREATE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -381,9 +386,10 @@ commands:
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-CONTEXT-DELETE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -455,9 +461,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-CONTEXT-UPDATE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -490,9 +497,10 @@ commands:
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-CREATE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -612,9 +620,10 @@ commands:
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-DELETE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -652,9 +661,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-DESCRIPTOR-DATA
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -693,9 +703,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-DUPLICATE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -733,9 +744,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-FIGURE-INTENT
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -974,9 +986,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-PAGE-PLAN
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -1059,11 +1072,12 @@ commands:
   result_model: DashboardPdfExportResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-PDF-EXPORT
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -1103,9 +1117,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-PUBLISHED-DATA-BY-URL
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -1184,9 +1199,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-PUBLISHED-DATA
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -1311,11 +1327,12 @@ commands:
   result_model: DashboardPublishedPdfExportResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-PUBLISHED-PDF-EXPORT
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -1435,11 +1452,12 @@ commands:
   result_model: DashboardPublishedVideoExportResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-PUBLISHED-VIDEO-EXPORT
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -1483,9 +1501,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-QA-ASK
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -1530,9 +1549,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-QA-COMMENT-CREATE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -1583,9 +1603,10 @@ commands:
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-QA-COMMENT-DELETE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -1635,9 +1656,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-QA-FEEDBACK
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -1676,9 +1698,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-QA-SESSION-CREATE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -1723,9 +1746,10 @@ commands:
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-QA-SESSION-DELETE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -1769,9 +1793,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-QA-SESSION-FORK
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -1901,9 +1926,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-QA-SESSION-RENAME
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -1949,9 +1975,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-QA-SESSION-SET-VISIBILITY
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2030,9 +2057,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-QA-SETTINGS-SET
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2071,9 +2099,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-QUERY
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2112,9 +2141,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-RESTORE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2194,9 +2224,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-RLS-ASSIGNMENT-SET
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2351,9 +2382,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-SIGNATURE-CREATE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2392,9 +2424,10 @@ commands:
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-SIGNATURE-DELETE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2466,9 +2499,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-SIGNATURE-UPDATE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2536,9 +2570,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-STYLE-CUSTOM-CREATE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2578,9 +2613,10 @@ commands:
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-STYLE-CUSTOM-DELETE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2653,9 +2689,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-STYLE-CUSTOM-UPDATE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2722,9 +2759,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-STYLE-DEFAULT-SET
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2757,9 +2795,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-STYLE-DERIVE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2793,9 +2832,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-STYLE-EXTRACT-BRAND
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2942,9 +2982,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-TEMPLATE-APPLY
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -2977,9 +3018,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-TEMPLATE-CREATE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -3018,9 +3060,10 @@ commands:
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-TEMPLATE-DELETE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -3166,9 +3209,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-TEMPLATE-PREVIEW
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -3207,9 +3251,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-TEMPLATE-RENAME
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -3243,9 +3288,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-TEMPLATE-RESOLVE-MAPPING
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -3284,9 +3330,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-TRASH
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -3324,9 +3371,10 @@ commands:
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-UPDATE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -3357,17 +3405,18 @@ commands:
   result_model: DashboardV3GenerateResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-V3-GENERATE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard v3 generate --help
-  agent_example: 'mammoth dashboard v3 generate --input ''{"body": {"params": {"dataview_id": 1, "intent":
-    "example"}}}'' --output json --no-input'
+  agent_example: 'mammoth dashboard v3 generate --input ''{"body": {"params": {"intent": "example", "dataview_id":
+    1}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-V3-GENERATE
   contract_tests:
@@ -3438,11 +3487,12 @@ commands:
   result_model: DashboardVideoExportResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-VIDEO-EXPORT
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -3480,9 +3530,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-WIDGET-DATA
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -3522,9 +3573,10 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DASHBOARD-WIDGET-DATA-BY-URL
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []

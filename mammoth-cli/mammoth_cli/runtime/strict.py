@@ -34,6 +34,7 @@ from typing import Any
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.services.argspec import FieldSpec, arg_spec
+from mammoth_cli.services.input_fields import excluded_input_fields
 from mammoth_cli.services.openapi_types import openapi_body_schema
 from mammoth_cli.services.positionals import resolve_positionals
 from mammoth_cli.services.type_system import TypeValidationError, is_opaque_mapping, validate_value
@@ -220,11 +221,7 @@ def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> N
     spec = arg_spec(symbol)
     if spec is None or spec.accepts_extra:
         return
-    externally_supplied = {"project_id", "workspace_id"} | {
-        positional.name
-        for positional in resolve_positionals(command_id)
-        if positional.falls_back_to_field is None
-    }
+    externally_supplied = excluded_input_fields(command_id)
     fields_by_name = {
         field.name: field for field in spec.fields if field.name not in externally_supplied
     }

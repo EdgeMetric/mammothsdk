@@ -96,6 +96,10 @@ def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
 def job_get(invocation: Invocation) -> HandlerResult:
     """Get one job's status by id."""
     job_id = _require_int_positional(invocation, "job id")
+    # Load even though this immediate read has no request fields.  This keeps
+    # strict validation authoritative when a caller supplies ``--input`` (for
+    # example, a misleading timeout that only wait commands implement).
+    invocation.load_input()
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), job_id=job_id)
     return data, _meta(invocation, auth.workspace_id)

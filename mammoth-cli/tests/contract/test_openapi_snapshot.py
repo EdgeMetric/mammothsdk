@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 CLI_ROOT = Path(__file__).resolve().parent.parent.parent
 SNAPSHOT = CLI_ROOT / "spec" / "openapi" / "openapi.json"
@@ -69,7 +70,7 @@ def test_openapi_inventory_identity_is_method_and_path() -> None:
         seen.add(record["identity"])
 
 
-def test_live_drift_comparison_uses_stable_operation_identities(monkeypatch, capsys) -> None:
+def test_live_drift_comparison_detects_inventory_and_schema_changes(monkeypatch, capsys) -> None:
     """Exercise the opt-in network check without making the test network-dependent."""
     scripts = CLI_ROOT / "scripts"
     sys.path.insert(0, str(scripts))
@@ -87,6 +88,21 @@ def test_live_drift_comparison_uses_stable_operation_identities(monkeypatch, cap
         monkeypatch.setattr(sync_openapi, "fetch_document", lambda: (b"", changed))
         assert sync_openapi.check_live() == 1
         assert "+ GET /__inventory_drift_test__" in capsys.readouterr().err
+
+        changed = json.loads(json.dumps(committed))
+        schema = next(iter(changed["components"]["schemas"].values()))
+        schema["__contract_drift_test__"] = {"type": "string"}
+        monkeypatch.setattr(sync_openapi, "fetch_document", lambda: (b"", changed))
+        assert sync_openapi.check_live() == 1
+        assert "component schema changed" in capsys.readouterr().err
+
+        documentation_only = json.loads(json.dumps(committed))
+        documentation_only["info"]["description"] = "non-contract wording changed"
+        documentation_only["components"]["schemas"]["ProjectProperties"]["properties"]["color"][
+            "default"
+        ] = "#000000"
+        monkeypatch.setattr(sync_openapi, "fetch_document", lambda: (b"", documentation_only))
+        assert sync_openapi.check_live() == 0
     finally:
         sys.path.remove(str(scripts))
 
@@ -100,6 +116,10 @@ def test_generated_dashboard_wrappers_have_no_drift() -> None:
         assert (
             gen_dashboard_v3_sdk.OUTPUT.read_text(encoding="utf-8") == gen_dashboard_v3_sdk.build()
         )
+        assert (
+            gen_dashboard_v3_sdk.MODELS_OUTPUT.read_text(encoding="utf-8")
+            == gen_dashboard_v3_sdk.build_models()
+        )
     finally:
         sys.path.remove(str(scripts))
 
@@ -112,10 +132,11 @@ def test_generated_dashboard_wrapper_routes_path_query_and_body() -> None:
     class Client:
         def _request_json(self, *args, **kwargs):
             calls.append((args, kwargs))
-            return {"ok": True}
+            return {"column": "region", "total": 1, "values": ["west"]}
 
     owner = type("Owner", (), {"_client": Client()})()
-    assert generated.rls_value_list(owner, 17, "region", "west") == {"ok": True}
+    response = generated.rls_value_list(owner, 17, "region", "west")
+    assert response.model_dump() == {"column": "region", "total": 1, "values": ["west"]}
     assert calls == [
         (("GET", "/dashboards/17/rls/values"), {"params": {"column": "region", "search": "west"}})
     ]
@@ -156,13 +177,44 @@ def test_generated_nullable_parameter_types_and_routing() -> None:
     class Client:
         def _request_json(self, *args, **kwargs):
             calls.append((args, kwargs))
-            return {}
+            if args[1].endswith("/chat"):
+                return {"sequence": 3}
+            return {"dataview_id": 42}
 
     owner = type("Owner", (), {"_client": Client()})()
     generated.chat_history(owner, 17, sequence=3)
     generated.template_fit(owner, 42, table_item_id=9)
     assert calls[0][1]["params"] == {"sequence": 3}
     assert calls[1][1]["params"] == {"dataview_id": 42, "table_item_id": 9}
+
+
+def test_generated_dashboard_named_bodies_and_results_are_typed() -> None:
+    from mammoth.api import dashboard_generated as generated
+
+    signature = inspect.signature(generated.v3_generate)
+    assert signature.parameters["body"].annotation == "GenerateDashboardV3Spec"
+    assert signature.return_annotation == "ObjectJobSchema | JobResponse"
+
+    owner = type(
+        "Owner",
+        (),
+        {"_client": type("Client", (), {"_request_json": lambda *_a, **_kw: {"job_id": 9}})()},
+    )()
+    result = generated.v3_generate(
+        owner, {"params": {"dataview_id": 1, "intent": "Revenue by quarter"}}
+    )
+    assert type(result).__name__ == "ObjectJobSchema"
+    assert result.job_id == 9
+
+    invalid_owner = type(
+        "Owner",
+        (),
+        {"_client": type("Client", (), {"_request_json": lambda *_a, **_kw: {"oops": 9}})()},
+    )()
+    with pytest.raises(ValidationError):
+        generated.v3_generate(
+            invalid_owner, {"params": {"dataview_id": 1, "intent": "Revenue by quarter"}}
+        )
 
 
 if __name__ == "__main__":

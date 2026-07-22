@@ -39,6 +39,10 @@ SEAM_REASONS: dict[str, str] = {
         "SDK-only lifecycle seam; the CLI closes the client through the context "
         "manager, not a command."
     ),
+    "mammoth.client.MammothClient.wait_if_job": (
+        "SDK-only generated-operation wait seam; CLI commands apply it from their "
+        "reviewed wait policy rather than exposing a separate command."
+    ),
     "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview": (
         "SDK-only dataview->dataset resolver seam used by public view "
         "conveniences; not a CLI command."

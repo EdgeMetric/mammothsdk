@@ -20,6 +20,7 @@ from typing import Any
 
 from mammoth_cli.manifest.loader import command_by_id, load_commands
 from mammoth_cli.services.argspec import FieldSpec, arg_spec
+from mammoth_cli.services.input_fields import excluded_input_fields, handler_owned_fields
 from mammoth_cli.services.openapi_types import openapi_body_schema_for, sample_from_schema
 from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
 from mammoth_cli.services.type_system import is_opaque_mapping, json_schema, sample_value
@@ -61,7 +62,7 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
                 if field.name == "body"
                 and is_opaque_mapping(field.annotation)
                 and body_schema is not None
-                else json_schema(field.annotation)
+                else json_schema(field.annotation, field.name)
             ),
         }
         for field in spec.fields
@@ -71,14 +72,7 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
 
 def _externally_supplied_fields(command_id: str) -> frozenset[str]:
     """Fields supplied by positionals or authenticated CLI context."""
-    return frozenset(
-        {"project_id", "workspace_id"}
-        | {
-            item.name
-            for item in resolve_positionals(command_id)
-            if item.falls_back_to_field is None
-        }
-    )
+    return excluded_input_fields(command_id)
 
 
 def _positionals(command_id: str) -> list[dict[str, Any]]:
@@ -121,7 +115,9 @@ def runnable_example(
         positionals = resolve_positionals(record["command_id"])
     tokens: list[str] = ["mammoth", *record["command_path"].split()]
     tokens.extend(str(_sample_positional_value(p)) for p in positionals)
-    excluded = frozenset({"project_id", "workspace_id"} | {item.name for item in positionals})
+    excluded = frozenset(
+        {"project_id", "workspace_id"} | {item.name for item in positionals}
+    ) | handler_owned_fields(record["command_id"])
     required = [field for field in spec.fields if field.required and field.name not in excluded]
     if required:
         body_schema = openapi_body_schema_for(

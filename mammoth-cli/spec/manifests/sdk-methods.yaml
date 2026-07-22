@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 544
+method_count: 545
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -1775,7 +1775,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.analytics
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.analytics
-  signature: 'analytics(self: ''Any'', dashboard_id: ''int'') -> ''Any'''
+  signature: 'analytics(self: ''Any'', dashboard_id: ''int'') -> ''DashboardAnalyticsResponse'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: null
@@ -1799,7 +1799,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.canvas_get
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.canvas_get
-  signature: 'canvas_get(self: ''Any'', dashboard_id: ''int'', sequence: ''int | None'' = None) -> ''Any'''
+  signature: 'canvas_get(self: ''Any'', dashboard_id: ''int'', sequence: ''int | None'' = None) -> ''CanvasResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.canvas.get
   alias_of: null
@@ -1811,7 +1811,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.canvas_restore
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.canvas_restore
-  signature: 'canvas_restore(self: ''Any'', dashboard_id: ''int'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'canvas_restore(self: ''Any'', dashboard_id: ''int'', body: ''RestoreCanvasSpec'') -> ''ObjectJobSchema
+    | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.canvas.restore
   alias_of: null
@@ -1823,7 +1824,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.canvas_save
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.canvas_save
-  signature: 'canvas_save(self: ''Any'', dashboard_id: ''int'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'canvas_save(self: ''Any'', dashboard_id: ''int'', body: ''SaveCanvasSpec'') -> ''SaveCanvasResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.canvas.save
   alias_of: null
@@ -1835,7 +1836,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chat_edit
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.chat_edit
-  signature: 'chat_edit(self: ''Any'', dashboard_id: ''int'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'chat_edit(self: ''Any'', dashboard_id: ''int'', body: ''ChatEditSpec'') -> ''ObjectJobSchema
+    | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.chat.edit
   alias_of: null
@@ -1847,7 +1849,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chat_history
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.chat_history
-  signature: 'chat_history(self: ''Any'', dashboard_id: ''int'', sequence: ''int | None'' = None) -> ''Any'''
+  signature: 'chat_history(self: ''Any'', dashboard_id: ''int'', sequence: ''int | None'' = None) -> ''mmai_dashboards_v3_schema_ChatHistoryResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.chat.history
   alias_of: null
@@ -1859,7 +1861,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_create
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.context_create
-  signature: 'context_create(self: ''Any'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'context_create(self: ''Any'', body: ''ContextSpec'') -> ''ContextResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.context.create
   alias_of: null
@@ -1871,7 +1873,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_delete
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.context_delete
-  signature: 'context_delete(self: ''Any'', context_id: ''str'') -> ''Any'''
+  signature: 'context_delete(self: ''Any'', context_id: ''str'') -> ''OkResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.context.delete
   alias_of: null
@@ -1883,7 +1885,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_list
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.context_list
-  signature: 'context_list(self: ''Any'') -> ''Any'''
+  signature: 'context_list(self: ''Any'') -> ''ContextListResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.context.list
   alias_of: null
@@ -1895,7 +1897,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_update
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.context_update
-  signature: 'context_update(self: ''Any'', context_id: ''str'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'context_update(self: ''Any'', context_id: ''str'', body: ''ContextSpec'') -> ''ContextResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.context.update
   alias_of: null
@@ -1920,7 +1922,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.data_draft
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.data_draft
-  signature: 'data_draft(self: ''Any'', dashboard_id: ''int'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'data_draft(self: ''Any'', dashboard_id: ''int'', body: ''WidgetDataSpec'') -> ''WidgetDataResponse
+    | ObjectJobSchema | JobResponse'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: null
@@ -1932,7 +1935,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.data_published
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.data_published
-  signature: 'data_published(self: ''Any'', dashboard_id: ''int'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'data_published(self: ''Any'', dashboard_id: ''int'', body: ''WidgetDataSpec'') -> ''WidgetDataResponse
+    | ObjectJobSchema | JobResponse'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: null
@@ -1956,7 +1960,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.descriptor_data
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.descriptor_data
-  signature: 'descriptor_data(self: ''Any'', dashboard_id: ''int'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'descriptor_data(self: ''Any'', dashboard_id: ''int'', body: ''DescriptorDataSpec'') -> ''ObjectJobSchema
+    | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.descriptor-data
   alias_of: null
@@ -1968,7 +1973,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.duplicate
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.duplicate
-  signature: 'duplicate(self: ''Any'', dashboard_id: ''int'') -> ''Any'''
+  signature: 'duplicate(self: ''Any'', dashboard_id: ''int'') -> ''DuplicateDashboardResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.duplicate
   alias_of: null
@@ -1980,7 +1985,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.figure_intent
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.figure_intent
-  signature: 'figure_intent(self: ''Any'', dashboard_id: ''int'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'figure_intent(self: ''Any'', dashboard_id: ''int'', body: ''FigureIntentSpec'') -> ''FigureIntentResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.figure-intent
   alias_of: null
@@ -2088,7 +2093,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.og_card
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.og_card
-  signature: 'og_card(self: ''Any'', dashboard_id: ''int'') -> ''Any'''
+  signature: 'og_card(self: ''Any'', dashboard_id: ''int'') -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dashboard.og-card
   alias_of: null
@@ -2100,7 +2105,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.page_plan
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.page_plan
-  signature: 'page_plan(self: ''Any'', dashboard_id: ''int'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'page_plan(self: ''Any'', dashboard_id: ''int'', body: ''PlanPageSpec'') -> ''PlanPageResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.page.plan
   alias_of: null
@@ -2112,7 +2117,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.pdf_artifact
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.pdf_artifact
-  signature: 'pdf_artifact(self: ''Any'', dashboard_id: ''int'', job_id: ''int'') -> ''Any'''
+  signature: 'pdf_artifact(self: ''Any'', dashboard_id: ''int'', job_id: ''int'') -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dashboard.pdf-artifact
   alias_of: null
@@ -2124,19 +2129,20 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.pdf_export
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.pdf_export
-  signature: 'pdf_export(self: ''Any'', dashboard_id: ''int'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'pdf_export(self: ''Any'', dashboard_id: ''int'', body: ''PdfExportSpec'') -> ''ObjectJobSchema
+    | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.pdf.export
   alias_of: null
   no_command_reason: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: always_wait
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_canvas
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.published_canvas
-  signature: 'published_canvas(self: ''Any'', url: ''str'') -> ''Any'''
+  signature: 'published_canvas(self: ''Any'', url: ''str'') -> ''CanvasResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.published.canvas
   alias_of: null
@@ -2148,7 +2154,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_data
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.published_data
-  signature: 'published_data(self: ''Any'', url: ''str'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'published_data(self: ''Any'', url: ''str'', body: ''DescriptorDataSpec'') -> ''ObjectJobSchema
+    | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.published.data
   alias_of: null
@@ -2172,7 +2179,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_og_card
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.published_og_card
-  signature: 'published_og_card(self: ''Any'', url: ''str'') -> ''Any'''
+  signature: 'published_og_card(self: ''Any'', url: ''str'') -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dashboard.published.og-card
   alias_of: null
@@ -2184,7 +2191,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_pdf_artifact
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.published_pdf_artifact
-  signature: 'published_pdf_artifact(self: ''Any'', url: ''str'', job_id: ''int'') -> ''Any'''
+  signature: 'published_pdf_artifact(self: ''Any'', url: ''str'', job_id: ''int'') -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dashboard.published.pdf-artifact
   alias_of: null
@@ -2196,19 +2203,20 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_pdf_export
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.published_pdf_export
-  signature: 'published_pdf_export(self: ''Any'', url: ''str'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'published_pdf_export(self: ''Any'', url: ''str'', body: ''PdfExportSpec'') -> ''ObjectJobSchema
+    | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.published.pdf.export
   alias_of: null
   no_command_reason: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: always_wait
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_share_page
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.published_share_page
-  signature: 'published_share_page(self: ''Any'', url: ''str'') -> ''Any'''
+  signature: 'published_share_page(self: ''Any'', url: ''str'') -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dashboard.published.share-page
   alias_of: null
@@ -2220,7 +2228,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_video_artifact
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.published_video_artifact
-  signature: 'published_video_artifact(self: ''Any'', url: ''str'') -> ''Any'''
+  signature: 'published_video_artifact(self: ''Any'', url: ''str'') -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dashboard.published.video-artifact
   alias_of: null
@@ -2232,20 +2240,20 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_video_export
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.published_video_export
-  signature: 'published_video_export(self: ''Any'', url: ''str'') -> ''Any'''
+  signature: 'published_video_export(self: ''Any'', url: ''str'') -> ''ObjectJobSchema | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.published.video.export
   alias_of: null
   no_command_reason: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: always_wait
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_ask
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.qa_ask
-  signature: 'qa_ask(self: ''Any'', dashboard_id: ''int'', session_id: ''int'', body: ''dict[str, Any]'')
-    -> ''Any'''
+  signature: 'qa_ask(self: ''Any'', dashboard_id: ''int'', session_id: ''int'', body: ''AskSpec'') ->
+    ''ObjectJobSchema | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.qa.ask
   alias_of: null
@@ -2257,8 +2265,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_comment_create
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.qa_comment_create
-  signature: 'qa_comment_create(self: ''Any'', dashboard_id: ''int'', session_id: ''int'', body: ''dict[str,
-    Any]'') -> ''Any'''
+  signature: 'qa_comment_create(self: ''Any'', dashboard_id: ''int'', session_id: ''int'', body: ''CommentSpec'')
+    -> ''SessionResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.qa.comment.create
   alias_of: null
@@ -2271,7 +2279,7 @@ methods:
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_comment_delete
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.qa_comment_delete
   signature: 'qa_comment_delete(self: ''Any'', dashboard_id: ''int'', session_id: ''int'', comment_id:
-    ''int'') -> ''Any'''
+    ''int'') -> ''SessionResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.qa.comment.delete
   alias_of: null
@@ -2284,7 +2292,7 @@ methods:
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_feedback
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.qa_feedback
   signature: 'qa_feedback(self: ''Any'', dashboard_id: ''int'', session_id: ''int'', message_id: ''int'',
-    body: ''dict[str, Any]'') -> ''Any'''
+    body: ''FeedbackSpec'') -> ''SessionResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.qa.feedback
   alias_of: null
@@ -2296,7 +2304,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_create
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.qa_session_create
-  signature: 'qa_session_create(self: ''Any'', dashboard_id: ''int'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'qa_session_create(self: ''Any'', dashboard_id: ''int'', body: ''CreateSessionSpec'') ->
+    ''SessionResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.qa.session.create
   alias_of: null
@@ -2308,7 +2317,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_delete
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.qa_session_delete
-  signature: 'qa_session_delete(self: ''Any'', dashboard_id: ''int'', session_id: ''int'') -> ''Any'''
+  signature: 'qa_session_delete(self: ''Any'', dashboard_id: ''int'', session_id: ''int'') -> ''dict[str,
+    Any]'''
   openapi_operation_ids: []
   canonical_command: dashboard.qa.session.delete
   alias_of: null
@@ -2320,7 +2330,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_fork
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.qa_session_fork
-  signature: 'qa_session_fork(self: ''Any'', dashboard_id: ''int'', session_id: ''int'') -> ''Any'''
+  signature: 'qa_session_fork(self: ''Any'', dashboard_id: ''int'', session_id: ''int'') -> ''SessionResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.qa.session.fork
   alias_of: null
@@ -2332,7 +2342,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_get
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.qa_session_get
-  signature: 'qa_session_get(self: ''Any'', dashboard_id: ''int'', session_id: ''int'') -> ''Any'''
+  signature: 'qa_session_get(self: ''Any'', dashboard_id: ''int'', session_id: ''int'') -> ''SessionResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.qa.session.get
   alias_of: null
@@ -2344,7 +2354,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_list
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.qa_session_list
-  signature: 'qa_session_list(self: ''Any'', dashboard_id: ''int'') -> ''Any'''
+  signature: 'qa_session_list(self: ''Any'', dashboard_id: ''int'') -> ''SessionListResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.qa.session.list
   alias_of: null
@@ -2356,8 +2366,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_rename
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.qa_session_rename
-  signature: 'qa_session_rename(self: ''Any'', dashboard_id: ''int'', session_id: ''int'', body: ''dict[str,
-    Any]'') -> ''Any'''
+  signature: 'qa_session_rename(self: ''Any'', dashboard_id: ''int'', session_id: ''int'', body: ''RenameSessionSpec'')
+    -> ''SessionResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.qa.session.rename
   alias_of: null
@@ -2370,7 +2380,7 @@ methods:
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_set_visibility
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.qa_session_set_visibility
   signature: 'qa_session_set_visibility(self: ''Any'', dashboard_id: ''int'', session_id: ''int'', body:
-    ''dict[str, Any]'') -> ''Any'''
+    ''VisibilitySpec'') -> ''SessionResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.qa.session.set-visibility
   alias_of: null
@@ -2382,7 +2392,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_settings_get
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.qa_settings_get
-  signature: 'qa_settings_get(self: ''Any'', dashboard_id: ''int'') -> ''Any'''
+  signature: 'qa_settings_get(self: ''Any'', dashboard_id: ''int'') -> ''QaSettingsResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.qa.settings.get
   alias_of: null
@@ -2394,7 +2404,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_settings_set
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.qa_settings_set
-  signature: 'qa_settings_set(self: ''Any'', dashboard_id: ''int'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'qa_settings_set(self: ''Any'', dashboard_id: ''int'', body: ''QaSettingsSpec'') -> ''QaSettingsResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.qa.settings.set
   alias_of: null
@@ -2406,7 +2416,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.query
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.query
-  signature: 'query(self: ''Any'', dashboard_id: ''int'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'query(self: ''Any'', dashboard_id: ''int'', body: ''AdhocQuerySpec'') -> ''AdhocQueryResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.query
   alias_of: null
@@ -2430,7 +2440,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rls_assignment_list
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.rls_assignment_list
-  signature: 'rls_assignment_list(self: ''Any'', dashboard_id: ''int'') -> ''Any'''
+  signature: 'rls_assignment_list(self: ''Any'', dashboard_id: ''int'') -> ''RlsAssignmentsResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.rls.assignment.list
   alias_of: null
@@ -2442,7 +2452,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rls_assignment_set
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.rls_assignment_set
-  signature: 'rls_assignment_set(self: ''Any'', dashboard_id: ''int'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'rls_assignment_set(self: ''Any'', dashboard_id: ''int'', body: ''RlsAssignmentsSpec'') ->
+    ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dashboard.rls.assignment.set
   alias_of: null
@@ -2454,7 +2465,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rls_column_list
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.rls_column_list
-  signature: 'rls_column_list(self: ''Any'', dashboard_id: ''int'') -> ''Any'''
+  signature: 'rls_column_list(self: ''Any'', dashboard_id: ''int'') -> ''RlsColumnsResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.rls.column.list
   alias_of: null
@@ -2467,7 +2478,7 @@ methods:
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rls_value_list
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.rls_value_list
   signature: 'rls_value_list(self: ''Any'', dashboard_id: ''int'', column: ''str'', search: ''str | None''
-    = None) -> ''Any'''
+    = None) -> ''RlsDistinctValuesResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.rls.value.list
   alias_of: null
@@ -2492,7 +2503,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.signature_create
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.signature_create
-  signature: 'signature_create(self: ''Any'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'signature_create(self: ''Any'', body: ''SignatureSpec'') -> ''SignatureResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.signature.create
   alias_of: null
@@ -2504,7 +2515,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.signature_delete
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.signature_delete
-  signature: 'signature_delete(self: ''Any'', signature_id: ''str'') -> ''Any'''
+  signature: 'signature_delete(self: ''Any'', signature_id: ''str'') -> ''OkResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.signature.delete
   alias_of: null
@@ -2516,7 +2527,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.signature_list
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.signature_list
-  signature: 'signature_list(self: ''Any'') -> ''Any'''
+  signature: 'signature_list(self: ''Any'') -> ''SignatureListResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.signature.list
   alias_of: null
@@ -2528,7 +2539,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.signature_update
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.signature_update
-  signature: 'signature_update(self: ''Any'', signature_id: ''str'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'signature_update(self: ''Any'', signature_id: ''str'', body: ''SignatureSpec'') -> ''SignatureResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.signature.update
   alias_of: null
@@ -2540,7 +2551,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.source_list
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.source_list
-  signature: 'source_list(self: ''Any'') -> ''Any'''
+  signature: 'source_list(self: ''Any'') -> ''DashboardSourcesType'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: null
@@ -2552,7 +2563,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_custom_create
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.style_custom_create
-  signature: 'style_custom_create(self: ''Any'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'style_custom_create(self: ''Any'', body: ''CustomStyleSpec'') -> ''StyleResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.style.custom.create
   alias_of: null
@@ -2564,7 +2575,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_custom_delete
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.style_custom_delete
-  signature: 'style_custom_delete(self: ''Any'', style_id: ''str'') -> ''Any'''
+  signature: 'style_custom_delete(self: ''Any'', style_id: ''str'') -> ''OkResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.style.custom.delete
   alias_of: null
@@ -2576,7 +2587,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_custom_list
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.style_custom_list
-  signature: 'style_custom_list(self: ''Any'') -> ''Any'''
+  signature: 'style_custom_list(self: ''Any'') -> ''StyleListResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.style.custom.list
   alias_of: null
@@ -2588,7 +2599,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_custom_update
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.style_custom_update
-  signature: 'style_custom_update(self: ''Any'', style_id: ''str'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'style_custom_update(self: ''Any'', style_id: ''str'', body: ''CustomStyleSpec'') -> ''StyleResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.style.custom.update
   alias_of: null
@@ -2600,7 +2611,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_default_get
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.style_default_get
-  signature: 'style_default_get(self: ''Any'') -> ''Any'''
+  signature: 'style_default_get(self: ''Any'') -> ''DefaultStyleResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.style.default.get
   alias_of: null
@@ -2612,7 +2623,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_default_set
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.style_default_set
-  signature: 'style_default_set(self: ''Any'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'style_default_set(self: ''Any'', body: ''DefaultStyleSpec'') -> ''DefaultStyleResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.style.default.set
   alias_of: null
@@ -2624,7 +2635,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_derive
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.style_derive
-  signature: 'style_derive(self: ''Any'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'style_derive(self: ''Any'', body: ''DeriveStyleSpec'') -> ''dict[str, Any] | DeriveStyleResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.style.derive
   alias_of: null
@@ -2636,7 +2647,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_extract_brand
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.style_extract_brand
-  signature: 'style_extract_brand(self: ''Any'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'style_extract_brand(self: ''Any'', body: ''ExtractBrandSpec'') -> ''ObjectJobSchema | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.style.extract-brand
   alias_of: null
@@ -2648,7 +2659,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_preset_list
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.style_preset_list
-  signature: 'style_preset_list(self: ''Any'') -> ''Any'''
+  signature: 'style_preset_list(self: ''Any'') -> ''StylePresetsResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.style.preset.list
   alias_of: null
@@ -2660,7 +2671,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_token_list
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.style_token_list
-  signature: 'style_token_list(self: ''Any'', id: ''str'') -> ''Any'''
+  signature: 'style_token_list(self: ''Any'', id: ''str'') -> ''StyleTokensResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.style.token.list
   alias_of: null
@@ -2673,7 +2684,7 @@ methods:
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.suggestion_list
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.suggestion_list
   signature: 'suggestion_list(self: ''Any'', dataview_id: ''int'', table_item_id: ''int | None'' = None)
-    -> ''Any'''
+    -> ''DashboardSuggestionsResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.suggestion.list
   alias_of: null
@@ -2685,7 +2696,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_apply
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.template_apply
-  signature: 'template_apply(self: ''Any'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'template_apply(self: ''Any'', body: ''ApplyTemplateSpec'') -> ''ObjectJobSchema | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.template.apply
   alias_of: null
@@ -2697,7 +2708,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_create
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.template_create
-  signature: 'template_create(self: ''Any'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'template_create(self: ''Any'', body: ''SaveTemplateSpec'') -> ''TemplateDetailResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.template.create
   alias_of: null
@@ -2709,7 +2720,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_delete
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.template_delete
-  signature: 'template_delete(self: ''Any'', template_id: ''str'') -> ''Any'''
+  signature: 'template_delete(self: ''Any'', template_id: ''str'') -> ''OkResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.template.delete
   alias_of: null
@@ -2722,7 +2733,7 @@ methods:
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_fit
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.template_fit
   signature: 'template_fit(self: ''Any'', dataview_id: ''int'', table_item_id: ''int | None'' = None)
-    -> ''Any'''
+    -> ''TemplateFitResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.template.fit
   alias_of: null
@@ -2734,7 +2745,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_get
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.template_get
-  signature: 'template_get(self: ''Any'', template_id: ''str'') -> ''Any'''
+  signature: 'template_get(self: ''Any'', template_id: ''str'') -> ''TemplateDetailResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.template.get
   alias_of: null
@@ -2746,7 +2757,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_list
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.template_list
-  signature: 'template_list(self: ''Any'') -> ''Any'''
+  signature: 'template_list(self: ''Any'') -> ''TemplateListResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.template.list
   alias_of: null
@@ -2758,7 +2769,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_preview
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.template_preview
-  signature: 'template_preview(self: ''Any'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'template_preview(self: ''Any'', body: ''PreviewTemplateSpec'') -> ''PreviewTemplateResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.template.preview
   alias_of: null
@@ -2770,7 +2781,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_rename
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.template_rename
-  signature: 'template_rename(self: ''Any'', template_id: ''str'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'template_rename(self: ''Any'', template_id: ''str'', body: ''RenameTemplateSpec'') -> ''TemplateDetailResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.template.rename
   alias_of: null
@@ -2782,7 +2793,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_resolve_mapping
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.template_resolve_mapping
-  signature: 'template_resolve_mapping(self: ''Any'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'template_resolve_mapping(self: ''Any'', body: ''ResolveTemplateMappingSpec'') -> ''ResolveTemplateMappingResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.template.resolve-mapping
   alias_of: null
@@ -2819,31 +2830,31 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.v3_generate
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.v3_generate
-  signature: 'v3_generate(self: ''Any'', body: ''dict[str, Any]'') -> ''Any'''
+  signature: 'v3_generate(self: ''Any'', body: ''GenerateDashboardV3Spec'') -> ''ObjectJobSchema | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.v3.generate
   alias_of: null
   no_command_reason: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: always_wait
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.video_export
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.video_export
-  signature: 'video_export(self: ''Any'', dashboard_id: ''int'') -> ''Any'''
+  signature: 'video_export(self: ''Any'', dashboard_id: ''int'') -> ''ObjectJobSchema | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.video.export
   alias_of: null
   no_command_reason: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: always_wait
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.video_state
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.video_state
-  signature: 'video_state(self: ''Any'', dashboard_id: ''int'') -> ''Any'''
+  signature: 'video_state(self: ''Any'', dashboard_id: ''int'') -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dashboard.video-state
   alias_of: null
@@ -6423,6 +6434,20 @@ methods:
   no_command_reason: null
   mutation_class: read
   wait_policy: not_async
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.client.MammothClient.wait_if_job
+  implementation_origin: mammoth.client.MammothClient.wait_if_job
+  signature: 'wait_if_job(self, response: ''dict[str, Any]'', timeout: ''int | None'' = None, poll_interval:
+    ''int'' = 2) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only generated-operation wait seam; CLI commands apply it from their reviewed
+    wait policy rather than exposing a separate command.
+  mutation_class: null
+  wait_policy: null
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary

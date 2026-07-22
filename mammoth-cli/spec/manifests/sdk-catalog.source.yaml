@@ -1216,7 +1216,7 @@ sdk_methods:
   canonical_command: dashboard.pdf.export
   alias_of: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_canvas
@@ -1258,7 +1258,7 @@ sdk_methods:
   canonical_command: dashboard.published.pdf.export
   alias_of: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_share_page
@@ -1279,7 +1279,7 @@ sdk_methods:
   canonical_command: dashboard.published.video.export
   alias_of: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_ask
@@ -1611,14 +1611,14 @@ sdk_methods:
   canonical_command: dashboard.v3.generate
   alias_of: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.video_export
   canonical_command: dashboard.video.export
   alias_of: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.video_state
@@ -3671,6 +3671,15 @@ sdk_methods:
   notes: alias; auth status --check uses a typed diagnostic distinguishing invalid credentials, forbidden
     workspace, server unavailability, and timeout. Do not implement the SDK method's lossy boolean behavior
     in the CLI.
+- sdk_symbol: mammoth.client.MammothClient.wait_if_job
+  canonical_command: null
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: SDK-only generated-operation wait seam; CLI commands apply it from their reviewed wait policy
+    rather than exposing a separate command.
 - sdk_symbol: mammoth.client.ViewsResource.bulk_delete
   canonical_command: null
   alias_of: view.delete

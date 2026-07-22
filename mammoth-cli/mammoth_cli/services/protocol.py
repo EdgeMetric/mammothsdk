@@ -32,6 +32,10 @@ class MammothService(Protocol):
         """
         ...
 
+    def wait_if_job(self, response: Any) -> Any:
+        """Wait for an SDK response containing a recognized async job reference."""
+        ...
+
     def call_view(self, view_id: int, method: str, /, **kwargs: Any) -> Any:
         """Invoke a public method on a rich View object.
 

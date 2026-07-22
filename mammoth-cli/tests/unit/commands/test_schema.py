@@ -100,6 +100,26 @@ def test_unknown_command_returns_none() -> None:
     assert get_schema("nope.nope") is None
 
 
+def test_schema_omits_fields_that_handlers_ignore_or_replace() -> None:
+    skill = get_schema("skill.install")
+    job = get_schema("job.get")
+    assert skill is not None and job is not None
+    skill_fields = {field["name"] for field in skill["accepted_fields"]}
+    job_fields = {field["name"] for field in job["accepted_fields"]}
+    assert {"home", "cwd", "timestamp"}.isdisjoint(skill_fields)
+    assert "timeout" not in job_fields
+    assert {"home", "cwd", "timestamp"}.isdisjoint(skill["input_schema"]["properties"])
+    assert "timeout" not in job["input_schema"]["properties"]
+
+
+def test_id_collection_schema_requires_positive_non_empty_ids() -> None:
+    schema = get_schema("project.bulk-delete")
+    assert schema is not None
+    project_ids = schema["input_schema"]["properties"]["project_ids"]
+    assert project_ids["minItems"] == 1
+    assert project_ids["items"]["minimum"] == 1
+
+
 def test_build_time_example_uses_explicit_operation_ids_not_generated_manifest(
     monkeypatch,
 ) -> None:

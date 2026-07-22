@@ -33,6 +33,7 @@
         "live_dedicated_external_fixture",
         "live_read_only",
         "contract_only_high_impact",
+        "contract_only_no_disposable_fixture",
         "server_unavailable"
       ]
     },

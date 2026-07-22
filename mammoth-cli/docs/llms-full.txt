@@ -427,7 +427,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth dashboard update` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.update
   example: mammoth dashboard update 123 --input '{"patch": [{"op": "add", "path": "intent", "value": "example"}]}' --output json --no-input
 - `mammoth dashboard v3 generate` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.v3_generate
-  example: mammoth dashboard v3 generate --input '{"body": {"params": {"dataview_id": 1, "intent": "example"}}}' --output json --no-input
+  example: mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "example", "dataview_id": 1}}}' --output json --no-input
 - `mammoth dashboard video export` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.video_export
   example: mammoth dashboard video export 123 --output json --no-input
 - `mammoth dashboard video-state` [read/none] -> mammoth.api.dashboards.DashboardsAPI.video_state

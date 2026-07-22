@@ -53,7 +53,18 @@ on your PATH. Run `pipx upgrade mammoth-cli` to update it.
 The versioned release ships `mammoth-install.sh` (Linux and macOS, POSIX `sh`)
 and `mammoth-install.ps1` (Windows PowerShell 5.1+). The verified flow downloads
 the installer, `SHA256SUMS`, and the Sigstore bundle, verifies both, then runs
-the installer. See the release notes for the exact `cosign verify-blob` command.
+the installer. For the direct convenience flow:
+
+```sh
+curl -fsSL https://github.com/EdgeMetric/mm-pysdk/releases/latest/download/mammoth-install.sh | sh
+```
+
+```powershell
+irm https://github.com/EdgeMetric/mm-pysdk/releases/latest/download/mammoth-install.ps1 | iex
+```
+
+Piping a download directly to a shell does not verify it first. For the
+verified flow and exact `cosign verify-blob` command, see the release notes.
 
 ## Install the agent skill
 

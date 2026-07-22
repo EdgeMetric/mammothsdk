@@ -1804,7 +1804,7 @@ Total commands: 504.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.v3_generate`
-- Agent example: `mammoth dashboard v3 generate --input '{"body": {"params": {"dataview_id": 1, "intent": "example"}}}' --output json --no-input`
+- Agent example: `mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "example", "dataview_id": 1}}}' --output json --no-input`
 
 ### `mammoth dashboard video export`
 

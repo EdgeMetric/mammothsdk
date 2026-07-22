@@ -20,7 +20,7 @@ Usage::
 
     python scripts/sync_openapi.py            # fetch, write snapshot + projection
     python scripts/sync_openapi.py --check    # re-project committed snapshot only
-    python scripts/sync_openapi.py --check-live  # opt-in operation inventory drift check
+    python scripts/sync_openapi.py --check-live  # opt-in semantic contract drift check
 """
 
 from __future__ import annotations
@@ -106,6 +106,58 @@ def project_contract(document: dict[str, Any]) -> dict[str, Any]:
     return projected
 
 
+def _strip_documentation(node: Any) -> Any:
+    """Remove presentation-only fields from a semantic contract comparison."""
+    if isinstance(node, dict):
+        return {
+            key: _strip_documentation(value)
+            for key, value in sorted(node.items())
+            if key
+            not in {
+                "default",
+                "description",
+                "example",
+                "examples",
+                "externalDocs",
+                "summary",
+                "title",
+            }
+        }
+    if isinstance(node, list):
+        return [_strip_documentation(item) for item in node]
+    return node
+
+
+def semantic_contract(document: dict[str, Any]) -> dict[str, Any]:
+    """Return the API surface used by live drift monitoring.
+
+    Unlike the operation inventory, this retains parameters, request bodies,
+    responses, component schemas, requiredness, and types. Documentation and
+    examples and server-supplied defaults are excluded because they do not
+    change the accepted or returned wire shape. The production fleet can also
+    serve different UI defaults during a rolling deployment; monitoring them
+    would make this scheduled structural check nondeterministic.
+    """
+    projected = _strip_documentation(document)
+    paths = projected.get("paths", {})
+    for path_item in paths.values():
+        if not isinstance(path_item, dict):
+            continue
+        for method, operation in path_item.items():
+            if method.lower() not in HTTP_METHODS or not isinstance(operation, dict):
+                continue
+            params = operation.get("parameters")
+            if isinstance(params, list):
+                operation["parameters"] = sorted(
+                    params,
+                    key=lambda parameter: (
+                        str(parameter.get("in", "")) if isinstance(parameter, dict) else "",
+                        str(parameter.get("name", "")) if isinstance(parameter, dict) else "",
+                    ),
+                )
+    return projected
+
+
 def write_json(path: Path, data: Any) -> None:
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -151,7 +203,7 @@ def check() -> int:
 
 
 def check_live() -> int:
-    """Compare only stable operation identities with production.
+    """Compare the normalized semantic API contract with production.
 
     This is intentionally opt-in rather than part of ordinary CI: network
     availability must not make the deterministic contract suite flaky.
@@ -162,14 +214,17 @@ def check_live() -> int:
     live_ops = operation_inventory(live)
     added = sorted(live_ops - committed_ops)
     removed = sorted(committed_ops - live_ops)
-    if not added and not removed:
-        print(f"live inventory matches snapshot: operations={len(live_ops)}")
+    semantic_changed = semantic_contract(committed) != semantic_contract(live)
+    if not added and not removed and not semantic_changed:
+        print(f"live semantic contract matches snapshot: operations={len(live_ops)}")
         return 0
-    print("live OpenAPI operation inventory differs from the pinned snapshot", file=sys.stderr)
+    print("live OpenAPI contract differs from the pinned snapshot", file=sys.stderr)
     for identity in added:
         print(f"+ {identity}", file=sys.stderr)
     for identity in removed:
         print(f"- {identity}", file=sys.stderr)
+    if semantic_changed and not added and not removed:
+        print("~ request, response, parameter, or component schema changed", file=sys.stderr)
     return 1
 
 
@@ -180,7 +235,7 @@ def main() -> int:
     modes.add_argument(
         "--check-live",
         action="store_true",
-        help="opt-in comparison of live and pinned operation identities",
+        help="opt-in comparison of the live and pinned semantic contracts",
     )
     args = parser.parse_args()
     if args.check:

@@ -118,6 +118,11 @@ def derive_acceptance(command_id: str, mutation_class: str) -> tuple[str, str | 
         )
     if mutation_class == "read":
         return "live_read_only", None
+    if group == "dashboard":
+        return "contract_only_no_disposable_fixture", (
+            "Dashboard mutation has contract coverage but no automated disposable-dashboard "
+            "fixture in tests/live."
+        )
     # Project-scoped safe operations run against a disposable project.
     return "live_disposable_project", None
 

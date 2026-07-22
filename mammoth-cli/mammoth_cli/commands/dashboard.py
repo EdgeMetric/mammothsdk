@@ -386,4 +386,8 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
 
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+        if record.get("wait_policy") in {"always_wait", "start_or_wait"}:
+            if hasattr(data, "model_dump"):
+                data = data.model_dump(mode="json")
+            data = service.wait_if_job(data)
     return data, _meta(invocation, auth.workspace_id)

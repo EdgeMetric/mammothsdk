@@ -50,6 +50,27 @@ def test_input_field_type_mismatch_is_rejected_through_the_app(
     assert "invalid_input_field_type" in result.output
 
 
+def test_non_positive_structured_ids_are_rejected_before_auth(
+    isolated_cli_config: Path, tmp_path: Path
+) -> None:
+    doc = tmp_path / "ids.json"
+    doc.write_text(json.dumps({"project_ids": [-1, 0]}), encoding="utf-8")
+    result = make_runner().invoke(["project", "bulk-delete", "--input", str(doc), *_JSON_NO_INPUT])
+    assert result.exit_code == EXIT_USAGE
+    assert "invalid_input_field_type" in result.output
+    assert "project_ids[0]" in result.output
+
+
+def test_handler_owned_field_is_rejected_before_auth(
+    isolated_cli_config: Path, tmp_path: Path
+) -> None:
+    doc = tmp_path / "job.json"
+    doc.write_text(json.dumps({"timeout": 1}), encoding="utf-8")
+    result = make_runner().invoke(["job", "get", "123", "--input", str(doc), *_JSON_NO_INPUT])
+    assert result.exit_code == EXIT_USAGE
+    assert "unknown_input_field" in result.output
+
+
 # --- R8: global options and positional ids are validated -------------------
 
 
