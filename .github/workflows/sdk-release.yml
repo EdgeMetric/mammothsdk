@@ -1,0 +1,96 @@
+name: SDK Release
+
+# Publishes the mammoth-io SDK to PyPI on its own tag, independent of the CLI
+# release and of the combined publish.yml flow. This never publishes
+# mammoth-mcp. It runs ONLY when an authorized maintainer pushes an `sdk-vX.Y.Z`
+# tag. Do not push an `sdk-v*` tag without separate release authorization.
+on:
+  push:
+    tags:
+      - "sdk-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build and verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Derive version from tag
+        id: version
+        run: |
+          set -eu
+          version="${GITHUB_REF_NAME#sdk-v}"
+          case "$version" in
+            [0-9]*.[0-9]*.[0-9]*) : ;;
+            *) echo "::error::tag '${GITHUB_REF_NAME}' is not sdk-vX.Y.Z"; exit 1 ;;
+          esac
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Verify pyproject version matches tag
+        run: |
+          set -eu
+          declared="$(poetry version --short)"
+          if [ "$declared" != "${{ steps.version.outputs.version }}" ]; then
+            echo "::error::pyproject version '$declared' != tag version '${{ steps.version.outputs.version }}'"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Lint and type-check
+        run: |
+          set -eu
+          poetry run ruff check mammoth/
+          poetry run mypy mammoth/
+
+      - name: Unit tests
+        run: poetry run pytest tests/unit/ -q
+
+      - name: Build distribution
+        env:
+          SOURCE_DATE_EPOCH: "1700000000"
+        run: poetry build --output dist
+
+      - name: Upload distribution artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-dist
+          path: dist/
+          if-no-files-found: error
+
+  publish-pypi:
+    name: publish mammoth-io to PyPI (trusted publishing)
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Download distribution artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sdk-dist
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
