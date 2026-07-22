@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import workflow as workflow_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -32,9 +33,9 @@ _BLOCK_TYPE = "mammoth.api.workflows.WorkflowsAPI.block_type"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -117,9 +118,7 @@ def test_create_requires_name(fake_service: FakeMammothService) -> None:
     assert excinfo.value.code == "missing_argument"
 
 
-def test_create_forwards_optional_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     input_file = _write(
         tmp_path,
         {"name": "Pipeline", "shape": "full", "purpose": "ETL", "seed_datasource_id": 9},
@@ -288,9 +287,7 @@ def test_block_add_forwards_optional_fields(
 # -- block.auth ------------------------------------------------------------
 
 
-def test_block_auth_uses_two_positionals(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_block_auth_uses_two_positionals(fake_service: FakeMammothService, tmp_path: Path) -> None:
     input_file = _write(tmp_path, {"auth_data": {"token": "t"}})
     workflow_cmd.workflow_block_auth(
         _inv("workflow.block.auth", project=180, extra_args=["7", "3"], input_file=input_file)
@@ -310,9 +307,7 @@ def test_block_auth_uses_two_positionals(
 
 def test_block_auth_requires_block_id(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        workflow_cmd.workflow_block_auth(
-            _inv("workflow.block.auth", project=180, extra_args=["7"])
-        )
+        workflow_cmd.workflow_block_auth(_inv("workflow.block.auth", project=180, extra_args=["7"]))
     assert excinfo.value.code == "missing_argument"
 
 

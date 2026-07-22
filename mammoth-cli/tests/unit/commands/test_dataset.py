@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import dataset as dataset_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -31,9 +32,9 @@ _UPDATE = "mammoth.api.datasets.DatasetsAPI.update"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -269,9 +270,7 @@ def test_rename_forwards_name(fake_service: FakeMammothService, tmp_path: Path) 
     dataset_cmd.dataset_rename(
         _inv("dataset.rename", project=180, extra_args=["7"], input_file=input_file)
     )
-    assert fake_service.call_log == [
-        (_RENAME, {"dataset_id": 7, "name": "New", "project_id": 180})
-    ]
+    assert fake_service.call_log == [(_RENAME, {"dataset_id": 7, "name": "New", "project_id": 180})]
 
 
 # -- trash / restore --------------------------------------------------------
@@ -309,9 +308,7 @@ def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
 
 def test_bulk_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_bulk_delete(
-            _inv("dataset.bulk-delete", project=180, output="json")
-        )
+        dataset_cmd.dataset_bulk_delete(_inv("dataset.bulk-delete", project=180, output="json"))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
 
@@ -385,9 +382,7 @@ def test_bulk_update_proceeds_with_matching_confirm(
 
 def test_update_requires_patch_data(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_update(
-            _inv("dataset.update", project=180, yes=True, confirm="180")
-        )
+        dataset_cmd.dataset_update(_inv("dataset.update", project=180, yes=True, confirm="180"))
     assert excinfo.value.code == "missing_field"
 
 

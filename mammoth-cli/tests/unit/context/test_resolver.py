@@ -7,7 +7,14 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.context import credentials, profiles
-from mammoth_cli.context.resolver import ExplicitLogin, resolve_auth, resolve_project
+from mammoth_cli.context.resolver import (
+    ENV_API_KEY,
+    ENV_API_SECRET,
+    ENV_WORKSPACE_ID,
+    ExplicitLogin,
+    resolve_auth,
+    resolve_project,
+)
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 
@@ -42,9 +49,9 @@ def test_resolve_auth_env_overrides_profile(isolated_cli_config: Path) -> None:
     )
     credentials.store_credentials("default", "profile-key", "profile-secret", storage="file")
     env = {
-        "MAMMOTH_API_KEY": "env-key",
-        "MAMMOTH_API_SECRET": "env-secret",
-        "MAMMOTH_WORKSPACE_ID": "9",
+        ENV_API_KEY: "env-key",
+        ENV_API_SECRET: "env-secret",
+        ENV_WORKSPACE_ID: "9",
     }
     resolved = resolve_auth(_invocation(), env=env)
     assert resolved.api_key == "env-key"
@@ -54,9 +61,9 @@ def test_resolve_auth_env_overrides_profile(isolated_cli_config: Path) -> None:
 
 def test_resolve_auth_explicit_login_overrides_everything(isolated_cli_config: Path) -> None:
     env = {
-        "MAMMOTH_API_KEY": "env-key",
-        "MAMMOTH_API_SECRET": "env-secret",
-        "MAMMOTH_WORKSPACE_ID": "9",
+        ENV_API_KEY: "env-key",
+        ENV_API_SECRET: "env-secret",
+        ENV_WORKSPACE_ID: "9",
     }
     explicit = ExplicitLogin(api_key="explicit-key", api_secret="explicit-secret", workspace_id=1)
     resolved = resolve_auth(_invocation(), env=env, explicit_login=explicit)
@@ -74,9 +81,9 @@ def test_resolve_auth_invocation_base_url_wins(isolated_cli_config: Path) -> Non
 
 def test_resolve_auth_invalid_env_workspace_id(isolated_cli_config: Path) -> None:
     env = {
-        "MAMMOTH_API_KEY": "env-key",
-        "MAMMOTH_API_SECRET": "env-secret",
-        "MAMMOTH_WORKSPACE_ID": "not-a-number",
+        ENV_API_KEY: "env-key",
+        ENV_API_SECRET: "env-secret",
+        ENV_WORKSPACE_ID: "not-a-number",
     }
     with pytest.raises(CliError) as excinfo:
         resolve_auth(_invocation(), env=env)

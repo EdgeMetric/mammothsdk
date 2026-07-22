@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.context.resolver import ResolvedAuth
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID, ResolvedAuth
 from mammoth_cli.runtime import session
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services import factory
@@ -56,9 +56,9 @@ def test_open_service_wires_invocation_timeouts(monkeypatch: Any) -> None:
         return _Probe()
 
     monkeypatch.setattr(factory, "build_service", _fake_build_service)
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
     invocation = Invocation(
         command_id="project.list", timeout=5, job_timeout=11, pipeline_timeout=22

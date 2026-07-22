@@ -14,7 +14,12 @@ from typing import Any
 from mammoth.client import MammothClient
 
 from mammoth_cli.context.resolver import ResolvedAuth
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_INVALID_ARGUMENTS,
+    CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.services.coerce import coerce_arguments
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dispatch import resolve_sdk_method
@@ -83,7 +88,7 @@ class SdkMammothService:
             return method(**kwargs)
         except TypeError as exc:
             raise CliError(
-                code="invalid_arguments",
+                code=CODE_INVALID_ARGUMENTS,
                 message=f"The supplied fields do not fit '{sdk_symbol}'.",
                 exit_status=EXIT_USAGE,
                 hint="Check the command schema with 'mammoth schema get'.",
@@ -126,7 +131,7 @@ class SdkMammothService:
             kwargs = coerce_arguments(attribute, kwargs)
         except (ValueError, TypeError) as exc:
             raise CliError(
-                code="invalid_arguments",
+                code=CODE_INVALID_ARGUMENTS,
                 message=f"The supplied fields do not fit View.{method}.",
                 exit_status=EXIT_USAGE,
                 hint="Check the command schema with 'mammoth schema get'.",
@@ -138,7 +143,7 @@ class SdkMammothService:
             return attribute(**kwargs)
         except TypeError as exc:
             raise CliError(
-                code="invalid_arguments",
+                code=CODE_INVALID_ARGUMENTS,
                 message=f"The supplied fields do not fit View.{method}.",
                 exit_status=EXIT_USAGE,
                 hint="Check the command schema with 'mammoth schema get'.",
@@ -150,7 +155,7 @@ class SdkMammothService:
     @staticmethod
     def _view_member_error(view_id: int, method: str) -> CliError:
         return CliError(
-            code="sdk_symbol_unresolved",
+            code=CODE_SDK_SYMBOL_UNRESOLVED,
             message=f"View {view_id} has no public method '{method}'.",
             exit_status=EXIT_USAGE,
         )

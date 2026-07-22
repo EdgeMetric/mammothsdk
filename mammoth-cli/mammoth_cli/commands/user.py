@@ -15,7 +15,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_MISSING_ARGUMENT,
+    CODE_MISSING_FIELD,
+    CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
@@ -33,7 +39,7 @@ def _symbol(invocation: Invocation) -> str:
     record = command_by_id(invocation.command_id)
     if record is None or not record.get("sdk_symbol"):
         raise CliError(
-            code="sdk_symbol_unresolved",
+            code=CODE_SDK_SYMBOL_UNRESOLVED,
             message=f"No SDK symbol is recorded for '{invocation.command_id}'.",
             exit_status=EXIT_USAGE,
         )
@@ -44,7 +50,7 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     """Return a required field from the ``--input`` document, or raise usage."""
     if document is None or field not in document:
         raise CliError(
-            code="missing_field",
+            code=CODE_MISSING_FIELD,
             message=f"This command requires the '{field}' input field.",
             exit_status=EXIT_USAGE,
             hint=f"Pass it via --input, for example: --input '{{\"{field}\": ...}}'.",
@@ -88,7 +94,7 @@ def user_avatar_upload(invocation: Invocation) -> HandlerResult:
     file = (invocation.extra_args[0] if invocation.extra_args else None) or document.get("file")
     if not file:
         raise CliError(
-            code="missing_argument",
+            code=CODE_MISSING_ARGUMENT,
             message="A file path is required.",
             exit_status=EXIT_USAGE,
             hint="Pass the file path as a positional argument or a 'file' input field.",
@@ -153,7 +159,7 @@ def user_preference_update(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     if not document:
         raise CliError(
-            code="missing_field",
+            code=CODE_MISSING_FIELD,
             message="Provide at least one preference field to update.",
             exit_status=EXIT_USAGE,
             hint="Pass fields via --input.",
@@ -168,7 +174,7 @@ def user_update(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     if not document:
         raise CliError(
-            code="missing_field",
+            code=CODE_MISSING_FIELD,
             message="Provide at least one field to update.",
             exit_status=EXIT_USAGE,
             hint="Pass fields via --input.",

@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import parameter as parameter_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -30,9 +31,9 @@ _UPDATE = "mammoth.api.parameters.ParametersAPI.update"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -231,12 +232,8 @@ def test_update_requires_at_least_one_field(fake_service: FakeMammothService) ->
 def test_update_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"name": "New", "value": 10}), encoding="utf-8")
-    parameter_cmd.parameter_update(
-        _inv("parameter.update", extra_args=["7"], input_file=str(doc))
-    )
-    assert fake_service.call_log == [
-        (_UPDATE, {"parameter_id": 7, "name": "New", "value": 10})
-    ]
+    parameter_cmd.parameter_update(_inv("parameter.update", extra_args=["7"], input_file=str(doc)))
+    assert fake_service.call_log == [(_UPDATE, {"parameter_id": 7, "name": "New", "value": 10})]
 
 
 # -- parameter.group.create ------------------------------------------------------
@@ -249,9 +246,7 @@ def test_group_create_requires_name(fake_service: FakeMammothService) -> None:
 
 
 def test_group_create_uses_positional_name(fake_service: FakeMammothService) -> None:
-    parameter_cmd.parameter_group_create(
-        _inv("parameter.group.create", extra_args=["Rates"])
-    )
+    parameter_cmd.parameter_group_create(_inv("parameter.group.create", extra_args=["Rates"]))
     assert fake_service.call_log == [(_GROUP_CREATE, {"name": "Rates"})]
 
 
@@ -326,9 +321,7 @@ def test_group_reorder_forwards_order_and_project(
     parameter_cmd.parameter_group_reorder(
         _inv("parameter.group.reorder", project=180, input_file=str(doc))
     )
-    assert fake_service.call_log == [
-        (_GROUP_REORDER, {"order": [3, 1, 2], "project_id": 180})
-    ]
+    assert fake_service.call_log == [(_GROUP_REORDER, {"order": [3, 1, 2], "project_id": 180})]
 
 
 # -- parameter.group.update ---------------------------------------------------------

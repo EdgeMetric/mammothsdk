@@ -55,7 +55,7 @@ from mammoth_cli.commands import view_ops as view_ops_cmd
 from mammoth_cli.commands import webhook as webhook_cmd
 from mammoth_cli.commands import workflow as workflow_cmd
 from mammoth_cli.commands import workspace as workspace_cmd
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import CODE_MISSING_ARGUMENT, EXIT_USAGE, CliError
 from mammoth_cli.runtime.invocation import Invocation
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -65,7 +65,7 @@ Handler = Callable[[Invocation], HandlerResult]
 def _require_arg(invocation: Invocation, name: str) -> str:
     if not invocation.extra_args:
         raise CliError(
-            code="missing_argument",
+            code=CODE_MISSING_ARGUMENT,
             message=f"This command requires a {name} argument.",
             exit_status=EXIT_USAGE,
             hint=f"Pass the {name} as a positional argument.",

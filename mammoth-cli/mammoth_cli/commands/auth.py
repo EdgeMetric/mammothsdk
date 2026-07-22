@@ -23,9 +23,25 @@ from pydantic import ValidationError
 
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.endpoint import resolve_base_url
-from mammoth_cli.context.resolver import ResolvedAuth, resolve_auth
+from mammoth_cli.context.resolver import (
+    ENV_API_KEY,
+    ENV_API_SECRET,
+    ENV_SERVER_PREFIX,
+    ENV_WORKSPACE_ID,
+    ResolvedAuth,
+    resolve_auth,
+)
 from mammoth_cli.contracts.auth import LoginRequest
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_CONFIRMATION_DECLINED,
+    CODE_CONFIRMATION_REQUIRED,
+    CODE_INPUT_FORMAT_REQUIRED,
+    CODE_INVALID_INPUT_DOCUMENT,
+    CODE_INVALID_INPUT_FORMAT,
+    CODE_INVALID_WORKSPACE_ID,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.output.policy import resolve_policy
 from mammoth_cli.runtime import executor
 from mammoth_cli.runtime import options as go
@@ -53,7 +69,7 @@ def _format_from_suffix(path: Path) -> str:
     if suffix in (".yaml", ".yml"):
         return "yaml"
     raise CliError(
-        code="invalid_input_format",
+        code=CODE_INVALID_INPUT_FORMAT,
         message=f"Cannot detect the document format from '{path.name}'.",
         exit_status=EXIT_USAGE,
         hint="Pass --input-format json or --input-format yaml.",
@@ -101,7 +117,7 @@ def _load_login_document(path_or_dash: str, input_format: str | None) -> dict[st
     if path_or_dash == "-":
         if input_format is None:
             raise CliError(
-                code="input_format_required",
+                code=CODE_INPUT_FORMAT_REQUIRED,
                 message="Reading the login document from stdin requires --input-format.",
                 exit_status=EXIT_USAGE,
                 hint="Pass --input-format json or --input-format yaml.",
@@ -122,7 +138,7 @@ def _load_login_document(path_or_dash: str, input_format: str | None) -> dict[st
 
     if fmt not in ("json", "yaml"):
         raise CliError(
-            code="invalid_input_format",
+            code=CODE_INVALID_INPUT_FORMAT,
             message=f"'{fmt}' is not a supported input format.",
             exit_status=EXIT_USAGE,
             hint="Use json or yaml.",
@@ -131,14 +147,14 @@ def _load_login_document(path_or_dash: str, input_format: str | None) -> dict[st
         loaded = json.loads(text) if fmt == "json" else yaml.safe_load(text)
     except (json.JSONDecodeError, yaml.YAMLError) as exc:
         raise CliError(
-            code="invalid_input_document",
+            code=CODE_INVALID_INPUT_DOCUMENT,
             message=f"The login document is not valid {fmt}.",
             exit_status=EXIT_USAGE,
             hint="Provide a well-formed JSON or YAML object.",
         ) from exc
     if not isinstance(loaded, dict):
         raise CliError(
-            code="invalid_input_document",
+            code=CODE_INVALID_INPUT_DOCUMENT,
             message="The login document must be a JSON/YAML object.",
             exit_status=EXIT_USAGE,
         )
@@ -184,10 +200,10 @@ def _read_env_login() -> tuple[str, str, int | None, str | None]:
         CliError: ``missing_env_credentials`` when the API key or secret
             variable is unset.
     """
-    api_key = os.environ.get("MAMMOTH_API_KEY")
-    api_secret = os.environ.get("MAMMOTH_API_SECRET")
-    workspace_raw = os.environ.get("MAMMOTH_WORKSPACE_ID")
-    server_prefix = os.environ.get("MAMMOTH_SERVER_PREFIX")
+    api_key = os.environ.get(ENV_API_KEY)
+    api_secret = os.environ.get(ENV_API_SECRET)
+    workspace_raw = os.environ.get(ENV_WORKSPACE_ID)
+    server_prefix = os.environ.get(ENV_SERVER_PREFIX)
     if not api_key or not api_secret:
         raise CliError(
             code="missing_env_credentials",
@@ -200,7 +216,7 @@ def _read_env_login() -> tuple[str, str, int | None, str | None]:
             workspace_id = int(workspace_raw)
         except ValueError as exc:
             raise CliError(
-                code="invalid_workspace_id",
+                code=CODE_INVALID_WORKSPACE_ID,
                 message="MAMMOTH_WORKSPACE_ID must be an integer.",
                 exit_status=EXIT_USAGE,
                 hint="Set MAMMOTH_WORKSPACE_ID to a numeric workspace id.",
@@ -264,7 +280,7 @@ def _run_login(
 
     if effective_workspace is None or effective_workspace <= 0:
         raise CliError(
-            code="invalid_workspace_id",
+            code=CODE_INVALID_WORKSPACE_ID,
             message="A positive --workspace id is required.",
             exit_status=EXIT_USAGE,
         )
@@ -488,14 +504,14 @@ def _run_logout(
     if not yes:
         if policy.prompts_disabled:
             raise CliError(
-                code="confirmation_required",
+                code=CODE_CONFIRMATION_REQUIRED,
                 message="auth logout requires --yes in non-interactive mode.",
                 exit_status=EXIT_USAGE,
                 hint="Re-run with --yes.",
             )
         if not typer.confirm("Remove the stored credentials?", default=False):
             raise CliError(
-                code="confirmation_declined",
+                code=CODE_CONFIRMATION_DECLINED,
                 message="Logout was not confirmed.",
                 exit_status=EXIT_USAGE,
             )

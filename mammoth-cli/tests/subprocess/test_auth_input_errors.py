@@ -14,14 +14,21 @@ import sys
 
 import pytest
 
+from mammoth_cli.context.resolver import (
+    ENV_API_KEY,
+    ENV_API_SECRET,
+    ENV_SERVER_PREFIX,
+    ENV_WORKSPACE_ID,
+)
+
 pytestmark = pytest.mark.subprocess
 
 _EXIT_USAGE = 2
 _MAMMOTH_ENV = (
-    "MAMMOTH_API_KEY",
-    "MAMMOTH_API_SECRET",
-    "MAMMOTH_WORKSPACE_ID",
-    "MAMMOTH_SERVER_PREFIX",
+    ENV_API_KEY,
+    ENV_API_SECRET,
+    ENV_WORKSPACE_ID,
+    ENV_SERVER_PREFIX,
 )
 
 
@@ -48,9 +55,9 @@ def _base_env() -> dict[str, str]:
 def test_nonnumeric_workspace_id_is_a_clean_envelope() -> None:
     """A nonnumeric MAMMOTH_WORKSPACE_ID maps to a usage-error envelope."""
     env = _base_env()
-    env["MAMMOTH_API_KEY"] = "k"
-    env["MAMMOTH_API_SECRET"] = "s"
-    env["MAMMOTH_WORKSPACE_ID"] = "abc"
+    env[ENV_API_KEY] = "k"
+    env[ENV_API_SECRET] = "s"
+    env[ENV_WORKSPACE_ID] = "abc"
 
     result = _run(["auth", "login", "--from-env", "--output", "json", "--no-input"], env=env)
 

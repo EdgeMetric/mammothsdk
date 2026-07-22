@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import dashboard as dashboard_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -35,9 +36,9 @@ _WIDGET_DATA_BY_URL = "mammoth.api.dashboards.DashboardsAPI.widget_data_by_url"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:

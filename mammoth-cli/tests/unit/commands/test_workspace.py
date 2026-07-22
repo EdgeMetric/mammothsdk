@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import workspace as workspace_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -36,9 +37,9 @@ _USER_UPDATE_BATCH = "mammoth.api.workspaces.WorkspacesAPI.user_update_batch"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -89,16 +90,10 @@ def test_check_expression_requires_body(fake_service: FakeMammothService) -> Non
     assert excinfo.value.code == "missing_field"
 
 
-def test_check_expression_forwards_body(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_check_expression_forwards_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"body": {"expression": "1+1"}})
-    workspace_cmd.workspace_check_expression(
-        _inv("workspace.check-expression", input_file=doc)
-    )
-    assert fake_service.call_log == [
-        (_CHECK_EXPRESSION, {"body": {"expression": "1+1"}})
-    ]
+    workspace_cmd.workspace_check_expression(_inv("workspace.check-expression", input_file=doc))
+    assert fake_service.call_log == [(_CHECK_EXPRESSION, {"body": {"expression": "1+1"}})]
 
 
 # --- create --------------------------------------------------------------------
@@ -121,9 +116,7 @@ def test_create_forwards_body(fake_service: FakeMammothService, tmp_path: Path) 
 
 def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        workspace_cmd.workspace_delete(
-            _inv("workspace.delete", extra_args=["9"], output="json")
-        )
+        workspace_cmd.workspace_delete(_inv("workspace.delete", extra_args=["9"], output="json"))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
 
@@ -259,9 +252,7 @@ def test_storage_breakdown_forwards_fields(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"limit": 5, "offset": 10})
-    workspace_cmd.workspace_storage_breakdown(
-        _inv("workspace.storage-breakdown", input_file=doc)
-    )
+    workspace_cmd.workspace_storage_breakdown(_inv("workspace.storage-breakdown", input_file=doc))
     assert fake_service.call_log == [(_STORAGE_BREAKDOWN, {"limit": 5, "offset": 10})]
 
 
@@ -279,9 +270,7 @@ def test_update_blocked_without_confirmation(
 ) -> None:
     doc = _write(tmp_path, {"patches": [{"op": "replace", "path": "name", "value": "X"}]})
     with pytest.raises(CliError) as excinfo:
-        workspace_cmd.workspace_update(
-            _inv("workspace.update", input_file=doc, output="json")
-        )
+        workspace_cmd.workspace_update(_inv("workspace.update", input_file=doc, output="json"))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
 
@@ -302,9 +291,7 @@ def test_update_defaults_target_to_auth_workspace(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"patches": [{"op": "replace", "path": "name", "value": "X"}]})
-    workspace_cmd.workspace_update(
-        _inv("workspace.update", input_file=doc, yes=True, confirm="4")
-    )
+    workspace_cmd.workspace_update(_inv("workspace.update", input_file=doc, yes=True, confirm="4"))
     assert fake_service.call_log == [
         (_UPDATE, {"patches": [{"op": "replace", "path": "name", "value": "X"}]})
     ]
@@ -367,9 +354,7 @@ def test_user_remove_blocked_without_confirmation(fake_service: FakeMammothServi
 
 
 def test_user_remove_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    workspace_cmd.workspace_user_remove(
-        _inv("workspace.user.remove", extra_args=["3"], yes=True)
-    )
+    workspace_cmd.workspace_user_remove(_inv("workspace.user.remove", extra_args=["3"], yes=True))
     assert fake_service.call_log == [(_USER_REMOVE, {"user_id": 3})]
 
 
@@ -377,9 +362,7 @@ def test_user_remove_batch_requires_ids_or_invite_ids(
     fake_service: FakeMammothService,
 ) -> None:
     with pytest.raises(CliError) as excinfo:
-        workspace_cmd.workspace_user_remove_batch(
-            _inv("workspace.user.remove-batch", yes=True)
-        )
+        workspace_cmd.workspace_user_remove_batch(_inv("workspace.user.remove-batch", yes=True))
     assert excinfo.value.code == "missing_field"
     assert fake_service.call_log == []
 
@@ -403,9 +386,7 @@ def test_user_remove_batch_proceeds_with_yes(
     workspace_cmd.workspace_user_remove_batch(
         _inv("workspace.user.remove-batch", input_file=doc, yes=True)
     )
-    assert fake_service.call_log == [
-        (_USER_REMOVE_BATCH, {"ids": "1,2", "invite_ids": "5"})
-    ]
+    assert fake_service.call_log == [(_USER_REMOVE_BATCH, {"ids": "1,2", "invite_ids": "5"})]
 
 
 # --- user update / update-batch -------------------------------------------------
@@ -474,9 +455,7 @@ def test_user_update_batch_forwards_patches(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"patches": [{"op": "replace", "path": "role", "value": "x"}]})
-    workspace_cmd.workspace_user_update_batch(
-        _inv("workspace.user.update-batch", input_file=doc)
-    )
+    workspace_cmd.workspace_user_update_batch(_inv("workspace.user.update-batch", input_file=doc))
     assert fake_service.call_log == [
         (_USER_UPDATE_BATCH, {"patches": [{"op": "replace", "path": "role", "value": "x"}]})
     ]

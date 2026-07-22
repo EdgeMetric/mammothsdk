@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import batch as batch_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -22,9 +23,9 @@ _BULK_DELETE = "mammoth.api.batches.BatchesAPI.bulk_delete"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -54,9 +55,7 @@ def test_list_passes_dataset_and_project(fake_service: FakeMammothService) -> No
 def test_list_forwards_limit_offset(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"limit": 10, "offset": 5}), encoding="utf-8")
-    batch_cmd.batch_list(
-        _inv("batch.list", project=180, extra_args=["9"], input_file=str(doc))
-    )
+    batch_cmd.batch_list(_inv("batch.list", project=180, extra_args=["9"], input_file=str(doc)))
     assert fake_service.call_log == [
         (_LIST, {"dataset_id": 9, "project_id": 180, "limit": 10, "offset": 5})
     ]
@@ -67,9 +66,7 @@ def test_list_forwards_limit_offset(fake_service: FakeMammothService, tmp_path: 
 
 def test_get_uses_positional_dataset_and_batch_id(fake_service: FakeMammothService) -> None:
     batch_cmd.batch_get(_inv("batch.get", project=180, extra_args=["9", "3"]))
-    assert fake_service.call_log == [
-        (_GET, {"dataset_id": 9, "batch_id": 3, "project_id": 180})
-    ]
+    assert fake_service.call_log == [(_GET, {"dataset_id": 9, "batch_id": 3, "project_id": 180})]
 
 
 def test_get_without_dataset_id_is_usage_error(fake_service: FakeMammothService) -> None:
@@ -116,9 +113,7 @@ def test_create_requires_mapping(fake_service: FakeMammothService, tmp_path: Pat
 def test_create_passes_required_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"source_id": 5, "mapping": {"a": "b"}}), encoding="utf-8")
-    batch_cmd.batch_create(
-        _inv("batch.create", project=180, extra_args=["9"], input_file=str(doc))
-    )
+    batch_cmd.batch_create(_inv("batch.create", project=180, extra_args=["9"], input_file=str(doc)))
     assert fake_service.call_log == [
         (
             _CREATE,
@@ -132,9 +127,7 @@ def test_create_passes_required_fields(fake_service: FakeMammothService, tmp_pat
     ]
 
 
-def test_create_forwards_optional_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(
         json.dumps(
@@ -149,9 +142,7 @@ def test_create_forwards_optional_fields(
         ),
         encoding="utf-8",
     )
-    batch_cmd.batch_create(
-        _inv("batch.create", project=180, extra_args=["9"], input_file=str(doc))
-    )
+    batch_cmd.batch_create(_inv("batch.create", project=180, extra_args=["9"], input_file=str(doc)))
     assert fake_service.call_log == [
         (
             _CREATE,
@@ -180,12 +171,8 @@ def test_update_requires_patch(fake_service: FakeMammothService) -> None:
 
 def test_update_forwards_patch(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(
-        json.dumps({"patch": [{"op": "remove", "value": [1, 2]}]}), encoding="utf-8"
-    )
-    batch_cmd.batch_update(
-        _inv("batch.update", project=180, extra_args=["9"], input_file=str(doc))
-    )
+    doc.write_text(json.dumps({"patch": [{"op": "remove", "value": [1, 2]}]}), encoding="utf-8")
+    batch_cmd.batch_update(_inv("batch.update", project=180, extra_args=["9"], input_file=str(doc)))
     assert fake_service.call_log == [
         (
             _UPDATE,
@@ -211,12 +198,8 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
 
 
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    batch_cmd.batch_delete(
-        _inv("batch.delete", project=180, extra_args=["9", "3"], yes=True)
-    )
-    assert fake_service.call_log == [
-        (_DELETE, {"dataset_id": 9, "batch_id": 3, "project_id": 180})
-    ]
+    batch_cmd.batch_delete(_inv("batch.delete", project=180, extra_args=["9", "3"], yes=True))
+    assert fake_service.call_log == [(_DELETE, {"dataset_id": 9, "batch_id": 3, "project_id": 180})]
 
 
 def test_delete_without_batch_id_is_usage_error(fake_service: FakeMammothService) -> None:
@@ -239,9 +222,7 @@ def test_bulk_delete_blocked_without_confirmation(fake_service: FakeMammothServi
 
 
 def test_bulk_delete_proceeds_with_yes_and_no_ids(fake_service: FakeMammothService) -> None:
-    batch_cmd.batch_bulk_delete(
-        _inv("batch.bulk-delete", project=180, extra_args=["9"], yes=True)
-    )
+    batch_cmd.batch_bulk_delete(_inv("batch.bulk-delete", project=180, extra_args=["9"], yes=True))
     assert fake_service.call_log == [(_BULK_DELETE, {"dataset_id": 9, "project_id": 180})]
 
 

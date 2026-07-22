@@ -16,7 +16,12 @@ from collections.abc import Callable
 
 import typer
 
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_CONFIRMATION_DECLINED,
+    CODE_CONFIRMATION_REQUIRED,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.output.policy import MACHINE_OUTPUTS
 from mammoth_cli.runtime.invocation import Invocation
 
@@ -33,7 +38,7 @@ def _required_error(action: str, *, target: str | None, need_target: bool) -> Cl
     if need_target and target is not None:
         recovery = f"mammoth ... --yes --confirm {target}"
     return CliError(
-        code="confirmation_required",
+        code=CODE_CONFIRMATION_REQUIRED,
         message=f"This command needs explicit confirmation to {action}.",
         exit_status=EXIT_USAGE,
         hint=(
@@ -107,7 +112,7 @@ def enforce_confirmation(
         if ask(f"Confirm: {action}?"):
             return
         raise CliError(
-            code="confirmation_declined",
+            code=CODE_CONFIRMATION_DECLINED,
             message=f"Declined to {action}.",
             exit_status=EXIT_USAGE,
         )

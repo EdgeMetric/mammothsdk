@@ -14,12 +14,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, cast
 
-from mammoth_cli.errors.envelope import EXIT_API, CliError
+from mammoth_cli.errors.envelope import CODE_SDK_SYMBOL_UNRESOLVED, EXIT_API, CliError
 
 
 def _unresolved_error(sdk_symbol: str) -> CliError:
     return CliError(
-        code="sdk_symbol_unresolved",
+        code=CODE_SDK_SYMBOL_UNRESOLVED,
         message=f"No public SDK method backs the symbol '{sdk_symbol}'.",
         exit_status=EXIT_API,
         hint="This is an internal manifest/SDK mismatch; please report it.",
@@ -51,11 +51,7 @@ def resolve_sdk_method(client: object, sdk_symbol: str) -> Callable[..., Any]:
         raise _unresolved_error(sdk_symbol)
 
     sub_client = next(
-        (
-            value
-            for value in vars(client).values()
-            if type(value).__name__ == class_name
-        ),
+        (value for value in vars(client).values() if type(value).__name__ == class_name),
         None,
     )
     if sub_client is None:

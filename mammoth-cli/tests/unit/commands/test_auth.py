@@ -11,15 +11,21 @@ import pytest
 
 from mammoth_cli.commands import auth as auth_cmd
 from mammoth_cli.context import credentials, profiles
+from mammoth_cli.context.resolver import (
+    ENV_API_KEY,
+    ENV_API_SECRET,
+    ENV_SERVER_PREFIX,
+    ENV_WORKSPACE_ID,
+)
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import make_runner
 
 ENV = {
-    "MAMMOTH_API_KEY": "env-key-value",
-    "MAMMOTH_API_SECRET": "env-secret-value",
-    "MAMMOTH_WORKSPACE_ID": "4",
-    "MAMMOTH_SERVER_PREFIX": "release",
+    ENV_API_KEY: "env-key-value",
+    ENV_API_SECRET: "env-secret-value",
+    ENV_WORKSPACE_ID: "4",
+    ENV_SERVER_PREFIX: "release",
 }
 
 

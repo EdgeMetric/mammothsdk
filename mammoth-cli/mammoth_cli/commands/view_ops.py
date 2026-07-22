@@ -21,11 +21,19 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_INVALID_ARGUMENT,
+    CODE_MISSING_ARGUMENT,
+    CODE_MISSING_FIELD,
+    CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
+from mammoth_cli.services.conditions import CONDITION_KWARG
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -35,7 +43,7 @@ def _symbol(invocation: Invocation) -> str:
     record = command_by_id(invocation.command_id)
     if record is None or not record.get("sdk_symbol"):
         raise CliError(
-            code="sdk_symbol_unresolved",
+            code=CODE_SDK_SYMBOL_UNRESOLVED,
             message=f"No SDK symbol is recorded for '{invocation.command_id}'.",
             exit_status=EXIT_USAGE,
         )
@@ -51,7 +59,7 @@ def _int_positional(invocation: Invocation, name: str) -> int | None:
         return int(raw)
     except ValueError as exc:
         raise CliError(
-            code="invalid_argument",
+            code=CODE_INVALID_ARGUMENT,
             message=f"The {name} argument '{raw}' is not an integer.",
             exit_status=EXIT_USAGE,
         ) from exc
@@ -62,7 +70,7 @@ def _require_int_positional(invocation: Invocation, name: str) -> int:
     value = _int_positional(invocation, name)
     if value is None:
         raise CliError(
-            code="missing_argument",
+            code=CODE_MISSING_ARGUMENT,
             message=f"This command requires a {name} argument.",
             exit_status=EXIT_USAGE,
             hint=f"Pass the {name} as a positional argument.",
@@ -79,7 +87,7 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     """Return a required field from the ``--input`` document, or raise usage."""
     if document is None or field not in document:
         raise CliError(
-            code="missing_field",
+            code=CODE_MISSING_FIELD,
             message=f"This command requires the '{field}' input field.",
             exit_status=EXIT_USAGE,
             hint=f"Pass it via --input, for example: --input '{{\"{field}\": ...}}'.",
@@ -234,7 +242,7 @@ def view_transform_bulk_replace(invocation: Invocation) -> HandlerResult:
     mapping = _require_field(document, "mapping")
     assert document is not None
     kwargs: dict[str, Any] = {"columns": columns, "mapping": mapping}
-    _forward_optional(document, kwargs, ("match_case", "match_words", "condition"))
+    _forward_optional(document, kwargs, ("match_case", "match_words", CONDITION_KWARG))
     return _dispatch_view(invocation, view_id, "bulk_replace", **kwargs)
 
 
@@ -248,7 +256,7 @@ def view_transform_combine_columns(invocation: Invocation) -> HandlerResult:
     _forward_optional(
         document,
         kwargs,
-        ("new_column", "column_type", "existing_column", "separator", "condition"),
+        ("new_column", "column_type", "existing_column", "separator", CONDITION_KWARG),
     )
     return _dispatch_view(invocation, view_id, "combine_columns", **kwargs)
 
@@ -285,7 +293,9 @@ def view_transform_crosstab(invocation: Invocation) -> HandlerResult:
         "select": select,
         "dataset_name": dataset_name,
     }
-    _forward_optional(document, kwargs, ("save_as_mode", "target_ds_id", "condition", "timeout"))
+    _forward_optional(
+        document, kwargs, ("save_as_mode", "target_ds_id", CONDITION_KWARG, "timeout")
+    )
     return _dispatch_view(invocation, view_id, "crosstab", **kwargs)
 
 
@@ -347,9 +357,9 @@ def view_transform_filter(invocation: Invocation) -> HandlerResult:
     """Filter rows. ``condition`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    condition = _require_field(document, "condition")
+    condition = _require_field(document, CONDITION_KWARG)
     assert document is not None
-    kwargs: dict[str, Any] = {"condition": condition}
+    kwargs: dict[str, Any] = {CONDITION_KWARG: condition}
     _forward_optional(document, kwargs, ("filter_type", "prompt"))
     return _dispatch_view(invocation, view_id, "filter_rows", **kwargs)
 
@@ -370,7 +380,7 @@ def view_transform_increment_date(invocation: Invocation) -> HandlerResult:
     delta = _require_field(document, "delta")
     assert document is not None
     kwargs: dict[str, Any] = {"column": column, "delta": delta}
-    _forward_optional(document, kwargs, ("new_column", "existing_column", "condition"))
+    _forward_optional(document, kwargs, ("new_column", "existing_column", CONDITION_KWARG))
     return _dispatch_view(invocation, view_id, "increment_date", **kwargs)
 
 
@@ -445,7 +455,7 @@ def view_transform_math(invocation: Invocation) -> HandlerResult:
     assert document is not None
     kwargs: dict[str, Any] = {"expression": expression}
     _forward_optional(
-        document, kwargs, ("new_column", "column_type", "existing_column", "condition")
+        document, kwargs, ("new_column", "column_type", "existing_column", CONDITION_KWARG)
     )
     return _dispatch_view(invocation, view_id, "math", **kwargs)
 
@@ -458,7 +468,7 @@ def view_transform_pivot(invocation: Invocation) -> HandlerResult:
     aggregations = _require_field(document, "aggregations")
     assert document is not None
     kwargs: dict[str, Any] = {"group_by": group_by, "aggregations": aggregations}
-    _forward_optional(document, kwargs, ("condition",))
+    _forward_optional(document, kwargs, (CONDITION_KWARG,))
     return _dispatch_view(invocation, view_id, "pivot", **kwargs)
 
 
@@ -471,7 +481,7 @@ def view_transform_replace(invocation: Invocation) -> HandlerResult:
     replace = _require_field(document, "replace")
     assert document is not None
     kwargs: dict[str, Any] = {"columns": columns, "find": find, "replace": replace}
-    _forward_optional(document, kwargs, ("match_case", "match_words", "condition"))
+    _forward_optional(document, kwargs, ("match_case", "match_words", CONDITION_KWARG))
     return _dispatch_view(invocation, view_id, "replace_values", **kwargs)
 
 
@@ -483,7 +493,7 @@ def view_transform_set_values(invocation: Invocation) -> HandlerResult:
     assert document is not None
     kwargs: dict[str, Any] = {"values": values}
     _forward_optional(
-        document, kwargs, ("new_column", "column_type", "existing_column", "condition")
+        document, kwargs, ("new_column", "column_type", "existing_column", CONDITION_KWARG)
     )
     return _dispatch_view(invocation, view_id, "set_values", **kwargs)
 
@@ -535,7 +545,7 @@ def view_transform_substring(invocation: Invocation) -> HandlerResult:
             "regex_invert",
             "new_column",
             "existing_column",
-            "condition",
+            CONDITION_KWARG,
         ),
     )
     return _dispatch_view(invocation, view_id, "substring", **kwargs)
@@ -548,7 +558,7 @@ def view_transform_text(invocation: Invocation) -> HandlerResult:
     columns = _require_field(document, "columns")
     assert document is not None
     kwargs: dict[str, Any] = {"columns": columns}
-    _forward_optional(document, kwargs, ("case", "trim", "condition"))
+    _forward_optional(document, kwargs, ("case", "trim", CONDITION_KWARG))
     return _dispatch_view(invocation, view_id, "text_transform", **kwargs)
 
 

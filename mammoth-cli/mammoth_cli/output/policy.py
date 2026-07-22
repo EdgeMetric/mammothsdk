@@ -16,6 +16,9 @@ MACHINE_OUTPUTS = {"json", "ndjson"}
 #: in ``--output`` help and error hints.
 VALID_OUTPUTS = ("table", "json", "yaml", "ndjson", "plain")
 
+#: Every ``--color`` policy value. The tuple order is the order shown in help.
+COLOR_MODES = ("auto", "always", "never")
+
 
 @dataclass(frozen=True)
 class OutputPolicy:

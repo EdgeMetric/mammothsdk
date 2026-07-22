@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import job as job_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -20,9 +21,9 @@ _WAIT_MANY = "mammoth.api.jobs.JobsAPI.wait_for_jobs"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -125,9 +126,7 @@ def test_wait_many_requires_job_ids(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == []
 
 
-def test_wait_many_forwards_job_ids_only(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_wait_many_forwards_job_ids_only(fake_service: FakeMammothService, tmp_path: Path) -> None:
     input_file = _write(tmp_path, {"job_ids": [1, 2]})
     job_cmd.job_wait_many(_inv("job.wait-many", input_file=input_file))
     assert fake_service.call_log == [(_WAIT_MANY, {"job_ids": [1, 2]})]

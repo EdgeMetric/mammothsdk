@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import addon as addon_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -23,9 +24,9 @@ _USER_REMOVE = "mammoth.api.addons.AddonsAPI.remove_users"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -55,9 +56,7 @@ def test_connector_add_requires_confirm_target(fake_service: FakeMammothService)
     assert fake_service.call_log == []
 
 
-def test_connector_add_forwards_single_id(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_connector_add_forwards_single_id(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"connector_id": 42})
     addon_cmd.addon_connector_add(
         _inv("addon.connector.add", input_file=doc, yes=True, confirm="4")
@@ -65,9 +64,7 @@ def test_connector_add_forwards_single_id(
     assert fake_service.call_log == [(_CONNECTOR_ADD, {"connector_id": 42})]
 
 
-def test_connector_add_forwards_bulk_ids(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_connector_add_forwards_bulk_ids(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"connector_ids": [1, 2]})
     addon_cmd.addon_connector_add(
         _inv("addon.connector.add", input_file=doc, yes=True, confirm="4")
@@ -121,9 +118,7 @@ def test_storage_add_blocked_without_confirmation(
 ) -> None:
     doc = _write(tmp_path, {"additional_storage_gb": 50})
     with pytest.raises(CliError) as excinfo:
-        addon_cmd.addon_storage_add(
-            _inv("addon.storage.add", input_file=doc, output="json")
-        )
+        addon_cmd.addon_storage_add(_inv("addon.storage.add", input_file=doc, output="json"))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
 
@@ -132,15 +127,11 @@ def test_storage_add_proceeds_with_matching_target(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"additional_storage_gb": 50})
-    addon_cmd.addon_storage_add(
-        _inv("addon.storage.add", input_file=doc, yes=True, confirm="4")
-    )
+    addon_cmd.addon_storage_add(_inv("addon.storage.add", input_file=doc, yes=True, confirm="4"))
     assert fake_service.call_log == [(_STORAGE_ADD, {"additional_storage_gb": 50})]
 
 
-def test_storage_add_target_mismatch(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_storage_add_target_mismatch(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"additional_storage_gb": 50})
     with pytest.raises(CliError) as excinfo:
         addon_cmd.addon_storage_add(
@@ -180,9 +171,7 @@ def test_user_add_blocked_without_confirmation(fake_service: FakeMammothService)
     assert fake_service.call_log == []
 
 
-def test_user_add_forwards_user_count(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_user_add_forwards_user_count(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"user_count": 5})
     addon_cmd.addon_user_add(_inv("addon.user.add", input_file=doc, yes=True, confirm="4"))
     assert fake_service.call_log == [(_USER_ADD, {"user_count": 5})]
@@ -215,9 +204,7 @@ def test_user_remove_blocked_without_confirmation(
 ) -> None:
     doc = _write(tmp_path, {"user_count": 2})
     with pytest.raises(CliError) as excinfo:
-        addon_cmd.addon_user_remove(
-            _inv("addon.user.remove", input_file=doc, output="json")
-        )
+        addon_cmd.addon_user_remove(_inv("addon.user.remove", input_file=doc, output="json"))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
 
@@ -226,7 +213,5 @@ def test_user_remove_proceeds_with_matching_target(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"user_count": 2})
-    addon_cmd.addon_user_remove(
-        _inv("addon.user.remove", input_file=doc, yes=True, confirm="4")
-    )
+    addon_cmd.addon_user_remove(_inv("addon.user.remove", input_file=doc, yes=True, confirm="4"))
     assert fake_service.call_log == [(_USER_REMOVE, {"user_count": 2})]

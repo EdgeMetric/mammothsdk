@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import project as project_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -21,9 +22,9 @@ _PUBCRED_SYMBOL = "mammoth.api.projects.ProjectsAPI.publish_credentials"
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
     """Give resolve_auth valid environment credentials for every test."""
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _invocation(command_id: str, **overrides: object) -> Invocation:
@@ -89,9 +90,7 @@ def test_resource_dependencies_forwards_optional_recursive(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(
-        json.dumps({"resource_ids": ["a", "b"], "is_recursive": True}), encoding="utf-8"
-    )
+    doc.write_text(json.dumps({"resource_ids": ["a", "b"], "is_recursive": True}), encoding="utf-8")
     project_cmd.project_resource_dependencies(
         _invocation("project.resource-dependencies", project=7, input_file=str(doc))
     )
@@ -116,6 +115,4 @@ def test_publish_credentials_forwards_odbc_type(
     project_cmd.project_publish_credentials(
         _invocation("project.publish-credentials", project=9, input_file=str(doc))
     )
-    assert fake_service.call_log == [
-        (_PUBCRED_SYMBOL, {"project_id": 9, "odbc_type": "postgres"})
-    ]
+    assert fake_service.call_log == [(_PUBCRED_SYMBOL, {"project_id": 9, "odbc_type": "postgres"})]

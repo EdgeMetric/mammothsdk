@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.context.profiles import ProfileRecord
-from mammoth_cli.errors.envelope import EXIT_AUTH, EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import CODE_INVALID_WORKSPACE_ID, EXIT_AUTH, EXIT_USAGE, CliError
 from mammoth_cli.runtime.invocation import Invocation
 
 ENV_API_KEY = "MAMMOTH_API_KEY"
@@ -81,7 +81,7 @@ def not_authenticated_error() -> CliError:
 
 def _invalid_workspace_env_error(raw: str) -> CliError:
     return CliError(
-        code="invalid_workspace_id",
+        code=CODE_INVALID_WORKSPACE_ID,
         message=f"MAMMOTH_WORKSPACE_ID='{raw}' is not a positive integer.",
         exit_status=EXIT_USAGE,
     )

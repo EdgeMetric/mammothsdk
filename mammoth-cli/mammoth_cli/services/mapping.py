@@ -10,6 +10,9 @@ from __future__ import annotations
 from mammoth.exceptions import MammothAPIError, MammothAuthError, MammothError
 
 from mammoth_cli.errors.envelope import (
+    CODE_API_ERROR,
+    CODE_AUTHENTICATION_FAILED,
+    CODE_RESOURCE_NOT_FOUND,
     EXIT_API,
     EXIT_AUTH,
     EXIT_NOT_FOUND,
@@ -35,7 +38,7 @@ def map_sdk_exception(exc: Exception) -> CliError:
     """
     if isinstance(exc, MammothAuthError):
         return CliError(
-            code="authentication_failed",
+            code=CODE_AUTHENTICATION_FAILED,
             message="Mammoth rejected the provided credentials.",
             exit_status=EXIT_AUTH,
             hint="Check the API key, secret, and workspace id.",
@@ -46,7 +49,7 @@ def map_sdk_exception(exc: Exception) -> CliError:
         message = str(exc)
         if status == 404:
             return CliError(
-                code="resource_not_found",
+                code=CODE_RESOURCE_NOT_FOUND,
                 message="The requested Mammoth resource does not exist.",
                 exit_status=EXIT_NOT_FOUND,
                 hint="Check the resource id.",
@@ -61,11 +64,11 @@ def map_sdk_exception(exc: Exception) -> CliError:
                 retryable=True,
             )
         return CliError(
-            code="api_error",
+            code=CODE_API_ERROR,
             message=message,
             exit_status=EXIT_API,
             details={"status_code": status} if status is not None else {},
         )
     if isinstance(exc, MammothError):
-        return CliError(code="api_error", message=str(exc), exit_status=EXIT_API)
-    return CliError(code="api_error", message=str(exc), exit_status=EXIT_API, retryable=True)
+        return CliError(code=CODE_API_ERROR, message=str(exc), exit_status=EXIT_API)
+    return CliError(code=CODE_API_ERROR, message=str(exc), exit_status=EXIT_API, retryable=True)

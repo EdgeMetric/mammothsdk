@@ -12,7 +12,7 @@ from typing import Any
 import typer
 
 from mammoth_cli.context import profiles
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import CODE_PROFILE_NOT_FOUND, EXIT_USAGE, CliError
 from mammoth_cli.runtime import executor
 from mammoth_cli.runtime import options as go
 from mammoth_cli.runtime.invocation import Invocation
@@ -32,7 +32,7 @@ def _project_source(invocation: Invocation, record: profiles.ProfileRecord | Non
 
 def _profile_not_found_error(profile_name: str) -> CliError:
     return CliError(
-        code="profile_not_found",
+        code=CODE_PROFILE_NOT_FOUND,
         message=f"No profile named '{profile_name}' exists yet.",
         exit_status=EXIT_USAGE,
         hint="Run 'mammoth auth login' first.",

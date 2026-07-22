@@ -15,10 +15,12 @@ from typing import cast
 
 import typer
 
+from mammoth_cli.output.policy import COLOR_MODES, VALID_OUTPUTS
 from mammoth_cli.runtime.invocation import Invocation
 
-OUTPUT_MODES = ("table", "json", "yaml", "ndjson", "plain")
-COLOR_MODES = ("auto", "always", "never")
+#: Alias of the canonical output-mode tuple, kept for callers that import it
+#: from this module. Both names refer to the same source of truth.
+OUTPUT_MODES = VALID_OUTPUTS
 
 
 def output_option() -> str:

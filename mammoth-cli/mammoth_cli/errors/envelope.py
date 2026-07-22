@@ -23,6 +23,27 @@ EXIT_CONFLICT = 6
 EXIT_RETRYABLE = 7
 EXIT_INTERRUPT = 130
 
+# Stable machine-readable error codes shared across more than one call site.
+# These are a compatibility contract: the *values* never change; centralizing
+# them here keeps the repeated codes spelled identically everywhere they are
+# raised. Codes raised from a single site stay inline literals.
+CODE_MISSING_ARGUMENT = "missing_argument"
+CODE_MISSING_FIELD = "missing_field"
+CODE_SDK_SYMBOL_UNRESOLVED = "sdk_symbol_unresolved"
+CODE_INVALID_ARGUMENT = "invalid_argument"
+CODE_INVALID_ARGUMENTS = "invalid_arguments"
+CODE_INVALID_CONFIG_VALUE = "invalid_config_value"
+CODE_INVALID_INPUT_DOCUMENT = "invalid_input_document"
+CODE_INVALID_INPUT_FORMAT = "invalid_input_format"
+CODE_INVALID_WORKSPACE_ID = "invalid_workspace_id"
+CODE_INPUT_FORMAT_REQUIRED = "input_format_required"
+CODE_API_ERROR = "api_error"
+CODE_RESOURCE_NOT_FOUND = "resource_not_found"
+CODE_PROFILE_NOT_FOUND = "profile_not_found"
+CODE_CONFIRMATION_REQUIRED = "confirmation_required"
+CODE_CONFIRMATION_DECLINED = "confirmation_declined"
+CODE_AUTHENTICATION_FAILED = "authentication_failed"
+
 
 @dataclass
 class CliError(Exception):

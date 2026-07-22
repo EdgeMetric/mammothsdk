@@ -11,7 +11,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from mammoth_cli.errors.envelope import EXIT_AUTH, EXIT_NOT_FOUND, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_AUTHENTICATION_FAILED,
+    CODE_RESOURCE_NOT_FOUND,
+    EXIT_AUTH,
+    EXIT_NOT_FOUND,
+    CliError,
+)
 
 
 @dataclass
@@ -80,7 +86,7 @@ class FakeMammothService:
         self.calls.append("check_connection")
         if not self.connection_ok:
             raise CliError(
-                code="authentication_failed",
+                code=CODE_AUTHENTICATION_FAILED,
                 message="Mammoth rejected the provided credentials.",
                 exit_status=EXIT_AUTH,
                 recovery_commands=["mammoth auth login"],
@@ -99,7 +105,7 @@ class FakeMammothService:
             if project.get("id") == project_id:
                 return project
         raise CliError(
-            code="resource_not_found",
+            code=CODE_RESOURCE_NOT_FOUND,
             message=f"Project {project_id} does not exist.",
             exit_status=EXIT_NOT_FOUND,
         )

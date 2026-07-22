@@ -24,12 +24,12 @@ from mammoth_cli.commands import BESPOKE
 from mammoth_cli.commands.registry import HANDLERS
 from mammoth_cli.errors.envelope import not_implemented_error
 from mammoth_cli.manifest.loader import command_by_id, load_commands
-from mammoth_cli.output.policy import VALID_OUTPUTS
+from mammoth_cli.output.policy import COLOR_MODES, VALID_OUTPUTS
 from mammoth_cli.runtime import executor
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.strict import validate_extra_args
 
 OUTPUT_MODES = VALID_OUTPUTS
-COLOR_MODES = ("auto", "always", "never")
 
 
 def _version_callback(value: bool) -> None:
@@ -116,6 +116,7 @@ def _execute(invocation: Invocation) -> None:
     """Run one command: dispatch to its handler and render the envelope."""
 
     def producer() -> tuple[Any, dict[str, Any]]:
+        validate_extra_args(invocation.command_id, invocation.extra_args)
         handler = HANDLERS.get(invocation.command_id)
         if handler is None:
             record = command_by_id(invocation.command_id)
