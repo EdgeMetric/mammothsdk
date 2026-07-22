@@ -62,3 +62,6 @@ site/
 bridge/
 *.docx
 
+
+# Transient STE text corpus
+mammoth-cli/build/

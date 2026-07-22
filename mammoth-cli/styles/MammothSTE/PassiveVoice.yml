@@ -1,0 +1,7 @@
+extends: existence
+message: "Prefer the active voice (Mammoth STE): '%s'."
+level: warning
+ignorecase: true
+nonword: false
+tokens:
+  - \b(?:am|are|were|being|is|been|was|be)\b\s+(?:\w+ed|written|done|made|run|sent|read|built|shown|given|kept|held|set)\b

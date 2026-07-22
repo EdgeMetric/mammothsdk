@@ -12,7 +12,7 @@ Every command carries a reviewed confirmation policy. Discover it with
 | `yes_always` | Pass `--yes` (always, even at a terminal). |
 | `confirm_target` | Pass `--yes` and `--confirm TARGET` (exact match). |
 
-## Noninteractive behavior
+## Behavior without a terminal
 
 Prompts occur only when standard input is a real terminal. Under `--no-input`,
 in `json`/`ndjson` output, or in CI, there is no prompt. A missing `--yes` or

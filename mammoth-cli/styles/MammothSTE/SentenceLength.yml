@@ -1,0 +1,9 @@
+extends: occurrence
+message: "Keep sentences to 25 words or fewer (Mammoth STE descriptive limit)."
+level: warning
+scope: sentence
+# Count word tokens in each sentence; warn past the descriptive limit. The
+# stricter 20-word procedural limit is enforced by scripts/check_ste.py, which
+# can tell a procedural step from a descriptive sentence.
+token: \b[\w'-]+\b
+max: 25

@@ -1,0 +1,8 @@
+extends: existence
+message: "Give one instruction per sentence (Mammoth STE): split '%s'."
+level: warning
+ignorecase: true
+scope: sentence
+tokens:
+  - \band then\b
+  - ';'

@@ -2,7 +2,7 @@
 
 [Documentation index](llms.txt)
 
-The CLI is built to be driven by autonomous agents and CI jobs.
+This CLI targets autonomous agents and CI jobs.
 
 ## Always run in machine mode
 
