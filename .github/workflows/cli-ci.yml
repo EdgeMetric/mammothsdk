@@ -40,32 +40,37 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      # Poetry stays available purely as the build backend the packaging tests
+      # invoke (poetry build); the environment itself is provisioned with pip so
+      # the unpublished in-repo SDK satisfies mammoth-io, never PyPI.
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
+          virtualenvs-create: false
 
-      - name: Install dependencies
-        run: poetry install --no-interaction
-
-      # Monorepo: validate against the in-repo SDK this CLI ships beside, not
-      # whatever mammoth-io happens to be on PyPI. The published wheel still
-      # declares the PyPI dependency (PKG-NO-LOCAL-URL keeps it clean).
-      - name: Install in-repo SDK (editable)
-        run: poetry run pip install -e ..
+      - name: Install in-repo SDK, CLI, and dev tools
+        run: |
+          python -m pip install --upgrade pip
+          # The in-repo SDK provides mammoth-io 0.6.0 (not yet on PyPI); install
+          # it editable FIRST so the CLI's `mammoth-io>=0.6.0,<0.7` constraint
+          # resolves against it instead of PyPI (which only has 0.5.1). The
+          # shipped wheel still declares the published dependency.
+          pip install -e ..
+          pip install -e .
+          # Dev tooling; names read from pyproject so this list cannot drift.
+          pip install $(python -c "import tomllib; g = tomllib.load(open('pyproject.toml', 'rb'))['tool']['poetry']['group']['dev']['dependencies']; print(' '.join(k for k in g if k.lower() != 'python'))")
 
       - name: Ruff (lint)
-        run: poetry run ruff check mammoth_cli/ tests/ scripts/
+        run: ruff check mammoth_cli/ tests/ scripts/
 
       - name: Mypy (strict)
-        run: poetry run mypy mammoth_cli/
+        run: mypy mammoth_cli/
 
       - name: Unit, contract, and installer tests
-        run: poetry run pytest tests/unit tests/contract tests/installer -q -p no:cacheprovider -m "not live"
+        run: pytest tests/unit tests/contract tests/installer -q -p no:cacheprovider -m "not live"
 
       - name: Packaging tests (build + wheel/sdist + reproducibility)
-        run: poetry run pytest tests/packaging -q -p no:cacheprovider
+        run: pytest tests/packaging -q -p no:cacheprovider
 
   installer-windows:
     name: installer (windows, pwsh)
@@ -78,24 +83,19 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Install dependencies
-        run: poetry install --no-interaction
-
-      - name: Install in-repo SDK (editable)
-        run: poetry run pip install -e ..
+      - name: Install in-repo SDK, CLI, and dev tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ..
+          pip install -e .
+          pip install $(python -c "import tomllib; g = tomllib.load(open('pyproject.toml', 'rb'))['tool']['poetry']['group']['dev']['dependencies']; print(' '.join(k for k in g if k.lower() != 'python'))")
 
       # Exercise the PowerShell installer's failure contract on a real Windows
       # runner: a stubbed `mammoth` that fails `skill install` must make the
       # installer exit nonzero. pwsh is present on windows-latest, so the
       # guarded ps1 test runs here. No network or admin required.
       - name: Installer contract tests (pwsh)
-        run: poetry run pytest tests/installer -q -p no:cacheprovider -m "not live"
+        run: pytest tests/installer -q -p no:cacheprovider -m "not live"
 
   docs:
     name: docs (generation, STE, Vale, links)
@@ -110,17 +110,12 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Install dependencies
-        run: poetry install --no-interaction
-
-      - name: Install in-repo SDK (editable)
-        run: poetry run pip install -e ..
+      - name: Install in-repo SDK, CLI, and dev tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ..
+          pip install -e .
+          pip install $(python -c "import tomllib; g = tomllib.load(open('pyproject.toml', 'rb'))['tool']['poetry']['group']['dev']['dependencies']; print(' '.join(k for k in g if k.lower() != 'python'))")
 
       - name: Install Vale (pinned)
         working-directory: .
@@ -134,13 +129,13 @@ jobs:
           vale --version
 
       - name: Documentation generation drift
-        run: poetry run python scripts/gen_docs.py --check
+        run: python scripts/gen_docs.py --check
 
       - name: Sentence-length checker (STE)
-        run: poetry run python scripts/check_ste.py docs/*.md
+        run: python scripts/check_ste.py docs/*.md
 
       - name: Vale house style
         run: vale docs/
 
       - name: Link validation
-        run: poetry run python scripts/check_links.py docs
+        run: python scripts/check_links.py docs
