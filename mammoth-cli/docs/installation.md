@@ -22,6 +22,16 @@ mammoth --version
 The CLI supports Python 3.12 through the latest tested stable minor (currently
 3.12, 3.13, and 3.14). It does not support 3.10 or 3.11.
 
+## From PyPI with pipx
+
+```bash
+pipx install mammoth-cli
+mammoth --version
+```
+
+`pipx` installs the `mammoth` executable in an isolated environment and puts it
+on your PATH. Run `pipx upgrade mammoth-cli` to update it.
+
 ## Convenience installers
 
 The versioned release ships `mammoth-install.sh` (Linux and macOS, POSIX `sh`)
