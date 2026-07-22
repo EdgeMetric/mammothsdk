@@ -129,6 +129,19 @@
         "help": {"type": "string"}
       }
     },
+    "positional_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type", "required", "metavar", "falls_back_to_field", "help"],
+      "properties": {
+        "name": {"$ref": "#/$defs/no_placeholder"},
+        "type": {"enum": ["int", "str"]},
+        "required": {"type": "boolean"},
+        "metavar": {"$ref": "#/$defs/no_placeholder"},
+        "falls_back_to_field": {"type": ["string", "null"]},
+        "help": {"$ref": "#/$defs/no_placeholder"}
+      }
+    },
     "command_record": {
       "type": "object",
       "additionalProperties": false,
@@ -136,6 +149,7 @@
         "command_id",
         "command_path",
         "disposition",
+        "positionals",
         "sdk_symbol",
         "sdk_conversion",
         "request_model",
@@ -157,7 +171,7 @@
         "disposition": {"enum": ["command", "alias"]},
         "alias_of": {"type": ["string", "null"]},
         "operation_ids": {"type": "array", "items": {"type": "string"}},
-        "positionals": {"type": "array", "items": {"$ref": "#/$defs/no_placeholder"}},
+        "positionals": {"type": "array", "items": {"$ref": "#/$defs/positional_record"}},
         "options": {"type": "array", "items": {"$ref": "#/$defs/option_record"}},
         "sdk_symbol": {"$ref": "#/$defs/no_placeholder"},
         "sdk_conversion": {"$ref": "#/$defs/no_placeholder"},

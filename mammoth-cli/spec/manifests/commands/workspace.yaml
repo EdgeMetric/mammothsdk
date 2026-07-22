@@ -481,7 +481,13 @@ commands:
   disposition: command
   alias_of: null
   operation_ids: []
-  positionals: []
+  positionals:
+  - name: user_id
+    type: int
+    required: true
+    metavar: USER_ID
+    falls_back_to_field: null
+    help: ID of the user.
   options: []
   sdk_symbol: mammoth.api.workspace.WorkspaceAPI.get_user
   sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.get_user with validated request fields.
@@ -497,8 +503,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth workspace user get --help
-  agent_example: mammoth workspace user get --output json --no-input
+  human_example: mammoth workspace user get USER_ID --help
+  agent_example: mammoth workspace user get 123 --output json --no-input
   unit_tests:
   - UT-WORKSPACE-USER-GET
   contract_tests:
@@ -549,7 +555,13 @@ commands:
   alias_of: null
   operation_ids:
   - RemoveUser
-  positionals: []
+  positionals:
+  - name: user_id
+    type: int
+    required: true
+    metavar: USER_ID
+    falls_back_to_field: null
+    help: ID of the user.
   options: []
   sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.user_remove
   sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.user_remove with validated request fields.
@@ -565,8 +577,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth workspace user remove --help
-  agent_example: mammoth workspace user remove --output json --no-input
+  human_example: mammoth workspace user remove USER_ID --help
+  agent_example: mammoth workspace user remove 123 --output json --no-input
   unit_tests:
   - UT-WORKSPACE-USER-REMOVE
   contract_tests:
@@ -617,7 +629,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateUserInWorkspace
-  positionals: []
+  positionals:
+  - name: user_id
+    type: int
+    required: true
+    metavar: USER_ID
+    falls_back_to_field: null
+    help: ID of the user.
   options: []
   sdk_symbol: mammoth.api.workspace.WorkspaceAPI.update_user
   sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.update_user with validated request fields.
@@ -633,8 +651,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth workspace user update --help
-  agent_example: mammoth workspace user update --output json --no-input
+  human_example: mammoth workspace user update USER_ID --help
+  agent_example: mammoth workspace user update 123 --output json --no-input
   unit_tests:
   - UT-WORKSPACE-USER-UPDATE
   contract_tests:

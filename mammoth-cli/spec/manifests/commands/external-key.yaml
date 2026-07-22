@@ -40,7 +40,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteExternalKey
-  positionals: []
+  positionals:
+  - name: key_id
+    type: int
+    required: true
+    metavar: KEY_ID
+    falls_back_to_field: null
+    help: ID of the key.
   options: []
   sdk_symbol: mammoth.api.external_keys.ExternalKeysAPI.delete
   sdk_conversion: Call mammoth.api.external_keys.ExternalKeysAPI.delete with validated request fields.
@@ -56,8 +62,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth external-key delete --help
-  agent_example: mammoth external-key delete --output json --no-input
+  human_example: mammoth external-key delete KEY_ID --help
+  agent_example: mammoth external-key delete 123 --output json --no-input
   unit_tests:
   - UT-EXTERNAL-KEY-DELETE
   contract_tests:
@@ -74,7 +80,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetExternalKey
-  positionals: []
+  positionals:
+  - name: key_id
+    type: int
+    required: true
+    metavar: KEY_ID
+    falls_back_to_field: null
+    help: ID of the key.
   options: []
   sdk_symbol: mammoth.api.external_keys.ExternalKeysAPI.get
   sdk_conversion: Call mammoth.api.external_keys.ExternalKeysAPI.get with validated request fields.
@@ -90,8 +102,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth external-key get --help
-  agent_example: mammoth external-key get --output json --no-input
+  human_example: mammoth external-key get KEY_ID --help
+  agent_example: mammoth external-key get 123 --output json --no-input
   unit_tests:
   - UT-EXTERNAL-KEY-GET
   contract_tests:

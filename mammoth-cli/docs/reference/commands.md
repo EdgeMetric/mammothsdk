@@ -83,10 +83,14 @@ Total commands: 435.
 
 ### `mammoth agent session delete`
 
+**Arguments**
+
+- `SESSION_ID` (int, required) — ID of the session.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.session_delete`
-- Agent example: `mammoth agent session delete --output json --no-input`
+- Agent example: `mammoth agent session delete 123 --output json --no-input`
 
 ### `mammoth agent session list`
 
@@ -97,17 +101,25 @@ Total commands: 435.
 
 ### `mammoth agent session messages`
 
+**Arguments**
+
+- `SESSION_ID` (int, required) — ID of the session.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.session_messages`
-- Agent example: `mammoth agent session messages --output json --no-input`
+- Agent example: `mammoth agent session messages 123 --output json --no-input`
 
 ### `mammoth agent session set-visibility`
+
+**Arguments**
+
+- `SESSION_ID` (int, required) — ID of the session.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.session_set_visibility`
-- Agent example: `mammoth agent session set-visibility --output json --no-input`
+- Agent example: `mammoth agent session set-visibility 123 --output json --no-input`
 
 ## ai
 
@@ -143,10 +155,14 @@ Total commands: 435.
 
 ### `mammoth annotation comment add`
 
+**Arguments**
+
+- `ANNOTATION_ID` (int, required) — ID of the annotation.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.annotations.AnnotationsAPI.comment_add`
-- Agent example: `mammoth annotation comment add --output json --no-input`
+- Agent example: `mammoth annotation comment add 123 --output json --no-input`
 
 ### `mammoth annotation create`
 
@@ -157,10 +173,14 @@ Total commands: 435.
 
 ### `mammoth annotation delete`
 
+**Arguments**
+
+- `ANNOTATION_ID` (int, required) — ID of the annotation.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.annotations.AnnotationsAPI.delete`
-- Agent example: `mammoth annotation delete --output json --no-input`
+- Agent example: `mammoth annotation delete 123 --output json --no-input`
 
 ### `mammoth annotation list`
 
@@ -171,10 +191,14 @@ Total commands: 435.
 
 ### `mammoth annotation update`
 
+**Arguments**
+
+- `ANNOTATION_ID` (int, required) — ID of the annotation.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.annotations.AnnotationsAPI.update`
-- Agent example: `mammoth annotation update --output json --no-input`
+- Agent example: `mammoth annotation update 123 --output json --no-input`
 
 ## auth
 
@@ -210,17 +234,25 @@ Total commands: 435.
 
 ### `mammoth automation delete`
 
+**Arguments**
+
+- `AUTOMATION_ID` (int, required) — ID of the automation.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.automations.AutomationsAPI.delete`
-- Agent example: `mammoth automation delete --output json --no-input`
+- Agent example: `mammoth automation delete 123 --output json --no-input`
 
 ### `mammoth automation get`
+
+**Arguments**
+
+- `AUTOMATION_ID` (int, required) — ID of the automation.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.automations.AutomationsAPI.get`
-- Agent example: `mammoth automation get --output json --no-input`
+- Agent example: `mammoth automation get 123 --output json --no-input`
 
 ### `mammoth automation list`
 
@@ -231,68 +263,107 @@ Total commands: 435.
 
 ### `mammoth automation restore`
 
+**Arguments**
+
+- `AUTOMATION_ID` (int, required) — ID of the automation.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.automations.AutomationsAPI.restore`
-- Agent example: `mammoth automation restore --output json --no-input`
+- Agent example: `mammoth automation restore 123 --output json --no-input`
 
 ### `mammoth automation trash`
+
+**Arguments**
+
+- `AUTOMATION_ID` (int, required) — ID of the automation.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.automations.AutomationsAPI.trash`
-- Agent example: `mammoth automation trash --output json --no-input`
+- Agent example: `mammoth automation trash 123 --output json --no-input`
 
 ### `mammoth automation update`
+
+**Arguments**
+
+- `AUTOMATION_ID` (int, required) — ID of the automation.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.automations.AutomationsAPI.update`
-- Agent example: `mammoth automation update --output json --no-input`
+- Agent example: `mammoth automation update 123 --output json --no-input`
 
 ## batch
 
 ### `mammoth batch bulk-delete`
 
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.bulk_delete`
-- Agent example: `mammoth batch bulk-delete --output json --no-input`
+- Agent example: `mammoth batch bulk-delete 123 --output json --no-input`
 
 ### `mammoth batch create`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `SOURCE_ID` (int, required) — ID of the source.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.create`
-- Agent example: `mammoth batch create --output json --no-input`
+- Agent example: `mammoth batch create 123 123 --output json --no-input`
 
 ### `mammoth batch delete`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `BATCH_ID` (int, required) — ID of the batch.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.delete`
-- Agent example: `mammoth batch delete --output json --no-input`
+- Agent example: `mammoth batch delete 123 123 --output json --no-input`
 
 ### `mammoth batch get`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `BATCH_ID` (int, required) — ID of the batch.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.get`
-- Agent example: `mammoth batch get --output json --no-input`
+- Agent example: `mammoth batch get 123 123 --output json --no-input`
 
 ### `mammoth batch list`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.list`
-- Agent example: `mammoth batch list --output json --no-input`
+- Agent example: `mammoth batch list 123 --output json --no-input`
 
 ### `mammoth batch update`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.update`
-- Agent example: `mammoth batch update --output json --no-input`
+- Agent example: `mammoth batch update 123 --output json --no-input`
 
 ## billing
 
@@ -319,10 +390,14 @@ Total commands: 435.
 
 ### `mammoth billing invoice get`
 
+**Arguments**
+
+- `INVOICE_ID` (int, required) — ID of the invoice.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.invoice_get`
-- Agent example: `mammoth billing invoice get --output json --no-input`
+- Agent example: `mammoth billing invoice get 123 --output json --no-input`
 
 ### `mammoth billing invoice list`
 
@@ -347,10 +422,14 @@ Total commands: 435.
 
 ### `mammoth billing stripe create`
 
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_create`
-- Agent example: `mammoth billing stripe create --output json --no-input`
+- Agent example: `mammoth billing stripe create 123 --output json --no-input`
 
 ### `mammoth billing stripe end-trial`
 
@@ -375,10 +454,14 @@ Total commands: 435.
 
 ### `mammoth billing stripe payment-method delete`
 
+**Arguments**
+
+- `PAYMENT_METHOD_ID` (int, required) — ID of the payment method.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_payment_method_delete`
-- Agent example: `mammoth billing stripe payment-method delete --output json --no-input`
+- Agent example: `mammoth billing stripe payment-method delete 123 --output json --no-input`
 
 ### `mammoth billing stripe payment-method list`
 
@@ -389,10 +472,14 @@ Total commands: 435.
 
 ### `mammoth billing stripe payment-method set-default`
 
+**Arguments**
+
+- `PAYMENT_METHOD_ID` (int, required) — ID of the payment method.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_payment_method_set_default`
-- Agent example: `mammoth billing stripe payment-method set-default --output json --no-input`
+- Agent example: `mammoth billing stripe payment-method set-default 123 --output json --no-input`
 
 ### `mammoth billing stripe portal-url`
 
@@ -461,10 +548,14 @@ Total commands: 435.
 
 ### `mammoth browse folder`
 
+**Arguments**
+
+- `FOLDER_ID` (int, required) — ID of the folder.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.browse.BrowseAPI.folder_resources`
-- Agent example: `mammoth browse folder --output json --no-input`
+- Agent example: `mammoth browse folder 123 --output json --no-input`
 
 ### `mammoth browse project`
 
@@ -514,17 +605,25 @@ Total commands: 435.
 
 ### `mammoth client-app delete`
 
+**Arguments**
+
+- `CLIENT_KEY` (str, required) — Key identifying the client.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.clientapps.ClientAppsAPI.delete`
-- Agent example: `mammoth client-app delete --output json --no-input`
+- Agent example: `mammoth client-app delete example --output json --no-input`
 
 ### `mammoth client-app get`
+
+**Arguments**
+
+- `CLIENT_KEY` (str, required) — Key identifying the client.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.clientapps.ClientAppsAPI.get`
-- Agent example: `mammoth client-app get --output json --no-input`
+- Agent example: `mammoth client-app get example --output json --no-input`
 
 ### `mammoth client-app list`
 
@@ -535,10 +634,14 @@ Total commands: 435.
 
 ### `mammoth client-app update`
 
+**Arguments**
+
+- `CLIENT_KEY` (str, required) — Key identifying the client.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.clientapps.ClientAppsAPI.update`
-- Agent example: `mammoth client-app update --output json --no-input`
+- Agent example: `mammoth client-app update example --output json --no-input`
 
 ## completion
 
@@ -604,10 +707,14 @@ Total commands: 435.
 
 ### `mammoth connector ai history`
 
+**Arguments**
+
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connector_ai.ConnectorAIAPI.history`
-- Agent example: `mammoth connector ai history --output json --no-input`
+- Agent example: `mammoth connector ai history example --output json --no-input`
 
 ### `mammoth connector ai session list`
 
@@ -618,10 +725,14 @@ Total commands: 435.
 
 ### `mammoth connector ai session messages`
 
+**Arguments**
+
+- `SESSION_ID` (int, required) — ID of the session.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connector_ai.ConnectorAIAPI.session_messages`
-- Agent example: `mammoth connector ai session messages --output json --no-input`
+- Agent example: `mammoth connector ai session messages 123 --output json --no-input`
 
 ### `mammoth connector ai submit-column-selection`
 
@@ -639,87 +750,147 @@ Total commands: 435.
 
 ### `mammoth connector connection create`
 
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
+
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.create_connection`
-- Agent example: `mammoth connector connection create --output json --no-input`
+- Agent example: `mammoth connector connection create example --output json --no-input`
 
 ### `mammoth connector connection delete`
+
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.delete_connection`
-- Agent example: `mammoth connector connection delete --output json --no-input`
+- Agent example: `mammoth connector connection delete example example --output json --no-input`
 
 ### `mammoth connector connection get`
+
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.get_connection`
-- Agent example: `mammoth connector connection get --output json --no-input`
+- Agent example: `mammoth connector connection get example example --output json --no-input`
 
 ### `mammoth connector connection list`
+
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.list_connections`
-- Agent example: `mammoth connector connection list --output json --no-input`
+- Agent example: `mammoth connector connection list example --output json --no-input`
 
 ### `mammoth connector connection update`
+
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.update_connection`
-- Agent example: `mammoth connector connection update --output json --no-input`
+- Agent example: `mammoth connector connection update example example --output json --no-input`
 
 ### `mammoth connector ds-config create`
+
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.create_ds_config`
-- Agent example: `mammoth connector ds-config create --output json --no-input`
+- Agent example: `mammoth connector ds-config create example example --output json --no-input`
 
 ### `mammoth connector ds-config delete`
+
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
+- `DS_CONFIG_KEY` (str, required) — Key identifying the ds config.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.delete_ds_config`
-- Agent example: `mammoth connector ds-config delete --output json --no-input`
+- Agent example: `mammoth connector ds-config delete example example example --output json --no-input`
 
 ### `mammoth connector ds-config delete-all`
+
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.ds_config_delete_all`
-- Agent example: `mammoth connector ds-config delete-all --output json --no-input`
+- Agent example: `mammoth connector ds-config delete-all example example --output json --no-input`
 
 ### `mammoth connector ds-config get`
+
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
+- `DS_CONFIG_KEY` (str, required) — Key identifying the ds config.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.get_ds_config`
-- Agent example: `mammoth connector ds-config get --output json --no-input`
+- Agent example: `mammoth connector ds-config get example example example --output json --no-input`
 
 ### `mammoth connector ds-config list`
+
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.list_ds_configs`
-- Agent example: `mammoth connector ds-config list --output json --no-input`
+- Agent example: `mammoth connector ds-config list example example --output json --no-input`
 
 ### `mammoth connector ds-config update`
+
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
+- `DS_CONFIG_KEY` (str, required) — Key identifying the ds config.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.update_ds_config`
-- Agent example: `mammoth connector ds-config update --output json --no-input`
+- Agent example: `mammoth connector ds-config update example example example --output json --no-input`
 
 ### `mammoth connector get`
+
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.get`
-- Agent example: `mammoth connector get --output json --no-input`
+- Agent example: `mammoth connector get example --output json --no-input`
 
 ### `mammoth connector list`
 
@@ -730,17 +901,27 @@ Total commands: 435.
 
 ### `mammoth connector query generate`
 
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.query_gen`
-- Agent example: `mammoth connector query generate --output json --no-input`
+- Agent example: `mammoth connector query generate example example --output json --no-input`
 
 ### `mammoth connector query status`
+
+**Arguments**
+
+- `CONNECTOR_KEY` (str, required) — Key identifying the connector.
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.status`
-- Agent example: `mammoth connector query status --output json --no-input`
+- Agent example: `mammoth connector query status example example --output json --no-input`
 
 ## context
 
@@ -769,24 +950,36 @@ Total commands: 435.
 
 ### `mammoth dashboard action`
 
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.action`
-- Agent example: `mammoth dashboard action --output json --no-input`
+- Agent example: `mammoth dashboard action 123 --output json --no-input`
 
 ### `mammoth dashboard analytics`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.get_analytics`
-- Agent example: `mammoth dashboard analytics --output json --no-input`
+- Agent example: `mammoth dashboard analytics 123 --output json --no-input`
 
 ### `mammoth dashboard cancel-generation`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.cancel_generation`
-- Agent example: `mammoth dashboard cancel-generation --output json --no-input`
+- Agent example: `mammoth dashboard cancel-generation 123 --output json --no-input`
 
 ### `mammoth dashboard create`
 
@@ -797,31 +990,47 @@ Total commands: 435.
 
 ### `mammoth dashboard data draft`
 
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.get_draft_data`
-- Agent example: `mammoth dashboard data draft --output json --no-input`
+- Agent example: `mammoth dashboard data draft 123 --output json --no-input`
 
 ### `mammoth dashboard data published`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.get_publish_data`
-- Agent example: `mammoth dashboard data published --output json --no-input`
+- Agent example: `mammoth dashboard data published 123 --output json --no-input`
 
 ### `mammoth dashboard delete`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.delete`
-- Agent example: `mammoth dashboard delete --output json --no-input`
+- Agent example: `mammoth dashboard delete 123 --output json --no-input`
 
 ### `mammoth dashboard get`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.get`
-- Agent example: `mammoth dashboard get --output json --no-input`
+- Agent example: `mammoth dashboard get 123 --output json --no-input`
 
 ### `mammoth dashboard get-by-url`
 
@@ -853,17 +1062,25 @@ Total commands: 435.
 
 ### `mammoth dashboard restore`
 
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.restore`
-- Agent example: `mammoth dashboard restore --output json --no-input`
+- Agent example: `mammoth dashboard restore 123 --output json --no-input`
 
 ### `mammoth dashboard share`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.share`
-- Agent example: `mammoth dashboard share --output json --no-input`
+- Agent example: `mammoth dashboard share 123 --output json --no-input`
 
 ### `mammoth dashboard source list`
 
@@ -874,24 +1091,36 @@ Total commands: 435.
 
 ### `mammoth dashboard trash`
 
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.trash`
-- Agent example: `mammoth dashboard trash --output json --no-input`
+- Agent example: `mammoth dashboard trash 123 --output json --no-input`
 
 ### `mammoth dashboard update`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.update`
-- Agent example: `mammoth dashboard update --output json --no-input`
+- Agent example: `mammoth dashboard update 123 --output json --no-input`
 
 ### `mammoth dashboard widget-data`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.widget_data`
-- Agent example: `mammoth dashboard widget-data --output json --no-input`
+- Agent example: `mammoth dashboard widget-data 123 --output json --no-input`
 
 ### `mammoth dashboard widget-data-by-url`
 
@@ -904,10 +1133,14 @@ Total commands: 435.
 
 ### `mammoth data-app active-job`
 
+**Arguments**
+
+- `DATA_APP_ID` (int, required) — ID of the data app.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.active_job`
-- Agent example: `mammoth data-app active-job --output json --no-input`
+- Agent example: `mammoth data-app active-job 123 --output json --no-input`
 
 ### `mammoth data-app create`
 
@@ -918,24 +1151,37 @@ Total commands: 435.
 
 ### `mammoth data-app delete`
 
+**Arguments**
+
+- `DATA_APP_ID` (int, required) — ID of the data app.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.delete`
-- Agent example: `mammoth data-app delete --output json --no-input`
+- Agent example: `mammoth data-app delete 123 --output json --no-input`
 
 ### `mammoth data-app get`
+
+**Arguments**
+
+- `DATA_APP_ID` (int, required) — ID of the data app.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.get`
-- Agent example: `mammoth data-app get --output json --no-input`
+- Agent example: `mammoth data-app get 123 --output json --no-input`
 
 ### `mammoth data-app job`
+
+**Arguments**
+
+- `DATA_APP_ID` (int, required) — ID of the data app.
+- `JOB_ID` (int, required) — ID of the job.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.job`
-- Agent example: `mammoth data-app job --output json --no-input`
+- Agent example: `mammoth data-app job 123 123 --output json --no-input`
 
 ### `mammoth data-app list`
 
@@ -946,45 +1192,69 @@ Total commands: 435.
 
 ### `mammoth data-app pipeline-changes`
 
+**Arguments**
+
+- `DATA_APP_ID` (int, required) — ID of the data app.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.pipeline_changes`
-- Agent example: `mammoth data-app pipeline-changes --output json --no-input`
+- Agent example: `mammoth data-app pipeline-changes 123 --output json --no-input`
 
 ### `mammoth data-app share`
+
+**Arguments**
+
+- `DATA_APP_ID` (int, required) — ID of the data app.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.share`
-- Agent example: `mammoth data-app share --output json --no-input`
+- Agent example: `mammoth data-app share 123 --output json --no-input`
 
 ### `mammoth data-app update`
+
+**Arguments**
+
+- `DATA_APP_ID` (int, required) — ID of the data app.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.update`
-- Agent example: `mammoth data-app update --output json --no-input`
+- Agent example: `mammoth data-app update 123 --output json --no-input`
 
 ### `mammoth data-app upload`
+
+**Arguments**
+
+- `DATA_APP_ID` (int, required) — ID of the data app.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.upload`
-- Agent example: `mammoth data-app upload --output json --no-input`
+- Agent example: `mammoth data-app upload 123 --output json --no-input`
 
 ### `mammoth data-app user list`
+
+**Arguments**
+
+- `DATA_APP_ID` (int, required) — ID of the data app.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.user_list`
-- Agent example: `mammoth data-app user list --output json --no-input`
+- Agent example: `mammoth data-app user list 123 --output json --no-input`
 
 ### `mammoth data-app user remove`
+
+**Arguments**
+
+- `DATA_APP_ID` (int, required) — ID of the data app.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.user_remove`
-- Agent example: `mammoth data-app user remove --output json --no-input`
+- Agent example: `mammoth data-app user remove 123 --output json --no-input`
 
 ## dataset
 
@@ -1011,52 +1281,80 @@ Total commands: 435.
 
 ### `mammoth dataset create-from-pdf`
 
+**Arguments**
+
+- `FILE_OBJECT_ID` (int, required) — ID of the file object.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.create_from_pdf`
-- Agent example: `mammoth dataset create-from-pdf --output json --no-input`
+- Agent example: `mammoth dataset create-from-pdf 123 --output json --no-input`
 
 ### `mammoth dataset data`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.get_data`
-- Agent example: `mammoth dataset data --output json --no-input`
+- Agent example: `mammoth dataset data 123 --output json --no-input`
 
 ### `mammoth dataset delete`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.delete`
-- Agent example: `mammoth dataset delete --output json --no-input`
+- Agent example: `mammoth dataset delete 123 --output json --no-input`
 
 ### `mammoth dataset file-settings`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.get_file_settings`
-- Agent example: `mammoth dataset file-settings --output json --no-input`
+- Agent example: `mammoth dataset file-settings 123 --output json --no-input`
 
 ### `mammoth dataset file-settings undo`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.file_settings_undo`
-- Agent example: `mammoth dataset file-settings undo --output json --no-input`
+- Agent example: `mammoth dataset file-settings undo 123 --output json --no-input`
 
 ### `mammoth dataset file-settings update`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.file_settings_update`
-- Agent example: `mammoth dataset file-settings update --output json --no-input`
+- Agent example: `mammoth dataset file-settings update 123 --output json --no-input`
 
 ### `mammoth dataset get`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.get`
-- Agent example: `mammoth dataset get --output json --no-input`
+- Agent example: `mammoth dataset get 123 --output json --no-input`
 
 ### `mammoth dataset list`
 
@@ -1067,24 +1365,36 @@ Total commands: 435.
 
 ### `mammoth dataset rename`
 
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.rename`
-- Agent example: `mammoth dataset rename --output json --no-input`
+- Agent example: `mammoth dataset rename 123 --output json --no-input`
 
 ### `mammoth dataset restore`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.restore`
-- Agent example: `mammoth dataset restore --output json --no-input`
+- Agent example: `mammoth dataset restore 123 --output json --no-input`
 
 ### `mammoth dataset trash`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.trash`
-- Agent example: `mammoth dataset trash --output json --no-input`
+- Agent example: `mammoth dataset trash 123 --output json --no-input`
 
 ### `mammoth dataset update`
 
@@ -1113,17 +1423,25 @@ Total commands: 435.
 
 ### `mammoth external-key delete`
 
+**Arguments**
+
+- `KEY_ID` (int, required) — ID of the key.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.external_keys.ExternalKeysAPI.delete`
-- Agent example: `mammoth external-key delete --output json --no-input`
+- Agent example: `mammoth external-key delete 123 --output json --no-input`
 
 ### `mammoth external-key get`
+
+**Arguments**
+
+- `KEY_ID` (int, required) — ID of the key.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.external_keys.ExternalKeysAPI.get`
-- Agent example: `mammoth external-key get --output json --no-input`
+- Agent example: `mammoth external-key get 123 --output json --no-input`
 
 ### `mammoth external-key list`
 
@@ -1143,24 +1461,36 @@ Total commands: 435.
 
 ### `mammoth file delete`
 
+**Arguments**
+
+- `FILE_ID` (int, required) — ID of the file.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.files.FilesAPI.delete`
-- Agent example: `mammoth file delete --output json --no-input`
+- Agent example: `mammoth file delete 123 --output json --no-input`
 
 ### `mammoth file extract-sheets`
+
+**Arguments**
+
+- `FILE_ID` (int, required) — ID of the file.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.files.FilesAPI.extract_sheets`
-- Agent example: `mammoth file extract-sheets --output json --no-input`
+- Agent example: `mammoth file extract-sheets 123 --output json --no-input`
 
 ### `mammoth file get`
+
+**Arguments**
+
+- `FILE_ID` (int, required) — ID of the file.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.files.FilesAPI.get`
-- Agent example: `mammoth file get --output json --no-input`
+- Agent example: `mammoth file get 123 --output json --no-input`
 
 ### `mammoth file list`
 
@@ -1171,17 +1501,25 @@ Total commands: 435.
 
 ### `mammoth file set-password`
 
+**Arguments**
+
+- `FILE_ID` (int, required) — ID of the file.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.files.FilesAPI.set_password`
-- Agent example: `mammoth file set-password --output json --no-input`
+- Agent example: `mammoth file set-password 123 --output json --no-input`
 
 ### `mammoth file update`
+
+**Arguments**
+
+- `FILE_ID` (int, required) — ID of the file.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.files.FilesAPI.update`
-- Agent example: `mammoth file update --output json --no-input`
+- Agent example: `mammoth file update 123 --output json --no-input`
 
 ### `mammoth file upload`
 
@@ -1222,10 +1560,14 @@ Total commands: 435.
 
 ### `mammoth folder get`
 
+**Arguments**
+
+- `FOLDER_ID` (int, required) — ID of the folder.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.folders.FoldersAPI.get`
-- Agent example: `mammoth folder get --output json --no-input`
+- Agent example: `mammoth folder get 123 --output json --no-input`
 
 ### `mammoth folder list`
 
@@ -1250,26 +1592,38 @@ Total commands: 435.
 
 ### `mammoth folder trash`
 
+**Arguments**
+
+- `FOLDER_ID` (int, required) — ID of the folder.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.folders.FoldersAPI.trash`
-- Agent example: `mammoth folder trash --output json --no-input`
+- Agent example: `mammoth folder trash 123 --output json --no-input`
 
 ### `mammoth folder update`
+
+**Arguments**
+
+- `FOLDER_ID` (int, required) — ID of the folder.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.folders.FoldersAPI.update`
-- Agent example: `mammoth folder update --output json --no-input`
+- Agent example: `mammoth folder update 123 --output json --no-input`
 
 ## job
 
 ### `mammoth job get`
 
+**Arguments**
+
+- `JOB_ID` (int, required) — ID of the job.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.jobs.JobsAPI.get_job`
-- Agent example: `mammoth job get --output json --no-input`
+- Agent example: `mammoth job get 123 --output json --no-input`
 
 ### `mammoth job get-many`
 
@@ -1280,10 +1634,14 @@ Total commands: 435.
 
 ### `mammoth job wait`
 
+**Arguments**
+
+- `JOB_ID` (int, required) — ID of the job.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.jobs.JobsAPI.wait_for_job`
-- Agent example: `mammoth job wait --output json --no-input`
+- Agent example: `mammoth job wait 123 --output json --no-input`
 
 ### `mammoth job wait-many`
 
@@ -1296,10 +1654,14 @@ Total commands: 435.
 
 ### `mammoth notification delete`
 
+**Arguments**
+
+- `NOTIFICATION_ID` (int, required) — ID of the notification.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.notifications.NotificationsAPI.delete`
-- Agent example: `mammoth notification delete --output json --no-input`
+- Agent example: `mammoth notification delete 123 --output json --no-input`
 
 ### `mammoth notification delete-batch`
 
@@ -1317,10 +1679,14 @@ Total commands: 435.
 
 ### `mammoth notification update`
 
+**Arguments**
+
+- `NOTIFICATION_ID` (int, required) — ID of the notification.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.notifications.NotificationsAPI.update`
-- Agent example: `mammoth notification update --output json --no-input`
+- Agent example: `mammoth notification update 123 --output json --no-input`
 
 ### `mammoth notification update-batch`
 
@@ -1340,31 +1706,47 @@ Total commands: 435.
 
 ### `mammoth parameter delete`
 
+**Arguments**
+
+- `PARAMETER_ID` (int, required) — ID of the parameter.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.parameters.ParametersAPI.delete`
-- Agent example: `mammoth parameter delete --output json --no-input`
+- Agent example: `mammoth parameter delete 123 --output json --no-input`
 
 ### `mammoth parameter dependencies`
+
+**Arguments**
+
+- `PARAMETER_ID` (int, required) — ID of the parameter.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.parameters.ParametersAPI.dependencies`
-- Agent example: `mammoth parameter dependencies --output json --no-input`
+- Agent example: `mammoth parameter dependencies 123 --output json --no-input`
 
 ### `mammoth parameter duplicate`
+
+**Arguments**
+
+- `PARAMETER_ID` (int, required) — ID of the parameter.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.parameters.ParametersAPI.duplicate`
-- Agent example: `mammoth parameter duplicate --output json --no-input`
+- Agent example: `mammoth parameter duplicate 123 --output json --no-input`
 
 ### `mammoth parameter get`
+
+**Arguments**
+
+- `PARAMETER_ID` (int, required) — ID of the parameter.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.parameters.ParametersAPI.get`
-- Agent example: `mammoth parameter get --output json --no-input`
+- Agent example: `mammoth parameter get 123 --output json --no-input`
 
 ### `mammoth parameter group create`
 
@@ -1375,10 +1757,14 @@ Total commands: 435.
 
 ### `mammoth parameter group delete`
 
+**Arguments**
+
+- `GROUP_ID` (int, required) — ID of the group.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.parameters.ParametersAPI.group_delete`
-- Agent example: `mammoth parameter group delete --output json --no-input`
+- Agent example: `mammoth parameter group delete 123 --output json --no-input`
 
 ### `mammoth parameter group list`
 
@@ -1396,10 +1782,14 @@ Total commands: 435.
 
 ### `mammoth parameter group update`
 
+**Arguments**
+
+- `GROUP_ID` (int, required) — ID of the group.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.parameters.ParametersAPI.group_update`
-- Agent example: `mammoth parameter group update --output json --no-input`
+- Agent example: `mammoth parameter group update 123 --output json --no-input`
 
 ### `mammoth parameter list`
 
@@ -1410,10 +1800,14 @@ Total commands: 435.
 
 ### `mammoth parameter rerun`
 
+**Arguments**
+
+- `PARAMETER_ID` (int, required) — ID of the parameter.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.parameters.ParametersAPI.rerun`
-- Agent example: `mammoth parameter rerun --output json --no-input`
+- Agent example: `mammoth parameter rerun 123 --output json --no-input`
 
 ### `mammoth parameter rerun-all-stale`
 
@@ -1424,10 +1818,14 @@ Total commands: 435.
 
 ### `mammoth parameter update`
 
+**Arguments**
+
+- `PARAMETER_ID` (int, required) — ID of the parameter.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.parameters.ParametersAPI.update`
-- Agent example: `mammoth parameter update --output json --no-input`
+- Agent example: `mammoth parameter update 123 --output json --no-input`
 
 ## project
 
@@ -1447,38 +1845,58 @@ Total commands: 435.
 
 ### `mammoth project checkpoint list`
 
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.checkpoint_list`
-- Agent example: `mammoth project checkpoint list --output json --no-input`
+- Agent example: `mammoth project checkpoint list 123 --output json --no-input`
 
 ### `mammoth project create`
+
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new project; or pass it via the 'name' input field.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.create`
-- Agent example: `mammoth project create --output json --no-input`
+- Agent example: `mammoth project create example --output json --no-input`
 
 ### `mammoth project data-check list`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.data_check_list`
-- Agent example: `mammoth project data-check list --output json --no-input`
+- Agent example: `mammoth project data-check list 123 --output json --no-input`
 
 ### `mammoth project delete`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.delete`
-- Agent example: `mammoth project delete --output json --no-input`
+- Agent example: `mammoth project delete 123 --output json --no-input`
 
 ### `mammoth project get`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.get`
-- Agent example: `mammoth project get --output json --no-input`
+- Agent example: `mammoth project get 123 --output json --no-input`
 
 ### `mammoth project list`
 
@@ -1489,66 +1907,102 @@ Total commands: 435.
 
 ### `mammoth project pending-changes`
 
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.pending_changes`
-- Agent example: `mammoth project pending-changes --output json --no-input`
+- Agent example: `mammoth project pending-changes 123 --output json --no-input`
 
 ### `mammoth project publish-credentials`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.publish_credentials`
-- Agent example: `mammoth project publish-credentials --output json --no-input`
+- Agent example: `mammoth project publish-credentials 123 --output json --no-input`
 
 ### `mammoth project resource-dependencies`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.resource_dependencies`
-- Agent example: `mammoth project resource-dependencies --output json --no-input`
+- Agent example: `mammoth project resource-dependencies 123 --output json --no-input`
 
 ### `mammoth project resource-status`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.resource_status`
-- Agent example: `mammoth project resource-status --output json --no-input`
+- Agent example: `mammoth project resource-status 123 --output json --no-input`
 
 ### `mammoth project sample-flow`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.sample_flow`
-- Agent example: `mammoth project sample-flow --output json --no-input`
+- Agent example: `mammoth project sample-flow 123 --output json --no-input`
 
 ### `mammoth project update`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.update`
-- Agent example: `mammoth project update --output json --no-input`
+- Agent example: `mammoth project update 123 --output json --no-input`
 
 ### `mammoth project user add`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.add_users`
-- Agent example: `mammoth project user add --output json --no-input`
+- Agent example: `mammoth project user add 123 --output json --no-input`
 
 ### `mammoth project user remove`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.remove_users`
-- Agent example: `mammoth project user remove --output json --no-input`
+- Agent example: `mammoth project user remove 123 --output json --no-input`
 
 ### `mammoth project user update`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.user_update`
-- Agent example: `mammoth project user update --output json --no-input`
+- Agent example: `mammoth project user update 123 --output json --no-input`
 
 ## report
 
@@ -1570,17 +2024,25 @@ Total commands: 435.
 
 ### `mammoth schedule delete`
 
+**Arguments**
+
+- `SCHEDULE_ID` (int, required) — ID of the schedule.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.schedules.SchedulesAPI.delete`
-- Agent example: `mammoth schedule delete --output json --no-input`
+- Agent example: `mammoth schedule delete 123 --output json --no-input`
 
 ### `mammoth schedule get`
+
+**Arguments**
+
+- `SCHEDULE_ID` (int, required) — ID of the schedule.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.schedules.SchedulesAPI.get`
-- Agent example: `mammoth schedule get --output json --no-input`
+- Agent example: `mammoth schedule get 123 --output json --no-input`
 
 ### `mammoth schedule list`
 
@@ -1591,10 +2053,14 @@ Total commands: 435.
 
 ### `mammoth schedule update`
 
+**Arguments**
+
+- `SCHEDULE_ID` (int, required) — ID of the schedule.
+
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.schedules.SchedulesAPI.update`
-- Agent example: `mammoth schedule update --output json --no-input`
+- Agent example: `mammoth schedule update 123 --output json --no-input`
 
 ## schema
 
@@ -1660,31 +2126,47 @@ Total commands: 435.
 
 ### `mammoth snippet delete`
 
+**Arguments**
+
+- `SNIPPET_ID` (int, required) — ID of the snippet.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.snippets.SnippetsAPI.delete`
-- Agent example: `mammoth snippet delete --output json --no-input`
+- Agent example: `mammoth snippet delete 123 --output json --no-input`
 
 ### `mammoth snippet dependencies`
+
+**Arguments**
+
+- `SNIPPET_ID` (int, required) — ID of the snippet.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.snippets.SnippetsAPI.dependencies`
-- Agent example: `mammoth snippet dependencies --output json --no-input`
+- Agent example: `mammoth snippet dependencies 123 --output json --no-input`
 
 ### `mammoth snippet duplicate`
+
+**Arguments**
+
+- `SNIPPET_ID` (int, required) — ID of the snippet.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.snippets.SnippetsAPI.duplicate`
-- Agent example: `mammoth snippet duplicate --output json --no-input`
+- Agent example: `mammoth snippet duplicate 123 --output json --no-input`
 
 ### `mammoth snippet get`
+
+**Arguments**
+
+- `SNIPPET_ID` (int, required) — ID of the snippet.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.snippets.SnippetsAPI.get`
-- Agent example: `mammoth snippet get --output json --no-input`
+- Agent example: `mammoth snippet get 123 --output json --no-input`
 
 ### `mammoth snippet list`
 
@@ -1695,17 +2177,25 @@ Total commands: 435.
 
 ### `mammoth snippet rerun`
 
+**Arguments**
+
+- `SNIPPET_ID` (int, required) — ID of the snippet.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.snippets.SnippetsAPI.rerun`
-- Agent example: `mammoth snippet rerun --output json --no-input`
+- Agent example: `mammoth snippet rerun 123 --output json --no-input`
 
 ### `mammoth snippet update`
+
+**Arguments**
+
+- `SNIPPET_ID` (int, required) — ID of the snippet.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.snippets.SnippetsAPI.update`
-- Agent example: `mammoth snippet update --output json --no-input`
+- Agent example: `mammoth snippet update 123 --output json --no-input`
 
 ## support
 
@@ -1718,10 +2208,14 @@ Total commands: 435.
 
 ### `mammoth support connector delete`
 
+**Arguments**
+
+- `CONNECTOR_ID` (int, required) — ID of the connector.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_delete`
-- Agent example: `mammoth support connector delete --output json --no-input`
+- Agent example: `mammoth support connector delete 123 --output json --no-input`
 
 ### `mammoth support connector list`
 
@@ -1732,17 +2226,26 @@ Total commands: 435.
 
 ### `mammoth support connector update`
 
+**Arguments**
+
+- `CONNECTOR_ID` (int, required) — ID of the connector.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_update`
-- Agent example: `mammoth support connector update --output json --no-input`
+- Agent example: `mammoth support connector update 123 --output json --no-input`
 
 ### `mammoth support connector-profile add-connector`
+
+**Arguments**
+
+- `PROFILE_ID` (int, required) — ID of the profile.
+- `CONNECTOR_ID` (int, required) — ID of the connector.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_profile_add_connector`
-- Agent example: `mammoth support connector-profile add-connector --output json --no-input`
+- Agent example: `mammoth support connector-profile add-connector 123 123 --output json --no-input`
 
 ### `mammoth support connector-profile create`
 
@@ -1753,10 +2256,14 @@ Total commands: 435.
 
 ### `mammoth support connector-profile delete`
 
+**Arguments**
+
+- `PROFILE_ID` (int, required) — ID of the profile.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_profile_delete`
-- Agent example: `mammoth support connector-profile delete --output json --no-input`
+- Agent example: `mammoth support connector-profile delete 123 --output json --no-input`
 
 ### `mammoth support connector-profile list`
 
@@ -1767,10 +2274,14 @@ Total commands: 435.
 
 ### `mammoth support connector-profile update`
 
+**Arguments**
+
+- `PROFILE_ID` (int, required) — ID of the profile.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_profile_update`
-- Agent example: `mammoth support connector-profile update --output json --no-input`
+- Agent example: `mammoth support connector-profile update 123 --output json --no-input`
 
 ### `mammoth support feature create`
 
@@ -1781,10 +2292,14 @@ Total commands: 435.
 
 ### `mammoth support feature delete`
 
+**Arguments**
+
+- `FEATURE_ID` (int, required) — ID of the feature.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_delete`
-- Agent example: `mammoth support feature delete --output json --no-input`
+- Agent example: `mammoth support feature delete 123 --output json --no-input`
 
 ### `mammoth support feature list`
 
@@ -1795,17 +2310,26 @@ Total commands: 435.
 
 ### `mammoth support feature update`
 
+**Arguments**
+
+- `FEATURE_ID` (int, required) — ID of the feature.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_update`
-- Agent example: `mammoth support feature update --output json --no-input`
+- Agent example: `mammoth support feature update 123 --output json --no-input`
 
 ### `mammoth support feature-profile add-feature`
+
+**Arguments**
+
+- `PROFILE_ID` (int, required) — ID of the profile.
+- `FEATURE_ID` (int, required) — ID of the feature.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_profile_add_feature`
-- Agent example: `mammoth support feature-profile add-feature --output json --no-input`
+- Agent example: `mammoth support feature-profile add-feature 123 123 --output json --no-input`
 
 ### `mammoth support feature-profile create`
 
@@ -1816,10 +2340,14 @@ Total commands: 435.
 
 ### `mammoth support feature-profile delete`
 
+**Arguments**
+
+- `PROFILE_ID` (int, required) — ID of the profile.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_profile_delete`
-- Agent example: `mammoth support feature-profile delete --output json --no-input`
+- Agent example: `mammoth support feature-profile delete 123 --output json --no-input`
 
 ### `mammoth support feature-profile list`
 
@@ -1830,24 +2358,37 @@ Total commands: 435.
 
 ### `mammoth support feature-profile update`
 
+**Arguments**
+
+- `PROFILE_ID` (int, required) — ID of the profile.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_profile_update`
-- Agent example: `mammoth support feature-profile update --output json --no-input`
+- Agent example: `mammoth support feature-profile update 123 --output json --no-input`
 
 ### `mammoth support ownership transfer`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+- `USER_ID` (int, required) — ID of the user.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.ownership_transfer`
-- Agent example: `mammoth support ownership transfer --output json --no-input`
+- Agent example: `mammoth support ownership transfer 123 123 --output json --no-input`
 
 ### `mammoth support plan archive`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_archive`
-- Agent example: `mammoth support plan archive --output json --no-input`
+- Agent example: `mammoth support plan archive 123 --output json --no-input`
 
 ### `mammoth support plan chargebee-list`
 
@@ -1865,17 +2406,25 @@ Total commands: 435.
 
 ### `mammoth support plan delete`
 
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_delete`
-- Agent example: `mammoth support plan delete --output json --no-input`
+- Agent example: `mammoth support plan delete 123 --output json --no-input`
 
 ### `mammoth support plan get`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_get`
-- Agent example: `mammoth support plan get --output json --no-input`
+- Agent example: `mammoth support plan get 123 --output json --no-input`
 
 ### `mammoth support plan list`
 
@@ -1893,38 +2442,60 @@ Total commands: 435.
 
 ### `mammoth support plan update`
 
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_update`
-- Agent example: `mammoth support plan update --output json --no-input`
+- Agent example: `mammoth support plan update 123 --output json --no-input`
 
 ### `mammoth support plan update-storage-tiers`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_update_storage_tiers`
-- Agent example: `mammoth support plan update-storage-tiers --output json --no-input`
+- Agent example: `mammoth support plan update-storage-tiers 123 --output json --no-input`
 
 ### `mammoth support subscription create`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+- `PLAN_ID` (int, required) — ID of the plan.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.subscription_create`
-- Agent example: `mammoth support subscription create --output json --no-input`
+- Agent example: `mammoth support subscription create 123 123 --output json --no-input`
 
 ### `mammoth support subscription get`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.subscription_get`
-- Agent example: `mammoth support subscription get --output json --no-input`
+- Agent example: `mammoth support subscription get 123 --output json --no-input`
 
 ### `mammoth support subscription update`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+- `SUBSCRIPTION_ID` (int, required) — ID of the subscription.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.subscription_update`
-- Agent example: `mammoth support subscription update --output json --no-input`
+- Agent example: `mammoth support subscription update 123 123 --output json --no-input`
 
 ### `mammoth support user list-all`
 
@@ -1956,17 +2527,25 @@ Total commands: 435.
 
 ### `mammoth support workspace delete`
 
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_delete`
-- Agent example: `mammoth support workspace delete --output json --no-input`
+- Agent example: `mammoth support workspace delete 123 --output json --no-input`
 
 ### `mammoth support workspace get`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_get`
-- Agent example: `mammoth support workspace get --output json --no-input`
+- Agent example: `mammoth support workspace get 123 --output json --no-input`
 
 ### `mammoth support workspace list`
 
@@ -1977,52 +2556,82 @@ Total commands: 435.
 
 ### `mammoth support workspace restore-access`
 
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_restore_access`
-- Agent example: `mammoth support workspace restore-access --output json --no-input`
+- Agent example: `mammoth support workspace restore-access 123 --output json --no-input`
 
 ### `mammoth support workspace suspend-access`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_suspend_access`
-- Agent example: `mammoth support workspace suspend-access --output json --no-input`
+- Agent example: `mammoth support workspace suspend-access 123 --output json --no-input`
 
 ### `mammoth support workspace update`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_update`
-- Agent example: `mammoth support workspace update --output json --no-input`
+- Agent example: `mammoth support workspace update 123 --output json --no-input`
 
 ### `mammoth support workspace user add`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_user_add`
-- Agent example: `mammoth support workspace user add --output json --no-input`
+- Agent example: `mammoth support workspace user add 123 --output json --no-input`
 
 ### `mammoth support workspace user list`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_user_list`
-- Agent example: `mammoth support workspace user list --output json --no-input`
+- Agent example: `mammoth support workspace user list 123 --output json --no-input`
 
 ### `mammoth support workspace user remove`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+- `USER_ID` (int, required) — ID of the user.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_user_remove`
-- Agent example: `mammoth support workspace user remove --output json --no-input`
+- Agent example: `mammoth support workspace user remove 123 123 --output json --no-input`
 
 ### `mammoth support workspace user transfer`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+- `USER_ID` (int, required) — ID of the user.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_user_transfer`
-- Agent example: `mammoth support workspace user transfer --output json --no-input`
+- Agent example: `mammoth support workspace user transfer 123 123 --output json --no-input`
 
 ## template
 
@@ -2035,17 +2644,25 @@ Total commands: 435.
 
 ### `mammoth template delete`
 
+**Arguments**
+
+- `TEMPLATE_ID` (int, required) — ID of the template.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.templates.TemplatesAPI.delete`
-- Agent example: `mammoth template delete --output json --no-input`
+- Agent example: `mammoth template delete 123 --output json --no-input`
 
 ### `mammoth template get`
+
+**Arguments**
+
+- `TEMPLATE_ID` (int, required) — ID of the template.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.templates.TemplatesAPI.get`
-- Agent example: `mammoth template get --output json --no-input`
+- Agent example: `mammoth template get 123 --output json --no-input`
 
 ### `mammoth template list`
 
@@ -2056,10 +2673,14 @@ Total commands: 435.
 
 ### `mammoth template update`
 
+**Arguments**
+
+- `TEMPLATE_ID` (int, required) — ID of the template.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.templates.TemplatesAPI.update`
-- Agent example: `mammoth template update --output json --no-input`
+- Agent example: `mammoth template update 123 --output json --no-input`
 
 ## trash
 
@@ -2155,675 +2776,1111 @@ Total commands: 435.
 
 ### `mammoth view active-user list`
 
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.active_users`
-- Agent example: `mammoth view active-user list --output json --no-input`
+- Agent example: `mammoth view active-user list 123 123 --output json --no-input`
 
 ### `mammoth view active-user mark`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.mark_active`
-- Agent example: `mammoth view active-user mark --output json --no-input`
+- Agent example: `mammoth view active-user mark 123 123 --output json --no-input`
 
 ### `mammoth view ai generate-data`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.generate_data`
-- Agent example: `mammoth view ai generate-data --output json --no-input`
+- Agent example: `mammoth view ai generate-data 123 --output json --no-input`
 
 ### `mammoth view ai generation-info`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.get_data_gen_info`
-- Agent example: `mammoth view ai generation-info --output json --no-input`
+- Agent example: `mammoth view ai generation-info 123 --output json --no-input`
 
 ### `mammoth view ai profile`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.generate_profile`
-- Agent example: `mammoth view ai profile --output json --no-input`
+- Agent example: `mammoth view ai profile 123 --output json --no-input`
 
 ### `mammoth view bulk-delete`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.bulk_delete`
-- Agent example: `mammoth view bulk-delete --output json --no-input`
+- Agent example: `mammoth view bulk-delete 123 --output json --no-input`
 
 ### `mammoth view checkpoint create`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.checkpoints.CheckpointsAPI.create`
-- Agent example: `mammoth view checkpoint create --output json --no-input`
+- Agent example: `mammoth view checkpoint create 123 123 --output json --no-input`
 
 ### `mammoth view checkpoint delete`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `CHECKPOINT_ID` (int, required) — ID of the checkpoint.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.checkpoints.CheckpointsAPI.delete`
-- Agent example: `mammoth view checkpoint delete --output json --no-input`
+- Agent example: `mammoth view checkpoint delete 123 123 123 --output json --no-input`
 
 ### `mammoth view checkpoint get`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `CHECKPOINT_ID` (int, required) — ID of the checkpoint.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.checkpoints.CheckpointsAPI.get`
-- Agent example: `mammoth view checkpoint get --output json --no-input`
+- Agent example: `mammoth view checkpoint get 123 123 123 --output json --no-input`
 
 ### `mammoth view checkpoint list`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.checkpoints.CheckpointsAPI.list`
-- Agent example: `mammoth view checkpoint list --output json --no-input`
+- Agent example: `mammoth view checkpoint list 123 123 --output json --no-input`
 
 ### `mammoth view checkpoint update`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `CHECKPOINT_ID` (int, required) — ID of the checkpoint.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.checkpoints.CheckpointsAPI.update`
-- Agent example: `mammoth view checkpoint update --output json --no-input`
+- Agent example: `mammoth view checkpoint update 123 123 123 --output json --no-input`
 
 ### `mammoth view conditional-format create`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.conditional_format_create`
-- Agent example: `mammoth view conditional-format create --output json --no-input`
+- Agent example: `mammoth view conditional-format create 123 123 --output json --no-input`
 
 ### `mammoth view conditional-format delete-all`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.conditional_format_delete`
-- Agent example: `mammoth view conditional-format delete-all --output json --no-input`
+- Agent example: `mammoth view conditional-format delete-all 123 123 --output json --no-input`
 
 ### `mammoth view conditional-format list`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.conditional_format_list`
-- Agent example: `mammoth view conditional-format list --output json --no-input`
+- Agent example: `mammoth view conditional-format list 123 123 --output json --no-input`
 
 ### `mammoth view conditional-format update`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.conditional_format_update`
-- Agent example: `mammoth view conditional-format update --output json --no-input`
+- Agent example: `mammoth view conditional-format update 123 123 --output json --no-input`
 
 ### `mammoth view create`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.client.ViewsResource.create`
-- Agent example: `mammoth view create --output json --no-input`
+- Agent example: `mammoth view create 123 --output json --no-input`
 
 ### `mammoth view data get`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.get_data`
-- Agent example: `mammoth view data get --output json --no-input`
+- Agent example: `mammoth view data get 123 123 --output json --no-input`
 
 ### `mammoth view data query`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.query_data`
-- Agent example: `mammoth view data query --output json --no-input`
+- Agent example: `mammoth view data query 123 123 --output json --no-input`
 
 ### `mammoth view data-check create`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_checks.DataChecksAPI.create`
-- Agent example: `mammoth view data-check create --output json --no-input`
+- Agent example: `mammoth view data-check create 123 123 --output json --no-input`
 
 ### `mammoth view data-check delete`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `DATA_CHECK_ID` (int, required) — ID of the data check.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.data_checks.DataChecksAPI.delete`
-- Agent example: `mammoth view data-check delete --output json --no-input`
+- Agent example: `mammoth view data-check delete 123 123 123 --output json --no-input`
 
 ### `mammoth view data-check get`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `DATA_CHECK_ID` (int, required) — ID of the data check.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_checks.DataChecksAPI.get`
-- Agent example: `mammoth view data-check get --output json --no-input`
+- Agent example: `mammoth view data-check get 123 123 123 --output json --no-input`
 
 ### `mammoth view data-check list`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_checks.DataChecksAPI.list`
-- Agent example: `mammoth view data-check list --output json --no-input`
+- Agent example: `mammoth view data-check list 123 123 --output json --no-input`
 
 ### `mammoth view data-check update`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `DATA_CHECK_ID` (int, required) — ID of the data check.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_checks.DataChecksAPI.update`
-- Agent example: `mammoth view data-check update --output json --no-input`
+- Agent example: `mammoth view data-check update 123 123 123 --output json --no-input`
 
 ### `mammoth view delete`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.client.ViewsResource.delete`
-- Agent example: `mammoth view delete --output json --no-input`
+- Agent example: `mammoth view delete 123 --output json --no-input`
 
 ### `mammoth view derivative create`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.derivatives.DerivativesAPI.create`
-- Agent example: `mammoth view derivative create --output json --no-input`
+- Agent example: `mammoth view derivative create 123 123 --output json --no-input`
 
 ### `mammoth view derivative data`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `DERIVATIVE_ID` (int, required) — ID of the derivative.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.derivatives.DerivativesAPI.data`
-- Agent example: `mammoth view derivative data --output json --no-input`
+- Agent example: `mammoth view derivative data 123 123 123 --output json --no-input`
 
 ### `mammoth view derivative delete`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `DERIVATIVE_ID` (int, required) — ID of the derivative.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.derivatives.DerivativesAPI.delete`
-- Agent example: `mammoth view derivative delete --output json --no-input`
+- Agent example: `mammoth view derivative delete 123 123 123 --output json --no-input`
 
 ### `mammoth view derivative list`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.derivatives.DerivativesAPI.list`
-- Agent example: `mammoth view derivative list --output json --no-input`
+- Agent example: `mammoth view derivative list 123 123 --output json --no-input`
 
 ### `mammoth view derivative update`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `DERIVATIVE_ID` (int, required) — ID of the derivative.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.derivatives.DerivativesAPI.update`
-- Agent example: `mammoth view derivative update --output json --no-input`
+- Agent example: `mammoth view derivative update 123 123 123 --output json --no-input`
 
 ### `mammoth view draft auto-run`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.view.View.set_auto_run`
-- Agent example: `mammoth view draft auto-run --output json --no-input`
+- Agent example: `mammoth view draft auto-run 123 --output json --no-input`
 
 ### `mammoth view draft command`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.command`
-- Agent example: `mammoth view draft command --output json --no-input`
+- Agent example: `mammoth view draft command 123 --output json --no-input`
 
 ### `mammoth view draft discard`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.view.View.discard_draft`
-- Agent example: `mammoth view draft discard --output json --no-input`
+- Agent example: `mammoth view draft discard 123 --output json --no-input`
 
 ### `mammoth view draft enter`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.view.View.enter_draft_mode`
-- Agent example: `mammoth view draft enter --output json --no-input`
+- Agent example: `mammoth view draft enter 123 --output json --no-input`
 
 ### `mammoth view draft status`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.get_draft_status`
-- Agent example: `mammoth view draft status --output json --no-input`
+- Agent example: `mammoth view draft status 123 --output json --no-input`
 
 ### `mammoth view draft submit`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.view.View.submit_draft`
-- Agent example: `mammoth view draft submit --output json --no-input`
+- Agent example: `mammoth view draft submit 123 --output json --no-input`
 
 ### `mammoth view export create`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.create`
-- Agent example: `mammoth view export create --output json --no-input`
+- Agent example: `mammoth view export create 123 --output json --no-input`
 
 ### `mammoth view export csv`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.to_csv`
-- Agent example: `mammoth view export csv --output json --no-input`
+- Agent example: `mammoth view export csv 123 --output json --no-input`
 
 ### `mammoth view export delete`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `EXPORT_ID` (int, required) — ID of the export.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.delete`
-- Agent example: `mammoth view export delete --output json --no-input`
+- Agent example: `mammoth view export delete 123 123 --output json --no-input`
 
 ### `mammoth view export get`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `EXPORT_ID` (int, required) — ID of the export.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.get`
-- Agent example: `mammoth view export get --output json --no-input`
+- Agent example: `mammoth view export get 123 123 --output json --no-input`
 
 ### `mammoth view export list`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.list`
-- Agent example: `mammoth view export list --output json --no-input`
+- Agent example: `mammoth view export list 123 --output json --no-input`
 
 ### `mammoth view export publish-db`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.publish_db`
-- Agent example: `mammoth view export publish-db --output json --no-input`
+- Agent example: `mammoth view export publish-db 123 --output json --no-input`
 
 ### `mammoth view export publish-db-update`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.publish_db_update`
-- Agent example: `mammoth view export publish-db-update --output json --no-input`
+- Agent example: `mammoth view export publish-db-update 123 --output json --no-input`
 
 ### `mammoth view export update`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `EXPORT_ID` (int, required) — ID of the export.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.update`
-- Agent example: `mammoth view export update --output json --no-input`
+- Agent example: `mammoth view export update 123 123 --output json --no-input`
 
 ### `mammoth view get`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.client.ViewsResource.get`
-- Agent example: `mammoth view get --output json --no-input`
+- Agent example: `mammoth view get 123 --output json --no-input`
 
 ### `mammoth view list`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.list`
-- Agent example: `mammoth view list --output json --no-input`
+- Agent example: `mammoth view list 123 --output json --no-input`
 
 ### `mammoth view parameter-context`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.parameter_context`
-- Agent example: `mammoth view parameter-context --output json --no-input`
+- Agent example: `mammoth view parameter-context 123 123 --output json --no-input`
 
 ### `mammoth view pipeline edit`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.edit_pipeline`
-- Agent example: `mammoth view pipeline edit --output json --no-input`
+- Agent example: `mammoth view pipeline edit 123 --output json --no-input`
 
 ### `mammoth view pipeline get`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.get_pipeline`
-- Agent example: `mammoth view pipeline get --output json --no-input`
+- Agent example: `mammoth view pipeline get 123 --output json --no-input`
 
 ### `mammoth view pipeline items`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.items`
-- Agent example: `mammoth view pipeline items --output json --no-input`
+- Agent example: `mammoth view pipeline items 123 --output json --no-input`
 
 ### `mammoth view pipeline rerun`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.rerun`
-- Agent example: `mammoth view pipeline rerun --output json --no-input`
+- Agent example: `mammoth view pipeline rerun 123 --output json --no-input`
 
 ### `mammoth view pipeline wait`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.wait_for_pipeline`
-- Agent example: `mammoth view pipeline wait --output json --no-input`
+- Agent example: `mammoth view pipeline wait 123 --output json --no-input`
 
 ### `mammoth view preview`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.preview`
-- Agent example: `mammoth view preview --output json --no-input`
+- Agent example: `mammoth view preview 123 123 --output json --no-input`
 
 ### `mammoth view restore`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.restore`
-- Agent example: `mammoth view restore --output json --no-input`
+- Agent example: `mammoth view restore 123 123 --output json --no-input`
 
 ### `mammoth view task add`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.add_task`
-- Agent example: `mammoth view task add --output json --no-input`
+- Agent example: `mammoth view task add 123 --output json --no-input`
 
 ### `mammoth view task delete`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `TASK_ID` (int, required) — ID of the task.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.delete_task`
-- Agent example: `mammoth view task delete --output json --no-input`
+- Agent example: `mammoth view task delete 123 123 --output json --no-input`
 
 ### `mammoth view task get`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `TASK_ID` (int, required) — ID of the task.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.get_task`
-- Agent example: `mammoth view task get --output json --no-input`
+- Agent example: `mammoth view task get 123 123 --output json --no-input`
 
 ### `mammoth view task list`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.list_tasks`
-- Agent example: `mammoth view task list --output json --no-input`
+- Agent example: `mammoth view task list 123 --output json --no-input`
 
 ### `mammoth view task preview`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.preview_task`
-- Agent example: `mammoth view task preview --output json --no-input`
+- Agent example: `mammoth view task preview 123 --output json --no-input`
 
 ### `mammoth view task update`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `TASK_ID` (int, required) — ID of the task.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.update_task`
-- Agent example: `mammoth view task update --output json --no-input`
+- Agent example: `mammoth view task update 123 123 --output json --no-input`
 
 ### `mammoth view transform add-column`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._column_ops.ColumnOpsMixin.add_column`
-- Agent example: `mammoth view transform add-column --output json --no-input`
+- Agent example: `mammoth view transform add-column 123 --output json --no-input`
 
 ### `mammoth view transform add-sql`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql`
-- Agent example: `mammoth view transform add-sql --output json --no-input`
+- Agent example: `mammoth view transform add-sql 123 --output json --no-input`
 
 ### `mammoth view transform ai`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._advanced_ops.AdvancedOpsMixin.gen_ai`
-- Agent example: `mammoth view transform ai --output json --no-input`
+- Agent example: `mammoth view transform ai 123 --output json --no-input`
 
 ### `mammoth view transform bulk-replace`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._text_ops.TextOpsMixin.bulk_replace`
-- Agent example: `mammoth view transform bulk-replace --output json --no-input`
+- Agent example: `mammoth view transform bulk-replace 123 --output json --no-input`
 
 ### `mammoth view transform combine-columns`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._column_ops.ColumnOpsMixin.combine_columns`
-- Agent example: `mammoth view transform combine-columns --output json --no-input`
+- Agent example: `mammoth view transform combine-columns 123 --output json --no-input`
 
 ### `mammoth view transform convert-type`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._column_ops.ColumnOpsMixin.convert_type`
-- Agent example: `mammoth view transform convert-type --output json --no-input`
+- Agent example: `mammoth view transform convert-type 123 --output json --no-input`
 
 ### `mammoth view transform copy-columns`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._column_ops.ColumnOpsMixin.copy_columns`
-- Agent example: `mammoth view transform copy-columns --output json --no-input`
+- Agent example: `mammoth view transform copy-columns 123 --output json --no-input`
 
 ### `mammoth view transform crosstab`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._aggregate_ops.AggregateOpsMixin.crosstab`
-- Agent example: `mammoth view transform crosstab --output json --no-input`
+- Agent example: `mammoth view transform crosstab 123 --output json --no-input`
 
 ### `mammoth view transform date-diff`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._date_ops.DateOpsMixin.date_diff`
-- Agent example: `mammoth view transform date-diff --output json --no-input`
+- Agent example: `mammoth view transform date-diff 123 --output json --no-input`
 
 ### `mammoth view transform delete-columns`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._column_ops.ColumnOpsMixin.delete_columns`
-- Agent example: `mammoth view transform delete-columns --output json --no-input`
+- Agent example: `mammoth view transform delete-columns 123 --output json --no-input`
 
 ### `mammoth view transform discard-duplicates`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._row_ops.RowOpsMixin.discard_duplicates`
-- Agent example: `mammoth view transform discard-duplicates --output json --no-input`
+- Agent example: `mammoth view transform discard-duplicates 123 --output json --no-input`
 
 ### `mammoth view transform extract-date`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._date_ops.DateOpsMixin.extract_date`
-- Agent example: `mammoth view transform extract-date --output json --no-input`
+- Agent example: `mammoth view transform extract-date 123 --output json --no-input`
 
 ### `mammoth view transform fill-missing`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._row_ops.RowOpsMixin.fill_missing`
-- Agent example: `mammoth view transform fill-missing --output json --no-input`
+- Agent example: `mammoth view transform fill-missing 123 --output json --no-input`
 
 ### `mammoth view transform filter`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._filter_ops.FilterOpsMixin.filter_rows`
-- Agent example: `mammoth view transform filter --output json --no-input`
+- Agent example: `mammoth view transform filter 123 --output json --no-input`
 
 ### `mammoth view transform generate-sql`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._advanced_ops.AdvancedOpsMixin.generate_sql`
-- Agent example: `mammoth view transform generate-sql --output json --no-input`
+- Agent example: `mammoth view transform generate-sql 123 --output json --no-input`
 
 ### `mammoth view transform increment-date`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._date_ops.DateOpsMixin.increment_date`
-- Agent example: `mammoth view transform increment-date --output json --no-input`
+- Agent example: `mammoth view transform increment-date 123 --output json --no-input`
 
 ### `mammoth view transform join`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._advanced_ops.AdvancedOpsMixin.join`
-- Agent example: `mammoth view transform join --output json --no-input`
+- Agent example: `mammoth view transform join 123 --output json --no-input`
 
 ### `mammoth view transform json-extract`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._advanced_ops.AdvancedOpsMixin.json_extract`
-- Agent example: `mammoth view transform json-extract --output json --no-input`
+- Agent example: `mammoth view transform json-extract 123 --output json --no-input`
 
 ### `mammoth view transform limit-rows`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._row_ops.RowOpsMixin.limit_rows`
-- Agent example: `mammoth view transform limit-rows --output json --no-input`
+- Agent example: `mammoth view transform limit-rows 123 --output json --no-input`
 
 ### `mammoth view transform lookup`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._advanced_ops.AdvancedOpsMixin.lookup`
-- Agent example: `mammoth view transform lookup --output json --no-input`
+- Agent example: `mammoth view transform lookup 123 --output json --no-input`
 
 ### `mammoth view transform math`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._math_ops.MathOpsMixin.math`
-- Agent example: `mammoth view transform math --output json --no-input`
+- Agent example: `mammoth view transform math 123 --output json --no-input`
 
 ### `mammoth view transform pivot`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._aggregate_ops.AggregateOpsMixin.pivot`
-- Agent example: `mammoth view transform pivot --output json --no-input`
+- Agent example: `mammoth view transform pivot 123 --output json --no-input`
 
 ### `mammoth view transform replace`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._text_ops.TextOpsMixin.replace_values`
-- Agent example: `mammoth view transform replace --output json --no-input`
+- Agent example: `mammoth view transform replace 123 --output json --no-input`
 
 ### `mammoth view transform set-values`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._filter_ops.FilterOpsMixin.set_values`
-- Agent example: `mammoth view transform set-values --output json --no-input`
+- Agent example: `mammoth view transform set-values 123 --output json --no-input`
 
 ### `mammoth view transform small-large`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._math_ops.MathOpsMixin.small_large`
-- Agent example: `mammoth view transform small-large --output json --no-input`
+- Agent example: `mammoth view transform small-large 123 --output json --no-input`
 
 ### `mammoth view transform split`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._text_ops.TextOpsMixin.split_column`
-- Agent example: `mammoth view transform split --output json --no-input`
+- Agent example: `mammoth view transform split 123 --output json --no-input`
 
 ### `mammoth view transform substring`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._text_ops.TextOpsMixin.substring`
-- Agent example: `mammoth view transform substring --output json --no-input`
+- Agent example: `mammoth view transform substring 123 --output json --no-input`
 
 ### `mammoth view transform text`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._text_ops.TextOpsMixin.text_transform`
-- Agent example: `mammoth view transform text --output json --no-input`
+- Agent example: `mammoth view transform text 123 --output json --no-input`
 
 ### `mammoth view transform unnest`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._row_ops.RowOpsMixin.unnest`
-- Agent example: `mammoth view transform unnest --output json --no-input`
+- Agent example: `mammoth view transform unnest 123 --output json --no-input`
 
 ### `mammoth view transform window`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth._mixins._aggregate_ops.AggregateOpsMixin.window`
-- Agent example: `mammoth view transform window --output json --no-input`
+- Agent example: `mammoth view transform window 123 --output json --no-input`
 
 ### `mammoth view trash`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.trash`
-- Agent example: `mammoth view trash --output json --no-input`
+- Agent example: `mammoth view trash 123 123 --output json --no-input`
 
 ### `mammoth view update`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.update`
-- Agent example: `mammoth view update --output json --no-input`
+- Agent example: `mammoth view update 123 123 --output json --no-input`
 
 ### `mammoth view version apply`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VERSION_ID` (int, required) — ID of the version.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline_versions.PipelineVersionsAPI.apply`
-- Agent example: `mammoth view version apply --output json --no-input`
+- Agent example: `mammoth view version apply 123 123 123 --output json --no-input`
 
 ### `mammoth view version delete`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VERSION_ID` (int, required) — ID of the version.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.pipeline_versions.PipelineVersionsAPI.delete`
-- Agent example: `mammoth view version delete --output json --no-input`
+- Agent example: `mammoth view version delete 123 123 123 --output json --no-input`
 
 ### `mammoth view version get`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VERSION_ID` (int, required) — ID of the version.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline_versions.PipelineVersionsAPI.get`
-- Agent example: `mammoth view version get --output json --no-input`
+- Agent example: `mammoth view version get 123 123 123 --output json --no-input`
 
 ### `mammoth view version list`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline_versions.PipelineVersionsAPI.list`
-- Agent example: `mammoth view version list --output json --no-input`
+- Agent example: `mammoth view version list 123 123 --output json --no-input`
 
 ### `mammoth view version update`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VERSION_ID` (int, required) — ID of the version.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline_versions.PipelineVersionsAPI.update`
-- Agent example: `mammoth view version update --output json --no-input`
+- Agent example: `mammoth view version update 123 123 123 --output json --no-input`
 
 ## webhook
 
@@ -2836,17 +3893,25 @@ Total commands: 435.
 
 ### `mammoth webhook delete`
 
+**Arguments**
+
+- `WEBHOOK_ID` (int, required) — ID of the webhook.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.webhooks.WebhooksAPI.delete`
-- Agent example: `mammoth webhook delete --output json --no-input`
+- Agent example: `mammoth webhook delete 123 --output json --no-input`
 
 ### `mammoth webhook get`
+
+**Arguments**
+
+- `WEBHOOK_ID` (int, required) — ID of the webhook.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.webhooks.WebhooksAPI.get`
-- Agent example: `mammoth webhook get --output json --no-input`
+- Agent example: `mammoth webhook get 123 --output json --no-input`
 
 ### `mammoth webhook list`
 
@@ -2871,47 +3936,74 @@ Total commands: 435.
 
 ### `mammoth webhook update`
 
+**Arguments**
+
+- `WEBHOOK_ID` (int, required) — ID of the webhook.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.webhooks.WebhooksAPI.update`
-- Agent example: `mammoth webhook update --output json --no-input`
+- Agent example: `mammoth webhook update 123 --output json --no-input`
 
 ## workflow
 
 ### `mammoth workflow block add`
 
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.block_add`
-- Agent example: `mammoth workflow block add --output json --no-input`
+- Agent example: `mammoth workflow block add 123 --output json --no-input`
 
 ### `mammoth workflow block auth`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+- `BLOCK_ID` (int, required) — ID of the block.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.block_auth`
-- Agent example: `mammoth workflow block auth --output json --no-input`
+- Agent example: `mammoth workflow block auth 123 123 --output json --no-input`
 
 ### `mammoth workflow block config`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+- `BLOCK_ID` (int, required) — ID of the block.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.block_config`
-- Agent example: `mammoth workflow block config --output json --no-input`
+- Agent example: `mammoth workflow block config 123 123 --output json --no-input`
 
 ### `mammoth workflow block type`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+- `BLOCK_ID` (int, required) — ID of the block.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.block_type`
-- Agent example: `mammoth workflow block type --output json --no-input`
+- Agent example: `mammoth workflow block type 123 123 --output json --no-input`
 
 ### `mammoth workflow canvas`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.canvas`
-- Agent example: `mammoth workflow canvas --output json --no-input`
+- Agent example: `mammoth workflow canvas 123 --output json --no-input`
 
 ### `mammoth workflow cleanup`
 
@@ -2929,24 +4021,36 @@ Total commands: 435.
 
 ### `mammoth workflow delete`
 
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.delete`
-- Agent example: `mammoth workflow delete --output json --no-input`
+- Agent example: `mammoth workflow delete 123 --output json --no-input`
 
 ### `mammoth workflow from-template`
+
+**Arguments**
+
+- `TEMPLATE_ID` (int, required) — ID of the template.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.from_template`
-- Agent example: `mammoth workflow from-template --output json --no-input`
+- Agent example: `mammoth workflow from-template 123 --output json --no-input`
 
 ### `mammoth workflow get`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.get`
-- Agent example: `mammoth workflow get --output json --no-input`
+- Agent example: `mammoth workflow get 123 --output json --no-input`
 
 ### `mammoth workflow graph`
 
@@ -2964,10 +4068,14 @@ Total commands: 435.
 
 ### `mammoth workflow update`
 
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.update`
-- Agent example: `mammoth workflow update --output json --no-input`
+- Agent example: `mammoth workflow update 123 --output json --no-input`
 
 ### `mammoth workflow workspace-datasets`
 
@@ -3092,10 +4200,14 @@ Total commands: 435.
 
 ### `mammoth workspace user get`
 
+**Arguments**
+
+- `USER_ID` (int, required) — ID of the user.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workspace.WorkspaceAPI.get_user`
-- Agent example: `mammoth workspace user get --output json --no-input`
+- Agent example: `mammoth workspace user get 123 --output json --no-input`
 
 ### `mammoth workspace user list`
 
@@ -3106,10 +4218,14 @@ Total commands: 435.
 
 ### `mammoth workspace user remove`
 
+**Arguments**
+
+- `USER_ID` (int, required) — ID of the user.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.user_remove`
-- Agent example: `mammoth workspace user remove --output json --no-input`
+- Agent example: `mammoth workspace user remove 123 --output json --no-input`
 
 ### `mammoth workspace user remove-batch`
 
@@ -3120,10 +4236,14 @@ Total commands: 435.
 
 ### `mammoth workspace user update`
 
+**Arguments**
+
+- `USER_ID` (int, required) — ID of the user.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.workspace.WorkspaceAPI.update_user`
-- Agent example: `mammoth workspace user update --output json --no-input`
+- Agent example: `mammoth workspace user update 123 --output json --no-input`
 
 ### `mammoth workspace user update-batch`
 

@@ -40,7 +40,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteWebhook
-  positionals: []
+  positionals:
+  - name: webhook_id
+    type: int
+    required: true
+    metavar: WEBHOOK_ID
+    falls_back_to_field: null
+    help: ID of the webhook.
   options: []
   sdk_symbol: mammoth.api.webhooks.WebhooksAPI.delete
   sdk_conversion: Call mammoth.api.webhooks.WebhooksAPI.delete with validated request fields.
@@ -56,8 +62,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth webhook delete --help
-  agent_example: mammoth webhook delete --output json --no-input
+  human_example: mammoth webhook delete WEBHOOK_ID --help
+  agent_example: mammoth webhook delete 123 --output json --no-input
   unit_tests:
   - UT-WEBHOOK-DELETE
   contract_tests:
@@ -74,7 +80,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetWebhookDetails
-  positionals: []
+  positionals:
+  - name: webhook_id
+    type: int
+    required: true
+    metavar: WEBHOOK_ID
+    falls_back_to_field: null
+    help: ID of the webhook.
   options: []
   sdk_symbol: mammoth.api.webhooks.WebhooksAPI.get
   sdk_conversion: Call mammoth.api.webhooks.WebhooksAPI.get with validated request fields.
@@ -90,8 +102,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth webhook get --help
-  agent_example: mammoth webhook get --output json --no-input
+  human_example: mammoth webhook get WEBHOOK_ID --help
+  agent_example: mammoth webhook get 123 --output json --no-input
   unit_tests:
   - UT-WEBHOOK-GET
   contract_tests:
@@ -212,7 +224,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateWebhookConfigurations
-  positionals: []
+  positionals:
+  - name: webhook_id
+    type: int
+    required: true
+    metavar: WEBHOOK_ID
+    falls_back_to_field: null
+    help: ID of the webhook.
   options: []
   sdk_symbol: mammoth.api.webhooks.WebhooksAPI.update
   sdk_conversion: Call mammoth.api.webhooks.WebhooksAPI.update with validated request fields.
@@ -228,8 +246,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth webhook update --help
-  agent_example: mammoth webhook update --output json --no-input
+  human_example: mammoth webhook update WEBHOOK_ID --help
+  agent_example: mammoth webhook update 123 --output json --no-input
   unit_tests:
   - UT-WEBHOOK-UPDATE
   contract_tests:

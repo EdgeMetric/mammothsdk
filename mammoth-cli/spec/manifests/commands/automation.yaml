@@ -41,7 +41,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteAutomation
-  positionals: []
+  positionals:
+  - name: automation_id
+    type: int
+    required: true
+    metavar: AUTOMATION_ID
+    falls_back_to_field: null
+    help: ID of the automation.
   options: []
   sdk_symbol: mammoth.api.automations.AutomationsAPI.delete
   sdk_conversion: Call mammoth.api.automations.AutomationsAPI.delete with validated request fields.
@@ -57,8 +63,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth automation delete --help
-  agent_example: mammoth automation delete --output json --no-input
+  human_example: mammoth automation delete AUTOMATION_ID --help
+  agent_example: mammoth automation delete 123 --output json --no-input
   unit_tests:
   - UT-AUTOMATION-DELETE
   contract_tests:
@@ -75,7 +81,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetAutomation
-  positionals: []
+  positionals:
+  - name: automation_id
+    type: int
+    required: true
+    metavar: AUTOMATION_ID
+    falls_back_to_field: null
+    help: ID of the automation.
   options: []
   sdk_symbol: mammoth.api.automations.AutomationsAPI.get
   sdk_conversion: Call mammoth.api.automations.AutomationsAPI.get with validated request fields.
@@ -91,8 +103,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth automation get --help
-  agent_example: mammoth automation get --output json --no-input
+  human_example: mammoth automation get AUTOMATION_ID --help
+  agent_example: mammoth automation get 123 --output json --no-input
   unit_tests:
   - UT-AUTOMATION-GET
   contract_tests:
@@ -143,7 +155,13 @@ commands:
   alias_of: null
   operation_ids:
   - RestoreAutomation
-  positionals: []
+  positionals:
+  - name: automation_id
+    type: int
+    required: true
+    metavar: AUTOMATION_ID
+    falls_back_to_field: null
+    help: ID of the automation.
   options: []
   sdk_symbol: mammoth.api.automations.AutomationsAPI.restore
   sdk_conversion: Call mammoth.api.automations.AutomationsAPI.restore with validated request fields.
@@ -159,8 +177,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth automation restore --help
-  agent_example: mammoth automation restore --output json --no-input
+  human_example: mammoth automation restore AUTOMATION_ID --help
+  agent_example: mammoth automation restore 123 --output json --no-input
   unit_tests:
   - UT-AUTOMATION-RESTORE
   contract_tests:
@@ -177,7 +195,13 @@ commands:
   alias_of: null
   operation_ids:
   - TrashAutomation
-  positionals: []
+  positionals:
+  - name: automation_id
+    type: int
+    required: true
+    metavar: AUTOMATION_ID
+    falls_back_to_field: null
+    help: ID of the automation.
   options: []
   sdk_symbol: mammoth.api.automations.AutomationsAPI.trash
   sdk_conversion: Call mammoth.api.automations.AutomationsAPI.trash with validated request fields.
@@ -193,8 +217,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth automation trash --help
-  agent_example: mammoth automation trash --output json --no-input
+  human_example: mammoth automation trash AUTOMATION_ID --help
+  agent_example: mammoth automation trash 123 --output json --no-input
   unit_tests:
   - UT-AUTOMATION-TRASH
   contract_tests:
@@ -211,7 +235,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateAutomation
-  positionals: []
+  positionals:
+  - name: automation_id
+    type: int
+    required: true
+    metavar: AUTOMATION_ID
+    falls_back_to_field: null
+    help: ID of the automation.
   options: []
   sdk_symbol: mammoth.api.automations.AutomationsAPI.update
   sdk_conversion: Call mammoth.api.automations.AutomationsAPI.update with validated request fields.
@@ -227,8 +257,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth automation update --help
-  agent_example: mammoth automation update --output json --no-input
+  human_example: mammoth automation update AUTOMATION_ID --help
+  agent_example: mammoth automation update 123 --output json --no-input
   unit_tests:
   - UT-AUTOMATION-UPDATE
   contract_tests:

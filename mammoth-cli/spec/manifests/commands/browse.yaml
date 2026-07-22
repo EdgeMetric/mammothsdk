@@ -6,7 +6,13 @@ commands:
   alias_of: null
   operation_ids:
   - BrowseFolderFolders
-  positionals: []
+  positionals:
+  - name: folder_id
+    type: int
+    required: true
+    metavar: FOLDER_ID
+    falls_back_to_field: null
+    help: ID of the folder.
   options: []
   sdk_symbol: mammoth.api.browse.BrowseAPI.folder_resources
   sdk_conversion: Call mammoth.api.browse.BrowseAPI.folder_resources with validated request fields.
@@ -22,8 +28,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth browse folder --help
-  agent_example: mammoth browse folder --output json --no-input
+  human_example: mammoth browse folder FOLDER_ID --help
+  agent_example: mammoth browse folder 123 --output json --no-input
   unit_tests:
   - UT-BROWSE-FOLDER
   contract_tests:

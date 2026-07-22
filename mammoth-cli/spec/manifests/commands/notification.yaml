@@ -6,7 +6,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteNotification
-  positionals: []
+  positionals:
+  - name: notification_id
+    type: int
+    required: true
+    metavar: NOTIFICATION_ID
+    falls_back_to_field: null
+    help: ID of the notification.
   options: []
   sdk_symbol: mammoth.api.notifications.NotificationsAPI.delete
   sdk_conversion: Call mammoth.api.notifications.NotificationsAPI.delete with validated request fields.
@@ -22,8 +28,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth notification delete --help
-  agent_example: mammoth notification delete --output json --no-input
+  human_example: mammoth notification delete NOTIFICATION_ID --help
+  agent_example: mammoth notification delete 123 --output json --no-input
   unit_tests:
   - UT-NOTIFICATION-DELETE
   contract_tests:
@@ -109,7 +115,13 @@ commands:
   alias_of: null
   operation_ids:
   - EditNotification
-  positionals: []
+  positionals:
+  - name: notification_id
+    type: int
+    required: true
+    metavar: NOTIFICATION_ID
+    falls_back_to_field: null
+    help: ID of the notification.
   options: []
   sdk_symbol: mammoth.api.notifications.NotificationsAPI.update
   sdk_conversion: Call mammoth.api.notifications.NotificationsAPI.update with validated request fields.
@@ -125,8 +137,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth notification update --help
-  agent_example: mammoth notification update --output json --no-input
+  human_example: mammoth notification update NOTIFICATION_ID --help
+  agent_example: mammoth notification update 123 --output json --no-input
   unit_tests:
   - UT-NOTIFICATION-UPDATE
   contract_tests:

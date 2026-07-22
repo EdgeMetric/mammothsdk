@@ -40,7 +40,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteFile
-  positionals: []
+  positionals:
+  - name: file_id
+    type: int
+    required: true
+    metavar: FILE_ID
+    falls_back_to_field: null
+    help: ID of the file.
   options: []
   sdk_symbol: mammoth.api.files.FilesAPI.delete
   sdk_conversion: Call mammoth.api.files.FilesAPI.delete with validated request fields.
@@ -56,8 +62,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth file delete --help
-  agent_example: mammoth file delete --output json --no-input
+  human_example: mammoth file delete FILE_ID --help
+  agent_example: mammoth file delete 123 --output json --no-input
   unit_tests:
   - UT-FILE-DELETE
   contract_tests:
@@ -75,7 +81,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateFileConfigs
-  positionals: []
+  positionals:
+  - name: file_id
+    type: int
+    required: true
+    metavar: FILE_ID
+    falls_back_to_field: null
+    help: ID of the file.
   options: []
   sdk_symbol: mammoth.api.files.FilesAPI.extract_sheets
   sdk_conversion: Call mammoth.api.files.FilesAPI.extract_sheets with validated request fields.
@@ -91,8 +103,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth file extract-sheets --help
-  agent_example: mammoth file extract-sheets --output json --no-input
+  human_example: mammoth file extract-sheets FILE_ID --help
+  agent_example: mammoth file extract-sheets 123 --output json --no-input
   unit_tests:
   - UT-FILE-EXTRACT-SHEETS
   contract_tests:
@@ -109,7 +121,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetFileDetails
-  positionals: []
+  positionals:
+  - name: file_id
+    type: int
+    required: true
+    metavar: FILE_ID
+    falls_back_to_field: null
+    help: ID of the file.
   options: []
   sdk_symbol: mammoth.api.files.FilesAPI.get
   sdk_conversion: Call mammoth.api.files.FilesAPI.get with validated request fields.
@@ -125,8 +143,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth file get --help
-  agent_example: mammoth file get --output json --no-input
+  human_example: mammoth file get FILE_ID --help
+  agent_example: mammoth file get 123 --output json --no-input
   unit_tests:
   - UT-FILE-GET
   contract_tests:
@@ -177,7 +195,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateFileConfigs
-  positionals: []
+  positionals:
+  - name: file_id
+    type: int
+    required: true
+    metavar: FILE_ID
+    falls_back_to_field: null
+    help: ID of the file.
   options: []
   sdk_symbol: mammoth.api.files.FilesAPI.set_password
   sdk_conversion: Call mammoth.api.files.FilesAPI.set_password with validated request fields.
@@ -193,8 +217,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth file set-password --help
-  agent_example: mammoth file set-password --output json --no-input
+  human_example: mammoth file set-password FILE_ID --help
+  agent_example: mammoth file set-password 123 --output json --no-input
   unit_tests:
   - UT-FILE-SET-PASSWORD
   contract_tests:
@@ -211,7 +235,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateFileConfigs
-  positionals: []
+  positionals:
+  - name: file_id
+    type: int
+    required: true
+    metavar: FILE_ID
+    falls_back_to_field: null
+    help: ID of the file.
   options: []
   sdk_symbol: mammoth.api.files.FilesAPI.update
   sdk_conversion: Call mammoth.api.files.FilesAPI.update with validated request fields.
@@ -227,8 +257,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth file update --help
-  agent_example: mammoth file update --output json --no-input
+  human_example: mammoth file update FILE_ID --help
+  agent_example: mammoth file update 123 --output json --no-input
   unit_tests:
   - UT-FILE-UPDATE
   contract_tests:

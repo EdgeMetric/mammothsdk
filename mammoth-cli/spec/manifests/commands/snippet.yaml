@@ -40,7 +40,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteSnippet
-  positionals: []
+  positionals:
+  - name: snippet_id
+    type: int
+    required: true
+    metavar: SNIPPET_ID
+    falls_back_to_field: null
+    help: ID of the snippet.
   options: []
   sdk_symbol: mammoth.api.snippets.SnippetsAPI.delete
   sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.delete with validated request fields.
@@ -56,8 +62,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth snippet delete --help
-  agent_example: mammoth snippet delete --output json --no-input
+  human_example: mammoth snippet delete SNIPPET_ID --help
+  agent_example: mammoth snippet delete 123 --output json --no-input
   unit_tests:
   - UT-SNIPPET-DELETE
   contract_tests:
@@ -74,7 +80,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetSnippetDependencies
-  positionals: []
+  positionals:
+  - name: snippet_id
+    type: int
+    required: true
+    metavar: SNIPPET_ID
+    falls_back_to_field: null
+    help: ID of the snippet.
   options: []
   sdk_symbol: mammoth.api.snippets.SnippetsAPI.dependencies
   sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.dependencies with validated request fields.
@@ -90,8 +102,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth snippet dependencies --help
-  agent_example: mammoth snippet dependencies --output json --no-input
+  human_example: mammoth snippet dependencies SNIPPET_ID --help
+  agent_example: mammoth snippet dependencies 123 --output json --no-input
   unit_tests:
   - UT-SNIPPET-DEPENDENCIES
   contract_tests:
@@ -108,7 +120,13 @@ commands:
   alias_of: null
   operation_ids:
   - DuplicateSnippet
-  positionals: []
+  positionals:
+  - name: snippet_id
+    type: int
+    required: true
+    metavar: SNIPPET_ID
+    falls_back_to_field: null
+    help: ID of the snippet.
   options: []
   sdk_symbol: mammoth.api.snippets.SnippetsAPI.duplicate
   sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.duplicate with validated request fields.
@@ -124,8 +142,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth snippet duplicate --help
-  agent_example: mammoth snippet duplicate --output json --no-input
+  human_example: mammoth snippet duplicate SNIPPET_ID --help
+  agent_example: mammoth snippet duplicate 123 --output json --no-input
   unit_tests:
   - UT-SNIPPET-DUPLICATE
   contract_tests:
@@ -142,7 +160,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetSnippetDetail
-  positionals: []
+  positionals:
+  - name: snippet_id
+    type: int
+    required: true
+    metavar: SNIPPET_ID
+    falls_back_to_field: null
+    help: ID of the snippet.
   options: []
   sdk_symbol: mammoth.api.snippets.SnippetsAPI.get
   sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.get with validated request fields.
@@ -158,8 +182,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth snippet get --help
-  agent_example: mammoth snippet get --output json --no-input
+  human_example: mammoth snippet get SNIPPET_ID --help
+  agent_example: mammoth snippet get 123 --output json --no-input
   unit_tests:
   - UT-SNIPPET-GET
   contract_tests:
@@ -210,7 +234,13 @@ commands:
   alias_of: null
   operation_ids:
   - RerunSnippet
-  positionals: []
+  positionals:
+  - name: snippet_id
+    type: int
+    required: true
+    metavar: SNIPPET_ID
+    falls_back_to_field: null
+    help: ID of the snippet.
   options: []
   sdk_symbol: mammoth.api.snippets.SnippetsAPI.rerun
   sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.rerun with validated request fields.
@@ -226,8 +256,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth snippet rerun --help
-  agent_example: mammoth snippet rerun --output json --no-input
+  human_example: mammoth snippet rerun SNIPPET_ID --help
+  agent_example: mammoth snippet rerun 123 --output json --no-input
   unit_tests:
   - UT-SNIPPET-RERUN
   contract_tests:
@@ -244,7 +274,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateSnippet
-  positionals: []
+  positionals:
+  - name: snippet_id
+    type: int
+    required: true
+    metavar: SNIPPET_ID
+    falls_back_to_field: null
+    help: ID of the snippet.
   options: []
   sdk_symbol: mammoth.api.snippets.SnippetsAPI.update
   sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.update with validated request fields.
@@ -260,8 +296,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth snippet update --help
-  agent_example: mammoth snippet update --output json --no-input
+  human_example: mammoth snippet update SNIPPET_ID --help
+  agent_example: mammoth snippet update 123 --output json --no-input
   unit_tests:
   - UT-SNIPPET-UPDATE
   contract_tests:

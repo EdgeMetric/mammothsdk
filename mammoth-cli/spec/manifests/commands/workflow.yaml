@@ -6,7 +6,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddSkeletonBlock
-  positionals: []
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
   options: []
   sdk_symbol: mammoth.api.workflows.WorkflowsAPI.block_add
   sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.block_add with validated request fields.
@@ -22,8 +28,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth workflow block add --help
-  agent_example: mammoth workflow block add --output json --no-input
+  human_example: mammoth workflow block add WORKFLOW_ID --help
+  agent_example: mammoth workflow block add 123 --output json --no-input
   unit_tests:
   - UT-WORKFLOW-BLOCK-ADD
   contract_tests:
@@ -40,7 +46,19 @@ commands:
   alias_of: null
   operation_ids:
   - PatchBlockAuth
-  positionals: []
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
+  - name: block_id
+    type: int
+    required: true
+    metavar: BLOCK_ID
+    falls_back_to_field: null
+    help: ID of the block.
   options: []
   sdk_symbol: mammoth.api.workflows.WorkflowsAPI.block_auth
   sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.block_auth with validated request fields.
@@ -56,8 +74,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth workflow block auth --help
-  agent_example: mammoth workflow block auth --output json --no-input
+  human_example: mammoth workflow block auth WORKFLOW_ID BLOCK_ID --help
+  agent_example: mammoth workflow block auth 123 123 --output json --no-input
   unit_tests:
   - UT-WORKFLOW-BLOCK-AUTH
   contract_tests:
@@ -74,7 +92,19 @@ commands:
   alias_of: null
   operation_ids:
   - PromoteSkeletonBlock
-  positionals: []
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
+  - name: block_id
+    type: int
+    required: true
+    metavar: BLOCK_ID
+    falls_back_to_field: null
+    help: ID of the block.
   options: []
   sdk_symbol: mammoth.api.workflows.WorkflowsAPI.block_config
   sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.block_config with validated request fields.
@@ -90,8 +120,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth workflow block config --help
-  agent_example: mammoth workflow block config --output json --no-input
+  human_example: mammoth workflow block config WORKFLOW_ID BLOCK_ID --help
+  agent_example: mammoth workflow block config 123 123 --output json --no-input
   unit_tests:
   - UT-WORKFLOW-BLOCK-CONFIG
   contract_tests:
@@ -108,7 +138,19 @@ commands:
   alias_of: null
   operation_ids:
   - PatchBlockType
-  positionals: []
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
+  - name: block_id
+    type: int
+    required: true
+    metavar: BLOCK_ID
+    falls_back_to_field: null
+    help: ID of the block.
   options: []
   sdk_symbol: mammoth.api.workflows.WorkflowsAPI.block_type
   sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.block_type with validated request fields.
@@ -124,8 +166,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth workflow block type --help
-  agent_example: mammoth workflow block type --output json --no-input
+  human_example: mammoth workflow block type WORKFLOW_ID BLOCK_ID --help
+  agent_example: mammoth workflow block type 123 123 --output json --no-input
   unit_tests:
   - UT-WORKFLOW-BLOCK-TYPE
   contract_tests:
@@ -142,7 +184,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateCanvasState
-  positionals: []
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
   options: []
   sdk_symbol: mammoth.api.workflows.WorkflowsAPI.canvas
   sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.canvas with validated request fields.
@@ -158,8 +206,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth workflow canvas --help
-  agent_example: mammoth workflow canvas --output json --no-input
+  human_example: mammoth workflow canvas WORKFLOW_ID --help
+  agent_example: mammoth workflow canvas 123 --output json --no-input
   unit_tests:
   - UT-WORKFLOW-CANVAS
   contract_tests:
@@ -244,7 +292,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteWorkflow
-  positionals: []
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
   options: []
   sdk_symbol: mammoth.api.workflows.WorkflowsAPI.delete
   sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.delete with validated request fields.
@@ -260,8 +314,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth workflow delete --help
-  agent_example: mammoth workflow delete --output json --no-input
+  human_example: mammoth workflow delete WORKFLOW_ID --help
+  agent_example: mammoth workflow delete 123 --output json --no-input
   unit_tests:
   - UT-WORKFLOW-DELETE
   contract_tests:
@@ -278,7 +332,13 @@ commands:
   alias_of: null
   operation_ids:
   - InstantiateFromTemplate
-  positionals: []
+  positionals:
+  - name: template_id
+    type: int
+    required: true
+    metavar: TEMPLATE_ID
+    falls_back_to_field: null
+    help: ID of the template.
   options: []
   sdk_symbol: mammoth.api.workflows.WorkflowsAPI.from_template
   sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.from_template with validated request fields.
@@ -294,8 +354,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth workflow from-template --help
-  agent_example: mammoth workflow from-template --output json --no-input
+  human_example: mammoth workflow from-template TEMPLATE_ID --help
+  agent_example: mammoth workflow from-template 123 --output json --no-input
   unit_tests:
   - UT-WORKFLOW-FROM-TEMPLATE
   contract_tests:
@@ -312,7 +372,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetWorkflow
-  positionals: []
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
   options: []
   sdk_symbol: mammoth.api.workflows.WorkflowsAPI.get
   sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.get with validated request fields.
@@ -328,8 +394,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth workflow get --help
-  agent_example: mammoth workflow get --output json --no-input
+  human_example: mammoth workflow get WORKFLOW_ID --help
+  agent_example: mammoth workflow get 123 --output json --no-input
   unit_tests:
   - UT-WORKFLOW-GET
   contract_tests:
@@ -414,7 +480,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateWorkflow
-  positionals: []
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
   options: []
   sdk_symbol: mammoth.api.workflows.WorkflowsAPI.update
   sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.update with validated request fields.
@@ -430,8 +502,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth workflow update --help
-  agent_example: mammoth workflow update --output json --no-input
+  human_example: mammoth workflow update WORKFLOW_ID --help
+  agent_example: mammoth workflow update 123 --output json --no-input
   unit_tests:
   - UT-WORKFLOW-UPDATE
   contract_tests:

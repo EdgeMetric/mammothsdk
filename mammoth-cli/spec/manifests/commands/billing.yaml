@@ -108,7 +108,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetInvoice
-  positionals: []
+  positionals:
+  - name: invoice_id
+    type: int
+    required: true
+    metavar: INVOICE_ID
+    falls_back_to_field: null
+    help: ID of the invoice.
   options: []
   sdk_symbol: mammoth.api.billing.BillingAPI.invoice_get
   sdk_conversion: Call mammoth.api.billing.BillingAPI.invoice_get with validated request fields.
@@ -124,8 +130,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth billing invoice get --help
-  agent_example: mammoth billing invoice get --output json --no-input
+  human_example: mammoth billing invoice get INVOICE_ID --help
+  agent_example: mammoth billing invoice get 123 --output json --no-input
   unit_tests:
   - UT-BILLING-INVOICE-GET
   contract_tests:
@@ -244,7 +250,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreateWorkspaceSubscription
-  positionals: []
+  positionals:
+  - name: plan_id
+    type: int
+    required: true
+    metavar: PLAN_ID
+    falls_back_to_field: null
+    help: ID of the plan.
   options: []
   sdk_symbol: mammoth.api.billing.BillingAPI.stripe_create
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_create with validated request fields.
@@ -260,8 +272,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth billing stripe create --help
-  agent_example: mammoth billing stripe create --output json --no-input
+  human_example: mammoth billing stripe create PLAN_ID --help
+  agent_example: mammoth billing stripe create 123 --output json --no-input
   unit_tests:
   - UT-BILLING-STRIPE-CREATE
   contract_tests:
@@ -380,7 +392,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeletePaymentMethod
-  positionals: []
+  positionals:
+  - name: payment_method_id
+    type: int
+    required: true
+    metavar: PAYMENT_METHOD_ID
+    falls_back_to_field: null
+    help: ID of the payment method.
   options: []
   sdk_symbol: mammoth.api.billing.BillingAPI.stripe_payment_method_delete
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_payment_method_delete with validated request
@@ -397,8 +415,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth billing stripe payment-method delete --help
-  agent_example: mammoth billing stripe payment-method delete --output json --no-input
+  human_example: mammoth billing stripe payment-method delete PAYMENT_METHOD_ID --help
+  agent_example: mammoth billing stripe payment-method delete 123 --output json --no-input
   unit_tests:
   - UT-BILLING-STRIPE-PAYMENT-METHOD-DELETE
   contract_tests:
@@ -450,7 +468,13 @@ commands:
   alias_of: null
   operation_ids:
   - SetDefaultPaymentMethod
-  positionals: []
+  positionals:
+  - name: payment_method_id
+    type: int
+    required: true
+    metavar: PAYMENT_METHOD_ID
+    falls_back_to_field: null
+    help: ID of the payment method.
   options: []
   sdk_symbol: mammoth.api.billing.BillingAPI.stripe_payment_method_set_default
   sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_payment_method_set_default with validated
@@ -467,8 +491,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth billing stripe payment-method set-default --help
-  agent_example: mammoth billing stripe payment-method set-default --output json --no-input
+  human_example: mammoth billing stripe payment-method set-default PAYMENT_METHOD_ID --help
+  agent_example: mammoth billing stripe payment-method set-default 123 --output json --no-input
   unit_tests:
   - UT-BILLING-STRIPE-PAYMENT-METHOD-SET-DEFAULT
   contract_tests:

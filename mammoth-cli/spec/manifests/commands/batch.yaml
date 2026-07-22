@@ -6,7 +6,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteBatches
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
   options: []
   sdk_symbol: mammoth.api.batches.BatchesAPI.bulk_delete
   sdk_conversion: Call mammoth.api.batches.BatchesAPI.bulk_delete with validated request fields.
@@ -22,8 +28,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth batch bulk-delete --help
-  agent_example: mammoth batch bulk-delete --output json --no-input
+  human_example: mammoth batch bulk-delete DATASET_ID --help
+  agent_example: mammoth batch bulk-delete 123 --output json --no-input
   unit_tests:
   - UT-BATCH-BULK-DELETE
   contract_tests:
@@ -40,7 +46,19 @@ commands:
   alias_of: null
   operation_ids:
   - CreateBatch
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: source_id
+    type: int
+    required: true
+    metavar: SOURCE_ID
+    falls_back_to_field: null
+    help: ID of the source.
   options: []
   sdk_symbol: mammoth.api.batches.BatchesAPI.create
   sdk_conversion: Call mammoth.api.batches.BatchesAPI.create with validated request fields.
@@ -56,8 +74,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth batch create --help
-  agent_example: mammoth batch create --output json --no-input
+  human_example: mammoth batch create DATASET_ID SOURCE_ID --help
+  agent_example: mammoth batch create 123 123 --output json --no-input
   unit_tests:
   - UT-BATCH-CREATE
   contract_tests:
@@ -74,7 +92,19 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteBatch
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: batch_id
+    type: int
+    required: true
+    metavar: BATCH_ID
+    falls_back_to_field: null
+    help: ID of the batch.
   options: []
   sdk_symbol: mammoth.api.batches.BatchesAPI.delete
   sdk_conversion: Call mammoth.api.batches.BatchesAPI.delete with validated request fields.
@@ -90,8 +120,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth batch delete --help
-  agent_example: mammoth batch delete --output json --no-input
+  human_example: mammoth batch delete DATASET_ID BATCH_ID --help
+  agent_example: mammoth batch delete 123 123 --output json --no-input
   unit_tests:
   - UT-BATCH-DELETE
   contract_tests:
@@ -108,7 +138,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetBatch
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: batch_id
+    type: int
+    required: true
+    metavar: BATCH_ID
+    falls_back_to_field: null
+    help: ID of the batch.
   options: []
   sdk_symbol: mammoth.api.batches.BatchesAPI.get
   sdk_conversion: Call mammoth.api.batches.BatchesAPI.get with validated request fields.
@@ -124,8 +166,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth batch get --help
-  agent_example: mammoth batch get --output json --no-input
+  human_example: mammoth batch get DATASET_ID BATCH_ID --help
+  agent_example: mammoth batch get 123 123 --output json --no-input
   unit_tests:
   - UT-BATCH-GET
   contract_tests:
@@ -142,7 +184,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetBatches
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
   options: []
   sdk_symbol: mammoth.api.batches.BatchesAPI.list
   sdk_conversion: Call mammoth.api.batches.BatchesAPI.list with validated request fields.
@@ -158,8 +206,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth batch list --help
-  agent_example: mammoth batch list --output json --no-input
+  human_example: mammoth batch list DATASET_ID --help
+  agent_example: mammoth batch list 123 --output json --no-input
   unit_tests:
   - UT-BATCH-LIST
   contract_tests:
@@ -176,7 +224,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateBatches
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
   options: []
   sdk_symbol: mammoth.api.batches.BatchesAPI.update
   sdk_conversion: Call mammoth.api.batches.BatchesAPI.update with validated request fields.
@@ -192,8 +246,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth batch update --help
-  agent_example: mammoth batch update --output json --no-input
+  human_example: mammoth batch update DATASET_ID --help
+  agent_example: mammoth batch update 123 --output json --no-input
   unit_tests:
   - UT-BATCH-UPDATE
   contract_tests:

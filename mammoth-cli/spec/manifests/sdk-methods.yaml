@@ -3557,11 +3557,10 @@ methods:
   signature: 'get_draft_status(self, dataview_id: ''int'', dataset_id: ''int | None'' = None) -> ''dict[str,
     Any]'''
   openapi_operation_ids: []
-  canonical_command: null
+  canonical_command: view.draft.status
   alias_of: null
-  no_command_reason: Server-backed draft-status seam read by the draft verbs; surfaced through 'view draft
-    status', not its own SDK-mapped command.
-  mutation_class: null
+  no_command_reason: null
+  mutation_class: read
   wait_policy: null
   pagination_policy: null
   secret_fields: []
@@ -5709,8 +5708,8 @@ methods:
   implementation_origin: mammoth.view.View.is_draft_mode
   signature: is_draft_mode(self) -> 'bool'
   openapi_operation_ids: []
-  canonical_command: view.draft.status
-  alias_of: null
+  canonical_command: null
+  alias_of: view.draft.status
   no_command_reason: null
   mutation_class: read
   wait_policy: not_async

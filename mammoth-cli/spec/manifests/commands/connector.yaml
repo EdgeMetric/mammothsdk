@@ -74,7 +74,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetChatHistory
-  positionals: []
+  positionals:
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
   options: []
   sdk_symbol: mammoth.api.connector_ai.ConnectorAIAPI.history
   sdk_conversion: Call mammoth.api.connector_ai.ConnectorAIAPI.history with validated request fields.
@@ -90,8 +96,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector ai history --help
-  agent_example: mammoth connector ai history --output json --no-input
+  human_example: mammoth connector ai history CONNECTION_KEY --help
+  agent_example: mammoth connector ai history example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-AI-HISTORY
   contract_tests:
@@ -142,7 +148,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetSessionMessages
-  positionals: []
+  positionals:
+  - name: session_id
+    type: int
+    required: true
+    metavar: SESSION_ID
+    falls_back_to_field: null
+    help: ID of the session.
   options: []
   sdk_symbol: mammoth.api.connector_ai.ConnectorAIAPI.session_messages
   sdk_conversion: Call mammoth.api.connector_ai.ConnectorAIAPI.session_messages with validated request
@@ -159,8 +171,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector ai session messages --help
-  agent_example: mammoth connector ai session messages --output json --no-input
+  human_example: mammoth connector ai session messages SESSION_ID --help
+  agent_example: mammoth connector ai session messages 123 --output json --no-input
   unit_tests:
   - UT-CONNECTOR-AI-SESSION-MESSAGES
   contract_tests:
@@ -247,7 +259,13 @@ commands:
   alias_of: null
   operation_ids:
   - SaveConnection
-  positionals: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
   options: []
   sdk_symbol: mammoth.api.connectors.ConnectorsAPI.create_connection
   sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.create_connection with validated request fields.
@@ -263,8 +281,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector connection create --help
-  agent_example: mammoth connector connection create --output json --no-input
+  human_example: mammoth connector connection create CONNECTOR_KEY --help
+  agent_example: mammoth connector connection create example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-CONNECTION-CREATE
   contract_tests:
@@ -281,7 +299,19 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteConnection
-  positionals: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
   options: []
   sdk_symbol: mammoth.api.connectors.ConnectorsAPI.delete_connection
   sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.delete_connection with validated request fields.
@@ -297,8 +327,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector connection delete --help
-  agent_example: mammoth connector connection delete --output json --no-input
+  human_example: mammoth connector connection delete CONNECTOR_KEY CONNECTION_KEY --help
+  agent_example: mammoth connector connection delete example example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-CONNECTION-DELETE
   contract_tests:
@@ -315,7 +345,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetConnection
-  positionals: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
   options: []
   sdk_symbol: mammoth.api.connectors.ConnectorsAPI.get_connection
   sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.get_connection with validated request fields.
@@ -331,8 +373,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector connection get --help
-  agent_example: mammoth connector connection get --output json --no-input
+  human_example: mammoth connector connection get CONNECTOR_KEY CONNECTION_KEY --help
+  agent_example: mammoth connector connection get example example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-CONNECTION-GET
   contract_tests:
@@ -349,7 +391,13 @@ commands:
   alias_of: null
   operation_ids:
   - ListConnections
-  positionals: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
   options: []
   sdk_symbol: mammoth.api.connectors.ConnectorsAPI.list_connections
   sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.list_connections with validated request fields.
@@ -365,8 +413,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector connection list --help
-  agent_example: mammoth connector connection list --output json --no-input
+  human_example: mammoth connector connection list CONNECTOR_KEY --help
+  agent_example: mammoth connector connection list example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-CONNECTION-LIST
   contract_tests:
@@ -383,7 +431,19 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateConnection
-  positionals: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
   options: []
   sdk_symbol: mammoth.api.connectors.ConnectorsAPI.update_connection
   sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.update_connection with validated request fields.
@@ -399,8 +459,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector connection update --help
-  agent_example: mammoth connector connection update --output json --no-input
+  human_example: mammoth connector connection update CONNECTOR_KEY CONNECTION_KEY --help
+  agent_example: mammoth connector connection update example example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-CONNECTION-UPDATE
   contract_tests:
@@ -417,7 +477,19 @@ commands:
   alias_of: null
   operation_ids:
   - ValidateAndGetDsConfig
-  positionals: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
   options: []
   sdk_symbol: mammoth.api.connectors.ConnectorsAPI.create_ds_config
   sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.create_ds_config with validated request fields.
@@ -433,8 +505,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector ds-config create --help
-  agent_example: mammoth connector ds-config create --output json --no-input
+  human_example: mammoth connector ds-config create CONNECTOR_KEY CONNECTION_KEY --help
+  agent_example: mammoth connector ds-config create example example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-CREATE
   contract_tests:
@@ -451,7 +523,25 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteDsConfig
-  positionals: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
+  - name: ds_config_key
+    type: str
+    required: true
+    metavar: DS_CONFIG_KEY
+    falls_back_to_field: null
+    help: Key identifying the ds config.
   options: []
   sdk_symbol: mammoth.api.connectors.ConnectorsAPI.delete_ds_config
   sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.delete_ds_config with validated request fields.
@@ -467,8 +557,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector ds-config delete --help
-  agent_example: mammoth connector ds-config delete --output json --no-input
+  human_example: mammoth connector ds-config delete CONNECTOR_KEY CONNECTION_KEY DS_CONFIG_KEY --help
+  agent_example: mammoth connector ds-config delete example example example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-DELETE
   contract_tests:
@@ -485,7 +575,19 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteDsConfigs
-  positionals: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
   options: []
   sdk_symbol: mammoth.api.connectors.ConnectorsAPI.ds_config_delete_all
   sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.ds_config_delete_all with validated request
@@ -502,8 +604,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector ds-config delete-all --help
-  agent_example: mammoth connector ds-config delete-all --output json --no-input
+  human_example: mammoth connector ds-config delete-all CONNECTOR_KEY CONNECTION_KEY --help
+  agent_example: mammoth connector ds-config delete-all example example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-DELETE-ALL
   contract_tests:
@@ -520,7 +622,25 @@ commands:
   alias_of: null
   operation_ids:
   - GetDsConfig
-  positionals: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
+  - name: ds_config_key
+    type: str
+    required: true
+    metavar: DS_CONFIG_KEY
+    falls_back_to_field: null
+    help: Key identifying the ds config.
   options: []
   sdk_symbol: mammoth.api.connectors.ConnectorsAPI.get_ds_config
   sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.get_ds_config with validated request fields.
@@ -536,8 +656,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector ds-config get --help
-  agent_example: mammoth connector ds-config get --output json --no-input
+  human_example: mammoth connector ds-config get CONNECTOR_KEY CONNECTION_KEY DS_CONFIG_KEY --help
+  agent_example: mammoth connector ds-config get example example example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-GET
   contract_tests:
@@ -554,7 +674,19 @@ commands:
   alias_of: null
   operation_ids:
   - ListDsConfigs
-  positionals: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
   options: []
   sdk_symbol: mammoth.api.connectors.ConnectorsAPI.list_ds_configs
   sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.list_ds_configs with validated request fields.
@@ -570,8 +702,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector ds-config list --help
-  agent_example: mammoth connector ds-config list --output json --no-input
+  human_example: mammoth connector ds-config list CONNECTOR_KEY CONNECTION_KEY --help
+  agent_example: mammoth connector ds-config list example example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-LIST
   contract_tests:
@@ -588,7 +720,25 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateDsConfigs
-  positionals: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
+  - name: ds_config_key
+    type: str
+    required: true
+    metavar: DS_CONFIG_KEY
+    falls_back_to_field: null
+    help: Key identifying the ds config.
   options: []
   sdk_symbol: mammoth.api.connectors.ConnectorsAPI.update_ds_config
   sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.update_ds_config with validated request fields.
@@ -604,8 +754,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector ds-config update --help
-  agent_example: mammoth connector ds-config update --output json --no-input
+  human_example: mammoth connector ds-config update CONNECTOR_KEY CONNECTION_KEY DS_CONFIG_KEY --help
+  agent_example: mammoth connector ds-config update example example example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-UPDATE
   contract_tests:
@@ -623,7 +773,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetConnector
-  positionals: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
   options: []
   sdk_symbol: mammoth.api.connectors.ConnectorsAPI.get
   sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.get with validated request fields.
@@ -639,8 +795,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector get --help
-  agent_example: mammoth connector get --output json --no-input
+  human_example: mammoth connector get CONNECTOR_KEY --help
+  agent_example: mammoth connector get example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-GET
   contract_tests:
@@ -691,7 +847,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetQuerySuggestion
-  positionals: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
   options: []
   sdk_symbol: mammoth.api.ai.AIAPI.query_gen
   sdk_conversion: Call mammoth.api.ai.AIAPI.query_gen with validated request fields.
@@ -707,8 +875,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector query generate --help
-  agent_example: mammoth connector query generate --output json --no-input
+  human_example: mammoth connector query generate CONNECTOR_KEY CONNECTION_KEY --help
+  agent_example: mammoth connector query generate example example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-QUERY-GENERATE
   contract_tests:
@@ -726,7 +894,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetChatStatus
-  positionals: []
+  positionals:
+  - name: connector_key
+    type: str
+    required: true
+    metavar: CONNECTOR_KEY
+    falls_back_to_field: null
+    help: Key identifying the connector.
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
   options: []
   sdk_symbol: mammoth.api.ai.AIAPI.status
   sdk_conversion: Call mammoth.api.ai.AIAPI.status with validated request fields.
@@ -742,8 +922,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector query status --help
-  agent_example: mammoth connector query status --output json --no-input
+  human_example: mammoth connector query status CONNECTOR_KEY CONNECTION_KEY --help
+  agent_example: mammoth connector query status example example --output json --no-input
   unit_tests:
   - UT-CONNECTOR-QUERY-STATUS
   contract_tests:

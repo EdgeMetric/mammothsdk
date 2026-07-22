@@ -2052,14 +2052,15 @@ sdk_methods:
   openapi_operation_ids: []
   notes: SDK-only dataview->dataset resolver seam used by public view conveniences; not a CLI command.
 - sdk_symbol: mammoth.api.pipeline.PipelineAPI.get_draft_status
-  canonical_command: null
+  canonical_command: view.draft.status
   alias_of: null
-  mutation_class: null
+  mutation_class: read
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
-  notes: Server-backed draft-status seam read by the draft verbs; surfaced through 'view draft status',
-    not its own SDK-mapped command.
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.get_draft_status with the dataview id to
+    read server-backed draft state (never a process-local flag).
+  notes: Server-backed draft-status seam used by 'view draft status'.
 - sdk_symbol: mammoth.api.pipeline.PipelineAPI.get_pipeline
   canonical_command: view.pipeline.get
   alias_of: null
@@ -3295,8 +3296,8 @@ sdk_methods:
   openapi_operation_ids: []
   notes: Local projection in view get VIEW_ID; machine output field data.columns.
 - sdk_symbol: mammoth.view.View.is_draft_mode
-  canonical_command: view.draft.status
-  alias_of: null
+  canonical_command: null
+  alias_of: view.draft.status
   mutation_class: read
   wait_policy: not_async
   pagination_policy: null

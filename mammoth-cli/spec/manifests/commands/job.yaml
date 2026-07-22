@@ -6,7 +6,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetJob
-  positionals: []
+  positionals:
+  - name: job_id
+    type: int
+    required: true
+    metavar: JOB_ID
+    falls_back_to_field: null
+    help: ID of the job.
   options: []
   sdk_symbol: mammoth.api.jobs.JobsAPI.get_job
   sdk_conversion: Call mammoth.api.jobs.JobsAPI.get_job with validated request fields.
@@ -22,8 +28,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth job get --help
-  agent_example: mammoth job get --output json --no-input
+  human_example: mammoth job get JOB_ID --help
+  agent_example: mammoth job get 123 --output json --no-input
   unit_tests:
   - UT-JOB-GET
   contract_tests:
@@ -75,7 +81,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetJob
-  positionals: []
+  positionals:
+  - name: job_id
+    type: int
+    required: true
+    metavar: JOB_ID
+    falls_back_to_field: null
+    help: ID of the job.
   options: []
   sdk_symbol: mammoth.api.jobs.JobsAPI.wait_for_job
   sdk_conversion: Call mammoth.api.jobs.JobsAPI.wait_for_job with validated request fields.
@@ -91,8 +103,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth job wait --help
-  agent_example: mammoth job wait --output json --no-input
+  human_example: mammoth job wait JOB_ID --help
+  agent_example: mammoth job wait 123 --output json --no-input
   unit_tests:
   - UT-JOB-WAIT
   contract_tests:

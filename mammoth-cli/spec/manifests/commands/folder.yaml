@@ -109,7 +109,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetFolder
-  positionals: []
+  positionals:
+  - name: folder_id
+    type: int
+    required: true
+    metavar: FOLDER_ID
+    falls_back_to_field: null
+    help: ID of the folder.
   options: []
   sdk_symbol: mammoth.api.folders.FoldersAPI.get
   sdk_conversion: Call mammoth.api.folders.FoldersAPI.get with validated request fields.
@@ -125,8 +131,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth folder get --help
-  agent_example: mammoth folder get --output json --no-input
+  human_example: mammoth folder get FOLDER_ID --help
+  agent_example: mammoth folder get 123 --output json --no-input
   unit_tests:
   - UT-FOLDER-GET
   contract_tests:
@@ -246,7 +252,13 @@ commands:
   alias_of: null
   operation_ids:
   - TrashFolder
-  positionals: []
+  positionals:
+  - name: folder_id
+    type: int
+    required: true
+    metavar: FOLDER_ID
+    falls_back_to_field: null
+    help: ID of the folder.
   options: []
   sdk_symbol: mammoth.api.folders.FoldersAPI.trash
   sdk_conversion: Call mammoth.api.folders.FoldersAPI.trash with validated request fields.
@@ -262,8 +274,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth folder trash --help
-  agent_example: mammoth folder trash --output json --no-input
+  human_example: mammoth folder trash FOLDER_ID --help
+  agent_example: mammoth folder trash 123 --output json --no-input
   unit_tests:
   - UT-FOLDER-TRASH
   contract_tests:
@@ -280,7 +292,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateFolderDetails
-  positionals: []
+  positionals:
+  - name: folder_id
+    type: int
+    required: true
+    metavar: FOLDER_ID
+    falls_back_to_field: null
+    help: ID of the folder.
   options: []
   sdk_symbol: mammoth.api.folders.FoldersAPI.update
   sdk_conversion: Call mammoth.api.folders.FoldersAPI.update with validated request fields.
@@ -296,8 +314,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth folder update --help
-  agent_example: mammoth folder update --output json --no-input
+  human_example: mammoth folder update FOLDER_ID --help
+  agent_example: mammoth folder update 123 --output json --no-input
   unit_tests:
   - UT-FOLDER-UPDATE
   contract_tests:

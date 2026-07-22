@@ -35,6 +35,8 @@ import _command_map as cmap  # noqa: E402
 from _openapi_extract import iter_operations, load_snapshot  # noqa: E402
 from _sdk_catalog import CLI_ONLY_COMMANDS, EXTRA_OP_HINTS, load_sdk_catalog  # noqa: E402
 
+from mammoth_cli.services.positionals import positionals_for  # noqa: E402
+
 REVIEWER = "primary"
 
 
@@ -143,6 +145,9 @@ def build_command_record(
     confirmation = derive_confirmation(mutation)
     evidence, exemption = derive_acceptance(command_id, mutation)
     base = _model_base(command_id)
+    positionals = positionals_for(command_id, sdk_symbol)
+    required_metavars = "".join(f" {p.metavar}" for p in positionals if p.required)
+    positional_samples = "".join(f" {123 if p.type is int else 'example'}" for p in positionals)
 
     record: dict[str, Any] = {
         "command_id": command_id,
@@ -150,10 +155,11 @@ def build_command_record(
         "disposition": disposition,
         "alias_of": alias_of,
         "operation_ids": operation_ids,
-        "positionals": [],
+        "positionals": [p.as_manifest() for p in positionals],
         "options": [],
         "sdk_symbol": sdk_symbol,
-        "sdk_conversion": f"Call {sdk_symbol} with validated request fields.",
+        "sdk_conversion": (catalog or {}).get("sdk_conversion")
+        or f"Call {sdk_symbol} with validated request fields.",
         "request_model": f"{base}Request",
         "result_model": f"{base}Result",
         "mutation_class": mutation,
@@ -166,8 +172,8 @@ def build_command_record(
         "contract_fixture": None,
         "required_fixture_guard": None,
         "secret_fields": list((catalog or {}).get("secret_fields") or []),
-        "human_example": f"mammoth {command_path} --help",
-        "agent_example": f"mammoth {command_path} --output json --no-input",
+        "human_example": f"mammoth {command_path}{required_metavars} --help",
+        "agent_example": f"mammoth {command_path}{positional_samples} --output json --no-input",
         "unit_tests": [f"UT-{op_token}"],
         "contract_tests": [f"CT-{op_token}-HUMAN", f"CT-{op_token}-JSON", f"CT-{op_token}-ERROR"],
         "draft_test": None,

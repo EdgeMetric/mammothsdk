@@ -6,7 +6,13 @@ commands:
   alias_of: null
   operation_ids:
   - DashboardAction
-  positionals: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.action
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.action with validated request fields.
@@ -22,8 +28,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dashboard action --help
-  agent_example: mammoth dashboard action --output json --no-input
+  human_example: mammoth dashboard action DASHBOARD_ID --help
+  agent_example: mammoth dashboard action 123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-ACTION
   contract_tests:
@@ -41,7 +47,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetDashboardAnalytics
-  positionals: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get_analytics
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.get_analytics with validated request fields.
@@ -57,8 +69,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dashboard analytics --help
-  agent_example: mammoth dashboard analytics --output json --no-input
+  human_example: mammoth dashboard analytics DASHBOARD_ID --help
+  agent_example: mammoth dashboard analytics 123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-ANALYTICS
   contract_tests:
@@ -75,7 +87,13 @@ commands:
   alias_of: null
   operation_ids:
   - CancelDashboardGeneration
-  positionals: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.cancel_generation
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.cancel_generation with validated request fields.
@@ -91,8 +109,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dashboard cancel-generation --help
-  agent_example: mammoth dashboard cancel-generation --output json --no-input
+  human_example: mammoth dashboard cancel-generation DASHBOARD_ID --help
+  agent_example: mammoth dashboard cancel-generation 123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-CANCEL-GENERATION
   contract_tests:
@@ -144,7 +162,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetDraftDataFromSql
-  positionals: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get_draft_data
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.get_draft_data with validated request fields.
@@ -160,8 +184,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dashboard data draft --help
-  agent_example: mammoth dashboard data draft --output json --no-input
+  human_example: mammoth dashboard data draft DASHBOARD_ID --help
+  agent_example: mammoth dashboard data draft 123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-DATA-DRAFT
   contract_tests:
@@ -178,7 +202,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetPublishDataFromSql
-  positionals: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get_publish_data
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.get_publish_data with validated request fields.
@@ -194,8 +224,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dashboard data published --help
-  agent_example: mammoth dashboard data published --output json --no-input
+  human_example: mammoth dashboard data published DASHBOARD_ID --help
+  agent_example: mammoth dashboard data published 123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-DATA-PUBLISHED
   contract_tests:
@@ -212,7 +242,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteDashboard
-  positionals: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.delete
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.delete with validated request fields.
@@ -228,8 +264,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dashboard delete --help
-  agent_example: mammoth dashboard delete --output json --no-input
+  human_example: mammoth dashboard delete DASHBOARD_ID --help
+  agent_example: mammoth dashboard delete 123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-DELETE
   contract_tests:
@@ -246,7 +282,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetDashboard
-  positionals: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.get with validated request fields.
@@ -262,8 +304,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dashboard get --help
-  agent_example: mammoth dashboard get --output json --no-input
+  human_example: mammoth dashboard get DASHBOARD_ID --help
+  agent_example: mammoth dashboard get 123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-GET
   contract_tests:
@@ -417,7 +459,13 @@ commands:
   alias_of: null
   operation_ids:
   - RestoreDashboard
-  positionals: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.restore
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.restore with validated request fields.
@@ -433,8 +481,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dashboard restore --help
-  agent_example: mammoth dashboard restore --output json --no-input
+  human_example: mammoth dashboard restore DASHBOARD_ID --help
+  agent_example: mammoth dashboard restore 123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-RESTORE
   contract_tests:
@@ -451,7 +499,13 @@ commands:
   alias_of: null
   operation_ids:
   - ShareDashboard
-  positionals: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.share
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.share with validated request fields.
@@ -467,8 +521,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dashboard share --help
-  agent_example: mammoth dashboard share --output json --no-input
+  human_example: mammoth dashboard share DASHBOARD_ID --help
+  agent_example: mammoth dashboard share 123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-SHARE
   contract_tests:
@@ -520,7 +574,13 @@ commands:
   alias_of: null
   operation_ids:
   - TrashDashboard
-  positionals: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.trash
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.trash with validated request fields.
@@ -536,8 +596,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dashboard trash --help
-  agent_example: mammoth dashboard trash --output json --no-input
+  human_example: mammoth dashboard trash DASHBOARD_ID --help
+  agent_example: mammoth dashboard trash 123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-TRASH
   contract_tests:
@@ -554,7 +614,13 @@ commands:
   alias_of: null
   operation_ids:
   - EditDashboard
-  positionals: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.update
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.update with validated request fields.
@@ -570,8 +636,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dashboard update --help
-  agent_example: mammoth dashboard update --output json --no-input
+  human_example: mammoth dashboard update DASHBOARD_ID --help
+  agent_example: mammoth dashboard update 123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-UPDATE
   contract_tests:
@@ -588,7 +654,13 @@ commands:
   alias_of: null
   operation_ids:
   - BulkWidgetData
-  positionals: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.widget_data
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.widget_data with validated request fields.
@@ -604,8 +676,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dashboard widget-data --help
-  agent_example: mammoth dashboard widget-data --output json --no-input
+  human_example: mammoth dashboard widget-data DASHBOARD_ID --help
+  agent_example: mammoth dashboard widget-data 123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-WIDGET-DATA
   contract_tests:

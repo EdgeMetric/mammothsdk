@@ -40,7 +40,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteAgentSession
-  positionals: []
+  positionals:
+  - name: session_id
+    type: int
+    required: true
+    metavar: SESSION_ID
+    falls_back_to_field: null
+    help: ID of the session.
   options: []
   sdk_symbol: mammoth.api.agents.AgentsAPI.session_delete
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.session_delete with validated request fields.
@@ -56,8 +62,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth agent session delete --help
-  agent_example: mammoth agent session delete --output json --no-input
+  human_example: mammoth agent session delete SESSION_ID --help
+  agent_example: mammoth agent session delete 123 --output json --no-input
   unit_tests:
   - UT-AGENT-SESSION-DELETE
   contract_tests:
@@ -108,7 +114,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetAgentSessionMessages
-  positionals: []
+  positionals:
+  - name: session_id
+    type: int
+    required: true
+    metavar: SESSION_ID
+    falls_back_to_field: null
+    help: ID of the session.
   options: []
   sdk_symbol: mammoth.api.agents.AgentsAPI.session_messages
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.session_messages with validated request fields.
@@ -124,8 +136,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth agent session messages --help
-  agent_example: mammoth agent session messages --output json --no-input
+  human_example: mammoth agent session messages SESSION_ID --help
+  agent_example: mammoth agent session messages 123 --output json --no-input
   unit_tests:
   - UT-AGENT-SESSION-MESSAGES
   contract_tests:
@@ -142,7 +154,13 @@ commands:
   alias_of: null
   operation_ids:
   - SetAgentSessionVisibility
-  positionals: []
+  positionals:
+  - name: session_id
+    type: int
+    required: true
+    metavar: SESSION_ID
+    falls_back_to_field: null
+    help: ID of the session.
   options: []
   sdk_symbol: mammoth.api.agents.AgentsAPI.session_set_visibility
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.session_set_visibility with validated request fields.
@@ -158,8 +176,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth agent session set-visibility --help
-  agent_example: mammoth agent session set-visibility --output json --no-input
+  human_example: mammoth agent session set-visibility SESSION_ID --help
+  agent_example: mammoth agent session set-visibility 123 --output json --no-input
   unit_tests:
   - UT-AGENT-SESSION-SET-VISIBILITY
   contract_tests:
