@@ -31,7 +31,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13", "3.14"]
+        # The CLI supports 3.12 through the latest; testing the minimum and the
+        # newest covers the support boundaries without a job per minor version.
+        python-version: ["3.12", "3.14"]
     steps:
       - uses: actions/checkout@v4
 
@@ -59,6 +61,9 @@ jobs:
           pip install -e .
           # Dev tooling; names read from pyproject so this list cannot drift.
           pip install $(python -c "import tomllib; g = tomllib.load(open('pyproject.toml', 'rb'))['tool']['poetry']['group']['dev']['dependencies']; print(' '.join(k for k in g if k.lower() != 'python'))")
+          # The installer tests exercise the real installer, which uses uv from
+          # PATH; provide it so the installer does not try to download uv.
+          pip install uv
 
       - name: Ruff (lint)
         run: ruff check mammoth_cli/ tests/ scripts/
@@ -84,11 +89,16 @@ jobs:
           python-version: "3.13"
 
       - name: Install in-repo SDK, CLI, and dev tools
+        # The dependency-name substitution below is bash; windows-latest
+        # otherwise defaults to pwsh. Git bash ships on the Windows runner.
+        shell: bash
         run: |
           python -m pip install --upgrade pip
           pip install -e ..
           pip install -e .
           pip install $(python -c "import tomllib; g = tomllib.load(open('pyproject.toml', 'rb'))['tool']['poetry']['group']['dev']['dependencies']; print(' '.join(k for k in g if k.lower() != 'python'))")
+          # Provide uv so the installer uses it from PATH instead of downloading.
+          pip install uv
 
       # Exercise the PowerShell installer's failure contract on a real Windows
       # runner: a stubbed `mammoth` that fails `skill install` must make the

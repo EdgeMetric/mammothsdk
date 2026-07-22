@@ -31,6 +31,18 @@ from mammoth_cli.services.sdk_service import SdkMammothService
 Route = Callable[["RecordedRequest"], "tuple[int, Any]"]
 
 
+@pytest.fixture(autouse=True)
+def _stable_help_width(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Render CLI help at a stable width regardless of the host terminal.
+
+    Rich derives its console width from ``COLUMNS`` (falling back to the
+    detected terminal size), so a narrow or differing value on a CI runner can
+    wrap option names and break help-text assertions that pass locally.
+    Pinning a wide width keeps rendered help deterministic everywhere.
+    """
+    monkeypatch.setenv("COLUMNS", "200")
+
+
 @dataclass
 class RecordedRequest:
     """One HTTP request the real code emitted through the faked transport."""

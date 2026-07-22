@@ -50,6 +50,10 @@ stress.py
 employee.csv
 Store_Transactions.csv
 openapi.json
+# The CLI's pinned OpenAPI snapshot is a committed source artifact: contract
+# tests read it and the built wheel ships it. Keep it tracked despite the
+# broad rule above (which still ignores stray downloads elsewhere).
+!mammoth-cli/spec/openapi/openapi.json
 
 # Env files
 .env
