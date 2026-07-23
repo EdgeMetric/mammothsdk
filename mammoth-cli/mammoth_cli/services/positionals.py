@@ -226,6 +226,35 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             ("support.user.update", "email", "Email of the user to update"),
         )
     },
+    # These ``create`` verbs take their identifying name (or ``intent``) as a
+    # positional OR the matching ``--input`` field: each handler reads
+    # ``extra_args[0] or document.get(<field>)``. Without a registered optional
+    # positional the strict validator rejects the positional form outright, so
+    # only the ``--input`` form is invokable and the documented dual-sourcing is
+    # a half promise. Author an optional locator that falls back to the field --
+    # the same shape as ``project create``.
+    **{
+        command: (
+            PositionalSpec(
+                name=field,
+                type=str,
+                required=False,
+                help=f"{label}; or pass it via the '{field}' input field.",
+                falls_back_to_field=field,
+            ),
+        )
+        for command, field, label in (
+            ("automation.create", "name", "Name of the new automation"),
+            ("client-app.create", "app_name", "Name of the new client app"),
+            ("dashboard.create", "intent", "Generation intent for the new dashboard"),
+            ("folder.create", "name", "Name of the new folder"),
+            ("parameter.create", "name", "Name of the new parameter"),
+            ("parameter.group.create", "name", "Name of the new parameter group"),
+            ("snippet.create", "name", "Name of the new snippet"),
+            ("webhook.create", "name", "Name of the new webhook"),
+            ("workflow.create", "name", "Name of the new workflow"),
+        )
+    },
     # ``schema get`` / ``capability get`` are CLI-only discovery commands with no
     # backing SDK signature (their ``sdk_symbol`` is a meta-reference), so the
     # derivation emits nothing. Their handlers read the single id positionally

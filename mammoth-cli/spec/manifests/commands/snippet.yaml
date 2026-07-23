@@ -6,7 +6,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreateSnippet
-  positionals: []
+  positionals:
+  - name: name
+    type: str
+    required: false
+    metavar: NAME
+    falls_back_to_field: name
+    help: Name of the new snippet; or pass it via the 'name' input field.
   options: []
   sdk_symbol: mammoth.api.snippets.SnippetsAPI.create
   sdk_conversion: Call mammoth.api.snippets.SnippetsAPI.create with validated request fields.
@@ -23,8 +29,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth snippet create --help
-  agent_example: 'mammoth snippet create --input ''{"name": "example", "code": "example", "language":
-    "example"}'' --output json --no-input'
+  agent_example: 'mammoth snippet create example --input ''{"code": "example", "language": "example"}''
+    --output json --no-input'
   unit_tests:
   - UT-SNIPPET-CREATE
   contract_tests:

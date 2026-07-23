@@ -75,7 +75,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 ## automation
 
 - `mammoth automation create` [external_effect/yes_always] -> mammoth.api.automations.AutomationsAPI.create
-  example: mammoth automation create --input '{"name": "example", "description": "example", "tasks": [{"task_type": "run_data_retrieval"}]}' --output json --no-input
+  example: mammoth automation create example --input '{"description": "example", "tasks": [{"task_type": "run_data_retrieval"}]}' --output json --no-input
 - `mammoth automation delete` [destructive/prompt_or_yes] -> mammoth.api.automations.AutomationsAPI.delete
   example: mammoth automation delete 123 --output json --no-input
 - `mammoth automation get` [read/none] -> mammoth.api.automations.AutomationsAPI.get
@@ -174,7 +174,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 ## client-app
 
 - `mammoth client-app create` [high_impact/confirm_target] -> mammoth.api.clientapps.ClientAppsAPI.create
-  example: mammoth client-app create --input '{"app_name": "example"}' --output json --no-input
+  example: mammoth client-app create example --output json --no-input
 - `mammoth client-app delete` [destructive/prompt_or_yes] -> mammoth.api.clientapps.ClientAppsAPI.delete
   example: mammoth client-app delete example --output json --no-input
 - `mammoth client-app get` [read/none] -> mammoth.api.clientapps.ClientAppsAPI.get
@@ -285,7 +285,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth dashboard context update` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.context_update
   example: mammoth dashboard context update example --input '{"body": {"params": {"name": "example"}}}' --output json --no-input
 - `mammoth dashboard create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.create
-  example: mammoth dashboard create --input '{"intent": "example", "source": [1]}' --output json --no-input
+  example: mammoth dashboard create example --input '{"source": [1]}' --output json --no-input
 - `mammoth dashboard data draft` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_draft_data
   example: mammoth dashboard data draft 123 --input '{"sql": "example"}' --output json --no-input
 - `mammoth dashboard data published` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_publish_data
@@ -539,7 +539,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth folder bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.folders.FoldersAPI.bulk_delete
   example: mammoth folder bulk-delete --output json --no-input
 - `mammoth folder create` [benign_mutation/none] -> mammoth.api.folders.FoldersAPI.create
-  example: mammoth folder create --input '{"name": "example"}' --output json --no-input
+  example: mammoth folder create example --output json --no-input
 - `mammoth folder delete` [destructive/prompt_or_yes] -> mammoth.api.folders.FoldersAPI.delete
   example: mammoth folder delete 123 --output json --no-input
 - `mammoth folder get` [read/none] -> mammoth.api.folders.FoldersAPI.get
@@ -582,7 +582,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 ## parameter
 
 - `mammoth parameter create` [benign_mutation/none] -> mammoth.api.parameters.ParametersAPI.create
-  example: mammoth parameter create --input '{"name": "example", "param_type": "example", "value": "example"}' --output json --no-input
+  example: mammoth parameter create example --input '{"param_type": "example", "value": "example"}' --output json --no-input
 - `mammoth parameter delete` [destructive/prompt_or_yes] -> mammoth.api.parameters.ParametersAPI.delete
   example: mammoth parameter delete 123 --output json --no-input
 - `mammoth parameter dependencies` [read/none] -> mammoth.api.parameters.ParametersAPI.dependencies
@@ -592,7 +592,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth parameter get` [read/none] -> mammoth.api.parameters.ParametersAPI.get
   example: mammoth parameter get 123 --output json --no-input
 - `mammoth parameter group create` [benign_mutation/none] -> mammoth.api.parameters.ParametersAPI.group_create
-  example: mammoth parameter group create --input '{"name": "example"}' --output json --no-input
+  example: mammoth parameter group create example --output json --no-input
 - `mammoth parameter group delete` [destructive/prompt_or_yes] -> mammoth.api.parameters.ParametersAPI.group_delete
   example: mammoth parameter group delete 123 --output json --no-input
 - `mammoth parameter group list` [read/none] -> mammoth.api.parameters.ParametersAPI.group_list
@@ -688,7 +688,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 ## snippet
 
 - `mammoth snippet create` [benign_mutation/none] -> mammoth.api.snippets.SnippetsAPI.create
-  example: mammoth snippet create --input '{"name": "example", "code": "example", "language": "example"}' --output json --no-input
+  example: mammoth snippet create example --input '{"code": "example", "language": "example"}' --output json --no-input
 - `mammoth snippet delete` [destructive/prompt_or_yes] -> mammoth.api.snippets.SnippetsAPI.delete
   example: mammoth snippet delete 123 --output json --no-input
 - `mammoth snippet dependencies` [read/none] -> mammoth.api.snippets.SnippetsAPI.dependencies
@@ -1046,7 +1046,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 ## webhook
 
 - `mammoth webhook create` [benign_mutation/none] -> mammoth.api.webhooks.WebhooksAPI.create
-  example: mammoth webhook create --output json --no-input
+  example: mammoth webhook create example --output json --no-input
 - `mammoth webhook delete` [destructive/prompt_or_yes] -> mammoth.api.webhooks.WebhooksAPI.delete
   example: mammoth webhook delete 123 --output json --no-input
 - `mammoth webhook get` [read/none] -> mammoth.api.webhooks.WebhooksAPI.get
@@ -1075,7 +1075,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth workflow cleanup` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.cleanup
   example: mammoth workflow cleanup --output json --no-input
 - `mammoth workflow create` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.create
-  example: mammoth workflow create --input '{"name": "example"}' --output json --no-input
+  example: mammoth workflow create example --output json --no-input
 - `mammoth workflow delete` [destructive/prompt_or_yes] -> mammoth.api.workflows.WorkflowsAPI.delete
   example: mammoth workflow delete 123 --output json --no-input
 - `mammoth workflow from-template` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.from_template
