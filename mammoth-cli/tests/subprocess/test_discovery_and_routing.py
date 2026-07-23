@@ -146,11 +146,25 @@ def test_bad_option_value_is_a_machine_envelope() -> None:
 
 
 def test_unknown_command_human_mode_stays_click_prose() -> None:
-    """Human output is unchanged: Click's own usage message, not a JSON envelope."""
-    result = _run(["frobnicate"], env=_base_env())
+    """Human output is unchanged: Click's own usage message, not a JSON envelope.
+
+    A human output mode is requested explicitly with ``--output table``. The
+    default ``auto`` mode would resolve to JSON here because the subprocess pipe
+    is not a terminal, so a concrete human mode is the way to exercise the
+    human-prose path deterministically.
+    """
+    result = _run(["frobnicate", "--output", "table"], env=_base_env())
     assert result.returncode == _EXIT_USAGE
     assert "Traceback" not in result.stderr
     combined = result.stdout + result.stderr
     assert "Usage:" in combined
     with pytest.raises(json.JSONDecodeError):
         json.loads(combined)
+
+
+def test_unknown_command_piped_defaults_to_machine_envelope() -> None:
+    """With no --output and a non-terminal pipe, auto resolves to the JSON envelope."""
+    result = _run(["frobnicate"], env=_base_env())
+    assert result.returncode == _EXIT_USAGE, result.stderr
+    payload = _envelope(result)
+    assert payload["error"]["code"] == "usage_error"
