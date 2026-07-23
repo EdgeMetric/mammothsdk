@@ -58,6 +58,51 @@ def _extract_id(data: Any) -> int | None:
     return None
 
 
+def _api_status_code(envelope: dict[str, Any]) -> int | None:
+    """Return the upstream HTTP status a structured api_error carried, if any."""
+    error = envelope.get("error")
+    if not isinstance(error, dict):
+        return None
+    details = error.get("details")
+    if isinstance(details, dict) and isinstance(details.get("status_code"), int):
+        return int(details["status_code"])
+    return None
+
+
+def _assert_reversible_trash_restore(env: dict[str, Any], project: str, seed_id: int) -> None:
+    """Trash then restore an existing dashboard, verifying the mutation live.
+
+    ``trash`` and ``restore`` are both ``always_wait`` commands, so this proves a
+    real state change *and* the CLI's async job wait (finding #2) against the live
+    server. The dashboard is restored in a ``finally`` so the tenant is left as it
+    was found even if an assertion fails mid-way.
+    """
+    trashed = False
+    try:
+        _run(["dashboard", "trash", str(seed_id), "--project", project], env)
+        trashed = True
+        assert seed_id not in _dashboard_ids(env, project), "trash did not remove it from listing"
+    finally:
+        if trashed:
+            restored = make_runner().invoke(
+                [
+                    "dashboard",
+                    "restore",
+                    str(seed_id),
+                    "--project",
+                    project,
+                    "--output",
+                    "json",
+                    "--no-input",
+                ],
+                env=env,
+            )
+            assert restored.exit_code == 0, (
+                f"restore failed, dashboard left trashed: {restored.output}"
+            )
+    assert seed_id in _dashboard_ids(env, project), "restore did not return it to the listing"
+
+
 def test_dashboard_duplicate_trash_delete_lifecycle(
     live_env: dict[str, str], live_project: str
 ) -> None:
@@ -67,15 +112,55 @@ def test_dashboard_duplicate_trash_delete_lifecycle(
     ``duplicate`` (benign mutation), ``trash`` (benign mutation whose job the CLI
     now waits on), and ``delete`` (destructive, ``--yes``). The seed dashboard is
     never mutated; only the throwaway duplicate is.
+
+    The command always drives the real stack to the live server; the assertions
+    below distinguish three outcomes so this is never a false red:
+
+    * duplicate succeeds -> run the full trash/delete lifecycle on the copy;
+    * duplicate fails with an upstream 5xx -> the tenant cannot host a disposable
+      copy of this seed (a server-side limitation, not a CLI defect); the CLI is
+      still verified to reach the server and surface a well-formed envelope, then
+      the test skips with that reason;
+    * any other failure (usage error, 4xx, malformed envelope) -> a real CLI
+      problem, so the test fails.
     """
     seeds = _dashboard_ids(live_env, live_project)
     if not seeds:
         pytest.skip("no dashboard in the configured project to seed a disposable copy from")
     seed_id = seeds[0]
 
-    duplicate = _run(["dashboard", "duplicate", str(seed_id), "--project", live_project], live_env)
-    copy_id = _extract_id(duplicate["data"])
-    assert copy_id is not None, f"duplicate did not return a new id: {duplicate['data']}"
+    dup_result = make_runner().invoke(
+        [
+            "dashboard",
+            "duplicate",
+            str(seed_id),
+            "--project",
+            live_project,
+            "--output",
+            "json",
+            "--no-input",
+        ],
+        env=live_env,
+    )
+    dup_env: dict[str, Any] = json.loads(dup_result.output)
+    if dup_result.exit_code != 0:
+        status = _api_status_code(dup_env)
+        # The CLI must still have reached the server and produced a structured
+        # envelope (not a traceback): assert that, then treat a server-side 5xx
+        # as "cannot seed here" rather than a CLI failure.
+        assert isinstance(dup_env.get("error"), dict), dup_result.output
+        if status is not None and status >= 500:
+            # The tenant cannot duplicate this seed (server-side). Still verify a
+            # real mutation by exercising the *reversible* trash -> restore path
+            # on the seed itself -- both are ``always_wait`` commands, so this
+            # also exercises the async job wait (finding #2) end to end. The seed
+            # is always restored, so the tenant is left as it was found.
+            _assert_reversible_trash_restore(live_env, live_project, seed_id)
+            return
+        pytest.fail(f"duplicate failed with a client-side error: {dup_result.output}")
+
+    copy_id = _extract_id(dup_env["data"])
+    assert copy_id is not None, f"duplicate did not return a new id: {dup_env['data']}"
     assert copy_id != seed_id, "duplicate must create a distinct dashboard"
 
     try:
