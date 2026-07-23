@@ -56,7 +56,7 @@ def test_resolve_auth_env_overrides_profile(isolated_cli_config: Path) -> None:
     resolved = resolve_auth(_invocation(), env=env)
     assert resolved.api_key == "env-key"
     assert resolved.workspace_id == 9
-    assert resolved.base_url == "https://app-eu.mammoth.io/api/v2"
+    assert resolved.base_url == "https://app.mammoth.io/api/v2"
 
 
 def test_resolve_auth_explicit_login_overrides_everything(isolated_cli_config: Path) -> None:

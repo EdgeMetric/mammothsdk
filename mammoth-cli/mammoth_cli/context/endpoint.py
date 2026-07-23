@@ -1,7 +1,7 @@
 """Resolve the Mammoth API base url from a server prefix.
 
 A server prefix is the only endpoint input the CLI exposes; it maps to
-``https://PREFIX.mammoth.io/api/v2`` with default ``app-eu``. There is no
+``https://PREFIX.mammoth.io/api/v2`` with default ``app``. There is no
 public base-url override: the supported configuration surface is exactly the
 API key, API secret, workspace id, and this optional one-label server prefix.
 """
@@ -12,7 +12,7 @@ import re
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 
-DEFAULT_SERVER_PREFIX = "app-eu"
+DEFAULT_SERVER_PREFIX = "app"
 
 # One DNS label: 1-63 characters, alphanumeric, internal hyphens only. This
 # rejects schemes, dots, slashes, query strings, fragments, ports, and
@@ -33,7 +33,7 @@ def invalid_server_prefix_error(prefix: str) -> CliError:
         code="invalid_server_prefix",
         message=f"'{prefix}' is not a valid server prefix.",
         exit_status=EXIT_USAGE,
-        hint="Use one DNS label, for example 'app-eu'.",
+        hint="Use one DNS label, for example 'app'.",
     )
 
 
@@ -41,8 +41,8 @@ def resolve_base_url(server_prefix: str | None) -> str:
     """Resolve the API base url from a server prefix.
 
     Args:
-        server_prefix: A one-label server prefix (for example ``"app-eu"``),
-            or None to use the default ``app-eu``.
+        server_prefix: A one-label server prefix (for example ``"app"``),
+            or None to use the default ``app``.
 
     Returns:
         The resolved API base url.

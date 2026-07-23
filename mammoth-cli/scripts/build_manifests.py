@@ -177,7 +177,11 @@ def build_command_record(
     mutation = (catalog or {}).get("mutation_class") or derive_mutation(command_id, method)
     wait = derive_wait(command_id, method, (catalog or {}).get("wait_policy"))
     pagination = derive_pagination(command_id, method, (catalog or {}).get("pagination_policy"))
-    confirmation = derive_confirmation(mutation)
+    # A reviewed catalog entry may pin an explicit confirmation policy when the
+    # derived default for its mutation class does not fit (e.g. a local
+    # external-effect command that should prompt at a TTY rather than always
+    # require --yes). Otherwise derive it from the mutation class.
+    confirmation = (catalog or {}).get("confirmation") or derive_confirmation(mutation)
     evidence, exemption = derive_acceptance(command_id, mutation)
     base = _model_base(command_id)
     positionals = positionals_for(command_id, sdk_symbol)
@@ -374,6 +378,7 @@ def build() -> dict[str, int]:
                 "mutation_class": spec["mutation_class"],
                 "wait_policy": "not_async",
                 "pagination_policy": spec.get("pagination_policy", "none"),
+                "confirmation": spec.get("confirmation"),
             },
         )
         commands[command]["acceptance_evidence"] = "live_read_only"

@@ -1,7 +1,7 @@
 """Endpoint resolution: server-prefix mapping and validation.
 
 The CLI exposes no base-url override: a one-label server prefix (default
-``app-eu``) is the only endpoint input.
+``app``) is the only endpoint input.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from mammoth_cli.errors.envelope import CliError
 
 
 def test_default_prefix_maps_to_app_eu() -> None:
-    assert resolve_base_url(None) == "https://app-eu.mammoth.io/api/v2"
+    assert resolve_base_url(None) == "https://app.mammoth.io/api/v2"
 
 
 def test_general_prefix_maps_to_its_own_host() -> None:

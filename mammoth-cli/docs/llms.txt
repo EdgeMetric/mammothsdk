@@ -52,6 +52,7 @@
 - `support` (45 commands)
 - `template` (5 commands)
 - `trash` (3 commands)
+- `upgrade` (1 commands)
 - `user` (8 commands)
 - `version` (1 commands)
 - `view` (96 commands)

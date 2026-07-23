@@ -14,6 +14,7 @@ from collections.abc import Callable
 from mammoth_cli.commands import auth as auth_cmd
 from mammoth_cli.commands import config as config_cmd
 from mammoth_cli.commands import context as context_cmd
+from mammoth_cli.commands import upgrade as upgrade_cmd
 
 BESPOKE: dict[str, Callable[..., None]] = {
     "auth.login": auth_cmd.auth_login,
@@ -26,4 +27,5 @@ BESPOKE: dict[str, Callable[..., None]] = {
     "context.project.status": context_cmd.context_project_status,
     "context.project.use": context_cmd.context_project_use,
     "context.project.clear": context_cmd.context_project_clear,
+    "upgrade": upgrade_cmd.upgrade_command,
 }

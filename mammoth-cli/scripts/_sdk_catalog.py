@@ -122,6 +122,12 @@ CLI_ONLY_COMMANDS: dict[str, dict[str, Any]] = {
         "mutation_class": "read",
         "live_exemption_reason": "Diagnostic; safe read-only checks.",
     },
+    "upgrade": {
+        "sdk_symbol": "mammoth_cli.commands.upgrade.run",
+        "mutation_class": "external_effect",
+        "confirmation": "prompt_or_yes",
+        "live_exemption_reason": "Local package upgrade; no Mammoth server call.",
+    },
     "capability.list": {
         "sdk_symbol": "mammoth_cli.commands.capability.list_",
         "mutation_class": "read",

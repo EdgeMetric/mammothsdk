@@ -13,7 +13,7 @@ class LoginRequest(BaseModel):
         api_secret: The Mammoth API secret.
         workspace_id: A positive workspace id.
         server_prefix: An optional one-label server prefix; defaults to
-            ``"app-eu"`` when omitted.
+            ``"app"`` when omitted.
     """
 
     model_config = ConfigDict(extra="forbid")
