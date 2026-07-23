@@ -66,11 +66,11 @@ jobs:
             *) echo "::error::tag '$tag' is not mcp-vX.Y.Z"; exit 1 ;;
           esac
           version="${tag#mcp-v}"
-          semver='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
-          if ! printf '%s' "$version" | grep -Eq "$semver"; then
-            echo "::error::tag '$tag' is not strict SemVer; version '$version' must be MAJOR.MINOR.PATCH[-prerelease][+build]"
-            exit 1
-          fi
+          # Strict-SemVer check via the one shared validator used by all three
+          # release workflows (mammoth-cli/scripts/validate_semver.sh), so the
+          # rule lives in exactly one place. This step runs from the repo root
+          # (working-directory: .).
+          bash mammoth-cli/scripts/validate_semver.sh "$version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Verify pyproject version matches tag
@@ -82,10 +82,75 @@ jobs:
             exit 1
           fi
 
+      # Real quality gates before publishing. `poetry install` provisions the
+      # runtime deps and the in-repo mammoth-io SDK (declared as a path
+      # dependency), so the tests exercise the code exactly as it will ship.
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Install test tooling (mammoth-mcp declares no dev group)
+        run: |
+          set -eu
+          # mammoth-mcp declares no dev dependency group, and its unit tests use
+          # @pytest.mark.asyncio, which needs pytest-asyncio. Neither pytest nor
+          # pytest-asyncio is declared by the package, so install them here,
+          # pinned, so the gate is deterministic.
+          poetry run pip install "pytest>=8,<9" "pytest-asyncio>=0.24,<0.25"
+
+      - name: Tests
+        # The unit suites run offline. The e2e/oauth suites self-skip when
+        # MCP_SERVER_URL and the Mammoth credentials are absent (see
+        # tests/conftest.py), so no live server is required in CI. mypy is NOT
+        # run: mammoth-mcp configures no mypy settings (no [tool.mypy], no
+        # mypy.ini); inventing config here would be out of scope.
+        run: poetry run pytest tests/ -q -p no:cacheprovider
+
       - name: Build distribution
         env:
           SOURCE_DATE_EPOCH: "1700000000"
         run: poetry build --output dist
+
+      # Install the freshly built wheel into a throwaway clean venv and smoke it,
+      # mirroring the build-and-verify discipline of cli-release.yml. The wheel's
+      # mammoth-io requirement is satisfied from a local wheelhouse holding the
+      # in-repo SDK wheel (PyPI does not yet carry the matching SDK release), so
+      # the first-party dependency needs no network; third-party deps resolve
+      # from PyPI.
+      #
+      # KNOWN PREREQUISITE (surfaced by this gate): mammoth-mcp/pyproject.toml
+      # declares mammoth-io as a path dependency (`{path = "..", develop =
+      # true}`), so `poetry build` emits `mammoth-io @ file:///<checkout>` into
+      # the wheel metadata. PyPI rejects direct-URL dependencies, and this direct
+      # reference makes the clean-venv install non-portable across machines.
+      # Before mammoth-mcp can actually be published, replace that path
+      # dependency with a PyPI version spec (as mammoth-cli does with
+      # `mammoth-io = ">=0.6.0,<0.7"`), installing the in-repo SDK editable first
+      # for local dev.
+      - name: Clean-venv install of the built wheel + smoke
+        env:
+          EXPECTED_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -eu
+          wheelhouse="$(mktemp -d)"
+          ( cd .. && poetry build --format wheel --output "$wheelhouse" )
+          venv="${RUNNER_TEMP}/mcp-smoke"
+          python -m venv "$venv"
+          "$venv/bin/pip" install --upgrade pip
+          "$venv/bin/pip" install --find-links "$wheelhouse" dist/mammoth_mcp-*.whl
+          "$venv/bin/python" <<'PY'
+          import os
+          import mammoth_mcp
+          from importlib.metadata import entry_points, version
+          expected = os.environ["EXPECTED_VERSION"]
+          assert mammoth_mcp.__version__ == expected, mammoth_mcp.__version__
+          assert version("mammoth-mcp") == expected, "installed wheel version mismatch"
+          # Import-time smoke only: main() starts the server and must NOT be run.
+          from mammoth_mcp.server import main
+          assert callable(main), "console entrypoint target not callable"
+          names = {e.name for e in entry_points(group="console_scripts")}
+          assert "mammoth-mcp" in names, "mammoth-mcp console script not registered"
+          print("mcp clean-venv smoke ok:", mammoth_mcp.__version__)
+          PY
 
       - name: Upload distribution artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

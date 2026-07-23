@@ -13,9 +13,10 @@ server prefix is optional and defaults to `app-eu`
 The CLI resolves credentials in this order:
 
 1. Explicit credentials given to the current command (secure prompt or stdin).
-2. Environment variables: `MAMMOTH_API_KEY`, `MAMMOTH_API_SECRET`,
-   `MAMMOTH_WORKSPACE_ID`, and optionally `MAMMOTH_SERVER_PREFIX` or
-   `MAMMOTH_BASE_URL`.
+2. Environment variables: `MAMMOTH_API_KEY`, `MAMMOTH_API_SECRET`, and
+   `MAMMOTH_WORKSPACE_ID` (all three required together), plus optionally
+   `MAMMOTH_SERVER_PREFIX`. Supplying only some of the three is rejected
+   (`incomplete_environment_auth`) instead of falling back to a profile.
 3. The selected profile, or the profile named by `--profile`.
 
 ## Profiles
@@ -31,11 +32,13 @@ Secrets are stored in the OS keyring, or in a permission-checked `0600` file
 when no keyring is available. A secret is never printed, logged, or included in
 any output envelope. Never pass a secret as an ordinary argument.
 
-## Server prefix and base URL
+## Server prefix
 
-Pass `--base-url` to point at a non-default runtime, or set a server prefix in
-the profile or `MAMMOTH_SERVER_PREFIX`. The invocation's own `--base-url` wins
-over any prefix.
+The endpoint is chosen by a one-label server prefix: pass `--server-prefix` to
+`mammoth auth login`, set it on the profile (`mammoth config set server_prefix
+...`), or supply `MAMMOTH_SERVER_PREFIX`. It defaults to `app-eu`
+(`https://app-eu.mammoth.io/api/v2`). There is no base-url override — the server
+prefix is the only supported endpoint input.
 
 ## Project context
 

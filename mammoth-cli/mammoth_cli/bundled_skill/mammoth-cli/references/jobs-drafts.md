@@ -1,13 +1,21 @@
 # Jobs, draft mode, and bulk replace
 
 ## Jobs
-Async operations return a job. Wait, then inspect:
-```bash
-mammoth job wait 55123 --output json --no-input
-mammoth job get 55123 --output json --no-input
-```
-A timeout returns exit code 7 with `recovery_commands` that re-wait or fetch the
-job. The `--job-timeout` / `--pipeline-timeout` options bound the wait.
+A command's `wait_policy` (visible via `mammoth schema get`) determines what
+happens with the job, so you do not have to guess:
+
+- `always_wait` and `start_or_wait` commands resolve the job for you and return
+  the final result. You do NOT wait manually.
+- Only a `returns_job` command normally needs you to wait on the job id
+  explicitly:
+  ```bash
+  mammoth job wait 55123 --output json --no-input
+  mammoth job get 55123 --output json --no-input
+  ```
+
+A timeout returns exit code 7 with `recovery_commands` in the envelope that
+re-wait or fetch the job — run those commands. The `--job-timeout` /
+`--pipeline-timeout` options bound the wait.
 
 ## Draft mode
 Batch several pipeline edits, then submit them together:

@@ -8,8 +8,26 @@ build a second HTTP client and does not call private SDK members.
 
 ## Status
 
-Under active development. See `docs/plans/add-cli-for-mammoth.md` in the
-repository root for the full plan.
+Stable. `mammoth-cli` 1.0.0 is a production release; the command surface and the
+machine-output contract are covered by the compatibility policy below.
+
+## Versioning & support
+
+`mammoth-cli` follows [Semantic Versioning](https://semver.org) for the 1.x
+series. Within the 1.x major line:
+
+- The machine-output and error-envelope contract is stable. `SCHEMA_VERSION`
+  (see `mammoth_cli/__init__.py`) identifies that contract and does not change
+  incompatibly within a major version; new fields may be added, but existing
+  fields and their meanings are preserved.
+- The CLI surface is stable: command names, subcommands, flags, and exit codes
+  are not removed or repurposed. New commands, flags, and output fields may be
+  added in minor releases.
+- Bug fixes ship in patch releases; additive, backward-compatible changes ship
+  in minor releases.
+
+Any breaking change to the machine-output contract or the CLI surface bumps the
+major version (2.0.0).
 
 ## Layout
 

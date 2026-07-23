@@ -36,6 +36,7 @@ CODE_INVALID_CONFIG_VALUE = "invalid_config_value"
 CODE_INVALID_INPUT_DOCUMENT = "invalid_input_document"
 CODE_INVALID_INPUT_FORMAT = "invalid_input_format"
 CODE_INVALID_WORKSPACE_ID = "invalid_workspace_id"
+CODE_INCOMPLETE_ENVIRONMENT_AUTH = "incomplete_environment_auth"
 CODE_INPUT_FORMAT_REQUIRED = "input_format_required"
 CODE_API_ERROR = "api_error"
 CODE_RESOURCE_NOT_FOUND = "resource_not_found"
@@ -88,8 +89,8 @@ def missing_project_error() -> CliError:
         exit_status=EXIT_USAGE,
         hint="Set an active project or pass --project.",
         recovery_commands=[
-            "mammoth project list --output json",
-            "mammoth context project use PROJECT_ID",
+            "mammoth project list --output json --no-input",
+            "mammoth context project use PROJECT_ID --output json --no-input",
         ],
     )
 
@@ -109,8 +110,8 @@ def timeout_error(*, job_id: str | None = None, command: str = "job") -> CliErro
     recovery: list[str] = []
     if job_id is not None:
         details["job_id"] = job_id
-        recovery.append(f"mammoth {command} wait {job_id} --output json")
-        recovery.append(f"mammoth {command} get {job_id} --output json")
+        recovery.append(f"mammoth {command} wait {job_id} --output json --no-input")
+        recovery.append(f"mammoth {command} get {job_id} --output json --no-input")
     return CliError(
         code="timeout",
         message="The operation did not finish before the timeout.",

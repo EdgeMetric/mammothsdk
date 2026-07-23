@@ -179,14 +179,6 @@ def _shared_option_params() -> list[inspect.Parameter]:
             Annotated[int | None, typer.Option("--project", help="Active project id override.")],
         ),
         opt(
-            "base_url",
-            None,
-            Annotated[
-                str | None,
-                typer.Option("--base-url", help="Expert runtime API base-url override."),
-            ],
-        ),
-        opt(
             "timeout",
             None,
             Annotated[float | None, typer.Option("--timeout", help="Per-request timeout seconds.")],

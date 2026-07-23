@@ -291,8 +291,7 @@ def _run_login(
             exit_status=EXIT_USAGE,
         )
 
-    endpoint_prefix = None if invocation.base_url is not None else effective_prefix
-    resolved_base_url = resolve_base_url(endpoint_prefix, invocation.base_url)
+    resolved_base_url = resolve_base_url(effective_prefix)
 
     resolved_auth = ResolvedAuth(
         api_key=api_key,
@@ -309,13 +308,10 @@ def _run_login(
     profile_name = invocation.profile or profiles.DEFAULT_PROFILE_NAME
     profiles.validate_profile_name(profile_name)
     existing = profiles.get_profile(profile_name)
-    stored_prefix = effective_prefix if invocation.base_url is None else None
-    stored_base_url = invocation.base_url if invocation.base_url is not None else None
     record = profiles.ProfileRecord(
         name=profile_name,
         workspace_id=effective_workspace,
-        server_prefix=stored_prefix,
-        base_url=stored_base_url,
+        server_prefix=effective_prefix,
         project_id=existing.project_id if existing is not None else None,
     )
     profiles.save_profile(record)
@@ -341,7 +337,6 @@ def auth_login(
     output: str = go.output_option(),
     profile: str | None = go.profile_option(),
     project: int | None = go.project_option(),
-    base_url: str | None = go.base_url_option(),
     timeout: float | None = go.timeout_option(),
     job_timeout: float | None = go.job_timeout_option(),
     pipeline_timeout: float | None = go.pipeline_timeout_option(),
@@ -379,7 +374,6 @@ def auth_login(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,
@@ -410,12 +404,10 @@ def _run_status(invocation: Invocation, *, check: bool) -> tuple[dict[str, Any],
     has_creds = credentials.has_credentials(profile_name)
 
     if record is not None:
-        endpoint_prefix = None if invocation.base_url is not None else record.server_prefix
-        endpoint_base = invocation.base_url if invocation.base_url is not None else record.base_url
-        endpoint = resolve_base_url(endpoint_prefix, endpoint_base)
+        endpoint = resolve_base_url(record.server_prefix)
         workspace_id: int | None = record.workspace_id
     else:
-        endpoint = resolve_base_url(None, invocation.base_url)
+        endpoint = resolve_base_url(None)
         workspace_id = None
 
     data: dict[str, Any] = {
@@ -444,7 +436,6 @@ def auth_status(
     output: str = go.output_option(),
     profile: str | None = go.profile_option(),
     project: int | None = go.project_option(),
-    base_url: str | None = go.base_url_option(),
     timeout: float | None = go.timeout_option(),
     job_timeout: float | None = go.job_timeout_option(),
     pipeline_timeout: float | None = go.pipeline_timeout_option(),
@@ -465,7 +456,6 @@ def auth_status(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,
@@ -536,7 +526,6 @@ def auth_logout(
     output: str = go.output_option(),
     profile: str | None = go.profile_option(),
     project: int | None = go.project_option(),
-    base_url: str | None = go.base_url_option(),
     timeout: float | None = go.timeout_option(),
     job_timeout: float | None = go.job_timeout_option(),
     pipeline_timeout: float | None = go.pipeline_timeout_option(),
@@ -558,7 +547,6 @@ def auth_logout(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,

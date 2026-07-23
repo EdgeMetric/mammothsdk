@@ -35,15 +35,6 @@ def test_save_and_get_profile_roundtrip(isolated_cli_config: Path) -> None:
     assert loaded == record
 
 
-def test_save_profile_rejects_conflicting_endpoint(isolated_cli_config: Path) -> None:
-    record = profiles.ProfileRecord(
-        name="default", workspace_id=4, server_prefix="release", base_url="https://x/api/v2"
-    )
-    with pytest.raises(CliError) as excinfo:
-        profiles.save_profile(record)
-    assert excinfo.value.code == "conflicting_endpoint"
-
-
 def test_list_profiles_sorted(isolated_cli_config: Path) -> None:
     profiles.save_profile(profiles.ProfileRecord(name="zeta", workspace_id=1))
     profiles.save_profile(profiles.ProfileRecord(name="alpha", workspace_id=2))

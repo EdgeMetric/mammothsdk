@@ -126,6 +126,25 @@ def test_prerelease_uv_is_rejected(tmp_path: Path) -> None:
 
 @pytest.mark.skipif(_SH is None, reason="POSIX sh not available")
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX installer test")
+@pytest.mark.parametrize("malformed_version", [".11.30", "0.11.", "0.11..30"])
+def test_malformed_dotted_uv_is_rejected(tmp_path: Path, malformed_version: str) -> None:
+    """A malformed dotted version must NOT satisfy the pin.
+
+    A leading-empty (``.11.30``), trailing-empty (``0.11.``), or empty-middle
+    (``0.11..30``) component is not a well-formed ``MAJOR.MINOR.PATCH`` version.
+    The gate must refuse it — regardless of what its non-empty fields would
+    compare to — so the installer bootstraps its own pinned uv (download stubbed
+    to fail here) instead of trusting a garbage version string.
+    """
+    result, log_file = _run_local(tmp_path, malformed_version)
+    assert result.returncode != 0, f"stdout={result.stdout!r} stderr={result.stderr!r}"
+    assert "installing pinned uv" in result.stderr
+    assert "could not download uv" in result.stderr
+    assert not _build_lines(log_file), "installer must not build with a malformed uv version"
+
+
+@pytest.mark.skipif(_SH is None, reason="POSIX sh not available")
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX installer test")
 @pytest.mark.parametrize("clean_version", ["0.11.30", "0.12.0"])
 def test_clean_uv_at_or_above_pin_is_accepted(tmp_path: Path, clean_version: str) -> None:
     """A clean final uv at or above the pin is trusted and used directly."""

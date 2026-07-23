@@ -5,9 +5,15 @@ prefix (default `app-eu`, resolving to `https://app-eu.mammoth.io/api/v2`).
 
 ## Precedence
 1. Explicit credentials given to the current command (secure prompt or stdin).
-2. Environment: `MAMMOTH_API_KEY`, `MAMMOTH_API_SECRET`, `MAMMOTH_WORKSPACE_ID`,
-   optional `MAMMOTH_SERVER_PREFIX` / `MAMMOTH_BASE_URL`.
+2. Environment: `MAMMOTH_API_KEY`, `MAMMOTH_API_SECRET`, `MAMMOTH_WORKSPACE_ID`
+   (all three required together), plus optional `MAMMOTH_SERVER_PREFIX`. Setting
+   only some of the three is rejected (`incomplete_environment_auth`) rather than
+   falling back to a saved profile.
 3. The selected or `--profile` profile's saved credentials.
+
+The only supported configuration is the API key, API secret, workspace id, and
+an optional one-label server prefix (default `app-eu`). There is no base-url
+override.
 
 ## Commands
 ```bash

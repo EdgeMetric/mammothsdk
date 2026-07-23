@@ -1,8 +1,8 @@
 """Bespoke `config` command family: get, set, list, path.
 
 Manages non-secret, profile-scoped configuration: the default output mode,
-the timeout family, the server prefix or expert base url, and the active
-project id. All local; no command in this family makes a network call.
+the timeout family, the one-label server prefix, and the active project id.
+All local; no command in this family makes a network call.
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from mammoth_cli.runtime.invocation import Invocation
 #: The timeout-family setting keys, shared between the settable-key registry
 #: and the numeric-parsing branch below.
 _TIMEOUT_KEYS = ("timeout", "job_timeout", "pipeline_timeout")
-_PROFILE_KEYS = ("server_prefix", "base_url", "project")
+_PROFILE_KEYS = ("server_prefix", "project")
 _SETTING_KEYS = ("output", *_TIMEOUT_KEYS)
 ALL_CONFIG_KEYS = tuple(sorted(_PROFILE_KEYS + _SETTING_KEYS))
 
@@ -68,9 +68,7 @@ def _get_value(profile_name: str, key: str) -> str | int | None:
         return None
     if key == "project":
         return record.project_id
-    if key == "server_prefix":
-        return record.server_prefix
-    return record.base_url
+    return record.server_prefix
 
 
 def _require_profile(profile_name: str) -> profiles.ProfileRecord:
@@ -131,34 +129,19 @@ def _set_value(profile_name: str, key: str, value: str) -> str | int | float:
                 name=existing.name,
                 workspace_id=existing.workspace_id,
                 server_prefix=existing.server_prefix,
-                base_url=existing.base_url,
                 project_id=project_id,
             )
         )
         return project_id
 
     if key == "server_prefix":
-        resolve_base_url(value, None)
+        resolve_base_url(value)
         existing = _require_profile(profile_name)
         profiles.save_profile(
             profiles.ProfileRecord(
                 name=existing.name,
                 workspace_id=existing.workspace_id,
                 server_prefix=value,
-                base_url=None,
-                project_id=existing.project_id,
-            )
-        )
-        return value
-
-    if key == "base_url":
-        existing = _require_profile(profile_name)
-        profiles.save_profile(
-            profiles.ProfileRecord(
-                name=existing.name,
-                workspace_id=existing.workspace_id,
-                server_prefix=None,
-                base_url=value,
                 project_id=existing.project_id,
             )
         )
@@ -171,7 +154,6 @@ def config_get(
     output: str = go.output_option(),
     profile: str | None = go.profile_option(),
     project: int | None = go.project_option(),
-    base_url: str | None = go.base_url_option(),
     timeout: float | None = go.timeout_option(),
     job_timeout: float | None = go.job_timeout_option(),
     pipeline_timeout: float | None = go.pipeline_timeout_option(),
@@ -189,7 +171,6 @@ def config_get(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,
@@ -214,7 +195,6 @@ def config_set(
     output: str = go.output_option(),
     profile: str | None = go.profile_option(),
     project: int | None = go.project_option(),
-    base_url: str | None = go.base_url_option(),
     timeout: float | None = go.timeout_option(),
     job_timeout: float | None = go.job_timeout_option(),
     pipeline_timeout: float | None = go.pipeline_timeout_option(),
@@ -233,7 +213,6 @@ def config_set(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,
@@ -258,7 +237,6 @@ def config_list(
     output: str = go.output_option(),
     profile: str | None = go.profile_option(),
     project: int | None = go.project_option(),
-    base_url: str | None = go.base_url_option(),
     timeout: float | None = go.timeout_option(),
     job_timeout: float | None = go.job_timeout_option(),
     pipeline_timeout: float | None = go.pipeline_timeout_option(),
@@ -275,7 +253,6 @@ def config_list(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,
@@ -299,7 +276,6 @@ def config_path(
     output: str = go.output_option(),
     profile: str | None = go.profile_option(),
     project: int | None = go.project_option(),
-    base_url: str | None = go.base_url_option(),
     timeout: float | None = go.timeout_option(),
     job_timeout: float | None = go.job_timeout_option(),
     pipeline_timeout: float | None = go.pipeline_timeout_option(),
@@ -316,7 +292,6 @@ def config_path(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,

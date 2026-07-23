@@ -58,7 +58,6 @@ def context_project_status(
     output: str = go.output_option(),
     profile: str | None = go.profile_option(),
     project: int | None = go.project_option(),
-    base_url: str | None = go.base_url_option(),
     timeout: float | None = go.timeout_option(),
     job_timeout: float | None = go.job_timeout_option(),
     pipeline_timeout: float | None = go.pipeline_timeout_option(),
@@ -75,7 +74,6 @@ def context_project_status(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,
@@ -109,7 +107,6 @@ def _run_use(invocation: Invocation, *, project_id: int) -> tuple[dict[str, Any]
             name=existing.name,
             workspace_id=existing.workspace_id,
             server_prefix=existing.server_prefix,
-            base_url=existing.base_url,
             project_id=project_id,
         )
     )
@@ -121,7 +118,6 @@ def context_project_use(
     output: str = go.output_option(),
     profile: str | None = go.profile_option(),
     project: int | None = go.project_option(),
-    base_url: str | None = go.base_url_option(),
     timeout: float | None = go.timeout_option(),
     job_timeout: float | None = go.job_timeout_option(),
     pipeline_timeout: float | None = go.pipeline_timeout_option(),
@@ -139,7 +135,6 @@ def context_project_use(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,
@@ -166,7 +161,6 @@ def _run_clear(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
                 name=existing.name,
                 workspace_id=existing.workspace_id,
                 server_prefix=existing.server_prefix,
-                base_url=existing.base_url,
                 project_id=None,
             )
         )
@@ -178,7 +172,6 @@ def context_project_clear(
     output: str = go.output_option(),
     profile: str | None = go.profile_option(),
     project: int | None = go.project_option(),
-    base_url: str | None = go.base_url_option(),
     timeout: float | None = go.timeout_option(),
     job_timeout: float | None = go.job_timeout_option(),
     pipeline_timeout: float | None = go.pipeline_timeout_option(),
@@ -195,7 +188,6 @@ def context_project_clear(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,

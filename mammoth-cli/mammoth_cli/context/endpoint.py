@@ -1,9 +1,9 @@
-"""Resolve the Mammoth API base url from a server prefix or an expert override.
+"""Resolve the Mammoth API base url from a server prefix.
 
-A server prefix is the only endpoint input most users need; it maps to
-``https://PREFIX.mammoth.io/api/v2`` with default ``app-eu``. An expert
-``base-url`` is a separate, non-authentication runtime override for custom
-deployments. A profile or command cannot set both at once.
+A server prefix is the only endpoint input the CLI exposes; it maps to
+``https://PREFIX.mammoth.io/api/v2`` with default ``app-eu``. There is no
+public base-url override: the supported configuration surface is exactly the
+API key, API secret, workspace id, and this optional one-label server prefix.
 """
 
 from __future__ import annotations
@@ -37,40 +37,20 @@ def invalid_server_prefix_error(prefix: str) -> CliError:
     )
 
 
-def conflicting_endpoint_error() -> CliError:
-    """Build the stable error for a server-prefix/base-url conflict.
-
-    Returns:
-        A ``conflicting_endpoint`` :class:`CliError` (exit status 2).
-    """
-    return CliError(
-        code="conflicting_endpoint",
-        message="A profile or command cannot set both --server-prefix and --base-url.",
-        exit_status=EXIT_USAGE,
-        hint="Pass only one of --server-prefix or --base-url.",
-    )
-
-
-def resolve_base_url(server_prefix: str | None, base_url: str | None) -> str:
-    """Resolve the API base url from a server prefix or an expert base url.
+def resolve_base_url(server_prefix: str | None) -> str:
+    """Resolve the API base url from a server prefix.
 
     Args:
         server_prefix: A one-label server prefix (for example ``"app-eu"``),
-            or None to use the default.
-        base_url: An expert base-url override, or None.
+            or None to use the default ``app-eu``.
 
     Returns:
         The resolved API base url.
 
     Raises:
-        CliError: ``conflicting_endpoint`` when both arguments are given;
-            ``invalid_server_prefix`` when the prefix is not one valid DNS
-            label.
+        CliError: ``invalid_server_prefix`` when the prefix is not one valid
+            DNS label.
     """
-    if server_prefix is not None and base_url is not None:
-        raise conflicting_endpoint_error()
-    if base_url is not None:
-        return base_url
     prefix = server_prefix if server_prefix is not None else DEFAULT_SERVER_PREFIX
     if not _DNS_LABEL_RE.match(prefix):
         raise invalid_server_prefix_error(prefix)

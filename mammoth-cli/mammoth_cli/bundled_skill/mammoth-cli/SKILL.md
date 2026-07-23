@@ -78,8 +78,8 @@ mammoth view transform bulk-replace VIEW_ID \
   `replace`.
 - `match_case` defaults to `true`; `match_words` defaults to `false`.
 - `condition` is optional (restrict the rows the replacement touches).
-- Run `mammoth schema get view.transform.bulk-replace --output json` for the full
-  request shape.
+- Run `mammoth schema get view.transform.bulk-replace --output json --no-input`
+  for the full request shape.
 
 ## Safe mutations
 

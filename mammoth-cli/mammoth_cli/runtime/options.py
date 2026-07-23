@@ -43,14 +43,6 @@ def project_option() -> int | None:
     return cast(int | None, typer.Option(None, "--project", help="Active project id override."))
 
 
-def base_url_option() -> str | None:
-    """Return the shared ``--base-url`` option definition."""
-    return cast(
-        str | None,
-        typer.Option(None, "--base-url", help="Expert runtime API base-url override."),
-    )
-
-
 def timeout_option() -> float | None:
     """Return the shared ``--timeout`` option definition."""
     return cast(float | None, typer.Option(None, "--timeout", help="Per-request timeout seconds."))
@@ -129,7 +121,6 @@ def make_invocation(
     output: str,
     profile: str | None,
     project: int | None,
-    base_url: str | None,
     timeout: float | None,
     job_timeout: float | None,
     pipeline_timeout: float | None,
@@ -149,7 +140,6 @@ def make_invocation(
         output: The resolved ``--output`` value.
         profile: The resolved ``--profile`` value.
         project: The resolved ``--project`` value.
-        base_url: The resolved ``--base-url`` value.
         timeout: The resolved ``--timeout`` value.
         job_timeout: The resolved ``--job-timeout`` value.
         pipeline_timeout: The resolved ``--pipeline-timeout`` value.
@@ -168,7 +158,6 @@ def make_invocation(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,

@@ -1,6 +1,6 @@
 """Non-secret profile store.
 
-Stores named profiles (workspace id, server prefix or expert base url, active
+Stores named profiles (workspace id, optional one-label server prefix, active
 project id) and profile-scoped settings (output mode, timeouts) in
 ``platformdirs.user_config_dir("mammoth-cli", "Mammoth")/profiles.toml``,
 plus a top-level ``selected`` profile pointer. Secrets never live here; see
@@ -23,7 +23,6 @@ import platformdirs
 import tomlkit
 from tomlkit import TOMLDocument
 
-from mammoth_cli.context.endpoint import conflicting_endpoint_error
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 
 PROFILE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
@@ -38,16 +37,13 @@ class ProfileRecord:
     Attributes:
         name: The profile name.
         workspace_id: The Mammoth workspace id.
-        server_prefix: A one-label server prefix, or None.
-        base_url: An expert base-url override, or None. Mutually exclusive
-            with ``server_prefix``.
+        server_prefix: A one-label server prefix, or None (default ``app-eu``).
         project_id: The active project id, or None.
     """
 
     name: str
     workspace_id: int
     server_prefix: str | None = None
-    base_url: str | None = None
     project_id: int | None = None
 
 
@@ -130,7 +126,6 @@ def load_profiles() -> dict[str, ProfileRecord]:
             name=str(name),
             workspace_id=int(value["workspace_id"]),
             server_prefix=value.get("server_prefix"),
-            base_url=value.get("base_url"),
             project_id=value.get("project_id"),
         )
     return result
@@ -158,13 +153,9 @@ def save_profile(record: ProfileRecord) -> None:
             record with the same name.
 
     Raises:
-        CliError: ``invalid_profile_name`` for a malformed name;
-            ``conflicting_endpoint`` when both ``server_prefix`` and
-            ``base_url`` are set.
+        CliError: ``invalid_profile_name`` for a malformed name.
     """
     validate_profile_name(record.name)
-    if record.server_prefix is not None and record.base_url is not None:
-        raise conflicting_endpoint_error()
     document = _load_document()
     table = document.get("profiles")
     if table is None:
@@ -174,8 +165,6 @@ def save_profile(record: ProfileRecord) -> None:
     entry["workspace_id"] = record.workspace_id
     if record.server_prefix is not None:
         entry["server_prefix"] = record.server_prefix
-    if record.base_url is not None:
-        entry["base_url"] = record.base_url
     if record.project_id is not None:
         entry["project_id"] = record.project_id
     table[record.name] = entry

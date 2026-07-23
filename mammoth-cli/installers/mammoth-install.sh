@@ -107,10 +107,16 @@ detect_platform() {
 uv_version_ge() {
     _a="$1"
     _b="$2"
-    # Reject any version that is not purely dotted digits (a prerelease or build
-    # suffix makes it fail the pin regardless of its numeric fields).
+    # Reject any version that is not a well-formed dotted-digit string. A
+    # prerelease or build suffix (e.g. "0.11.30rc1", "0.11.30-alpha",
+    # "0.11.30+build") fails the pin regardless of its numeric fields. A
+    # malformed dotted form must also be rejected: each dot-separated component
+    # must be a non-empty run of digits, so a leading-empty (".11.30"),
+    # trailing-empty ("0.11.") or empty-middle ("0.11..30") component is refused
+    # rather than silently treated as a zero field.
     case "$_a" in
         ''|*[!0-9.]*) return 1 ;;
+        .*|*.|*..*) return 1 ;;
     esac
     while [ -n "$_a" ] || [ -n "$_b" ]; do
         _af="${_a%%.*}"

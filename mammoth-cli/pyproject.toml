@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mammoth-cli"
-version = "0.1.0"
+version = "1.0.0"
 description = "Command-line interface for the Mammoth Analytics platform"
 authors = ["Mammoth Analytics <support@mammoth.io>"]
 readme = "README.md"
@@ -20,7 +20,7 @@ include = [
     { path = "spec/manifests/**/*", format = ["sdist", "wheel"] },
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "License :: Other/Proprietary License",
