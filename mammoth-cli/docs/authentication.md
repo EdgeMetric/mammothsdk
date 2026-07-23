@@ -5,8 +5,8 @@
 ## Required and optional inputs
 
 Authentication needs an API key, an API secret, and a workspace id. A one-label
-server prefix is optional and defaults to `app-eu`
-(`https://app-eu.mammoth.io/api/v2`).
+server prefix is optional and defaults to `app`
+(`https://app.mammoth.io/api/v2`).
 
 ## Precedence
 
@@ -36,8 +36,8 @@ any output envelope. Never pass a secret as an ordinary argument.
 
 The endpoint is chosen by a one-label server prefix: pass `--server-prefix` to
 `mammoth auth login`, set it on the profile (`mammoth config set server_prefix
-...`), or supply `MAMMOTH_SERVER_PREFIX`. It defaults to `app-eu`
-(`https://app-eu.mammoth.io/api/v2`). There is no base-url override — the server
+...`), or supply `MAMMOTH_SERVER_PREFIX`. It defaults to `app`
+(`https://app.mammoth.io/api/v2`). There is no base-url override — the server
 prefix is the only supported endpoint input.
 
 ## Project context

@@ -1,7 +1,7 @@
 """Bespoke `auth` command family: login, status, logout.
 
 Authentication has exactly three required inputs (API key, API secret,
-workspace id) and one optional input (server prefix, default ``app-eu``).
+workspace id) and one optional input (server prefix, default ``app``).
 These commands never accept a secret as an ordinary command-line value: the
 API key and secret come from a hidden TTY prompt, the four documented
 ``MAMMOTH_*`` environment variables, or a permission-checked JSON/YAML
@@ -353,7 +353,7 @@ def auth_login(
         help="Workspace id. Required unless --from-env or --input supplies it.",
     ),
     server_prefix: str | None = typer.Option(
-        None, "--server-prefix", help="Server prefix (one DNS label). Default 'app-eu'."
+        None, "--server-prefix", help="Server prefix (one DNS label). Default 'app'."
     ),
     storage: str = typer.Option(
         "auto", "--storage", help="Credential storage backend.", metavar="auto|keyring|file"

@@ -32,7 +32,7 @@ PROFILES_FILENAME = "profiles.toml"
 # A canonical Mammoth endpoint, e.g. ``https://release.mammoth.io/api/v2``. A
 # legacy profile that stored such a base url is migrated to its server prefix on
 # load; any other stored base url is unsupported and rejected explicitly rather
-# than silently dropped (which would redirect the profile to the app-eu
+# than silently dropped (which would redirect the profile to the app
 # default). The trailing ``/api/v2`` and optional slash mirror
 # :func:`mammoth_cli.context.endpoint.resolve_base_url`.
 _CANONICAL_BASE_URL_RE = re.compile(
@@ -67,7 +67,7 @@ def _server_prefix_from_legacy_base_url(profile_name: str, base_url: str) -> str
         exit_status=EXIT_USAGE,
         hint=(
             f"Edit {profiles_path()}: remove the profile's base_url and set a "
-            "one-label server_prefix (for example server_prefix = 'app-eu')."
+            "one-label server_prefix (for example server_prefix = 'app')."
         ),
     )
 
@@ -79,7 +79,7 @@ class ProfileRecord:
     Attributes:
         name: The profile name.
         workspace_id: The Mammoth workspace id.
-        server_prefix: A one-label server prefix, or None (default ``app-eu``).
+        server_prefix: A one-label server prefix, or None (default ``app``).
         project_id: The active project id, or None.
     """
 
@@ -168,7 +168,7 @@ def _parse_profile(name: str, value: Any) -> ProfileRecord:
     if legacy_base_url is not None and server_prefix is None:
         # Migrate a legacy base_url to its server prefix, or reject it. This
         # must not be silently ignored: dropping it would redirect the
-        # profile to the app-eu default endpoint.
+        # profile to the app default endpoint.
         server_prefix = _server_prefix_from_legacy_base_url(name, str(legacy_base_url))
     return ProfileRecord(
         name=name,

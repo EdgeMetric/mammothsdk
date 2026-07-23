@@ -31,7 +31,7 @@ mammoth doctor --output json --no-input        # verify credentials + endpoint
 ```
 
 Credentials resolve in this order: explicit login, then environment, then the
-saved profile. The endpoint defaults to the `app-eu` server prefix. See
+saved profile. The endpoint defaults to the `app` server prefix. See
 [references/auth.md](references/auth.md).
 
 ## Select a project

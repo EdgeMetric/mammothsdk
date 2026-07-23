@@ -39,7 +39,7 @@ def test_legacy_canonical_base_url_migrates_to_server_prefix(isolated_cli_config
     """A legacy canonical base_url is migrated to its server prefix on load.
 
     Dropping it (the previous behavior) would silently redirect the profile to
-    the app-eu default endpoint.
+    the app default endpoint.
     """
     _write_raw_profiles(
         'selected = "default"\n\n'

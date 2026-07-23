@@ -1,7 +1,7 @@
 # Authentication and profiles
 
 Required: API key, API secret, workspace id. Optional: a one-label server
-prefix (default `app-eu`, resolving to `https://app-eu.mammoth.io/api/v2`).
+prefix (default `app`, resolving to `https://app.mammoth.io/api/v2`).
 
 ## Precedence
 1. Explicit credentials given to the current command (secure prompt or stdin).
@@ -12,7 +12,7 @@ prefix (default `app-eu`, resolving to `https://app-eu.mammoth.io/api/v2`).
 3. The selected or `--profile` profile's saved credentials.
 
 The only supported configuration is the API key, API secret, workspace id, and
-an optional one-label server prefix (default `app-eu`). There is no base-url
+an optional one-label server prefix (default `app`). There is no base-url
 override.
 
 ## Commands

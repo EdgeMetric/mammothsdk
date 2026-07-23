@@ -6,7 +6,7 @@ The product requirement is that a caller configures the CLI with exactly:
 * an API key,
 * an API secret,
 * a workspace id, and
-* an OPTIONAL one-label server prefix (default ``app-eu``).
+* an OPTIONAL one-label server prefix (default ``app``).
 
 Historically an expert ``base-url`` override leaked into the public surface as a
 ``--base-url`` option, a ``MAMMOTH_BASE_URL`` environment variable, and a

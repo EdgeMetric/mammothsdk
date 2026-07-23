@@ -3,7 +3,7 @@
 Precedence, per the product contract: explicit secure input to the current
 command, then environment variables, then the selected or ``--profile``
 profile's saved credentials. The API endpoint additionally falls back to the
-``app-eu`` default when nothing supplies a server prefix. Project context
+``app`` default when nothing supplies a server prefix. Project context
 resolves separately: ``--project`` overrides the saved profile project id,
 which overrides no project at all.
 
@@ -142,7 +142,7 @@ def _require_positive_workspace(workspace_id: int, *, source: str) -> int:
 
 
 def _endpoint(server_prefix: str | None) -> str:
-    """Resolve one endpoint from a server prefix (default ``app-eu``)."""
+    """Resolve one endpoint from a server prefix (default ``app``)."""
     return resolve_base_url(server_prefix)
 
 
