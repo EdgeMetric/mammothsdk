@@ -3,7 +3,7 @@
 Generated from the reviewed command manifests for mammoth-cli 1.0.0.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 
-Total commands: 504.
+Total commands: 505.
 
 ## activity
 
@@ -3478,6 +3478,15 @@ Total commands: 504.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.trash.TrashAPI.restore`
 - Agent example: `mammoth trash restore --input '{"items": [{"example": "example"}]}' --output json --no-input`
+
+## upgrade
+
+### `mammoth upgrade`
+
+- Mutation class: `external_effect`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth_cli.commands.upgrade.run`
+- Agent example: `mammoth upgrade --output json --no-input`
 
 ## user
 

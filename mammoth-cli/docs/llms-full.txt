@@ -819,6 +819,11 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth trash restore` [benign_mutation/none] -> mammoth.api.trash.TrashAPI.restore
   example: mammoth trash restore --input '{"items": [{"example": "example"}]}' --output json --no-input
 
+## upgrade
+
+- `mammoth upgrade` [external_effect/prompt_or_yes] -> mammoth_cli.commands.upgrade.run
+  example: mammoth upgrade --output json --no-input
+
 ## user
 
 - `mammoth user avatar delete` [destructive/prompt_or_yes] -> mammoth.api.users.UsersAPI.avatar_delete

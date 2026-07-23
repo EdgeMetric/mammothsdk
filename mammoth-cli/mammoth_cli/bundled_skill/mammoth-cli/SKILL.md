@@ -107,3 +107,14 @@ mammoth capability list --output json --no-input     # every operation
 mammoth schema list --output json --no-input         # every command's schema
 mammoth schema get view.transform.filter --output json --no-input
 ```
+
+## Keep the CLI current
+
+```bash
+mammoth upgrade --check --output json --no-input      # read-only: installed vs latest on PyPI
+mammoth upgrade --yes --output json --no-input         # upgrade in place (requires --yes when non-interactive)
+```
+
+`mammoth upgrade` detects how the CLI was installed (uv tool, pipx, or pip) and
+upgrades it; `--check` changes nothing. Pin an exact release with
+`--version X.Y.Z`.
