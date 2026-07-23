@@ -50,13 +50,19 @@ jobs:
         with:
           virtualenvs-create: false
 
+      # Fail fast if poetry.lock has drifted from pyproject.toml. The lock pins
+      # the CLI's resolved dependency tree for reproducible release builds.
+      - name: Verify poetry.lock is consistent with pyproject
+        run: poetry check --lock
+
       - name: Install in-repo SDK, CLI, and dev tools
         run: |
           python -m pip install --upgrade pip
-          # The in-repo SDK provides mammoth-io 0.6.0 (not yet on PyPI); install
-          # it editable FIRST so the CLI's `mammoth-io>=0.6.0,<0.7` constraint
-          # resolves against it instead of PyPI (which only has 0.5.1). The
-          # shipped wheel still declares the published dependency.
+          # Install the in-repo SDK editable FIRST so the CLI's
+          # `mammoth-io>=0.6.0,<0.7` constraint resolves against the code in this
+          # checkout (the exact SDK being shipped alongside), not whatever PyPI
+          # currently serves. The shipped wheel still declares the published
+          # PyPI dependency.
           pip install -e ..
           pip install -e .
           # Dev tooling; names read from pyproject so this list cannot drift.

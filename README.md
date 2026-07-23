@@ -739,3 +739,8 @@ pip install mammoth-mcp
 ```
 
 See the [mammoth-mcp](https://github.com/EdgeMetric/mm-pysdk/tree/main/mammoth-mcp) directory for configuration and usage details.
+
+## Releasing
+
+Maintainer release process (SDK + CLI, PyPI + GitHub releases, tag-triggered CI
+and the local fallback) is documented in [RELEASING.md](RELEASING.md).
