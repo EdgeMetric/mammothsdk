@@ -2,54 +2,62 @@
 
 [Documentation index](llms.txt)
 
-## 1. Provide credentials
+This guide takes you from zero to a safe change in five minutes.
+
+Output defaults to `auto`. A terminal gets a readable table. A pipe or redirect gets JSON. So the human examples below need no output flag.
+
+## Log in
 
 ```bash
-export MAMMOTH_API_KEY=...
-export MAMMOTH_API_SECRET=...
-export MAMMOTH_WORKSPACE_ID=4
+mammoth auth login -w 4
 ```
 
-Or run `mammoth auth login` to store them in the OS keyring. See
-[authentication](authentication.md).
+The command prompts for your API key and secret. Both stay hidden as you type.
 
-## 2. Verify the environment
+Agents and CI use a file instead. Run `mammoth auth login --input creds.json`. See [authentication](authentication.md).
+
+## Verify
 
 ```bash
-mammoth doctor --output json --no-input
+mammoth doctor
 ```
 
-Exit code `0` means credentials resolve and an authenticated request succeeds.
+Exit code `0` means your credentials resolve and a request succeeds.
 
-## 3. Pick a project
+## Pick a project
 
 ```bash
-mammoth project list --output json --no-input
-mammoth context project use 180 --output json --no-input
+mammoth project list
+mammoth context project use 180
 ```
 
-## 4. Read something
+The saved project applies to later commands. You can still pass `--project ID` to override it.
+
+## Read something
 
 ```bash
-mammoth dataset list --project 180 --output json --no-input
-mammoth folder list --project 180 --output json --no-input
+mammoth dataset list --project 180
+mammoth folder list --project 180
 ```
 
-## 5. Make a change, safely
+## Make a change safely
 
 ```bash
-mammoth folder create Reports --project 180 --output json --no-input
-mammoth folder delete 7 --project 180 --output json --no-input --yes
+mammoth folder create Reports --project 180
+mammoth folder delete 7 --project 180 --yes
 ```
 
-Destructive commands need `--yes`; high-impact commands also need
-`--confirm TARGET`. See [safety](safety.md).
+Destructive commands need `--yes`. High-impact commands also need `--confirm TARGET`. See [safety](safety.md).
 
 ## Discover everything
 
 ```bash
-mammoth capability list --output json --no-input
-mammoth schema get folder.create --output json --no-input
+mammoth capability list
+mammoth schema get folder.create
 ```
 
 See the full [command reference](reference/commands.md).
+
+## Force JSON anywhere
+
+Add `--output json` to any command to get the JSON envelope in a terminal. A pipe or redirect already gives you JSON without the flag.

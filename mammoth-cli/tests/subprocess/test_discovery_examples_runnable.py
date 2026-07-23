@@ -23,12 +23,6 @@ import sys
 
 import pytest
 
-from mammoth_cli.context.resolver import (
-    ENV_API_KEY,
-    ENV_API_SECRET,
-    ENV_SERVER_PREFIX,
-    ENV_WORKSPACE_ID,
-)
 from mammoth_cli.manifest.loader import command_by_id
 
 pytestmark = pytest.mark.subprocess
@@ -53,7 +47,14 @@ def _normalize(text: str) -> str:
 # network, no credentials, no filesystem mutation -- so their advertised example
 # must run to exit zero anywhere, including a clean machine.
 _DISCOVERY_COMMANDS = ["schema.list", "schema.get", "capability.list", "capability.get"]
-_MAMMOTH_ENV = (ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID, ENV_SERVER_PREFIX)
+# Ambient Mammoth credentials are stripped so each subprocess starts logged out.
+# There is no environment credential path; these names are cleared for hygiene.
+_MAMMOTH_ENV = (
+    "MAMMOTH_API_KEY",
+    "MAMMOTH_API_SECRET",
+    "MAMMOTH_WORKSPACE_ID",
+    "MAMMOTH_SERVER_PREFIX",
+)
 
 
 def _clean_env() -> dict[str, str]:

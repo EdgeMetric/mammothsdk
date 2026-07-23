@@ -11,31 +11,42 @@ import pytest
 
 from mammoth_cli.commands import auth as auth_cmd
 from mammoth_cli.context import credentials, profiles
-from mammoth_cli.context.resolver import (
-    ENV_API_KEY,
-    ENV_API_SECRET,
-    ENV_SERVER_PREFIX,
-    ENV_WORKSPACE_ID,
-)
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import make_runner
 
-ENV = {
-    ENV_API_KEY: "env-key-value",
-    ENV_API_SECRET: "env-secret-value",
-    ENV_WORKSPACE_ID: "4",
-    ENV_SERVER_PREFIX: "release",
-}
+
+def _write_login_doc(tmp_path: Path, **fields: object) -> Path:
+    """Write a permission-safe login document (owner read/write only)."""
+    doc = tmp_path / "login.json"
+    doc.write_text(json.dumps(fields), encoding="utf-8")
+    os.chmod(doc, stat.S_IRUSR | stat.S_IWUSR)
+    return doc
 
 
-def test_login_from_env_no_input_succeeds(
-    isolated_cli_config: Path, fake_service: FakeMammothService
+def _saved_login(*, server_prefix: str | None = None) -> None:
+    """Persist a default profile and credentials, as a completed login would."""
+    profiles.save_profile(
+        profiles.ProfileRecord(name="default", workspace_id=4, server_prefix=server_prefix)
+    )
+    credentials.store_credentials("default", "k", "s", storage="file")
+    profiles.set_selected("default")
+
+
+def test_login_from_input_no_input_succeeds(
+    isolated_cli_config: Path, fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
+    doc = _write_login_doc(
+        tmp_path,
+        api_key="doc-key-value",
+        api_secret="doc-secret-value",
+        workspace_id=4,
+        server_prefix="release",
+    )
     runner = make_runner()
     result = runner.invoke(
-        ["auth", "login", "--from-env", "--storage", "file", "--output", "json", "--no-input"],
-        env=ENV,
+        ["auth", "login", "--input", str(doc), "--storage", "file", "--output", "json"],
+        env={},
     )
     assert result.exit_code == 0, result.stderr
     envelope = json.loads(result.stdout)
@@ -44,11 +55,11 @@ def test_login_from_env_no_input_succeeds(
     assert envelope["data"]["base_url"] == "https://release.mammoth.io/api/v2"
     assert "check_connection" in fake_service.calls
     # Saved for real, and never leaks the secret value anywhere in stdout.
-    assert credentials.load_credentials("default") == ("env-key-value", "env-secret-value")
-    assert "env-secret-value" not in result.stdout
+    assert credentials.load_credentials("default") == ("doc-key-value", "doc-secret-value")
+    assert "doc-secret-value" not in result.stdout
 
 
-def test_login_noninteractive_without_source_requires_from_env_or_input(
+def test_login_noninteractive_without_source_requires_input(
     isolated_cli_config: Path, fake_service: FakeMammothService
 ) -> None:
     runner = make_runner()
@@ -60,41 +71,15 @@ def test_login_noninteractive_without_source_requires_from_env_or_input(
     assert envelope["error"]["code"] == "login_input_required"
 
 
-def test_login_from_env_and_input_are_mutually_exclusive(
+def test_login_connection_failure_leaves_state_unchanged(
     isolated_cli_config: Path, fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = tmp_path / "login.json"
-    doc.write_text(
-        json.dumps({"api_key": "k", "api_secret": "s", "workspace_id": 4}), encoding="utf-8"
-    )
-    os.chmod(doc, stat.S_IRUSR | stat.S_IWUSR)
-    runner = make_runner()
-    result = runner.invoke(
-        [
-            "auth",
-            "login",
-            "--from-env",
-            "--input",
-            str(doc),
-            "--output",
-            "json",
-            "--no-input",
-        ],
-        env=ENV,
-    )
-    assert result.exit_code == 2
-    envelope = json.loads(result.stderr)
-    assert envelope["error"]["code"] == "invalid_input_mode"
-
-
-def test_login_connection_failure_leaves_state_unchanged(
-    isolated_cli_config: Path, fake_service: FakeMammothService
-) -> None:
     fake_service.connection_ok = False
+    doc = _write_login_doc(tmp_path, api_key="k", api_secret="s", workspace_id=4)
     runner = make_runner()
     result = runner.invoke(
-        ["auth", "login", "--from-env", "--storage", "file", "--output", "json", "--no-input"],
-        env=ENV,
+        ["auth", "login", "--input", str(doc), "--storage", "file", "--output", "json"],
+        env={},
     )
     assert result.exit_code == 4
     envelope = json.loads(result.stderr)
@@ -171,7 +156,7 @@ def test_login_prompt_path_when_interactive(
     monkeypatch.setattr(auth_cmd.typer, "prompt", lambda text, hide_input=False: "prompted-" + text)
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
     data, meta = auth_cmd._run_login(
-        invocation, workspace=4, server_prefix=None, storage="file", from_env=False
+        invocation, workspace=4, server_prefix=None, storage="file"
     )
     assert data["workspace_id"] == 4
     assert credentials.load_credentials("default") == ("prompted-API key", "prompted-API secret")
@@ -190,10 +175,7 @@ def test_status_reports_credentials_after_login(
     isolated_cli_config: Path, fake_service: FakeMammothService
 ) -> None:
     runner = make_runner()
-    runner.invoke(
-        ["auth", "login", "--from-env", "--storage", "file", "--output", "json", "--no-input"],
-        env=ENV,
-    )
+    _saved_login(server_prefix="release")
     result = runner.invoke(["auth", "status", "--output", "json", "--no-input"])
     envelope = json.loads(result.stdout)
     assert envelope["data"]["has_credentials"] is True
@@ -205,10 +187,7 @@ def test_status_check_true_reports_connected(
     isolated_cli_config: Path, fake_service: FakeMammothService
 ) -> None:
     runner = make_runner()
-    runner.invoke(
-        ["auth", "login", "--from-env", "--storage", "file", "--output", "json", "--no-input"],
-        env=ENV,
-    )
+    _saved_login(server_prefix="release")
     result = runner.invoke(["auth", "status", "--check", "--output", "json", "--no-input"])
     assert result.exit_code == 0, result.stderr
     envelope = json.loads(result.stdout)
@@ -220,10 +199,7 @@ def test_status_check_failure_surfaces_mapped_error(
     isolated_cli_config: Path, fake_service: FakeMammothService
 ) -> None:
     runner = make_runner()
-    runner.invoke(
-        ["auth", "login", "--from-env", "--storage", "file", "--output", "json", "--no-input"],
-        env=ENV,
-    )
+    _saved_login(server_prefix="release")
     fake_service.connection_ok = False
     result = runner.invoke(["auth", "status", "--check", "--output", "json", "--no-input"])
     assert result.exit_code == 4
@@ -251,10 +227,7 @@ def test_logout_removes_credentials_and_profile(
     isolated_cli_config: Path, fake_service: FakeMammothService
 ) -> None:
     runner = make_runner()
-    runner.invoke(
-        ["auth", "login", "--from-env", "--storage", "file", "--output", "json", "--no-input"],
-        env=ENV,
-    )
+    _saved_login(server_prefix="release")
     result = runner.invoke(["auth", "logout", "--yes", "--output", "json", "--no-input"])
     assert result.exit_code == 0, result.stderr
     envelope = json.loads(result.stdout)

@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 1.0.1.
+Generated from the reviewed command manifests for mammoth-cli 1.0.2.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 
 Total commands: 505.
@@ -4255,7 +4255,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._column_ops.ColumnOpsMixin.add_column`
+- Backing SDK: `mammoth.View.add_column`
 - Agent example: `mammoth view transform add-column 123 --input '{"name": "example"}' --output json --no-input`
 
 ### `mammoth view transform add-sql`
@@ -4266,7 +4266,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql`
+- Backing SDK: `mammoth.View.add_sql`
 - Agent example: `mammoth view transform add-sql 123 --input '{"query": "example"}' --output json --no-input`
 
 ### `mammoth view transform ai`
@@ -4277,7 +4277,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._advanced_ops.AdvancedOpsMixin.gen_ai`
+- Backing SDK: `mammoth.View.gen_ai`
 - Agent example: `mammoth view transform ai 123 --input '{"prompt": "example", "context_columns": ["example"]}' --output json --no-input`
 
 ### `mammoth view transform bulk-replace`
@@ -4288,7 +4288,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._text_ops.TextOpsMixin.bulk_replace`
+- Backing SDK: `mammoth.View.bulk_replace`
 - Agent example: `mammoth view transform bulk-replace 123 --input '{"columns": ["example"], "mapping": [{"search": ["example"], "replace": "example"}]}' --output json --no-input`
 
 ### `mammoth view transform combine-columns`
@@ -4299,7 +4299,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._column_ops.ColumnOpsMixin.combine_columns`
+- Backing SDK: `mammoth.View.combine_columns`
 - Agent example: `mammoth view transform combine-columns 123 --input '{"sources": ["example"]}' --output json --no-input`
 
 ### `mammoth view transform convert-type`
@@ -4310,7 +4310,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._column_ops.ColumnOpsMixin.convert_type`
+- Backing SDK: `mammoth.View.convert_type`
 - Agent example: `mammoth view transform convert-type 123 --input '{"conversions": [{"column": "example", "to": "TEXT"}]}' --output json --no-input`
 
 ### `mammoth view transform copy-columns`
@@ -4321,7 +4321,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._column_ops.ColumnOpsMixin.copy_columns`
+- Backing SDK: `mammoth.View.copy_columns`
 - Agent example: `mammoth view transform copy-columns 123 --input '{"copies": [{"source": "example"}]}' --output json --no-input`
 
 ### `mammoth view transform crosstab`
@@ -4332,7 +4332,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._aggregate_ops.AggregateOpsMixin.crosstab`
+- Backing SDK: `mammoth.View.crosstab`
 - Agent example: `mammoth view transform crosstab 123 --input '{"rows": ["example"], "pivot_column": "example", "select": {"function": "SUM"}, "dataset_name": "example"}' --output json --no-input`
 
 ### `mammoth view transform date-diff`
@@ -4343,7 +4343,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._date_ops.DateOpsMixin.date_diff`
+- Backing SDK: `mammoth.View.date_diff`
 - Agent example: `mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "example", "end": "example"}' --output json --no-input`
 
 ### `mammoth view transform delete-columns`
@@ -4354,7 +4354,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._column_ops.ColumnOpsMixin.delete_columns`
+- Backing SDK: `mammoth.View.delete_columns`
 - Agent example: `mammoth view transform delete-columns 123 --input '{"columns": ["example"]}' --output json --no-input`
 
 ### `mammoth view transform discard-duplicates`
@@ -4365,7 +4365,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._row_ops.RowOpsMixin.discard_duplicates`
+- Backing SDK: `mammoth.View.discard_duplicates`
 - Agent example: `mammoth view transform discard-duplicates 123 --output json --no-input`
 
 ### `mammoth view transform extract-date`
@@ -4376,7 +4376,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._date_ops.DateOpsMixin.extract_date`
+- Backing SDK: `mammoth.View.extract_date`
 - Agent example: `mammoth view transform extract-date 123 --input '{"column": "example", "component": "year"}' --output json --no-input`
 
 ### `mammoth view transform fill-missing`
@@ -4387,7 +4387,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._row_ops.RowOpsMixin.fill_missing`
+- Backing SDK: `mammoth.View.fill_missing`
 - Agent example: `mammoth view transform fill-missing 123 --input '{"column": "example", "direction": "FIRST_VALUE"}' --output json --no-input`
 
 ### `mammoth view transform filter`
@@ -4398,7 +4398,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._filter_ops.FilterOpsMixin.filter_rows`
+- Backing SDK: `mammoth.View.filter_rows`
 - Agent example: `mammoth view transform filter 123 --input '{"condition": {"column": "Status", "operator": "EQ", "value": "Active"}}' --output json --no-input`
 
 ### `mammoth view transform generate-sql`
@@ -4409,7 +4409,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._advanced_ops.AdvancedOpsMixin.generate_sql`
+- Backing SDK: `mammoth.View.generate_sql`
 - Agent example: `mammoth view transform generate-sql 123 --input '{"intent": "example"}' --output json --no-input`
 
 ### `mammoth view transform increment-date`
@@ -4420,7 +4420,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._date_ops.DateOpsMixin.increment_date`
+- Backing SDK: `mammoth.View.increment_date`
 - Agent example: `mammoth view transform increment-date 123 --input '{"column": "example", "delta": {}}' --output json --no-input`
 
 ### `mammoth view transform join`
@@ -4431,7 +4431,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._advanced_ops.AdvancedOpsMixin.join`
+- Backing SDK: `mammoth.View.join`
 - Agent example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "example", "right": "example"}], "select": ["example"]}' --output json --no-input`
 
 ### `mammoth view transform json-extract`
@@ -4442,7 +4442,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._advanced_ops.AdvancedOpsMixin.json_extract`
+- Backing SDK: `mammoth.View.json_extract`
 - Agent example: `mammoth view transform json-extract 123 --input '{"column": "example"}' --output json --no-input`
 
 ### `mammoth view transform limit-rows`
@@ -4453,7 +4453,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._row_ops.RowOpsMixin.limit_rows`
+- Backing SDK: `mammoth.View.limit_rows`
 - Agent example: `mammoth view transform limit-rows 123 --input '{"n": 1}' --output json --no-input`
 
 ### `mammoth view transform lookup`
@@ -4464,7 +4464,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._advanced_ops.AdvancedOpsMixin.lookup`
+- Backing SDK: `mammoth.View.lookup`
 - Agent example: `mammoth view transform lookup 123 --input '{"source": "example", "lookup_view_id": 1, "key": "example", "value": "example"}' --output json --no-input`
 
 ### `mammoth view transform math`
@@ -4475,7 +4475,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._math_ops.MathOpsMixin.math`
+- Backing SDK: `mammoth.View.math`
 - Agent example: `mammoth view transform math 123 --input '{"expression": "example"}' --output json --no-input`
 
 ### `mammoth view transform pivot`
@@ -4486,7 +4486,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._aggregate_ops.AggregateOpsMixin.pivot`
+- Backing SDK: `mammoth.View.pivot`
 - Agent example: `mammoth view transform pivot 123 --input '{"group_by": ["example"], "aggregations": [{"column": "example", "function": "SUM"}]}' --output json --no-input`
 
 ### `mammoth view transform replace`
@@ -4497,7 +4497,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._text_ops.TextOpsMixin.replace_values`
+- Backing SDK: `mammoth.View.replace_values`
 - Agent example: `mammoth view transform replace 123 --input '{"columns": ["example"], "find": "example", "replace": "example"}' --output json --no-input`
 
 ### `mammoth view transform set-values`
@@ -4508,7 +4508,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._filter_ops.FilterOpsMixin.set_values`
+- Backing SDK: `mammoth.View.set_values`
 - Agent example: `mammoth view transform set-values 123 --input '{"values": [{"value": "example"}]}' --output json --no-input`
 
 ### `mammoth view transform small-large`
@@ -4519,7 +4519,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._math_ops.MathOpsMixin.small_large`
+- Backing SDK: `mammoth.View.small_large`
 - Agent example: `mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["example"]}' --output json --no-input`
 
 ### `mammoth view transform split`
@@ -4530,7 +4530,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._text_ops.TextOpsMixin.split_column`
+- Backing SDK: `mammoth.View.split_column`
 - Agent example: `mammoth view transform split 123 --input '{"column": "example", "delimiter": "example", "new_columns": [{"name": "example"}]}' --output json --no-input`
 
 ### `mammoth view transform substring`
@@ -4541,7 +4541,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._text_ops.TextOpsMixin.substring`
+- Backing SDK: `mammoth.View.substring`
 - Agent example: `mammoth view transform substring 123 --input '{"column": "example"}' --output json --no-input`
 
 ### `mammoth view transform text`
@@ -4552,7 +4552,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._text_ops.TextOpsMixin.text_transform`
+- Backing SDK: `mammoth.View.text_transform`
 - Agent example: `mammoth view transform text 123 --input '{"columns": ["example"]}' --output json --no-input`
 
 ### `mammoth view transform unnest`
@@ -4563,7 +4563,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._row_ops.RowOpsMixin.unnest`
+- Backing SDK: `mammoth.View.unnest`
 - Agent example: `mammoth view transform unnest 123 --input '{"columns": ["example"]}' --output json --no-input`
 
 ### `mammoth view transform window`
@@ -4574,7 +4574,7 @@ Total commands: 505.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
-- Backing SDK: `mammoth._mixins._aggregate_ops.AggregateOpsMixin.window`
+- Backing SDK: `mammoth.View.window`
 - Agent example: `mammoth view transform window 123 --input '{"function": "ROW_NUMBER"}' --output json --no-input`
 
 ### `mammoth view trash`

@@ -2,10 +2,10 @@
 
 Authentication has exactly three required inputs (API key, API secret,
 workspace id) and one optional input (server prefix, default ``app``).
-These commands never accept a secret as an ordinary command-line value: the
-API key and secret come from a hidden TTY prompt, the four documented
-``MAMMOTH_*`` environment variables, or a permission-checked JSON/YAML
-document read through the shared ``--input`` option.
+Authentication always requires a login; there is no environment credential
+path. These commands never accept a secret as an ordinary command-line value:
+the API key and secret come from a hidden TTY prompt or a permission-checked
+JSON/YAML login document read through the shared ``--input`` option.
 """
 
 from __future__ import annotations
@@ -24,10 +24,6 @@ from pydantic import ValidationError
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.context.resolver import (
-    ENV_API_KEY,
-    ENV_API_SECRET,
-    ENV_SERVER_PREFIX,
-    ENV_WORKSPACE_ID,
     ResolvedAuth,
     resolve_auth,
 )
@@ -189,48 +185,12 @@ def _validate_login_document(document: dict[str, Any]) -> LoginRequest:
         ) from exc
 
 
-def _read_env_login() -> tuple[str, str, int | None, str | None]:
-    """Read credentials from the four documented ``MAMMOTH_*`` variables.
-
-    Returns:
-        ``(api_key, api_secret, workspace_id, server_prefix)``. Workspace id
-        and server prefix are None when their variable is unset.
-
-    Raises:
-        CliError: ``missing_env_credentials`` when the API key or secret
-            variable is unset.
-    """
-    api_key = os.environ.get(ENV_API_KEY)
-    api_secret = os.environ.get(ENV_API_SECRET)
-    workspace_raw = os.environ.get(ENV_WORKSPACE_ID)
-    server_prefix = os.environ.get(ENV_SERVER_PREFIX)
-    if not api_key or not api_secret:
-        raise CliError(
-            code="missing_env_credentials",
-            message="MAMMOTH_API_KEY and MAMMOTH_API_SECRET must be set for --from-env.",
-            exit_status=EXIT_USAGE,
-        )
-    workspace_id: int | None = None
-    if workspace_raw:
-        try:
-            workspace_id = int(workspace_raw)
-        except ValueError as exc:
-            raise CliError(
-                code=CODE_INVALID_WORKSPACE_ID,
-                message="MAMMOTH_WORKSPACE_ID must be an integer.",
-                exit_status=EXIT_USAGE,
-                hint="Set MAMMOTH_WORKSPACE_ID to a numeric workspace id.",
-            ) from exc
-    return api_key, api_secret, workspace_id, server_prefix
-
-
 def _run_login(
     invocation: Invocation,
     *,
     workspace: int | None,
     server_prefix: str | None,
     storage: str,
-    from_env: bool,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Validate, connection-check, and persist one `auth login` invocation."""
     if storage not in _STORAGE_MODES:
@@ -239,12 +199,6 @@ def _run_login(
             message=f"'{storage}' is not a valid --storage value.",
             exit_status=EXIT_USAGE,
             hint=f"Use one of: {', '.join(_STORAGE_MODES)}.",
-        )
-    if from_env and invocation.input_file is not None:
-        raise CliError(
-            code="invalid_input_mode",
-            message="--from-env and --input are mutually exclusive.",
-            exit_status=EXIT_USAGE,
         )
 
     policy = resolve_policy(
@@ -255,11 +209,8 @@ def _run_login(
         color=invocation.color,
     )
 
-    if from_env:
-        api_key, api_secret, env_workspace, env_prefix = _read_env_login()
-        effective_workspace = workspace if workspace is not None else env_workspace
-        effective_prefix = server_prefix if server_prefix is not None else env_prefix
-    elif invocation.input_file is not None:
+    effective_workspace: int | None
+    if invocation.input_file is not None:
         document = _load_login_document(invocation.input_file, invocation.input_format)
         request = _validate_login_document(document)
         api_key, api_secret = request.api_key, request.api_secret
@@ -273,9 +224,9 @@ def _run_login(
     else:
         raise CliError(
             code="login_input_required",
-            message="Non-interactive login requires --from-env or --input.",
+            message="Non-interactive login requires --input.",
             exit_status=EXIT_USAGE,
-            hint="Pass --from-env, or --input FILE|- (with --input-format for stdin).",
+            hint="Pass --input FILE|- (with --input-format for stdin), or run in a terminal.",
         )
 
     if effective_workspace is None or effective_workspace <= 0:
@@ -350,7 +301,7 @@ def auth_login(
         None,
         "--workspace",
         "-w",
-        help="Workspace id. Required unless --from-env or --input supplies it.",
+        help="Workspace id. Required unless --input supplies it.",
     ),
     server_prefix: str | None = typer.Option(
         None, "--server-prefix", help="Server prefix (one DNS label). Default 'app'."
@@ -358,14 +309,11 @@ def auth_login(
     storage: str = typer.Option(
         "auto", "--storage", help="Credential storage backend.", metavar="auto|keyring|file"
     ),
-    from_env: bool = typer.Option(
-        False,
-        "--from-env",
-        help="Read credentials from MAMMOTH_API_KEY/MAMMOTH_API_SECRET/MAMMOTH_WORKSPACE_ID.",
-    ),
 ) -> None:
     """Log in and store one profile's credentials.
 
+    Prompts for the API key and secret in a terminal. For non-interactive use
+    (agents, CI), pass ``--input FILE`` with a login document instead.
     Performs a lightweight connection check before saving anything; a failed
     check leaves existing profile state unchanged.
     """
@@ -391,7 +339,6 @@ def auth_login(
             workspace=workspace,
             server_prefix=server_prefix,
             storage=storage,
-            from_env=from_env,
         )
 
     executor.run(invocation.command_id, invocation.output, producer)

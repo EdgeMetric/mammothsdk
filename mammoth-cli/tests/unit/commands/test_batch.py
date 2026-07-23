@@ -8,10 +8,10 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import batch as batch_cmd
-from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
+from mammoth_cli.testing import login_default_profile
 
 _LIST = "mammoth.api.batches.BatchesAPI.list"
 _GET = "mammoth.api.batches.BatchesAPI.get"
@@ -22,10 +22,9 @@ _BULK_DELETE = "mammoth.api.batches.BatchesAPI.bulk_delete"
 
 
 @pytest.fixture(autouse=True)
-def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv(ENV_API_KEY, "k")
-    monkeypatch.setenv(ENV_API_SECRET, "s")
-    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
+def _env_auth(isolated_cli_config: Path) -> None:
+    """Authenticate every test with a saved default profile."""
+    login_default_profile()
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:

@@ -8,10 +8,10 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import support as support_cmd
-from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
+from mammoth_cli.testing import login_default_profile
 
 _CONNECTOR_LIST = "mammoth.api.support.SupportAPI.connector_list"
 _CONNECTOR_CREATE = "mammoth.api.support.SupportAPI.connector_create"
@@ -61,10 +61,9 @@ _WORKSPACE_USER_TRANSFER = "mammoth.api.support.SupportAPI.workspace_user_transf
 
 
 @pytest.fixture(autouse=True)
-def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv(ENV_API_KEY, "k")
-    monkeypatch.setenv(ENV_API_SECRET, "s")
-    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
+def _env_auth(isolated_cli_config: Path) -> None:
+    """Authenticate every test with a saved default profile."""
+    login_default_profile()
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:

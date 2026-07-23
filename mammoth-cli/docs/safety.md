@@ -2,8 +2,25 @@
 
 [Documentation index](llms.txt)
 
-Every command carries a reviewed confirmation policy. Discover it with
-`mammoth schema get <command.id> --output json --no-input`.
+Every command carries a reviewed mutation class and confirmation policy.
+Discover both with `mammoth schema get <command.id>`.
+
+## Mutation classes
+
+The class states what a command does to your data or account.
+
+| Class | Meaning |
+|---|---|
+| `read` | No change. |
+| `benign_mutation` | A small, low-risk change. |
+| `reversible_pipeline` | A pipeline edit you can undo. |
+| `destructive` | Deletes or overwrites data. |
+| `external_effect` | Acts outside Mammoth, for example sends a message or writes to an external store. |
+| `high_impact` | Workspace- or account-level, hard to reverse. |
+
+## Confirmation policies
+
+The policy states what you must pass before a command runs.
 
 | Policy | How to satisfy it |
 |---|---|
@@ -21,10 +38,10 @@ in `json`/`ndjson` output, or in CI, there is no prompt. A missing `--yes` or
 
 ```bash
 # normal delete
-mammoth dataset delete 2340 --project 180 --output json --no-input --yes
+mammoth dataset delete 2340 --project 180 --yes
 
 # high-impact: the target must match exactly
-mammoth workspace delete 9 --output json --no-input --yes --confirm 9
+mammoth workspace delete 9 --yes --confirm 9
 ```
 
 ## Other safety rules

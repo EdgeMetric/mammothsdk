@@ -9,13 +9,15 @@ session wires the invocation values into the factory.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
-from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID, ResolvedAuth
+from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.runtime import session
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services import factory
 from mammoth_cli.services.sdk_service import SdkMammothService
+from mammoth_cli.testing import login_default_profile
 
 _AUTH = ResolvedAuth(
     api_key="k", api_secret="s", workspace_id=4, base_url="https://fake.mammoth.test/api/v2"
@@ -43,7 +45,9 @@ def test_service_defaults_leave_client_defaults_intact() -> None:
         default.close()
 
 
-def test_open_service_wires_invocation_timeouts(monkeypatch: Any) -> None:
+def test_open_service_wires_invocation_timeouts(
+    isolated_cli_config: Path, monkeypatch: Any
+) -> None:
     """open_service passes the invocation's timeout family into the factory."""
     captured: dict[str, Any] = {}
 
@@ -56,9 +60,7 @@ def test_open_service_wires_invocation_timeouts(monkeypatch: Any) -> None:
         return _Probe()
 
     monkeypatch.setattr(factory, "build_service", _fake_build_service)
-    monkeypatch.setenv(ENV_API_KEY, "k")
-    monkeypatch.setenv(ENV_API_SECRET, "s")
-    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
+    login_default_profile()
 
     invocation = Invocation(
         command_id="project.list", timeout=5, job_timeout=11, pipeline_timeout=22

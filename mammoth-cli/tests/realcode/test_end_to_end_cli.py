@@ -17,13 +17,10 @@ from typing import Any
 
 import pytest
 
-from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.services import factory
 from mammoth_cli.testing import make_runner
 
 ServiceFactory = Callable[..., Any]
-
-_ENV = {ENV_API_KEY: "k", ENV_API_SECRET: "s", ENV_WORKSPACE_ID: "4"}
 
 
 def _bind_real_service(
@@ -46,7 +43,7 @@ def test_project_list_full_stack(
     api = _bind_real_service(monkeypatch, real_service)
     api.on("GET", r"/projects", 200, {"projects": [{"id": 7, "name": "Demo"}]})
 
-    result = make_runner().invoke(["project", "list", "--output", "json", "--no-input"], env=_ENV)
+    result = make_runner().invoke(["project", "list", "--output", "json", "--no-input"])
 
     assert result.exit_code == 0, result.output
     assert any(r.path.endswith("/projects") for r in api.requests)
@@ -79,7 +76,6 @@ def test_generated_dashboard_path_query_full_stack(
             "json",
             "--no-input",
         ],
-        env=_ENV,
     )
 
     assert result.exit_code == 0, result.output
@@ -96,7 +92,6 @@ def test_dashboard_list_nullable_project_query_full_stack(
 
     result = make_runner().invoke(
         ["dashboard", "list", "--project", "42", "--output", "json", "--no-input"],
-        env=_ENV,
     )
 
     assert result.exit_code == 0, result.output
@@ -123,7 +118,6 @@ def test_generated_dashboard_body_full_stack(
             "json",
             "--no-input",
         ],
-        env=_ENV,
     )
 
     assert result.exit_code == 0, result.output
@@ -177,7 +171,6 @@ def test_generated_dashboard_async_result_waits_for_job(
             "--job-timeout",
             "7",
         ],
-        env=_ENV,
     )
 
     assert result.exit_code == 0, result.output
@@ -200,11 +193,11 @@ def test_generated_dashboard_delete_requires_confirmation_and_routes(
         "json",
         "--no-input",
     ]
-    refused = make_runner().invoke(argv, env=_ENV)
+    refused = make_runner().invoke(argv)
     assert refused.exit_code != 0
     assert not api.requests
 
-    accepted = make_runner().invoke([*argv, "--yes"], env=_ENV)
+    accepted = make_runner().invoke([*argv, "--yes"])
     assert accepted.exit_code == 0, accepted.output
     assert api.last().path.endswith("/dashboards/v3/contexts/abc")
 
@@ -249,7 +242,6 @@ def test_view_transform_full_stack(
             "json",
             "--no-input",
         ],
-        env=_ENV,
     )
 
     assert result.exit_code == 0, result.output
@@ -277,7 +269,6 @@ def test_data_app_user_remove_email_positional_full_stack(
 
     result = make_runner().invoke(
         ["data-app", "user", "remove", "123", "user@example.com", "--yes", "--output", "json"],
-        env=_ENV,
     )
 
     assert result.exit_code == 0, result.output
@@ -310,7 +301,6 @@ def test_data_app_user_remove_rejects_email_via_input(
             "--output",
             "json",
         ],
-        env=_ENV,
     )
 
     assert result.exit_code == 2, result.output
@@ -343,7 +333,6 @@ def test_folder_get_forwards_fields_input_full_stack(
             "--output",
             "json",
         ],
-        env=_ENV,
     )
 
     assert result.exit_code == 0, result.output
@@ -367,7 +356,6 @@ def test_folder_delete_positional_id_full_stack(
 
     result = make_runner().invoke(
         ["folder", "delete", "7", "--project", "180", "--yes", "--output", "json"],
-        env=_ENV,
     )
 
     assert result.exit_code == 0, result.output
@@ -402,7 +390,6 @@ def test_ai_condition_generate_positional_dataset_full_stack(
             "--output",
             "json",
         ],
-        env=_ENV,
     )
 
     assert result.exit_code == 0, result.output

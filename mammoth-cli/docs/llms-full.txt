@@ -968,65 +968,65 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
   example: mammoth view task preview 123 --input '{"task_spec": {"example": "example"}}' --output json --no-input
 - `mammoth view task update` [reversible_pipeline/none] -> mammoth.api.pipeline.PipelineAPI.update_task
   example: mammoth view task update 123 123 --input '{"task_spec": {"example": "example"}}' --output json --no-input
-- `mammoth view transform add-column` [reversible_pipeline/none] -> mammoth._mixins._column_ops.ColumnOpsMixin.add_column
+- `mammoth view transform add-column` [reversible_pipeline/none] -> mammoth.View.add_column
   example: mammoth view transform add-column 123 --input '{"name": "example"}' --output json --no-input
-- `mammoth view transform add-sql` [reversible_pipeline/none] -> mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
+- `mammoth view transform add-sql` [reversible_pipeline/none] -> mammoth.View.add_sql
   example: mammoth view transform add-sql 123 --input '{"query": "example"}' --output json --no-input
-- `mammoth view transform ai` [reversible_pipeline/none] -> mammoth._mixins._advanced_ops.AdvancedOpsMixin.gen_ai
+- `mammoth view transform ai` [reversible_pipeline/none] -> mammoth.View.gen_ai
   example: mammoth view transform ai 123 --input '{"prompt": "example", "context_columns": ["example"]}' --output json --no-input
-- `mammoth view transform bulk-replace` [reversible_pipeline/none] -> mammoth._mixins._text_ops.TextOpsMixin.bulk_replace
+- `mammoth view transform bulk-replace` [reversible_pipeline/none] -> mammoth.View.bulk_replace
   example: mammoth view transform bulk-replace 123 --input '{"columns": ["example"], "mapping": [{"search": ["example"], "replace": "example"}]}' --output json --no-input
-- `mammoth view transform combine-columns` [reversible_pipeline/none] -> mammoth._mixins._column_ops.ColumnOpsMixin.combine_columns
+- `mammoth view transform combine-columns` [reversible_pipeline/none] -> mammoth.View.combine_columns
   example: mammoth view transform combine-columns 123 --input '{"sources": ["example"]}' --output json --no-input
-- `mammoth view transform convert-type` [reversible_pipeline/none] -> mammoth._mixins._column_ops.ColumnOpsMixin.convert_type
+- `mammoth view transform convert-type` [reversible_pipeline/none] -> mammoth.View.convert_type
   example: mammoth view transform convert-type 123 --input '{"conversions": [{"column": "example", "to": "TEXT"}]}' --output json --no-input
-- `mammoth view transform copy-columns` [reversible_pipeline/none] -> mammoth._mixins._column_ops.ColumnOpsMixin.copy_columns
+- `mammoth view transform copy-columns` [reversible_pipeline/none] -> mammoth.View.copy_columns
   example: mammoth view transform copy-columns 123 --input '{"copies": [{"source": "example"}]}' --output json --no-input
-- `mammoth view transform crosstab` [reversible_pipeline/none] -> mammoth._mixins._aggregate_ops.AggregateOpsMixin.crosstab
+- `mammoth view transform crosstab` [reversible_pipeline/none] -> mammoth.View.crosstab
   example: mammoth view transform crosstab 123 --input '{"rows": ["example"], "pivot_column": "example", "select": {"function": "SUM"}, "dataset_name": "example"}' --output json --no-input
-- `mammoth view transform date-diff` [reversible_pipeline/none] -> mammoth._mixins._date_ops.DateOpsMixin.date_diff
+- `mammoth view transform date-diff` [reversible_pipeline/none] -> mammoth.View.date_diff
   example: mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "example", "end": "example"}' --output json --no-input
-- `mammoth view transform delete-columns` [reversible_pipeline/none] -> mammoth._mixins._column_ops.ColumnOpsMixin.delete_columns
+- `mammoth view transform delete-columns` [reversible_pipeline/none] -> mammoth.View.delete_columns
   example: mammoth view transform delete-columns 123 --input '{"columns": ["example"]}' --output json --no-input
-- `mammoth view transform discard-duplicates` [reversible_pipeline/none] -> mammoth._mixins._row_ops.RowOpsMixin.discard_duplicates
+- `mammoth view transform discard-duplicates` [reversible_pipeline/none] -> mammoth.View.discard_duplicates
   example: mammoth view transform discard-duplicates 123 --output json --no-input
-- `mammoth view transform extract-date` [reversible_pipeline/none] -> mammoth._mixins._date_ops.DateOpsMixin.extract_date
+- `mammoth view transform extract-date` [reversible_pipeline/none] -> mammoth.View.extract_date
   example: mammoth view transform extract-date 123 --input '{"column": "example", "component": "year"}' --output json --no-input
-- `mammoth view transform fill-missing` [reversible_pipeline/none] -> mammoth._mixins._row_ops.RowOpsMixin.fill_missing
+- `mammoth view transform fill-missing` [reversible_pipeline/none] -> mammoth.View.fill_missing
   example: mammoth view transform fill-missing 123 --input '{"column": "example", "direction": "FIRST_VALUE"}' --output json --no-input
-- `mammoth view transform filter` [reversible_pipeline/none] -> mammoth._mixins._filter_ops.FilterOpsMixin.filter_rows
+- `mammoth view transform filter` [reversible_pipeline/none] -> mammoth.View.filter_rows
   example: mammoth view transform filter 123 --input '{"condition": {"column": "Status", "operator": "EQ", "value": "Active"}}' --output json --no-input
-- `mammoth view transform generate-sql` [reversible_pipeline/none] -> mammoth._mixins._advanced_ops.AdvancedOpsMixin.generate_sql
+- `mammoth view transform generate-sql` [reversible_pipeline/none] -> mammoth.View.generate_sql
   example: mammoth view transform generate-sql 123 --input '{"intent": "example"}' --output json --no-input
-- `mammoth view transform increment-date` [reversible_pipeline/none] -> mammoth._mixins._date_ops.DateOpsMixin.increment_date
+- `mammoth view transform increment-date` [reversible_pipeline/none] -> mammoth.View.increment_date
   example: mammoth view transform increment-date 123 --input '{"column": "example", "delta": {}}' --output json --no-input
-- `mammoth view transform join` [reversible_pipeline/none] -> mammoth._mixins._advanced_ops.AdvancedOpsMixin.join
+- `mammoth view transform join` [reversible_pipeline/none] -> mammoth.View.join
   example: mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "example", "right": "example"}], "select": ["example"]}' --output json --no-input
-- `mammoth view transform json-extract` [reversible_pipeline/none] -> mammoth._mixins._advanced_ops.AdvancedOpsMixin.json_extract
+- `mammoth view transform json-extract` [reversible_pipeline/none] -> mammoth.View.json_extract
   example: mammoth view transform json-extract 123 --input '{"column": "example"}' --output json --no-input
-- `mammoth view transform limit-rows` [reversible_pipeline/none] -> mammoth._mixins._row_ops.RowOpsMixin.limit_rows
+- `mammoth view transform limit-rows` [reversible_pipeline/none] -> mammoth.View.limit_rows
   example: mammoth view transform limit-rows 123 --input '{"n": 1}' --output json --no-input
-- `mammoth view transform lookup` [reversible_pipeline/none] -> mammoth._mixins._advanced_ops.AdvancedOpsMixin.lookup
+- `mammoth view transform lookup` [reversible_pipeline/none] -> mammoth.View.lookup
   example: mammoth view transform lookup 123 --input '{"source": "example", "lookup_view_id": 1, "key": "example", "value": "example"}' --output json --no-input
-- `mammoth view transform math` [reversible_pipeline/none] -> mammoth._mixins._math_ops.MathOpsMixin.math
+- `mammoth view transform math` [reversible_pipeline/none] -> mammoth.View.math
   example: mammoth view transform math 123 --input '{"expression": "example"}' --output json --no-input
-- `mammoth view transform pivot` [reversible_pipeline/none] -> mammoth._mixins._aggregate_ops.AggregateOpsMixin.pivot
+- `mammoth view transform pivot` [reversible_pipeline/none] -> mammoth.View.pivot
   example: mammoth view transform pivot 123 --input '{"group_by": ["example"], "aggregations": [{"column": "example", "function": "SUM"}]}' --output json --no-input
-- `mammoth view transform replace` [reversible_pipeline/none] -> mammoth._mixins._text_ops.TextOpsMixin.replace_values
+- `mammoth view transform replace` [reversible_pipeline/none] -> mammoth.View.replace_values
   example: mammoth view transform replace 123 --input '{"columns": ["example"], "find": "example", "replace": "example"}' --output json --no-input
-- `mammoth view transform set-values` [reversible_pipeline/none] -> mammoth._mixins._filter_ops.FilterOpsMixin.set_values
+- `mammoth view transform set-values` [reversible_pipeline/none] -> mammoth.View.set_values
   example: mammoth view transform set-values 123 --input '{"values": [{"value": "example"}]}' --output json --no-input
-- `mammoth view transform small-large` [reversible_pipeline/none] -> mammoth._mixins._math_ops.MathOpsMixin.small_large
+- `mammoth view transform small-large` [reversible_pipeline/none] -> mammoth.View.small_large
   example: mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["example"]}' --output json --no-input
-- `mammoth view transform split` [reversible_pipeline/none] -> mammoth._mixins._text_ops.TextOpsMixin.split_column
+- `mammoth view transform split` [reversible_pipeline/none] -> mammoth.View.split_column
   example: mammoth view transform split 123 --input '{"column": "example", "delimiter": "example", "new_columns": [{"name": "example"}]}' --output json --no-input
-- `mammoth view transform substring` [reversible_pipeline/none] -> mammoth._mixins._text_ops.TextOpsMixin.substring
+- `mammoth view transform substring` [reversible_pipeline/none] -> mammoth.View.substring
   example: mammoth view transform substring 123 --input '{"column": "example"}' --output json --no-input
-- `mammoth view transform text` [reversible_pipeline/none] -> mammoth._mixins._text_ops.TextOpsMixin.text_transform
+- `mammoth view transform text` [reversible_pipeline/none] -> mammoth.View.text_transform
   example: mammoth view transform text 123 --input '{"columns": ["example"]}' --output json --no-input
-- `mammoth view transform unnest` [reversible_pipeline/none] -> mammoth._mixins._row_ops.RowOpsMixin.unnest
+- `mammoth view transform unnest` [reversible_pipeline/none] -> mammoth.View.unnest
   example: mammoth view transform unnest 123 --input '{"columns": ["example"]}' --output json --no-input
-- `mammoth view transform window` [reversible_pipeline/none] -> mammoth._mixins._aggregate_ops.AggregateOpsMixin.window
+- `mammoth view transform window` [reversible_pipeline/none] -> mammoth.View.window
   example: mammoth view transform window 123 --input '{"function": "ROW_NUMBER"}' --output json --no-input
 - `mammoth view trash` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.trash
   example: mammoth view trash 123 123 --output json --no-input
