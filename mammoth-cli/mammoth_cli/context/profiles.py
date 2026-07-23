@@ -201,6 +201,21 @@ def list_profiles() -> list[ProfileRecord]:
     return sorted(load_profiles().values(), key=lambda record: record.name)
 
 
+def list_profile_names() -> list[str]:
+    """Return every stored profile name, sorted, without parsing records.
+
+    Unlike :func:`list_profiles`, this reads only the profile table keys, so an
+    unsupported legacy profile never raises. It exists for bulk maintenance
+    commands (for example ``auth logout --all``) that must operate on every
+    profile precisely including any that can no longer be parsed.
+    """
+    document = _load_document()
+    table = _profiles_table(document)
+    if not table:
+        return []
+    return sorted(str(name) for name in table.keys())
+
+
 def get_profile(name: str) -> ProfileRecord | None:
     """Return one stored profile, or None if it does not exist.
 

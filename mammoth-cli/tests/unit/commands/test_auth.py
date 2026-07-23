@@ -263,6 +263,42 @@ def test_logout_removes_credentials_and_profile(
     assert credentials.load_credentials("default") is None
 
 
+def test_logout_all_removes_profiles_even_with_invalid_profile(
+    isolated_cli_config: Path,
+) -> None:
+    """``--all`` must clean up every profile, including an unparseable legacy one.
+
+    A profile carrying an unsupported legacy base_url must not block the bulk
+    logout whose entire purpose is to delete it. Cleanup iterates raw profile
+    names, never parsing records.
+    """
+    path = profiles.profiles_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "[profiles.default]\n"
+        "workspace_id = 4\n"
+        'server_prefix = "release"\n\n'
+        "[profiles.legacy]\n"
+        "workspace_id = 7\n"
+        'base_url = "https://custom.example.com/api/v2"\n',
+        encoding="utf-8",
+    )
+    credentials.store_credentials("default", "k", "s", storage="file")
+    credentials.store_credentials("legacy", "k2", "s2", storage="file")
+
+    runner = make_runner()
+    result = runner.invoke(
+        ["auth", "logout", "--all", "--yes", "--output", "json", "--no-input"]
+    )
+    assert result.exit_code == 0, result.stderr
+    envelope = json.loads(result.stdout)
+    assert sorted(envelope["data"]["removed_profiles"]) == ["default", "legacy"]
+    # Both profiles are gone from the store.
+    assert profiles.list_profile_names() == []
+    assert credentials.load_credentials("default") is None
+    assert credentials.load_credentials("legacy") is None
+
+
 def test_logout_all_and_profile_are_mutually_exclusive(isolated_cli_config: Path) -> None:
     runner = make_runner()
     result = runner.invoke(

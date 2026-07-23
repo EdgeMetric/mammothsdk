@@ -508,10 +508,13 @@ def _run_logout(
 
     removed: list[str] = []
     if all_profiles:
-        for record in profiles.list_profiles():
-            if credentials.delete_credentials(record.name):
-                removed.append(record.name)
-            profiles.delete_profile(record.name)
+        # Iterate raw profile names so an unparseable legacy profile (for
+        # example one with an unsupported base_url) is still cleaned up rather
+        # than blocking the very command meant to remove it.
+        for name in profiles.list_profile_names():
+            if credentials.delete_credentials(name):
+                removed.append(name)
+            profiles.delete_profile(name)
     else:
         profile_name = invocation.profile or profiles.get_selected()
         if credentials.delete_credentials(profile_name):
