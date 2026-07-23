@@ -65,6 +65,41 @@ def test_legacy_unsupported_base_url_is_rejected(isolated_cli_config: Path) -> N
     assert excinfo.value.exit_status == 2
 
 
+def test_get_profile_ignores_unrelated_invalid_profile(isolated_cli_config: Path) -> None:
+    """A valid selected profile loads even when an unrelated profile is invalid.
+
+    ``get_profile`` must parse only the requested profile. Otherwise one legacy
+    profile with an unsupported base_url would block authentication under an
+    entirely different, valid profile.
+    """
+    _write_raw_profiles(
+        'selected = "default"\n\n'
+        "[profiles.default]\n"
+        "workspace_id = 4\n"
+        'server_prefix = "release"\n\n'
+        "[profiles.legacy]\n"
+        "workspace_id = 7\n"
+        'base_url = "https://custom.example.com/api/v2"\n'
+    )
+    record = profiles.get_profile("default")
+    assert record is not None
+    assert record.workspace_id == 4
+    assert record.server_prefix == "release"
+
+
+def test_get_profile_selecting_invalid_profile_is_rejected(isolated_cli_config: Path) -> None:
+    """Explicitly requesting the invalid profile still fails loudly."""
+    _write_raw_profiles(
+        "[profiles.legacy]\n"
+        "workspace_id = 7\n"
+        'base_url = "https://custom.example.com/api/v2"\n'
+    )
+    with pytest.raises(CliError) as excinfo:
+        profiles.get_profile("legacy")
+    assert excinfo.value.code == "unsupported_profile_base_url"
+    assert excinfo.value.exit_status == 2
+
+
 def test_save_and_get_profile_roundtrip(isolated_cli_config: Path) -> None:
     record = profiles.ProfileRecord(name="default", workspace_id=4, server_prefix="release")
     profiles.save_profile(record)

@@ -187,14 +187,15 @@ jobs:
   installer-macos:
     # Native macOS installation gate. The CLI advertises macOS support, so the
     # POSIX installer must be exercised on real macOS runners, not only Linux.
-    # macos-latest is Apple Silicon (arm64); macos-13 is the last Intel
-    # (x86_64) image — both native macOS architectures are covered.
+    # macos-latest is Apple Silicon (arm64); macos-15-intel is the supported
+    # Intel (x86_64) image (macos-13/-14 Intel are retired) — both native macOS
+    # architectures are covered.
     name: installer (macos, ${{ matrix.runner }})
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-latest, macos-13]
+        runner: [macos-latest, macos-15-intel]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 

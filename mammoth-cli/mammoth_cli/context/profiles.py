@@ -152,32 +152,48 @@ def _profiles_table(document: TOMLDocument) -> Any:
     return document.get("profiles")
 
 
+def _parse_profile(name: str, value: Any) -> ProfileRecord:
+    """Parse one raw profile table entry into a :class:`ProfileRecord`.
+
+    Args:
+        name: The profile name.
+        value: The raw TOML table for that profile.
+
+    Raises:
+        CliError: ``unsupported_profile_base_url`` when the entry carries a
+            legacy base_url that is not a canonical Mammoth endpoint.
+    """
+    server_prefix = value.get("server_prefix")
+    legacy_base_url = value.get("base_url")
+    if legacy_base_url is not None and server_prefix is None:
+        # Migrate a legacy base_url to its server prefix, or reject it. This
+        # must not be silently ignored: dropping it would redirect the
+        # profile to the app-eu default endpoint.
+        server_prefix = _server_prefix_from_legacy_base_url(name, str(legacy_base_url))
+    return ProfileRecord(
+        name=name,
+        workspace_id=int(value["workspace_id"]),
+        server_prefix=server_prefix,
+        project_id=value.get("project_id"),
+    )
+
+
 def load_profiles() -> dict[str, ProfileRecord]:
     """Load every stored profile.
 
     Returns:
         A mapping of profile name to :class:`ProfileRecord`.
+
+    Raises:
+        CliError: ``unsupported_profile_base_url`` if any profile carries an
+            unsupported legacy base_url. Use :func:`get_profile` to load a
+            single profile without being blocked by an unrelated invalid one.
     """
     document = _load_document()
     table = _profiles_table(document)
     if not table:
         return {}
-    result: dict[str, ProfileRecord] = {}
-    for name, value in table.items():
-        server_prefix = value.get("server_prefix")
-        legacy_base_url = value.get("base_url")
-        if legacy_base_url is not None and server_prefix is None:
-            # Migrate a legacy base_url to its server prefix, or reject it. This
-            # must not be silently ignored: dropping it would redirect the
-            # profile to the app-eu default endpoint.
-            server_prefix = _server_prefix_from_legacy_base_url(str(name), str(legacy_base_url))
-        result[name] = ProfileRecord(
-            name=str(name),
-            workspace_id=int(value["workspace_id"]),
-            server_prefix=server_prefix,
-            project_id=value.get("project_id"),
-        )
-    return result
+    return {str(name): _parse_profile(str(name), value) for name, value in table.items()}
 
 
 def list_profiles() -> list[ProfileRecord]:
@@ -188,10 +204,22 @@ def list_profiles() -> list[ProfileRecord]:
 def get_profile(name: str) -> ProfileRecord | None:
     """Return one stored profile, or None if it does not exist.
 
+    Only the requested profile is parsed, so an unrelated invalid profile (for
+    example one with an unsupported legacy base_url) never blocks loading a
+    different, valid profile. Requesting the invalid profile itself still fails.
+
     Args:
         name: The profile name.
+
+    Raises:
+        CliError: ``unsupported_profile_base_url`` if the requested profile
+            carries an unsupported legacy base_url.
     """
-    return load_profiles().get(name)
+    document = _load_document()
+    table = _profiles_table(document)
+    if not table or name not in table:
+        return None
+    return _parse_profile(name, table[name])
 
 
 def save_profile(record: ProfileRecord) -> None:
