@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import file as file_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -25,9 +26,9 @@ _UPLOAD_FOLDER = "mammoth.api.files.FilesAPI.upload_folder"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -83,11 +84,10 @@ def test_update_requires_patch_request(fake_service: FakeMammothService) -> None
 
 def test_update_forwards_patch_request(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"patch_request": {"patch": [{"name": "n"}]}}), encoding="utf-8")
+    patch_request = {"patch": [{"op": "replace", "path": "password", "value": "secret"}]}
+    doc.write_text(json.dumps({"patch_request": patch_request}), encoding="utf-8")
     file_cmd.file_update(_inv("file.update", extra_args=["7"], input_file=str(doc)))
-    assert fake_service.call_log == [
-        (_UPDATE, {"file_id": 7, "patch_request": {"patch": [{"name": "n"}]}})
-    ]
+    assert fake_service.call_log == [(_UPDATE, {"file_id": 7, "patch_request": patch_request})]
 
 
 def test_set_password_requires_password(fake_service: FakeMammothService) -> None:

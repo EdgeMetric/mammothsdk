@@ -50,6 +50,10 @@ stress.py
 employee.csv
 Store_Transactions.csv
 openapi.json
+# The CLI's pinned OpenAPI snapshot is a committed source artifact: contract
+# tests read it and the built wheel ships it. Keep it tracked despite the
+# broad rule above (which still ignores stray downloads elsewhere).
+!mammoth-cli/spec/openapi/openapi.json
 
 # Env files
 .env
@@ -65,3 +69,15 @@ bridge/
 
 # Transient STE text corpus
 mammoth-cli/build/
+
+# The CLI is poetry-managed for dev and installed via `uv tool install
+# mammoth-cli` from PyPI (uv resolves fresh); the clean-bootstrap installer CI
+# also resolves fresh by design. A real `uv lock` is not possible yet: uv needs
+# a PEP 621 `[project]` table, but this pyproject uses the legacy `[tool.poetry]`
+# layout that the release/CI workflows read (`poetry version`, `[tool.poetry]`
+# dependency reads), and even with a `[project]` table the required
+# `mammoth-io>=0.6.0,<0.7` does not resolve on PyPI until SDK 0.6.0 is published
+# (only <=0.5.1 exists). Until both hold, keep any (necessarily bogus) uv.lock
+# out of the tree so a stray one pinning the wrong requires-python (e.g. >=3.14)
+# cannot be committed. See the release notes for the follow-up.
+mammoth-cli/uv.lock

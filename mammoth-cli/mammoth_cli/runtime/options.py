@@ -15,10 +15,12 @@ from typing import cast
 
 import typer
 
+from mammoth_cli.output.policy import COLOR_MODES, VALID_OUTPUTS
 from mammoth_cli.runtime.invocation import Invocation
 
-OUTPUT_MODES = ("table", "json", "yaml", "ndjson", "plain")
-COLOR_MODES = ("auto", "always", "never")
+#: Alias of the canonical output-mode tuple, kept for callers that import it
+#: from this module. Both names refer to the same source of truth.
+OUTPUT_MODES = VALID_OUTPUTS
 
 
 def output_option() -> str:
@@ -39,14 +41,6 @@ def profile_option() -> str | None:
 def project_option() -> int | None:
     """Return the shared ``--project`` option definition."""
     return cast(int | None, typer.Option(None, "--project", help="Active project id override."))
-
-
-def base_url_option() -> str | None:
-    """Return the shared ``--base-url`` option definition."""
-    return cast(
-        str | None,
-        typer.Option(None, "--base-url", help="Expert runtime API base-url override."),
-    )
 
 
 def timeout_option() -> float | None:
@@ -127,7 +121,6 @@ def make_invocation(
     output: str,
     profile: str | None,
     project: int | None,
-    base_url: str | None,
     timeout: float | None,
     job_timeout: float | None,
     pipeline_timeout: float | None,
@@ -147,7 +140,6 @@ def make_invocation(
         output: The resolved ``--output`` value.
         profile: The resolved ``--profile`` value.
         project: The resolved ``--project`` value.
-        base_url: The resolved ``--base-url`` value.
         timeout: The resolved ``--timeout`` value.
         job_timeout: The resolved ``--job-timeout`` value.
         pipeline_timeout: The resolved ``--pipeline-timeout`` value.
@@ -166,7 +158,6 @@ def make_invocation(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,

@@ -29,15 +29,48 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up Python 3.14
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.14"
 
+      # R12 release-ordering gate: the CLI declares `mammoth-io>=0.6.0,<0.7`
+      # (see pyproject.toml), but the SDK and CLI publish from independent,
+      # tag-triggered workflows (sdk-release.yml / cli-release.yml). Nothing
+      # else stops a maintainer from tagging cli-vX before sdk-vX has actually
+      # published, which would ship a CLI wheel whose SDK dependency cannot
+      # resolve. Fail fast, before any build or publish step runs, if the
+      # exact range the CLI requires does not currently resolve on PyPI.
+      #
+      # This step only reads PyPI (`pip download` into a throwaway, discarded
+      # directory) — it never installs into this job's environment, never
+      # publishes, and never tags. `pip install --dry-run` was considered
+      # instead, but it reports "already satisfied" against whatever is
+      # already installed in the job's environment rather than checking PyPI,
+      # which would make the gate a no-op whenever the SDK happens to be
+      # preinstalled (e.g. editable). `pip download` always resolves against
+      # the index, so it has no such false-positive path.
+      - name: Gate — required mammoth-io version must resolve on PyPI
+        run: |
+          set -eu
+          python -m pip install --upgrade pip --quiet
+          spec="$(python -c "
+          import tomllib
+          d = tomllib.load(open('pyproject.toml', 'rb'))
+          print(d['tool']['poetry']['dependencies']['mammoth-io'])
+          ")"
+          echo "required mammoth-io spec: $spec"
+          gate_dir="$(mktemp -d)"
+          if ! python -m pip download "mammoth-io$spec" --no-deps -d "$gate_dir"; then
+            echo "::error::mammoth-io$spec does not resolve on PyPI yet. Publish/tag the sdk-v release first (see sdk-release.yml); this cli-v release is halted until it does."
+            exit 1
+          fi
+          rm -rf "$gate_dir"
+
       - name: Install Poetry
-        uses: snok/install-poetry@v1
+        uses: snok/install-poetry@a783c322200f0519c7926aa6faa857c4e23e9263 # v1.4.2
         with:
           virtualenvs-create: true
           virtualenvs-in-project: true
@@ -48,11 +81,23 @@ jobs:
         run: |
           set -eu
           tag="${GITHUB_REF_NAME}"
-          version="${tag#cli-v}"
-          case "$version" in
-            [0-9]*.[0-9]*.[0-9]*) : ;;
+          # The tag must be cli-v<SemVer>. Require the exact prefix, then
+          # validate the remainder as STRICT SemVer: MAJOR.MINOR.PATCH with
+          # optional -prerelease and +build metadata, fully anchored. The old
+          # glob `[0-9]*.[0-9]*.[0-9]*` accepted non-SemVer such as `1.2.3.4`
+          # or `1.2.3abc`; this regex does not, so a malformed tag fails fast
+          # before any build or publish step runs. (A residual mismatch like a
+          # leading zero is still caught by the pyproject-version check below.)
+          case "$tag" in
+            cli-v*) : ;;
             *) echo "::error::tag '$tag' is not cli-vX.Y.Z"; exit 1 ;;
           esac
+          version="${tag#cli-v}"
+          # Strict-SemVer check via the one shared validator used by all three
+          # release workflows (mammoth-cli/scripts/validate_semver.sh), so the
+          # rule lives in exactly one place. This step runs from the repo root
+          # (working-directory: .).
+          bash mammoth-cli/scripts/validate_semver.sh "$version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Verify pyproject version matches tag
@@ -67,12 +112,20 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction
 
+      # Validate the release against the in-repo SDK being shipped in this same
+      # repository state. The published wheel declares the PyPI dependency.
+      - name: Install in-repo SDK (editable)
+        run: poetry run pip install -e ..
+
       - name: Full gate (lint, type, tests, packaging)
         run: |
           set -eu
           poetry run ruff check mammoth_cli/ tests/ scripts/
           poetry run mypy mammoth_cli/
-          poetry run pytest tests/unit tests/contract tests/packaging -q -p no:cacheprovider -m "not live"
+          # Whole non-live tree in one invocation: naming a subset of dirs
+          # silently drops tests/realcode and tests/subprocess. Enforced by
+          # tests/contract/test_ci_runs_all_suites.py.
+          poetry run pytest tests -m "not live" -q -p no:cacheprovider
 
       - name: Build reproducible distribution
         env:
@@ -96,14 +149,14 @@ jobs:
           cat "$staging/SHA256SUMS"
 
       - name: Upload distribution artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dist
           path: mammoth-cli/dist/
           if-no-files-found: error
 
       - name: Upload release assets artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: release-assets
           path: mammoth-cli/release-assets/
@@ -118,13 +171,13 @@ jobs:
       id-token: write
     steps:
       - name: Download distribution artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: dist
           path: dist
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247 # v1.14.1
         with:
           packages-dir: dist/
 
@@ -137,23 +190,35 @@ jobs:
       id-token: write
     steps:
       - name: Download release assets
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: release-assets
           path: release-assets
 
       # Produces release-assets/SHA256SUMS.sigstore.json, covering SHA256SUMS
-      # with a GitHub Actions OIDC identity. Verify with `cosign verify-blob`
-      # (exact command recorded in the release documentation).
+      # with a GitHub Actions OIDC identity. Verify with `cosign verify-blob`,
+      # constraining --certificate-identity-regexp to this workflow's tag ref
+      # URL and --certificate-oidc-issuer to GitHub's OIDC issuer so that only
+      # artifacts signed by the EdgeMetric/mm-pysdk cli-release workflow pass —
+      # a bare verify-blob would accept any valid Sigstore certificate. The
+      # exact command is in the release body below and the installation docs.
       - name: Sign SHA256SUMS with Sigstore
-        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        uses: sigstore/gh-action-sigstore-python@f514d46b907ebcd5bedc05145c03b69c1edd8b46 # v3.0.0
         with:
           inputs: release-assets/SHA256SUMS
           upload-signing-artifacts: false
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
+          body: |
+            ## Quick install
+
+            Linux/macOS: `curl -fsSL https://github.com/EdgeMetric/mm-pysdk/releases/download/${{ github.ref_name }}/mammoth-install.sh | sh`
+
+            Windows PowerShell: `irm https://github.com/EdgeMetric/mm-pysdk/releases/download/${{ github.ref_name }}/mammoth-install.ps1 | iex`
+
+            Piping downloaded code directly to a shell is convenient but does not verify it first. For a verified install, download the installer, `SHA256SUMS`, and `SHA256SUMS.sigstore.json`, then run `cosign verify-blob --bundle SHA256SUMS.sigstore.json --certificate-identity-regexp '^https://github\.com/EdgeMetric/mm-pysdk/\.github/workflows/cli-release\.yml@refs/tags/' --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' SHA256SUMS` and `sha256sum --check --ignore-missing SHA256SUMS`. The identity and issuer constraints ensure the signature came from the EdgeMetric/mm-pysdk release workflow rather than any valid Sigstore certificate. Inspect the verified installer before executing the local file. On Windows, compare `(Get-FileHash .\mammoth-install.ps1 -Algorithm SHA256).Hash` with its `SHA256SUMS` entry after verifying the Sigstore bundle.
           fail_on_unmatched_files: true
           files: |
             release-assets/mammoth_cli-*.whl

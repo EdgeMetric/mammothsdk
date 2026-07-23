@@ -5,7 +5,13 @@ commands:
   disposition: command
   alias_of: null
   operation_ids: []
-  positionals: []
+  positionals:
+  - name: command_id
+    type: str
+    required: true
+    metavar: COMMAND_ID
+    falls_back_to_field: null
+    help: Command id to fetch the schema for (e.g. view.transform.bulk-replace).
   options: []
   sdk_symbol: mammoth_cli.commands.schema.get
   sdk_conversion: Call mammoth_cli.commands.schema.get with validated request fields.
@@ -21,8 +27,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth schema get --help
-  agent_example: mammoth schema get --output json --no-input
+  human_example: mammoth schema get COMMAND_ID --help
+  agent_example: mammoth schema get view.transform.bulk-replace --output json --no-input
   unit_tests:
   - UT-SCHEMA-GET
   contract_tests:

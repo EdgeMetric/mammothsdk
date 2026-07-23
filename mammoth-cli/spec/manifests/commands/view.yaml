@@ -6,7 +6,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetActiveUsers
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.active_users
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.active_users with validated request fields.
@@ -22,8 +34,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view active-user list --help
-  agent_example: mammoth view active-user list --output json --no-input
+  human_example: mammoth view active-user list DATASET_ID DATAVIEW_ID --help
+  agent_example: mammoth view active-user list 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-ACTIVE-USER-LIST
   contract_tests:
@@ -40,7 +52,19 @@ commands:
   alias_of: null
   operation_ids:
   - MarkActiveUser
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.mark_active
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.mark_active with validated request fields.
@@ -56,8 +80,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view active-user mark --help
-  agent_example: mammoth view active-user mark --output json --no-input
+  human_example: mammoth view active-user mark DATASET_ID DATAVIEW_ID --help
+  agent_example: mammoth view active-user mark 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-ACTIVE-USER-MARK
   contract_tests:
@@ -74,7 +98,13 @@ commands:
   alias_of: null
   operation_ids:
   - Preview
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.ai.AIAPI.generate_data
   sdk_conversion: Call mammoth.api.ai.AIAPI.generate_data with validated request fields.
@@ -90,8 +120,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view ai generate-data --help
-  agent_example: mammoth view ai generate-data --output json --no-input
+  human_example: mammoth view ai generate-data DATAVIEW_ID --help
+  agent_example: 'mammoth view ai generate-data 123 --input ''{"prompt": "example"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-AI-GENERATE-DATA
   contract_tests:
@@ -109,7 +139,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetValidationInfo
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.ai.AIAPI.get_data_gen_info
   sdk_conversion: Call mammoth.api.ai.AIAPI.get_data_gen_info with validated request fields.
@@ -125,8 +161,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view ai generation-info --help
-  agent_example: mammoth view ai generation-info --output json --no-input
+  human_example: mammoth view ai generation-info DATAVIEW_ID --help
+  agent_example: mammoth view ai generation-info 123 --output json --no-input
   unit_tests:
   - UT-VIEW-AI-GENERATION-INFO
   contract_tests:
@@ -143,7 +179,13 @@ commands:
   alias_of: null
   operation_ids:
   - GenerateProfile
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.ai.AIAPI.generate_profile
   sdk_conversion: Call mammoth.api.ai.AIAPI.generate_profile with validated request fields.
@@ -159,8 +201,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view ai profile --help
-  agent_example: mammoth view ai profile --output json --no-input
+  human_example: mammoth view ai profile DATAVIEW_ID --help
+  agent_example: mammoth view ai profile 123 --output json --no-input
   unit_tests:
   - UT-VIEW-AI-PROFILE
   contract_tests:
@@ -177,7 +219,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteMultipleDataviews
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.bulk_delete
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.bulk_delete with validated request fields.
@@ -193,8 +241,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view bulk-delete --help
-  agent_example: mammoth view bulk-delete --output json --no-input
+  human_example: mammoth view bulk-delete DATASET_ID --help
+  agent_example: 'mammoth view bulk-delete 123 --input ''{"dataview_ids": [1]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-BULK-DELETE
   contract_tests:
@@ -211,7 +259,19 @@ commands:
   alias_of: null
   operation_ids:
   - AddCheckpoint
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.create
   sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.create with validated request fields.
@@ -227,8 +287,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view checkpoint create --help
-  agent_example: mammoth view checkpoint create --output json --no-input
+  human_example: mammoth view checkpoint create DATASET_ID DATAVIEW_ID --help
+  agent_example: 'mammoth view checkpoint create 123 123 --input ''{"body": {"checkpoint_name": "example",
+    "checkpoint_type": "alert"}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-CHECKPOINT-CREATE
   contract_tests:
@@ -245,7 +306,25 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteCheckpoint
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: checkpoint_id
+    type: int
+    required: true
+    metavar: CHECKPOINT_ID
+    falls_back_to_field: null
+    help: ID of the checkpoint.
   options: []
   sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.delete
   sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.delete with validated request fields.
@@ -261,8 +340,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view checkpoint delete --help
-  agent_example: mammoth view checkpoint delete --output json --no-input
+  human_example: mammoth view checkpoint delete DATASET_ID DATAVIEW_ID CHECKPOINT_ID --help
+  agent_example: mammoth view checkpoint delete 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-CHECKPOINT-DELETE
   contract_tests:
@@ -279,7 +358,25 @@ commands:
   alias_of: null
   operation_ids:
   - GetPipelineCheckpoint
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: checkpoint_id
+    type: int
+    required: true
+    metavar: CHECKPOINT_ID
+    falls_back_to_field: null
+    help: ID of the checkpoint.
   options: []
   sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.get
   sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.get with validated request fields.
@@ -295,8 +392,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view checkpoint get --help
-  agent_example: mammoth view checkpoint get --output json --no-input
+  human_example: mammoth view checkpoint get DATASET_ID DATAVIEW_ID CHECKPOINT_ID --help
+  agent_example: mammoth view checkpoint get 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-CHECKPOINT-GET
   contract_tests:
@@ -313,7 +410,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetPipelineCheckpoints
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.list
   sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.list with validated request fields.
@@ -329,8 +438,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view checkpoint list --help
-  agent_example: mammoth view checkpoint list --output json --no-input
+  human_example: mammoth view checkpoint list DATASET_ID DATAVIEW_ID --help
+  agent_example: mammoth view checkpoint list 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-CHECKPOINT-LIST
   contract_tests:
@@ -347,7 +456,25 @@ commands:
   alias_of: null
   operation_ids:
   - EditPatches
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: checkpoint_id
+    type: int
+    required: true
+    metavar: CHECKPOINT_ID
+    falls_back_to_field: null
+    help: ID of the checkpoint.
   options: []
   sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.update
   sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.update with validated request fields.
@@ -363,8 +490,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view checkpoint update --help
-  agent_example: mammoth view checkpoint update --output json --no-input
+  human_example: mammoth view checkpoint update DATASET_ID DATAVIEW_ID CHECKPOINT_ID --help
+  agent_example: 'mammoth view checkpoint update 123 123 123 --input ''{"body": {"patches": [{"op": "replace",
+    "path": "approve"}]}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-CHECKPOINT-UPDATE
   contract_tests:
@@ -381,7 +509,19 @@ commands:
   alias_of: null
   operation_ids:
   - CreateConditionalFormat
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_create
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_create with validated request
@@ -398,8 +538,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view conditional-format create --help
-  agent_example: mammoth view conditional-format create --output json --no-input
+  human_example: mammoth view conditional-format create DATASET_ID DATAVIEW_ID --help
+  agent_example: 'mammoth view conditional-format create 123 123 --input ''{"rule": {"example": "example"}}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-CONDITIONAL-FORMAT-CREATE
   contract_tests:
@@ -417,7 +558,19 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteConditionalFormat
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_delete
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_delete with validated request
@@ -434,8 +587,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view conditional-format delete-all --help
-  agent_example: mammoth view conditional-format delete-all --output json --no-input
+  human_example: mammoth view conditional-format delete-all DATASET_ID DATAVIEW_ID --help
+  agent_example: mammoth view conditional-format delete-all 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-CONDITIONAL-FORMAT-DELETE-ALL
   contract_tests:
@@ -452,7 +605,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetConditionalFormat
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_list
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_list with validated request
@@ -469,8 +634,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view conditional-format list --help
-  agent_example: mammoth view conditional-format list --output json --no-input
+  human_example: mammoth view conditional-format list DATASET_ID DATAVIEW_ID --help
+  agent_example: mammoth view conditional-format list 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-CONDITIONAL-FORMAT-LIST
   contract_tests:
@@ -487,7 +652,19 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateConditionalFormat
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_update
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_update with validated request
@@ -504,8 +681,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view conditional-format update --help
-  agent_example: mammoth view conditional-format update --output json --no-input
+  human_example: mammoth view conditional-format update DATASET_ID DATAVIEW_ID --help
+  agent_example: 'mammoth view conditional-format update 123 123 --input ''{"rule": {"example": "example"}}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-CONDITIONAL-FORMAT-UPDATE
   contract_tests:
@@ -522,7 +700,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddDataview
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
   options: []
   sdk_symbol: mammoth.client.ViewsResource.create
   sdk_conversion: Call mammoth.client.ViewsResource.create with validated request fields.
@@ -538,8 +722,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view create --help
-  agent_example: mammoth view create --output json --no-input
+  human_example: mammoth view create DATASET_ID --help
+  agent_example: mammoth view create 123 --output json --no-input
   unit_tests:
   - UT-VIEW-CREATE
   contract_tests:
@@ -556,7 +740,19 @@ commands:
   alias_of: null
   operation_ids:
   - AddDataCheck
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.data_checks.DataChecksAPI.create
   sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.create with validated request fields.
@@ -572,8 +768,10 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view data-check create --help
-  agent_example: mammoth view data-check create --output json --no-input
+  human_example: mammoth view data-check create DATASET_ID DATAVIEW_ID --help
+  agent_example: 'mammoth view data-check create 123 123 --input ''{"body": {"checks": [{"check_type":
+    "null_percentage", "config": {"column": "example", "condition": "lt"}}], "name": "example"}}'' --output
+    json --no-input'
   unit_tests:
   - UT-VIEW-DATA-CHECK-CREATE
   contract_tests:
@@ -590,7 +788,25 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteDataCheck
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: data_check_id
+    type: int
+    required: true
+    metavar: DATA_CHECK_ID
+    falls_back_to_field: null
+    help: ID of the data check.
   options: []
   sdk_symbol: mammoth.api.data_checks.DataChecksAPI.delete
   sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.delete with validated request fields.
@@ -606,8 +822,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view data-check delete --help
-  agent_example: mammoth view data-check delete --output json --no-input
+  human_example: mammoth view data-check delete DATASET_ID DATAVIEW_ID DATA_CHECK_ID --help
+  agent_example: mammoth view data-check delete 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DATA-CHECK-DELETE
   contract_tests:
@@ -624,7 +840,25 @@ commands:
   alias_of: null
   operation_ids:
   - GetPipelineDataCheck
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: data_check_id
+    type: int
+    required: true
+    metavar: DATA_CHECK_ID
+    falls_back_to_field: null
+    help: ID of the data check.
   options: []
   sdk_symbol: mammoth.api.data_checks.DataChecksAPI.get
   sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.get with validated request fields.
@@ -640,8 +874,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view data-check get --help
-  agent_example: mammoth view data-check get --output json --no-input
+  human_example: mammoth view data-check get DATASET_ID DATAVIEW_ID DATA_CHECK_ID --help
+  agent_example: mammoth view data-check get 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DATA-CHECK-GET
   contract_tests:
@@ -658,7 +892,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetPipelineDataChecks
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.data_checks.DataChecksAPI.list
   sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.list with validated request fields.
@@ -674,8 +920,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view data-check list --help
-  agent_example: mammoth view data-check list --output json --no-input
+  human_example: mammoth view data-check list DATASET_ID DATAVIEW_ID --help
+  agent_example: mammoth view data-check list 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DATA-CHECK-LIST
   contract_tests:
@@ -692,7 +938,25 @@ commands:
   alias_of: null
   operation_ids:
   - EditDatacheck
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: data_check_id
+    type: int
+    required: true
+    metavar: DATA_CHECK_ID
+    falls_back_to_field: null
+    help: ID of the data check.
   options: []
   sdk_symbol: mammoth.api.data_checks.DataChecksAPI.update
   sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.update with validated request fields.
@@ -708,8 +972,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view data-check update --help
-  agent_example: mammoth view data-check update --output json --no-input
+  human_example: mammoth view data-check update DATASET_ID DATAVIEW_ID DATA_CHECK_ID --help
+  agent_example: 'mammoth view data-check update 123 123 123 --input ''{"body": {"patches": [{"op": "replace",
+    "path": "enable"}]}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-DATA-CHECK-UPDATE
   contract_tests:
@@ -726,7 +991,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetDataviewData
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.get_data
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.get_data with validated request fields.
@@ -742,8 +1019,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view data get --help
-  agent_example: mammoth view data get --output json --no-input
+  human_example: mammoth view data get DATASET_ID DATAVIEW_ID --help
+  agent_example: mammoth view data get 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DATA-GET
   contract_tests:
@@ -760,7 +1037,19 @@ commands:
   alias_of: null
   operation_ids:
   - ExecuteVolatileQuery
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.query_data
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.query_data with validated request fields.
@@ -776,8 +1065,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view data query --help
-  agent_example: mammoth view data query --output json --no-input
+  human_example: mammoth view data query DATASET_ID DATAVIEW_ID --help
+  agent_example: mammoth view data query 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DATA-QUERY
   contract_tests:
@@ -795,7 +1084,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteDataview
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view.
   options: []
   sdk_symbol: mammoth.client.ViewsResource.delete
   sdk_conversion: Call mammoth.client.ViewsResource.delete with validated request fields.
@@ -811,8 +1106,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view delete --help
-  agent_example: mammoth view delete --output json --no-input
+  human_example: mammoth view delete VIEW_ID --help
+  agent_example: mammoth view delete 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DELETE
   contract_tests:
@@ -829,7 +1124,19 @@ commands:
   alias_of: null
   operation_ids:
   - CreateDerivative
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.derivatives.DerivativesAPI.create
   sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.create with validated request fields.
@@ -845,8 +1152,10 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view derivative create --help
-  agent_example: mammoth view derivative create --output json --no-input
+  human_example: mammoth view derivative create DATASET_ID DATAVIEW_ID --help
+  agent_example: 'mammoth view derivative create 123 123 --input ''{"body": {"param": {"METRIC": {"AS":
+    "example", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "example", "FUNCTION": "SUM"}}]}}}}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-DERIVATIVE-CREATE
   contract_tests:
@@ -863,7 +1172,25 @@ commands:
   alias_of: null
   operation_ids:
   - FetchDerivativeData
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: derivative_id
+    type: int
+    required: true
+    metavar: DERIVATIVE_ID
+    falls_back_to_field: null
+    help: ID of the derivative.
   options: []
   sdk_symbol: mammoth.api.derivatives.DerivativesAPI.data
   sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.data with validated request fields.
@@ -879,8 +1206,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view derivative data --help
-  agent_example: mammoth view derivative data --output json --no-input
+  human_example: mammoth view derivative data DATASET_ID DATAVIEW_ID DERIVATIVE_ID --help
+  agent_example: 'mammoth view derivative data 123 123 123 --input ''{"body": {"condition": {"FILTER_TYPE":
+    "SHOW"}}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-DERIVATIVE-DATA
   contract_tests:
@@ -897,7 +1225,25 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteDerivative
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: derivative_id
+    type: int
+    required: true
+    metavar: DERIVATIVE_ID
+    falls_back_to_field: null
+    help: ID of the derivative.
   options: []
   sdk_symbol: mammoth.api.derivatives.DerivativesAPI.delete
   sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.delete with validated request fields.
@@ -913,8 +1259,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view derivative delete --help
-  agent_example: mammoth view derivative delete --output json --no-input
+  human_example: mammoth view derivative delete DATASET_ID DATAVIEW_ID DERIVATIVE_ID --help
+  agent_example: mammoth view derivative delete 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DERIVATIVE-DELETE
   contract_tests:
@@ -931,7 +1277,19 @@ commands:
   alias_of: null
   operation_ids:
   - ListDerivatives
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.derivatives.DerivativesAPI.list
   sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.list with validated request fields.
@@ -947,8 +1305,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view derivative list --help
-  agent_example: mammoth view derivative list --output json --no-input
+  human_example: mammoth view derivative list DATASET_ID DATAVIEW_ID --help
+  agent_example: mammoth view derivative list 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DERIVATIVE-LIST
   contract_tests:
@@ -965,7 +1323,25 @@ commands:
   alias_of: null
   operation_ids:
   - EditDerivative
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: derivative_id
+    type: int
+    required: true
+    metavar: DERIVATIVE_ID
+    falls_back_to_field: null
+    help: ID of the derivative.
   options: []
   sdk_symbol: mammoth.api.derivatives.DerivativesAPI.update
   sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.update with validated request fields.
@@ -981,8 +1357,10 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view derivative update --help
-  agent_example: mammoth view derivative update --output json --no-input
+  human_example: mammoth view derivative update DATASET_ID DATAVIEW_ID DERIVATIVE_ID --help
+  agent_example: 'mammoth view derivative update 123 123 123 --input ''{"body": {"patches": [{"op": "replace",
+    "path": "param", "value": {"METRIC": {"AS": "example", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE":
+    {"ARGUMENT": "example", "FUNCTION": "SUM"}}]}}}]}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-DERIVATIVE-UPDATE
   contract_tests:
@@ -999,7 +1377,13 @@ commands:
   alias_of: null
   operation_ids:
   - ExecutePipelineDraftCommand
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth.view.View.set_auto_run
   sdk_conversion: Call mammoth.view.View.set_auto_run with validated request fields.
@@ -1015,8 +1399,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view draft auto-run --help
-  agent_example: mammoth view draft auto-run --output json --no-input
+  human_example: mammoth view draft auto-run VIEW_ID --help
+  agent_example: 'mammoth view draft auto-run 123 --input ''{"enabled": true}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-DRAFT-AUTO-RUN
   contract_tests:
@@ -1033,7 +1417,13 @@ commands:
   alias_of: null
   operation_ids:
   - ExecutePipelineDraftCommand
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.pipeline.PipelineAPI.command
   sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.command with validated request fields.
@@ -1049,8 +1439,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view draft command --help
-  agent_example: mammoth view draft command --output json --no-input
+  human_example: mammoth view draft command DATAVIEW_ID --help
+  agent_example: 'mammoth view draft command 123 --input ''{"command": "example"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-DRAFT-COMMAND
   contract_tests:
@@ -1067,7 +1457,13 @@ commands:
   alias_of: null
   operation_ids:
   - ExecutePipelineDraftCommand
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth.view.View.discard_draft
   sdk_conversion: Call mammoth.view.View.discard_draft with validated request fields.
@@ -1083,8 +1479,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view draft discard --help
-  agent_example: mammoth view draft discard --output json --no-input
+  human_example: mammoth view draft discard VIEW_ID --help
+  agent_example: mammoth view draft discard 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DRAFT-DISCARD
   contract_tests:
@@ -1101,7 +1497,13 @@ commands:
   alias_of: null
   operation_ids:
   - ExecutePipelineDraftCommand
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth.view.View.enter_draft_mode
   sdk_conversion: Call mammoth.view.View.enter_draft_mode with validated request fields.
@@ -1117,8 +1519,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view draft enter --help
-  agent_example: mammoth view draft enter --output json --no-input
+  human_example: mammoth view draft enter VIEW_ID --help
+  agent_example: mammoth view draft enter 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DRAFT-ENTER
   contract_tests:
@@ -1135,10 +1537,17 @@ commands:
   alias_of: null
   operation_ids:
   - ExecutePipelineDraftCommand
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
-  sdk_symbol: mammoth.view.View.is_draft_mode
-  sdk_conversion: Call mammoth.view.View.is_draft_mode with validated request fields.
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.get_draft_status
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.get_draft_status with the dataview id to read
+    server-backed draft state (never a process-local flag).
   request_model: ViewDraftStatusRequest
   result_model: ViewDraftStatusResult
   mutation_class: read
@@ -1151,8 +1560,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view draft status --help
-  agent_example: mammoth view draft status --output json --no-input
+  human_example: mammoth view draft status DATAVIEW_ID --help
+  agent_example: mammoth view draft status 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DRAFT-STATUS
   contract_tests:
@@ -1161,7 +1570,7 @@ commands:
   - CT-VIEW-DRAFT-STATUS-ERROR
   draft_test: LT-VIEW-DRAFT-STATUS-DRAFT
   undo_test: null
-  known_restrictions: Property; never read process-local state, always server-backed.
+  known_restrictions: Server-backed draft-status seam used by 'view draft status'.
   reviewed_by: primary
 - command_id: view.draft.submit
   command_path: view draft submit
@@ -1169,7 +1578,13 @@ commands:
   alias_of: null
   operation_ids:
   - ExecutePipelineDraftCommand
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth.view.View.submit_draft
   sdk_conversion: Call mammoth.view.View.submit_draft with validated request fields.
@@ -1185,8 +1600,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view draft submit --help
-  agent_example: mammoth view draft submit --output json --no-input
+  human_example: mammoth view draft submit VIEW_ID --help
+  agent_example: mammoth view draft submit 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DRAFT-SUBMIT
   contract_tests:
@@ -1203,7 +1618,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddExport
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.exports.ExportsAPI.create
   sdk_conversion: Call mammoth.api.exports.ExportsAPI.create with validated request fields.
@@ -1219,8 +1640,11 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view export create --help
-  agent_example: mammoth view export create --output json --no-input
+  human_example: mammoth view export create DATAVIEW_ID --help
+  agent_example: 'mammoth view export create 123 --input ''{"export_spec": {"DATAVIEW_ID": 1, "handler_type":
+    "postgres", "trigger_type": "none", "target_properties": {"file": "example", "file_type": "example",
+    "include_hidden": true, "is_format_set": true, "use_format": true}, "additional_properties": {}, "run_immediately":
+    true}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-EXPORT-CREATE
   contract_tests:
@@ -1237,7 +1661,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddExport
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.exports.ExportsAPI.to_csv
   sdk_conversion: Call mammoth.api.exports.ExportsAPI.to_csv with validated request fields.
@@ -1253,8 +1683,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view export csv --help
-  agent_example: mammoth view export csv --output json --no-input
+  human_example: mammoth view export csv DATAVIEW_ID --help
+  agent_example: mammoth view export csv 123 --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-CSV
   contract_tests:
@@ -1272,7 +1702,19 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteExport
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: export_id
+    type: int
+    required: true
+    metavar: EXPORT_ID
+    falls_back_to_field: null
+    help: ID of the export.
   options: []
   sdk_symbol: mammoth.api.exports.ExportsAPI.delete
   sdk_conversion: Call mammoth.api.exports.ExportsAPI.delete with validated request fields.
@@ -1288,8 +1730,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view export delete --help
-  agent_example: mammoth view export delete --output json --no-input
+  human_example: mammoth view export delete DATAVIEW_ID EXPORT_ID --help
+  agent_example: mammoth view export delete 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-DELETE
   contract_tests:
@@ -1306,7 +1748,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetPipelineExport
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: export_id
+    type: int
+    required: true
+    metavar: EXPORT_ID
+    falls_back_to_field: null
+    help: ID of the export.
   options: []
   sdk_symbol: mammoth.api.exports.ExportsAPI.get
   sdk_conversion: Call mammoth.api.exports.ExportsAPI.get with validated request fields.
@@ -1322,8 +1776,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view export get --help
-  agent_example: mammoth view export get --output json --no-input
+  human_example: mammoth view export get DATAVIEW_ID EXPORT_ID --help
+  agent_example: mammoth view export get 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-GET
   contract_tests:
@@ -1340,7 +1794,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetPipelineExports
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.exports.ExportsAPI.list
   sdk_conversion: Call mammoth.api.exports.ExportsAPI.list with validated request fields.
@@ -1356,8 +1816,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view export list --help
-  agent_example: mammoth view export list --output json --no-input
+  human_example: mammoth view export list DATAVIEW_ID --help
+  agent_example: mammoth view export list 123 --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-LIST
   contract_tests:
@@ -1374,7 +1834,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreatePublishToDb
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.exports.ExportsAPI.publish_db
   sdk_conversion: Call mammoth.api.exports.ExportsAPI.publish_db with validated request fields.
@@ -1390,8 +1856,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view export publish-db --help
-  agent_example: mammoth view export publish-db --output json --no-input
+  human_example: mammoth view export publish-db DATAVIEW_ID --help
+  agent_example: 'mammoth view export publish-db 123 --input ''{"odbc_type": "postgres", "target_properties":
+    {"example": "example"}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-EXPORT-PUBLISH-DB
   contract_tests:
@@ -1408,7 +1875,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdatePublishToDb
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.exports.ExportsAPI.publish_db_update
   sdk_conversion: Call mammoth.api.exports.ExportsAPI.publish_db_update with validated request fields.
@@ -1424,8 +1897,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view export publish-db-update --help
-  agent_example: mammoth view export publish-db-update --output json --no-input
+  human_example: mammoth view export publish-db-update DATAVIEW_ID --help
+  agent_example: 'mammoth view export publish-db-update 123 --input ''{"patch": [{"example": "example"}]}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-EXPORT-PUBLISH-DB-UPDATE
   contract_tests:
@@ -1442,7 +1916,19 @@ commands:
   alias_of: null
   operation_ids:
   - EditExport
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: export_id
+    type: int
+    required: true
+    metavar: EXPORT_ID
+    falls_back_to_field: null
+    help: ID of the export.
   options: []
   sdk_symbol: mammoth.api.exports.ExportsAPI.update
   sdk_conversion: Call mammoth.api.exports.ExportsAPI.update with validated request fields.
@@ -1458,8 +1944,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view export update --help
-  agent_example: mammoth view export update --output json --no-input
+  human_example: mammoth view export update DATAVIEW_ID EXPORT_ID --help
+  agent_example: 'mammoth view export update 123 123 --input ''{"patches": [{"example": "example"}]}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-EXPORT-UPDATE
   contract_tests:
@@ -1476,7 +1963,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetDataviewInformationIndividual
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view.
   options: []
   sdk_symbol: mammoth.client.ViewsResource.get
   sdk_conversion: Call mammoth.client.ViewsResource.get with validated request fields.
@@ -1492,8 +1985,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view get --help
-  agent_example: mammoth view get --output json --no-input
+  human_example: mammoth view get VIEW_ID --help
+  agent_example: mammoth view get 123 --output json --no-input
   unit_tests:
   - UT-VIEW-GET
   contract_tests:
@@ -1510,7 +2003,13 @@ commands:
   alias_of: null
   operation_ids:
   - ListDataviews
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.list
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.list with validated request fields.
@@ -1526,8 +2025,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view list --help
-  agent_example: mammoth view list --output json --no-input
+  human_example: mammoth view list DATASET_ID --help
+  agent_example: mammoth view list 123 --output json --no-input
   unit_tests:
   - UT-VIEW-LIST
   contract_tests:
@@ -1544,7 +2043,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetParameterContext
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.parameter_context
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.parameter_context with validated request fields.
@@ -1560,8 +2071,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view parameter-context --help
-  agent_example: mammoth view parameter-context --output json --no-input
+  human_example: mammoth view parameter-context DATASET_ID DATAVIEW_ID --help
+  agent_example: mammoth view parameter-context 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-PARAMETER-CONTEXT
   contract_tests:
@@ -1578,7 +2089,13 @@ commands:
   alias_of: null
   operation_ids:
   - EditPipeline
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.pipeline.PipelineAPI.edit_pipeline
   sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.edit_pipeline with validated request fields.
@@ -1594,8 +2111,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view pipeline edit --help
-  agent_example: mammoth view pipeline edit --output json --no-input
+  human_example: mammoth view pipeline edit DATAVIEW_ID --help
+  agent_example: 'mammoth view pipeline edit 123 --input ''{"patches": [{"example": "example"}]}'' --output
+    json --no-input'
   unit_tests:
   - UT-VIEW-PIPELINE-EDIT
   contract_tests:
@@ -1613,7 +2131,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetPipeline
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.pipeline.PipelineAPI.get_pipeline
   sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.get_pipeline with validated request fields.
@@ -1629,8 +2153,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view pipeline get --help
-  agent_example: mammoth view pipeline get --output json --no-input
+  human_example: mammoth view pipeline get DATAVIEW_ID --help
+  agent_example: mammoth view pipeline get 123 --output json --no-input
   unit_tests:
   - UT-VIEW-PIPELINE-GET
   contract_tests:
@@ -1647,7 +2171,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetPipelineItems
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.pipeline.PipelineAPI.items
   sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.items with validated request fields.
@@ -1663,8 +2193,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view pipeline items --help
-  agent_example: mammoth view pipeline items --output json --no-input
+  human_example: mammoth view pipeline items DATAVIEW_ID --help
+  agent_example: mammoth view pipeline items 123 --output json --no-input
   unit_tests:
   - UT-VIEW-PIPELINE-ITEMS
   contract_tests:
@@ -1681,7 +2211,13 @@ commands:
   alias_of: null
   operation_ids:
   - RerunFromSequence
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.pipeline.PipelineAPI.rerun
   sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.rerun with validated request fields.
@@ -1697,8 +2233,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view pipeline rerun --help
-  agent_example: mammoth view pipeline rerun --output json --no-input
+  human_example: mammoth view pipeline rerun DATAVIEW_ID --help
+  agent_example: mammoth view pipeline rerun 123 --output json --no-input
   unit_tests:
   - UT-VIEW-PIPELINE-RERUN
   contract_tests:
@@ -1714,7 +2250,13 @@ commands:
   disposition: command
   alias_of: null
   operation_ids: []
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.pipeline.PipelineAPI.wait_for_pipeline
   sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.wait_for_pipeline with validated request fields.
@@ -1730,8 +2272,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view pipeline wait --help
-  agent_example: mammoth view pipeline wait --output json --no-input
+  human_example: mammoth view pipeline wait DATAVIEW_ID --help
+  agent_example: mammoth view pipeline wait 123 --output json --no-input
   unit_tests:
   - UT-VIEW-PIPELINE-WAIT
   contract_tests:
@@ -1748,7 +2290,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetDataviewPreview
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.preview
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.preview with validated request fields.
@@ -1764,8 +2318,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view preview --help
-  agent_example: mammoth view preview --output json --no-input
+  human_example: mammoth view preview DATASET_ID DATAVIEW_ID --help
+  agent_example: mammoth view preview 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-PREVIEW
   contract_tests:
@@ -1782,7 +2336,19 @@ commands:
   alias_of: null
   operation_ids:
   - RestoreDataview
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.restore
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.restore with validated request fields.
@@ -1798,8 +2364,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view restore --help
-  agent_example: mammoth view restore --output json --no-input
+  human_example: mammoth view restore DATASET_ID DATAVIEW_ID --help
+  agent_example: mammoth view restore 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-RESTORE
   contract_tests:
@@ -1816,7 +2382,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.pipeline.PipelineAPI.add_task
   sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.add_task with validated request fields.
@@ -1832,8 +2404,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view task add --help
-  agent_example: mammoth view task add --output json --no-input
+  human_example: mammoth view task add DATAVIEW_ID --help
+  agent_example: 'mammoth view task add 123 --input ''{"task_spec": {"example": "example"}}'' --output
+    json --no-input'
   unit_tests:
   - UT-VIEW-TASK-ADD
   contract_tests:
@@ -1850,7 +2423,19 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteTask
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: task_id
+    type: int
+    required: true
+    metavar: TASK_ID
+    falls_back_to_field: null
+    help: ID of the task.
   options: []
   sdk_symbol: mammoth.api.pipeline.PipelineAPI.delete_task
   sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.delete_task with validated request fields.
@@ -1866,8 +2451,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view task delete --help
-  agent_example: mammoth view task delete --output json --no-input
+  human_example: mammoth view task delete DATAVIEW_ID TASK_ID --help
+  agent_example: mammoth view task delete 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-TASK-DELETE
   contract_tests:
@@ -1884,7 +2469,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetPipelineTask
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: task_id
+    type: int
+    required: true
+    metavar: TASK_ID
+    falls_back_to_field: null
+    help: ID of the task.
   options: []
   sdk_symbol: mammoth.api.pipeline.PipelineAPI.get_task
   sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.get_task with validated request fields.
@@ -1900,8 +2497,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view task get --help
-  agent_example: mammoth view task get --output json --no-input
+  human_example: mammoth view task get DATAVIEW_ID TASK_ID --help
+  agent_example: mammoth view task get 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-TASK-GET
   contract_tests:
@@ -1918,7 +2515,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetPipelineTasks
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.pipeline.PipelineAPI.list_tasks
   sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.list_tasks with validated request fields.
@@ -1934,8 +2537,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view task list --help
-  agent_example: mammoth view task list --output json --no-input
+  human_example: mammoth view task list DATAVIEW_ID --help
+  agent_example: mammoth view task list 123 --output json --no-input
   unit_tests:
   - UT-VIEW-TASK-LIST
   contract_tests:
@@ -1952,7 +2555,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetTaskPreview
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.pipeline.PipelineAPI.preview_task
   sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.preview_task with validated request fields.
@@ -1968,8 +2577,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view task preview --help
-  agent_example: mammoth view task preview --output json --no-input
+  human_example: mammoth view task preview DATAVIEW_ID --help
+  agent_example: 'mammoth view task preview 123 --input ''{"task_spec": {"example": "example"}}'' --output
+    json --no-input'
   unit_tests:
   - UT-VIEW-TASK-PREVIEW
   contract_tests:
@@ -1986,7 +2596,19 @@ commands:
   alias_of: null
   operation_ids:
   - EditTask
-  positionals: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: task_id
+    type: int
+    required: true
+    metavar: TASK_ID
+    falls_back_to_field: null
+    help: ID of the task.
   options: []
   sdk_symbol: mammoth.api.pipeline.PipelineAPI.update_task
   sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.update_task with validated request fields.
@@ -2002,8 +2624,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view task update --help
-  agent_example: mammoth view task update --output json --no-input
+  human_example: mammoth view task update DATAVIEW_ID TASK_ID --help
+  agent_example: 'mammoth view task update 123 123 --input ''{"task_spec": {"example": "example"}}'' --output
+    json --no-input'
   unit_tests:
   - UT-VIEW-TASK-UPDATE
   contract_tests:
@@ -2020,7 +2643,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.add_column
   sdk_conversion: Call mammoth._mixins._column_ops.ColumnOpsMixin.add_column with validated request fields.
@@ -2036,8 +2665,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform add-column --help
-  agent_example: mammoth view transform add-column --output json --no-input
+  human_example: mammoth view transform add-column VIEW_ID --help
+  agent_example: 'mammoth view transform add-column 123 --input ''{"name": "example"}'' --output json
+    --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-ADD-COLUMN
   contract_tests:
@@ -2054,7 +2684,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
   sdk_conversion: Call mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql with validated request fields.
@@ -2070,8 +2706,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform add-sql --help
-  agent_example: mammoth view transform add-sql --output json --no-input
+  human_example: mammoth view transform add-sql VIEW_ID --help
+  agent_example: 'mammoth view transform add-sql 123 --input ''{"query": "example"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-ADD-SQL
   contract_tests:
@@ -2088,7 +2724,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.gen_ai
   sdk_conversion: Call mammoth._mixins._advanced_ops.AdvancedOpsMixin.gen_ai with validated request fields.
@@ -2104,8 +2746,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform ai --help
-  agent_example: mammoth view transform ai --output json --no-input
+  human_example: mammoth view transform ai VIEW_ID --help
+  agent_example: 'mammoth view transform ai 123 --input ''{"prompt": "example", "context_columns": ["example"]}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-AI
   contract_tests:
@@ -2123,7 +2766,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._text_ops.TextOpsMixin.bulk_replace
   sdk_conversion: Call mammoth._mixins._text_ops.TextOpsMixin.bulk_replace with validated request fields.
@@ -2139,8 +2788,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform bulk-replace --help
-  agent_example: mammoth view transform bulk-replace --output json --no-input
+  human_example: mammoth view transform bulk-replace VIEW_ID --help
+  agent_example: 'mammoth view transform bulk-replace 123 --input ''{"columns": ["example"], "mapping":
+    [{"search": ["example"], "replace": "example"}]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-BULK-REPLACE
   contract_tests:
@@ -2158,7 +2808,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.combine_columns
   sdk_conversion: Call mammoth._mixins._column_ops.ColumnOpsMixin.combine_columns with validated request
@@ -2175,8 +2831,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform combine-columns --help
-  agent_example: mammoth view transform combine-columns --output json --no-input
+  human_example: mammoth view transform combine-columns VIEW_ID --help
+  agent_example: 'mammoth view transform combine-columns 123 --input ''{"sources": ["example"]}'' --output
+    json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-COMBINE-COLUMNS
   contract_tests:
@@ -2194,7 +2851,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.convert_type
   sdk_conversion: Call mammoth._mixins._column_ops.ColumnOpsMixin.convert_type with validated request
@@ -2211,8 +2874,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform convert-type --help
-  agent_example: mammoth view transform convert-type --output json --no-input
+  human_example: mammoth view transform convert-type VIEW_ID --help
+  agent_example: 'mammoth view transform convert-type 123 --input ''{"conversions": [{"column": "example",
+    "to": "TEXT"}]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-CONVERT-TYPE
   contract_tests:
@@ -2229,7 +2893,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.copy_columns
   sdk_conversion: Call mammoth._mixins._column_ops.ColumnOpsMixin.copy_columns with validated request
@@ -2246,8 +2916,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform copy-columns --help
-  agent_example: mammoth view transform copy-columns --output json --no-input
+  human_example: mammoth view transform copy-columns VIEW_ID --help
+  agent_example: 'mammoth view transform copy-columns 123 --input ''{"copies": [{"source": "example"}]}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-COPY-COLUMNS
   contract_tests:
@@ -2264,7 +2935,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._aggregate_ops.AggregateOpsMixin.crosstab
   sdk_conversion: Call mammoth._mixins._aggregate_ops.AggregateOpsMixin.crosstab with validated request
@@ -2281,8 +2958,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform crosstab --help
-  agent_example: mammoth view transform crosstab --output json --no-input
+  human_example: mammoth view transform crosstab VIEW_ID --help
+  agent_example: 'mammoth view transform crosstab 123 --input ''{"rows": ["example"], "pivot_column":
+    "example", "select": {"function": "SUM"}, "dataset_name": "example"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-CROSSTAB
   contract_tests:
@@ -2300,7 +2978,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._date_ops.DateOpsMixin.date_diff
   sdk_conversion: Call mammoth._mixins._date_ops.DateOpsMixin.date_diff with validated request fields.
@@ -2316,8 +3000,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform date-diff --help
-  agent_example: mammoth view transform date-diff --output json --no-input
+  human_example: mammoth view transform date-diff VIEW_ID --help
+  agent_example: 'mammoth view transform date-diff 123 --input ''{"component": "YEAR", "start": "example",
+    "end": "example"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-DATE-DIFF
   contract_tests:
@@ -2334,7 +3019,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.delete_columns
   sdk_conversion: Call mammoth._mixins._column_ops.ColumnOpsMixin.delete_columns with validated request
@@ -2351,8 +3042,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform delete-columns --help
-  agent_example: mammoth view transform delete-columns --output json --no-input
+  human_example: mammoth view transform delete-columns VIEW_ID --help
+  agent_example: 'mammoth view transform delete-columns 123 --input ''{"columns": ["example"]}'' --output
+    json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-DELETE-COLUMNS
   contract_tests:
@@ -2370,7 +3062,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.discard_duplicates
   sdk_conversion: Call mammoth._mixins._row_ops.RowOpsMixin.discard_duplicates with validated request
@@ -2387,8 +3085,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform discard-duplicates --help
-  agent_example: mammoth view transform discard-duplicates --output json --no-input
+  human_example: mammoth view transform discard-duplicates VIEW_ID --help
+  agent_example: mammoth view transform discard-duplicates 123 --output json --no-input
   unit_tests:
   - UT-VIEW-TRANSFORM-DISCARD-DUPLICATES
   contract_tests:
@@ -2405,7 +3103,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._date_ops.DateOpsMixin.extract_date
   sdk_conversion: Call mammoth._mixins._date_ops.DateOpsMixin.extract_date with validated request fields.
@@ -2421,8 +3125,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform extract-date --help
-  agent_example: mammoth view transform extract-date --output json --no-input
+  human_example: mammoth view transform extract-date VIEW_ID --help
+  agent_example: 'mammoth view transform extract-date 123 --input ''{"column": "example", "component":
+    "year"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-EXTRACT-DATE
   contract_tests:
@@ -2439,7 +3144,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.fill_missing
   sdk_conversion: Call mammoth._mixins._row_ops.RowOpsMixin.fill_missing with validated request fields.
@@ -2455,8 +3166,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform fill-missing --help
-  agent_example: mammoth view transform fill-missing --output json --no-input
+  human_example: mammoth view transform fill-missing VIEW_ID --help
+  agent_example: 'mammoth view transform fill-missing 123 --input ''{"column": "example", "direction":
+    "FIRST_VALUE"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-FILL-MISSING
   contract_tests:
@@ -2473,7 +3185,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._filter_ops.FilterOpsMixin.filter_rows
   sdk_conversion: Call mammoth._mixins._filter_ops.FilterOpsMixin.filter_rows with validated request fields.
@@ -2489,8 +3207,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform filter --help
-  agent_example: mammoth view transform filter --output json --no-input
+  human_example: mammoth view transform filter VIEW_ID --help
+  agent_example: 'mammoth view transform filter 123 --input ''{"condition": {"column": "Status", "operator":
+    "EQ", "value": "Active"}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-FILTER
   contract_tests:
@@ -2507,7 +3226,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.generate_sql
   sdk_conversion: Call mammoth._mixins._advanced_ops.AdvancedOpsMixin.generate_sql with validated request
@@ -2524,8 +3249,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform generate-sql --help
-  agent_example: mammoth view transform generate-sql --output json --no-input
+  human_example: mammoth view transform generate-sql VIEW_ID --help
+  agent_example: 'mammoth view transform generate-sql 123 --input ''{"intent": "example"}'' --output json
+    --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-GENERATE-SQL
   contract_tests:
@@ -2543,7 +3269,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._date_ops.DateOpsMixin.increment_date
   sdk_conversion: Call mammoth._mixins._date_ops.DateOpsMixin.increment_date with validated request fields.
@@ -2559,8 +3291,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform increment-date --help
-  agent_example: mammoth view transform increment-date --output json --no-input
+  human_example: mammoth view transform increment-date VIEW_ID --help
+  agent_example: 'mammoth view transform increment-date 123 --input ''{"column": "example", "delta": {}}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-INCREMENT-DATE
   contract_tests:
@@ -2577,7 +3310,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.join
   sdk_conversion: Call mammoth._mixins._advanced_ops.AdvancedOpsMixin.join with validated request fields.
@@ -2593,8 +3332,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform join --help
-  agent_example: mammoth view transform join --output json --no-input
+  human_example: mammoth view transform join VIEW_ID --help
+  agent_example: 'mammoth view transform join 123 --input ''{"foreign_view": 1, "join_type": "INNER",
+    "on": [{"left": "example", "right": "example"}], "select": ["example"]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-JOIN
   contract_tests:
@@ -2611,7 +3351,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.json_extract
   sdk_conversion: Call mammoth._mixins._advanced_ops.AdvancedOpsMixin.json_extract with validated request
@@ -2628,8 +3374,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform json-extract --help
-  agent_example: mammoth view transform json-extract --output json --no-input
+  human_example: mammoth view transform json-extract VIEW_ID --help
+  agent_example: 'mammoth view transform json-extract 123 --input ''{"column": "example"}'' --output json
+    --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-JSON-EXTRACT
   contract_tests:
@@ -2646,7 +3393,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.limit_rows
   sdk_conversion: Call mammoth._mixins._row_ops.RowOpsMixin.limit_rows with validated request fields.
@@ -2662,8 +3415,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform limit-rows --help
-  agent_example: mammoth view transform limit-rows --output json --no-input
+  human_example: mammoth view transform limit-rows VIEW_ID --help
+  agent_example: 'mammoth view transform limit-rows 123 --input ''{"n": 1}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-LIMIT-ROWS
   contract_tests:
@@ -2680,7 +3433,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.lookup
   sdk_conversion: Call mammoth._mixins._advanced_ops.AdvancedOpsMixin.lookup with validated request fields.
@@ -2696,8 +3455,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform lookup --help
-  agent_example: mammoth view transform lookup --output json --no-input
+  human_example: mammoth view transform lookup VIEW_ID --help
+  agent_example: 'mammoth view transform lookup 123 --input ''{"source": "example", "lookup_view_id":
+    1, "key": "example", "value": "example"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-LOOKUP
   contract_tests:
@@ -2714,7 +3474,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._math_ops.MathOpsMixin.math
   sdk_conversion: Call mammoth._mixins._math_ops.MathOpsMixin.math with validated request fields.
@@ -2730,8 +3496,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform math --help
-  agent_example: mammoth view transform math --output json --no-input
+  human_example: mammoth view transform math VIEW_ID --help
+  agent_example: 'mammoth view transform math 123 --input ''{"expression": "example"}'' --output json
+    --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-MATH
   contract_tests:
@@ -2748,7 +3515,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._aggregate_ops.AggregateOpsMixin.pivot
   sdk_conversion: Call mammoth._mixins._aggregate_ops.AggregateOpsMixin.pivot with validated request fields.
@@ -2764,8 +3537,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform pivot --help
-  agent_example: mammoth view transform pivot --output json --no-input
+  human_example: mammoth view transform pivot VIEW_ID --help
+  agent_example: 'mammoth view transform pivot 123 --input ''{"group_by": ["example"], "aggregations":
+    [{"column": "example", "function": "SUM"}]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-PIVOT
   contract_tests:
@@ -2782,7 +3556,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._text_ops.TextOpsMixin.replace_values
   sdk_conversion: Call mammoth._mixins._text_ops.TextOpsMixin.replace_values with validated request fields.
@@ -2798,8 +3578,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform replace --help
-  agent_example: mammoth view transform replace --output json --no-input
+  human_example: mammoth view transform replace VIEW_ID --help
+  agent_example: 'mammoth view transform replace 123 --input ''{"columns": ["example"], "find": "example",
+    "replace": "example"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-REPLACE
   contract_tests:
@@ -2816,7 +3597,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._filter_ops.FilterOpsMixin.set_values
   sdk_conversion: Call mammoth._mixins._filter_ops.FilterOpsMixin.set_values with validated request fields.
@@ -2832,8 +3619,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform set-values --help
-  agent_example: mammoth view transform set-values --output json --no-input
+  human_example: mammoth view transform set-values VIEW_ID --help
+  agent_example: 'mammoth view transform set-values 123 --input ''{"values": [{"value": "example"}]}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-SET-VALUES
   contract_tests:
@@ -2850,7 +3638,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._math_ops.MathOpsMixin.small_large
   sdk_conversion: Call mammoth._mixins._math_ops.MathOpsMixin.small_large with validated request fields.
@@ -2866,8 +3660,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform small-large --help
-  agent_example: mammoth view transform small-large --output json --no-input
+  human_example: mammoth view transform small-large VIEW_ID --help
+  agent_example: 'mammoth view transform small-large 123 --input ''{"function": "SMALL", "columns": ["example"]}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-SMALL-LARGE
   contract_tests:
@@ -2884,7 +3679,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._text_ops.TextOpsMixin.split_column
   sdk_conversion: Call mammoth._mixins._text_ops.TextOpsMixin.split_column with validated request fields.
@@ -2900,8 +3701,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform split --help
-  agent_example: mammoth view transform split --output json --no-input
+  human_example: mammoth view transform split VIEW_ID --help
+  agent_example: 'mammoth view transform split 123 --input ''{"column": "example", "delimiter": "example",
+    "new_columns": [{"name": "example"}]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-SPLIT
   contract_tests:
@@ -2918,7 +3720,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._text_ops.TextOpsMixin.substring
   sdk_conversion: Call mammoth._mixins._text_ops.TextOpsMixin.substring with validated request fields.
@@ -2934,8 +3742,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform substring --help
-  agent_example: mammoth view transform substring --output json --no-input
+  human_example: mammoth view transform substring VIEW_ID --help
+  agent_example: 'mammoth view transform substring 123 --input ''{"column": "example"}'' --output json
+    --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-SUBSTRING
   contract_tests:
@@ -2952,7 +3761,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._text_ops.TextOpsMixin.text_transform
   sdk_conversion: Call mammoth._mixins._text_ops.TextOpsMixin.text_transform with validated request fields.
@@ -2968,8 +3783,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform text --help
-  agent_example: mammoth view transform text --output json --no-input
+  human_example: mammoth view transform text VIEW_ID --help
+  agent_example: 'mammoth view transform text 123 --input ''{"columns": ["example"]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-TEXT
   contract_tests:
@@ -2986,7 +3801,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.unnest
   sdk_conversion: Call mammoth._mixins._row_ops.RowOpsMixin.unnest with validated request fields.
@@ -3002,8 +3823,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform unnest --help
-  agent_example: mammoth view transform unnest --output json --no-input
+  human_example: mammoth view transform unnest VIEW_ID --help
+  agent_example: 'mammoth view transform unnest 123 --input ''{"columns": ["example"]}'' --output json
+    --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-UNNEST
   contract_tests:
@@ -3020,7 +3842,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddTask
-  positionals: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._aggregate_ops.AggregateOpsMixin.window
   sdk_conversion: Call mammoth._mixins._aggregate_ops.AggregateOpsMixin.window with validated request
@@ -3037,8 +3865,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view transform window --help
-  agent_example: mammoth view transform window --output json --no-input
+  human_example: mammoth view transform window VIEW_ID --help
+  agent_example: 'mammoth view transform window 123 --input ''{"function": "ROW_NUMBER"}'' --output json
+    --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-WINDOW
   contract_tests:
@@ -3055,7 +3884,19 @@ commands:
   alias_of: null
   operation_ids:
   - TrashDataview
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.trash
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.trash with validated request fields.
@@ -3071,8 +3912,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view trash --help
-  agent_example: mammoth view trash --output json --no-input
+  human_example: mammoth view trash DATASET_ID DATAVIEW_ID --help
+  agent_example: mammoth view trash 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-TRASH
   contract_tests:
@@ -3089,7 +3930,19 @@ commands:
   alias_of: null
   operation_ids:
   - Patch
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.update
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.update with validated request fields.
@@ -3105,8 +3958,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view update --help
-  agent_example: mammoth view update --output json --no-input
+  human_example: mammoth view update DATASET_ID DATAVIEW_ID --help
+  agent_example: 'mammoth view update 123 123 --input ''{"patch_data": [{"example": "example"}]}'' --output
+    json --no-input'
   unit_tests:
   - UT-VIEW-UPDATE
   contract_tests:
@@ -3124,7 +3978,25 @@ commands:
   alias_of: null
   operation_ids:
   - ApplyPipelineVersion
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: version_id
+    type: int
+    required: true
+    metavar: VERSION_ID
+    falls_back_to_field: null
+    help: ID of the version.
   options: []
   sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.apply
   sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.apply with validated request
@@ -3141,8 +4013,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view version apply --help
-  agent_example: mammoth view version apply --output json --no-input
+  human_example: mammoth view version apply DATASET_ID DATAVIEW_ID VERSION_ID --help
+  agent_example: mammoth view version apply 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-VERSION-APPLY
   contract_tests:
@@ -3159,7 +4031,25 @@ commands:
   alias_of: null
   operation_ids:
   - DeletePipelineVersion
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: version_id
+    type: int
+    required: true
+    metavar: VERSION_ID
+    falls_back_to_field: null
+    help: ID of the version.
   options: []
   sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.delete
   sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.delete with validated request
@@ -3176,8 +4066,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view version delete --help
-  agent_example: mammoth view version delete --output json --no-input
+  human_example: mammoth view version delete DATASET_ID DATAVIEW_ID VERSION_ID --help
+  agent_example: mammoth view version delete 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-VERSION-DELETE
   contract_tests:
@@ -3194,7 +4084,25 @@ commands:
   alias_of: null
   operation_ids:
   - GetPipelineVersion
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: version_id
+    type: int
+    required: true
+    metavar: VERSION_ID
+    falls_back_to_field: null
+    help: ID of the version.
   options: []
   sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.get
   sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.get with validated request fields.
@@ -3210,8 +4118,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view version get --help
-  agent_example: mammoth view version get --output json --no-input
+  human_example: mammoth view version get DATASET_ID DATAVIEW_ID VERSION_ID --help
+  agent_example: mammoth view version get 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-VERSION-GET
   contract_tests:
@@ -3228,7 +4136,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetPipelineVersions
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
   options: []
   sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.list
   sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.list with validated request fields.
@@ -3244,8 +4164,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view version list --help
-  agent_example: mammoth view version list --output json --no-input
+  human_example: mammoth view version list DATASET_ID DATAVIEW_ID --help
+  agent_example: mammoth view version list 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-VERSION-LIST
   contract_tests:
@@ -3262,7 +4182,25 @@ commands:
   alias_of: null
   operation_ids:
   - EditPipelineVersion
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: version_id
+    type: int
+    required: true
+    metavar: VERSION_ID
+    falls_back_to_field: null
+    help: ID of the version.
   options: []
   sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.update
   sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.update with validated request
@@ -3279,8 +4217,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view version update --help
-  agent_example: mammoth view version update --output json --no-input
+  human_example: mammoth view version update DATASET_ID DATAVIEW_ID VERSION_ID --help
+  agent_example: 'mammoth view version update 123 123 123 --input ''{"body": {"patches": [{"op": "replace",
+    "path": "name"}]}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-VERSION-UPDATE
   contract_tests:

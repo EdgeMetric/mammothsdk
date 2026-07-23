@@ -57,6 +57,30 @@ mammoth view transform math 1039 --project 180 --output json --no-input \
 See [references/machine-output.md](references/machine-output.md) and
 [references/input.md](references/input.md).
 
+A transform that takes a nested request is driven the same way. Bulk-replace
+maps many search values to one replacement, across one or more columns:
+
+```bash
+mammoth view transform bulk-replace VIEW_ID \
+  --project PROJECT_ID \
+  --input '{
+    "columns": ["Status"],
+    "mapping": [
+      {"search": ["In progress", "Pending"], "replace": "Open"}
+    ],
+    "match_case": false,
+    "match_words": true
+  }' \
+  --output json --no-input
+```
+
+- `columns` and `mapping` are required; each mapping needs `search` (a list) and
+  `replace`.
+- `match_case` defaults to `true`; `match_words` defaults to `false`.
+- `condition` is optional (restrict the rows the replacement touches).
+- Run `mammoth schema get view.transform.bulk-replace --output json --no-input`
+  for the full request shape.
+
 ## Safe mutations
 
 ```bash
@@ -68,9 +92,12 @@ See [references/safety.md](references/safety.md).
 
 ## Jobs, drafts, and cleanup
 
-Long operations return a job; wait on it, then inspect the result. Draft mode
-batches pipeline edits before submitting. Always delete resources you created in
-a shared project. See [references/jobs-drafts.md](references/jobs-drafts.md) and
+Long operations return a job. A command's `wait_policy` (see `mammoth schema
+get`) tells you what to expect: `always_wait` and `start_or_wait` commands
+resolve the job for you and return the final result; only a `returns_job`
+command normally needs you to wait on the job id explicitly. Draft mode batches
+pipeline edits before submitting. Always delete resources you created in a
+shared project. See [references/jobs-drafts.md](references/jobs-drafts.md) and
 [references/recovery.md](references/recovery.md).
 
 ## Discover everything

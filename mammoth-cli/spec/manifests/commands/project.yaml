@@ -23,7 +23,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project bulk-delete --help
-  agent_example: mammoth project bulk-delete --output json --no-input
+  agent_example: 'mammoth project bulk-delete --input ''{"project_ids": [1]}'' --output json --no-input'
   unit_tests:
   - UT-PROJECT-BULK-DELETE
   contract_tests:
@@ -57,7 +57,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project bulk-update --help
-  agent_example: mammoth project bulk-update --output json --no-input
+  agent_example: 'mammoth project bulk-update --input ''{"patch_data": {"example": "example"}}'' --output
+    json --no-input'
   unit_tests:
   - UT-PROJECT-BULK-UPDATE
   contract_tests:
@@ -75,7 +76,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetProjectCheckpoints
-  positionals: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.checkpoint_list
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.checkpoint_list with validated request fields.
@@ -92,7 +99,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project checkpoint list --help
-  agent_example: mammoth project checkpoint list --output json --no-input
+  agent_example: mammoth project checkpoint list 123 --output json --no-input
   unit_tests:
   - UT-PROJECT-CHECKPOINT-LIST
   contract_tests:
@@ -109,7 +116,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreateProject
-  positionals: []
+  positionals:
+  - name: name
+    type: str
+    required: false
+    metavar: NAME
+    falls_back_to_field: name
+    help: Name of the new project; or pass it via the 'name' input field.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.create
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.create with validated request fields.
@@ -126,7 +139,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project create --help
-  agent_example: mammoth project create --output json --no-input
+  agent_example: mammoth project create example --output json --no-input
   unit_tests:
   - UT-PROJECT-CREATE
   contract_tests:
@@ -143,7 +156,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetProjectDataChecks
-  positionals: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.data_check_list
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.data_check_list with validated request fields.
@@ -160,7 +179,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project data-check list --help
-  agent_example: mammoth project data-check list --output json --no-input
+  agent_example: mammoth project data-check list 123 --output json --no-input
   unit_tests:
   - UT-PROJECT-DATA-CHECK-LIST
   contract_tests:
@@ -177,7 +196,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteProject
-  positionals: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.delete
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.delete with validated request fields.
@@ -194,7 +219,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project delete --help
-  agent_example: mammoth project delete --output json --no-input
+  agent_example: mammoth project delete 123 --output json --no-input
   unit_tests:
   - UT-PROJECT-DELETE
   contract_tests:
@@ -210,7 +235,13 @@ commands:
   disposition: command
   alias_of: null
   operation_ids: []
-  positionals: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.get
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.get with validated request fields.
@@ -227,7 +258,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project get --help
-  agent_example: mammoth project get --output json --no-input
+  agent_example: mammoth project get 123 --output json --no-input
   unit_tests:
   - UT-PROJECT-GET
   contract_tests:
@@ -278,7 +309,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetPendingChanges
-  positionals: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.pending_changes
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.pending_changes with validated request fields.
@@ -295,7 +332,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project pending-changes --help
-  agent_example: mammoth project pending-changes --output json --no-input
+  agent_example: mammoth project pending-changes 123 --output json --no-input
   unit_tests:
   - UT-PROJECT-PENDING-CHANGES
   contract_tests:
@@ -312,7 +349,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetPublishCredentials
-  positionals: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.publish_credentials
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.publish_credentials with validated request fields.
@@ -329,7 +372,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project publish-credentials --help
-  agent_example: mammoth project publish-credentials --output json --no-input
+  agent_example: 'mammoth project publish-credentials 123 --input ''{"odbc_type": "postgres"}'' --output
+    json --no-input'
   unit_tests:
   - UT-PROJECT-PUBLISH-CREDENTIALS
   contract_tests:
@@ -346,7 +390,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetResourceDependencies
-  positionals: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.resource_dependencies
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.resource_dependencies with validated request fields.
@@ -363,7 +413,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project resource-dependencies --help
-  agent_example: mammoth project resource-dependencies --output json --no-input
+  agent_example: 'mammoth project resource-dependencies 123 --input ''{"resource_ids": ["example"]}''
+    --output json --no-input'
   unit_tests:
   - UT-PROJECT-RESOURCE-DEPENDENCIES
   contract_tests:
@@ -380,7 +431,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetResourceStatus
-  positionals: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.resource_status
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.resource_status with validated request fields.
@@ -397,7 +454,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project resource-status --help
-  agent_example: mammoth project resource-status --output json --no-input
+  agent_example: mammoth project resource-status 123 --output json --no-input
   unit_tests:
   - UT-PROJECT-RESOURCE-STATUS
   contract_tests:
@@ -414,7 +471,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreateSampleFlow
-  positionals: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.sample_flow
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.sample_flow with validated request fields.
@@ -431,7 +494,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project sample-flow --help
-  agent_example: mammoth project sample-flow --output json --no-input
+  agent_example: mammoth project sample-flow 123 --output json --no-input
   unit_tests:
   - UT-PROJECT-SAMPLE-FLOW
   contract_tests:
@@ -448,7 +511,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateProject
-  positionals: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.update
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.update with validated request fields.
@@ -465,7 +534,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project update --help
-  agent_example: mammoth project update --output json --no-input
+  agent_example: mammoth project update 123 --output json --no-input
   unit_tests:
   - UT-PROJECT-UPDATE
   contract_tests:
@@ -482,7 +551,13 @@ commands:
   alias_of: null
   operation_ids:
   - AddUserProject
-  positionals: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.add_users
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.add_users with validated request fields.
@@ -499,7 +574,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project user add --help
-  agent_example: mammoth project user add --output json --no-input
+  agent_example: 'mammoth project user add 123 --input ''{"user_ids": ["example"]}'' --output json --no-input'
   unit_tests:
   - UT-PROJECT-USER-ADD
   contract_tests:
@@ -516,7 +591,13 @@ commands:
   alias_of: null
   operation_ids:
   - RemoveUserProject
-  positionals: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.remove_users
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.remove_users with validated request fields.
@@ -533,7 +614,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project user remove --help
-  agent_example: mammoth project user remove --output json --no-input
+  agent_example: 'mammoth project user remove 123 --input ''{"user_ids": ["example"]}'' --output json
+    --no-input'
   unit_tests:
   - UT-PROJECT-USER-REMOVE
   contract_tests:
@@ -550,7 +632,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateUserProject
-  positionals: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
   options: []
   sdk_symbol: mammoth.api.projects.ProjectsAPI.user_update
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.user_update with validated request fields.
@@ -567,7 +655,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project user update --help
-  agent_example: mammoth project user update --output json --no-input
+  agent_example: 'mammoth project user update 123 --input ''{"role": "project_admin"}'' --output json
+    --no-input'
   unit_tests:
   - UT-PROJECT-USER-UPDATE
   contract_tests:

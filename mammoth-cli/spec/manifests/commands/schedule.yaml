@@ -23,7 +23,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth schedule create --help
-  agent_example: mammoth schedule create --output json --no-input
+  agent_example: 'mammoth schedule create --input ''{"spec": {"rrule": {"frequency": "minutely", "start":
+    "2026-01-01T00:00:00Z"}}}'' --output json --no-input'
   unit_tests:
   - UT-SCHEDULE-CREATE
   contract_tests:
@@ -40,7 +41,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteSchedule
-  positionals: []
+  positionals:
+  - name: schedule_id
+    type: int
+    required: true
+    metavar: SCHEDULE_ID
+    falls_back_to_field: null
+    help: ID of the schedule.
   options: []
   sdk_symbol: mammoth.api.schedules.SchedulesAPI.delete
   sdk_conversion: Call mammoth.api.schedules.SchedulesAPI.delete with validated request fields.
@@ -56,8 +63,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth schedule delete --help
-  agent_example: mammoth schedule delete --output json --no-input
+  human_example: mammoth schedule delete SCHEDULE_ID --help
+  agent_example: mammoth schedule delete 123 --output json --no-input
   unit_tests:
   - UT-SCHEDULE-DELETE
   contract_tests:
@@ -74,7 +81,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetSchedule
-  positionals: []
+  positionals:
+  - name: schedule_id
+    type: int
+    required: true
+    metavar: SCHEDULE_ID
+    falls_back_to_field: null
+    help: ID of the schedule.
   options: []
   sdk_symbol: mammoth.api.schedules.SchedulesAPI.get
   sdk_conversion: Call mammoth.api.schedules.SchedulesAPI.get with validated request fields.
@@ -90,8 +103,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth schedule get --help
-  agent_example: mammoth schedule get --output json --no-input
+  human_example: mammoth schedule get SCHEDULE_ID --help
+  agent_example: mammoth schedule get 123 --output json --no-input
   unit_tests:
   - UT-SCHEDULE-GET
   contract_tests:
@@ -142,7 +155,13 @@ commands:
   alias_of: null
   operation_ids:
   - PatchSchedule
-  positionals: []
+  positionals:
+  - name: schedule_id
+    type: int
+    required: true
+    metavar: SCHEDULE_ID
+    falls_back_to_field: null
+    help: ID of the schedule.
   options: []
   sdk_symbol: mammoth.api.schedules.SchedulesAPI.update
   sdk_conversion: Call mammoth.api.schedules.SchedulesAPI.update with validated request fields.
@@ -158,8 +177,11 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth schedule update --help
-  agent_example: mammoth schedule update --output json --no-input
+  human_example: mammoth schedule update SCHEDULE_ID --help
+  agent_example: 'mammoth schedule update 123 --input ''{"patch": [{"op": "replace", "path": "rrule",
+    "value": {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}, "work_items": [{"name":
+    "pull_cloud_data", "execution_params": {"schedule_type": "moment", "first_pull_at": "now", "on_refresh_action":
+    "replace"}, "args": [1]}]}}]}'' --output json --no-input'
   unit_tests:
   - UT-SCHEDULE-UPDATE
   contract_tests:

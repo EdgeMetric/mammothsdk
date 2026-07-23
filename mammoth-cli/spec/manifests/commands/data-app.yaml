@@ -6,7 +6,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetDataAppActiveJob
-  positionals: []
+  positionals:
+  - name: data_app_id
+    type: int
+    required: true
+    metavar: DATA_APP_ID
+    falls_back_to_field: null
+    help: ID of the data app.
   options: []
   sdk_symbol: mammoth.api.data_apps.DataAppsAPI.active_job
   sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.active_job with validated request fields.
@@ -22,8 +28,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth data-app active-job --help
-  agent_example: mammoth data-app active-job --output json --no-input
+  human_example: mammoth data-app active-job DATA_APP_ID --help
+  agent_example: mammoth data-app active-job 123 --output json --no-input
   unit_tests:
   - UT-DATA-APP-ACTIVE-JOB
   contract_tests:
@@ -57,7 +63,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app create --help
-  agent_example: mammoth data-app create --output json --no-input
+  agent_example: 'mammoth data-app create --input ''{"body": {"automation_id": 1, "dashboard_ids": [1],
+    "name": "example", "project_id": 1}}'' --output json --no-input'
   unit_tests:
   - UT-DATA-APP-CREATE
   contract_tests:
@@ -74,7 +81,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteDataAppEndpoint
-  positionals: []
+  positionals:
+  - name: data_app_id
+    type: int
+    required: true
+    metavar: DATA_APP_ID
+    falls_back_to_field: null
+    help: ID of the data app.
   options: []
   sdk_symbol: mammoth.api.data_apps.DataAppsAPI.delete
   sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.delete with validated request fields.
@@ -90,8 +103,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth data-app delete --help
-  agent_example: mammoth data-app delete --output json --no-input
+  human_example: mammoth data-app delete DATA_APP_ID --help
+  agent_example: mammoth data-app delete 123 --output json --no-input
   unit_tests:
   - UT-DATA-APP-DELETE
   contract_tests:
@@ -108,7 +121,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetDataAppDetails
-  positionals: []
+  positionals:
+  - name: data_app_id
+    type: int
+    required: true
+    metavar: DATA_APP_ID
+    falls_back_to_field: null
+    help: ID of the data app.
   options: []
   sdk_symbol: mammoth.api.data_apps.DataAppsAPI.get
   sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.get with validated request fields.
@@ -124,8 +143,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth data-app get --help
-  agent_example: mammoth data-app get --output json --no-input
+  human_example: mammoth data-app get DATA_APP_ID --help
+  agent_example: mammoth data-app get 123 --output json --no-input
   unit_tests:
   - UT-DATA-APP-GET
   contract_tests:
@@ -142,7 +161,19 @@ commands:
   alias_of: null
   operation_ids:
   - GetDataAppJob
-  positionals: []
+  positionals:
+  - name: data_app_id
+    type: int
+    required: true
+    metavar: DATA_APP_ID
+    falls_back_to_field: null
+    help: ID of the data app.
+  - name: job_id
+    type: int
+    required: true
+    metavar: JOB_ID
+    falls_back_to_field: null
+    help: ID of the job.
   options: []
   sdk_symbol: mammoth.api.data_apps.DataAppsAPI.job
   sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.job with validated request fields.
@@ -158,8 +189,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth data-app job --help
-  agent_example: mammoth data-app job --output json --no-input
+  human_example: mammoth data-app job DATA_APP_ID JOB_ID --help
+  agent_example: mammoth data-app job 123 123 --output json --no-input
   unit_tests:
   - UT-DATA-APP-JOB
   contract_tests:
@@ -210,7 +241,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetPipelineChanges
-  positionals: []
+  positionals:
+  - name: data_app_id
+    type: int
+    required: true
+    metavar: DATA_APP_ID
+    falls_back_to_field: null
+    help: ID of the data app.
   options: []
   sdk_symbol: mammoth.api.data_apps.DataAppsAPI.pipeline_changes
   sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.pipeline_changes with validated request fields.
@@ -226,8 +263,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth data-app pipeline-changes --help
-  agent_example: mammoth data-app pipeline-changes --output json --no-input
+  human_example: mammoth data-app pipeline-changes DATA_APP_ID --help
+  agent_example: mammoth data-app pipeline-changes 123 --output json --no-input
   unit_tests:
   - UT-DATA-APP-PIPELINE-CHANGES
   contract_tests:
@@ -244,7 +281,13 @@ commands:
   alias_of: null
   operation_ids:
   - ShareDataApp
-  positionals: []
+  positionals:
+  - name: data_app_id
+    type: int
+    required: true
+    metavar: DATA_APP_ID
+    falls_back_to_field: null
+    help: ID of the data app.
   options: []
   sdk_symbol: mammoth.api.data_apps.DataAppsAPI.share
   sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.share with validated request fields.
@@ -260,8 +303,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth data-app share --help
-  agent_example: mammoth data-app share --output json --no-input
+  human_example: mammoth data-app share DATA_APP_ID --help
+  agent_example: 'mammoth data-app share 123 --input ''{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}''
+    --output json --no-input'
   unit_tests:
   - UT-DATA-APP-SHARE
   contract_tests:
@@ -278,7 +322,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateDataApp
-  positionals: []
+  positionals:
+  - name: data_app_id
+    type: int
+    required: true
+    metavar: DATA_APP_ID
+    falls_back_to_field: null
+    help: ID of the data app.
   options: []
   sdk_symbol: mammoth.api.data_apps.DataAppsAPI.update
   sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.update with validated request fields.
@@ -294,8 +344,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth data-app update --help
-  agent_example: mammoth data-app update --output json --no-input
+  human_example: mammoth data-app update DATA_APP_ID --help
+  agent_example: 'mammoth data-app update 123 --input ''{"body": {"params": {"name": "example"}}}'' --output
+    json --no-input'
   unit_tests:
   - UT-DATA-APP-UPDATE
   contract_tests:
@@ -312,7 +363,13 @@ commands:
   alias_of: null
   operation_ids:
   - UploadToDataApp
-  positionals: []
+  positionals:
+  - name: data_app_id
+    type: int
+    required: true
+    metavar: DATA_APP_ID
+    falls_back_to_field: null
+    help: ID of the data app.
   options: []
   sdk_symbol: mammoth.api.data_apps.DataAppsAPI.upload
   sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.upload with validated request fields.
@@ -328,8 +385,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth data-app upload --help
-  agent_example: mammoth data-app upload --output json --no-input
+  human_example: mammoth data-app upload DATA_APP_ID --help
+  agent_example: 'mammoth data-app upload 123 --input ''{"file": "example"}'' --output json --no-input'
   unit_tests:
   - UT-DATA-APP-UPLOAD
   contract_tests:
@@ -346,7 +403,13 @@ commands:
   alias_of: null
   operation_ids:
   - ListSharedUsers
-  positionals: []
+  positionals:
+  - name: data_app_id
+    type: int
+    required: true
+    metavar: DATA_APP_ID
+    falls_back_to_field: null
+    help: ID of the data app.
   options: []
   sdk_symbol: mammoth.api.data_apps.DataAppsAPI.user_list
   sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.user_list with validated request fields.
@@ -362,8 +425,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth data-app user list --help
-  agent_example: mammoth data-app user list --output json --no-input
+  human_example: mammoth data-app user list DATA_APP_ID --help
+  agent_example: mammoth data-app user list 123 --output json --no-input
   unit_tests:
   - UT-DATA-APP-USER-LIST
   contract_tests:
@@ -380,7 +443,19 @@ commands:
   alias_of: null
   operation_ids:
   - RemoveSharedUser
-  positionals: []
+  positionals:
+  - name: data_app_id
+    type: int
+    required: true
+    metavar: DATA_APP_ID
+    falls_back_to_field: null
+    help: ID of the data app.
+  - name: email
+    type: str
+    required: true
+    metavar: EMAIL
+    falls_back_to_field: null
+    help: Email address of the shared user to remove.
   options: []
   sdk_symbol: mammoth.api.data_apps.DataAppsAPI.user_remove
   sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.user_remove with validated request fields.
@@ -396,8 +471,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth data-app user remove --help
-  agent_example: mammoth data-app user remove --output json --no-input
+  human_example: mammoth data-app user remove DATA_APP_ID EMAIL --help
+  agent_example: mammoth data-app user remove 123 example --output json --no-input
   unit_tests:
   - UT-DATA-APP-USER-REMOVE
   contract_tests:

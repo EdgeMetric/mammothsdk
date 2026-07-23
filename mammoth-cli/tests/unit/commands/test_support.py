@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import support as support_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -20,9 +21,7 @@ _CONNECTOR_PROFILE_LIST = "mammoth.api.support.SupportAPI.connector_profile_list
 _CONNECTOR_PROFILE_CREATE = "mammoth.api.support.SupportAPI.connector_profile_create"
 _CONNECTOR_PROFILE_UPDATE = "mammoth.api.support.SupportAPI.connector_profile_update"
 _CONNECTOR_PROFILE_DELETE = "mammoth.api.support.SupportAPI.connector_profile_delete"
-_CONNECTOR_PROFILE_ADD_CONNECTOR = (
-    "mammoth.api.support.SupportAPI.connector_profile_add_connector"
-)
+_CONNECTOR_PROFILE_ADD_CONNECTOR = "mammoth.api.support.SupportAPI.connector_profile_add_connector"
 _FEATURE_LIST = "mammoth.api.support.SupportAPI.feature_list"
 _FEATURE_CREATE = "mammoth.api.support.SupportAPI.feature_create"
 _FEATURE_UPDATE = "mammoth.api.support.SupportAPI.feature_update"
@@ -63,9 +62,9 @@ _WORKSPACE_USER_TRANSFER = "mammoth.api.support.SupportAPI.workspace_user_transf
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -164,9 +163,7 @@ def test_connector_update_blocked_without_confirmation(
     assert fake_service.call_log == []
 
 
-def test_connector_update_forwards_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_connector_update_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"name": "New", "price_per_month": 5.0})
     support_cmd.support_connector_update(
         _inv("support.connector.update", extra_args=["7"], input_file=doc, yes=True, confirm="7")
@@ -258,9 +255,7 @@ def test_connector_profile_create_forwards_connectors(
 ) -> None:
     doc = _write(tmp_path, {"name": "Basic", "connectors": [{"connector_id": 1}]})
     support_cmd.support_connector_profile_create(
-        _inv(
-            "support.connector-profile.create", input_file=doc, yes=True, confirm="Basic"
-        )
+        _inv("support.connector-profile.create", input_file=doc, yes=True, confirm="Basic")
     )
     assert fake_service.call_log == [
         (_CONNECTOR_PROFILE_CREATE, {"name": "Basic", "connectors": [{"connector_id": 1}]})
@@ -361,18 +356,18 @@ def test_connector_profile_add_connector_requires_connector_id(
                 confirm="3",
             )
         )
-    assert excinfo.value.code == "missing_field"
+    assert excinfo.value.code == "missing_argument"
 
 
 def test_connector_profile_add_connector_blocked(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"connector_id": 9})
+    doc = _write(tmp_path, {})
     with pytest.raises(CliError) as excinfo:
         support_cmd.support_connector_profile_add_connector(
             _inv(
                 "support.connector-profile.add-connector",
-                extra_args=["3"],
+                extra_args=["3", "9"],
                 input_file=doc,
                 output="json",
             )
@@ -384,11 +379,11 @@ def test_connector_profile_add_connector_blocked(
 def test_connector_profile_add_connector_forwards_fields(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"connector_id": 9, "price_per_month": 2.5, "enabled": False})
+    doc = _write(tmp_path, {"price_per_month": 2.5, "enabled": False})
     support_cmd.support_connector_profile_add_connector(
         _inv(
             "support.connector-profile.add-connector",
-            extra_args=["3"],
+            extra_args=["3", "9"],
             input_file=doc,
             yes=True,
             confirm="3",
@@ -435,16 +430,12 @@ def test_feature_create_blocked(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == []
 
 
-def test_feature_create_forwards_values(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_feature_create_forwards_values(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"name": "Beta", "values": ["a", "b"]})
     support_cmd.support_feature_create(
         _inv("support.feature.create", input_file=doc, yes=True, confirm="Beta")
     )
-    assert fake_service.call_log == [
-        (_FEATURE_CREATE, {"name": "Beta", "values": ["a", "b"]})
-    ]
+    assert fake_service.call_log == [(_FEATURE_CREATE, {"name": "Beta", "values": ["a", "b"]})]
 
 
 # --- feature.update --------------------------------------------------------------------
@@ -465,9 +456,7 @@ def test_feature_update_blocked(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == []
 
 
-def test_feature_update_forwards_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_feature_update_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"enabled": False})
     support_cmd.support_feature_update(
         _inv("support.feature.update", extra_args=["5"], input_file=doc, yes=True, confirm="5")
@@ -524,9 +513,7 @@ def test_feature_profile_list_proceeds(fake_service: FakeMammothService) -> None
 
 def test_feature_profile_create_requires_name(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        support_cmd.support_feature_profile_create(
-            _inv("support.feature-profile.create", yes=True)
-        )
+        support_cmd.support_feature_profile_create(_inv("support.feature-profile.create", yes=True))
     assert excinfo.value.code == "missing_argument"
 
 
@@ -544,9 +531,7 @@ def test_feature_profile_create_forwards_features(
 ) -> None:
     doc = _write(tmp_path, {"name": "Gold", "features": [{"feature_id": 1}]})
     support_cmd.support_feature_profile_create(
-        _inv(
-            "support.feature-profile.create", input_file=doc, yes=True, confirm="Gold"
-        )
+        _inv("support.feature-profile.create", input_file=doc, yes=True, confirm="Gold")
     )
     assert fake_service.call_log == [
         (_FEATURE_PROFILE_CREATE, {"name": "Gold", "features": [{"feature_id": 1}]})
@@ -560,9 +545,7 @@ def test_feature_profile_update_requires_positional(
     fake_service: FakeMammothService,
 ) -> None:
     with pytest.raises(CliError) as excinfo:
-        support_cmd.support_feature_profile_update(
-            _inv("support.feature-profile.update", yes=True)
-        )
+        support_cmd.support_feature_profile_update(_inv("support.feature-profile.update", yes=True))
     assert excinfo.value.code == "missing_argument"
 
 
@@ -600,9 +583,7 @@ def test_feature_profile_delete_requires_positional(
     fake_service: FakeMammothService,
 ) -> None:
     with pytest.raises(CliError) as excinfo:
-        support_cmd.support_feature_profile_delete(
-            _inv("support.feature-profile.delete", yes=True)
-        )
+        support_cmd.support_feature_profile_delete(_inv("support.feature-profile.delete", yes=True))
     assert excinfo.value.code == "missing_argument"
 
 
@@ -647,18 +628,18 @@ def test_feature_profile_add_feature_requires_feature_id(
                 confirm="2",
             )
         )
-    assert excinfo.value.code == "missing_field"
+    assert excinfo.value.code == "missing_argument"
 
 
 def test_feature_profile_add_feature_blocked(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"feature_id": 8})
+    doc = _write(tmp_path, {})
     with pytest.raises(CliError) as excinfo:
         support_cmd.support_feature_profile_add_feature(
             _inv(
                 "support.feature-profile.add-feature",
-                extra_args=["2"],
+                extra_args=["2", "8"],
                 input_file=doc,
                 output="json",
             )
@@ -670,11 +651,11 @@ def test_feature_profile_add_feature_blocked(
 def test_feature_profile_add_feature_forwards_value(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"feature_id": 8, "value": "on"})
+    doc = _write(tmp_path, {"value": "on"})
     support_cmd.support_feature_profile_add_feature(
         _inv(
             "support.feature-profile.add-feature",
-            extra_args=["2"],
+            extra_args=["2", "8"],
             input_file=doc,
             yes=True,
             confirm="2",
@@ -704,18 +685,16 @@ def test_ownership_transfer_requires_user_id(fake_service: FakeMammothService) -
                 confirm="9",
             )
         )
-    assert excinfo.value.code == "missing_field"
+    assert excinfo.value.code == "missing_argument"
 
 
-def test_ownership_transfer_blocked(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write(tmp_path, {"user_id": 3})
+def test_ownership_transfer_blocked(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {})
     with pytest.raises(CliError) as excinfo:
         support_cmd.support_ownership_transfer(
             _inv(
                 "support.ownership.transfer",
-                extra_args=["9"],
+                extra_args=["9", "3"],
                 input_file=doc,
                 output="json",
             )
@@ -727,11 +706,11 @@ def test_ownership_transfer_blocked(
 def test_ownership_transfer_forwards_roles(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"user_id": 3, "new_role": "workspace_owner", "remove_role": "member"})
+    doc = _write(tmp_path, {"new_role": "workspace_owner", "remove_role": "member"})
     support_cmd.support_ownership_transfer(
         _inv(
             "support.ownership.transfer",
-            extra_args=["9"],
+            extra_args=["9", "3"],
             input_file=doc,
             yes=True,
             confirm="9",
@@ -783,9 +762,7 @@ def test_plan_self_serve_list_proceeds(fake_service: FakeMammothService) -> None
 
 def test_plan_chargebee_list_blocked(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        support_cmd.support_plan_chargebee_list(
-            _inv("support.plan.chargebee-list", output="json")
-        )
+        support_cmd.support_plan_chargebee_list(_inv("support.plan.chargebee-list", output="json"))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
 
@@ -817,9 +794,7 @@ def test_plan_get_blocked(fake_service: FakeMammothService) -> None:
 
 
 def test_plan_get_proceeds(fake_service: FakeMammothService) -> None:
-    support_cmd.support_plan_get(
-        _inv("support.plan.get", extra_args=["6"], yes=True, confirm="6")
-    )
+    support_cmd.support_plan_get(_inv("support.plan.get", extra_args=["6"], yes=True, confirm="6"))
     assert fake_service.call_log == [(_PLAN_GET, {"plan_id": 6})]
 
 
@@ -850,9 +825,7 @@ def test_plan_create_blocked(fake_service: FakeMammothService, tmp_path: Path) -
     assert fake_service.call_log == []
 
 
-def test_plan_create_forwards_optional(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_plan_create_forwards_optional(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(
         tmp_path,
         {
@@ -903,9 +876,7 @@ def test_plan_update_blocked(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == []
 
 
-def test_plan_update_forwards_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_plan_update_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"name": "Renamed", "monthly_price": 59.0})
     support_cmd.support_plan_update(
         _inv("support.plan.update", extra_args=["6"], input_file=doc, yes=True, confirm="6")
@@ -1056,14 +1027,10 @@ def test_subscription_get_blocked(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == []
 
 
-def test_subscription_get_forwards_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_subscription_get_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"fields": "plan_id,status"})
     support_cmd.support_subscription_get(
-        _inv(
-            "support.subscription.get", extra_args=["9"], input_file=doc, yes=True, confirm="9"
-        )
+        _inv("support.subscription.get", extra_args=["9"], input_file=doc, yes=True, confirm="9")
     )
     assert fake_service.call_log == [
         (_SUBSCRIPTION_GET, {"workspace_id": 9, "fields": "plan_id,status"})
@@ -1075,9 +1042,7 @@ def test_subscription_get_forwards_fields(
 
 def test_subscription_create_requires_positional(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        support_cmd.support_subscription_create(
-            _inv("support.subscription.create", yes=True)
-        )
+        support_cmd.support_subscription_create(_inv("support.subscription.create", yes=True))
     assert excinfo.value.code == "missing_argument"
 
 
@@ -1091,18 +1056,16 @@ def test_subscription_create_requires_plan_id(fake_service: FakeMammothService) 
                 confirm="9",
             )
         )
-    assert excinfo.value.code == "missing_field"
+    assert excinfo.value.code == "missing_argument"
 
 
-def test_subscription_create_blocked(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write(tmp_path, {"plan_id": "cb-plan-1"})
+def test_subscription_create_blocked(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {})
     with pytest.raises(CliError) as excinfo:
         support_cmd.support_subscription_create(
             _inv(
                 "support.subscription.create",
-                extra_args=["9"],
+                extra_args=["9", "cb-plan-1"],
                 input_file=doc,
                 output="json",
             )
@@ -1117,7 +1080,6 @@ def test_subscription_create_forwards_customer_fields(
     doc = _write(
         tmp_path,
         {
-            "plan_id": "cb-plan-1",
             "first_name": "Ann",
             "last_name": "Lee",
             "email": "ann@x.com",
@@ -1127,7 +1089,7 @@ def test_subscription_create_forwards_customer_fields(
     support_cmd.support_subscription_create(
         _inv(
             "support.subscription.create",
-            extra_args=["9"],
+            extra_args=["9", "cb-plan-1"],
             input_file=doc,
             yes=True,
             confirm="9",
@@ -1153,9 +1115,7 @@ def test_subscription_create_forwards_customer_fields(
 
 def test_subscription_update_requires_positional(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        support_cmd.support_subscription_update(
-            _inv("support.subscription.update", yes=True)
-        )
+        support_cmd.support_subscription_update(_inv("support.subscription.update", yes=True))
     assert excinfo.value.code == "missing_argument"
 
 
@@ -1169,18 +1129,16 @@ def test_subscription_update_requires_field(fake_service: FakeMammothService) ->
                 confirm="9",
             )
         )
-    assert excinfo.value.code == "missing_field"
+    assert excinfo.value.code == "missing_argument"
 
 
-def test_subscription_update_blocked(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write(tmp_path, {"subscription_id": "sub-1"})
+def test_subscription_update_blocked(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {})
     with pytest.raises(CliError) as excinfo:
         support_cmd.support_subscription_update(
             _inv(
                 "support.subscription.update",
-                extra_args=["9"],
+                extra_args=["9", "sub-1"],
                 input_file=doc,
                 output="json",
             )
@@ -1189,14 +1147,12 @@ def test_subscription_update_blocked(
     assert fake_service.call_log == []
 
 
-def test_subscription_update_proceeds(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write(tmp_path, {"subscription_id": "sub-1"})
+def test_subscription_update_proceeds(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {})
     support_cmd.support_subscription_update(
         _inv(
             "support.subscription.update",
-            extra_args=["9"],
+            extra_args=["9", "sub-1"],
             input_file=doc,
             yes=True,
             confirm="9",
@@ -1381,9 +1337,7 @@ def test_workspace_get_blocked(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == []
 
 
-def test_workspace_get_forwards_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_workspace_get_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"fields": "name,plan_id"})
     support_cmd.support_workspace_get(
         _inv("support.workspace.get", extra_args=["9"], input_file=doc, yes=True, confirm="9")
@@ -1416,9 +1370,7 @@ def test_workspace_create_requires_fields(fake_service: FakeMammothService) -> N
 
 
 def test_workspace_create_blocked(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(
-        tmp_path, {"user_email": "owner@acme.com", "payment_frequency": "monthly"}
-    )
+    doc = _write(tmp_path, {"user_email": "owner@acme.com", "payment_frequency": "monthly"})
     with pytest.raises(CliError) as excinfo:
         support_cmd.support_workspace_create(
             _inv(
@@ -1490,9 +1442,7 @@ def test_workspace_update_requires_fields(fake_service: FakeMammothService) -> N
 
 
 def test_workspace_update_blocked(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(
-        tmp_path, {"name": "Acme Renamed", "payment_frequency": "yearly", "plan_id": 4}
-    )
+    doc = _write(tmp_path, {"name": "Acme Renamed", "payment_frequency": "yearly", "plan_id": 4})
     with pytest.raises(CliError) as excinfo:
         support_cmd.support_workspace_update(
             _inv(
@@ -1760,9 +1710,7 @@ def test_workspace_user_add_forwards_names(
 
 def test_workspace_user_remove_requires_positional(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        support_cmd.support_workspace_user_remove(
-            _inv("support.workspace.user.remove", yes=True)
-        )
+        support_cmd.support_workspace_user_remove(_inv("support.workspace.user.remove", yes=True))
     assert excinfo.value.code == "missing_argument"
 
 
@@ -1776,18 +1724,16 @@ def test_workspace_user_remove_requires_user_id(fake_service: FakeMammothService
                 confirm="9",
             )
         )
-    assert excinfo.value.code == "missing_field"
+    assert excinfo.value.code == "missing_argument"
 
 
-def test_workspace_user_remove_blocked(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write(tmp_path, {"user_id": 2})
+def test_workspace_user_remove_blocked(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {})
     with pytest.raises(CliError) as excinfo:
         support_cmd.support_workspace_user_remove(
             _inv(
                 "support.workspace.user.remove",
-                extra_args=["9"],
+                extra_args=["9", "2"],
                 input_file=doc,
                 output="json",
             )
@@ -1796,14 +1742,12 @@ def test_workspace_user_remove_blocked(
     assert fake_service.call_log == []
 
 
-def test_workspace_user_remove_proceeds(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write(tmp_path, {"user_id": 2})
+def test_workspace_user_remove_proceeds(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {})
     support_cmd.support_workspace_user_remove(
         _inv(
             "support.workspace.user.remove",
-            extra_args=["9"],
+            extra_args=["9", "2"],
             input_file=doc,
             yes=True,
             confirm="9",
@@ -1835,18 +1779,16 @@ def test_workspace_user_transfer_requires_fields(fake_service: FakeMammothServic
                 confirm="9",
             )
         )
-    assert excinfo.value.code == "missing_field"
+    assert excinfo.value.code == "missing_argument"
 
 
-def test_workspace_user_transfer_blocked(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write(tmp_path, {"user_id": 2, "role": "workspace_admin"})
+def test_workspace_user_transfer_blocked(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {"role": "workspace_admin"})
     with pytest.raises(CliError) as excinfo:
         support_cmd.support_workspace_user_transfer(
             _inv(
                 "support.workspace.user.transfer",
-                extra_args=["9"],
+                extra_args=["9", "2"],
                 input_file=doc,
                 output="json",
             )
@@ -1858,13 +1800,11 @@ def test_workspace_user_transfer_blocked(
 def test_workspace_user_transfer_forwards_remove_role(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(
-        tmp_path, {"user_id": 2, "role": "workspace_admin", "remove_role": "workspace_member"}
-    )
+    doc = _write(tmp_path, {"role": "workspace_admin", "remove_role": "workspace_member"})
     support_cmd.support_workspace_user_transfer(
         _inv(
             "support.workspace.user.transfer",
-            extra_args=["9"],
+            extra_args=["9", "2"],
             input_file=doc,
             yes=True,
             confirm="9",

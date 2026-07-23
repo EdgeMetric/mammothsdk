@@ -28,20 +28,83 @@ def test_get_selected_defaults_to_default(isolated_cli_config: Path) -> None:
     assert profiles.get_selected() == "default"
 
 
+def _write_raw_profiles(toml_text: str) -> None:
+    """Write a raw profiles.toml, simulating a legacy on-disk profile store."""
+    path = profiles.profiles_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(toml_text, encoding="utf-8")
+
+
+def test_legacy_canonical_base_url_migrates_to_server_prefix(isolated_cli_config: Path) -> None:
+    """A legacy canonical base_url is migrated to its server prefix on load.
+
+    Dropping it (the previous behavior) would silently redirect the profile to
+    the app-eu default endpoint.
+    """
+    _write_raw_profiles(
+        'selected = "default"\n\n'
+        "[profiles.default]\n"
+        "workspace_id = 4\n"
+        'base_url = "https://release.mammoth.io/api/v2"\n'
+    )
+    record = profiles.get_profile("default")
+    assert record is not None
+    assert record.server_prefix == "release"
+
+
+def test_legacy_unsupported_base_url_is_rejected(isolated_cli_config: Path) -> None:
+    """A legacy non-canonical base_url is rejected explicitly, not silently dropped."""
+    _write_raw_profiles(
+        "[profiles.default]\n"
+        "workspace_id = 4\n"
+        'base_url = "https://custom.example.com/api/v2"\n'
+    )
+    with pytest.raises(CliError) as excinfo:
+        profiles.load_profiles()
+    assert excinfo.value.code == "unsupported_profile_base_url"
+    assert excinfo.value.exit_status == 2
+
+
+def test_get_profile_ignores_unrelated_invalid_profile(isolated_cli_config: Path) -> None:
+    """A valid selected profile loads even when an unrelated profile is invalid.
+
+    ``get_profile`` must parse only the requested profile. Otherwise one legacy
+    profile with an unsupported base_url would block authentication under an
+    entirely different, valid profile.
+    """
+    _write_raw_profiles(
+        'selected = "default"\n\n'
+        "[profiles.default]\n"
+        "workspace_id = 4\n"
+        'server_prefix = "release"\n\n'
+        "[profiles.legacy]\n"
+        "workspace_id = 7\n"
+        'base_url = "https://custom.example.com/api/v2"\n'
+    )
+    record = profiles.get_profile("default")
+    assert record is not None
+    assert record.workspace_id == 4
+    assert record.server_prefix == "release"
+
+
+def test_get_profile_selecting_invalid_profile_is_rejected(isolated_cli_config: Path) -> None:
+    """Explicitly requesting the invalid profile still fails loudly."""
+    _write_raw_profiles(
+        "[profiles.legacy]\n"
+        "workspace_id = 7\n"
+        'base_url = "https://custom.example.com/api/v2"\n'
+    )
+    with pytest.raises(CliError) as excinfo:
+        profiles.get_profile("legacy")
+    assert excinfo.value.code == "unsupported_profile_base_url"
+    assert excinfo.value.exit_status == 2
+
+
 def test_save_and_get_profile_roundtrip(isolated_cli_config: Path) -> None:
     record = profiles.ProfileRecord(name="default", workspace_id=4, server_prefix="release")
     profiles.save_profile(record)
     loaded = profiles.get_profile("default")
     assert loaded == record
-
-
-def test_save_profile_rejects_conflicting_endpoint(isolated_cli_config: Path) -> None:
-    record = profiles.ProfileRecord(
-        name="default", workspace_id=4, server_prefix="release", base_url="https://x/api/v2"
-    )
-    with pytest.raises(CliError) as excinfo:
-        profiles.save_profile(record)
-    assert excinfo.value.code == "conflicting_endpoint"
 
 
 def test_list_profiles_sorted(isolated_cli_config: Path) -> None:

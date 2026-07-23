@@ -45,6 +45,12 @@ class TestWaitIfJobPatterns:
         self.client.jobs.wait_for_job.assert_called_once_with(42, timeout=60, poll_interval=2)
         assert result == {"rows": [1, 2, 3]}
 
+    def test_public_wait_seam_uses_the_same_job_contract(self):
+        """Generated integrations can wait without reaching into SDK internals."""
+        result = self.client.wait_if_job({"job_id": 42})
+        self.client.jobs.wait_for_job.assert_called_once_with(42, timeout=60, poll_interval=2)
+        assert result == {"rows": [1, 2, 3]}
+
     def test_pattern_job_dict(self):
         """Pattern 2: {"job": {"id": N}} (JobResponse)."""
         response = {"job": {"id": 99, "status": "processing"}}

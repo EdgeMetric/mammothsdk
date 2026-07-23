@@ -13,7 +13,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_INVALID_ARGUMENT,
+    CODE_MISSING_ARGUMENT,
+    CODE_MISSING_FIELD,
+    CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
@@ -31,7 +38,7 @@ def _symbol(invocation: Invocation) -> str:
     record = command_by_id(invocation.command_id)
     if record is None or not record.get("sdk_symbol"):
         raise CliError(
-            code="sdk_symbol_unresolved",
+            code=CODE_SDK_SYMBOL_UNRESOLVED,
             message=f"No SDK symbol is recorded for '{invocation.command_id}'.",
             exit_status=EXIT_USAGE,
         )
@@ -52,7 +59,7 @@ def _int_positional_at(invocation: Invocation, index: int, name: str) -> int | N
         return int(raw)
     except ValueError as exc:
         raise CliError(
-            code="invalid_argument",
+            code=CODE_INVALID_ARGUMENT,
             message=f"The {name} argument '{raw}' is not an integer.",
             exit_status=EXIT_USAGE,
         ) from exc
@@ -63,7 +70,7 @@ def _require_int_positional_at(invocation: Invocation, index: int, name: str) ->
     value = _int_positional_at(invocation, index, name)
     if value is None:
         raise CliError(
-            code="missing_argument",
+            code=CODE_MISSING_ARGUMENT,
             message=f"This command requires a {name} argument.",
             exit_status=EXIT_USAGE,
             hint=f"Pass the {name} as a positional argument.",
@@ -75,7 +82,7 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     """Return a required field from the ``--input`` document, or raise usage."""
     if document is None or field not in document:
         raise CliError(
-            code="missing_field",
+            code=CODE_MISSING_FIELD,
             message=f"This command requires the '{field}' input field.",
             exit_status=EXIT_USAGE,
             hint=f"Pass it via --input, for example: --input '{{\"{field}\": ...}}'.",
@@ -165,7 +172,7 @@ def workflow_create(invocation: Invocation) -> HandlerResult:
     name = _string_positional(invocation) or document.get("name")
     if not name:
         raise CliError(
-            code="missing_argument",
+            code=CODE_MISSING_ARGUMENT,
             message="A workflow name is required.",
             exit_status=EXIT_USAGE,
             hint="Pass the name as a positional argument or a 'name' input field.",
@@ -186,7 +193,7 @@ def workflow_update(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, _UPDATE_OPTIONAL)
     if len(kwargs) == 2:
         raise CliError(
-            code="missing_field",
+            code=CODE_MISSING_FIELD,
             message=(
                 "Provide at least one of 'name', 'purpose', 'pipeline_summary', "
                 "or 'notes' to update."
@@ -214,20 +221,24 @@ def workflow_delete(invocation: Invocation) -> HandlerResult:
 def workflow_from_template(invocation: Invocation) -> HandlerResult:
     """Instantiate a workflow from a workspace template.
 
-    The new workflow's name comes from a positional argument or the
-    ``workflow_name`` input field; ``template_id`` is a required input field.
+    ``template_id`` is positional; the new workflow name is an input field.
     """
     project_id = require_project(invocation)
     document = invocation.load_input() or {}
-    workflow_name = _string_positional(invocation) or document.get("workflow_name")
+    workflow_name = document.get("workflow_name")
     if not workflow_name:
         raise CliError(
-            code="missing_argument",
+            code=CODE_MISSING_ARGUMENT,
             message="A workflow name is required.",
             exit_status=EXIT_USAGE,
-            hint="Pass the name as a positional argument or a 'workflow_name' input field.",
+            hint="Pass 'workflow_name' via --input.",
         )
-    template_id = _require_field(document, "template_id")
+    template_id = invocation.positional("template_id")
+    if template_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT, message="A template id is required.", exit_status=EXIT_USAGE
+        )
+    template_id = int(template_id)
     kwargs: dict[str, Any] = {
         "template_id": template_id,
         "workflow_name": workflow_name,

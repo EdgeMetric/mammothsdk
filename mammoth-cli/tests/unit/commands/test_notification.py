@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import notification as notification_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -21,9 +22,9 @@ _DELETE_BATCH = "mammoth.api.notifications.NotificationsAPI.delete_batch"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -44,14 +45,11 @@ def test_list_with_no_input_passes_no_kwargs(fake_service: FakeMammothService) -
     assert fake_service.call_log == [(_LIST, {})]
 
 
-def test_list_forwards_optional_filters(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_list_forwards_optional_filters(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write_doc(
         tmp_path,
         {
             "fields": "id,status",
-            "project_id": 180,
             "status": "unread",
             "is_read": False,
             "notification_scope": "workspace",
@@ -60,7 +58,7 @@ def test_list_forwards_optional_filters(
             "sort": "-created_at",
         },
     )
-    notification_cmd.notification_list(_inv("notification.list", input_file=doc))
+    notification_cmd.notification_list(_inv("notification.list", project=180, input_file=doc))
     assert fake_service.call_log == [
         (
             _LIST,
@@ -78,12 +76,11 @@ def test_list_forwards_optional_filters(
     ]
 
 
-def test_list_never_forwards_workspace_id(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_list_never_forwards_workspace_id(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write_doc(tmp_path, {"workspace_id": 999, "status": "read"})
-    notification_cmd.notification_list(_inv("notification.list", input_file=doc))
-    assert fake_service.call_log == [(_LIST, {"status": "read"})]
+    with pytest.raises(CliError) as excinfo:
+        notification_cmd.notification_list(_inv("notification.list", input_file=doc))
+    assert excinfo.value.code == "unknown_input_field"
 
 
 # --- notification update ------------------------------------------------
@@ -132,19 +129,16 @@ def test_update_batch_requires_patch(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == []
 
 
-def test_update_batch_forwards_patch_only(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_update_batch_forwards_patch_only(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write_doc(
         tmp_path,
         {"patch": [{"op": "replace", "path": "/is_read", "value": True}], "workspace_id": 4},
     )
-    notification_cmd.notification_update_batch(
-        _inv("notification.update-batch", input_file=doc)
-    )
-    assert fake_service.call_log == [
-        (_UPDATE_BATCH, {"patch": [{"op": "replace", "path": "/is_read", "value": True}]})
-    ]
+    with pytest.raises(CliError) as excinfo:
+        notification_cmd.notification_update_batch(
+            _inv("notification.update-batch", input_file=doc)
+        )
+    assert excinfo.value.code == "unknown_input_field"
 
 
 # --- notification delete -------------------------------------------------
@@ -160,9 +154,7 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
 
 
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    notification_cmd.notification_delete(
-        _inv("notification.delete", extra_args=["7"], yes=True)
-    )
+    notification_cmd.notification_delete(_inv("notification.delete", extra_args=["7"], yes=True))
     assert fake_service.call_log == [(_DELETE, {"notification_id": 7})]
 
 
@@ -204,12 +196,11 @@ def test_delete_batch_proceeds_with_filter_only_and_no_workspace_id(
     doc = _write_doc(
         tmp_path, {"last_updated_at__lt": "2026-01-01", "is_read": True, "workspace_id": 4}
     )
-    notification_cmd.notification_delete_batch(
-        _inv("notification.delete-batch", input_file=doc, yes=True)
-    )
-    assert fake_service.call_log == [
-        (_DELETE_BATCH, {"last_updated_at__lt": "2026-01-01", "is_read": True})
-    ]
+    with pytest.raises(CliError) as excinfo:
+        notification_cmd.notification_delete_batch(
+            _inv("notification.delete-batch", input_file=doc, yes=True)
+        )
+    assert excinfo.value.code == "unknown_input_field"
 
 
 def test_delete_batch_with_no_input_still_requires_confirmation(

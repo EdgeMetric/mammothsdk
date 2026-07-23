@@ -14,7 +14,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_INVALID_ARGUMENT,
+    CODE_MISSING_ARGUMENT,
+    CODE_MISSING_FIELD,
+    CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
@@ -29,7 +36,7 @@ def _symbol(invocation: Invocation) -> str:
     record = command_by_id(invocation.command_id)
     if record is None or not record.get("sdk_symbol"):
         raise CliError(
-            code="sdk_symbol_unresolved",
+            code=CODE_SDK_SYMBOL_UNRESOLVED,
             message=f"No SDK symbol is recorded for '{invocation.command_id}'.",
             exit_status=EXIT_USAGE,
         )
@@ -40,7 +47,7 @@ def _require_int_positional(invocation: Invocation, name: str) -> int:
     """Return the first positional argument parsed as an int, or raise usage."""
     if not invocation.extra_args:
         raise CliError(
-            code="missing_argument",
+            code=CODE_MISSING_ARGUMENT,
             message=f"This command requires a {name} argument.",
             exit_status=EXIT_USAGE,
             hint=f"Pass the {name} as a positional argument.",
@@ -50,7 +57,7 @@ def _require_int_positional(invocation: Invocation, name: str) -> int:
         return int(raw)
     except ValueError as exc:
         raise CliError(
-            code="invalid_argument",
+            code=CODE_INVALID_ARGUMENT,
             message=f"The {name} argument '{raw}' is not an integer.",
             exit_status=EXIT_USAGE,
         ) from exc
@@ -60,7 +67,7 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     """Return a required field from the ``--input`` document, or raise usage."""
     if document is None or field not in document:
         raise CliError(
-            code="missing_field",
+            code=CODE_MISSING_FIELD,
             message=f"This command requires the '{field}' input field.",
             exit_status=EXIT_USAGE,
             hint=f"Pass it via --input, for example: --input '{{\"{field}\": ...}}'.",
@@ -89,6 +96,10 @@ def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
 def job_get(invocation: Invocation) -> HandlerResult:
     """Get one job's status by id."""
     job_id = _require_int_positional(invocation, "job id")
+    # Load even though this immediate read has no request fields.  This keeps
+    # strict validation authoritative when a caller supplies ``--input`` (for
+    # example, a misleading timeout that only wait commands implement).
+    invocation.load_input()
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), job_id=job_id)
     return data, _meta(invocation, auth.workspace_id)

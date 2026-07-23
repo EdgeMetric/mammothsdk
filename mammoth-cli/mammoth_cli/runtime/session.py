@@ -39,7 +39,11 @@ def open_service(invocation: Invocation) -> Iterator[tuple[MammothService, Resol
     """
     auth = resolve_auth(invocation)
     service = factory.build_service(
-        auth, timeout=invocation.timeout, project_id=resolved_project(invocation)
+        auth,
+        timeout=invocation.timeout,
+        job_timeout=invocation.job_timeout,
+        pipeline_timeout=invocation.pipeline_timeout,
+        project_id=resolved_project(invocation),
     )
     try:
         yield service, auth

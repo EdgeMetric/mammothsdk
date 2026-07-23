@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import agent as agent_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -21,9 +22,9 @@ _SESSION_SET_VISIBILITY = "mammoth.api.agents.AgentsAPI.session_set_visibility"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -58,14 +59,10 @@ def test_chat_requires_scope(fake_service: FakeMammothService, tmp_path: Path) -
 def test_chat_passes_required_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"message": "hello", "scope": {"type": "workspace"}})
     agent_cmd.agent_chat(_inv("agent.chat", input_file=doc))
-    assert fake_service.call_log == [
-        (_CHAT, {"message": "hello", "scope": {"type": "workspace"}})
-    ]
+    assert fake_service.call_log == [(_CHAT, {"message": "hello", "scope": {"type": "workspace"}})]
 
 
-def test_chat_forwards_optional_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_chat_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(
         tmp_path,
         {
@@ -155,8 +152,9 @@ def test_session_list_never_forwards_workspace_id(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"workspace_id": 999, "limit": 10})
-    agent_cmd.agent_session_list(_inv("agent.session.list", input_file=doc))
-    assert fake_service.call_log == [(_SESSION_LIST, {"limit": 10})]
+    with pytest.raises(CliError) as excinfo:
+        agent_cmd.agent_session_list(_inv("agent.session.list", input_file=doc))
+    assert excinfo.value.code == "unknown_input_field"
 
 
 # --- agent session messages -----------------------------------------------------
@@ -184,9 +182,7 @@ def test_session_set_visibility_requires_session_id(
 ) -> None:
     doc = _write(tmp_path, {"visibility": "shared"})
     with pytest.raises(CliError) as excinfo:
-        agent_cmd.agent_session_set_visibility(
-            _inv("agent.session.set-visibility", input_file=doc)
-        )
+        agent_cmd.agent_session_set_visibility(_inv("agent.session.set-visibility", input_file=doc))
     assert excinfo.value.code == "missing_argument"
     assert fake_service.call_log == []
 
@@ -202,9 +198,7 @@ def test_session_set_visibility_requires_visibility_field(
     assert fake_service.call_log == []
 
 
-def test_session_set_visibility_proceeds(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_session_set_visibility_proceeds(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"visibility": "shared"})
     agent_cmd.agent_session_set_visibility(
         _inv("agent.session.set-visibility", extra_args=["s-1"], input_file=doc)

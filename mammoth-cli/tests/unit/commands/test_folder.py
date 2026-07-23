@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import folder as folder_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -25,9 +26,9 @@ _BULK_DELETE = "mammoth.api.folders.FoldersAPI.bulk_delete"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -91,9 +92,7 @@ def test_update_forwards_name(fake_service: FakeMammothService, tmp_path: Path) 
     folder_cmd.folder_update(
         _inv("folder.update", project=180, extra_args=["7"], input_file=str(doc))
     )
-    assert fake_service.call_log == [
-        (_UPDATE, {"folder_id": 7, "name": "New", "project_id": 180})
-    ]
+    assert fake_service.call_log == [(_UPDATE, {"folder_id": 7, "name": "New", "project_id": 180})]
 
 
 def test_move_requires_resource_ids(fake_service: FakeMammothService) -> None:

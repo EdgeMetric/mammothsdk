@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import template as template_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -21,9 +22,9 @@ _UPDATE = "mammoth.api.templates.TemplatesAPI.update"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -71,9 +72,7 @@ def test_delete_invalid_positional_is_usage_error(fake_service: FakeMammothServi
 
 def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        template_cmd.template_delete(
-            _inv("template.delete", extra_args=["7"], output="json")
-        )
+        template_cmd.template_delete(_inv("template.delete", extra_args=["7"], output="json"))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
 
@@ -126,9 +125,5 @@ def test_update_requires_body(fake_service: FakeMammothService) -> None:
 
 def test_update_forwards_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"body": {"name": "New name"}})
-    template_cmd.template_update(
-        _inv("template.update", extra_args=["7"], input_file=doc)
-    )
-    assert fake_service.call_log == [
-        (_UPDATE, {"template_id": 7, "body": {"name": "New name"}})
-    ]
+    template_cmd.template_update(_inv("template.update", extra_args=["7"], input_file=doc))
+    assert fake_service.call_log == [(_UPDATE, {"template_id": 7, "body": {"name": "New name"}})]

@@ -29,6 +29,14 @@ PIPELINE_TERMINAL_STATES = frozenset({"ready", "runtime_error", "ref_error"})
 
 ERR_FROM_SEQUENCE_NON_NEGATIVE = "`from_sequence` must be >= 0, got {0}."
 
+# OpenAPI `dataview_pipeline_consts_PipelineDraftMode` enum values (pinned in
+# `mammoth-cli/spec/openapi/openapi.json`) for which the dataview IS in draft.
+# "clean" = draft with no unsaved changes yet; "dirty" = unsaved changes
+# pending. "off" (or the field being null/absent) means NOT in draft.
+DRAFT_MODE_CLEAN = "clean"
+DRAFT_MODE_DIRTY = "dirty"
+DRAFT_MODE_ACTIVE_VALUES = frozenset({DRAFT_MODE_CLEAN, DRAFT_MODE_DIRTY})
+
 
 class PipelineAPI:
     """Low-level HTTP client for pipeline task endpoints.
@@ -119,7 +127,18 @@ class PipelineAPI:
                     project_id=project_id,
                 )
                 return dataset_id
-            except (MammothAPIError, KeyError):
+            except MammothAPIError as exc:
+                # Only a proven 404 means "this dataset does not contain the
+                # dataview" — a genuine miss we keep scanning past. Any other
+                # status (401/403/429/5xx) is a real failure that must
+                # propagate with its correct classification instead of being
+                # swallowed and misreported as a generic not-found.
+                if exc.status_code == 404:
+                    continue
+                raise
+            except KeyError:
+                # A missing dict key while reading the response is a local
+                # miss for this dataset; keep scanning the remaining datasets.
                 continue
 
         raise ValueError(f"Dataview {dataview_id} not found in any dataset in project {project_id}")
@@ -178,8 +197,14 @@ class PipelineAPI:
                     dataset_ids.extend(
                         self._collect_dataset_ids(sub_children, project_id, workspace_id)
                     )
-                except MammothAPIError:
-                    continue
+                except MammothAPIError as exc:
+                    # A vanished or inaccessible-as-missing folder (404) is
+                    # safely skippable. Auth, rate-limit, and server errors
+                    # (401/403/429/5xx) must propagate so resolution is not
+                    # silently narrowed and misreported as a not-found.
+                    if exc.status_code == 404:
+                        continue
+                    raise
 
         return dataset_ids
 
@@ -357,10 +382,11 @@ class PipelineAPI:
         if draft_section is None:
             draft_section = pipeline.get("draft_mode")
         is_draft = bool(
-            pipeline.get("is_draft")
-            or pipeline.get("in_draft_mode")
+            (isinstance(draft_section, str) and draft_section in DRAFT_MODE_ACTIVE_VALUES)
             or (isinstance(draft_section, dict) and draft_section.get("active"))
             or (isinstance(draft_section, dict) and draft_section.get("is_draft"))
+            or pipeline.get("is_draft")
+            or pipeline.get("in_draft_mode")
         )
         return {
             "dataview_id": dataview_id,

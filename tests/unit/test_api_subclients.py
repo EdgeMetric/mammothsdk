@@ -1018,6 +1018,12 @@ class TestDashboardsAPI:
         client.dashboards.list()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/dashboards")
 
+    def test_list_forwards_nullable_project_id(self, client: MammothClient):
+        client.dashboards.list(project_id=42)
+        client._request_json.assert_called_once_with(
+            "GET", "/dashboards", params={"project_id": 42}
+        )
+
     def test_get(self, client: MammothClient):
         client.dashboards.get(dashboard_id=5)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/dashboards/5")

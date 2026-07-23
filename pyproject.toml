@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mammoth-io"
-version = "0.5.1"
+version = "0.6.0"
 description = "Python SDK for Mammoth Analytics platform"
 authors = ["Ankit Kumar Pandey <ankitpandey@mammoth.io>"]
 readme = "README.md"
@@ -15,15 +15,17 @@ classifiers = [
     "License :: Other/Proprietary License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Information Analysis"
 ]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+# Matches the CLI's floor (mammoth-cli requires >=3.12,<3.15): the SDK and CLI
+# ship from the same monorepo and should not diverge on supported interpreters.
+python = ">=3.12,<3.15"
 # Runtime deps use ranges, not exact pins: as a library, mm-pysdk must compose
 # with whatever versions its consumer applications pin (e.g. mvc-service pins
 # requests==2.32.5). Exact pins here cause unsatisfiable resolver conflicts.

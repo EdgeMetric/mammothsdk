@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import billing as billing_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -39,9 +40,9 @@ _SUBSCRIPTION_UPDATE = "mammoth.api.billing.BillingAPI.subscription_update"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -66,9 +67,7 @@ def test_chargebee_plan_blocked_without_yes(fake_service: FakeMammothService) ->
 
 def test_chargebee_plan_requires_confirm_target(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_chargebee_plan(
-            _inv("billing.chargebee-plan", yes=True, confirm="999")
-        )
+        billing_cmd.billing_chargebee_plan(_inv("billing.chargebee-plan", yes=True, confirm="999"))
     assert excinfo.value.code == "confirmation_target_mismatch"
     assert fake_service.call_log == []
 
@@ -221,9 +220,7 @@ def test_stripe_cancel_forwards_body(fake_service: FakeMammothService, tmp_path:
     billing_cmd.billing_stripe_cancel(
         _inv("billing.stripe.cancel", input_file=doc, yes=True, confirm="4")
     )
-    assert fake_service.call_log == [
-        (_STRIPE_CANCEL, {"body": {"reason": "too expensive"}})
-    ]
+    assert fake_service.call_log == [(_STRIPE_CANCEL, {"body": {"reason": "too expensive"}})]
 
 
 # --- stripe.checkout-url --------------------------------------------------------------
@@ -238,9 +235,7 @@ def test_checkout_url_requires_success_url(fake_service: FakeMammothService) -> 
     assert fake_service.call_log == []
 
 
-def test_checkout_url_requires_cancel_url(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_checkout_url_requires_cancel_url(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"success_url": "https://x/ok"})
     with pytest.raises(CliError) as excinfo:
         billing_cmd.billing_stripe_checkout_url(
@@ -250,9 +245,7 @@ def test_checkout_url_requires_cancel_url(
     assert fake_service.call_log == []
 
 
-def test_checkout_url_blocked_without_yes(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_checkout_url_blocked_without_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"success_url": "https://x/ok", "cancel_url": "https://x/cancel"})
     with pytest.raises(CliError) as excinfo:
         billing_cmd.billing_stripe_checkout_url(
@@ -293,9 +286,7 @@ def test_checkout_url_forwards_optional_flag(
 
 def test_stripe_create_requires_plan_id(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_stripe_create(
-            _inv("billing.stripe.create", yes=True, confirm="4")
-        )
+        billing_cmd.billing_stripe_create(_inv("billing.stripe.create", yes=True, confirm="4"))
     assert excinfo.value.code == "missing_argument"
     assert fake_service.call_log == []
 
@@ -316,9 +307,7 @@ def test_stripe_create_forwards_billing_interval(
     billing_cmd.billing_stripe_create(
         _inv("billing.stripe.create", extra_args=["9"], input_file=doc, yes=True, confirm="4")
     )
-    assert fake_service.call_log == [
-        (_STRIPE_CREATE, {"plan_id": 9, "billing_interval": "annual"})
-    ]
+    assert fake_service.call_log == [(_STRIPE_CREATE, {"plan_id": 9, "billing_interval": "annual"})]
 
 
 # --- stripe.end-trial --------------------------------------------------------------------
@@ -332,9 +321,7 @@ def test_stripe_end_trial_blocked_without_yes(fake_service: FakeMammothService) 
 
 
 def test_stripe_end_trial_proceeds_with_confirm(fake_service: FakeMammothService) -> None:
-    billing_cmd.billing_stripe_end_trial(
-        _inv("billing.stripe.end-trial", yes=True, confirm="4")
-    )
+    billing_cmd.billing_stripe_end_trial(_inv("billing.stripe.end-trial", yes=True, confirm="4"))
     assert fake_service.call_log == [(_STRIPE_END_TRIAL, {})]
 
 
@@ -474,9 +461,7 @@ def test_pm_set_default_proceeds_with_matching_confirm(
             confirm="pm_1",
         )
     )
-    assert fake_service.call_log == [
-        (_STRIPE_PM_SET_DEFAULT, {"payment_method_id": "pm_1"})
-    ]
+    assert fake_service.call_log == [(_STRIPE_PM_SET_DEFAULT, {"payment_method_id": "pm_1"})]
 
 
 # --- stripe.portal-url -------------------------------------------------------------------
@@ -489,16 +474,12 @@ def test_portal_url_blocked_without_yes(fake_service: FakeMammothService) -> Non
     assert fake_service.call_log == []
 
 
-def test_portal_url_forwards_return_url(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_portal_url_forwards_return_url(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"return_url": "https://x/settings"})
     billing_cmd.billing_stripe_portal_url(
         _inv("billing.stripe.portal-url", input_file=doc, yes=True, confirm="4")
     )
-    assert fake_service.call_log == [
-        (_STRIPE_PORTAL_URL, {"return_url": "https://x/settings"})
-    ]
+    assert fake_service.call_log == [(_STRIPE_PORTAL_URL, {"return_url": "https://x/settings"})]
 
 
 # --- stripe.preview-invoice ----------------------------------------------------------------
@@ -632,9 +613,7 @@ def test_subscription_get_blocked_without_yes(fake_service: FakeMammothService) 
     assert fake_service.call_log == []
 
 
-def test_subscription_get_forwards_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_subscription_get_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"fields": "plan,status"})
     billing_cmd.billing_subscription_get(
         _inv("billing.subscription.get", input_file=doc, yes=True, confirm="4")

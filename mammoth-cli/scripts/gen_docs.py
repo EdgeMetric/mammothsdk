@@ -50,15 +50,31 @@ def _families() -> dict[str, list[dict[str, object]]]:
 
 
 def _command_block(record: dict[str, object]) -> list[str]:
-    return [
+    lines = [
         f"### `mammoth {record['command_path']}`",
         "",
-        f"- Mutation class: `{record['mutation_class']}`",
-        f"- Confirmation: `{record['confirmation']}`",
-        f"- Backing SDK: `{record['sdk_symbol']}`",
-        f"- Agent example: `{record['agent_example']}`",
-        "",
     ]
+    positionals = record.get("positionals") or []
+    if positionals:
+        lines.append("**Arguments**")
+        lines.append("")
+        for positional in positionals:  # type: ignore[union-attr]
+            requiredness = "required" if positional["required"] else "optional"
+            lines.append(
+                f"- `{positional['metavar']}` ({positional['type']}, {requiredness}) "
+                f"— {positional['help']}"
+            )
+        lines.append("")
+    lines.extend(
+        [
+            f"- Mutation class: `{record['mutation_class']}`",
+            f"- Confirmation: `{record['confirmation']}`",
+            f"- Backing SDK: `{record['sdk_symbol']}`",
+            f"- Agent example: `{record['agent_example']}`",
+            "",
+        ]
+    )
+    return lines
 
 
 def render_commands_md(families: dict[str, list[dict[str, object]]]) -> str:
@@ -93,8 +109,9 @@ def render_llms_txt(families: dict[str, list[dict[str, object]]]) -> str:
     for name, summary in GUIDES:
         lines.append(f"- [{name}](docs/{name}): {summary}")
     lines.append("- [command reference](docs/reference/commands.md): every command.")
-    lines.append("- [agent skill](mammoth_cli/bundled_skill/mammoth-cli/SKILL.md): the "
-                 "installable skill.")
+    lines.append(
+        "- [agent skill](mammoth_cli/bundled_skill/mammoth-cli/SKILL.md): the " "installable skill."
+    )
     lines.append("")
     lines.append("## Command families")
     lines.append("")

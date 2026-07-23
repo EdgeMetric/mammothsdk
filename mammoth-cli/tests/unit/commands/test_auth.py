@@ -11,15 +11,21 @@ import pytest
 
 from mammoth_cli.commands import auth as auth_cmd
 from mammoth_cli.context import credentials, profiles
+from mammoth_cli.context.resolver import (
+    ENV_API_KEY,
+    ENV_API_SECRET,
+    ENV_SERVER_PREFIX,
+    ENV_WORKSPACE_ID,
+)
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import make_runner
 
 ENV = {
-    "MAMMOTH_API_KEY": "env-key-value",
-    "MAMMOTH_API_SECRET": "env-secret-value",
-    "MAMMOTH_WORKSPACE_ID": "4",
-    "MAMMOTH_SERVER_PREFIX": "release",
+    ENV_API_KEY: "env-key-value",
+    ENV_API_SECRET: "env-secret-value",
+    ENV_WORKSPACE_ID: "4",
+    ENV_SERVER_PREFIX: "release",
 }
 
 
@@ -160,6 +166,7 @@ def test_login_prompt_path_when_interactive(
     # Force a genuinely interactive policy regardless of the ambient CI-like
     # sandbox environment this test happens to run in.
     monkeypatch.delenv("CI", raising=False)
+    monkeypatch.setenv("TERM", "xterm")
     monkeypatch.setattr(auth_cmd.sys.stdin, "isatty", lambda: True)
     monkeypatch.setattr(auth_cmd.typer, "prompt", lambda text, hide_input=False: "prompted-" + text)
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
@@ -254,6 +261,42 @@ def test_logout_removes_credentials_and_profile(
     assert envelope["data"]["removed_profiles"] == ["default"]
     assert profiles.get_profile("default") is None
     assert credentials.load_credentials("default") is None
+
+
+def test_logout_all_removes_profiles_even_with_invalid_profile(
+    isolated_cli_config: Path,
+) -> None:
+    """``--all`` must clean up every profile, including an unparseable legacy one.
+
+    A profile carrying an unsupported legacy base_url must not block the bulk
+    logout whose entire purpose is to delete it. Cleanup iterates raw profile
+    names, never parsing records.
+    """
+    path = profiles.profiles_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "[profiles.default]\n"
+        "workspace_id = 4\n"
+        'server_prefix = "release"\n\n'
+        "[profiles.legacy]\n"
+        "workspace_id = 7\n"
+        'base_url = "https://custom.example.com/api/v2"\n',
+        encoding="utf-8",
+    )
+    credentials.store_credentials("default", "k", "s", storage="file")
+    credentials.store_credentials("legacy", "k2", "s2", storage="file")
+
+    runner = make_runner()
+    result = runner.invoke(
+        ["auth", "logout", "--all", "--yes", "--output", "json", "--no-input"]
+    )
+    assert result.exit_code == 0, result.stderr
+    envelope = json.loads(result.stdout)
+    assert sorted(envelope["data"]["removed_profiles"]) == ["default", "legacy"]
+    # Both profiles are gone from the store.
+    assert profiles.list_profile_names() == []
+    assert credentials.load_credentials("default") is None
+    assert credentials.load_credentials("legacy") is None
 
 
 def test_logout_all_and_profile_are_mutually_exclusive(isolated_cli_config: Path) -> None:

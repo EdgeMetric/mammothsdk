@@ -16,7 +16,12 @@ from collections.abc import Callable
 
 import typer
 
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_CONFIRMATION_DECLINED,
+    CODE_CONFIRMATION_REQUIRED,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.output.policy import MACHINE_OUTPUTS
 from mammoth_cli.runtime.invocation import Invocation
 
@@ -29,18 +34,23 @@ Prompter = Callable[[str], bool]
 
 
 def _required_error(action: str, *, target: str | None, need_target: bool) -> CliError:
-    recovery = "mammoth ... --yes"
+    # No recovery_commands: the only remedy is to re-run THIS command with an
+    # extra flag, and the required flags are stated in the hint. A recovery
+    # command here could only be a non-executable placeholder (the original
+    # argv is not reconstructable at this layer), and the recovery_commands
+    # contract is that every entry is a runnable command.
     if need_target and target is not None:
-        recovery = f"mammoth ... --yes --confirm {target}"
+        flags = f"--yes --confirm {target}"
+    else:
+        flags = "--yes"
     return CliError(
-        code="confirmation_required",
+        code=CODE_CONFIRMATION_REQUIRED,
         message=f"This command needs explicit confirmation to {action}.",
         exit_status=EXIT_USAGE,
         hint=(
-            "Pass --yes (and --confirm TARGET for high-impact actions), or run it "
-            "interactively at a terminal."
+            f"Re-run the same command with {flags} (keeping --output json "
+            "--no-input), or run it interactively at a terminal."
         ),
-        recovery_commands=[recovery],
     )
 
 
@@ -107,7 +117,7 @@ def enforce_confirmation(
         if ask(f"Confirm: {action}?"):
             return
         raise CliError(
-            code="confirmation_declined",
+            code=CODE_CONFIRMATION_DECLINED,
             message=f"Declined to {action}.",
             exit_status=EXIT_USAGE,
         )

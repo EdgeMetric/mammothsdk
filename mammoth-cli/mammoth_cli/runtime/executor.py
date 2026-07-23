@@ -16,12 +16,35 @@ from typing import Any
 
 import typer
 
-from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.output.envelope import Meta, Result
-from mammoth_cli.output.policy import MACHINE_OUTPUTS
+from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
 from mammoth_cli.output.render import render
 
 Producer = Callable[[], tuple[Any, dict[str, Any]]]
+
+
+def _validate_output(output: str) -> None:
+    """Reject an unsupported ``--output`` mode before any work is done.
+
+    Validating up front means an invalid mode fails with a clean usage error
+    instead of running the producer (and its network calls) and then crashing
+    in the renderer.
+
+    Args:
+        output: The requested output mode.
+
+    Raises:
+        CliError: ``invalid_output_mode`` with :data:`EXIT_USAGE` when the mode
+            is not one the renderer supports.
+    """
+    if output not in VALID_OUTPUTS:
+        raise CliError(
+            code="invalid_output_mode",
+            message=f"Unsupported output mode '{output}'.",
+            exit_status=EXIT_USAGE,
+            hint=f"Use one of: {', '.join(VALID_OUTPUTS)}.",
+        )
 
 
 def emit_success(
@@ -95,6 +118,7 @@ def run(command_id: str, output: str, producer: Producer) -> None:
             normally after rendering the success envelope.
     """
     try:
+        _validate_output(output)
         data, meta_extra = producer()
         emit_success(command_id, data, output, **meta_extra)
     except CliError as error:

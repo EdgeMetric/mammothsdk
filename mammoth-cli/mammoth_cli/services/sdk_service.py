@@ -14,8 +14,14 @@ from typing import Any
 from mammoth.client import MammothClient
 
 from mammoth_cli.context.resolver import ResolvedAuth
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
-from mammoth_cli.services.conditions import compile_condition
+from mammoth_cli.errors.envelope import (
+    CODE_INVALID_ARGUMENTS,
+    CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_USAGE,
+    CliError,
+)
+from mammoth_cli.services.coerce import coerce_arguments
+from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dispatch import resolve_sdk_method
 from mammoth_cli.services.mapping import map_sdk_exception
 
@@ -28,6 +34,8 @@ class SdkMammothService:
         auth: ResolvedAuth,
         *,
         timeout: float | None = None,
+        job_timeout: float | None = None,
+        pipeline_timeout: float | None = None,
         project_id: int | None = None,
     ) -> None:
         """Build the service from resolved authentication.
@@ -35,6 +43,10 @@ class SdkMammothService:
         Args:
             auth: Resolved API key, secret, workspace id, and base url.
             timeout: Optional per-request timeout override, in seconds.
+            job_timeout: Optional job-wait timeout override, in seconds; bound
+                on the client so async job waits honor it.
+            pipeline_timeout: Optional pipeline-readiness timeout override, in
+                seconds; bound on the client so pipeline waits honor it.
             project_id: Active project id to bind on the client, so SDK methods
                 that read the client's project context (rather than taking an
                 explicit ``project_id`` argument) resolve to it.
@@ -42,6 +54,10 @@ class SdkMammothService:
         kwargs: dict[str, Any] = {}
         if timeout is not None:
             kwargs["timeout"] = int(timeout)
+        if job_timeout is not None:
+            kwargs["job_timeout"] = int(job_timeout)
+        if pipeline_timeout is not None:
+            kwargs["pipeline_timeout"] = int(pipeline_timeout)
         self._client = MammothClient(
             api_key=auth.api_key,
             api_secret=auth.api_secret,
@@ -72,12 +88,19 @@ class SdkMammothService:
             return method(**kwargs)
         except TypeError as exc:
             raise CliError(
-                code="invalid_arguments",
+                code=CODE_INVALID_ARGUMENTS,
                 message=f"The supplied fields do not fit '{sdk_symbol}'.",
                 exit_status=EXIT_USAGE,
                 hint="Check the command schema with 'mammoth schema get'.",
                 details={"reason": str(exc)},
             ) from exc
+        except Exception as exc:
+            raise map_sdk_exception(exc) from exc
+
+    def wait_if_job(self, response: Any) -> Any:
+        """Wait for a recognized job response using the client's configured timeout."""
+        try:
+            return self._client.wait_if_job(response)
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
@@ -111,13 +134,23 @@ class SdkMammothService:
             raise self._view_member_error(view_id, method)
         if not callable(attribute):
             return attribute
-        if "condition" in kwargs and kwargs["condition"] is not None:
-            kwargs["condition"] = compile_condition(kwargs["condition"])
+        try:
+            kwargs = coerce_arguments(attribute, kwargs)
+        except (ValueError, TypeError) as exc:
+            raise CliError(
+                code=CODE_INVALID_ARGUMENTS,
+                message=f"The supplied fields do not fit View.{method}.",
+                exit_status=EXIT_USAGE,
+                hint="Check the command schema with 'mammoth schema get'.",
+                details={"reason": str(exc)},
+            ) from exc
+        if kwargs.get(CONDITION_KWARG) is not None:
+            kwargs[CONDITION_KWARG] = compile_condition(kwargs[CONDITION_KWARG])
         try:
             return attribute(**kwargs)
         except TypeError as exc:
             raise CliError(
-                code="invalid_arguments",
+                code=CODE_INVALID_ARGUMENTS,
                 message=f"The supplied fields do not fit View.{method}.",
                 exit_status=EXIT_USAGE,
                 hint="Check the command schema with 'mammoth schema get'.",
@@ -129,7 +162,7 @@ class SdkMammothService:
     @staticmethod
     def _view_member_error(view_id: int, method: str) -> CliError:
         return CliError(
-            code="sdk_symbol_unresolved",
+            code=CODE_SDK_SYMBOL_UNRESOLVED,
             message=f"View {view_id} has no public method '{method}'.",
             exit_status=EXIT_USAGE,
         )

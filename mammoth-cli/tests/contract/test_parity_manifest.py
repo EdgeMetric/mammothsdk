@@ -7,15 +7,18 @@ They are red until the manifests and typed SDK symbols exist.
 from __future__ import annotations
 
 import importlib
+import shlex
 from pathlib import Path
 
 import pytest
 
+from mammoth_cli.commands.schema import runnable_example
 from mammoth_cli.manifest.loader import (
     load_commands,
     load_operations,
     load_sdk_methods,
 )
+from mammoth_cli.services.positionals import positionals_for
 
 CLI_ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -119,6 +122,49 @@ def test_every_command_has_human_and_agent_examples() -> None:
             continue
         assert record.get("human_example"), f"{record['command_id']} missing human_example"
         assert record.get("agent_example"), f"{record['command_id']} missing agent_example"
+
+
+def test_manifest_positionals_match_the_canonical_source() -> None:
+    for record in load_commands():
+        if record.get("disposition") == "alias":
+            continue
+        expected = [
+            positional.as_manifest()
+            for positional in positionals_for(record["command_id"], record.get("sdk_symbol"))
+        ]
+        assert record.get("positionals") == expected, record["command_id"]
+
+
+def test_human_examples_contain_only_required_positional_metavars() -> None:
+    for record in load_commands():
+        if record.get("disposition") == "alias":
+            continue
+        positionals = positionals_for(record["command_id"], record.get("sdk_symbol"))
+        command_prefix = ["mammoth", *shlex.split(record["command_path"])]
+        tokens = shlex.split(record["human_example"])
+        assert tokens[: len(command_prefix)] == command_prefix, record["command_id"]
+        assert tokens[len(command_prefix) :] == [
+            *(positional.metavar for positional in positionals if positional.required),
+            "--help",
+        ], record["command_id"]
+
+
+def test_agent_examples_use_concrete_positional_samples_in_declared_order() -> None:
+    for record in load_commands():
+        if record.get("disposition") == "alias":
+            continue
+        positionals = positionals_for(record["command_id"], record.get("sdk_symbol"))
+        canonical = runnable_example(record, record.get("sdk_symbol"), positionals)
+        if canonical is None:
+            # Local auth/config/context commands intentionally have no SDK
+            # signature; their examples are covered by the general example
+            # shape tests rather than the SDK-derived generator.
+            continue
+        assert record["agent_example"] == canonical, record["command_id"]
+        example_tokens = shlex.split(canonical)
+        assert not {positional.metavar for positional in positionals}.intersection(
+            example_tokens
+        ), record["command_id"]
 
 
 def test_every_command_has_test_ids() -> None:

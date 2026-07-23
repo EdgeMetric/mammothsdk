@@ -23,7 +23,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter create --help
-  agent_example: mammoth parameter create --output json --no-input
+  agent_example: 'mammoth parameter create --input ''{"name": "example", "param_type": "example", "value":
+    "example"}'' --output json --no-input'
   unit_tests:
   - UT-PARAMETER-CREATE
   contract_tests:
@@ -40,7 +41,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteParameter
-  positionals: []
+  positionals:
+  - name: parameter_id
+    type: int
+    required: true
+    metavar: PARAMETER_ID
+    falls_back_to_field: null
+    help: ID of the parameter.
   options: []
   sdk_symbol: mammoth.api.parameters.ParametersAPI.delete
   sdk_conversion: Call mammoth.api.parameters.ParametersAPI.delete with validated request fields.
@@ -56,8 +63,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth parameter delete --help
-  agent_example: mammoth parameter delete --output json --no-input
+  human_example: mammoth parameter delete PARAMETER_ID --help
+  agent_example: mammoth parameter delete 123 --output json --no-input
   unit_tests:
   - UT-PARAMETER-DELETE
   contract_tests:
@@ -74,7 +81,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetParameterDependencies
-  positionals: []
+  positionals:
+  - name: parameter_id
+    type: int
+    required: true
+    metavar: PARAMETER_ID
+    falls_back_to_field: null
+    help: ID of the parameter.
   options: []
   sdk_symbol: mammoth.api.parameters.ParametersAPI.dependencies
   sdk_conversion: Call mammoth.api.parameters.ParametersAPI.dependencies with validated request fields.
@@ -90,8 +103,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth parameter dependencies --help
-  agent_example: mammoth parameter dependencies --output json --no-input
+  human_example: mammoth parameter dependencies PARAMETER_ID --help
+  agent_example: mammoth parameter dependencies 123 --output json --no-input
   unit_tests:
   - UT-PARAMETER-DEPENDENCIES
   contract_tests:
@@ -108,7 +121,13 @@ commands:
   alias_of: null
   operation_ids:
   - DuplicateParameter
-  positionals: []
+  positionals:
+  - name: parameter_id
+    type: int
+    required: true
+    metavar: PARAMETER_ID
+    falls_back_to_field: null
+    help: ID of the parameter.
   options: []
   sdk_symbol: mammoth.api.parameters.ParametersAPI.duplicate
   sdk_conversion: Call mammoth.api.parameters.ParametersAPI.duplicate with validated request fields.
@@ -124,8 +143,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth parameter duplicate --help
-  agent_example: mammoth parameter duplicate --output json --no-input
+  human_example: mammoth parameter duplicate PARAMETER_ID --help
+  agent_example: mammoth parameter duplicate 123 --output json --no-input
   unit_tests:
   - UT-PARAMETER-DUPLICATE
   contract_tests:
@@ -142,7 +161,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetParameterDetail
-  positionals: []
+  positionals:
+  - name: parameter_id
+    type: int
+    required: true
+    metavar: PARAMETER_ID
+    falls_back_to_field: null
+    help: ID of the parameter.
   options: []
   sdk_symbol: mammoth.api.parameters.ParametersAPI.get
   sdk_conversion: Call mammoth.api.parameters.ParametersAPI.get with validated request fields.
@@ -158,8 +183,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth parameter get --help
-  agent_example: mammoth parameter get --output json --no-input
+  human_example: mammoth parameter get PARAMETER_ID --help
+  agent_example: mammoth parameter get 123 --output json --no-input
   unit_tests:
   - UT-PARAMETER-GET
   contract_tests:
@@ -193,7 +218,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter group create --help
-  agent_example: mammoth parameter group create --output json --no-input
+  agent_example: 'mammoth parameter group create --input ''{"name": "example"}'' --output json --no-input'
   unit_tests:
   - UT-PARAMETER-GROUP-CREATE
   contract_tests:
@@ -210,7 +235,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteGroup
-  positionals: []
+  positionals:
+  - name: group_id
+    type: int
+    required: true
+    metavar: GROUP_ID
+    falls_back_to_field: null
+    help: ID of the group.
   options: []
   sdk_symbol: mammoth.api.parameters.ParametersAPI.group_delete
   sdk_conversion: Call mammoth.api.parameters.ParametersAPI.group_delete with validated request fields.
@@ -226,8 +257,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth parameter group delete --help
-  agent_example: mammoth parameter group delete --output json --no-input
+  human_example: mammoth parameter group delete GROUP_ID --help
+  agent_example: mammoth parameter group delete 123 --output json --no-input
   unit_tests:
   - UT-PARAMETER-GROUP-DELETE
   contract_tests:
@@ -295,7 +326,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter group reorder --help
-  agent_example: mammoth parameter group reorder --output json --no-input
+  agent_example: 'mammoth parameter group reorder --input ''{"order": [1]}'' --output json --no-input'
   unit_tests:
   - UT-PARAMETER-GROUP-REORDER
   contract_tests:
@@ -312,7 +343,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateGroup
-  positionals: []
+  positionals:
+  - name: group_id
+    type: int
+    required: true
+    metavar: GROUP_ID
+    falls_back_to_field: null
+    help: ID of the group.
   options: []
   sdk_symbol: mammoth.api.parameters.ParametersAPI.group_update
   sdk_conversion: Call mammoth.api.parameters.ParametersAPI.group_update with validated request fields.
@@ -328,8 +365,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth parameter group update --help
-  agent_example: mammoth parameter group update --output json --no-input
+  human_example: mammoth parameter group update GROUP_ID --help
+  agent_example: mammoth parameter group update 123 --output json --no-input
   unit_tests:
   - UT-PARAMETER-GROUP-UPDATE
   contract_tests:
@@ -380,7 +417,13 @@ commands:
   alias_of: null
   operation_ids:
   - RerunParameter
-  positionals: []
+  positionals:
+  - name: parameter_id
+    type: int
+    required: true
+    metavar: PARAMETER_ID
+    falls_back_to_field: null
+    help: ID of the parameter.
   options: []
   sdk_symbol: mammoth.api.parameters.ParametersAPI.rerun
   sdk_conversion: Call mammoth.api.parameters.ParametersAPI.rerun with validated request fields.
@@ -396,8 +439,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth parameter rerun --help
-  agent_example: mammoth parameter rerun --output json --no-input
+  human_example: mammoth parameter rerun PARAMETER_ID --help
+  agent_example: mammoth parameter rerun 123 --output json --no-input
   unit_tests:
   - UT-PARAMETER-RERUN
   contract_tests:
@@ -448,7 +491,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateParameter
-  positionals: []
+  positionals:
+  - name: parameter_id
+    type: int
+    required: true
+    metavar: PARAMETER_ID
+    falls_back_to_field: null
+    help: ID of the parameter.
   options: []
   sdk_symbol: mammoth.api.parameters.ParametersAPI.update
   sdk_conversion: Call mammoth.api.parameters.ParametersAPI.update with validated request fields.
@@ -464,8 +513,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth parameter update --help
-  agent_example: mammoth parameter update --output json --no-input
+  human_example: mammoth parameter update PARAMETER_ID --help
+  agent_example: mammoth parameter update 123 --output json --no-input
   unit_tests:
   - UT-PARAMETER-UPDATE
   contract_tests:

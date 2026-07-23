@@ -1,4 +1,8 @@
-"""Endpoint resolution: server-prefix mapping, validation, and conflicts."""
+"""Endpoint resolution: server-prefix mapping and validation.
+
+The CLI exposes no base-url override: a one-label server prefix (default
+``app-eu``) is the only endpoint input.
+"""
 
 from __future__ import annotations
 
@@ -9,17 +13,11 @@ from mammoth_cli.errors.envelope import CliError
 
 
 def test_default_prefix_maps_to_app_eu() -> None:
-    assert resolve_base_url(None, None) == "https://app-eu.mammoth.io/api/v2"
+    assert resolve_base_url(None) == "https://app-eu.mammoth.io/api/v2"
 
 
 def test_general_prefix_maps_to_its_own_host() -> None:
-    assert resolve_base_url("release", None) == "https://release.mammoth.io/api/v2"
-
-
-def test_base_url_override_wins_and_is_returned_verbatim() -> None:
-    assert resolve_base_url(None, "https://custom.example.com/api/v2") == (
-        "https://custom.example.com/api/v2"
-    )
+    assert resolve_base_url("release") == "https://release.mammoth.io/api/v2"
 
 
 @pytest.mark.parametrize(
@@ -38,13 +36,6 @@ def test_base_url_override_wins_and_is_returned_verbatim() -> None:
 )
 def test_invalid_prefixes_are_rejected(prefix: str) -> None:
     with pytest.raises(CliError) as excinfo:
-        resolve_base_url(prefix, None)
+        resolve_base_url(prefix)
     assert excinfo.value.code == "invalid_server_prefix"
-    assert excinfo.value.exit_status == 2
-
-
-def test_conflicting_prefix_and_base_url_is_rejected() -> None:
-    with pytest.raises(CliError) as excinfo:
-        resolve_base_url("app-eu", "https://custom.example.com/api/v2")
-    assert excinfo.value.code == "conflicting_endpoint"
     assert excinfo.value.exit_status == 2

@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import automation as automation_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -23,9 +24,9 @@ _TRASH = "mammoth.api.automations.AutomationsAPI.trash"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -86,9 +87,7 @@ def test_restore_passes_automation_id(fake_service: FakeMammothService) -> None:
 
 def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        automation_cmd.automation_delete(
-            _inv("automation.delete", extra_args=["7"], output="json")
-        )
+        automation_cmd.automation_delete(_inv("automation.delete", extra_args=["7"], output="json"))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
 
@@ -102,7 +101,7 @@ def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
 
 
 def test_create_requires_name(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write_doc(tmp_path, {"description": "d", "tasks": [{"task_type": "x"}]})
+    doc = _write_doc(tmp_path, {"description": "d", "tasks": [{"task_type": "run_data_retrieval"}]})
     with pytest.raises(CliError) as excinfo:
         automation_cmd.automation_create(_inv("automation.create", input_file=doc, yes=True))
     assert excinfo.value.code == "missing_argument"
@@ -110,7 +109,7 @@ def test_create_requires_name(fake_service: FakeMammothService, tmp_path: Path) 
 
 
 def test_create_requires_description(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write_doc(tmp_path, {"name": "Nightly", "tasks": [{"task_type": "x"}]})
+    doc = _write_doc(tmp_path, {"name": "Nightly", "tasks": [{"task_type": "run_data_retrieval"}]})
     with pytest.raises(CliError) as excinfo:
         automation_cmd.automation_create(_inv("automation.create", input_file=doc, yes=True))
     assert excinfo.value.code == "missing_field"
@@ -129,23 +128,33 @@ def test_create_blocked_without_confirmation(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write_doc(
-        tmp_path, {"name": "Nightly", "description": "d", "tasks": [{"task_type": "x"}]}
+        tmp_path,
+        {
+            "name": "Nightly",
+            "description": "d",
+            "tasks": [{"task_type": "run_data_retrieval"}],
+        },
     )
     with pytest.raises(CliError) as excinfo:
-        automation_cmd.automation_create(
-            _inv("automation.create", input_file=doc, output="json")
-        )
+        automation_cmd.automation_create(_inv("automation.create", input_file=doc, output="json"))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
 
 
 def test_create_uses_positional_name(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write_doc(tmp_path, {"description": "d", "tasks": [{"task_type": "x"}]})
+    doc = _write_doc(tmp_path, {"description": "d", "tasks": [{"task_type": "run_data_retrieval"}]})
     automation_cmd.automation_create(
         _inv("automation.create", extra_args=["Nightly"], input_file=doc, yes=True)
     )
     assert fake_service.call_log == [
-        (_CREATE, {"name": "Nightly", "description": "d", "tasks": [{"task_type": "x"}]})
+        (
+            _CREATE,
+            {
+                "name": "Nightly",
+                "description": "d",
+                "tasks": [{"task_type": "run_data_retrieval"}],
+            },
+        )
     ]
 
 
@@ -157,8 +166,8 @@ def test_create_forwards_conditions_and_mode(
         {
             "name": "Nightly",
             "description": "d",
-            "tasks": [{"task_type": "x"}],
-            "conditions": [{"condition_type": "y"}],
+            "tasks": [{"task_type": "run_data_retrieval"}],
+            "conditions": [{"condition_type": "at_specific_time", "details": {"interval": None}}],
             "condition_mode": "or",
         },
     )
@@ -169,8 +178,10 @@ def test_create_forwards_conditions_and_mode(
             {
                 "name": "Nightly",
                 "description": "d",
-                "tasks": [{"task_type": "x"}],
-                "conditions": [{"condition_type": "y"}],
+                "tasks": [{"task_type": "run_data_retrieval"}],
+                "conditions": [
+                    {"condition_type": "at_specific_time", "details": {"interval": None}}
+                ],
                 "condition_mode": "or",
             },
         )
@@ -182,9 +193,7 @@ def test_create_forwards_conditions_and_mode(
 
 def test_update_requires_patch(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        automation_cmd.automation_update(
-            _inv("automation.update", extra_args=["7"], yes=True)
-        )
+        automation_cmd.automation_update(_inv("automation.update", extra_args=["7"], yes=True))
     assert excinfo.value.code == "missing_field"
     assert fake_service.call_log == []
 

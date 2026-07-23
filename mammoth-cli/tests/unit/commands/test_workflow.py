@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import workflow as workflow_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -32,9 +33,9 @@ _BLOCK_TYPE = "mammoth.api.workflows.WorkflowsAPI.block_type"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -117,9 +118,7 @@ def test_create_requires_name(fake_service: FakeMammothService) -> None:
     assert excinfo.value.code == "missing_argument"
 
 
-def test_create_forwards_optional_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     input_file = _write(
         tmp_path,
         {"name": "Pipeline", "shape": "full", "purpose": "ETL", "seed_datasource_id": 9},
@@ -187,28 +186,26 @@ def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
 def test_from_template_requires_workflow_name(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    input_file = _write(tmp_path, {"template_id": 3})
+    input_file = _write(tmp_path, {})
     with pytest.raises(CliError) as excinfo:
         workflow_cmd.workflow_from_template(
-            _inv("workflow.from-template", project=180, input_file=input_file)
+            _inv("workflow.from-template", project=180, extra_args=["3"], input_file=input_file)
         )
     assert excinfo.value.code == "missing_argument"
 
 
 def test_from_template_requires_template_id(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        workflow_cmd.workflow_from_template(
-            _inv("workflow.from-template", project=180, extra_args=["Copy"])
-        )
-    assert excinfo.value.code == "missing_field"
+        workflow_cmd.workflow_from_template(_inv("workflow.from-template", project=180))
+    assert excinfo.value.code == "missing_argument"
 
 
 def test_from_template_uses_positional_name_and_input_template_id(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    input_file = _write(tmp_path, {"template_id": 3})
+    input_file = _write(tmp_path, {"workflow_name": "Copy"})
     workflow_cmd.workflow_from_template(
-        _inv("workflow.from-template", project=180, extra_args=["Copy"], input_file=input_file)
+        _inv("workflow.from-template", project=180, extra_args=["3"], input_file=input_file)
     )
     assert fake_service.call_log == [
         (_FROM_TEMPLATE, {"template_id": 3, "workflow_name": "Copy", "project_id": 180})
@@ -218,9 +215,9 @@ def test_from_template_uses_positional_name_and_input_template_id(
 def test_from_template_name_from_input_field(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    input_file = _write(tmp_path, {"template_id": 3, "workflow_name": "Copy"})
+    input_file = _write(tmp_path, {"workflow_name": "Copy"})
     workflow_cmd.workflow_from_template(
-        _inv("workflow.from-template", project=180, input_file=input_file)
+        _inv("workflow.from-template", project=180, extra_args=["3"], input_file=input_file)
     )
     assert fake_service.call_log == [
         (_FROM_TEMPLATE, {"template_id": 3, "workflow_name": "Copy", "project_id": 180})
@@ -288,9 +285,7 @@ def test_block_add_forwards_optional_fields(
 # -- block.auth ------------------------------------------------------------
 
 
-def test_block_auth_uses_two_positionals(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_block_auth_uses_two_positionals(fake_service: FakeMammothService, tmp_path: Path) -> None:
     input_file = _write(tmp_path, {"auth_data": {"token": "t"}})
     workflow_cmd.workflow_block_auth(
         _inv("workflow.block.auth", project=180, extra_args=["7", "3"], input_file=input_file)
@@ -310,9 +305,7 @@ def test_block_auth_uses_two_positionals(
 
 def test_block_auth_requires_block_id(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        workflow_cmd.workflow_block_auth(
-            _inv("workflow.block.auth", project=180, extra_args=["7"])
-        )
+        workflow_cmd.workflow_block_auth(_inv("workflow.block.auth", project=180, extra_args=["7"]))
     assert excinfo.value.code == "missing_argument"
 
 

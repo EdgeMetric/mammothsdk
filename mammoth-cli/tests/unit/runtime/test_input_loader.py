@@ -16,6 +16,13 @@ def test_returns_none_when_no_input_requested() -> None:
     assert load_input_document(None, None) is None
 
 
+def test_shell_quoted_inline_json_is_a_document() -> None:
+    document = '{"mapping":[{"search":["old"],"replace":"new"}]}'
+    assert load_input_document(document, None) == {
+        "mapping": [{"search": ["old"], "replace": "new"}]
+    }
+
+
 def test_loads_json_file_by_extension(tmp_path: Path) -> None:
     path = tmp_path / "req.json"
     path.write_text(json.dumps({"name": "x", "n": 1}), encoding="utf-8")

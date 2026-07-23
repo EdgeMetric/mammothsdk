@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import client_app as client_app_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -21,9 +22,9 @@ _DELETE = "mammoth.api.clientapps.ClientAppsAPI.delete"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -40,9 +41,7 @@ def test_list_with_no_input_passes_no_kwargs(fake_service: FakeMammothService) -
     assert fake_service.call_log == [(_LIST, {})]
 
 
-def test_list_forwards_optional_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_list_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(
         json.dumps({"limit": 5, "offset": 10, "fields": "id,app_name", "sort": "app_name"}),
@@ -73,9 +72,7 @@ def test_get_without_client_key_is_usage_error(fake_service: FakeMammothService)
 def test_get_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"fields": "id,app_name"}), encoding="utf-8")
-    client_app_cmd.client_app_get(
-        _inv("client-app.get", extra_args=["ck_1"], input_file=str(doc))
-    )
+    client_app_cmd.client_app_get(_inv("client-app.get", extra_args=["ck_1"], input_file=str(doc)))
     assert fake_service.call_log == [(_GET, {"client_key": "ck_1", "fields": "id,app_name"})]
 
 
@@ -128,9 +125,7 @@ def test_create_uses_input_name_and_forwards_description(
     client_app_cmd.client_app_create(
         _inv("client-app.create", input_file=str(doc), yes=True, confirm="My App")
     )
-    assert fake_service.call_log == [
-        (_CREATE, {"app_name": "My App", "description": "A test app"})
-    ]
+    assert fake_service.call_log == [(_CREATE, {"app_name": "My App", "description": "A test app"})]
 
 
 # ---------------------------------------------------------------------------
@@ -160,9 +155,7 @@ def test_update_blocked_without_confirmation(
     assert fake_service.call_log == []
 
 
-def test_update_forwards_patch_request(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_update_forwards_patch_request(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(
         json.dumps({"patch_request": {"patch": [{"op": "replace", "path": "/description"}]}}),
@@ -209,7 +202,5 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
 
 
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    client_app_cmd.client_app_delete(
-        _inv("client-app.delete", extra_args=["ck_1"], yes=True)
-    )
+    client_app_cmd.client_app_delete(_inv("client-app.delete", extra_args=["ck_1"], yes=True))
     assert fake_service.call_log == [(_DELETE, {"client_key": "ck_1"})]

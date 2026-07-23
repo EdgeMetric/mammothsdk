@@ -514,6 +514,20 @@ class MammothClient:
 
         return response
 
+    def wait_if_job(
+        self,
+        response: dict[str, Any],
+        timeout: int | None = None,
+        poll_interval: int = 2,
+    ) -> dict[str, Any]:
+        """Wait when an API response contains a recognized job reference.
+
+        This is the public counterpart to the SDK's internal response helper,
+        intended for integrations that dispatch generated SDK methods and must
+        apply the same job timeout and polling semantics as handwritten APIs.
+        """
+        return self._wait_if_job(response, timeout=timeout, poll_interval=poll_interval)
+
     def set_project_id(self, project_id: int) -> None:
         """Set the active project for subsequent API calls.
 

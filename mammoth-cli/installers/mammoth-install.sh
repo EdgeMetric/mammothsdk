@@ -8,11 +8,20 @@
 #
 # Usage:
 #   mammoth-install.sh [--version X.Y.Z] [--cli-only | --skills-only]
-#                      [--no-modify-path] [--noninteractive] [--help]
+#                      [--local[=DIR]] [--no-modify-path] [--noninteractive]
+#                      [--help]
 #
 # The versioned release embeds an exact --version default. A checksum- and
 # Sigstore-verified flow is documented in the release notes; this script is the
 # convenience path.
+#
+# --local builds the CLI and its mammoth-io SDK dependency from this source
+# checkout and installs ONLINE: the two monorepo wheels resolve from a local
+# wheelhouse (--find-links) while every other runtime dependency (typer, rich,
+# platformdirs, ...) still resolves normally from PyPI. This is NOT an offline
+# installer -- a clean machine has no cached copies of those third-party
+# packages, so a plain --no-index install cannot resolve them. DIR defaults to
+# the mammoth-cli directory this script ships in.
 
 set -eu
 
@@ -22,6 +31,8 @@ INSTALL_CLI=1
 INSTALL_SKILLS=1
 MODIFY_PATH=1
 NONINTERACTIVE=0
+LOCAL_SOURCE=0
+LOCAL_DIR=""
 VERSION="__CLI_VERSION__" # replaced at release build; empty/placeholder = latest published
 
 log() { printf '%s\n' "mammoth-install: $1" >&2; }
@@ -38,6 +49,8 @@ while [ $# -gt 0 ]; do
         --version=*) VERSION="${1#*=}" ;;
         --cli-only) INSTALL_SKILLS=0 ;;
         --skills-only) INSTALL_CLI=0 ;;
+        --local) LOCAL_SOURCE=1 ;;
+        --local=*) LOCAL_SOURCE=1; LOCAL_DIR="${1#*=}" ;;
         --no-modify-path) MODIFY_PATH=0 ;;
         --noninteractive|--yes|-y) NONINTERACTIVE=1 ;;
         --help|-h) usage ;;
@@ -55,6 +68,16 @@ detect_platform() {
     case "$os" in
         Linux) platform_os="linux" ;;
         Darwin) platform_os="macos" ;;
+        MINGW*|MSYS*|CYGWIN*)
+            # git-bash/MSYS2/Cygwin on Windows report a *_NT uname here. This is
+            # not an unsupported platform, just the wrong installer: defer to
+            # the native PowerShell installer instead of aborting. Exit 0 (not
+            # a failure) so a CI job or script that runs this by mistake on
+            # Windows does not fail — it is simply the wrong entry point.
+            log "Windows detected via '$os' (git-bash/MSYS/Cygwin)."
+            log "Use the PowerShell installer instead: mammoth-install.ps1"
+            exit 0
+            ;;
         *) die "unsupported OS '$os'. Install manually: uv tool install $CLI_PACKAGE" ;;
     esac
     case "$arch" in
@@ -68,15 +91,51 @@ detect_platform() {
 }
 
 # --- uv acquisition ---------------------------------------------------------
-ensure_uv() {
-    if command -v uv >/dev/null 2>&1; then
-        UV_BIN="$(command -v uv)"
-        log "using existing uv at $UV_BIN"
-        return
-    fi
-    # Install the pinned uv into an installer-owned location; never replace a
-    # user's uv. Astral's official installer verifies its own download.
-    log "uv not found; installing pinned uv $UV_PINNED_VERSION into an installer-owned dir"
+
+# Is dotted version $1 >= dotted version $2? Pure-POSIX, field-by-field integer
+# comparison. $2 (the pinned version) is always a clean dotted-digit string.
+#
+# POLICY: a $1 that is NOT purely dotted digits — i.e. it carries any
+# prerelease or build suffix such as "0.11.30rc1", "0.11.30-alpha", or
+# "0.11.30+build" — is treated as NOT satisfying the pin, even when its numeric
+# fields would otherwise compare >=. A prerelease/suffixed build is not the
+# pinned final release and may behave differently, so the caller must bootstrap
+# the pinned uv rather than trust it. (This reverses the earlier behavior, which
+# stripped non-digits per field and so accepted "0.11.30rc1" as equal to
+# "0.11.30".) Missing fields still count as 0, so differing field counts compare
+# correctly.
+uv_version_ge() {
+    _a="$1"
+    _b="$2"
+    # Reject any version that is not a well-formed dotted-digit string. A
+    # prerelease or build suffix (e.g. "0.11.30rc1", "0.11.30-alpha",
+    # "0.11.30+build") fails the pin regardless of its numeric fields. A
+    # malformed dotted form must also be rejected: each dot-separated component
+    # must be a non-empty run of digits, so a leading-empty (".11.30"),
+    # trailing-empty ("0.11.") or empty-middle ("0.11..30") component is refused
+    # rather than silently treated as a zero field.
+    case "$_a" in
+        ''|*[!0-9.]*) return 1 ;;
+        .*|*.|*..*) return 1 ;;
+    esac
+    while [ -n "$_a" ] || [ -n "$_b" ]; do
+        _af="${_a%%.*}"
+        _bf="${_b%%.*}"
+        _an="${_af:-0}"
+        _bn="${_bf:-0}"
+        if [ "$_an" -gt "$_bn" ]; then return 0; fi
+        if [ "$_an" -lt "$_bn" ]; then return 1; fi
+        case "$_a" in *.*) _a="${_a#*.}" ;; *) _a="" ;; esac
+        case "$_b" in *.*) _b="${_b#*.}" ;; *) _b="" ;; esac
+    done
+    return 0
+}
+
+# Download and install the pinned uv into an installer-owned location; never
+# replace or overwrite a user's own uv. Astral's official installer verifies
+# its own download. Sets UV_BIN to the installed binary.
+install_pinned_uv() {
+    log "installing pinned uv $UV_PINNED_VERSION into an installer-owned dir"
     UV_INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/mammoth-cli/uv-$UV_PINNED_VERSION"
     mkdir -p "$UV_INSTALL_DIR"
     if command -v curl >/dev/null 2>&1; then
@@ -95,7 +154,39 @@ ensure_uv() {
     [ -x "$UV_BIN" ] || die "uv was not installed where expected"
 }
 
+ensure_uv() {
+    if command -v uv >/dev/null 2>&1; then
+        existing_uv="$(command -v uv)"
+        # The installer promises a pinned uv ($UV_PINNED_VERSION). Only trust an
+        # already-present uv when it is at least that version; an older uv may
+        # not understand the commands/flags this installer relies on. When it is
+        # too old (or its version cannot be parsed) leave the user's uv
+        # untouched and bootstrap the pinned binary into an installer-owned dir
+        # instead.
+        existing_uv_version="$("$existing_uv" --version 2>/dev/null | awk 'NR==1{print $2}')"
+        if [ -n "$existing_uv_version" ] && uv_version_ge "$existing_uv_version" "$UV_PINNED_VERSION"; then
+            UV_BIN="$existing_uv"
+            log "using existing uv $existing_uv_version at $UV_BIN (>= pinned $UV_PINNED_VERSION)"
+            return
+        fi
+        if [ -z "$existing_uv_version" ]; then
+            log "existing uv at $existing_uv reports no parseable version; installing pinned uv $UV_PINNED_VERSION instead"
+        else
+            log "existing uv $existing_uv_version at $existing_uv is older than the pinned $UV_PINNED_VERSION; installing pinned uv instead"
+        fi
+        install_pinned_uv
+        return
+    fi
+    log "uv not found; installing pinned uv $UV_PINNED_VERSION"
+    install_pinned_uv
+}
+
 # --- CLI install ------------------------------------------------------------
+resolve_bin_dir() {
+    BIN_DIR="$("$UV_BIN" tool dir --bin 2>/dev/null || true)"
+    [ -n "$BIN_DIR" ] || BIN_DIR="$HOME/.local/bin"
+}
+
 install_cli() {
     if [ -n "$VERSION" ] && [ "$VERSION" != "__CLI_VERSION__" ]; then
         spec="$CLI_PACKAGE==$VERSION"
@@ -104,8 +195,93 @@ install_cli() {
     fi
     log "installing $spec with uv"
     "$UV_BIN" tool install --force "$spec" || die "uv tool install failed for $spec"
-    BIN_DIR="$("$UV_BIN" tool dir --bin 2>/dev/null || true)"
-    [ -n "$BIN_DIR" ] || BIN_DIR="$HOME/.local/bin"
+    resolve_bin_dir
+}
+
+# Build the CLI and its mammoth-io SDK dependency from this source checkout,
+# then install ONLINE: --find-links makes the two just-built wheels resolvable
+# while uv still consults PyPI (the default index) for every other runtime
+# dependency. There is no offline mode here -- a clean machine has none of
+# typer/rich/platformdirs/etc. cached, so --no-index would leave them
+# unresolvable.
+install_cli_local() {
+    script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+    cli_dir="${LOCAL_DIR:-$(CDPATH= cd -- "$script_dir/.." && pwd)}"
+    [ -f "$cli_dir/pyproject.toml" ] || die "no CLI project at '$cli_dir' (pass --local=DIR)"
+    # The mammoth-io SDK is the repository root that contains the CLI directory.
+    sdk_dir="$(CDPATH= cd -- "$cli_dir/.." && pwd)"
+    [ -f "$sdk_dir/pyproject.toml" ] || die "no mammoth-io SDK project at '$sdk_dir'"
+
+    wheelhouse="$(mktemp -d "${TMPDIR:-/tmp}/mammoth-wheelhouse.XXXXXX")" \
+        || die "could not create a temporary wheelhouse"
+    log "building mammoth-io and $CLI_PACKAGE wheels from $sdk_dir"
+    "$UV_BIN" build --wheel --out-dir "$wheelhouse" "$sdk_dir" \
+        || die "failed to build the mammoth-io SDK wheel"
+    "$UV_BIN" build --wheel --out-dir "$wheelhouse" "$cli_dir" \
+        || die "failed to build the $CLI_PACKAGE wheel"
+    log "installing $CLI_PACKAGE online (mammoth-io/$CLI_PACKAGE from the local wheelhouse, other deps from PyPI)"
+    # --find-links adds the local wheels as an extra source so mammoth-io and
+    # mammoth-cli resolve to what was just built here, in addition to (not
+    # instead of) the default index -- deliberately no --no-index, so every
+    # other runtime dependency still resolves normally from PyPI.
+    # Pick the first matching wheel for each distribution with a strictly POSIX
+    # shell glob, rather than a depth-limited `find` (that flag is a GNU/BSD
+    # extension, not part of POSIX find). An unmatched glob expands to the
+    # literal pattern in sh, so guard each candidate with `[ -f ]`; if nothing
+    # matches, cli_wheel/sdk_wheel stay empty and the guard below fires.
+    cli_wheel=""
+    for candidate in "$wheelhouse"/mammoth_cli-*.whl; do
+        [ -f "$candidate" ] || continue
+        cli_wheel="$candidate"
+        break
+    done
+    sdk_wheel=""
+    for candidate in "$wheelhouse"/mammoth_io-*.whl; do
+        [ -f "$candidate" ] || continue
+        sdk_wheel="$candidate"
+        break
+    done
+    [ -n "$cli_wheel" ] && [ -n "$sdk_wheel" ] || die "built wheel artifacts were not found"
+    # Install the exact CLI artifact and explicitly inject the exact SDK
+    # artifact. PyPI remains enabled only for their third-party dependencies;
+    # it cannot substitute either monorepo distribution.
+    "$UV_BIN" tool install --force "$cli_wheel" --with "$sdk_wheel" \
+        || die "uv tool install failed from the local wheelhouse"
+    resolve_bin_dir
+    tool_root="$("$UV_BIN" tool dir 2>/dev/null)"
+    tool_python="$tool_root/$CLI_PACKAGE/bin/python"
+    [ -x "$tool_python" ] || die "could not locate the installed CLI environment"
+    "$tool_python" - "$cli_wheel" "$sdk_wheel" <<'PY' || die "installed local distributions failed verification"
+import importlib.metadata as md
+import json
+import pathlib
+import re
+import sys
+import urllib.parse
+
+def wheel_version(path):
+    match = re.match(r"[^-]+-([^-]+)-", pathlib.Path(path).name)
+    if not match:
+        raise SystemExit(f"unrecognized wheel name: {path}")
+    return match.group(1)
+
+expected = {"mammoth-cli": wheel_version(sys.argv[1]), "mammoth-io": wheel_version(sys.argv[2])}
+for distribution, version in expected.items():
+    installed = md.distribution(distribution)
+    actual = installed.version
+    if actual != version:
+        raise SystemExit(f"{distribution}: installed {actual}, expected local wheel {version}")
+    direct_url = json.loads(installed.read_text("direct_url.json") or "{}")
+    expected_wheel = pathlib.Path(sys.argv[1 if distribution == "mammoth-cli" else 2]).resolve()
+    actual_url = direct_url.get("url", "")
+    parsed = urllib.parse.urlparse(actual_url)
+    if parsed.scheme != "file":
+        raise SystemExit(f"{distribution}: installed source is not a file URL: {actual_url!r}")
+    actual_wheel = pathlib.Path(urllib.parse.unquote(parsed.path)).resolve()
+    if actual_wheel != expected_wheel:
+        raise SystemExit(f"{distribution}: installed source is not {expected_wheel}: {actual_url!r}")
+PY
+    rm -rf "$wheelhouse"
 }
 
 # --- PATH handling ----------------------------------------------------------
@@ -127,16 +303,25 @@ modify_path() {
 install_skills() {
     exe="$BIN_DIR/mammoth"
     [ -x "$exe" ] || exe="mammoth"
-    "$exe" skill install --output json --no-input >/dev/null 2>&1 \
-        && log "installed the agent skill for all agents (user scope)" \
-        || log "warning: skill install did not complete; run 'mammoth skill install' manually"
+    # A failed skill install must fail the installer: do NOT downgrade it to a
+    # warning. Use an explicit if/else so the failure branch calls die (exit 1)
+    # rather than a `&& ... || ...` chain that would swallow the nonzero status.
+    if "$exe" skill install --output json --no-input >/dev/null 2>&1; then
+        log "installed the agent skill for all agents (user scope)"
+    else
+        die "skill install did not complete; run 'mammoth skill install' manually"
+    fi
 }
 
 main() {
     if [ "$INSTALL_CLI" -eq 1 ]; then
         detect_platform
         ensure_uv
-        install_cli
+        if [ "$LOCAL_SOURCE" -eq 1 ]; then
+            install_cli_local
+        else
+            install_cli
+        fi
         modify_path
     else
         BIN_DIR="$($(command -v uv || echo uv) tool dir --bin 2>/dev/null || echo "$HOME/.local/bin")"

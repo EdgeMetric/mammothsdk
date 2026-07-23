@@ -23,6 +23,28 @@ EXIT_CONFLICT = 6
 EXIT_RETRYABLE = 7
 EXIT_INTERRUPT = 130
 
+# Stable machine-readable error codes shared across more than one call site.
+# These are a compatibility contract: the *values* never change; centralizing
+# them here keeps the repeated codes spelled identically everywhere they are
+# raised. Codes raised from a single site stay inline literals.
+CODE_MISSING_ARGUMENT = "missing_argument"
+CODE_MISSING_FIELD = "missing_field"
+CODE_SDK_SYMBOL_UNRESOLVED = "sdk_symbol_unresolved"
+CODE_INVALID_ARGUMENT = "invalid_argument"
+CODE_INVALID_ARGUMENTS = "invalid_arguments"
+CODE_INVALID_CONFIG_VALUE = "invalid_config_value"
+CODE_INVALID_INPUT_DOCUMENT = "invalid_input_document"
+CODE_INVALID_INPUT_FORMAT = "invalid_input_format"
+CODE_INVALID_WORKSPACE_ID = "invalid_workspace_id"
+CODE_INCOMPLETE_ENVIRONMENT_AUTH = "incomplete_environment_auth"
+CODE_INPUT_FORMAT_REQUIRED = "input_format_required"
+CODE_API_ERROR = "api_error"
+CODE_RESOURCE_NOT_FOUND = "resource_not_found"
+CODE_PROFILE_NOT_FOUND = "profile_not_found"
+CODE_CONFIRMATION_REQUIRED = "confirmation_required"
+CODE_CONFIRMATION_DECLINED = "confirmation_declined"
+CODE_AUTHENTICATION_FAILED = "authentication_failed"
+
 
 @dataclass
 class CliError(Exception):
@@ -67,8 +89,8 @@ def missing_project_error() -> CliError:
         exit_status=EXIT_USAGE,
         hint="Set an active project or pass --project.",
         recovery_commands=[
-            "mammoth project list --output json",
-            "mammoth context project use PROJECT_ID",
+            "mammoth project list --output json --no-input",
+            "mammoth context project use PROJECT_ID --output json --no-input",
         ],
     )
 
@@ -88,8 +110,8 @@ def timeout_error(*, job_id: str | None = None, command: str = "job") -> CliErro
     recovery: list[str] = []
     if job_id is not None:
         details["job_id"] = job_id
-        recovery.append(f"mammoth {command} wait {job_id} --output json")
-        recovery.append(f"mammoth {command} get {job_id} --output json")
+        recovery.append(f"mammoth {command} wait {job_id} --output json --no-input")
+        recovery.append(f"mammoth {command} get {job_id} --output json --no-input")
     return CliError(
         code="timeout",
         message="The operation did not finish before the timeout.",

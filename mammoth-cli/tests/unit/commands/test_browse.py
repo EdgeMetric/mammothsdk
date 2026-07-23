@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import browse as browse_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -20,9 +21,9 @@ _WORKSPACE = "mammoth.api.browse.BrowseAPI.workspace_resources"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -55,9 +56,7 @@ def test_folder_passes_folder_and_project(fake_service: FakeMammothService) -> N
     assert fake_service.call_log == [(_FOLDER, {"folder_id": 7, "project_id": 180})]
 
 
-def test_folder_forwards_level_and_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_folder_forwards_level_and_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"level": 1, "fields": "id,name"}), encoding="utf-8")
     browse_cmd.browse_folder(
@@ -82,9 +81,7 @@ def test_project_passes_project_id(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == [(_PROJECT, {"project_id": 180})]
 
 
-def test_project_forwards_optional_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_project_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(
         json.dumps(
@@ -155,9 +152,7 @@ def test_workspace_forwards_optional_fields(
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"level": 1, "fields": "id,name", "limit": 50}), encoding="utf-8")
     browse_cmd.browse_workspace(_inv("browse.workspace", input_file=str(doc)))
-    assert fake_service.call_log == [
-        (_WORKSPACE, {"level": 1, "fields": "id,name", "limit": 50})
-    ]
+    assert fake_service.call_log == [(_WORKSPACE, {"level": 1, "fields": "id,name", "limit": 50})]
 
 
 def test_workspace_meta_has_no_project_when_unset(fake_service: FakeMammothService) -> None:

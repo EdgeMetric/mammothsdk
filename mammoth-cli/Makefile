@@ -18,7 +18,7 @@ type:
 	mypy mammoth_cli/
 
 test:
-	$(PY) -m pytest tests/unit/ -q -p no:cacheprovider
+	$(PY) -m pytest tests -m "not live" -q -p no:cacheprovider
 
 docs:
 	$(PY) scripts/gen_docs.py

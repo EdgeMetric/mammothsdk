@@ -13,7 +13,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_MISSING_ARGUMENT,
+    CODE_MISSING_FIELD,
+    CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
@@ -37,7 +43,7 @@ def _symbol(invocation: Invocation) -> str:
     record = command_by_id(invocation.command_id)
     if record is None or not record.get("sdk_symbol"):
         raise CliError(
-            code="sdk_symbol_unresolved",
+            code=CODE_SDK_SYMBOL_UNRESOLVED,
             message=f"No SDK symbol is recorded for '{invocation.command_id}'.",
             exit_status=EXIT_USAGE,
         )
@@ -72,7 +78,7 @@ def _require_string_positional(invocation: Invocation, name: str) -> str:
     value = _string_positional(invocation)
     if value is None:
         raise CliError(
-            code="missing_argument",
+            code=CODE_MISSING_ARGUMENT,
             message=f"This command requires a {name} argument.",
             exit_status=EXIT_USAGE,
             hint=f"Pass the {name} as a positional argument.",
@@ -96,7 +102,7 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     """
     if document is None or field not in document:
         raise CliError(
-            code="missing_field",
+            code=CODE_MISSING_FIELD,
             message=f"This command requires the '{field}' input field.",
             exit_status=EXIT_USAGE,
             hint=f"Pass it via --input, for example: --input '{{\"{field}\": ...}}'.",
@@ -144,9 +150,7 @@ def agent_chat(invocation: Invocation) -> HandlerResult:
     scope = _require_field(document, "scope")
     assert document is not None
     kwargs: dict[str, Any] = {"message": message, "scope": scope}
-    _forward_optional(
-        document, kwargs, ("agent_key", "session_id", "client_context", "selection")
-    )
+    _forward_optional(document, kwargs, ("agent_key", "session_id", "client_context", "selection"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))

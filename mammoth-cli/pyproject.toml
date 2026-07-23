@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mammoth-cli"
-version = "0.1.0"
+version = "1.0.0"
 description = "Command-line interface for the Mammoth Analytics platform"
 authors = ["Mammoth Analytics <support@mammoth.io>"]
 readme = "README.md"
@@ -11,12 +11,16 @@ packages = [{ include = "mammoth_cli" }]
 include = [
     "mammoth_cli/py.typed",
     "mammoth_cli/bundled_skill/**/*",
-    "spec/openapi/openapi.json",
-    "spec/openapi/metadata.json",
-    "spec/manifests/**/*",
+    # The reviewed spec data lives beside the package in the repo. Poetry only
+    # ships sibling-of-package files in the wheel when the wheel format is
+    # requested explicitly; without this the installed CLI can build no command
+    # tree (only --version works) because the manifests are absent.
+    { path = "spec/openapi/openapi.json", format = ["sdist", "wheel"] },
+    { path = "spec/openapi/metadata.json", format = ["sdist", "wheel"] },
+    { path = "spec/manifests/**/*", format = ["sdist", "wheel"] },
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "License :: Other/Proprietary License",
@@ -29,7 +33,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.12,<3.15"
 # The CLI must compose with a published SDK, never a repo-local file URL.
-mammoth-io = ">=0.5,<0.7"
+mammoth-io = ">=0.6.0,<0.7"
 typer = ">=0.27,<0.28"
 rich = ">=15,<16"
 platformdirs = ">=4.10,<5"
@@ -83,4 +87,6 @@ markers = [
     "live: guarded live tests that require a dedicated test tenant (deselect with -m 'not live')",
     "subprocess: tests that spawn the installed executable or module entry point",
 ]
-addopts = "-m 'not live'"
+# Import test files by their full paths so equally named realcode and unit
+# modules can be collected together by the documented ``pytest tests/`` command.
+addopts = "--import-mode=importlib -m 'not live'"

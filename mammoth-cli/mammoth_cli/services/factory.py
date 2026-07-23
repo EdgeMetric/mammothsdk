@@ -15,17 +15,31 @@ from mammoth_cli.services.sdk_service import SdkMammothService
 
 
 def build_service(
-    auth: ResolvedAuth, *, timeout: float | None = None, project_id: int | None = None
+    auth: ResolvedAuth,
+    *,
+    timeout: float | None = None,
+    job_timeout: float | None = None,
+    pipeline_timeout: float | None = None,
+    project_id: int | None = None,
 ) -> MammothService:
     """Build the production SDK-backed service for ``auth``.
 
     Args:
         auth: Resolved credentials, workspace id, and base url.
         timeout: Optional per-request timeout override, in seconds.
+        job_timeout: Optional job-wait timeout override, in seconds.
+        pipeline_timeout: Optional pipeline-readiness timeout override, in
+            seconds.
         project_id: Active project id to bind on the client for SDK methods
             that read project context implicitly.
 
     Returns:
         A :class:`MammothService` implementation backed by ``MammothClient``.
     """
-    return SdkMammothService(auth, timeout=timeout, project_id=project_id)
+    return SdkMammothService(
+        auth,
+        timeout=timeout,
+        job_timeout=job_timeout,
+        pipeline_timeout=pipeline_timeout,
+        project_id=project_id,
+    )

@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import data_app as data_app_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -28,9 +29,9 @@ _USER_REMOVE = "mammoth.api.data_apps.DataAppsAPI.user_remove"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -96,9 +97,10 @@ def test_create_requires_body(fake_service: FakeMammothService) -> None:
 
 
 def test_create_forwards_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"body": {"name": "My App"}})
+    body = {"automation_id": 1, "dashboard_ids": [2], "name": "My App", "project_id": 180}
+    doc = _write(tmp_path, {"body": body})
     data_app_cmd.data_app_create(_inv("data-app.create", input_file=doc))
-    assert fake_service.call_log == [(_CREATE, {"body": {"name": "My App"}})]
+    assert fake_service.call_log == [(_CREATE, {"body": body})]
 
 
 # --- data-app update -----------------------------------------------------
@@ -118,11 +120,10 @@ def test_update_without_id_is_usage_error(fake_service: FakeMammothService) -> N
 
 
 def test_update_forwards_id_and_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"body": {"name": "New name"}})
+    body = {"params": {"name": "New name"}}
+    doc = _write(tmp_path, {"body": body})
     data_app_cmd.data_app_update(_inv("data-app.update", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
-        (_UPDATE, {"data_app_id": 7, "body": {"name": "New name"}})
-    ]
+    assert fake_service.call_log == [(_UPDATE, {"data_app_id": 7, "body": body})]
 
 
 # --- data-app delete -------------------------------------------------------
@@ -130,9 +131,7 @@ def test_update_forwards_id_and_body(fake_service: FakeMammothService, tmp_path:
 
 def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        data_app_cmd.data_app_delete(
-            _inv("data-app.delete", extra_args=["7"], output="json")
-        )
+        data_app_cmd.data_app_delete(_inv("data-app.delete", extra_args=["7"], output="json"))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
 
@@ -198,9 +197,7 @@ def test_job_with_non_integer_job_id_is_invalid_argument(
 
 
 def test_pipeline_changes_uses_positional_id(fake_service: FakeMammothService) -> None:
-    data_app_cmd.data_app_pipeline_changes(
-        _inv("data-app.pipeline-changes", extra_args=["7"])
-    )
+    data_app_cmd.data_app_pipeline_changes(_inv("data-app.pipeline-changes", extra_args=["7"]))
     assert fake_service.call_log == [(_PIPELINE_CHANGES, {"data_app_id": 7})]
 
 
@@ -229,11 +226,10 @@ def test_share_without_id_is_usage_error(fake_service: FakeMammothService) -> No
 
 
 def test_share_forwards_id_and_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"body": {"email": "a@b.com", "role": "viewer"}})
+    body = {"params": {"auth": {"type_of_auth": "mammoth"}}}
+    doc = _write(tmp_path, {"body": body})
     data_app_cmd.data_app_share(_inv("data-app.share", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [
-        (_SHARE, {"data_app_id": 7, "body": {"email": "a@b.com", "role": "viewer"}})
-    ]
+    assert fake_service.call_log == [(_SHARE, {"data_app_id": 7, "body": body})]
 
 
 # --- data-app upload ---------------------------------------------------------
@@ -258,9 +254,7 @@ def test_upload_forwards_file_only(fake_service: FakeMammothService, tmp_path: P
     assert fake_service.call_log == [(_UPLOAD, {"data_app_id": 7, "file": "/tmp/data.csv"})]
 
 
-def test_upload_forwards_append_to_ds_id(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_upload_forwards_append_to_ds_id(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"file": "/tmp/data.csv", "append_to_ds_id": 9})
     data_app_cmd.data_app_upload(_inv("data-app.upload", extra_args=["7"], input_file=doc))
     assert fake_service.call_log == [
@@ -302,16 +296,12 @@ def test_user_remove_proceeds_with_yes(fake_service: FakeMammothService) -> None
     data_app_cmd.data_app_user_remove(
         _inv("data-app.user.remove", extra_args=["7", "a@b.com"], yes=True)
     )
-    assert fake_service.call_log == [
-        (_USER_REMOVE, {"data_app_id": 7, "email": "a@b.com"})
-    ]
+    assert fake_service.call_log == [(_USER_REMOVE, {"data_app_id": 7, "email": "a@b.com"})]
 
 
 def test_user_remove_without_email_is_usage_error(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        data_app_cmd.data_app_user_remove(
-            _inv("data-app.user.remove", extra_args=["7"], yes=True)
-        )
+        data_app_cmd.data_app_user_remove(_inv("data-app.user.remove", extra_args=["7"], yes=True))
     assert excinfo.value.code == "missing_argument"
     assert fake_service.call_log == []
 

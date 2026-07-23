@@ -1032,6 +1032,69 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.canvas_get
+  canonical_command: dashboard.canvas.get
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.canvas_restore
+  canonical_command: dashboard.canvas.restore
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.canvas_save
+  canonical_command: dashboard.canvas.save
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chat_edit
+  canonical_command: dashboard.chat.edit
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chat_history
+  canonical_command: dashboard.chat.history
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_create
+  canonical_command: dashboard.context.create
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_delete
+  canonical_command: dashboard.context.delete
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_list
+  canonical_command: dashboard.context.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.context_update
+  canonical_command: dashboard.context.update
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create
   canonical_command: dashboard.create
   alias_of: null
@@ -1049,6 +1112,27 @@ sdk_methods:
   pagination_policy: none
   openapi_operation_ids: []
   notes: Immutable dashboard-ID confirmation.
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.descriptor_data
+  canonical_command: dashboard.descriptor-data
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.duplicate
+  canonical_command: dashboard.duplicate
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.figure_intent
+  canonical_command: dashboard.figure-intent
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get
   canonical_command: dashboard.get
   alias_of: null
@@ -1107,6 +1191,48 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: single_page
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.og_card
+  canonical_command: dashboard.og-card
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.page_plan
+  canonical_command: dashboard.page.plan
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.pdf_artifact
+  canonical_command: dashboard.pdf-artifact
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.pdf_export
+  canonical_command: dashboard.pdf.export
+  alias_of: null
+  mutation_class: null
+  wait_policy: always_wait
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_canvas
+  canonical_command: dashboard.published.canvas
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_data
+  canonical_command: dashboard.published.data
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_data_by_url
   canonical_command: dashboard.published-data-by-url
   alias_of: null
@@ -1114,8 +1240,176 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_og_card
+  canonical_command: dashboard.published.og-card
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_pdf_artifact
+  canonical_command: dashboard.published.pdf-artifact
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_pdf_export
+  canonical_command: dashboard.published.pdf.export
+  alias_of: null
+  mutation_class: null
+  wait_policy: always_wait
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_share_page
+  canonical_command: dashboard.published.share-page
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_video_artifact
+  canonical_command: dashboard.published.video-artifact
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_video_export
+  canonical_command: dashboard.published.video.export
+  alias_of: null
+  mutation_class: null
+  wait_policy: always_wait
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_ask
+  canonical_command: dashboard.qa.ask
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_comment_create
+  canonical_command: dashboard.qa.comment.create
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_comment_delete
+  canonical_command: dashboard.qa.comment.delete
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_feedback
+  canonical_command: dashboard.qa.feedback
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_create
+  canonical_command: dashboard.qa.session.create
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_delete
+  canonical_command: dashboard.qa.session.delete
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_fork
+  canonical_command: dashboard.qa.session.fork
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_get
+  canonical_command: dashboard.qa.session.get
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_list
+  canonical_command: dashboard.qa.session.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_rename
+  canonical_command: dashboard.qa.session.rename
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_session_set_visibility
+  canonical_command: dashboard.qa.session.set-visibility
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_settings_get
+  canonical_command: dashboard.qa.settings.get
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.qa_settings_set
+  canonical_command: dashboard.qa.settings.set
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.query
+  canonical_command: dashboard.query
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.restore
   canonical_command: dashboard.restore
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rls_assignment_list
+  canonical_command: dashboard.rls.assignment.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rls_assignment_set
+  canonical_command: dashboard.rls.assignment.set
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rls_column_list
+  canonical_command: dashboard.rls.column.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rls_value_list
+  canonical_command: dashboard.rls.value.list
   alias_of: null
   mutation_class: null
   wait_policy: null
@@ -1130,6 +1424,174 @@ sdk_methods:
   openapi_operation_ids: []
   notes: 'B14 DASHBOARD_PASSWORD_MISSING: password sharing is an enum value but the SDK signature has
     no password input; type_of_auth=password blocked pending contract/repair.'
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.signature_create
+  canonical_command: dashboard.signature.create
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.signature_delete
+  canonical_command: dashboard.signature.delete
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.signature_list
+  canonical_command: dashboard.signature.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.signature_update
+  canonical_command: dashboard.signature.update
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_custom_create
+  canonical_command: dashboard.style.custom.create
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_custom_delete
+  canonical_command: dashboard.style.custom.delete
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_custom_list
+  canonical_command: dashboard.style.custom.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_custom_update
+  canonical_command: dashboard.style.custom.update
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_default_get
+  canonical_command: dashboard.style.default.get
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_default_set
+  canonical_command: dashboard.style.default.set
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_derive
+  canonical_command: dashboard.style.derive
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_extract_brand
+  canonical_command: dashboard.style.extract-brand
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_preset_list
+  canonical_command: dashboard.style.preset.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.style_token_list
+  canonical_command: dashboard.style.token.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.suggestion_list
+  canonical_command: dashboard.suggestion.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_apply
+  canonical_command: dashboard.template.apply
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_create
+  canonical_command: dashboard.template.create
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_delete
+  canonical_command: dashboard.template.delete
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_fit
+  canonical_command: dashboard.template.fit
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_get
+  canonical_command: dashboard.template.get
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_list
+  canonical_command: dashboard.template.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_preview
+  canonical_command: dashboard.template.preview
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_rename
+  canonical_command: dashboard.template.rename
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_resolve_mapping
+  canonical_command: dashboard.template.resolve-mapping
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.trash
   canonical_command: dashboard.trash
   alias_of: null
@@ -1145,6 +1607,27 @@ sdk_methods:
   pagination_policy: none
   openapi_operation_ids: []
   notes: B13.
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.v3_generate
+  canonical_command: dashboard.v3.generate
+  alias_of: null
+  mutation_class: null
+  wait_policy: always_wait
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.video_export
+  canonical_command: dashboard.video.export
+  alias_of: null
+  mutation_class: null
+  wait_policy: always_wait
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.video_state
+  canonical_command: dashboard.video-state
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.widget_data
   canonical_command: dashboard.widget-data
   alias_of: null
@@ -2052,14 +2535,15 @@ sdk_methods:
   openapi_operation_ids: []
   notes: SDK-only dataview->dataset resolver seam used by public view conveniences; not a CLI command.
 - sdk_symbol: mammoth.api.pipeline.PipelineAPI.get_draft_status
-  canonical_command: null
+  canonical_command: view.draft.status
   alias_of: null
-  mutation_class: null
+  mutation_class: read
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
-  notes: Server-backed draft-status seam read by the draft verbs; surfaced through 'view draft status',
-    not its own SDK-mapped command.
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.get_draft_status with the dataview id to read
+    server-backed draft state (never a process-local flag).
+  notes: Server-backed draft-status seam used by 'view draft status'.
 - sdk_symbol: mammoth.api.pipeline.PipelineAPI.get_pipeline
   canonical_command: view.pipeline.get
   alias_of: null
@@ -3187,6 +3671,15 @@ sdk_methods:
   notes: alias; auth status --check uses a typed diagnostic distinguishing invalid credentials, forbidden
     workspace, server unavailability, and timeout. Do not implement the SDK method's lossy boolean behavior
     in the CLI.
+- sdk_symbol: mammoth.client.MammothClient.wait_if_job
+  canonical_command: null
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: SDK-only generated-operation wait seam; CLI commands apply it from their reviewed wait policy
+    rather than exposing a separate command.
 - sdk_symbol: mammoth.client.ViewsResource.bulk_delete
   canonical_command: null
   alias_of: view.delete
@@ -3295,8 +3788,8 @@ sdk_methods:
   openapi_operation_ids: []
   notes: Local projection in view get VIEW_ID; machine output field data.columns.
 - sdk_symbol: mammoth.view.View.is_draft_mode
-  canonical_command: view.draft.status
-  alias_of: null
+  canonical_command: null
+  alias_of: view.draft.status
   mutation_class: read
   wait_policy: not_async
   pagination_policy: null

@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import schedule as schedule_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -21,9 +22,9 @@ _DELETE = "mammoth.api.schedules.SchedulesAPI.delete"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -50,14 +51,10 @@ def test_list_passes_project_only(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == [(_LIST, {"project_id": 180})]
 
 
-def test_list_forwards_limit_and_offset(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_list_forwards_limit_and_offset(fake_service: FakeMammothService, tmp_path: Path) -> None:
     input_file = _write(tmp_path, {"limit": 10, "offset": 5})
     schedule_cmd.schedule_list(_inv("schedule.list", project=180, input_file=input_file))
-    assert fake_service.call_log == [
-        (_LIST, {"project_id": 180, "limit": 10, "offset": 5})
-    ]
+    assert fake_service.call_log == [(_LIST, {"project_id": 180, "limit": 10, "offset": 5})]
 
 
 # -- get ------------------------------------------------------------------
@@ -99,7 +96,10 @@ def test_create_requires_spec(fake_service: FakeMammothService) -> None:
 def test_create_blocked_without_confirmation(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    input_file = _write(tmp_path, {"spec": {"rrule": {"frequency": "daily"}}})
+    input_file = _write(
+        tmp_path,
+        {"spec": {"rrule": {"frequency": "daily", "start": "2026-01-01T00:00:00Z"}}},
+    )
     with pytest.raises(CliError) as excinfo:
         schedule_cmd.schedule_create(
             _inv("schedule.create", project=180, input_file=input_file, output="json")
@@ -109,7 +109,7 @@ def test_create_blocked_without_confirmation(
 
 
 def test_create_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    spec = {"rrule": {"frequency": "daily"}}
+    spec = {"rrule": {"frequency": "daily", "start": "2026-01-01T00:00:00Z"}}
     input_file = _write(tmp_path, {"spec": spec})
     schedule_cmd.schedule_create(
         _inv("schedule.create", project=180, input_file=input_file, yes=True)

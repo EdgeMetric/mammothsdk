@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import annotation as annotation_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -21,9 +22,9 @@ _UPDATE = "mammoth.api.annotations.AnnotationsAPI.update"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -178,9 +179,7 @@ def test_update_requires_annotation_id(fake_service: FakeMammothService) -> None
 
 def test_update_requires_status(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        annotation_cmd.annotation_update(
-            _inv("annotation.update", project=180, extra_args=["7"])
-        )
+        annotation_cmd.annotation_update(_inv("annotation.update", project=180, extra_args=["7"]))
     assert excinfo.value.code == "missing_field"
 
 

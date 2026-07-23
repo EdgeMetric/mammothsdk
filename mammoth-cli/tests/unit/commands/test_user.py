@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import user as user_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -24,9 +25,9 @@ _UPDATE = "mammoth.api.user_profile.UserProfileAPI.update"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -79,9 +80,7 @@ def test_avatar_upload_uses_input_field(fake_service: FakeMammothService, tmp_pa
 
 def test_change_password_requires_current_password(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        user_cmd.user_change_password(
-            _inv("user.change-password", yes=True, confirm="4")
-        )
+        user_cmd.user_change_password(_inv("user.change-password", yes=True, confirm="4"))
     assert excinfo.value.code == "missing_field"
     assert fake_service.call_log == []
 
@@ -103,9 +102,7 @@ def test_change_password_blocked_without_confirmation(
 ) -> None:
     doc = _write(tmp_path, {"current_password": "old", "new_password": "new"})
     with pytest.raises(CliError) as excinfo:
-        user_cmd.user_change_password(
-            _inv("user.change-password", input_file=doc, output="json")
-        )
+        user_cmd.user_change_password(_inv("user.change-password", input_file=doc, output="json"))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
 
@@ -146,9 +143,7 @@ def test_delete_account_blocked_without_confirmation(fake_service: FakeMammothSe
 
 def test_delete_account_requires_confirm_target(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        user_cmd.user_delete_account(
-            _inv("user.delete-account", yes=True, confirm="999")
-        )
+        user_cmd.user_delete_account(_inv("user.delete-account", yes=True, confirm="999"))
     assert excinfo.value.code == "confirmation_target_mismatch"
     assert fake_service.call_log == []
 
@@ -162,9 +157,7 @@ def test_delete_account_forwards_validate_only(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"validate_only": True})
-    user_cmd.user_delete_account(
-        _inv("user.delete-account", input_file=doc, yes=True, confirm="4")
-    )
+    user_cmd.user_delete_account(_inv("user.delete-account", input_file=doc, yes=True, confirm="4"))
     assert fake_service.call_log == [(_DELETE_ACCOUNT, {"validate_only": True})]
 
 
@@ -219,14 +212,10 @@ def test_update_blocked_without_confirmation(
     assert fake_service.call_log == []
 
 
-def test_update_requires_confirm_target(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_update_requires_confirm_target(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"name": "New Name"})
     with pytest.raises(CliError) as excinfo:
-        user_cmd.user_update(
-            _inv("user.update", input_file=doc, yes=True, confirm="999")
-        )
+        user_cmd.user_update(_inv("user.update", input_file=doc, yes=True, confirm="999"))
     assert excinfo.value.code == "confirmation_target_mismatch"
     assert fake_service.call_log == []
 
@@ -236,6 +225,4 @@ def test_update_proceeds_with_matching_target(
 ) -> None:
     doc = _write(tmp_path, {"name": "New Name", "email": "a@x.com"})
     user_cmd.user_update(_inv("user.update", input_file=doc, yes=True, confirm="4"))
-    assert fake_service.call_log == [
-        (_UPDATE, {"name": "New Name", "email": "a@x.com"})
-    ]
+    assert fake_service.call_log == [(_UPDATE, {"name": "New Name", "email": "a@x.com"})]

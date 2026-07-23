@@ -23,9 +23,25 @@ from pydantic import ValidationError
 
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.endpoint import resolve_base_url
-from mammoth_cli.context.resolver import ResolvedAuth, resolve_auth
+from mammoth_cli.context.resolver import (
+    ENV_API_KEY,
+    ENV_API_SECRET,
+    ENV_SERVER_PREFIX,
+    ENV_WORKSPACE_ID,
+    ResolvedAuth,
+    resolve_auth,
+)
 from mammoth_cli.contracts.auth import LoginRequest
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_CONFIRMATION_DECLINED,
+    CODE_CONFIRMATION_REQUIRED,
+    CODE_INPUT_FORMAT_REQUIRED,
+    CODE_INVALID_INPUT_DOCUMENT,
+    CODE_INVALID_INPUT_FORMAT,
+    CODE_INVALID_WORKSPACE_ID,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.output.policy import resolve_policy
 from mammoth_cli.runtime import executor
 from mammoth_cli.runtime import options as go
@@ -53,7 +69,7 @@ def _format_from_suffix(path: Path) -> str:
     if suffix in (".yaml", ".yml"):
         return "yaml"
     raise CliError(
-        code="invalid_input_format",
+        code=CODE_INVALID_INPUT_FORMAT,
         message=f"Cannot detect the document format from '{path.name}'.",
         exit_status=EXIT_USAGE,
         hint="Pass --input-format json or --input-format yaml.",
@@ -101,7 +117,7 @@ def _load_login_document(path_or_dash: str, input_format: str | None) -> dict[st
     if path_or_dash == "-":
         if input_format is None:
             raise CliError(
-                code="input_format_required",
+                code=CODE_INPUT_FORMAT_REQUIRED,
                 message="Reading the login document from stdin requires --input-format.",
                 exit_status=EXIT_USAGE,
                 hint="Pass --input-format json or --input-format yaml.",
@@ -120,20 +136,25 @@ def _load_login_document(path_or_dash: str, input_format: str | None) -> dict[st
         text = path.read_text(encoding="utf-8")
         fmt = input_format or _format_from_suffix(path)
 
-    if fmt == "json":
-        loaded = json.loads(text)
-    elif fmt == "yaml":
-        loaded = yaml.safe_load(text)
-    else:
+    if fmt not in ("json", "yaml"):
         raise CliError(
-            code="invalid_input_format",
+            code=CODE_INVALID_INPUT_FORMAT,
             message=f"'{fmt}' is not a supported input format.",
             exit_status=EXIT_USAGE,
             hint="Use json or yaml.",
         )
+    try:
+        loaded = json.loads(text) if fmt == "json" else yaml.safe_load(text)
+    except (json.JSONDecodeError, yaml.YAMLError) as exc:
+        raise CliError(
+            code=CODE_INVALID_INPUT_DOCUMENT,
+            message=f"The login document is not valid {fmt}.",
+            exit_status=EXIT_USAGE,
+            hint="Provide a well-formed JSON or YAML object.",
+        ) from exc
     if not isinstance(loaded, dict):
         raise CliError(
-            code="invalid_input_document",
+            code=CODE_INVALID_INPUT_DOCUMENT,
             message="The login document must be a JSON/YAML object.",
             exit_status=EXIT_USAGE,
         )
@@ -179,17 +200,27 @@ def _read_env_login() -> tuple[str, str, int | None, str | None]:
         CliError: ``missing_env_credentials`` when the API key or secret
             variable is unset.
     """
-    api_key = os.environ.get("MAMMOTH_API_KEY")
-    api_secret = os.environ.get("MAMMOTH_API_SECRET")
-    workspace_raw = os.environ.get("MAMMOTH_WORKSPACE_ID")
-    server_prefix = os.environ.get("MAMMOTH_SERVER_PREFIX")
+    api_key = os.environ.get(ENV_API_KEY)
+    api_secret = os.environ.get(ENV_API_SECRET)
+    workspace_raw = os.environ.get(ENV_WORKSPACE_ID)
+    server_prefix = os.environ.get(ENV_SERVER_PREFIX)
     if not api_key or not api_secret:
         raise CliError(
             code="missing_env_credentials",
             message="MAMMOTH_API_KEY and MAMMOTH_API_SECRET must be set for --from-env.",
             exit_status=EXIT_USAGE,
         )
-    workspace_id = int(workspace_raw) if workspace_raw else None
+    workspace_id: int | None = None
+    if workspace_raw:
+        try:
+            workspace_id = int(workspace_raw)
+        except ValueError as exc:
+            raise CliError(
+                code=CODE_INVALID_WORKSPACE_ID,
+                message="MAMMOTH_WORKSPACE_ID must be an integer.",
+                exit_status=EXIT_USAGE,
+                hint="Set MAMMOTH_WORKSPACE_ID to a numeric workspace id.",
+            ) from exc
     return api_key, api_secret, workspace_id, server_prefix
 
 
@@ -249,7 +280,7 @@ def _run_login(
 
     if effective_workspace is None or effective_workspace <= 0:
         raise CliError(
-            code="invalid_workspace_id",
+            code=CODE_INVALID_WORKSPACE_ID,
             message="A positive --workspace id is required.",
             exit_status=EXIT_USAGE,
         )
@@ -260,8 +291,7 @@ def _run_login(
             exit_status=EXIT_USAGE,
         )
 
-    endpoint_prefix = None if invocation.base_url is not None else effective_prefix
-    resolved_base_url = resolve_base_url(endpoint_prefix, invocation.base_url)
+    resolved_base_url = resolve_base_url(effective_prefix)
 
     resolved_auth = ResolvedAuth(
         api_key=api_key,
@@ -278,13 +308,10 @@ def _run_login(
     profile_name = invocation.profile or profiles.DEFAULT_PROFILE_NAME
     profiles.validate_profile_name(profile_name)
     existing = profiles.get_profile(profile_name)
-    stored_prefix = effective_prefix if invocation.base_url is None else None
-    stored_base_url = invocation.base_url if invocation.base_url is not None else None
     record = profiles.ProfileRecord(
         name=profile_name,
         workspace_id=effective_workspace,
-        server_prefix=stored_prefix,
-        base_url=stored_base_url,
+        server_prefix=effective_prefix,
         project_id=existing.project_id if existing is not None else None,
     )
     profiles.save_profile(record)
@@ -310,7 +337,6 @@ def auth_login(
     output: str = go.output_option(),
     profile: str | None = go.profile_option(),
     project: int | None = go.project_option(),
-    base_url: str | None = go.base_url_option(),
     timeout: float | None = go.timeout_option(),
     job_timeout: float | None = go.job_timeout_option(),
     pipeline_timeout: float | None = go.pipeline_timeout_option(),
@@ -348,7 +374,6 @@ def auth_login(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,
@@ -379,12 +404,10 @@ def _run_status(invocation: Invocation, *, check: bool) -> tuple[dict[str, Any],
     has_creds = credentials.has_credentials(profile_name)
 
     if record is not None:
-        endpoint_prefix = None if invocation.base_url is not None else record.server_prefix
-        endpoint_base = invocation.base_url if invocation.base_url is not None else record.base_url
-        endpoint = resolve_base_url(endpoint_prefix, endpoint_base)
+        endpoint = resolve_base_url(record.server_prefix)
         workspace_id: int | None = record.workspace_id
     else:
-        endpoint = resolve_base_url(None, invocation.base_url)
+        endpoint = resolve_base_url(None)
         workspace_id = None
 
     data: dict[str, Any] = {
@@ -413,7 +436,6 @@ def auth_status(
     output: str = go.output_option(),
     profile: str | None = go.profile_option(),
     project: int | None = go.project_option(),
-    base_url: str | None = go.base_url_option(),
     timeout: float | None = go.timeout_option(),
     job_timeout: float | None = go.job_timeout_option(),
     pipeline_timeout: float | None = go.pipeline_timeout_option(),
@@ -434,7 +456,6 @@ def auth_status(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,
@@ -473,24 +494,27 @@ def _run_logout(
     if not yes:
         if policy.prompts_disabled:
             raise CliError(
-                code="confirmation_required",
+                code=CODE_CONFIRMATION_REQUIRED,
                 message="auth logout requires --yes in non-interactive mode.",
                 exit_status=EXIT_USAGE,
                 hint="Re-run with --yes.",
             )
         if not typer.confirm("Remove the stored credentials?", default=False):
             raise CliError(
-                code="confirmation_declined",
+                code=CODE_CONFIRMATION_DECLINED,
                 message="Logout was not confirmed.",
                 exit_status=EXIT_USAGE,
             )
 
     removed: list[str] = []
     if all_profiles:
-        for record in profiles.list_profiles():
-            if credentials.delete_credentials(record.name):
-                removed.append(record.name)
-            profiles.delete_profile(record.name)
+        # Iterate raw profile names so an unparseable legacy profile (for
+        # example one with an unsupported base_url) is still cleaned up rather
+        # than blocking the very command meant to remove it.
+        for name in profiles.list_profile_names():
+            if credentials.delete_credentials(name):
+                removed.append(name)
+            profiles.delete_profile(name)
     else:
         profile_name = invocation.profile or profiles.get_selected()
         if credentials.delete_credentials(profile_name):
@@ -505,7 +529,6 @@ def auth_logout(
     output: str = go.output_option(),
     profile: str | None = go.profile_option(),
     project: int | None = go.project_option(),
-    base_url: str | None = go.base_url_option(),
     timeout: float | None = go.timeout_option(),
     job_timeout: float | None = go.job_timeout_option(),
     pipeline_timeout: float | None = go.pipeline_timeout_option(),
@@ -527,7 +550,6 @@ def auth_logout(
         output=output,
         profile=profile,
         project=project,
-        base_url=base_url,
         timeout=timeout,
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,

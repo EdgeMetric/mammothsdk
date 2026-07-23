@@ -19,6 +19,15 @@ CATALOG_SOURCE = SPEC / "manifests" / "sdk-catalog.source.yaml"
 # Normalize catalog command ids to the canonical CLI scheme.
 CATALOG_COMMAND_REMAP = {
     "project.browse": "browse.project",
+    # ``dataset file-settings`` is both a leaf and the parent of ``... get``'s
+    # sibling verbs (``update``/``undo``); Click then reads the leaf's required
+    # dataset-id positional as a (missing) subcommand name, so the command was
+    # uninvokable. Move the read leaf to an unambiguous ``dataset file-settings
+    # get DATASET_ID`` so ``file-settings`` is a pure group. Remapping the SDK
+    # method's canonical command here keeps the real ``get_file_settings`` symbol
+    # bound to the new id (the operation map is updated in lockstep), so no
+    # fabricated symbol or duplicate command is emitted.
+    "dataset.file-settings": "dataset.file-settings.get",
 }
 
 # Underlying OpenAPI operation(s) and HTTP method for SDK-convenience commands

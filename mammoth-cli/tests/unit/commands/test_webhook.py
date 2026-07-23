@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import webhook as webhook_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -23,9 +24,9 @@ _SEND_GET = "mammoth.api.webhooks.WebhooksAPI.send_data_get"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -37,9 +38,7 @@ def test_list_passes_no_kwargs_by_default(fake_service: FakeMammothService) -> N
     assert fake_service.call_log == [(_LIST, {})]
 
 
-def test_list_forwards_limit_and_offset(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_list_forwards_limit_and_offset(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"limit": 10, "offset": 5}), encoding="utf-8")
     webhook_cmd.webhook_list(_inv("webhook.list", input_file=str(doc)))
@@ -73,9 +72,7 @@ def test_create_uses_positional_name(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == [(_CREATE, {"name": "My Hook"})]
 
 
-def test_create_forwards_optional_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(
         json.dumps(
@@ -117,16 +114,12 @@ def test_update_passes_only_webhook_id_when_no_fields(
     assert fake_service.call_log == [(_UPDATE, {"webhook_id": 7})]
 
 
-def test_update_forwards_optional_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_update_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(
         json.dumps({"mode": "replace", "origins": "*", "is_secure": False}), encoding="utf-8"
     )
-    webhook_cmd.webhook_update(
-        _inv("webhook.update", extra_args=["7"], input_file=str(doc))
-    )
+    webhook_cmd.webhook_update(_inv("webhook.update", extra_args=["7"], input_file=str(doc)))
     assert fake_service.call_log == [
         (_UPDATE, {"webhook_id": 7, "mode": "replace", "origins": "*", "is_secure": False})
     ]
@@ -164,9 +157,7 @@ def test_send_passes_uri_and_data(fake_service: FakeMammothService, tmp_path: Pa
         json.dumps({"webhook_uri": "abc123", "data": {"col1": "val1"}}), encoding="utf-8"
     )
     webhook_cmd.webhook_send(_inv("webhook.send", input_file=str(doc)))
-    assert fake_service.call_log == [
-        (_SEND, {"webhook_uri": "abc123", "data": {"col1": "val1"}})
-    ]
+    assert fake_service.call_log == [(_SEND, {"webhook_uri": "abc123", "data": {"col1": "val1"}})]
 
 
 def test_send_get_requires_webhook_uri(fake_service: FakeMammothService) -> None:

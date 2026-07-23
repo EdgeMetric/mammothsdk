@@ -85,7 +85,6 @@ def test_config_list_returns_every_key(isolated_cli_config: Path) -> None:
     assert result.exit_code == 0, result.stderr
     envelope = json.loads(result.stdout)
     assert set(envelope["data"]["values"]) == {
-        "base_url",
         "job_timeout",
         "output",
         "pipeline_timeout",

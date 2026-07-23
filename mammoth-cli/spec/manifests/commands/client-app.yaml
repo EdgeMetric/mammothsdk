@@ -23,7 +23,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth client-app create --help
-  agent_example: mammoth client-app create --output json --no-input
+  agent_example: 'mammoth client-app create --input ''{"app_name": "example"}'' --output json --no-input'
   unit_tests:
   - UT-CLIENT-APP-CREATE
   contract_tests:
@@ -41,7 +41,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteApp
-  positionals: []
+  positionals:
+  - name: client_key
+    type: str
+    required: true
+    metavar: CLIENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the client.
   options: []
   sdk_symbol: mammoth.api.clientapps.ClientAppsAPI.delete
   sdk_conversion: Call mammoth.api.clientapps.ClientAppsAPI.delete with validated request fields.
@@ -57,8 +63,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth client-app delete --help
-  agent_example: mammoth client-app delete --output json --no-input
+  human_example: mammoth client-app delete CLIENT_KEY --help
+  agent_example: mammoth client-app delete example --output json --no-input
   unit_tests:
   - UT-CLIENT-APP-DELETE
   contract_tests:
@@ -75,7 +81,13 @@ commands:
   alias_of: null
   operation_ids:
   - AppDetails
-  positionals: []
+  positionals:
+  - name: client_key
+    type: str
+    required: true
+    metavar: CLIENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the client.
   options: []
   sdk_symbol: mammoth.api.clientapps.ClientAppsAPI.get
   sdk_conversion: Call mammoth.api.clientapps.ClientAppsAPI.get with validated request fields.
@@ -91,8 +103,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth client-app get --help
-  agent_example: mammoth client-app get --output json --no-input
+  human_example: mammoth client-app get CLIENT_KEY --help
+  agent_example: mammoth client-app get example --output json --no-input
   unit_tests:
   - UT-CLIENT-APP-GET
   contract_tests:
@@ -143,7 +155,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateApp
-  positionals: []
+  positionals:
+  - name: client_key
+    type: str
+    required: true
+    metavar: CLIENT_KEY
+    falls_back_to_field: null
+    help: Key identifying the client.
   options: []
   sdk_symbol: mammoth.api.clientapps.ClientAppsAPI.update
   sdk_conversion: Call mammoth.api.clientapps.ClientAppsAPI.update with validated request fields.
@@ -159,8 +177,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth client-app update --help
-  agent_example: mammoth client-app update --output json --no-input
+  human_example: mammoth client-app update CLIENT_KEY --help
+  agent_example: 'mammoth client-app update example --input ''{"patch_request": {"patch": [{"op": "replace",
+    "path": "role"}]}}'' --output json --no-input'
   unit_tests:
   - UT-CLIENT-APP-UPDATE
   contract_tests:

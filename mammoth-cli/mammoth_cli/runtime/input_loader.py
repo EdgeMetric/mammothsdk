@@ -18,7 +18,13 @@ from typing import Any
 
 import yaml
 
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_INPUT_FORMAT_REQUIRED,
+    CODE_INVALID_INPUT_DOCUMENT,
+    CODE_INVALID_INPUT_FORMAT,
+    EXIT_USAGE,
+    CliError,
+)
 
 STDIN_SENTINEL = "-"
 _JSON_FORMAT = "json"
@@ -33,7 +39,7 @@ _EXTENSION_FORMATS = {
 
 def _invalid_format_error(value: str) -> CliError:
     return CliError(
-        code="invalid_input_format",
+        code=CODE_INVALID_INPUT_FORMAT,
         message=f"Unsupported input format '{value}'.",
         exit_status=EXIT_USAGE,
         hint=f"Use one of: {', '.join(_VALID_FORMATS)}.",
@@ -42,7 +48,7 @@ def _invalid_format_error(value: str) -> CliError:
 
 def _format_required_error(source: str) -> CliError:
     return CliError(
-        code="input_format_required",
+        code=CODE_INPUT_FORMAT_REQUIRED,
         message=f"Cannot infer the input format for {source}.",
         exit_status=EXIT_USAGE,
         hint="Pass --input-format json or --input-format yaml.",
@@ -57,6 +63,8 @@ def _resolve_format(input_file: str, input_format: str | None) -> str:
         return normalized
     if input_file == STDIN_SENTINEL:
         raise _format_required_error("standard input")
+    if input_file.lstrip().startswith("{"):
+        return _JSON_FORMAT
     suffix = Path(input_file).suffix.lower()
     resolved = _EXTENSION_FORMATS.get(suffix)
     if resolved is None:
@@ -67,6 +75,8 @@ def _resolve_format(input_file: str, input_format: str | None) -> str:
 def _read_text(input_file: str) -> str:
     if input_file == STDIN_SENTINEL:
         return sys.stdin.read()
+    if input_file.lstrip().startswith("{"):
+        return input_file
     path = Path(input_file)
     try:
         return path.read_text(encoding="utf-8")
@@ -92,21 +102,19 @@ def _parse(text: str, fmt: str) -> Any:
         return yaml.safe_load(text)
     except (json.JSONDecodeError, yaml.YAMLError) as exc:
         raise CliError(
-            code="invalid_input_document",
+            code=CODE_INVALID_INPUT_DOCUMENT,
             message="The input document is not valid.",
             exit_status=EXIT_USAGE,
             hint=f"Provide a well-formed {fmt} object.",
         ) from exc
 
 
-def load_input_document(
-    input_file: str | None, input_format: str | None
-) -> dict[str, Any] | None:
+def load_input_document(input_file: str | None, input_format: str | None) -> dict[str, Any] | None:
     """Load and validate a structured request document.
 
     Args:
-        input_file: The ``--input`` value: a filesystem path, ``"-"`` for
-            standard input, or None when no document was requested.
+        input_file: The ``--input`` value: inline JSON, a filesystem path,
+            ``"-"`` for standard input, or None when no document was requested.
         input_format: The ``--input-format`` value (``"json"`` or ``"yaml"``),
             or None to infer from the file extension. Required for stdin.
 
@@ -124,7 +132,7 @@ def load_input_document(
     document = _parse(_read_text(input_file), fmt)
     if not isinstance(document, dict):
         raise CliError(
-            code="invalid_input_document",
+            code=CODE_INVALID_INPUT_DOCUMENT,
             message="The input document must be a mapping of fields.",
             exit_status=EXIT_USAGE,
             hint="Wrap the request fields in a top-level object.",

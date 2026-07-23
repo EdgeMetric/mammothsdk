@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import connector as connector_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -38,9 +39,9 @@ _QUERY_STATUS = "mammoth.api.ai.AIAPI.status"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -99,11 +100,10 @@ def test_ai_chat_requires_body(fake_service: FakeMammothService) -> None:
 
 
 def test_ai_chat_dispatches(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"body": {"message": "connect postgres"}})
+    body = {"messages": [{"role": "user", "content": "connect postgres"}]}
+    doc = _write(tmp_path, {"body": body})
     connector_cmd.connector_ai_chat(_inv("connector.ai.chat", project=180, input_file=doc))
-    assert fake_service.call_log == [
-        (_AI_CHAT, {"body": {"message": "connect postgres"}, "project_id": 180})
-    ]
+    assert fake_service.call_log == [(_AI_CHAT, {"body": body, "project_id": 180})]
 
 
 # --- ai history --------------------------------------------------------------------
@@ -125,9 +125,7 @@ def test_ai_history_dispatches(fake_service: FakeMammothService) -> None:
     connector_cmd.connector_ai_history(
         _inv("connector.ai.history", project=180, extra_args=["conn1"])
     )
-    assert fake_service.call_log == [
-        (_AI_HISTORY, {"connection_key": "conn1", "project_id": 180})
-    ]
+    assert fake_service.call_log == [(_AI_HISTORY, {"connection_key": "conn1", "project_id": 180})]
 
 
 # --- ai session list -----------------------------------------------------------------
@@ -167,9 +165,7 @@ def test_ai_session_messages_dispatches(fake_service: FakeMammothService) -> Non
     connector_cmd.connector_ai_session_messages(
         _inv("connector.ai.session.messages", project=180, extra_args=["9"])
     )
-    assert fake_service.call_log == [
-        (_AI_SESSION_MESSAGES, {"session_id": 9, "project_id": 180})
-    ]
+    assert fake_service.call_log == [(_AI_SESSION_MESSAGES, {"session_id": 9, "project_id": 180})]
 
 
 # --- ai submit-column-selection --------------------------------------------------------
@@ -186,12 +182,13 @@ def test_ai_submit_column_selection_requires_body(fake_service: FakeMammothServi
 def test_ai_submit_column_selection_dispatches(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"body": {"columns": ["a", "b"]}})
+    body = {"selected_columns": ["a", "b"], "session_id": "s1"}
+    doc = _write(tmp_path, {"body": body})
     connector_cmd.connector_ai_submit_column_selection(
         _inv("connector.ai.submit-column-selection", project=180, input_file=doc)
     )
     assert fake_service.call_log == [
-        (_AI_SUBMIT_COLUMN_SELECTION, {"body": {"columns": ["a", "b"]}, "project_id": 180})
+        (_AI_SUBMIT_COLUMN_SELECTION, {"body": body, "project_id": 180})
     ]
 
 
@@ -206,17 +203,16 @@ def test_ai_submit_credentials_requires_body(fake_service: FakeMammothService) -
     assert excinfo.value.code == "missing_field"
 
 
-def test_ai_submit_credentials_dispatches(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write(tmp_path, {"body": {"username": "u", "password": "p"}})
+def test_ai_submit_credentials_dispatches(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    body = {"credentials": {"username": "u", "password": "p"}, "session_id": "s1"}
+    doc = _write(tmp_path, {"body": body})
     connector_cmd.connector_ai_submit_credentials(
         _inv("connector.ai.submit-credentials", project=180, input_file=doc)
     )
     assert fake_service.call_log == [
         (
             _AI_SUBMIT_CREDENTIALS,
-            {"body": {"username": "u", "password": "p"}, "project_id": 180},
+            {"body": body, "project_id": 180},
         )
     ]
 
@@ -708,9 +704,7 @@ def test_ds_config_update_requires_patch(fake_service: FakeMammothService) -> No
 def test_ds_config_update_blocked_without_confirmation(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(
-        tmp_path, {"patch": [{"op": "replace", "path": "query", "value": "select 2"}]}
-    )
+    doc = _write(tmp_path, {"patch": [{"op": "replace", "path": "query", "value": "select 2"}]})
     with pytest.raises(CliError) as excinfo:
         connector_cmd.connector_ds_config_update(
             _inv(
@@ -728,9 +722,7 @@ def test_ds_config_update_blocked_without_confirmation(
 def test_ds_config_update_dispatches_with_yes(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(
-        tmp_path, {"patch": [{"op": "replace", "path": "query", "value": "select 2"}]}
-    )
+    doc = _write(tmp_path, {"patch": [{"op": "replace", "path": "query", "value": "select 2"}]})
     connector_cmd.connector_ds_config_update(
         _inv(
             "connector.ds-config.update",

@@ -35,6 +35,8 @@ import _command_map as cmap  # noqa: E402
 from _openapi_extract import iter_operations, load_snapshot  # noqa: E402
 from _sdk_catalog import CLI_ONLY_COMMANDS, EXTRA_OP_HINTS, load_sdk_catalog  # noqa: E402
 
+from mammoth_cli.services.positionals import positionals_for  # noqa: E402
+
 REVIEWER = "primary"
 
 
@@ -48,6 +50,36 @@ def _yaml_dump(data: Any) -> str:
 
 READ_METHODS = {"GET"}
 HIGH_IMPACT_GROUPS = {"billing", "support"}
+
+# Response component schemas that denote an async *job handle* the caller must
+# wait on (the server kicked off work and returned only a reference), as opposed
+# to a job *status record* returned by a job-read endpoint. A command whose
+# success response is one of these -- directly or as a union member -- has not
+# produced its result yet, so labelling it ``not_async`` is a lie.
+_JOB_HANDLE_SCHEMAS = frozenset({"ObjectJobSchema", "JobResponse"})
+
+
+def _operations_with_job_id(document: dict[str, Any]) -> set[str]:
+    """Return operationIds that accept a ``job_id`` parameter (path or query).
+
+    Such an operation reads a *specific, already-known* job, so its job-shaped
+    response is a status record to return verbatim -- it must never auto-wait.
+    """
+    result: set[str] = set()
+    for path_item in document.get("paths", {}).values():
+        if not isinstance(path_item, dict):
+            continue
+        shared = path_item.get("parameters", []) or []
+        for method, operation in path_item.items():
+            if method not in {"get", "put", "post", "delete", "patch"}:
+                continue
+            if not isinstance(operation, dict):
+                continue
+            params = shared + (operation.get("parameters", []) or [])
+            names = {p.get("name") for p in params if isinstance(p, dict)}
+            if "job_id" in names and operation.get("operationId"):
+                result.add(str(operation["operationId"]))
+    return result
 
 
 def derive_mutation(command_id: str, method: str) -> str:
@@ -116,6 +148,11 @@ def derive_acceptance(command_id: str, mutation_class: str) -> tuple[str, str | 
         )
     if mutation_class == "read":
         return "live_read_only", None
+    if group == "dashboard":
+        return "contract_only_no_disposable_fixture", (
+            "Dashboard mutation has contract coverage but no automated disposable-dashboard "
+            "fixture in tests/live."
+        )
     # Project-scoped safe operations run against a disposable project.
     return "live_disposable_project", None
 
@@ -143,6 +180,19 @@ def build_command_record(
     confirmation = derive_confirmation(mutation)
     evidence, exemption = derive_acceptance(command_id, mutation)
     base = _model_base(command_id)
+    positionals = positionals_for(command_id, sdk_symbol)
+    required_metavars = "".join(f" {p.metavar}" for p in positionals if p.required)
+
+    # Honor an explicit ``example_value`` (a concrete, resolvable id for the
+    # discovery commands) so this fallback example -- used when a command has no
+    # resolvable SDK signature for ``runnable_example`` -- still runs to exit
+    # zero, matching ``schema._sample_positional_value``.
+    def _sample(spec: Any) -> str:
+        if spec.example_value is not None:
+            return str(spec.example_value)
+        return "123" if spec.type is int else "example"
+
+    positional_samples = "".join(f" {_sample(p)}" for p in positionals)
 
     record: dict[str, Any] = {
         "command_id": command_id,
@@ -150,10 +200,11 @@ def build_command_record(
         "disposition": disposition,
         "alias_of": alias_of,
         "operation_ids": operation_ids,
-        "positionals": [],
+        "positionals": [p.as_manifest() for p in positionals],
         "options": [],
         "sdk_symbol": sdk_symbol,
-        "sdk_conversion": f"Call {sdk_symbol} with validated request fields.",
+        "sdk_conversion": (catalog or {}).get("sdk_conversion")
+        or f"Call {sdk_symbol} with validated request fields.",
         "request_model": f"{base}Request",
         "result_model": f"{base}Result",
         "mutation_class": mutation,
@@ -166,8 +217,8 @@ def build_command_record(
         "contract_fixture": None,
         "required_fixture_guard": None,
         "secret_fields": list((catalog or {}).get("secret_fields") or []),
-        "human_example": f"mammoth {command_path} --help",
-        "agent_example": f"mammoth {command_path} --output json --no-input",
+        "human_example": f"mammoth {command_path}{required_metavars} --help",
+        "agent_example": f"mammoth {command_path}{positional_samples} --output json --no-input",
         "unit_tests": [f"UT-{op_token}"],
         "contract_tests": [f"CT-{op_token}-HUMAN", f"CT-{op_token}-JSON", f"CT-{op_token}-ERROR"],
         "draft_test": None,
@@ -175,6 +226,14 @@ def build_command_record(
         "known_restrictions": (catalog or {}).get("notes"),
         "reviewed_by": REVIEWER,
     }
+    # This is the same recursive, shell-safe example used by schema discovery;
+    # keeping it here prevents manifests and generated docs from carrying a
+    # syntactically valid but semantically incomplete invocation.
+    from mammoth_cli.commands.schema import runnable_example
+
+    record["agent_example"] = (
+        runnable_example(record, sdk_symbol, positionals) or record["agent_example"]
+    )
     if command_id.startswith("view.transform.") or command_id.startswith("view.draft."):
         record["draft_test"] = f"LT-{op_token}-DRAFT"
     if mutation == "reversible_pipeline":
@@ -322,6 +381,27 @@ def build() -> dict[str, int]:
         commands[command]["live_exemption_reason"] = spec.get(
             "live_exemption_reason", "Local CLI operation; no server call."
         )
+
+    # Correct async classification structurally: a dashboard command whose
+    # success response is a job *handle* (kicked-off work) but which is labelled
+    # not_async returns a raw job and silently ignores --job-timeout. The
+    # generated and handwritten dashboard SDK methods never wait internally, so
+    # the CLI must. Promote such commands to always_wait; exempt job-status
+    # reads (a job_id parameter) whose job-shaped body is the intended payload.
+    op_response_schemas = {meta["operation_id"]: set(meta["response_schemas"]) for meta in ops}
+    job_status_ops = _operations_with_job_id(document)
+    for command, record in commands.items():
+        if not command.startswith("dashboard."):
+            continue
+        if record.get("wait_policy") != "not_async":
+            continue
+        oids = record.get("operation_ids") or []
+        returns_handle = any(
+            op_response_schemas.get(oid, set()) & _JOB_HANDLE_SCHEMAS for oid in oids
+        )
+        is_status_read = any(oid in job_status_ops for oid in oids)
+        if returns_handle and not is_status_read:
+            record["wait_policy"] = "always_wait"
 
     # write grouped by top-level group
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)

@@ -11,7 +11,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_INVALID_ARGUMENT,
+    CODE_MISSING_ARGUMENT,
+    CODE_MISSING_FIELD,
+    CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
@@ -25,7 +32,7 @@ def _symbol(invocation: Invocation) -> str:
     record = command_by_id(invocation.command_id)
     if record is None or not record.get("sdk_symbol"):
         raise CliError(
-            code="sdk_symbol_unresolved",
+            code=CODE_SDK_SYMBOL_UNRESOLVED,
             message=f"No SDK symbol is recorded for '{invocation.command_id}'.",
             exit_status=EXIT_USAGE,
         )
@@ -48,7 +55,7 @@ def _require_int_positional(invocation: Invocation, name: str) -> int:
     """
     if not invocation.extra_args:
         raise CliError(
-            code="missing_argument",
+            code=CODE_MISSING_ARGUMENT,
             message=f"This command requires a {name} argument.",
             exit_status=EXIT_USAGE,
             hint=f"Pass the {name} as a positional argument.",
@@ -58,7 +65,7 @@ def _require_int_positional(invocation: Invocation, name: str) -> int:
         return int(raw)
     except ValueError as exc:
         raise CliError(
-            code="invalid_argument",
+            code=CODE_INVALID_ARGUMENT,
             message=f"The {name} argument '{raw}' is not an integer.",
             exit_status=EXIT_USAGE,
         ) from exc
@@ -80,7 +87,7 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     """
     if document is None or field not in document:
         raise CliError(
-            code="missing_field",
+            code=CODE_MISSING_FIELD,
             message=f"This command requires the '{field}' input field.",
             exit_status=EXIT_USAGE,
             hint=f"Pass it via --input, for example: --input '{{\"{field}\": ...}}'.",
@@ -125,12 +132,13 @@ def notification_list(invocation: Invocation) -> HandlerResult:
     """List notifications in the active workspace, optionally filtered."""
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {}
+    if invocation.project is not None:
+        kwargs["project_id"] = invocation.project
     _forward_optional(
         document,
         kwargs,
         (
             "fields",
-            "project_id",
             "last_updated_at__gte",
             "status",
             "is_read",
@@ -151,9 +159,7 @@ def notification_update(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input()
     patch = _require_field(document, "patch")
     with open_service(invocation) as (service, auth):
-        data = service.call(
-            _symbol(invocation), notification_id=notification_id, patch=patch
-        )
+        data = service.call(_symbol(invocation), notification_id=notification_id, patch=patch)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 

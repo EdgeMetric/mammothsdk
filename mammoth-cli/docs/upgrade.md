@@ -17,10 +17,15 @@ With pip:
 python -m pip install --upgrade mammoth-cli
 ```
 
-The released installer also supports `mammoth self update [--version X.Y.Z]`,
-which installs to a staging location, verifies `mammoth --version` and
-`mammoth doctor`, updates the skill atomically, and records the new state. If
-validation fails, it restores the previous CLI version and skill directories.
+To move to an exact version, pass it to the tool:
+
+```bash
+uv tool install mammoth-cli==X.Y.Z         # or: pipx install --force mammoth-cli==X.Y.Z
+mammoth --version
+```
+
+You can also re-run the convenience installer with `--version X.Y.Z`. After any
+upgrade, run `mammoth doctor` to confirm the new version works.
 
 ## Upgrade the agent skill
 

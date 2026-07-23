@@ -14,7 +14,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_INVALID_ARGUMENT,
+    CODE_MISSING_ARGUMENT,
+    CODE_MISSING_FIELD,
+    CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_CONFIRM_TARGET, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
@@ -28,7 +35,7 @@ def _symbol(invocation: Invocation) -> str:
     record = command_by_id(invocation.command_id)
     if record is None or not record.get("sdk_symbol"):
         raise CliError(
-            code="sdk_symbol_unresolved",
+            code=CODE_SDK_SYMBOL_UNRESOLVED,
             message=f"No SDK symbol is recorded for '{invocation.command_id}'.",
             exit_status=EXIT_USAGE,
         )
@@ -49,7 +56,7 @@ def _int_positional(invocation: Invocation, name: str) -> int | None:
         return int(raw)
     except ValueError as exc:
         raise CliError(
-            code="invalid_argument",
+            code=CODE_INVALID_ARGUMENT,
             message=f"The {name} argument '{raw}' is not an integer.",
             exit_status=EXIT_USAGE,
         ) from exc
@@ -60,7 +67,7 @@ def _require_int_positional(invocation: Invocation, name: str) -> int:
     value = _int_positional(invocation, name)
     if value is None:
         raise CliError(
-            code="missing_argument",
+            code=CODE_MISSING_ARGUMENT,
             message=f"This command requires a {name} argument.",
             exit_status=EXIT_USAGE,
             hint=f"Pass the {name} as a positional argument.",
@@ -75,7 +82,7 @@ def _require_positional_or_field(
     value = _string_positional(invocation) or (document.get(field) if document else None)
     if not value:
         raise CliError(
-            code="missing_argument",
+            code=CODE_MISSING_ARGUMENT,
             message=f"A {human} is required.",
             exit_status=EXIT_USAGE,
             hint=f"Pass the {human} as a positional argument or a '{field}' input field.",
@@ -87,7 +94,7 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     """Return a required field from the ``--input`` document, or raise usage."""
     if document is None or field not in document:
         raise CliError(
-            code="missing_field",
+            code=CODE_MISSING_FIELD,
             message=f"This command requires the '{field}' input field.",
             exit_status=EXIT_USAGE,
             hint=f"Pass it via --input, for example: --input '{{\"{field}\": ...}}'.",
@@ -147,9 +154,7 @@ def support_connector_update(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"connector_id": connector_id}
     _forward_optional(document, kwargs, ("name", "description", "price_per_month", "enabled"))
-    _confirm(
-        invocation, action=f"update connector {connector_id}", target=str(connector_id)
-    )
+    _confirm(invocation, action=f"update connector {connector_id}", target=str(connector_id))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
@@ -158,9 +163,7 @@ def support_connector_update(invocation: Invocation) -> HandlerResult:
 def support_connector_delete(invocation: Invocation) -> HandlerResult:
     """Delete one connector by id."""
     connector_id = _require_int_positional(invocation, "connector id")
-    _confirm(
-        invocation, action=f"delete connector {connector_id}", target=str(connector_id)
-    )
+    _confirm(invocation, action=f"delete connector {connector_id}", target=str(connector_id))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), connector_id=connector_id)
     return data, _meta(invocation, auth.workspace_id)
@@ -195,9 +198,7 @@ def support_connector_profile_update(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"profile_id": profile_id}
     _forward_optional(document, kwargs, ("name", "description", "connectors"))
-    _confirm(
-        invocation, action=f"update connector profile {profile_id}", target=str(profile_id)
-    )
+    _confirm(invocation, action=f"update connector profile {profile_id}", target=str(profile_id))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
@@ -206,9 +207,7 @@ def support_connector_profile_update(invocation: Invocation) -> HandlerResult:
 def support_connector_profile_delete(invocation: Invocation) -> HandlerResult:
     """Delete one connector profile by id."""
     profile_id = _require_int_positional(invocation, "profile id")
-    _confirm(
-        invocation, action=f"delete connector profile {profile_id}", target=str(profile_id)
-    )
+    _confirm(invocation, action=f"delete connector profile {profile_id}", target=str(profile_id))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), profile_id=profile_id)
     return data, _meta(invocation, auth.workspace_id)
@@ -217,10 +216,16 @@ def support_connector_profile_delete(invocation: Invocation) -> HandlerResult:
 def support_connector_profile_add_connector(invocation: Invocation) -> HandlerResult:
     """Add a connector to a connector profile. Profile id is positional."""
     profile_id = _require_int_positional(invocation, "profile id")
-    document = invocation.load_input()
-    connector_id = _require_field(document, "connector_id")
+    document = invocation.load_input() or {}
+    connector_id = invocation.positional("connector_id")
+    if connector_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="A connector id is required.",
+            exit_status=EXIT_USAGE,
+        )
+    connector_id = int(connector_id)
     kwargs: dict[str, Any] = {"profile_id": profile_id, "connector_id": connector_id}
-    assert document is not None
     _forward_optional(document, kwargs, ("price_per_month", "enabled"))
     _confirm(
         invocation,
@@ -307,9 +312,7 @@ def support_feature_profile_update(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"profile_id": profile_id}
     _forward_optional(document, kwargs, ("name", "description", "features"))
-    _confirm(
-        invocation, action=f"update feature profile {profile_id}", target=str(profile_id)
-    )
+    _confirm(invocation, action=f"update feature profile {profile_id}", target=str(profile_id))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
@@ -318,9 +321,7 @@ def support_feature_profile_update(invocation: Invocation) -> HandlerResult:
 def support_feature_profile_delete(invocation: Invocation) -> HandlerResult:
     """Delete one feature profile by id."""
     profile_id = _require_int_positional(invocation, "profile id")
-    _confirm(
-        invocation, action=f"delete feature profile {profile_id}", target=str(profile_id)
-    )
+    _confirm(invocation, action=f"delete feature profile {profile_id}", target=str(profile_id))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), profile_id=profile_id)
     return data, _meta(invocation, auth.workspace_id)
@@ -329,10 +330,14 @@ def support_feature_profile_delete(invocation: Invocation) -> HandlerResult:
 def support_feature_profile_add_feature(invocation: Invocation) -> HandlerResult:
     """Add a feature to a feature profile. Profile id is positional."""
     profile_id = _require_int_positional(invocation, "profile id")
-    document = invocation.load_input()
-    feature_id = _require_field(document, "feature_id")
+    document = invocation.load_input() or {}
+    feature_id = invocation.positional("feature_id")
+    if feature_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT, message="A feature id is required.", exit_status=EXIT_USAGE
+        )
+    feature_id = int(feature_id)
     kwargs: dict[str, Any] = {"profile_id": profile_id, "feature_id": feature_id}
-    assert document is not None
     _forward_optional(document, kwargs, ("price_per_month", "enabled", "value"))
     _confirm(
         invocation,
@@ -350,10 +355,14 @@ def support_feature_profile_add_feature(invocation: Invocation) -> HandlerResult
 def support_ownership_transfer(invocation: Invocation) -> HandlerResult:
     """Transfer ownership of a workspace. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input()
-    user_id = _require_field(document, "user_id")
+    document = invocation.load_input() or {}
+    user_id = invocation.positional("user_id")
+    if user_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT, message="A user id is required.", exit_status=EXIT_USAGE
+        )
+    user_id = int(user_id)
     kwargs: dict[str, Any] = {"workspace_id": workspace_id, "user_id": user_id}
-    assert document is not None
     _forward_optional(document, kwargs, ("new_role", "remove_role"))
     _confirm(
         invocation,
@@ -466,15 +475,11 @@ def support_plan_delete(invocation: Invocation) -> HandlerResult:
 def support_plan_update_storage_tiers(invocation: Invocation) -> HandlerResult:
     """Replace a plan's storage pricing tiers. Plan id is positional."""
     plan_id = _require_int_positional(invocation, "plan id")
-    document = invocation.load_input()
+    document = invocation.load_input() or {}
     storage_tiers = _require_field(document, "storage_tiers")
-    _confirm(
-        invocation, action=f"update storage tiers for plan {plan_id}", target=str(plan_id)
-    )
+    _confirm(invocation, action=f"update storage tiers for plan {plan_id}", target=str(plan_id))
     with open_service(invocation) as (service, auth):
-        data = service.call(
-            _symbol(invocation), plan_id=plan_id, storage_tiers=storage_tiers
-        )
+        data = service.call(_symbol(invocation), plan_id=plan_id, storage_tiers=storage_tiers)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -509,10 +514,14 @@ def support_subscription_get(invocation: Invocation) -> HandlerResult:
 def support_subscription_create(invocation: Invocation) -> HandlerResult:
     """Register a workspace's Chargebee subscription. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input()
-    plan_id = _require_field(document, "plan_id")
+    document = invocation.load_input() or {}
+    plan_id = invocation.positional("plan_id")
+    if plan_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT, message="A plan id is required.", exit_status=EXIT_USAGE
+        )
+    plan_id = str(plan_id)
     kwargs: dict[str, Any] = {"workspace_id": workspace_id, "plan_id": plan_id}
-    assert document is not None
     _forward_optional(
         document, kwargs, ("customer_id", "first_name", "last_name", "email", "company_name")
     )
@@ -529,8 +538,15 @@ def support_subscription_create(invocation: Invocation) -> HandlerResult:
 def support_subscription_update(invocation: Invocation) -> HandlerResult:
     """Update a workspace's Chargebee subscription id. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input()
-    subscription_id = _require_field(document, "subscription_id")
+    invocation.load_input()
+    subscription_id = invocation.positional("subscription_id")
+    if subscription_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="A subscription id is required.",
+            exit_status=EXIT_USAGE,
+        )
+    subscription_id = str(subscription_id)
     _confirm(
         invocation,
         action=f"update subscription for workspace {workspace_id}",
@@ -552,9 +568,7 @@ def support_user_list_all(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("fields", "sort", "offset", "limit"))
     with open_service(invocation) as (service, auth):
-        _confirm(
-            invocation, action="list users across workspaces", target=str(auth.workspace_id)
-        )
+        _confirm(invocation, action="list users across workspaces", target=str(auth.workspace_id))
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
 
@@ -609,9 +623,7 @@ def support_workspace_get(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"workspace_id": workspace_id}
     _forward_optional(document, kwargs, ("fields",))
-    _confirm(
-        invocation, action=f"get workspace {workspace_id}", target=str(workspace_id)
-    )
+    _confirm(invocation, action=f"get workspace {workspace_id}", target=str(workspace_id))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
@@ -662,9 +674,7 @@ def support_workspace_update(invocation: Invocation) -> HandlerResult:
     }
     assert document is not None
     _forward_optional(document, kwargs, ("plan_create", "plan_update"))
-    _confirm(
-        invocation, action=f"update workspace {workspace_id}", target=str(workspace_id)
-    )
+    _confirm(invocation, action=f"update workspace {workspace_id}", target=str(workspace_id))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
@@ -673,9 +683,7 @@ def support_workspace_update(invocation: Invocation) -> HandlerResult:
 def support_workspace_delete(invocation: Invocation) -> HandlerResult:
     """Delete one workspace by id."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    _confirm(
-        invocation, action=f"delete workspace {workspace_id}", target=str(workspace_id)
-    )
+    _confirm(invocation, action=f"delete workspace {workspace_id}", target=str(workspace_id))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), workspace_id=workspace_id)
     return data, _meta(invocation, auth.workspace_id)
@@ -751,8 +759,13 @@ def support_workspace_user_add(invocation: Invocation) -> HandlerResult:
 def support_workspace_user_remove(invocation: Invocation) -> HandlerResult:
     """Remove a user from a workspace. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input()
-    user_id = _require_field(document, "user_id")
+    invocation.load_input()
+    user_id = invocation.positional("user_id")
+    if user_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT, message="A user id is required.", exit_status=EXIT_USAGE
+        )
+    user_id = int(user_id)
     _confirm(
         invocation,
         action=f"remove user from workspace {workspace_id}",
@@ -767,7 +780,12 @@ def support_workspace_user_transfer(invocation: Invocation) -> HandlerResult:
     """Transfer/change a user's role within a workspace. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
     document = invocation.load_input()
-    user_id = _require_field(document, "user_id")
+    user_id = invocation.positional("user_id")
+    if user_id is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT, message="A user id is required.", exit_status=EXIT_USAGE
+        )
+    user_id = int(user_id)
     role = _require_field(document, "role")
     kwargs: dict[str, Any] = {"workspace_id": workspace_id, "user_id": user_id, "role": role}
     assert document is not None

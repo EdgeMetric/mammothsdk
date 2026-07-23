@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import external_key as external_key_cmd
+from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -20,9 +21,9 @@ _DELETE = "mammoth.api.external_keys.ExternalKeysAPI.delete"
 
 @pytest.fixture(autouse=True)
 def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MAMMOTH_API_KEY", "k")
-    monkeypatch.setenv("MAMMOTH_API_SECRET", "s")
-    monkeypatch.setenv("MAMMOTH_WORKSPACE_ID", "4")
+    monkeypatch.setenv(ENV_API_KEY, "k")
+    monkeypatch.setenv(ENV_API_SECRET, "s")
+    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -64,9 +65,7 @@ def test_create_requires_key_type(fake_service: FakeMammothService, tmp_path: Pa
 
 def test_create_requires_key_name(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(
-        json.dumps({"key_type": "anthropic", "secure_key": "sk-123"}), encoding="utf-8"
-    )
+    doc.write_text(json.dumps({"key_type": "anthropic", "secure_key": "sk-123"}), encoding="utf-8")
     with pytest.raises(CliError) as excinfo:
         external_key_cmd.external_key_create(
             _inv("external-key.create", input_file=str(doc), yes=True, confirm="4")
@@ -152,9 +151,7 @@ def test_create_proceeds_with_matching_target(
     ]
 
 
-def test_create_forwards_optional_fields(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(
         json.dumps(
@@ -197,9 +194,7 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
 
 
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    external_key_cmd.external_key_delete(
-        _inv("external-key.delete", extra_args=["7"], yes=True)
-    )
+    external_key_cmd.external_key_delete(_inv("external-key.delete", extra_args=["7"], yes=True))
     assert fake_service.call_log == [(_DELETE, {"key_id": 7})]
 
 
