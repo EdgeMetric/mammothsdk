@@ -37,6 +37,20 @@ def make_runner() -> Runner:
     return Runner()
 
 
+def login_default_profile(*, workspace_id: int = 4) -> None:
+    """Persist a default profile and credentials for tests that need auth.
+
+    Authentication requires a login; there is no environment credential path,
+    so a test that needs an authenticated context calls this (under the
+    ``isolated_cli_config`` fixture) instead of setting ``MAMMOTH_*`` variables.
+    """
+    from mammoth_cli.context import credentials, profiles
+
+    profiles.save_profile(profiles.ProfileRecord(name="default", workspace_id=workspace_id))
+    credentials.store_credentials("default", "k", "s", storage="file")
+    profiles.set_selected("default")
+
+
 def sample_success_envelope() -> dict[str, Any]:
     result = Result(
         data={"id": 1, "name": "example"},

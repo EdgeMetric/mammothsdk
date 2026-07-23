@@ -8,9 +8,9 @@ import pytest
 
 from mammoth_cli.commands import completion as completion_cmd
 from mammoth_cli.commands import doctor as doctor_cmd
-from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.testing import login_default_profile
 
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
@@ -18,11 +18,8 @@ def _inv(command_id: str, **overrides: object) -> Invocation:
 
 
 def test_doctor_reports_no_credentials_when_unauthenticated(
-    monkeypatch: pytest.MonkeyPatch,
+    isolated_cli_config: Path,
 ) -> None:
-    monkeypatch.delenv(ENV_API_KEY, raising=False)
-    monkeypatch.delenv(ENV_API_SECRET, raising=False)
-    monkeypatch.delenv(ENV_WORKSPACE_ID, raising=False)
     data, _meta = doctor_cmd.doctor(_inv("doctor"))
     assert data["ok"] is False
     names = {c["name"]: c["ok"] for c in data["checks"]}
@@ -32,11 +29,9 @@ def test_doctor_reports_no_credentials_when_unauthenticated(
 
 
 def test_doctor_connection_ok_with_fake_service(
-    fake_service: object, monkeypatch: pytest.MonkeyPatch
+    isolated_cli_config: Path, fake_service: object
 ) -> None:
-    monkeypatch.setenv(ENV_API_KEY, "k")
-    monkeypatch.setenv(ENV_API_SECRET, "s")
-    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
+    login_default_profile()
     data, _meta = doctor_cmd.doctor(_inv("doctor"))
     names = {c["name"]: c["ok"] for c in data["checks"]}
     assert names["endpoint"] is True

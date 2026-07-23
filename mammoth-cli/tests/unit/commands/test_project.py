@@ -8,10 +8,10 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import project as project_cmd
-from mammoth_cli.context.resolver import ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
+from mammoth_cli.testing import login_default_profile
 
 _LIST_SYMBOL = "mammoth.api.projects.ProjectsAPI.list"
 _GET_SYMBOL = "mammoth.api.projects.ProjectsAPI.get"
@@ -20,11 +20,9 @@ _PUBCRED_SYMBOL = "mammoth.api.projects.ProjectsAPI.publish_credentials"
 
 
 @pytest.fixture(autouse=True)
-def _env_auth(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Give resolve_auth valid environment credentials for every test."""
-    monkeypatch.setenv(ENV_API_KEY, "k")
-    monkeypatch.setenv(ENV_API_SECRET, "s")
-    monkeypatch.setenv(ENV_WORKSPACE_ID, "4")
+def _env_auth(isolated_cli_config: Path) -> None:
+    """Authenticate every test with a saved default profile."""
+    login_default_profile()
 
 
 def _invocation(command_id: str, **overrides: object) -> Invocation:

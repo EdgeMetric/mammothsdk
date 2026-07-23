@@ -23,18 +23,19 @@ from typing import Any
 
 import pytest
 
-from mammoth_cli.context.resolver import (
-    ENV_API_KEY,
-    ENV_API_SECRET,
-    ENV_SERVER_PREFIX,
-    ENV_WORKSPACE_ID,
-)
-
 pytestmark = pytest.mark.subprocess
 
 _EXIT_OK = 0
 _EXIT_USAGE = 2
-_MAMMOTH_ENV = (ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID, ENV_SERVER_PREFIX)
+# Any ambient Mammoth credentials are stripped so each subprocess starts logged
+# out. There is no environment credential path; these names are cleared purely
+# for test hygiene.
+_MAMMOTH_ENV = (
+    "MAMMOTH_API_KEY",
+    "MAMMOTH_API_SECRET",
+    "MAMMOTH_WORKSPACE_ID",
+    "MAMMOTH_SERVER_PREFIX",
+)
 
 
 def _run(args: list[str], *, env: dict[str, str]) -> subprocess.CompletedProcess[str]:

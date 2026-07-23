@@ -1,7 +1,7 @@
 """Subprocess tests: malformed auth input yields a stable envelope, not a traceback.
 
 These run the real ``mammoth`` entry point in machine mode and assert that a
-nonnumeric workspace id and malformed JSON/YAML each produce the versioned
+non-positive workspace id and malformed JSON/YAML each produce the versioned
 error envelope with the usage exit code (2) — never a Python traceback.
 """
 
@@ -14,21 +14,17 @@ import sys
 
 import pytest
 
-from mammoth_cli.context.resolver import (
-    ENV_API_KEY,
-    ENV_API_SECRET,
-    ENV_SERVER_PREFIX,
-    ENV_WORKSPACE_ID,
-)
-
 pytestmark = pytest.mark.subprocess
 
 _EXIT_USAGE = 2
+# Any ambient Mammoth credentials are stripped so the subprocess starts from a
+# clean, logged-out state. There is no environment credential path; these names
+# are cleared purely for test hygiene.
 _MAMMOTH_ENV = (
-    ENV_API_KEY,
-    ENV_API_SECRET,
-    ENV_WORKSPACE_ID,
-    ENV_SERVER_PREFIX,
+    "MAMMOTH_API_KEY",
+    "MAMMOTH_API_SECRET",
+    "MAMMOTH_WORKSPACE_ID",
+    "MAMMOTH_SERVER_PREFIX",
 )
 
 
@@ -52,19 +48,22 @@ def _base_env() -> dict[str, str]:
     return env
 
 
-def test_nonnumeric_workspace_id_is_a_clean_envelope() -> None:
-    """A nonnumeric MAMMOTH_WORKSPACE_ID maps to a usage-error envelope."""
+def test_non_positive_workspace_id_is_a_clean_envelope() -> None:
+    """A non-positive workspace id in the login document maps to a usage error."""
     env = _base_env()
-    env[ENV_API_KEY] = "k"
-    env[ENV_API_SECRET] = "s"
-    env[ENV_WORKSPACE_ID] = "abc"
 
-    result = _run(["auth", "login", "--from-env", "--output", "json", "--no-input"], env=env)
+    args = ["auth", "login", "--input", "-", "--input-format", "json"]
+    args += ["--output", "json", "--no-input"]
+    result = _run(
+        args,
+        env=env,
+        stdin=json.dumps({"api_key": "k", "api_secret": "s", "workspace_id": 0}),
+    )
 
     assert result.returncode == _EXIT_USAGE, result.stderr
     assert "Traceback" not in result.stderr
     payload = json.loads(result.stdout or result.stderr)
-    assert payload["error"]["code"] == "invalid_workspace_id"
+    assert payload["error"]["code"] == "invalid_login_document"
 
 
 def test_malformed_json_input_is_a_clean_envelope() -> None:

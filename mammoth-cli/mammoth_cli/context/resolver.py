@@ -1,48 +1,29 @@
 """Resolve authentication and project context for one command invocation.
 
-Precedence, per the product contract: explicit secure input to the current
-command, then environment variables, then the selected or ``--profile``
-profile's saved credentials. The API endpoint additionally falls back to the
-``app`` default when nothing supplies a server prefix. Project context
-resolves separately: ``--project`` overrides the saved profile project id,
-which overrides no project at all.
-
-Environment authentication is all-or-nothing: the three credential variables
-(:data:`ENV_API_KEY`, :data:`ENV_API_SECRET`, :data:`ENV_WORKSPACE_ID`) are
-only honoured when *all three* are present. Supplying only some of them is a
-misconfiguration that raises ``incomplete_environment_auth`` rather than
-silently falling back to a saved profile — falling back could operate in a
-different workspace than the partial environment implied.
+Authentication requires a login. Credentials come from an explicit secure
+input to the current command (a prompt or a permission-checked ``--input``
+file), or from the selected or ``--profile`` profile's saved credentials.
+There is no environment-variable credential path: ``mammoth auth login`` is the
+only way to establish credentials. The API endpoint falls back to the ``app``
+default when a profile supplies no server prefix. Project context resolves
+separately: ``--project`` overrides the saved profile project id, which
+overrides no project at all.
 """
 
 from __future__ import annotations
 
-import os
-from collections.abc import Mapping
 from dataclasses import dataclass
 
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.context.profiles import ProfileRecord
 from mammoth_cli.errors.envelope import (
-    CODE_INCOMPLETE_ENVIRONMENT_AUTH,
     CODE_INVALID_WORKSPACE_ID,
     EXIT_AUTH,
     EXIT_USAGE,
     CliError,
 )
 from mammoth_cli.runtime.invocation import Invocation
-
-ENV_API_KEY = "MAMMOTH_API_KEY"
-# This constant holds the *name* of the secret environment variable, not a
-# secret value. The annotation and noqa keep static secret-scanners honest.
-ENV_API_SECRET: str = "MAMMOTH_API_SECRET"  # noqa: S105
-ENV_WORKSPACE_ID = "MAMMOTH_WORKSPACE_ID"
-ENV_SERVER_PREFIX = "MAMMOTH_SERVER_PREFIX"
-
-# The environment credential variables, in canonical order. Environment
-# authentication requires every one of these; a partial set is rejected.
-ENV_CREDENTIAL_VARS = (ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID)
 
 
 @dataclass(frozen=True)
@@ -88,36 +69,8 @@ def not_authenticated_error() -> CliError:
         code="not_authenticated",
         message="No Mammoth credentials are available for this command.",
         exit_status=EXIT_AUTH,
-        hint="Log in, or set MAMMOTH_API_KEY, MAMMOTH_API_SECRET, and MAMMOTH_WORKSPACE_ID.",
+        hint="Log in first: run 'mammoth auth login' (or 'mammoth auth login --input creds.json').",
         recovery_commands=["mammoth auth login"],
-    )
-
-
-def _incomplete_environment_auth_error(missing: list[str]) -> CliError:
-    """Build the stable error for a partial environment credential set.
-
-    Args:
-        missing: The credential variable names that are absent, in canonical
-            order (:data:`ENV_CREDENTIAL_VARS`).
-    """
-    return CliError(
-        code=CODE_INCOMPLETE_ENVIRONMENT_AUTH,
-        message=(
-            "Incomplete Mammoth environment authentication: set "
-            "MAMMOTH_API_KEY, MAMMOTH_API_SECRET, and MAMMOTH_WORKSPACE_ID "
-            "together, or set none of them and use a saved profile."
-        ),
-        exit_status=EXIT_AUTH,
-        hint=f"Missing environment variable(s): {', '.join(missing)}.",
-        details={"missing": missing},
-    )
-
-
-def _invalid_workspace_env_error(raw: str) -> CliError:
-    return CliError(
-        code=CODE_INVALID_WORKSPACE_ID,
-        message=f"MAMMOTH_WORKSPACE_ID='{raw}' is not a positive integer.",
-        exit_status=EXIT_USAGE,
     )
 
 
@@ -148,29 +101,27 @@ def _endpoint(server_prefix: str | None) -> str:
 
 def resolve_auth(
     invocation: Invocation,
-    env: Mapping[str, str] | None = None,
     explicit_login: ExplicitLogin | None = None,
 ) -> ResolvedAuth:
     """Resolve credentials, workspace id, and base url for one invocation.
 
+    Credentials come from an explicit login (a secure prompt or ``--input``
+    document handed to :func:`resolve_auth` by ``auth login``), otherwise from
+    the selected or ``--profile`` saved profile. There is no environment
+    credential path; ``mammoth auth login`` is the only way to authenticate.
+
     Args:
         invocation: The current command's resolved global options.
-        env: Environment mapping to read (defaults to ``os.environ``). Kept as
-            a parameter so callers never depend on process-global state.
-        explicit_login: Ad-hoc credentials that outrank every other source.
+        explicit_login: Ad-hoc credentials that outrank the saved profile.
 
     Returns:
         A :class:`ResolvedAuth` with the credentials and endpoint to use.
 
     Raises:
-        CliError: ``incomplete_environment_auth`` when some but not all of the
-            three environment credential variables are set;
-            ``not_authenticated`` when no source supplies credentials;
-            ``invalid_workspace_id`` when ``MAMMOTH_WORKSPACE_ID`` is not a
+        CliError: ``not_authenticated`` when no source supplies credentials;
+            ``invalid_workspace_id`` when the resolved workspace id is not a
             positive integer; endpoint errors from :func:`resolve_base_url`.
     """
-    environment = env if env is not None else os.environ
-
     if explicit_login is not None:
         base_url = _endpoint(explicit_login.server_prefix)
         return ResolvedAuth(
@@ -181,29 +132,6 @@ def resolve_auth(
             ),
             base_url=base_url,
         )
-
-    # Environment authentication is all-or-nothing. Presence is decided by
-    # whether a variable is SET (``name in environment``), not by truthiness: an
-    # explicitly empty value (e.g. ``MAMMOTH_API_KEY=""``) is a deliberate
-    # attempt to use environment auth, so it must be rejected as incomplete
-    # rather than silently falling back to a saved profile (which could operate
-    # in a different workspace than the environment implied). If ANY of the
-    # three variables is set, all three must be set AND non-empty.
-    if any(name in environment for name in ENV_CREDENTIAL_VARS):
-        missing = [name for name in ENV_CREDENTIAL_VARS if not environment.get(name)]
-        if missing:
-            raise _incomplete_environment_auth_error(missing)
-        env_key = environment[ENV_API_KEY]
-        env_secret = environment[ENV_API_SECRET]
-        env_workspace = environment[ENV_WORKSPACE_ID]
-        try:
-            workspace_id = int(env_workspace)
-        except ValueError as exc:
-            raise _invalid_workspace_env_error(env_workspace) from exc
-        if workspace_id <= 0:
-            raise _invalid_workspace_env_error(env_workspace)
-        base_url = _endpoint(environment.get(ENV_SERVER_PREFIX))
-        return ResolvedAuth(env_key, env_secret, workspace_id, base_url)
 
     profile_name = invocation.profile or profiles.get_selected()
     record = profiles.get_profile(profile_name)
