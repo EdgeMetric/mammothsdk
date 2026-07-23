@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 
 sys.path.insert(0, ".")
@@ -10,14 +11,14 @@ sys.path.insert(0, ".")
 from mammoth import MammothClient
 
 client = MammothClient(
-    api_key="REDACTED_CREDENTIAL",
-    api_secret="REDACTED_CREDENTIAL",
-    workspace_id=304,
-    base_url="https://app.mammoth.io/api/v2",
+    api_key=os.environ["MAMMOTH_API_KEY"],
+    api_secret=os.environ["MAMMOTH_API_SECRET"],
+    workspace_id=int(os.environ.get("MAMMOTH_WORKSPACE_ID", "304")),
+    base_url=os.environ.get("MAMMOTH_BASE_URL", "https://app.mammoth.io/api/v2"),
     timeout=15,
     job_timeout=30,
 )
-client.set_project_id(1134)
+client.set_project_id(int(os.environ.get("MAMMOTH_PROJECT_ID", "1134")))
 
 passed = 0
 failed = 0
