@@ -69,3 +69,9 @@ bridge/
 
 # Transient STE text corpus
 mammoth-cli/build/
+
+# The CLI is poetry-managed for dev and installed via `uv tool install
+# mammoth-cli` from PyPI (uv resolves fresh) — nothing consumes a committed
+# uv.lock, and a stray one generated under a newer interpreter pins the wrong
+# requires-python. Keep it out of the tree.
+mammoth-cli/uv.lock

@@ -44,18 +44,51 @@ _CONSTRAINT_ARGUMENTS: list[tuple[str, str]] = [
     ("pattern", "pattern"),
 ]
 
+# Canonical anchored regex for a JSON-Schema ``format: uuid`` string. Applied as
+# a pydantic ``pattern`` so the field stays a plain ``str`` -- it validates the
+# shape while still serialising as a string in JSON (no ``UUID`` object).
+_UUID_PATTERN = (
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+)
+
+# JSON-Schema ``format`` -> anchored regex emitted as a pydantic ``pattern``.
+# Only formats that keep the field a plain ``str`` (guaranteed string JSON
+# serialisation) *and* are genuinely constraining are mapped here. Formats that
+# would need a non-``str`` type, or whose canonical regex is ambiguous, are left
+# unconstrained on purpose rather than fabricating a partial rule.
+_FORMAT_PATTERNS: dict[str, str] = {
+    "uuid": _UUID_PATTERN,
+}
+
 
 def _ref_name(schema: dict[str, Any]) -> str | None:
     ref = schema.get("$ref")
     return str(ref).rsplit("/", 1)[-1] if ref else None
 
 
-def _field_constraints(schema: dict[str, Any]) -> list[str]:
-    """Return ``Field(...)`` keyword fragments for every constraint on ``schema``."""
+def _field_constraints(schema: dict[str, Any], *, apply_format: bool = True) -> list[str]:
+    """Return ``Field(...)`` keyword fragments for every constraint on ``schema``.
+
+    When ``apply_format`` is set (the strict request side), a recognised string
+    ``format`` (e.g. ``uuid``) is translated into an anchored ``pattern``. The
+    explicit spec ``pattern`` always wins: if the field already carries one, the
+    format-derived pattern is skipped so there is never a conflicting double
+    ``pattern=``. The lenient response side passes ``apply_format=False`` so
+    forward-compatible/malformed server data still parses.
+    """
     fragments: list[str] = []
     for keyword_name, argument in _CONSTRAINT_ARGUMENTS:
         if keyword_name in schema:
             fragments.append(f"{argument}={schema[keyword_name]!r}")
+    if apply_format and "pattern" not in schema:
+        fmt = schema.get("format")
+        pattern = _FORMAT_PATTERNS.get(fmt) if isinstance(fmt, str) else None
+        schema_type = schema.get("type")
+        is_string = schema_type == "string" or (
+            isinstance(schema_type, list) and "string" in schema_type
+        )
+        if pattern is not None and is_string:
+            fragments.append(f"pattern={pattern!r}")
     return fragments
 
 
@@ -246,7 +279,7 @@ def build_models() -> str:
             default = "" if field in required else " = None"
             if default and "None" not in annotation.split(" | "):
                 annotation += " | None"
-            constraints = _field_constraints(field_schema)
+            constraints = _field_constraints(field_schema, apply_format=not response_context)
             if constraints:
                 annotation = f"Annotated[{annotation}, Field({', '.join(constraints)})]"
             block.append(f"    {field}: {annotation}{default}")

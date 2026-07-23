@@ -28,7 +28,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth schema get COMMAND_ID --help
-  agent_example: mammoth schema get example --output json --no-input
+  agent_example: mammoth schema get view.transform.bulk-replace --output json --no-input
   unit_tests:
   - UT-SCHEMA-GET
   contract_tests:

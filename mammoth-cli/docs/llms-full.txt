@@ -167,7 +167,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 ## capability
 
 - `mammoth capability get` [read/none] -> mammoth_cli.commands.capability.get
-  example: mammoth capability get example --output json --no-input
+  example: mammoth capability get AddTask --output json --no-input
 - `mammoth capability list` [read/none] -> mammoth_cli.commands.capability.list_
   example: mammoth capability list --output json --no-input
 
@@ -668,7 +668,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 ## schema
 
 - `mammoth schema get` [read/none] -> mammoth_cli.commands.schema.get
-  example: mammoth schema get example --output json --no-input
+  example: mammoth schema get view.transform.bulk-replace --output json --no-input
 - `mammoth schema list` [read/none] -> mammoth_cli.commands.schema.list_
   example: mammoth schema list --output json --no-input
 

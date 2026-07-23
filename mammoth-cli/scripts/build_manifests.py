@@ -182,7 +182,17 @@ def build_command_record(
     base = _model_base(command_id)
     positionals = positionals_for(command_id, sdk_symbol)
     required_metavars = "".join(f" {p.metavar}" for p in positionals if p.required)
-    positional_samples = "".join(f" {123 if p.type is int else 'example'}" for p in positionals)
+
+    # Honor an explicit ``example_value`` (a concrete, resolvable id for the
+    # discovery commands) so this fallback example -- used when a command has no
+    # resolvable SDK signature for ``runnable_example`` -- still runs to exit
+    # zero, matching ``schema._sample_positional_value``.
+    def _sample(spec: Any) -> str:
+        if spec.example_value is not None:
+            return str(spec.example_value)
+        return "123" if spec.type is int else "example"
+
+    positional_samples = "".join(f" {_sample(p)}" for p in positionals)
 
     record: dict[str, Any] = {
         "command_id": command_id,

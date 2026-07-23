@@ -35,10 +35,10 @@ jobs:
         # newest covers the support boundaries without a job per minor version.
         python-version: ["3.12", "3.14"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -46,7 +46,7 @@ jobs:
       # invoke (poetry build); the environment itself is provisioned with pip so
       # the unpublished in-repo SDK satisfies mammoth-io, never PyPI.
       - name: Install Poetry
-        uses: snok/install-poetry@v1
+        uses: snok/install-poetry@a783c322200f0519c7926aa6faa857c4e23e9263 # v1.4.2
         with:
           virtualenvs-create: false
 
@@ -83,7 +83,7 @@ jobs:
     name: installer (windows, pwsh)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Clean PowerShell uv bootstrap
         shell: pwsh
@@ -91,14 +91,36 @@ jobs:
           $env:PATH = (($env:PATH -split ';') | Where-Object { $_ -and -not (Test-Path -LiteralPath (Join-Path $_ 'uv.exe')) }) -join ';'
           if (Get-Command uv -ErrorAction SilentlyContinue) { throw 'failed to create a uv-free Windows PATH' }
           ./installers/mammoth-install.ps1 -BootstrapUvOnly -NoModifyPath -NonInteractive
-          $uv = Join-Path $env:USERPROFILE '.local\bin\uv.exe'
-          if (-not (Test-Path -LiteralPath $uv)) { throw 'installer did not bootstrap uv at the clean-user location' }
-          & $uv --version
+          # The installer bootstraps the pinned uv into a versioned,
+          # Mammoth-owned dir under LOCALAPPDATA (never the user's own uv). Find
+          # the uv.exe under that dir rather than a generic user location.
+          $owned = Join-Path $env:LOCALAPPDATA 'mammoth-cli'
+          $uv = Get-ChildItem -Path $owned -Recurse -Filter 'uv.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $uv) { throw "installer did not bootstrap uv into the Mammoth-owned dir under $owned" }
+          & $uv.FullName --version
 
       - name: Set up Python 3.13
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.13"
+
+      # Real install gate: run the SHIPPED PowerShell installer end to end with a
+      # --local build (mammoth-io + mammoth-cli wheels built from this checkout;
+      # third-party deps still resolve from PyPI), landing the shim in an
+      # explicit UV_TOOL_BIN_DIR (mirroring the macOS job), then smoke it. The
+      # installer bootstraps its own pinned uv, so no uv is required on PATH.
+      # Admin-free; network is needed only to reach PyPI (and to fetch uv).
+      - name: Real local install + smoke (pwsh)
+        shell: pwsh
+        env:
+          UV_TOOL_BIN_DIR: ${{ runner.temp }}\local-bin
+          UV_TOOL_DIR: ${{ runner.temp }}\local-tools
+        run: |
+          ./installers/mammoth-install.ps1 -Local -CliOnly -NoModifyPath -NonInteractive
+          $mammoth = Join-Path $env:UV_TOOL_BIN_DIR 'mammoth.exe'
+          if (-not (Test-Path -LiteralPath $mammoth)) { throw "mammoth not installed at $mammoth" }
+          & $mammoth --version
+          & $mammoth schema list --output json > $null
 
       - name: Install in-repo SDK, CLI, and dev tools
         # The dependency-name substitution below is bash; windows-latest
@@ -117,6 +139,51 @@ jobs:
       - name: Installer contract tests (pwsh)
         run: pytest tests/installer -q -p no:cacheprovider -m "not live"
 
+  installer-linux:
+    # Native Linux installation gate: the POSIX installer must be exercised end
+    # to end on Linux, not only macOS. Mirrors the installer-macos "Clean uv
+    # bootstrap + local install (smoke)" step exactly: strip every uv from PATH
+    # so the installer must download and pin its own uv (UV_PINNED_VERSION), then
+    # --local builds the mammoth-io + mammoth-cli wheels from this checkout and
+    # installs them (third-party deps still resolve from PyPI). The mammoth shim
+    # lands in the explicit UV_TOOL_BIN_DIR so the smoke checks find it
+    # deterministically.
+    name: installer (linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13"
+
+      - name: Clean uv bootstrap + local install (smoke)
+        env:
+          UV_TOOL_BIN_DIR: ${{ runner.temp }}/local-bin
+          UV_TOOL_DIR: ${{ runner.temp }}/local-tools
+        run: |
+          set -eu
+          # Build a uv-free PATH.
+          newpath=""
+          IFS=":"
+          for d in $PATH; do
+            [ -n "$d" ] || continue
+            [ -x "$d/uv" ] && continue
+            newpath="${newpath:+$newpath:}$d"
+          done
+          IFS=" "
+          export PATH="$newpath"
+          if command -v uv >/dev/null 2>&1; then
+            echo "::error::failed to create a uv-free PATH for the clean bootstrap"
+            exit 1
+          fi
+          ./installers/mammoth-install.sh --local --cli-only --no-modify-path
+          mammoth="$UV_TOOL_BIN_DIR/mammoth"
+          [ -x "$mammoth" ] || { echo "::error::mammoth not installed at $mammoth"; exit 1; }
+          "$mammoth" --version
+          "$mammoth" schema list --output json > /dev/null
+
   installer-macos:
     # Native macOS installation gate. The CLI advertises macOS support, so the
     # POSIX installer must be exercised on real macOS runners, not only Linux.
@@ -129,10 +196,10 @@ jobs:
       matrix:
         runner: [macos-latest, macos-13]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up Python 3.13
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.13"
 
@@ -199,10 +266,10 @@ jobs:
     env:
       VALE_VERSION: 3.15.1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up Python 3.14
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.14"
 

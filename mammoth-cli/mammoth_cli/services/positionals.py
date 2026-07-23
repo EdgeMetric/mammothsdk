@@ -74,6 +74,15 @@ class PositionalSpec:
     help: str
     falls_back_to_field: str | None = None
     fills_sdk_param: str | None = None
+    example_value: str | None = None
+    """A concrete, resolvable value for the generated runnable example.
+
+    Left ``None`` for ordinary locators, whose example placeholder is a generic
+    ``123``/``example`` (never validated at build time). Set only where the
+    generated example must actually *run* to exit zero -- the CLI-only discovery
+    commands (``schema get``/``capability get``), whose id is looked up against a
+    real, offline catalog, so the placeholder must be a genuine command/operation
+    id rather than the literal ``example`` (which resolves to nothing)."""
 
     @property
     def metavar(self) -> str:
@@ -229,6 +238,11 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Command id to fetch the schema for (e.g. view.transform.bulk-replace).",
+            # The generated example is executed offline against the real command
+            # catalog (see the discovery-example subprocess test), so its
+            # placeholder must be a genuine, resolvable command id -- the generic
+            # ``example`` would resolve to nothing and exit non-zero.
+            example_value="view.transform.bulk-replace",
         ),
     ),
     "capability.get": (
@@ -236,7 +250,9 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             name="operation_id",
             type=str,
             required=True,
-            help="Operation id to fetch the capability record for.",
+            help="Operation id to fetch the capability record for (e.g. AddTask).",
+            # A genuine, resolvable operation id, for the same reason as above.
+            example_value="AddTask",
         ),
     ),
     # ``folder delete`` takes a single folder id positionally; the handler wraps

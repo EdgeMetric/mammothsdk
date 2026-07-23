@@ -12,6 +12,12 @@ Two review blockers are guarded here:
 * **Blocker B** — ``DashboardAuth`` is reachable as both a request field and a
   response field. The request variant must stay strict (``extra="forbid"``)
   while a separate response variant must tolerate additive server fields.
+* **Blocker #4** — the generator must also honour the JSON-Schema ``format``
+  keyword. Every string field with ``format: uuid`` in a reachable *request*
+  schema must carry the anchored UUID ``pattern`` in the generated strict
+  model (so a malformed UUID is rejected), while the field still serialises as
+  a plain ``str``. Covered by a spec-derived audit plus explicit
+  valid/malformed value tests on ``WidgetDataParams``.
 
 The constraint inventory and baseline payloads are derived from the pinned
 OpenAPI snapshot (never the network), mirroring how the other contract tests
@@ -32,6 +38,8 @@ from pydantic import BaseModel, ValidationError
 
 CLI_ROOT = Path(__file__).resolve().parent.parent.parent
 SCRIPTS = CLI_ROOT / "scripts"
+
+VALID_UUID = "550e8400-e29b-41d4-a716-446655440000"
 
 CONSTRAINT_KEYS = {
     "minimum",
@@ -102,6 +110,8 @@ def _valid_value(schema: dict[str, Any], comps: dict[str, Any]) -> Any:
         return schema["enum"][0]
     kind = _scalar_type(schema)
     if kind == "string":
+        if schema.get("format") == "uuid" and "pattern" not in schema:
+            return VALID_UUID
         length = schema.get("minLength", 1) or 1
         if "maxLength" in schema:
             length = min(length, schema["maxLength"])
@@ -246,7 +256,9 @@ def test_named_specs_accept_valid_boundary_payloads() -> None:
     """The valid boundary of each named spec must still validate."""
     models.GenerateDashboardV3Spec.model_validate({"params": {"dataview_id": 1, "intent": "x"}})
     models.AskSpec.model_validate({"params": {"question": "x"}})
-    models.BulkWidgetDataSpec.model_validate({"params": {"widgets": [{"widget_id": "w1"}]}})
+    models.BulkWidgetDataSpec.model_validate(
+        {"params": {"widgets": [{"widget_id": VALID_UUID}]}}
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -268,6 +280,69 @@ def test_request_field_boundaries(
     else:
         with pytest.raises(ValidationError):
             model.model_validate(payload)
+
+
+# --------------------------------------------------------------------------- #
+# Blocker #4: JSON-Schema ``format: uuid`` -> anchored pattern on strict models
+# --------------------------------------------------------------------------- #
+
+
+def _uuid_request_fields() -> list[Any]:
+    """Yield ``(model_name, field)`` for every ``format: uuid`` string field.
+
+    Enumerated from the pinned OpenAPI over the reachable *request* closure,
+    unwrapping ``oneOf``/``anyOf`` exactly as the generator does. Only fields
+    without an explicit ``pattern`` are asserted to carry the format-derived
+    UUID pattern (an explicit spec ``pattern`` would win instead).
+    """
+    gen = _generator()
+    doc = _document()
+    comps = doc["components"]["schemas"]
+    request_reachable = gen._closure(doc, gen._request_seeds(doc))
+    cases: list[Any] = []
+    for name in sorted(request_reachable):
+        props = comps[name].get("properties") or {}
+        for field, raw in props.items():
+            if not isinstance(raw, dict):
+                continue
+            fs = _pick_variant(raw)
+            if fs.get("format") != "uuid":
+                continue
+            if fs.get("type") != "string" or "pattern" in fs:
+                continue
+            cases.append(pytest.param(name, field, id=f"{name}.{field}"))
+    return cases
+
+
+UUID_REQUEST_FIELDS = _uuid_request_fields()
+
+
+def test_uuid_request_fields_present() -> None:
+    """The audit must actually enumerate at least one ``format: uuid`` field."""
+    assert UUID_REQUEST_FIELDS, "expected at least one format:uuid request field"
+
+
+@pytest.mark.parametrize(("model_name", "field"), UUID_REQUEST_FIELDS)
+def test_uuid_format_emits_anchored_pattern(model_name: str, field: str) -> None:
+    """Every ``format: uuid`` request field carries the anchored UUID pattern."""
+    model = getattr(models, model_name)
+    prop = model.model_json_schema()["properties"][field]
+    assert prop.get("pattern") == _generator()._UUID_PATTERN
+    # The field must remain a plain string type (no UUID object / $ref coercion).
+    assert prop.get("type") == "string"
+
+
+def test_widget_data_params_rejects_malformed_uuid() -> None:
+    with pytest.raises(ValidationError):
+        models.WidgetDataParams.model_validate({"widget_id": "not-a-uuid"})
+
+
+def test_widget_data_params_accepts_valid_uuid_and_dumps_as_string() -> None:
+    valid = "550e8400-e29b-41d4-a716-446655440000"
+    obj = models.WidgetDataParams.model_validate({"widget_id": valid})
+    dumped = obj.model_dump(mode="json")
+    assert dumped["widget_id"] == valid
+    assert isinstance(dumped["widget_id"], str)
 
 
 # --------------------------------------------------------------------------- #

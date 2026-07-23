@@ -112,11 +112,22 @@ class _EnvelopeGroup(TyperGroup):
         raise SystemExit(result if isinstance(result, int) else 0)
 
     def _render_usage_error(self, error: Any, argv: Sequence[str] | None) -> None:
-        """Emit a usage error as the JSON envelope (machine) or Click prose (human)."""
+        """Emit a usage error as the JSON envelope (machine) or Click prose (human).
+
+        A *missing required argument* is reported with the stable
+        ``missing_argument`` code that the handler-level ``_require_*`` helpers
+        also raise, so the machine error contract is identical whether a required
+        positional is now enforced natively by Typer (a Click-layer
+        ``MissingParameter``, the common case since positionals are declared with
+        their real requiredness) or by a handler that reads it from
+        ``extra_args``. Every other usage error (unknown command, bad option or
+        argument value, an id read as a subcommand) stays ``usage_error``.
+        """
         if _output_mode_from_argv(argv) in MACHINE_OUTPUTS:
+            missing = isinstance(error, _typer_click_exceptions.MissingParameter)
             executor.emit_error(
                 CliError(
-                    code="usage_error",
+                    code="missing_argument" if missing else "usage_error",
                     message=error.format_message(),
                     exit_status=EXIT_USAGE,
                     hint="Check the command schema with 'mammoth schema get'.",
@@ -261,18 +272,30 @@ _SHARED_OPTION_PARAMS = _shared_option_params()
 def _positional_param(spec: PositionalSpec) -> inspect.Parameter:
     """Build a Typer ``Argument`` parameter for one positional spec.
 
-    The argument is declared optional at the Typer layer (default ``None``)
-    regardless of ``spec.required`` so a missing or malformed value flows to the
-    handler, which raises the stable ``CliError`` envelope. This preserves the
-    machine error contract (a missing required positional still returns the JSON
-    error envelope with the same code and exit status) while surfacing the
-    argument in ``--help`` and routing the parsed value into ``Invocation``.
+    The argument is declared with the spec's native scalar type (``int`` or
+    ``str``) and its native requiredness, so ``--help`` shows the truth: a
+    required id renders as ``DATASET_ID`` / ``<int>`` (not an optional
+    ``[DATASET_ID]`` / ``<str>``) and Typer enforces both presence and type at
+    parse time. A missing or ill-typed *required* positional raises a Click-layer
+    usage error that :class:`_EnvelopeGroup` renders as the stable JSON envelope
+    under a machine ``--output`` (``missing_argument`` for an absent one,
+    ``usage_error`` for a bad value), preserving the machine error contract. An
+    *optional* positional keeps a ``None`` default and an ``Optional`` annotation;
+    the handler fills it from ``--input`` or resolved context when omitted.
     """
+    if spec.required:
+        return inspect.Parameter(
+            spec.name,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            annotation=Annotated[spec.type, typer.Argument(help=spec.help, metavar=spec.metavar)],
+        )
     return inspect.Parameter(
         spec.name,
         inspect.Parameter.POSITIONAL_OR_KEYWORD,
         default=None,
-        annotation=Annotated[str | None, typer.Argument(help=spec.help, metavar=spec.metavar)],
+        annotation=Annotated[
+            spec.type | None, typer.Argument(help=spec.help, metavar=spec.metavar)
+        ],
     )
 
 

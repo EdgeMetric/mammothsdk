@@ -107,6 +107,43 @@ def test_existing_uv_at_pinned_version_is_used_directly(tmp_path: Path) -> None:
 
 @pytest.mark.skipif(_SH is None, reason="POSIX sh not available")
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX installer test")
+def test_existing_prerelease_uv_is_refused(tmp_path: Path) -> None:
+    """A prerelease/suffixed uv must NOT satisfy the pin, even at the pin number.
+
+    ``0.11.30rc1`` has the same numeric fields as the pinned ``0.11.30`` but is
+    not the pinned final release, so the version gate refuses it and the
+    installer bootstraps its own pinned uv (download stubbed to fail here, so it
+    exits nonzero) rather than building with the prerelease. See
+    test_installer_uv_prerelease.py for the full matrix.
+    """
+    assert _SH is not None
+    stub_dir = tmp_path / "bin"
+    home = tmp_path / "home"
+    home.mkdir(parents=True, exist_ok=True)
+    log_file = tmp_path / "uv.log"
+    _write_uv_stub(stub_dir, log_file, home / ".local" / "bin", f"{_pinned_version()}rc1")
+    _write_failing_downloader(stub_dir, "curl")
+    _write_failing_downloader(stub_dir, "wget")
+
+    result = subprocess.run(
+        [_SH, str(_INSTALLER_SH), "--local", "--cli-only", "--no-modify-path"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env={"PATH": f"{stub_dir}:/usr/bin:/bin", "HOME": str(home)},
+    )
+
+    assert result.returncode != 0
+    assert "installing pinned uv" in result.stderr
+    assert "could not download uv" in result.stderr
+    log = log_file.read_text(encoding="utf-8") if log_file.exists() else ""
+    assert not [ln for ln in log.splitlines() if ln.startswith("build ")], (
+        "installer must not build with a prerelease uv"
+    )
+
+
+@pytest.mark.skipif(_SH is None, reason="POSIX sh not available")
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX installer test")
 def test_existing_uv_older_than_pinned_is_refused(tmp_path: Path) -> None:
     """An older uv must NOT be trusted: the installer bootstraps the pinned uv.
 

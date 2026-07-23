@@ -592,12 +592,12 @@ Total commands: 504.
 
 **Arguments**
 
-- `OPERATION_ID` (str, required) — Operation id to fetch the capability record for.
+- `OPERATION_ID` (str, required) — Operation id to fetch the capability record for (e.g. AddTask).
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.capability.get`
-- Agent example: `mammoth capability get example --output json --no-input`
+- Agent example: `mammoth capability get AddTask --output json --no-input`
 
 ### `mammoth capability list`
 
@@ -2811,7 +2811,7 @@ Total commands: 504.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.schema.get`
-- Agent example: `mammoth schema get example --output json --no-input`
+- Agent example: `mammoth schema get view.transform.bulk-replace --output json --no-input`
 
 ### `mammoth schema list`
 

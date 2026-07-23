@@ -798,7 +798,12 @@ class VisibilitySpec(BaseModel):
 
 class WidgetDataParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    widget_id: str
+    widget_id: Annotated[
+        str,
+        Field(
+            pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        ),
+    ]
     global_filters: dict[str, Any] | None = None
     drilldown_filters: dict[str, Any] | None = None
 

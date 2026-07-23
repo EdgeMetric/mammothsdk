@@ -1,41 +1,114 @@
-name: Publish to PyPI
+name: MCP Release
 
+# Publishes the mammoth-mcp server to PyPI on its own tag, and NOTHING else.
+#
+# Single-publication-path design: each of the three distributions in this
+# monorepo is published by EXACTLY ONE tag-triggered workflow, and none is
+# triggered by a GitHub `release: published` event.
+#   - mammoth-io  -> sdk-release.yml   (tag: sdk-v*)
+#   - mammoth-cli -> cli-release.yml   (tag: cli-v*, also cuts a GitHub Release)
+#   - mammoth-mcp -> publish.yml       (tag: mcp-v*)  <-- this file
+#
+# This file used to trigger on `release: published` and publish BOTH mammoth-io
+# and mammoth-mcp with MUTABLE action tags. Because cli-release.yml creates a
+# GitHub Release, that gave the SDK a second, unpinned publication path and
+# re-published MCP on every CLI release. It is now a tag-triggered, MCP-only,
+# SHA-pinned mirror of sdk-release.yml. It runs ONLY when an authorized
+# maintainer pushes an `mcp-vX.Y.Z` tag. Do not push an `mcp-v*` tag without
+# separate release authorization. The invariant is enforced by
+# mammoth-cli/tests/contract/test_single_publication_path.py.
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "mcp-v*"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: mammoth-mcp
 
 jobs:
-  publish:
+  build:
+    name: build and verify
     runs-on: ubuntu-latest
-    environment: pypi
     permissions:
-      id-token: write
-
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
 
       - name: Install Poetry
-        uses: snok/install-poetry@v1
+        uses: snok/install-poetry@a783c322200f0519c7926aa6faa857c4e23e9263 # v1.4.2
         with:
           virtualenvs-create: true
           virtualenvs-in-project: true
 
-      - name: Build mammoth-io
-        run: poetry build
+      - name: Derive version from tag
+        id: version
+        working-directory: .
+        run: |
+          set -eu
+          tag="${GITHUB_REF_NAME}"
+          # The tag must be mcp-v<SemVer>. Require the exact prefix, then validate
+          # the remainder as STRICT SemVer: MAJOR.MINOR.PATCH with optional
+          # -prerelease and +build metadata, fully anchored. The old glob
+          # `[0-9]*.[0-9]*.[0-9]*` accepted non-SemVer such as `1.2.3.4` or
+          # `1.2.3abc`; this regex does not, so a malformed tag fails fast before
+          # any build or publish step runs. (Mirrors sdk-release.yml.)
+          case "$tag" in
+            mcp-v*) : ;;
+            *) echo "::error::tag '$tag' is not mcp-vX.Y.Z"; exit 1 ;;
+          esac
+          version="${tag#mcp-v}"
+          semver='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
+          if ! printf '%s' "$version" | grep -Eq "$semver"; then
+            echo "::error::tag '$tag' is not strict SemVer; version '$version' must be MAJOR.MINOR.PATCH[-prerelease][+build]"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Publish mammoth-io to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Verify pyproject version matches tag
+        run: |
+          set -eu
+          declared="$(poetry version --short)"
+          if [ "$declared" != "${{ steps.version.outputs.version }}" ]; then
+            echo "::error::pyproject version '$declared' != tag version '${{ steps.version.outputs.version }}'"
+            exit 1
+          fi
 
-      - name: Build mammoth-mcp
-        working-directory: mammoth-mcp
-        run: poetry build
+      - name: Build distribution
+        env:
+          SOURCE_DATE_EPOCH: "1700000000"
+        run: poetry build --output dist
 
-      - name: Publish mammoth-mcp to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Upload distribution artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          packages-dir: mammoth-mcp/dist/
+          name: mcp-dist
+          path: mammoth-mcp/dist/
+          if-no-files-found: error
+
+  publish-pypi:
+    name: publish mammoth-mcp to PyPI (trusted publishing)
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Download distribution artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: mcp-dist
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247 # v1.14.1
+        with:
+          packages-dir: dist/

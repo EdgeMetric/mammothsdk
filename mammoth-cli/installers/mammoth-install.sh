@@ -93,18 +93,30 @@ detect_platform() {
 # --- uv acquisition ---------------------------------------------------------
 
 # Is dotted version $1 >= dotted version $2? Pure-POSIX, field-by-field integer
-# comparison. Tolerates differing field counts (missing fields count as 0) and
-# non-digit suffixes on a field (e.g. a pre-release "30rc1" compares as 30).
+# comparison. $2 (the pinned version) is always a clean dotted-digit string.
+#
+# POLICY: a $1 that is NOT purely dotted digits — i.e. it carries any
+# prerelease or build suffix such as "0.11.30rc1", "0.11.30-alpha", or
+# "0.11.30+build" — is treated as NOT satisfying the pin, even when its numeric
+# fields would otherwise compare >=. A prerelease/suffixed build is not the
+# pinned final release and may behave differently, so the caller must bootstrap
+# the pinned uv rather than trust it. (This reverses the earlier behavior, which
+# stripped non-digits per field and so accepted "0.11.30rc1" as equal to
+# "0.11.30".) Missing fields still count as 0, so differing field counts compare
+# correctly.
 uv_version_ge() {
     _a="$1"
     _b="$2"
+    # Reject any version that is not purely dotted digits (a prerelease or build
+    # suffix makes it fail the pin regardless of its numeric fields).
+    case "$_a" in
+        ''|*[!0-9.]*) return 1 ;;
+    esac
     while [ -n "$_a" ] || [ -n "$_b" ]; do
         _af="${_a%%.*}"
         _bf="${_b%%.*}"
-        _an="$(printf '%s' "$_af" | tr -cd '0-9')"
-        [ -n "$_an" ] || _an=0
-        _bn="$(printf '%s' "$_bf" | tr -cd '0-9')"
-        [ -n "$_bn" ] || _bn=0
+        _an="${_af:-0}"
+        _bn="${_bf:-0}"
         if [ "$_an" -gt "$_bn" ]; then return 0; fi
         if [ "$_an" -lt "$_bn" ]; then return 1; fi
         case "$_a" in *.*) _a="${_a#*.}" ;; *) _a="" ;; esac

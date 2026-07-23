@@ -81,7 +81,14 @@ def _positionals(command_id: str) -> list[dict[str, Any]]:
 
 
 def _sample_positional_value(spec: PositionalSpec) -> Any:
-    """A representative value for one positional, for the runnable example."""
+    """A representative value for one positional, for the runnable example.
+
+    Prefers the spec's ``example_value`` when set (a concrete, resolvable id for
+    the discovery commands whose example is executed offline), falling back to a
+    generic ``123``/``example`` placeholder that is never validated at build time.
+    """
+    if spec.example_value is not None:
+        return spec.example_value
     return 123 if spec.type is int else "example"
 
 

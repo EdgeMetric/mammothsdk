@@ -126,7 +126,11 @@ def test_powershell_clean_bootstrap_locates_uv_without_path_mutation() -> None:
     ps1 = _INSTALLER.with_name("mammoth-install.ps1").read_text(encoding="utf-8")
     bootstrap = ps1.split("function Install-Cli", 1)[0]
     assert '$env:UV_NO_MODIFY_PATH = "1"' in bootstrap
-    assert 'Join-Path $env:USERPROFILE ".local\\bin\\uv.exe"' in bootstrap
+    # The pinned uv is bootstrapped into a versioned, Mammoth-owned dir under
+    # LOCALAPPDATA (mirroring the sh XDG data dir) — never the user's own uv
+    # location. It is then located under that dir, not via PATH.
+    assert 'Join-Path $env:LOCALAPPDATA "mammoth-cli\\uv-$UvPinnedVersion"' in bootstrap
+    assert '$env:UV_UNMANAGED_INSTALL = $installDir' in bootstrap
     assert "Test-Path -LiteralPath $candidate" in bootstrap
     # A fresh install cannot be rediscovered with Get-Command because PATH was
     # intentionally left untouched.
