@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from mammoth_cli.output.policy import OUTPUT_AUTO, resolve_output
 from mammoth_cli.runtime.input_loader import load_input_document
 from mammoth_cli.runtime.strict import validate_input_fields
 
@@ -36,6 +37,22 @@ class Invocation:
     input_format: str | None = None
     positionals: dict[str, Any] = field(default_factory=dict)
     extra_args: list[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        """Resolve the ``auto`` output alias to a concrete mode.
+
+        Resolving here — the single point every invocation passes through —
+        means confirmation prompts, the executor, and the renderer all see the
+        concrete mode, so a piped ``auto`` run gets machine JSON everywhere
+        (including its error envelopes) and never a half-human, half-machine
+        mix.
+        """
+        if self.output == OUTPUT_AUTO:
+            import sys
+
+            object.__setattr__(
+                self, "output", resolve_output(self.output, is_tty=sys.stdout.isatty())
+            )
 
     def positional(self, name: str) -> Any:
         """Return a resolved positional's value, or None when it was omitted.

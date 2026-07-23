@@ -29,7 +29,14 @@ from mammoth_cli.commands import BESPOKE
 from mammoth_cli.commands.registry import HANDLERS
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError, not_implemented_error
 from mammoth_cli.manifest.loader import command_by_id, load_commands
-from mammoth_cli.output.policy import COLOR_MODES, MACHINE_OUTPUTS, VALID_OUTPUTS
+from mammoth_cli.output.policy import (
+    COLOR_MODES,
+    MACHINE_OUTPUTS,
+    OUTPUT_AUTO,
+    SELECTABLE_OUTPUTS,
+    VALID_OUTPUTS,
+    resolve_output,
+)
 from mammoth_cli.runtime import executor, validate
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.strict import validate_extra_args
@@ -52,10 +59,12 @@ def _output_mode_from_argv(argv: Sequence[str] | None) -> str:
     Used when a Click ``UsageError`` is raised *before* the per-command option
     is parsed (an unknown command, an unexpected argument, a bad option value),
     so the top-level error renderer can still honor the machine-output contract.
-    Defaults to the same ``"table"`` default the ``--output`` option declares.
+    Defaults to the same ``auto`` default the ``--output`` option declares, then
+    resolves it against whether stdout is a terminal — so a piped invocation
+    gets the machine envelope even for an error raised before option parsing.
     """
     tokens = list(argv) if argv is not None else sys.argv[1:]
-    mode = "table"
+    mode = OUTPUT_AUTO
     index = 0
     while index < len(tokens):
         token = tokens[index]
@@ -69,7 +78,7 @@ def _output_mode_from_argv(argv: Sequence[str] | None) -> str:
         elif token.startswith("-o") and len(token) > 2:
             mode = token[2:]
         index += 1
-    return mode
+    return resolve_output(mode, is_tty=sys.stdout.isatty())
 
 
 class _EnvelopeGroup(TyperGroup):
@@ -160,11 +169,14 @@ def _shared_option_params() -> list[inspect.Parameter]:
     return [
         opt(
             "output",
-            "table",
+            OUTPUT_AUTO,
             Annotated[
                 str,
                 typer.Option(
-                    "--output", "-o", help="Output format.", metavar="|".join(OUTPUT_MODES)
+                    "--output",
+                    "-o",
+                    help="Output format. 'auto' picks a table on a terminal, JSON when piped.",
+                    metavar="|".join(SELECTABLE_OUTPUTS),
                 ),
             ],
         ),

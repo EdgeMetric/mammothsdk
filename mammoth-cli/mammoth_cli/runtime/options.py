@@ -15,7 +15,7 @@ from typing import cast
 
 import typer
 
-from mammoth_cli.output.policy import COLOR_MODES, VALID_OUTPUTS
+from mammoth_cli.output.policy import COLOR_MODES, OUTPUT_AUTO, SELECTABLE_OUTPUTS, VALID_OUTPUTS
 from mammoth_cli.runtime.invocation import Invocation
 
 #: Alias of the canonical output-mode tuple, kept for callers that import it
@@ -24,11 +24,19 @@ OUTPUT_MODES = VALID_OUTPUTS
 
 
 def output_option() -> str:
-    """Return the shared ``--output`` option definition."""
+    """Return the shared ``--output`` option definition.
+
+    Defaults to ``auto``: a readable table on a terminal, machine JSON when
+    stdout is piped or redirected, so neither a human nor an agent needs a flag.
+    """
     return cast(
         str,
         typer.Option(
-            "table", "--output", "-o", help="Output format.", metavar="|".join(OUTPUT_MODES)
+            OUTPUT_AUTO,
+            "--output",
+            "-o",
+            help="Output format. 'auto' picks a table on a terminal, JSON when piped.",
+            metavar="|".join(SELECTABLE_OUTPUTS),
         ),
     )
 

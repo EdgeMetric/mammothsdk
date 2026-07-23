@@ -16,8 +16,36 @@ MACHINE_OUTPUTS = {"json", "ndjson"}
 #: in ``--output`` help and error hints.
 VALID_OUTPUTS = ("table", "json", "yaml", "ndjson", "plain")
 
+#: The default ``--output`` value: resolves to a human table on a terminal and
+#: machine JSON when stdout is piped or redirected.
+OUTPUT_AUTO = "auto"
+
+#: Every value a caller may pass to ``--output``: the renderable modes plus the
+#: ``auto`` alias. The tuple order is the order shown in help and error hints.
+SELECTABLE_OUTPUTS = (OUTPUT_AUTO, *VALID_OUTPUTS)
+
 #: Every ``--color`` policy value. The tuple order is the order shown in help.
 COLOR_MODES = ("auto", "always", "never")
+
+
+def resolve_output(output: str, *, is_tty: bool) -> str:
+    """Resolve the ``auto`` output alias to a concrete renderable mode.
+
+    ``auto`` renders a human table on a terminal and machine JSON when stdout is
+    piped or redirected, so an interactive user gets a readable table while an
+    agent or pipeline gets parseable JSON without passing any flag. A concrete
+    mode is returned unchanged.
+
+    Args:
+        output: The requested output value, possibly ``auto``.
+        is_tty: Whether the output stream is an interactive terminal.
+
+    Returns:
+        A concrete output mode drawn from :data:`VALID_OUTPUTS`.
+    """
+    if output == OUTPUT_AUTO:
+        return "table" if is_tty else "json"
+    return output
 
 
 @dataclass(frozen=True)
