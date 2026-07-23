@@ -59,3 +59,14 @@ ruff check mammoth_cli scripts tests
 black mammoth_cli scripts tests
 mypy mammoth_cli
 ```
+
+## Releasing
+
+The CLI and its `mammoth-io` SDK dependency publish from independent,
+tag-triggered workflows (`cli-v*` / `sdk-v*`); the SDK must publish first. The
+full process — tag-triggered CI (Trusted Publishing + Sigstore-signed installer
+assets), one-time PyPI setup, the local fallback, and the dependency lock — is
+documented in [../RELEASING.md](../RELEASING.md).
+
+`poetry.lock` pins the resolved dependency tree; CI runs `poetry check --lock`
+to keep it consistent with `pyproject.toml`.

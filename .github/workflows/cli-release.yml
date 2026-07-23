@@ -109,8 +109,11 @@ jobs:
             exit 1
           fi
 
-      - name: Install dependencies
-        run: poetry install --no-interaction
+      - name: Verify poetry.lock is consistent with pyproject
+        run: poetry check --lock
+
+      - name: Install dependencies (locked)
+        run: poetry install --sync --no-interaction
 
       # Validate the release against the in-repo SDK being shipped in this same
       # repository state. The published wheel declares the PyPI dependency.
