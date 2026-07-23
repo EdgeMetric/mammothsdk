@@ -71,11 +71,13 @@ jobs:
       - name: Mypy (strict)
         run: mypy mammoth_cli/
 
-      - name: Unit, contract, and installer tests
-        run: pytest tests/unit tests/contract tests/installer -q -p no:cacheprovider -m "not live"
-
-      - name: Packaging tests (build + wheel/sdist + reproducibility)
-        run: pytest tests/packaging -q -p no:cacheprovider
+      # Run the WHOLE non-live suite in one invocation over the entire tests/
+      # tree. Naming a subset of directories silently drops the strongest
+      # suites (tests/realcode, tests/subprocess); ``live`` is deselected by
+      # marker, never by omitting a directory. The
+      # tests/contract/test_ci_runs_all_suites.py guard enforces this.
+      - name: Test suite (unit, contract, installer, packaging, realcode, subprocess)
+        run: pytest tests -m "not live" -q -p no:cacheprovider
 
   installer-windows:
     name: installer (windows, pwsh)
@@ -114,6 +116,82 @@ jobs:
       # guarded ps1 test runs here. No network or admin required.
       - name: Installer contract tests (pwsh)
         run: pytest tests/installer -q -p no:cacheprovider -m "not live"
+
+  installer-macos:
+    # Native macOS installation gate. The CLI advertises macOS support, so the
+    # POSIX installer must be exercised on real macOS runners, not only Linux.
+    # macos-latest is Apple Silicon (arm64); macos-13 is the last Intel
+    # (x86_64) image — both native macOS architectures are covered.
+    name: installer (macos, ${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-latest, macos-13]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # Local install with a CLEAN uv bootstrap: strip every uv from PATH so
+      # the POSIX installer must download and pin its own uv
+      # (UV_PINNED_VERSION) rather than reuse a preinstalled one, then --local
+      # builds the mammoth-io + mammoth-cli wheels from this checkout and
+      # installs them (third-party deps still resolve from PyPI). The mammoth
+      # shim lands in the explicit UV_TOOL_BIN_DIR so the smoke checks can find
+      # it deterministically.
+      - name: Clean uv bootstrap + local install (smoke)
+        env:
+          UV_TOOL_BIN_DIR: ${{ runner.temp }}/local-bin
+          UV_TOOL_DIR: ${{ runner.temp }}/local-tools
+        run: |
+          set -eu
+          # Build a uv-free PATH.
+          newpath=""
+          IFS=":"
+          for d in $PATH; do
+            [ -n "$d" ] || continue
+            [ -x "$d/uv" ] && continue
+            newpath="${newpath:+$newpath:}$d"
+          done
+          IFS=" "
+          export PATH="$newpath"
+          if command -v uv >/dev/null 2>&1; then
+            echo "::error::failed to create a uv-free PATH for the clean bootstrap"
+            exit 1
+          fi
+          ./installers/mammoth-install.sh --local --cli-only --no-modify-path
+          mammoth="$UV_TOOL_BIN_DIR/mammoth"
+          [ -x "$mammoth" ] || { echo "::error::mammoth not installed at $mammoth"; exit 1; }
+          "$mammoth" --version
+          "$mammoth" schema list --output json > /dev/null
+
+      # Release-style install: assemble the installer exactly as
+      # cli-release.yml does (substituting the embedded __CLI_VERSION__), then
+      # run that shipped script. It installs --local because the mammoth-io
+      # 0.6.0 / mammoth-cli release is not on PyPI yet (see the R12 gate in
+      # cli-release.yml); the PyPI path activates once those are published.
+      - name: Release-style install (smoke)
+        env:
+          UV_TOOL_BIN_DIR: ${{ runner.temp }}/release-bin
+          UV_TOOL_DIR: ${{ runner.temp }}/release-tools
+        run: |
+          set -eu
+          staging="${{ runner.temp }}/release-assets"
+          mkdir -p "$staging"
+          version="$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['tool']['poetry']['version'])")"
+          sed "s/__CLI_VERSION__/${version}/g" installers/mammoth-install.sh > "$staging/mammoth-install.sh"
+          chmod +x "$staging/mammoth-install.sh"
+          # The assembled script runs from a staging dir, so point --local at
+          # this CLI checkout explicitly ($PWD is the mammoth-cli directory).
+          "$staging/mammoth-install.sh" --local="$PWD" --cli-only --no-modify-path
+          mammoth="$UV_TOOL_BIN_DIR/mammoth"
+          [ -x "$mammoth" ] || { echo "::error::mammoth not installed at $mammoth"; exit 1; }
+          "$mammoth" --version
+          "$mammoth" schema list --output json > /dev/null
 
   docs:
     name: docs (generation, STE, Vale, links)

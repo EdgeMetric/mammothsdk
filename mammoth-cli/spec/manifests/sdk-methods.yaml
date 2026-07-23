@@ -3241,7 +3241,7 @@ methods:
   signature: 'get_file_settings(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id:
     ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
-  canonical_command: dataset.file-settings
+  canonical_command: dataset.file-settings.get
   alias_of: null
   no_command_reason: null
   mutation_class: read

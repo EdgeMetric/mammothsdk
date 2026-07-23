@@ -53,7 +53,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreateConnectorProfile
-  positionals: []
+  positionals:
+  - name: name
+    type: str
+    required: false
+    metavar: NAME
+    falls_back_to_field: name
+    help: Name of the new connector profile; or pass it via the 'name' input field.
   options: []
   sdk_symbol: mammoth.api.support.SupportAPI.connector_profile_create
   sdk_conversion: Call mammoth.api.support.SupportAPI.connector_profile_create with validated request
@@ -71,8 +77,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support connector-profile create --help
-  agent_example: 'mammoth support connector-profile create --input ''{"name": "example"}'' --output json
-    --no-input'
+  agent_example: mammoth support connector-profile create example --output json --no-input
   unit_tests:
   - UT-SUPPORT-CONNECTOR-PROFILE-CREATE
   contract_tests:
@@ -205,7 +210,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreateConnector
-  positionals: []
+  positionals:
+  - name: name
+    type: str
+    required: false
+    metavar: NAME
+    falls_back_to_field: name
+    help: Name of the new connector; or pass it via the 'name' input field.
   options: []
   sdk_symbol: mammoth.api.support.SupportAPI.connector_create
   sdk_conversion: Call mammoth.api.support.SupportAPI.connector_create with validated request fields.
@@ -222,7 +233,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support connector create --help
-  agent_example: 'mammoth support connector create --input ''{"name": "example"}'' --output json --no-input'
+  agent_example: mammoth support connector create example --output json --no-input
   unit_tests:
   - UT-SUPPORT-CONNECTOR-CREATE
   contract_tests:
@@ -400,7 +411,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreateFeatureProfile
-  positionals: []
+  positionals:
+  - name: name
+    type: str
+    required: false
+    metavar: NAME
+    falls_back_to_field: name
+    help: Name of the new feature profile; or pass it via the 'name' input field.
   options: []
   sdk_symbol: mammoth.api.support.SupportAPI.feature_profile_create
   sdk_conversion: Call mammoth.api.support.SupportAPI.feature_profile_create with validated request fields.
@@ -417,8 +434,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support feature-profile create --help
-  agent_example: 'mammoth support feature-profile create --input ''{"name": "example"}'' --output json
-    --no-input'
+  agent_example: mammoth support feature-profile create example --output json --no-input
   unit_tests:
   - UT-SUPPORT-FEATURE-PROFILE-CREATE
   contract_tests:
@@ -549,7 +565,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreateFeature
-  positionals: []
+  positionals:
+  - name: name
+    type: str
+    required: false
+    metavar: NAME
+    falls_back_to_field: name
+    help: Name of the new feature; or pass it via the 'name' input field.
   options: []
   sdk_symbol: mammoth.api.support.SupportAPI.feature_create
   sdk_conversion: Call mammoth.api.support.SupportAPI.feature_create with validated request fields.
@@ -566,7 +588,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support feature create --help
-  agent_example: 'mammoth support feature create --input ''{"name": "example"}'' --output json --no-input'
+  agent_example: mammoth support feature create example --output json --no-input
   unit_tests:
   - UT-SUPPORT-FEATURE-CREATE
   contract_tests:
@@ -817,7 +839,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreatePlan
-  positionals: []
+  positionals:
+  - name: name
+    type: str
+    required: false
+    metavar: NAME
+    falls_back_to_field: name
+    help: Name of the new plan; or pass it via the 'name' input field.
   options: []
   sdk_symbol: mammoth.api.support.SupportAPI.plan_create
   sdk_conversion: Call mammoth.api.support.SupportAPI.plan_create with validated request fields.
@@ -834,7 +862,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan create --help
-  agent_example: 'mammoth support plan create --input ''{"name": "example", "monthly_price": 1.0, "is_self_serve":
+  agent_example: 'mammoth support plan create example --input ''{"monthly_price": 1.0, "is_self_serve":
     true}'' --output json --no-input'
   unit_tests:
   - UT-SUPPORT-PLAN-CREATE
@@ -1248,7 +1276,13 @@ commands:
   alias_of: null
   operation_ids:
   - RegisterUser
-  positionals: []
+  positionals:
+  - name: email
+    type: str
+    required: false
+    metavar: EMAIL
+    falls_back_to_field: email
+    help: Email of the user to register; or pass it via the 'email' input field.
   options: []
   sdk_symbol: mammoth.api.support.SupportAPI.user_register
   sdk_conversion: Call mammoth.api.support.SupportAPI.user_register with validated request fields.
@@ -1265,8 +1299,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support user register --help
-  agent_example: 'mammoth support user register --input ''{"email": "example", "first_name": "example",
-    "last_name": "example", "verified": true}'' --output json --no-input'
+  agent_example: 'mammoth support user register example --input ''{"first_name": "example", "last_name":
+    "example", "verified": true}'' --output json --no-input'
   unit_tests:
   - UT-SUPPORT-USER-REGISTER
   contract_tests:
@@ -1283,7 +1317,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateUserVerification
-  positionals: []
+  positionals:
+  - name: email
+    type: str
+    required: false
+    metavar: EMAIL
+    falls_back_to_field: email
+    help: Email of the user to update; or pass it via the 'email' input field.
   options: []
   sdk_symbol: mammoth.api.support.SupportAPI.user_update
   sdk_conversion: Call mammoth.api.support.SupportAPI.user_update with validated request fields.
@@ -1300,8 +1340,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support user update --help
-  agent_example: 'mammoth support user update --input ''{"email": "example", "verified": true}'' --output
-    json --no-input'
+  agent_example: 'mammoth support user update example --input ''{"verified": true}'' --output json --no-input'
   unit_tests:
   - UT-SUPPORT-USER-UPDATE
   contract_tests:
@@ -1318,7 +1357,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreateWorkspaces
-  positionals: []
+  positionals:
+  - name: name
+    type: str
+    required: false
+    metavar: NAME
+    falls_back_to_field: name
+    help: Name of the new workspace; or pass it via the 'name' input field.
   options: []
   sdk_symbol: mammoth.api.support.SupportAPI.workspace_create
   sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_create with validated request fields.
@@ -1335,8 +1380,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support workspace create --help
-  agent_example: 'mammoth support workspace create --input ''{"name": "example", "user_email": "example",
-    "payment_frequency": "example"}'' --output json --no-input'
+  agent_example: 'mammoth support workspace create example --input ''{"user_email": "example", "payment_frequency":
+    "example"}'' --output json --no-input'
   unit_tests:
   - UT-SUPPORT-WORKSPACE-CREATE
   contract_tests:

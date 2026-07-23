@@ -91,15 +91,33 @@ detect_platform() {
 }
 
 # --- uv acquisition ---------------------------------------------------------
-ensure_uv() {
-    if command -v uv >/dev/null 2>&1; then
-        UV_BIN="$(command -v uv)"
-        log "using existing uv at $UV_BIN"
-        return
-    fi
-    # Install the pinned uv into an installer-owned location; never replace a
-    # user's uv. Astral's official installer verifies its own download.
-    log "uv not found; installing pinned uv $UV_PINNED_VERSION into an installer-owned dir"
+
+# Is dotted version $1 >= dotted version $2? Pure-POSIX, field-by-field integer
+# comparison. Tolerates differing field counts (missing fields count as 0) and
+# non-digit suffixes on a field (e.g. a pre-release "30rc1" compares as 30).
+uv_version_ge() {
+    _a="$1"
+    _b="$2"
+    while [ -n "$_a" ] || [ -n "$_b" ]; do
+        _af="${_a%%.*}"
+        _bf="${_b%%.*}"
+        _an="$(printf '%s' "$_af" | tr -cd '0-9')"
+        [ -n "$_an" ] || _an=0
+        _bn="$(printf '%s' "$_bf" | tr -cd '0-9')"
+        [ -n "$_bn" ] || _bn=0
+        if [ "$_an" -gt "$_bn" ]; then return 0; fi
+        if [ "$_an" -lt "$_bn" ]; then return 1; fi
+        case "$_a" in *.*) _a="${_a#*.}" ;; *) _a="" ;; esac
+        case "$_b" in *.*) _b="${_b#*.}" ;; *) _b="" ;; esac
+    done
+    return 0
+}
+
+# Download and install the pinned uv into an installer-owned location; never
+# replace or overwrite a user's own uv. Astral's official installer verifies
+# its own download. Sets UV_BIN to the installed binary.
+install_pinned_uv() {
+    log "installing pinned uv $UV_PINNED_VERSION into an installer-owned dir"
     UV_INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/mammoth-cli/uv-$UV_PINNED_VERSION"
     mkdir -p "$UV_INSTALL_DIR"
     if command -v curl >/dev/null 2>&1; then
@@ -116,6 +134,33 @@ ensure_uv() {
     UV_BIN="$UV_INSTALL_DIR/uv"
     [ -x "$UV_BIN" ] || UV_BIN="$UV_INSTALL_DIR/bin/uv"
     [ -x "$UV_BIN" ] || die "uv was not installed where expected"
+}
+
+ensure_uv() {
+    if command -v uv >/dev/null 2>&1; then
+        existing_uv="$(command -v uv)"
+        # The installer promises a pinned uv ($UV_PINNED_VERSION). Only trust an
+        # already-present uv when it is at least that version; an older uv may
+        # not understand the commands/flags this installer relies on. When it is
+        # too old (or its version cannot be parsed) leave the user's uv
+        # untouched and bootstrap the pinned binary into an installer-owned dir
+        # instead.
+        existing_uv_version="$("$existing_uv" --version 2>/dev/null | awk 'NR==1{print $2}')"
+        if [ -n "$existing_uv_version" ] && uv_version_ge "$existing_uv_version" "$UV_PINNED_VERSION"; then
+            UV_BIN="$existing_uv"
+            log "using existing uv $existing_uv_version at $UV_BIN (>= pinned $UV_PINNED_VERSION)"
+            return
+        fi
+        if [ -z "$existing_uv_version" ]; then
+            log "existing uv at $existing_uv reports no parseable version; installing pinned uv $UV_PINNED_VERSION instead"
+        else
+            log "existing uv $existing_uv_version at $existing_uv is older than the pinned $UV_PINNED_VERSION; installing pinned uv instead"
+        fi
+        install_pinned_uv
+        return
+    fi
+    log "uv not found; installing pinned uv $UV_PINNED_VERSION"
+    install_pinned_uv
 }
 
 # --- CLI install ------------------------------------------------------------

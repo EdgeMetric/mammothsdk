@@ -27,22 +27,66 @@ _SCALAR_ANNOTATIONS = {
     "object": "dict[str, Any]",
 }
 
+# OpenAPI validation keyword -> pydantic ``Field`` argument. ``minItems``/
+# ``maxItems`` and ``minLength``/``maxLength`` both map onto pydantic's unified
+# ``min_length``/``max_length`` (which constrain both strings and sequences).
+# The order fixes the emitted keyword order so regeneration stays deterministic.
+_CONSTRAINT_ARGUMENTS: list[tuple[str, str]] = [
+    ("exclusiveMinimum", "gt"),
+    ("exclusiveMaximum", "lt"),
+    ("minimum", "ge"),
+    ("maximum", "le"),
+    ("multipleOf", "multiple_of"),
+    ("minLength", "min_length"),
+    ("maxLength", "max_length"),
+    ("minItems", "min_length"),
+    ("maxItems", "max_length"),
+    ("pattern", "pattern"),
+]
+
 
 def _ref_name(schema: dict[str, Any]) -> str | None:
     ref = schema.get("$ref")
     return str(ref).rsplit("/", 1)[-1] if ref else None
 
 
-def schema_annotation(schema: dict[str, Any]) -> str:
-    """Translate an OpenAPI schema into a Python annotation."""
+def _field_constraints(schema: dict[str, Any]) -> list[str]:
+    """Return ``Field(...)`` keyword fragments for every constraint on ``schema``."""
+    fragments: list[str] = []
+    for keyword_name, argument in _CONSTRAINT_ARGUMENTS:
+        if keyword_name in schema:
+            fragments.append(f"{argument}={schema[keyword_name]!r}")
+    return fragments
+
+
+def schema_annotation(
+    schema: dict[str, Any],
+    *,
+    response_context: bool = False,
+    response_variants: frozenset[str] = frozenset(),
+) -> str:
+    """Translate an OpenAPI schema into a Python annotation.
+
+    When ``response_context`` is set, ``$ref`` targets listed in
+    ``response_variants`` resolve to their forward-compatible ``<Name>Response``
+    variant instead of the strict request model.
+    """
     ref = _ref_name(schema)
     if ref:
+        if response_context and ref in response_variants:
+            return f"{ref}Response"
         return ref
     if schema.get("type") == "null":
         return "None"
     variants = schema.get("oneOf") or schema.get("anyOf")
     if isinstance(variants, list):
-        annotations = [schema_annotation(item) for item in variants if isinstance(item, dict)]
+        annotations = [
+            schema_annotation(
+                item, response_context=response_context, response_variants=response_variants
+            )
+            for item in variants
+            if isinstance(item, dict)
+        ]
         return " | ".join(dict.fromkeys(annotations)) or "Any"
     if "enum" in schema:
         values = ", ".join(repr(value) for value in schema["enum"])
@@ -50,7 +94,13 @@ def schema_annotation(schema: dict[str, Any]) -> str:
     schema_type = schema.get("type")
     if schema_type == "array":
         items = schema.get("items")
-        item_annotation = schema_annotation(items) if isinstance(items, dict) else "Any"
+        item_annotation = (
+            schema_annotation(
+                items, response_context=response_context, response_variants=response_variants
+            )
+            if isinstance(items, dict)
+            else "Any"
+        )
         return f"list[{item_annotation}]"
     if isinstance(schema_type, list):
         annotations = [
@@ -143,22 +193,68 @@ def _response_only_components(document: dict[str, Any]) -> set[str]:
     )
 
 
+def _dual_use_components(document: dict[str, Any]) -> set[str]:
+    """Object components reachable as BOTH a request and a response.
+
+    A single class cannot serve both roles: the request side must stay strict
+    (reject unknown body fields) while the response side must tolerate additive
+    server fields. Each such component is emitted twice -- a strict ``<Name>``
+    and a forward-compatible ``<Name>Response`` -- and references are rewired by
+    role. Components whose OpenAPI definition forbids additional properties need
+    no lenient variant and are excluded.
+    """
+    components = document.get("components", {}).get("schemas", {})
+    shared = _closure(document, _request_seeds(document)) & _closure(
+        document, _response_seeds(document)
+    )
+    dual: set[str] = set()
+    for name in shared:
+        schema = components.get(name, {})
+        is_object = schema.get("type") == "object" or isinstance(schema.get("properties"), dict)
+        if is_object and schema.get("additionalProperties") is not False:
+            dual.add(name)
+    return dual
+
+
 def build_models() -> str:
     """Build Pydantic models for every dashboard request/response schema used."""
     document = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
     components = document["components"]["schemas"]
-    lines = [
-        "# ruff: noqa: N801, N815",
-        '"""Generated dashboard request and response models. Do not edit by hand."""',
-        "from __future__ import annotations",
-        "",
-        "from typing import Any, Literal",
-        "",
-        "from pydantic import BaseModel, ConfigDict, RootModel",
-        "",
-    ]
     names = sorted(_reachable_components(document))
     response_only = _response_only_components(document)
+    request_reachable = _closure(document, _request_seeds(document))
+    dual_use = _dual_use_components(document)
+    response_variants = frozenset(dual_use)
+
+    def render_class(
+        class_name: str, schema: dict[str, Any], extra: str, response_context: bool
+    ) -> list[str]:
+        block = [
+            f"class {class_name}(BaseModel):",
+            f'    model_config = ConfigDict(extra="{extra}")',
+        ]
+        required = set(schema.get("required", []))
+        properties = schema.get("properties")
+        if not properties:
+            block.append("    pass")
+        for field, field_schema in (properties or {}).items():
+            annotation = schema_annotation(
+                field_schema,
+                response_context=response_context,
+                response_variants=response_variants,
+            )
+            default = "" if field in required else " = None"
+            if default and "None" not in annotation.split(" | "):
+                annotation += " | None"
+            constraints = _field_constraints(field_schema)
+            if constraints:
+                annotation = f"Annotated[{annotation}, Field({', '.join(constraints)})]"
+            block.append(f"    {field}: {annotation}{default}")
+        block.append("")
+        return block
+
+    body: list[str] = []
+    emitted: list[str] = []
     for name in names:
         if not name.isidentifier() or keyword.iskeyword(name):
             raise ValueError(f"OpenAPI component is not a Python identifier: {name}")
@@ -171,30 +267,57 @@ def build_models() -> str:
         lenient = name in response_only and schema.get("additionalProperties") is not False
         extra = "allow" if lenient else "forbid"
         if schema.get("type") == "object" or isinstance(properties, dict):
-            lines.extend(
-                [f"class {name}(BaseModel):", f'    model_config = ConfigDict(extra="{extra}")']
+            # A response-only container renders references to dual-use
+            # components as their lenient ``<Name>Response`` variant; a
+            # request-reachable container keeps the strict variant. A dual-use
+            # component itself is request-reachable, so its primary class stays
+            # strict and a separate ``<Name>Response`` variant is emitted below.
+            primary_response_context = name not in request_reachable
+            body.extend(
+                render_class(name, schema, extra, response_context=primary_response_context)
             )
-            required = set(schema.get("required", []))
-            if not properties:
-                lines.append("    pass")
-            for field, field_schema in (properties or {}).items():
-                annotation = schema_annotation(field_schema)
-                default = "" if field in required else " = None"
-                if default and "None" not in annotation.split(" | "):
-                    annotation += " | None"
-                lines.append(f"    {field}: {annotation}{default}")
-            lines.append("")
+            emitted.append(name)
+            if name in dual_use:
+                variant = f"{name}Response"
+                if variant in components or variant in names:
+                    raise ValueError(f"response variant name collides with a component: {variant}")
+                body.extend(render_class(variant, schema, "allow", response_context=True))
+                emitted.append(variant)
         else:
-            lines.extend([f"class {name}(RootModel[{schema_annotation(schema)}]):", "    pass", ""])
+            body.extend([f"class {name}(RootModel[{schema_annotation(schema)}]):", "    pass", ""])
+            emitted.append(name)
+
+    needs_field = any("Annotated[" in line for line in body)
+    typing_imports = (
+        "from typing import Annotated, Any, Literal"
+        if needs_field
+        else "from typing import Any, Literal"
+    )
+    pydantic_imports = (
+        "from pydantic import BaseModel, ConfigDict, Field, RootModel"
+        if needs_field
+        else "from pydantic import BaseModel, ConfigDict, RootModel"
+    )
+    lines = [
+        "# ruff: noqa: N801, N815",
+        '"""Generated dashboard request and response models. Do not edit by hand."""',
+        "from __future__ import annotations",
+        "",
+        typing_imports,
+        "",
+        pydantic_imports,
+        "",
+    ]
+    lines.extend(body)
     lines.extend(
         [
             "_MODEL_NAMESPACE = {",
             "    name: value for name, value in globals().items() if isinstance(value, type)",
             "}",
-            f"for _model_name in {names!r}:",
+            f"for _model_name in {emitted!r}:",
             "    globals()[_model_name].model_rebuild(_types_namespace=_MODEL_NAMESPACE)",
             "",
-            f"__all__ = {names!r}",
+            f"__all__ = {emitted!r}",
         ]
     )
     return black.format_str("\n".join(lines) + "\n", mode=black.Mode(line_length=100))

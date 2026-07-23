@@ -167,7 +167,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 ## capability
 
 - `mammoth capability get` [read/none] -> mammoth_cli.commands.capability.get
-  example: mammoth capability get --output json --no-input
+  example: mammoth capability get example --output json --no-input
 - `mammoth capability list` [read/none] -> mammoth_cli.commands.capability.list_
   example: mammoth capability list --output json --no-input
 
@@ -478,8 +478,8 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
   example: mammoth dataset data 123 --output json --no-input
 - `mammoth dataset delete` [destructive/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.delete
   example: mammoth dataset delete 123 --output json --no-input
-- `mammoth dataset file-settings` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_file_settings
-  example: mammoth dataset file-settings 123 --output json --no-input
+- `mammoth dataset file-settings get` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_file_settings
+  example: mammoth dataset file-settings get 123 --output json --no-input
 - `mammoth dataset file-settings undo` [destructive/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.file_settings_undo
   example: mammoth dataset file-settings undo 123 --output json --no-input
 - `mammoth dataset file-settings update` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.file_settings_update
@@ -668,7 +668,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 ## schema
 
 - `mammoth schema get` [read/none] -> mammoth_cli.commands.schema.get
-  example: mammoth schema get --output json --no-input
+  example: mammoth schema get example --output json --no-input
 - `mammoth schema list` [read/none] -> mammoth_cli.commands.schema.list_
   example: mammoth schema list --output json --no-input
 
@@ -707,7 +707,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 ## support
 
 - `mammoth support connector create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_create
-  example: mammoth support connector create --input '{"name": "example"}' --output json --no-input
+  example: mammoth support connector create example --output json --no-input
 - `mammoth support connector delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_delete
   example: mammoth support connector delete 123 --output json --no-input
 - `mammoth support connector list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_list
@@ -717,7 +717,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth support connector-profile add-connector` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_profile_add_connector
   example: mammoth support connector-profile add-connector 123 123 --output json --no-input
 - `mammoth support connector-profile create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_profile_create
-  example: mammoth support connector-profile create --input '{"name": "example"}' --output json --no-input
+  example: mammoth support connector-profile create example --output json --no-input
 - `mammoth support connector-profile delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_profile_delete
   example: mammoth support connector-profile delete 123 --output json --no-input
 - `mammoth support connector-profile list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_profile_list
@@ -725,7 +725,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth support connector-profile update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_profile_update
   example: mammoth support connector-profile update 123 --output json --no-input
 - `mammoth support feature create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_create
-  example: mammoth support feature create --input '{"name": "example"}' --output json --no-input
+  example: mammoth support feature create example --output json --no-input
 - `mammoth support feature delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_delete
   example: mammoth support feature delete 123 --output json --no-input
 - `mammoth support feature list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_list
@@ -735,7 +735,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth support feature-profile add-feature` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_profile_add_feature
   example: mammoth support feature-profile add-feature 123 123 --output json --no-input
 - `mammoth support feature-profile create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_profile_create
-  example: mammoth support feature-profile create --input '{"name": "example"}' --output json --no-input
+  example: mammoth support feature-profile create example --output json --no-input
 - `mammoth support feature-profile delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_profile_delete
   example: mammoth support feature-profile delete 123 --output json --no-input
 - `mammoth support feature-profile list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_profile_list
@@ -749,7 +749,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth support plan chargebee-list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_chargebee_list
   example: mammoth support plan chargebee-list --output json --no-input
 - `mammoth support plan create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_create
-  example: mammoth support plan create --input '{"name": "example", "monthly_price": 1.0, "is_self_serve": true}' --output json --no-input
+  example: mammoth support plan create example --input '{"monthly_price": 1.0, "is_self_serve": true}' --output json --no-input
 - `mammoth support plan delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_delete
   example: mammoth support plan delete 123 --output json --no-input
 - `mammoth support plan get` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_get
@@ -771,11 +771,11 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth support user list-all` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.user_list_all
   example: mammoth support user list-all --output json --no-input
 - `mammoth support user register` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.user_register
-  example: mammoth support user register --input '{"email": "example", "first_name": "example", "last_name": "example", "verified": true}' --output json --no-input
+  example: mammoth support user register example --input '{"first_name": "example", "last_name": "example", "verified": true}' --output json --no-input
 - `mammoth support user update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.user_update
-  example: mammoth support user update --input '{"email": "example", "verified": true}' --output json --no-input
+  example: mammoth support user update example --input '{"verified": true}' --output json --no-input
 - `mammoth support workspace create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_create
-  example: mammoth support workspace create --input '{"name": "example", "user_email": "example", "payment_frequency": "example"}' --output json --no-input
+  example: mammoth support workspace create example --input '{"user_email": "example", "payment_frequency": "example"}' --output json --no-input
 - `mammoth support workspace delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_delete
   example: mammoth support workspace delete 123 --output json --no-input
 - `mammoth support workspace get` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_get

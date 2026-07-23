@@ -183,10 +183,25 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
                 return value
 
             properties[field["name"]] = hoist_definitions(namespace_refs(field_schema))
+        # A field a positional falls back to (the dual-sourced "positional OR
+        # --input field" pattern) is satisfiable from the command line, so it is
+        # NOT required *in the --input document*: the runnable example supplies
+        # it positionally and omits it from --input, so requiring it here would
+        # make the generated example fail its own input schema. It stays an
+        # accepted (optional) field so passing it via --input still works.
+        fallback_fields = {
+            spec.falls_back_to_field
+            for spec in resolve_positionals(record["command_id"])
+            if spec.falls_back_to_field
+        }
         input_schema = {
             "type": "object",
             "properties": properties,
-            "required": [field["name"] for field in accepted if field["required"]],
+            "required": [
+                field["name"]
+                for field in accepted
+                if field["required"] and field["name"] not in fallback_fields
+            ],
             "additionalProperties": False,
         }
         if definitions:

@@ -111,7 +111,9 @@ def test_data_forwards_timeout_and_poll_interval(
 
 
 def test_file_settings_passes_dataset_and_project(fake_service: FakeMammothService) -> None:
-    dataset_cmd.dataset_file_settings(_inv("dataset.file-settings", project=180, extra_args=["7"]))
+    dataset_cmd.dataset_file_settings(
+        _inv("dataset.file-settings.get", project=180, extra_args=["7"])
+    )
     assert fake_service.call_log == [(_FILE_SETTINGS, {"dataset_id": 7, "project_id": 180})]
 
 

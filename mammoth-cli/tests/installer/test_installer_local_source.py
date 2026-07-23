@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -34,6 +35,34 @@ _SH = shutil.which("sh")
 _UV = shutil.which("uv")
 
 
+def _version_key(value: str) -> list[int]:
+    return [int(re.sub(r"\D.*$", "", part) or "0") for part in value.split(".")]
+
+
+def _uv_meets_pinned_minimum() -> bool:
+    """True when the on-PATH uv is at least the installer's pinned version.
+
+    The installer only reuses an existing uv when it meets the pinned minimum
+    (UV_PINNED_VERSION); an older uv triggers an installer-owned bootstrap
+    instead. Tests that drive the installer with the on-PATH uv only hold their
+    premise when that uv is new enough, so they skip cleanly otherwise rather
+    than exercising (or failing on) the network bootstrap path.
+    """
+    if _UV is None:
+        return False
+    match = re.search(r'UV_PINNED_VERSION="([^"]+)"', _INSTALLER_SH.read_text(encoding="utf-8"))
+    if not match:
+        return False
+    try:
+        out = subprocess.check_output([_UV, "--version"], text=True)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    parts = out.split()
+    if len(parts) < 2:
+        return False
+    return _version_key(parts[1]) >= _version_key(match.group(1))
+
+
 def _write_uv_stub(directory: Path, log_file: Path, bin_dir: Path) -> None:
     """Write an executable ``uv`` stub that logs its argv and succeeds.
 
@@ -46,6 +75,9 @@ def _write_uv_stub(directory: Path, log_file: Path, bin_dir: Path) -> None:
     stub.write_text(
         "#!/bin/sh\n"
         f'printf "%s\\n" "$*" >> "{log_file}"\n'
+        # The installer now gates an existing uv on its version; report the
+        # pinned version so this stub is accepted and used directly.
+        'if [ "$1" = "--version" ]; then printf "uv 0.11.30\\n"; exit 0; fi\n'
         'if [ "$1" = "build" ]; then\n'
         '    project="${5##*/}"\n'
         '    if [ "$project" = "mammoth-cli" ]; then\n'
@@ -178,6 +210,11 @@ def test_local_source_selects_wheels_via_portable_glob(tmp_path: Path) -> None:
 
 
 @pytest.mark.skipif(_SH is None or _UV is None, reason="real sh and uv are required")
+@pytest.mark.skipif(
+    not _uv_meets_pinned_minimum(),
+    reason="on-PATH uv is older than the installer's pinned minimum; the installer "
+    "bootstraps its own uv rather than reusing this one",
+)
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX installer test")
 def test_local_source_installs_exact_local_distributions(tmp_path: Path) -> None:
     """Use real uv and inspect the isolated tool environment, including wheel origins."""

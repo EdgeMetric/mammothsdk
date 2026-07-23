@@ -180,7 +180,7 @@ HANDLERS: dict[str, Handler] = {
     "dataset.list": dataset_cmd.dataset_list,
     "dataset.get": dataset_cmd.dataset_get,
     "dataset.data": dataset_cmd.dataset_data,
-    "dataset.file-settings": dataset_cmd.dataset_file_settings,
+    "dataset.file-settings.get": dataset_cmd.dataset_file_settings,
     "dataset.file-settings.update": dataset_cmd.dataset_file_settings_update,
     "dataset.file-settings.undo": dataset_cmd.dataset_file_settings_undo,
     "dataset.create": dataset_cmd.dataset_create,

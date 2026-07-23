@@ -226,8 +226,8 @@ commands:
   undo_test: null
   known_restrictions: Immutable dataset-ID confirmation.
   reviewed_by: primary
-- command_id: dataset.file-settings
-  command_path: dataset file-settings
+- command_id: dataset.file-settings.get
+  command_path: dataset file-settings get
   disposition: command
   alias_of: null
   operation_ids:
@@ -242,26 +242,26 @@ commands:
   options: []
   sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_file_settings
   sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.get_file_settings with validated request fields.
-  request_model: DatasetFileSettingsRequest
-  result_model: DatasetFileSettingsResult
+  request_model: DatasetFileSettingsGetRequest
+  result_model: DatasetFileSettingsGetResult
   mutation_class: read
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_read_only
-  live_test: LT-DATASET-FILE-SETTINGS
+  live_test: LT-DATASET-FILE-SETTINGS-GET
   live_exemption_reason: null
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dataset file-settings DATASET_ID --help
-  agent_example: mammoth dataset file-settings 123 --output json --no-input
+  human_example: mammoth dataset file-settings get DATASET_ID --help
+  agent_example: mammoth dataset file-settings get 123 --output json --no-input
   unit_tests:
-  - UT-DATASET-FILE-SETTINGS
+  - UT-DATASET-FILE-SETTINGS-GET
   contract_tests:
-  - CT-DATASET-FILE-SETTINGS-HUMAN
-  - CT-DATASET-FILE-SETTINGS-JSON
-  - CT-DATASET-FILE-SETTINGS-ERROR
+  - CT-DATASET-FILE-SETTINGS-GET-HUMAN
+  - CT-DATASET-FILE-SETTINGS-GET-JSON
+  - CT-DATASET-FILE-SETTINGS-GET-ERROR
   draft_test: null
   undo_test: null
   known_restrictions: null

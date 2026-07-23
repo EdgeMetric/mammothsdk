@@ -293,7 +293,7 @@ OVERRIDES: dict[str, str] = {
     "GetDatasetData": "dataset.data",
     "RestoreDataset": "dataset.restore",
     "TrashDataset": "dataset.trash",
-    "GetFileSettings": "dataset.file-settings",
+    "GetFileSettings": "dataset.file-settings.get",
     "UpdateFileSettings": "dataset.file-settings.update",
     "UndoFileSettings": "dataset.file-settings.undo",
     # Batches.

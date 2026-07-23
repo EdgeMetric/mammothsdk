@@ -5,7 +5,13 @@ commands:
   disposition: command
   alias_of: null
   operation_ids: []
-  positionals: []
+  positionals:
+  - name: operation_id
+    type: str
+    required: true
+    metavar: OPERATION_ID
+    falls_back_to_field: null
+    help: Operation id to fetch the capability record for.
   options: []
   sdk_symbol: mammoth_cli.commands.capability.get
   sdk_conversion: Call mammoth_cli.commands.capability.get with validated request fields.
@@ -21,8 +27,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth capability get --help
-  agent_example: mammoth capability get --output json --no-input
+  human_example: mammoth capability get OPERATION_ID --help
+  agent_example: mammoth capability get example --output json --no-input
   unit_tests:
   - UT-CAPABILITY-GET
   contract_tests:

@@ -590,10 +590,14 @@ Total commands: 504.
 
 ### `mammoth capability get`
 
+**Arguments**
+
+- `OPERATION_ID` (str, required) — Operation id to fetch the capability record for.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.capability.get`
-- Agent example: `mammoth capability get --output json --no-input`
+- Agent example: `mammoth capability get example --output json --no-input`
 
 ### `mammoth capability list`
 
@@ -2042,7 +2046,7 @@ Total commands: 504.
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.delete`
 - Agent example: `mammoth dataset delete 123 --output json --no-input`
 
-### `mammoth dataset file-settings`
+### `mammoth dataset file-settings get`
 
 **Arguments**
 
@@ -2051,7 +2055,7 @@ Total commands: 504.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.get_file_settings`
-- Agent example: `mammoth dataset file-settings 123 --output json --no-input`
+- Agent example: `mammoth dataset file-settings get 123 --output json --no-input`
 
 ### `mammoth dataset file-settings undo`
 
@@ -2800,10 +2804,14 @@ Total commands: 504.
 
 ### `mammoth schema get`
 
+**Arguments**
+
+- `COMMAND_ID` (str, required) — Command id to fetch the schema for (e.g. view.transform.bulk-replace).
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.schema.get`
-- Agent example: `mammoth schema get --output json --no-input`
+- Agent example: `mammoth schema get example --output json --no-input`
 
 ### `mammoth schema list`
 
@@ -2935,10 +2943,14 @@ Total commands: 504.
 
 ### `mammoth support connector create`
 
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new connector; or pass it via the 'name' input field.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_create`
-- Agent example: `mammoth support connector create --input '{"name": "example"}' --output json --no-input`
+- Agent example: `mammoth support connector create example --output json --no-input`
 
 ### `mammoth support connector delete`
 
@@ -2983,10 +2995,14 @@ Total commands: 504.
 
 ### `mammoth support connector-profile create`
 
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new connector profile; or pass it via the 'name' input field.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_profile_create`
-- Agent example: `mammoth support connector-profile create --input '{"name": "example"}' --output json --no-input`
+- Agent example: `mammoth support connector-profile create example --output json --no-input`
 
 ### `mammoth support connector-profile delete`
 
@@ -3019,10 +3035,14 @@ Total commands: 504.
 
 ### `mammoth support feature create`
 
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new feature; or pass it via the 'name' input field.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_create`
-- Agent example: `mammoth support feature create --input '{"name": "example"}' --output json --no-input`
+- Agent example: `mammoth support feature create example --output json --no-input`
 
 ### `mammoth support feature delete`
 
@@ -3067,10 +3087,14 @@ Total commands: 504.
 
 ### `mammoth support feature-profile create`
 
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new feature profile; or pass it via the 'name' input field.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_profile_create`
-- Agent example: `mammoth support feature-profile create --input '{"name": "example"}' --output json --no-input`
+- Agent example: `mammoth support feature-profile create example --output json --no-input`
 
 ### `mammoth support feature-profile delete`
 
@@ -3133,10 +3157,14 @@ Total commands: 504.
 
 ### `mammoth support plan create`
 
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new plan; or pass it via the 'name' input field.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_create`
-- Agent example: `mammoth support plan create --input '{"name": "example", "monthly_price": 1.0, "is_self_serve": true}' --output json --no-input`
+- Agent example: `mammoth support plan create example --input '{"monthly_price": 1.0, "is_self_serve": true}' --output json --no-input`
 
 ### `mammoth support plan delete`
 
@@ -3240,24 +3268,36 @@ Total commands: 504.
 
 ### `mammoth support user register`
 
+**Arguments**
+
+- `EMAIL` (str, optional) — Email of the user to register; or pass it via the 'email' input field.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.user_register`
-- Agent example: `mammoth support user register --input '{"email": "example", "first_name": "example", "last_name": "example", "verified": true}' --output json --no-input`
+- Agent example: `mammoth support user register example --input '{"first_name": "example", "last_name": "example", "verified": true}' --output json --no-input`
 
 ### `mammoth support user update`
+
+**Arguments**
+
+- `EMAIL` (str, optional) — Email of the user to update; or pass it via the 'email' input field.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.user_update`
-- Agent example: `mammoth support user update --input '{"email": "example", "verified": true}' --output json --no-input`
+- Agent example: `mammoth support user update example --input '{"verified": true}' --output json --no-input`
 
 ### `mammoth support workspace create`
+
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new workspace; or pass it via the 'name' input field.
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_create`
-- Agent example: `mammoth support workspace create --input '{"name": "example", "user_email": "example", "payment_frequency": "example"}' --output json --no-input`
+- Agent example: `mammoth support workspace create example --input '{"user_email": "example", "payment_frequency": "example"}' --output json --no-input`
 
 ### `mammoth support workspace delete`
 

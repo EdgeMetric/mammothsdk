@@ -6825,7 +6825,7 @@ operations:
   deprecated: false
   disposition: command
   disposition_reason: User-initiated production operation.
-  canonical_command: dataset.file-settings
+  canonical_command: dataset.file-settings.get
   alias_of: null
   sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_file_settings
   reviewed_by: primary

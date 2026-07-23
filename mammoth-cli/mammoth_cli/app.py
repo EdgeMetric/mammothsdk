@@ -15,24 +15,116 @@ positionals and options are added per family as each handler is implemented.
 from __future__ import annotations
 
 import inspect
-from collections.abc import Callable
+import sys
+from collections.abc import Callable, Sequence
 from functools import cache
 from typing import Annotated, Any
 
 import typer
+from typer._click import exceptions as _typer_click_exceptions
+from typer.core import TyperGroup
 
 from mammoth_cli import __version__
 from mammoth_cli.commands import BESPOKE
 from mammoth_cli.commands.registry import HANDLERS
-from mammoth_cli.errors.envelope import not_implemented_error
+from mammoth_cli.errors.envelope import EXIT_USAGE, CliError, not_implemented_error
 from mammoth_cli.manifest.loader import command_by_id, load_commands
-from mammoth_cli.output.policy import COLOR_MODES, VALID_OUTPUTS
+from mammoth_cli.output.policy import COLOR_MODES, MACHINE_OUTPUTS, VALID_OUTPUTS
 from mammoth_cli.runtime import executor, validate
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.strict import validate_extra_args
 from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
 
 OUTPUT_MODES = VALID_OUTPUTS
+
+# Typer (pinned >=0.27,<0.28) ships a *vendored* click fork (``typer._click``)
+# and does NOT depend on the external ``click`` package. Command resolution
+# raises that fork's ``UsageError``/``Abort``, so the interceptor keys on the
+# vendored classes only -- importing the external ``click`` here would add a
+# phantom dependency that is absent from a clean wheel install.
+_USAGE_ERRORS: tuple[type[BaseException], ...] = (_typer_click_exceptions.UsageError,)
+_ABORT_ERRORS: tuple[type[BaseException], ...] = (_typer_click_exceptions.Abort,)
+
+
+def _output_mode_from_argv(argv: Sequence[str] | None) -> str:
+    """Recover the requested ``--output`` mode from raw argv tokens.
+
+    Used when a Click ``UsageError`` is raised *before* the per-command option
+    is parsed (an unknown command, an unexpected argument, a bad option value),
+    so the top-level error renderer can still honor the machine-output contract.
+    Defaults to the same ``"table"`` default the ``--output`` option declares.
+    """
+    tokens = list(argv) if argv is not None else sys.argv[1:]
+    mode = "table"
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if token in ("--output", "-o"):
+            if index + 1 < len(tokens):
+                mode = tokens[index + 1]
+            index += 2
+            continue
+        if token.startswith("--output="):
+            mode = token.split("=", 1)[1]
+        elif token.startswith("-o") and len(token) > 2:
+            mode = token[2:]
+        index += 1
+    return mode
+
+
+class _EnvelopeGroup(TyperGroup):
+    """Root group that renders Click usage errors as the machine error envelope.
+
+    Click's standalone error handling prints a human ``Usage: ... Error: ...``
+    message and exits, even under ``--output json``: an agent driving the CLI
+    then receives un-parseable prose (or, for a leaf that also parents
+    subcommands, a raw ``No such command`` error) instead of the stable JSON
+    envelope every handler-level failure emits. This override intercepts every
+    usage error (Typer's vendored ``UsageError``) raised anywhere in the command
+    tree and, when a machine output was requested, emits the same envelope
+    contract. Human output is unchanged (Click's own rendering is reused).
+
+    The interception runs Click's machinery with ``standalone_mode=False`` so
+    usage errors propagate here rather than being printed by Click, then restores
+    the ``SystemExit`` contract the console entry point and the test runner rely
+    on.
+    """
+
+    def main(self, *args: Any, **kwargs: Any) -> Any:
+        if not kwargs.get("standalone_mode", True):
+            return super().main(*args, **kwargs)
+        kwargs["standalone_mode"] = False
+        try:
+            result = super().main(*args, **kwargs)
+        except _USAGE_ERRORS as error:
+            argv = kwargs.get("args")
+            if argv is None:
+                argv = args[0] if args else None
+            self._render_usage_error(error, argv)
+            raise SystemExit(getattr(error, "exit_code", EXIT_USAGE)) from None
+        except _ABORT_ERRORS:
+            typer.echo("Aborted!", err=True)
+            raise SystemExit(1) from None
+        # Under standalone_mode=False a normal return is either None (success) or
+        # an int exit code (a click Exit, e.g. --help/--version or our own
+        # CliError path). Re-raise SystemExit so both the console script and the
+        # in-process test runner observe the exit status as before.
+        raise SystemExit(result if isinstance(result, int) else 0)
+
+    def _render_usage_error(self, error: Any, argv: Sequence[str] | None) -> None:
+        """Emit a usage error as the JSON envelope (machine) or Click prose (human)."""
+        if _output_mode_from_argv(argv) in MACHINE_OUTPUTS:
+            executor.emit_error(
+                CliError(
+                    code="usage_error",
+                    message=error.format_message(),
+                    exit_status=EXIT_USAGE,
+                    hint="Check the command schema with 'mammoth schema get'.",
+                ),
+                machine=True,
+            )
+        else:
+            error.show()
 
 
 def _version_callback(value: bool) -> None:
@@ -259,6 +351,33 @@ def _execute(invocation: Invocation) -> None:
     executor.run(invocation.command_id, invocation.output, producer)
 
 
+def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
+    """Build a command's user-facing ``--help`` summary.
+
+    Kept deliberately distinct from ``known_restrictions`` (internal review and
+    planning notes), which used to be shown here verbatim and leaked plan-document
+    prose -- e.g. "specified in plan 02's ... contract" -- into the user-facing
+    ``--help``. Instead the summary is the backing handler's docstring first line
+    (actionable field guidance such as "``columns``/``mapping`` required"),
+    followed by the manifest's runnable ``agent_example``, which already encodes
+    every required positional and ``--input`` field. ``known_restrictions``
+    remains available to machines through ``schema get``.
+    """
+    parts: list[str] = []
+    handler = HANDLERS.get(command_id) or BESPOKE.get(command_id)
+    doc = inspect.getdoc(handler) if handler is not None else None
+    if doc:
+        # First non-empty line, with RST inline-code backticks flattened to plain
+        # quotes so the help reads as prose rather than reStructuredText.
+        summary = doc.strip().splitlines()[0].strip().replace("``", "'")
+        if summary:
+            parts.append(summary)
+    example = (record or {}).get("agent_example")
+    if example:
+        parts.append(f"Example: {example}")
+    return "\n\n".join(parts) or None
+
+
 def build_app() -> typer.Typer:
     """Construct the full Typer command tree from the command manifests."""
     root = typer.Typer(
@@ -266,6 +385,7 @@ def build_app() -> typer.Typer:
         help="Command-line interface for the Mammoth Analytics platform.",
         no_args_is_help=True,
         add_completion=True,
+        cls=_EnvelopeGroup,
         context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
     )
 
@@ -333,7 +453,7 @@ def build_app() -> typer.Typer:
         callback = BESPOKE.get(command_id) or _build_leaf(command_id)
         _group_for(tokens[:-1]).command(
             name=tokens[-1],
-            help=(record or {}).get("known_restrictions") or None,
+            help=_command_help(command_id, record),
             context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
         )(callback)
 

@@ -189,6 +189,56 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="ID of the dataset to generate an expression for.",
         ),
     ),
+    # ``support`` create/register verbs take their identifying name/email as a
+    # positional OR the matching ``--input`` field (handler
+    # ``_require_positional_or_field``). Without a registered optional positional
+    # the strict validator rejects the positional form outright, so only the
+    # ``--input`` form is invokable and the documented dual-sourcing is a half
+    # promise. Author an optional locator that falls back to the field -- the
+    # same shape as ``project create``.
+    **{
+        command: (
+            PositionalSpec(
+                name=field,
+                type=str,
+                required=False,
+                help=f"{label}; or pass it via the '{field}' input field.",
+                falls_back_to_field=field,
+            ),
+        )
+        for command, field, label in (
+            ("support.connector.create", "name", "Name of the new connector"),
+            ("support.connector-profile.create", "name", "Name of the new connector profile"),
+            ("support.feature.create", "name", "Name of the new feature"),
+            ("support.feature-profile.create", "name", "Name of the new feature profile"),
+            ("support.plan.create", "name", "Name of the new plan"),
+            ("support.workspace.create", "name", "Name of the new workspace"),
+            ("support.user.register", "email", "Email of the user to register"),
+            ("support.user.update", "email", "Email of the user to update"),
+        )
+    },
+    # ``schema get`` / ``capability get`` are CLI-only discovery commands with no
+    # backing SDK signature (their ``sdk_symbol`` is a meta-reference), so the
+    # derivation emits nothing. Their handlers read the single id positionally
+    # (``registry._require_arg`` -> ``extra_args[0]``), so without a registered
+    # positional the strict validator rejects the id and the documented command
+    # is uninvokable. Author the required locator here.
+    "schema.get": (
+        PositionalSpec(
+            name="command_id",
+            type=str,
+            required=True,
+            help="Command id to fetch the schema for (e.g. view.transform.bulk-replace).",
+        ),
+    ),
+    "capability.get": (
+        PositionalSpec(
+            name="operation_id",
+            type=str,
+            required=True,
+            help="Operation id to fetch the capability record for.",
+        ),
+    ),
     # ``folder delete`` takes a single folder id positionally; the handler wraps
     # it into the SDK's ``folder_ids`` list. The signature leads with the
     # required ``folder_ids`` (a ``list[int]``, not a scalar identity), so the

@@ -3,9 +3,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, RootModel
+from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 
 class AdhocQueryParams(BaseModel):
@@ -26,8 +26,8 @@ class AdhocQuerySpec(BaseModel):
 
 class ApplyTemplateParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    source_dashboard_id: int
-    target_dataview_id: int
+    source_dashboard_id: Annotated[int, Field(ge=1.0)]
+    target_dataview_id: Annotated[int, Field(ge=1.0)]
     mapping: dict[str, Any] | None = None
     overrides: dict[str, Any] | None = None
 
@@ -39,7 +39,7 @@ class ApplyTemplateSpec(BaseModel):
 
 class AskParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    question: str
+    question: Annotated[str, Field(min_length=1, max_length=2000)]
     conversation_history: list[dict[str, Any]] | None = None
 
 
@@ -50,7 +50,7 @@ class AskSpec(BaseModel):
 
 class BulkWidgetDataParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    widgets: list[WidgetDataParams]
+    widgets: Annotated[list[WidgetDataParams], Field(min_length=1, max_length=100)]
     rls_preview_value: str | None = None
 
 
@@ -79,7 +79,7 @@ class CanvasResponse(BaseModel):
 
 class ChatEditParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    prompt: str
+    prompt: Annotated[str, Field(min_length=1)]
     scope: dict[str, Any] | None = None
     selected_fig: int | None = None
     active_page_id: str | None = None
@@ -96,7 +96,7 @@ class ChatEditSpec(BaseModel):
 
 class CommentParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    body: str
+    body: Annotated[str, Field(min_length=1, max_length=2000)]
 
 
 class CommentSpec(BaseModel):
@@ -133,7 +133,7 @@ class ContextSpec(BaseModel):
 
 class CreateSessionParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    title: str | None = None
+    title: Annotated[str | None, Field(max_length=200)] = None
 
 
 class CreateSessionSpec(BaseModel):
@@ -147,7 +147,7 @@ class CreatorDashboardHtmlType(BaseModel):
     sources: list[int]
     messages: list[dict[str, Any]]
     title: str
-    share: DashboardAuth | None = None
+    share: DashboardAuthResponse | None = None
     url: str
     theme: str
     id: int
@@ -222,6 +222,13 @@ class DashboardAuth(BaseModel):
     sequence: int | None = None
 
 
+class DashboardAuthResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    type_of_auth: Literal["mammoth", "public", "password"]
+    options: dict[str, Any] | None = None
+    sequence: int | None = None
+
+
 class DashboardEditParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
     op: mmai_dashboard_schema_OpValues
@@ -236,7 +243,7 @@ class DashboardEditSpec(BaseModel):
 
 class DashboardGenerationParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    intent: str
+    intent: Annotated[str, Field(min_length=1)]
     source: list[int]
     enable_filters: bool | None = None
     enable_pages: bool | None = None
@@ -328,7 +335,7 @@ class DashboardViewConfigType(BaseModel):
 
 class DefaultStyleParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    styleId: str
+    styleId: Annotated[str, Field(min_length=1)]
 
 
 class DefaultStyleResponse(BaseModel):
@@ -358,7 +365,7 @@ class DeriveStyleSpec(BaseModel):
 
 class DescriptorDataParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    descriptor_ids: list[str]
+    descriptor_ids: Annotated[list[str], Field(min_length=1, max_length=200)]
     filter_state: dict[str, Any] | None = None
     rls_preview_value: str | None = None
 
@@ -375,7 +382,7 @@ class DuplicateDashboardResponse(BaseModel):
 
 class ExtractBrandParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    url: str
+    url: Annotated[str, Field(min_length=1)]
 
 
 class ExtractBrandSpec(BaseModel):
@@ -418,8 +425,8 @@ class FigureIntentSpec(BaseModel):
 
 class GenerateDashboardV3Params(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    intent: str
-    dataview_id: int
+    intent: Annotated[str, Field(min_length=1)]
+    dataview_id: Annotated[int, Field(ge=1.0)]
     format: Literal["dashboard", "presentation", "document", None] | None = None
     contexts: list[str] | None = None
     client_turn_id: str | None = None
@@ -437,7 +444,7 @@ class JobResponse(BaseModel):
 
 class JobSchema(BaseModel):
     model_config = ConfigDict(extra="allow")
-    id: int
+    id: Annotated[int, Field(ge=0.0)]
     status: Literal["success", "failure", "processing", "error"]
     response: dict[str, Any] | list[Any]
     last_updated_at: str
@@ -492,9 +499,9 @@ class PlanPageSpec(BaseModel):
 
 class PreviewTemplateParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    source_dashboard_id: int
-    target_dataview_id: int
-    table_item_id: int | None = None
+    source_dashboard_id: Annotated[int, Field(ge=1.0)]
+    target_dataview_id: Annotated[int, Field(ge=1.0)]
+    table_item_id: Annotated[int | None, Field(ge=1)] = None
     mapping: dict[str, Any] | None = None
     overrides: dict[str, Any] | None = None
 
@@ -533,7 +540,7 @@ class QaSettingsSpec(BaseModel):
 
 class RenameSessionParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    title: str
+    title: Annotated[str, Field(min_length=1, max_length=200)]
 
 
 class RenameSessionSpec(BaseModel):
@@ -543,8 +550,8 @@ class RenameSessionSpec(BaseModel):
 
 class RenameTemplateParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    title: str
-    description: str | None = None
+    title: Annotated[str, Field(min_length=1, max_length=80)]
+    description: Annotated[str | None, Field(max_length=240)] = None
 
 
 class RenameTemplateSpec(BaseModel):
@@ -554,8 +561,8 @@ class RenameTemplateSpec(BaseModel):
 
 class ResolveTemplateMappingParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    source_dashboard_id: int
-    target_dataview_id: int
+    source_dashboard_id: Annotated[int, Field(ge=1.0)]
+    target_dataview_id: Annotated[int, Field(ge=1.0)]
 
 
 class ResolveTemplateMappingResponse(BaseModel):
@@ -572,7 +579,7 @@ class ResolveTemplateMappingSpec(BaseModel):
 
 class RestoreCanvasParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    target_sequence: int
+    target_sequence: Annotated[int, Field(ge=1.0)]
     base_sequence: int | None = None
     history_index: int | None = None
     activity: dict[str, Any] | None = None
@@ -649,9 +656,9 @@ class SaveCanvasSpec(BaseModel):
 
 class SaveTemplateParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    dashboard_id: int
-    title: str
-    description: str | None = None
+    dashboard_id: Annotated[int, Field(ge=1.0)]
+    title: Annotated[str, Field(min_length=1, max_length=80)]
+    description: Annotated[str | None, Field(max_length=240)] = None
 
 
 class SaveTemplateSpec(BaseModel):
@@ -768,7 +775,7 @@ class V3DashboardMetaType(BaseModel):
     model_config = ConfigDict(extra="allow")
     id: int
     title: str
-    share: DashboardAuth | None = None
+    share: DashboardAuthResponse | None = None
     url: str
     was_published: bool
     sources: list[int] | None = None
@@ -854,6 +861,7 @@ for _model_name in [
     "DashboardActionSpec",
     "DashboardAnalyticsResponse",
     "DashboardAuth",
+    "DashboardAuthResponse",
     "DashboardEditParams",
     "DashboardEditSpec",
     "DashboardGenerationParams",
@@ -981,6 +989,7 @@ __all__ = [
     "DashboardActionSpec",
     "DashboardAnalyticsResponse",
     "DashboardAuth",
+    "DashboardAuthResponse",
     "DashboardEditParams",
     "DashboardEditSpec",
     "DashboardGenerationParams",
