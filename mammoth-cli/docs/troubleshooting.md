@@ -23,24 +23,31 @@ Errors print to stderr as a stable envelope:
 {"schema_version": 1, "error": {"code": "...", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": ["..."]}}
 ```
 
-Branch on `error.code`, not the message. `recovery_commands` lists exact
+Branch on `error.code`, not the message. `recovery_commands` lists the exact
 next commands to run.
 
 ## Common cases
 
 | Exit | `error.code` | Next step |
 |---|---|---|
-| 4 | `not_authenticated`, `authentication_failed` | `mammoth auth login` |
-| 2 | `project_required` | `mammoth context project use ID` or `--project` |
-| 2 | `confirmation_required` | re-run with `--yes` (and `--confirm TARGET`) |
-| 5 | `resource_not_found` | re-list to find the correct id |
-| 7 | `retryable_error`, `timeout` | wait, then re-run the recovery command |
+| 4 | `not_authenticated`, `authentication_failed` | Run `mammoth auth login`. |
+| 2 | `project_required` | Pass `--project ID`, or run `mammoth context project use ID`. |
+| 2 | `confirmation_required` | Re-run with `--yes`. |
+| 2 | `confirmation_target_mismatch` | Re-run with `--yes` and a matching `--confirm TARGET`. |
+| 5 | `resource_not_found` | Re-list to find the correct id. |
+| 7 | `retryable_error`, `timeout` | Wait, then re-run the command. |
+
+Only exit code `7` is safe to retry. The CLI never retries a mutation on its
+own. For the confirmation codes, see [Safe mutation](safety.md).
 
 ## First diagnostic
 
+`mammoth doctor` is the first diagnostic to run:
+
 ```bash
-mammoth doctor --output json --no-input
+mammoth doctor
 ```
 
 It reports the profile, credential presence, resolved endpoint, and whether an
-authenticated request succeeds — with no secret in the output.
+authenticated request succeeds — with no secret in the output. To fix an auth
+failure, see [Authentication](authentication.md).

@@ -4,15 +4,17 @@
 
 This CLI targets autonomous agents and CI jobs.
 
-## Always run in machine mode
+## Machine behavior is automatic
+
+Piping or redirecting output already yields the JSON envelope. `--no-input` also turns on automatically off a terminal. So an agent needs no flags for machine behavior.
+
+To force it explicitly, or in an unusual TTY, pass `--output json --no-input`.
 
 ```bash
 mammoth <command> --output json --no-input
 ```
 
-- `--output json` (or `ndjson` for streams) emits a stable envelope.
-- `--no-input` never prompts; a missing required input fails instead of waiting.
-- `--no-progress` and machine output suppress color and progress rendering.
+Use `ndjson` for streamed results. Machine output suppresses color and progress rendering.
 
 ## Read the envelope, not the text
 
@@ -28,36 +30,32 @@ Error on stderr:
 {"schema_version": 1, "error": {"code": "...", "message": "...", "hint": "...", "retryable": false, "recovery_commands": ["..."]}}
 ```
 
-Branch on the exit code and the stable `error.code`. See
-[troubleshooting](troubleshooting.md) for the code table.
+Branch on the exit code and the stable `error.code`. See [troubleshooting](troubleshooting.md) for the code table.
 
 ## Structured input
 
 Pass multi-field requests as one document instead of many flags:
 
 ```bash
-mammoth view transform math 1039 --project 180 --output json --no-input \
-  --input '{"expression": "price * qty", "new_column": "total"}'
-mammoth <command> --input request.yaml --output json --no-input
-echo '{"...": "..."}' | mammoth <command> --input - --input-format json --output json --no-input
+mammoth view transform math 1039 --project 180 --input '{"expression": "price * qty", "new_column": "total"}'
+mammoth <command> --input request.yaml
+echo '{"...": "..."}' | mammoth <command> --input - --input-format json
 ```
 
 ## Confirmations without a terminal
 
-Destructive commands need `--yes`; high-impact commands also need
-`--confirm TARGET`. There is no prompt under `--no-input`. See
-[safety](safety.md).
+Destructive commands need `--yes`. High-impact commands also need `--confirm TARGET`. There is no prompt off a terminal. See [safety](safety.md).
 
 ## Discovery
 
 ```bash
-mammoth capability list --output json --no-input      # every operation
-mammoth schema list --output json --no-input          # every command's schema
-mammoth schema get <command.id> --output json --no-input
+mammoth capability list      # every operation
+mammoth schema list          # every command's schema
+mammoth schema get <command.id>
 ```
 
 ## Machine-readable docs
 
-`docs/llms.txt` indexes the guides and command families; `docs/llms-full.txt`
-lists every command with its mutation class, confirmation policy, and backing
-SDK symbol.
+`docs/llms.txt` indexes the guides and command families. `docs/llms-full.txt` lists every command with its mutation class, confirmation policy, and backing SDK symbol.
+
+For the full command list, see the [command reference](reference/commands.md). For login setup, see [authentication](authentication.md).

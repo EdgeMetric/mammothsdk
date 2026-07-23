@@ -2,10 +2,10 @@
 
 Authentication has exactly three required inputs (API key, API secret,
 workspace id) and one optional input (server prefix, default ``app``).
-These commands never accept a secret as an ordinary command-line value: the
-API key and secret come from a hidden TTY prompt, the four documented
-``MAMMOTH_*`` environment variables, or a permission-checked JSON/YAML
-document read through the shared ``--input`` option.
+Authentication always requires a login; there is no environment credential
+path. These commands never accept a secret as an ordinary command-line value:
+the API key and secret come from a hidden TTY prompt or a permission-checked
+JSON/YAML login document read through the shared ``--input`` option.
 """
 
 from __future__ import annotations

@@ -6,9 +6,11 @@
 
 - [installation.md](docs/installation.md): Install the CLI and the agent skill.
 - [quickstart.md](docs/quickstart.md): Authenticate and run your first commands in five minutes.
-- [authentication.md](docs/authentication.md): Credentials, profiles, server prefixes, and project context.
+- [authentication.md](docs/authentication.md): Getting an API key, login, profiles, and project context.
 - [agents.md](docs/agents.md): Deterministic output, promptless mode, and CI patterns for agents.
-- [safety.md](docs/safety.md): Confirmation policies and safe mutation.
+- [safety.md](docs/safety.md): Mutation classes, confirmation policies, and safe mutation.
+- [reference/output-and-errors.md](docs/reference/output-and-errors.md): Output modes, envelopes, exit codes, and error codes.
+- [reference/global-flags.md](docs/reference/global-flags.md): The global flags every command shares.
 - [troubleshooting.md](docs/troubleshooting.md): Exit codes, error envelopes, and recovery.
 - [upgrade.md](docs/upgrade.md): Update the CLI and skill.
 - [uninstall.md](docs/uninstall.md): Remove the CLI, skill, and configuration.

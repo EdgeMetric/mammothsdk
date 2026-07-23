@@ -11,7 +11,9 @@ deterministic machine output, promptless operation, and stable error envelopes.
 
 ## Golden rules for agents
 
-1. Always pass `--output json` and `--no-input`. Never rely on a prompt.
+1. Always pass `--output json` and `--no-input`. Machine output is automatic
+   when piped or redirected, and `--no-input` turns on automatically off a
+   terminal, but keeping both flags explicit is fine. Never rely on a prompt.
 2. Discover, do not guess. Use `mammoth capability list` and `mammoth schema get`
    to learn a command before you run it.
 3. Read the exit code, not the text. `0` ok, `2` usage, `4` auth, `5` not found,
@@ -20,19 +22,33 @@ deterministic machine output, promptless operation, and stable error envelopes.
    commands also need `--confirm TARGET`. There is no interactive fallback under
    `--no-input`.
 5. Never put a secret on the command line. Pass credentials through
-   `mammoth auth login` (prompt or environment) and structured secrets through
-   `--input`.
+   `mammoth auth login` (interactive) or `mammoth auth login --input creds.json`
+   (non-interactive), and structured secrets through `--input`.
 
 ## Authenticate
 
+Login is the only way to authenticate. Interactive login prompts for the API
+key and secret (hidden input):
+
 ```bash
-export MAMMOTH_API_KEY=... MAMMOTH_API_SECRET=... MAMMOTH_WORKSPACE_ID=4
-mammoth doctor --output json --no-input        # verify credentials + endpoint
+mammoth auth login -w 4                          # -w is the workspace id
 ```
 
-Credentials resolve in this order: explicit login, then environment, then the
-saved profile. The endpoint defaults to the `app` server prefix. See
-[references/auth.md](references/auth.md).
+For agents, log in non-interactively from a `0600` JSON file:
+
+```bash
+cat > creds.json <<'JSON'
+{"api_key": "...", "api_secret": "...", "workspace_id": 4, "server_prefix": "app"}
+JSON
+chmod 600 creds.json
+mammoth auth login --input creds.json --output json --no-input
+mammoth doctor --output json --no-input          # verify credentials + endpoint
+```
+
+`server_prefix` is optional (default `app`). You can also pipe the document with
+`--input - --input-format json`. Credentials resolve in this order: explicit
+login, then the saved profile. The endpoint defaults to the `app` server prefix.
+See [references/auth.md](references/auth.md).
 
 ## Select a project
 

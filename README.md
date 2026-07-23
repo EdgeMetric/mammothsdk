@@ -5,6 +5,10 @@ Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data 
 [![PyPI](https://img.shields.io/pypi/v/mammoth-io)](https://pypi.org/project/mammoth-io/)
 [![Python](https://img.shields.io/pypi/pyversions/mammoth-io)](https://pypi.org/project/mammoth-io/)
 
+> **Prefer the terminal?** This repository also ships **`mammoth-cli`**, a
+> command-line interface built for both people and autonomous agents. See
+> [Command-line interface](#command-line-interface-mammoth-cli) below.
+
 ## Installation
 
 ```bash
@@ -729,6 +733,18 @@ ds_config = client.connectors.create_ds_config(
     validate=True,
 )
 ```
+
+## Command-line interface (mammoth-cli)
+
+`mammoth-cli` drives the same platform from your terminal — for people at a shell and for autonomous agents. In a terminal it prints readable tables; when output is piped it emits a stable JSON envelope with documented exit and error codes, so agents and CI need no special flags.
+
+```bash
+uv tool install mammoth-cli      # or: pipx install mammoth-cli / pip install mammoth-cli
+mammoth auth login -w 4          # log in once; the secret goes to your OS keyring
+mammoth project list             # a table in a terminal, JSON when piped
+```
+
+It covers uploads, pipeline transformations, dashboards, automation, and administration, and it installs a bundled agent skill for Claude Code, Codex, and Cursor (`mammoth skill install`). See the [mammoth-cli](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli) directory and its [documentation](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli/docs).
 
 ## MCP Server
 

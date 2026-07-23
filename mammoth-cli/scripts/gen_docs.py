@@ -14,6 +14,7 @@ A ``--check`` flag regenerates into memory and exits non-zero on any drift.
 
 from __future__ import annotations
 
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -26,12 +27,33 @@ from mammoth_cli.manifest.loader import load_commands  # noqa: E402
 DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
 REPO_URL = "https://github.com/EdgeMetric/mammothsdk"
 
+# Transformation methods live on internal ``View`` mixins
+# (``mammoth._mixins._<area>_ops.<Area>OpsMixin.<method>``) but are exposed to
+# users on the public ``mammoth.View`` class. Public docs must name the public
+# symbol, never the private mixin module.
+_MIXIN_SYMBOL_RE = re.compile(r"mammoth\._mixins\._[a-z]+_ops\.[A-Za-z0-9]+Mixin\.")
+
+
+def public_sdk_symbol(symbol: str) -> str:
+    """Rewrite an internal View-mixin path to its public ``mammoth.View`` form.
+
+    Args:
+        symbol: The backing SDK symbol recorded in a command manifest.
+
+    Returns:
+        The symbol with any private ``_mixins`` prefix replaced by
+        ``mammoth.View.``; other symbols are returned unchanged.
+    """
+    return _MIXIN_SYMBOL_RE.sub("mammoth.View.", symbol)
+
 GUIDES = [
     ("installation.md", "Install the CLI and the agent skill."),
     ("quickstart.md", "Authenticate and run your first commands in five minutes."),
-    ("authentication.md", "Credentials, profiles, server prefixes, and project context."),
+    ("authentication.md", "Getting an API key, login, profiles, and project context."),
     ("agents.md", "Deterministic output, promptless mode, and CI patterns for agents."),
-    ("safety.md", "Confirmation policies and safe mutation."),
+    ("safety.md", "Mutation classes, confirmation policies, and safe mutation."),
+    ("reference/output-and-errors.md", "Output modes, envelopes, exit codes, and error codes."),
+    ("reference/global-flags.md", "The global flags every command shares."),
     ("troubleshooting.md", "Exit codes, error envelopes, and recovery."),
     ("upgrade.md", "Update the CLI and skill."),
     ("uninstall.md", "Remove the CLI, skill, and configuration."),
@@ -69,7 +91,7 @@ def _command_block(record: dict[str, object]) -> list[str]:
         [
             f"- Mutation class: `{record['mutation_class']}`",
             f"- Confirmation: `{record['confirmation']}`",
-            f"- Backing SDK: `{record['sdk_symbol']}`",
+            f"- Backing SDK: `{public_sdk_symbol(str(record['sdk_symbol']))}`",
             f"- Agent example: `{record['agent_example']}`",
             "",
         ]
@@ -138,7 +160,7 @@ def render_llms_full_txt(families: dict[str, list[dict[str, object]]]) -> str:
             lines.append(
                 f"- `mammoth {record['command_path']}` "
                 f"[{record['mutation_class']}/{record['confirmation']}] "
-                f"-> {record['sdk_symbol']}"
+                f"-> {public_sdk_symbol(str(record['sdk_symbol']))}"
             )
             lines.append(f"  example: {record['agent_example']}")
         lines.append("")
