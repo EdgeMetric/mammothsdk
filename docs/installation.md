@@ -31,7 +31,7 @@ The SDK has two runtime dependencies, installed automatically:
 Clone the repository and install with dev dependencies:
 
 ```bash
-git clone https://github.com/EdgeMetric/mm-pysdk.git
+git clone https://github.com/EdgeMetric/mammothsdk.git
 cd mm-pysdk
 poetry install
 ```

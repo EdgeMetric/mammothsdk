@@ -7,13 +7,13 @@
 Linux/macOS quick install:
 
 ```sh
-curl -fsSL https://github.com/EdgeMetric/mm-pysdk/releases/latest/download/mammoth-install.sh | sh
+curl -fsSL https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.sh | sh
 ```
 
 Windows PowerShell quick install:
 
 ```powershell
-irm https://github.com/EdgeMetric/mm-pysdk/releases/latest/download/mammoth-install.ps1 | iex
+irm https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.ps1 | iex
 ```
 
 These one-line commands execute downloaded code. For a verified install,
@@ -56,11 +56,11 @@ the installer, `SHA256SUMS`, and the Sigstore bundle, verifies both, then runs
 the installer. For the direct convenience flow:
 
 ```sh
-curl -fsSL https://github.com/EdgeMetric/mm-pysdk/releases/latest/download/mammoth-install.sh | sh
+curl -fsSL https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.sh | sh
 ```
 
 ```powershell
-irm https://github.com/EdgeMetric/mm-pysdk/releases/latest/download/mammoth-install.ps1 | iex
+irm https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.ps1 | iex
 ```
 
 Piping a download directly to a shell does not verify it first. For the
@@ -70,13 +70,13 @@ verified flow, download the installer, `SHA256SUMS`, and
 ```bash
 cosign verify-blob \
   --bundle SHA256SUMS.sigstore.json \
-  --certificate-identity-regexp '^https://github\.com/EdgeMetric/mm-pysdk/\.github/workflows/cli-release\.yml@refs/tags/' \
+  --certificate-identity-regexp '^https://github\.com/EdgeMetric/mammothsdk/\.github/workflows/cli-release\.yml@refs/tags/' \
   --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
   SHA256SUMS
 ```
 
 The `--certificate-identity-regexp` and `--certificate-oidc-issuer`
-constraints ensure the signature came from the EdgeMetric/mm-pysdk release
+constraints ensure the signature came from the EdgeMetric/mammothsdk release
 workflow. Without them, `cosign` accepts any valid Sigstore certificate.
 Then run `sha256sum --check --ignore-missing SHA256SUMS` and inspect the
 installer before you execute it.

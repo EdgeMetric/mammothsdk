@@ -6,7 +6,7 @@ authors = ["Mammoth Analytics <support@mammoth.io>"]
 license = "Proprietary"
 readme = "README.md"
 homepage = "https://mammoth.io"
-repository = "https://github.com/EdgeMetric/mm-pysdk"
+repository = "https://github.com/EdgeMetric/mammothsdk"
 documentation = "https://docs.mammoth.io"
 keywords = ["mammoth", "analytics", "data", "api", "sdk"]
 packages = [{include = "mammoth"}]

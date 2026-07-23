@@ -24,7 +24,7 @@ from mammoth_cli import __version__  # noqa: E402
 from mammoth_cli.manifest.loader import load_commands  # noqa: E402
 
 DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
-REPO_URL = "https://github.com/EdgeMetric/mm-pysdk"
+REPO_URL = "https://github.com/EdgeMetric/mammothsdk"
 
 GUIDES = [
     ("installation.md", "Install the CLI and the agent skill."),

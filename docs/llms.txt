@@ -61,5 +61,5 @@ For the full SDK documentation in a single file, see [llms-full.txt](https://doc
 ## Links
 
 - PyPI: https://pypi.org/project/mammoth-io/
-- GitHub: https://github.com/EdgeMetric/mm-pysdk
+- GitHub: https://github.com/EdgeMetric/mammothsdk
 - Platform: https://mammoth.io
