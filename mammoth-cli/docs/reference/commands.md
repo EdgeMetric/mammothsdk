@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 1.0.2.
+Generated from the reviewed command manifests for mammoth-cli 1.0.3.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 
 Total commands: 505.
@@ -235,10 +235,14 @@ Total commands: 505.
 
 ### `mammoth automation create`
 
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new automation; or pass it via the 'name' input field.
+
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.automations.AutomationsAPI.create`
-- Agent example: `mammoth automation create --input '{"name": "example", "description": "example", "tasks": [{"task_type": "run_data_retrieval"}]}' --output json --no-input`
+- Agent example: `mammoth automation create example --input '{"description": "example", "tasks": [{"task_type": "run_data_retrieval"}]}' --output json --no-input`
 
 ### `mammoth automation delete`
 
@@ -610,10 +614,14 @@ Total commands: 505.
 
 ### `mammoth client-app create`
 
+**Arguments**
+
+- `APP_NAME` (str, optional) — Name of the new client app; or pass it via the 'app_name' input field.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.clientapps.ClientAppsAPI.create`
-- Agent example: `mammoth client-app create --input '{"app_name": "example"}' --output json --no-input`
+- Agent example: `mammoth client-app create example --output json --no-input`
 
 ### `mammoth client-app delete`
 
@@ -1086,10 +1094,14 @@ Total commands: 505.
 
 ### `mammoth dashboard create`
 
+**Arguments**
+
+- `INTENT` (str, optional) — Generation intent for the new dashboard; or pass it via the 'intent' input field.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.create`
-- Agent example: `mammoth dashboard create --input '{"intent": "example", "source": [1]}' --output json --no-input`
+- Agent example: `mammoth dashboard create example --input '{"source": [1]}' --output json --no-input`
 
 ### `mammoth dashboard data draft`
 
@@ -2280,10 +2292,14 @@ Total commands: 505.
 
 ### `mammoth folder create`
 
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new folder; or pass it via the 'name' input field.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.folders.FoldersAPI.create`
-- Agent example: `mammoth folder create --input '{"name": "example"}' --output json --no-input`
+- Agent example: `mammoth folder create example --output json --no-input`
 
 ### `mammoth folder delete`
 
@@ -2437,10 +2453,14 @@ Total commands: 505.
 
 ### `mammoth parameter create`
 
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new parameter; or pass it via the 'name' input field.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.parameters.ParametersAPI.create`
-- Agent example: `mammoth parameter create --input '{"name": "example", "param_type": "example", "value": "example"}' --output json --no-input`
+- Agent example: `mammoth parameter create example --input '{"param_type": "example", "value": "example"}' --output json --no-input`
 
 ### `mammoth parameter delete`
 
@@ -2488,10 +2508,14 @@ Total commands: 505.
 
 ### `mammoth parameter group create`
 
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new parameter group; or pass it via the 'name' input field.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.parameters.ParametersAPI.group_create`
-- Agent example: `mammoth parameter group create --input '{"name": "example"}' --output json --no-input`
+- Agent example: `mammoth parameter group create example --output json --no-input`
 
 ### `mammoth parameter group delete`
 
@@ -2861,10 +2885,14 @@ Total commands: 505.
 
 ### `mammoth snippet create`
 
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new snippet; or pass it via the 'name' input field.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.snippets.SnippetsAPI.create`
-- Agent example: `mammoth snippet create --input '{"name": "example", "code": "example", "language": "example"}' --output json --no-input`
+- Agent example: `mammoth snippet create example --input '{"code": "example", "language": "example"}' --output json --no-input`
 
 ### `mammoth snippet delete`
 
@@ -4669,10 +4697,14 @@ Total commands: 505.
 
 ### `mammoth webhook create`
 
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new webhook; or pass it via the 'name' input field.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.webhooks.WebhooksAPI.create`
-- Agent example: `mammoth webhook create --output json --no-input`
+- Agent example: `mammoth webhook create example --output json --no-input`
 
 ### `mammoth webhook delete`
 
@@ -4797,10 +4829,14 @@ Total commands: 505.
 
 ### `mammoth workflow create`
 
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new workflow; or pass it via the 'name' input field.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.create`
-- Agent example: `mammoth workflow create --input '{"name": "example"}' --output json --no-input`
+- Agent example: `mammoth workflow create example --output json --no-input`
 
 ### `mammoth workflow delete`
 

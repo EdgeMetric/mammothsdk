@@ -6,7 +6,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreateApp
-  positionals: []
+  positionals:
+  - name: app_name
+    type: str
+    required: false
+    metavar: APP_NAME
+    falls_back_to_field: app_name
+    help: Name of the new client app; or pass it via the 'app_name' input field.
   options: []
   sdk_symbol: mammoth.api.clientapps.ClientAppsAPI.create
   sdk_conversion: Call mammoth.api.clientapps.ClientAppsAPI.create with validated request fields.
@@ -23,7 +29,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth client-app create --help
-  agent_example: 'mammoth client-app create --input ''{"app_name": "example"}'' --output json --no-input'
+  agent_example: mammoth client-app create example --output json --no-input
   unit_tests:
   - UT-CLIENT-APP-CREATE
   contract_tests:

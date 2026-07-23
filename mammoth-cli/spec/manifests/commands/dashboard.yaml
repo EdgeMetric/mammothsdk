@@ -487,7 +487,13 @@ commands:
   alias_of: null
   operation_ids:
   - GenerateDashboard
-  positionals: []
+  positionals:
+  - name: intent
+    type: str
+    required: false
+    metavar: INTENT
+    falls_back_to_field: intent
+    help: Generation intent for the new dashboard; or pass it via the 'intent' input field.
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.create with validated request fields.
@@ -505,8 +511,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard create --help
-  agent_example: 'mammoth dashboard create --input ''{"intent": "example", "source": [1]}'' --output json
-    --no-input'
+  agent_example: 'mammoth dashboard create example --input ''{"source": [1]}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-CREATE
   contract_tests:

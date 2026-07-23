@@ -6,7 +6,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreateAutomation
-  positionals: []
+  positionals:
+  - name: name
+    type: str
+    required: false
+    metavar: NAME
+    falls_back_to_field: name
+    help: Name of the new automation; or pass it via the 'name' input field.
   options: []
   sdk_symbol: mammoth.api.automations.AutomationsAPI.create
   sdk_conversion: Call mammoth.api.automations.AutomationsAPI.create with validated request fields.
@@ -23,8 +29,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth automation create --help
-  agent_example: 'mammoth automation create --input ''{"name": "example", "description": "example", "tasks":
-    [{"task_type": "run_data_retrieval"}]}'' --output json --no-input'
+  agent_example: 'mammoth automation create example --input ''{"description": "example", "tasks": [{"task_type":
+    "run_data_retrieval"}]}'' --output json --no-input'
   unit_tests:
   - UT-AUTOMATION-CREATE
   contract_tests:
