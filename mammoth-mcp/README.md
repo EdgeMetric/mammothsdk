@@ -147,11 +147,11 @@ MODE=remote PORT=8000 \
 
 ### 4. Nginx Reverse Proxy
 
-Route traffic to the MCP server. Replace `10.0.3.207` with your server's private IP.
+Route traffic to the MCP server. Replace `<PRIVATE_IP>` with your server's private IP.
 
 ```nginx
 upstream mammoth_mcp {
-    server 10.0.3.207:8000;
+    server <PRIVATE_IP>:8000;
     keepalive 32;
 }
 

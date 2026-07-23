@@ -13,6 +13,7 @@ Run:
 from __future__ import annotations
 
 import contextlib
+import os
 
 import pytest
 
@@ -45,12 +46,15 @@ class TestClientConnection:
         assert bad.test_connection() is False
 
     def test_context_manager(self) -> None:
+        required = ("VAL_API_KEY", "VAL_API_SECRET", "VAL_WORKSPACE_ID", "VAL_PROJECT_ID")
+        if any(not os.environ.get(name) for name in required):
+            pytest.skip(f"integration credentials not set: {', '.join(required)}")
         with MammothClient(
-            api_key="REDACTED_CREDENTIAL",
-            api_secret="REDACTED_CREDENTIAL",
-            workspace_id=304,
+            api_key=os.environ["VAL_API_KEY"],
+            api_secret=os.environ["VAL_API_SECRET"],
+            workspace_id=int(os.environ["VAL_WORKSPACE_ID"]),
         ) as c:
-            c.set_project_id(1134)
+            c.set_project_id(int(os.environ["VAL_PROJECT_ID"]))
             assert c.test_connection() is True
 
 
