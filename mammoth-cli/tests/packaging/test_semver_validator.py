@@ -31,6 +31,10 @@ _VALID = [
     "1.2.3-alpha",
     "1.2.3+build",
     "1.2.3-rc.1+build.5",
+    "1.0.0-0",  # numeric prerelease identifier of a single zero is legal
+    "1.2.3-0.3.7",  # multiple numeric prerelease identifiers, none zero-padded
+    "1.2.3-x.7.z.92",  # mixed alnum prerelease identifiers
+    "1.2.3+00A1",  # leading zeros ARE allowed in build metadata
 ]
 
 _INVALID = [
@@ -43,6 +47,14 @@ _INVALID = [
     "1..2",  # empty middle component
     "1.2.",  # trailing empty component
     "1.2.x",  # non-numeric PATCH
+    "01.2.3",  # leading zero in MAJOR
+    "1.02.3",  # leading zero in MINOR
+    "1.2.03",  # leading zero in PATCH
+    "1.2.3-01",  # leading zero in a numeric prerelease identifier
+    "1.2.3-alpha..1",  # empty prerelease identifier between dots
+    "1.2.3-..",  # empty prerelease identifiers
+    "1.2.3-",  # empty prerelease
+    "1.2.3+",  # empty build metadata
 ]
 
 

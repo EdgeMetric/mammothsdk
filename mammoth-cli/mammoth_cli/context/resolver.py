@@ -121,6 +121,26 @@ def _invalid_workspace_env_error(raw: str) -> CliError:
     )
 
 
+def _require_positive_workspace(workspace_id: int, *, source: str) -> int:
+    """Return ``workspace_id`` if positive, else raise ``invalid_workspace_id``.
+
+    A single choke point so every credential source -- environment, explicit
+    login, and a saved profile -- rejects a non-positive workspace id, rather
+    than only the environment path.
+
+    Args:
+        workspace_id: The candidate workspace id.
+        source: A short phrase naming where the id came from, for the message.
+    """
+    if workspace_id <= 0:
+        raise CliError(
+            code=CODE_INVALID_WORKSPACE_ID,
+            message=f"The {source} workspace id must be a positive integer, got {workspace_id}.",
+            exit_status=EXIT_USAGE,
+        )
+    return workspace_id
+
+
 def _endpoint(server_prefix: str | None) -> str:
     """Resolve one endpoint from a server prefix (default ``app-eu``)."""
     return resolve_base_url(server_prefix)
@@ -156,23 +176,26 @@ def resolve_auth(
         return ResolvedAuth(
             api_key=explicit_login.api_key,
             api_secret=explicit_login.api_secret,
-            workspace_id=explicit_login.workspace_id,
+            workspace_id=_require_positive_workspace(
+                explicit_login.workspace_id, source="login"
+            ),
             base_url=base_url,
         )
 
-    # Environment authentication is all-or-nothing. If the caller supplied ANY
-    # of the three credential variables, they must supply all three; a partial
-    # set must never silently fall back to a saved profile (which could operate
-    # in a different workspace than the partial environment implied).
-    env_values = {name: environment.get(name) for name in ENV_CREDENTIAL_VARS}
-    if any(env_values.values()):
-        missing = [name for name in ENV_CREDENTIAL_VARS if not env_values[name]]
+    # Environment authentication is all-or-nothing. Presence is decided by
+    # whether a variable is SET (``name in environment``), not by truthiness: an
+    # explicitly empty value (e.g. ``MAMMOTH_API_KEY=""``) is a deliberate
+    # attempt to use environment auth, so it must be rejected as incomplete
+    # rather than silently falling back to a saved profile (which could operate
+    # in a different workspace than the environment implied). If ANY of the
+    # three variables is set, all three must be set AND non-empty.
+    if any(name in environment for name in ENV_CREDENTIAL_VARS):
+        missing = [name for name in ENV_CREDENTIAL_VARS if not environment.get(name)]
         if missing:
             raise _incomplete_environment_auth_error(missing)
-        env_key = env_values[ENV_API_KEY]
-        env_secret = env_values[ENV_API_SECRET]
-        env_workspace = env_values[ENV_WORKSPACE_ID]
-        assert env_key is not None and env_secret is not None and env_workspace is not None
+        env_key = environment[ENV_API_KEY]
+        env_secret = environment[ENV_API_SECRET]
+        env_workspace = environment[ENV_WORKSPACE_ID]
         try:
             workspace_id = int(env_workspace)
         except ValueError as exc:
@@ -189,7 +212,12 @@ def resolve_auth(
         if creds is not None:
             api_key, api_secret = creds
             base_url = _endpoint(record.server_prefix)
-            return ResolvedAuth(api_key, api_secret, record.workspace_id, base_url)
+            return ResolvedAuth(
+                api_key,
+                api_secret,
+                _require_positive_workspace(record.workspace_id, source="profile"),
+                base_url,
+            )
 
     raise not_authenticated_error()
 

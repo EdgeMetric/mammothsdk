@@ -147,6 +147,67 @@ def test_resolve_auth_complete_env_still_works(isolated_cli_config: Path) -> Non
     assert resolved.workspace_id == 9
 
 
+# Every combination where at least one credential variable is SET-but-empty.
+# Presence is by "the variable exists", not by truthiness, so an explicitly
+# empty value is a deliberate (broken) env-auth attempt, never a profile
+# fallback.
+_EMPTY_ENV_COMBINATIONS = [
+    {ENV_API_KEY: ""},
+    {ENV_API_SECRET: ""},
+    {ENV_WORKSPACE_ID: ""},
+    {ENV_API_KEY: "", ENV_API_SECRET: "", ENV_WORKSPACE_ID: ""},
+    {ENV_API_KEY: "", ENV_API_SECRET: "s", ENV_WORKSPACE_ID: "9"},
+    {ENV_API_KEY: "k", ENV_API_SECRET: "", ENV_WORKSPACE_ID: "9"},
+    {ENV_API_KEY: "k", ENV_API_SECRET: "s", ENV_WORKSPACE_ID: ""},
+]
+
+
+@pytest.mark.parametrize("empty_env", _EMPTY_ENV_COMBINATIONS)
+def test_resolve_auth_explicitly_empty_env_var_does_not_fall_back(
+    isolated_cli_config: Path, empty_env: dict[str, str]
+) -> None:
+    """A SET-but-empty credential variable is rejected, not a profile fallback.
+
+    ``MAMMOTH_API_KEY=""`` is a deliberate attempt to use environment auth; it
+    must raise rather than silently operate under a saved profile's workspace.
+    """
+    profiles.save_profile(
+        profiles.ProfileRecord(name="default", workspace_id=4, server_prefix="release")
+    )
+    credentials.store_credentials("default", "profile-key", "profile-secret", storage="file")
+
+    with pytest.raises(CliError) as excinfo:
+        resolve_auth(_invocation(), env=empty_env)
+
+    error = excinfo.value
+    assert error.code == "incomplete_environment_auth"
+    assert "profile-key" not in str(error)
+    # Every set-but-empty (and absent) variable is reported missing.
+    missing = set(error.details["missing"])
+    all_vars = {ENV_API_KEY, ENV_API_SECRET, ENV_WORKSPACE_ID}
+    expected = {name for name in all_vars if not empty_env.get(name)}
+    assert missing == expected
+
+
+def test_resolve_auth_rejects_non_positive_profile_workspace(isolated_cli_config: Path) -> None:
+    """A saved profile with a non-positive workspace id is rejected centrally."""
+    profiles.save_profile(
+        profiles.ProfileRecord(name="default", workspace_id=0, server_prefix="release")
+    )
+    credentials.store_credentials("default", "k", "s", storage="file")
+    with pytest.raises(CliError) as excinfo:
+        resolve_auth(_invocation(), env={})
+    assert excinfo.value.code == "invalid_workspace_id"
+
+
+def test_resolve_auth_rejects_non_positive_explicit_workspace(isolated_cli_config: Path) -> None:
+    """An explicit login with a non-positive workspace id is rejected centrally."""
+    explicit = ExplicitLogin(api_key="k", api_secret="s", workspace_id=-1)
+    with pytest.raises(CliError) as excinfo:
+        resolve_auth(_invocation(), env={}, explicit_login=explicit)
+    assert excinfo.value.code == "invalid_workspace_id"
+
+
 def test_resolve_project_prefers_flag() -> None:
     record = profiles.ProfileRecord(name="default", workspace_id=1, project_id=7)
     assert resolve_project(_invocation(project=42), record) == 42

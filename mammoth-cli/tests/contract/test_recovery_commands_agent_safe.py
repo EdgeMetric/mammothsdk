@@ -13,14 +13,19 @@ fails loudly here.
 
 from __future__ import annotations
 
+import ast
 import inspect
 import shlex
+from pathlib import Path
 
 import pytest
 
 from mammoth_cli.errors import envelope
 
 AUTH_LOGIN_PREFIX = "mammoth auth login"
+
+# The installed package root (…/mammoth_cli), scanned statically below.
+_PKG_ROOT = Path(envelope.__file__).resolve().parents[1]
 
 
 def _has_adjacent_output_json(tokens: list[str]) -> bool:
@@ -115,3 +120,97 @@ def test_recovery_command_is_agent_safe(builder: str, command: str) -> None:
         tokens
     ), f"{builder} recovery command missing adjacent '--output json': {command!r}"
     assert "--no-input" in tokens, f"{builder} recovery command missing '--no-input': {command!r}"
+
+
+# --- Exhaustive static scan across the whole package -----------------------
+#
+# The dynamic scan above only reaches errors.envelope. Recovery commands are
+# also produced elsewhere (confirm.py, resolver.py, credentials.py, the command
+# modules, service layers). This AST scan finds EVERY recovery-command string
+# literal in the package -- list elements of a ``recovery_commands=[...]``
+# keyword and arguments to a ``recovery.append(...)`` call -- so no producer
+# escapes the contract, whichever module it lives in.
+
+
+def _skeleton(node: ast.expr) -> str | None:
+    """Return the literal skeleton of a str/f-string node, else None.
+
+    For an f-string, runtime-interpolated parts are replaced with a sentinel
+    that carries no flags, so the presence checks below see only the literal
+    text the author wrote (which is where the flags must live).
+    """
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.JoinedStr):
+        parts: list[str] = []
+        for value in node.values:
+            if isinstance(value, ast.Constant) and isinstance(value.value, str):
+                parts.append(value.value)
+            else:
+                parts.append(" \x00 ")  # interpolated value: opaque, flag-free
+        return "".join(parts)
+    return None
+
+
+def _iter_recovery_command_literals() -> list[tuple[str, str]]:
+    """Every (location, command-skeleton) recovery literal in the package."""
+    found: list[tuple[str, str]] = []
+    for path in sorted(_PKG_ROOT.rglob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        rel = path.relative_to(_PKG_ROOT.parent)
+        for node in ast.walk(tree):
+            # recovery_commands=[ ... ] keyword argument.
+            if isinstance(node, ast.keyword) and node.arg == "recovery_commands":
+                if isinstance(node.value, ast.List):
+                    for element in node.value.elts:
+                        skel = _skeleton(element)
+                        if skel is not None:
+                            found.append((f"{rel}", skel))
+            # <name-containing-'recovery'>.append( ... )
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "append"
+                and isinstance(node.func.value, ast.Name)
+                and "recovery" in node.func.value.id
+                and node.args
+            ):
+                skel = _skeleton(node.args[0])
+                if skel is not None:
+                    found.append((f"{rel}", skel))
+    return found
+
+
+_RECOVERY_LITERALS = _iter_recovery_command_literals()
+
+
+def test_static_scan_reaches_multiple_modules() -> None:
+    """Sanity: the AST scan sees producers beyond errors.envelope."""
+    modules = {loc for loc, _ in _RECOVERY_LITERALS}
+    assert any("envelope.py" in m for m in modules), modules
+    # The scan must cover more than one module (auth-login producers live in
+    # resolver.py, context.py, config.py, credentials.py, service layers).
+    assert len(modules) >= 2, modules
+
+
+@pytest.mark.parametrize(
+    ("location", "command"),
+    _RECOVERY_LITERALS,
+    ids=[f"{loc}:{cmd}" for loc, cmd in _RECOVERY_LITERALS],
+)
+def test_every_recovery_literal_is_agent_safe(location: str, command: str) -> None:
+    # A placeholder command (e.g. "mammoth ... --yes") is never runnable.
+    assert "..." not in command, (
+        f"{location}: non-executable placeholder recovery command: {command!r}"
+    )
+
+    if command.startswith(AUTH_LOGIN_PREFIX):
+        # Interactive auth login (and its --storage variants) is the exception.
+        return
+
+    assert "--output json" in command, (
+        f"{location}: recovery command missing '--output json': {command!r}"
+    )
+    assert "--no-input" in command, (
+        f"{location}: recovery command missing '--no-input': {command!r}"
+    )

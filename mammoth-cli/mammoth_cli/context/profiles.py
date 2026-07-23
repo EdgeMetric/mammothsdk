@@ -29,6 +29,48 @@ PROFILE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 DEFAULT_PROFILE_NAME = "default"
 PROFILES_FILENAME = "profiles.toml"
 
+# A canonical Mammoth endpoint, e.g. ``https://release.mammoth.io/api/v2``. A
+# legacy profile that stored such a base url is migrated to its server prefix on
+# load; any other stored base url is unsupported and rejected explicitly rather
+# than silently dropped (which would redirect the profile to the app-eu
+# default). The trailing ``/api/v2`` and optional slash mirror
+# :func:`mammoth_cli.context.endpoint.resolve_base_url`.
+_CANONICAL_BASE_URL_RE = re.compile(
+    r"^https://(?P<prefix>[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)\.mammoth\.io/api/v2/?$"
+)
+
+
+def _server_prefix_from_legacy_base_url(profile_name: str, base_url: str) -> str:
+    """Migrate a legacy stored ``base_url`` to its server prefix, or reject it.
+
+    Args:
+        profile_name: The profile whose record carried the legacy base url.
+        base_url: The stored legacy base url.
+
+    Returns:
+        The server prefix extracted from a canonical Mammoth url.
+
+    Raises:
+        CliError: ``unsupported_profile_base_url`` when ``base_url`` is not a
+            canonical Mammoth endpoint and therefore cannot be represented by a
+            server prefix.
+    """
+    match = _CANONICAL_BASE_URL_RE.match(base_url)
+    if match is not None:
+        return match.group("prefix")
+    raise CliError(
+        code="unsupported_profile_base_url",
+        message=(
+            f"Profile '{profile_name}' has an unsupported legacy base_url "
+            f"'{base_url}'. The CLI now configures endpoints by server prefix only."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            f"Edit {profiles_path()}: remove the profile's base_url and set a "
+            "one-label server_prefix (for example server_prefix = 'app-eu')."
+        ),
+    )
+
 
 @dataclass(frozen=True)
 class ProfileRecord:
@@ -122,10 +164,17 @@ def load_profiles() -> dict[str, ProfileRecord]:
         return {}
     result: dict[str, ProfileRecord] = {}
     for name, value in table.items():
+        server_prefix = value.get("server_prefix")
+        legacy_base_url = value.get("base_url")
+        if legacy_base_url is not None and server_prefix is None:
+            # Migrate a legacy base_url to its server prefix, or reject it. This
+            # must not be silently ignored: dropping it would redirect the
+            # profile to the app-eu default endpoint.
+            server_prefix = _server_prefix_from_legacy_base_url(str(name), str(legacy_base_url))
         result[name] = ProfileRecord(
             name=str(name),
             workspace_id=int(value["workspace_id"]),
-            server_prefix=value.get("server_prefix"),
+            server_prefix=server_prefix,
             project_id=value.get("project_id"),
         )
     return result

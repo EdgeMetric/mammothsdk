@@ -20,9 +20,19 @@ set -eu
 
 version="${1-}"
 
-# MAJOR.MINOR.PATCH, each a run of digits, with optional `-prerelease` and
-# `+build` metadata. Anchored at both ends so nothing extra may sneak in.
-semver='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
+# Canonical SemVer 2.0.0 (https://semver.org), as a POSIX ERE:
+#   - MAJOR.MINOR.PATCH are non-negative integers with NO leading zeros
+#     (`0` or `[1-9][0-9]*`), so `01.2.3` / `1.02.3` / `1.2.03` are rejected.
+#   - an optional `-prerelease` is a dot-separated list of non-empty identifiers;
+#     a numeric identifier has no leading zero (`1.2.3-01` rejected), and empty
+#     identifiers (`1.2.3-alpha..1`, `1.2.3-..`) are rejected.
+#   - an optional `+build` is a dot-separated list of non-empty alphanumeric
+#     identifiers (leading zeros allowed there, per the spec).
+# Anchored at both ends so nothing extra may sneak in.
+_num='(0|[1-9][0-9]*)'
+_pre_id='(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)'
+_build_id='[0-9a-zA-Z-]+'
+semver="^${_num}\.${_num}\.${_num}(-${_pre_id}(\.${_pre_id})*)?(\+${_build_id}(\.${_build_id})*)?\$"
 
 if ! printf '%s' "$version" | grep -Eq "$semver"; then
     echo "::error::version '$version' is not strict SemVer; it must be MAJOR.MINOR.PATCH[-prerelease][+build]"

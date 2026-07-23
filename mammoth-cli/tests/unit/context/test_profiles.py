@@ -28,6 +28,43 @@ def test_get_selected_defaults_to_default(isolated_cli_config: Path) -> None:
     assert profiles.get_selected() == "default"
 
 
+def _write_raw_profiles(toml_text: str) -> None:
+    """Write a raw profiles.toml, simulating a legacy on-disk profile store."""
+    path = profiles.profiles_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(toml_text, encoding="utf-8")
+
+
+def test_legacy_canonical_base_url_migrates_to_server_prefix(isolated_cli_config: Path) -> None:
+    """A legacy canonical base_url is migrated to its server prefix on load.
+
+    Dropping it (the previous behavior) would silently redirect the profile to
+    the app-eu default endpoint.
+    """
+    _write_raw_profiles(
+        'selected = "default"\n\n'
+        "[profiles.default]\n"
+        "workspace_id = 4\n"
+        'base_url = "https://release.mammoth.io/api/v2"\n'
+    )
+    record = profiles.get_profile("default")
+    assert record is not None
+    assert record.server_prefix == "release"
+
+
+def test_legacy_unsupported_base_url_is_rejected(isolated_cli_config: Path) -> None:
+    """A legacy non-canonical base_url is rejected explicitly, not silently dropped."""
+    _write_raw_profiles(
+        "[profiles.default]\n"
+        "workspace_id = 4\n"
+        'base_url = "https://custom.example.com/api/v2"\n'
+    )
+    with pytest.raises(CliError) as excinfo:
+        profiles.load_profiles()
+    assert excinfo.value.code == "unsupported_profile_base_url"
+    assert excinfo.value.exit_status == 2
+
+
 def test_save_and_get_profile_roundtrip(isolated_cli_config: Path) -> None:
     record = profiles.ProfileRecord(name="default", workspace_id=4, server_prefix="release")
     profiles.save_profile(record)
