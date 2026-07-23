@@ -429,3 +429,53 @@ def test_delete_without_id_is_usage_error(fake_service: FakeMammothService) -> N
         dashboard_cmd.dashboard_delete(_inv("dashboard.delete", yes=True))
     assert excinfo.value.code == "missing_argument"
     assert fake_service.call_log == []
+
+
+# --- async job handling (review finding #2) --------------------------------
+#
+# Fifteen dashboard commands return a job *handle* the caller must wait on, but
+# were labelled ``not_async`` -- so the CLI returned the raw job object and
+# ignored ``--job-timeout``. They are now ``always_wait`` in the manifest and
+# the handler resolves the job through ``wait_if_job`` (which honors the
+# service's configured job timeout). These tests pin that the handler waits.
+
+
+def test_restore_resolves_job_handle(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_RESTORE] = {"job_id": 55}
+    fake_service.job_result = {"status": "success", "resolved": True}
+    data, _ = dashboard_cmd.dashboard_restore(_inv("dashboard.restore", extra_args=["7"]))
+    assert "wait_if_job" in fake_service.calls
+    assert fake_service.wait_log == [{"job_id": 55}]
+    assert data == {"status": "success", "resolved": True}
+
+
+def test_trash_resolves_job_handle(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_TRASH] = {"job_id": 9}
+    dashboard_cmd.dashboard_trash(_inv("dashboard.trash", extra_args=["7"]))
+    assert "wait_if_job" in fake_service.calls
+    assert fake_service.wait_log == [{"job_id": 9}]
+
+
+def test_flipped_dashboard_commands_are_always_wait() -> None:
+    """The job-handle-returning dashboard commands are declared ``always_wait``.
+
+    A structural guard on the manifest: these commands must not silently
+    regress back to ``not_async`` (which would return a raw job handle).
+    """
+    from mammoth_cli.manifest.loader import command_by_id
+
+    for command_id in (
+        "dashboard.canvas.restore",
+        "dashboard.chat.edit",
+        "dashboard.data.draft",
+        "dashboard.data.published",
+        "dashboard.qa.ask",
+        "dashboard.restore",
+        "dashboard.trash",
+        "dashboard.template.apply",
+        "dashboard.widget-data",
+        "dashboard.style.extract-brand",
+    ):
+        record = command_by_id(command_id)
+        assert record is not None, command_id
+        assert record["wait_policy"] == "always_wait", command_id

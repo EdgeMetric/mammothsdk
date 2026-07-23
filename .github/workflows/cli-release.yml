@@ -181,8 +181,12 @@ jobs:
           path: release-assets
 
       # Produces release-assets/SHA256SUMS.sigstore.json, covering SHA256SUMS
-      # with a GitHub Actions OIDC identity. Verify with `cosign verify-blob`
-      # (exact command recorded in the release documentation).
+      # with a GitHub Actions OIDC identity. Verify with `cosign verify-blob`,
+      # constraining --certificate-identity-regexp to this workflow's tag ref
+      # URL and --certificate-oidc-issuer to GitHub's OIDC issuer so that only
+      # artifacts signed by the EdgeMetric/mm-pysdk cli-release workflow pass —
+      # a bare verify-blob would accept any valid Sigstore certificate. The
+      # exact command is in the release body below and the installation docs.
       - name: Sign SHA256SUMS with Sigstore
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
@@ -199,7 +203,7 @@ jobs:
 
             Windows PowerShell: `irm https://github.com/EdgeMetric/mm-pysdk/releases/download/${{ github.ref_name }}/mammoth-install.ps1 | iex`
 
-            Piping downloaded code directly to a shell is convenient but does not verify it first. For a verified install, download the installer, `SHA256SUMS`, and `SHA256SUMS.sigstore.json`, then run `cosign verify-blob --bundle SHA256SUMS.sigstore.json SHA256SUMS` and `sha256sum --check --ignore-missing SHA256SUMS`. Inspect the verified installer before executing the local file. On Windows, compare `(Get-FileHash .\mammoth-install.ps1 -Algorithm SHA256).Hash` with its `SHA256SUMS` entry after verifying the Sigstore bundle.
+            Piping downloaded code directly to a shell is convenient but does not verify it first. For a verified install, download the installer, `SHA256SUMS`, and `SHA256SUMS.sigstore.json`, then run `cosign verify-blob --bundle SHA256SUMS.sigstore.json --certificate-identity-regexp '^https://github\.com/EdgeMetric/mm-pysdk/\.github/workflows/cli-release\.yml@refs/tags/' --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' SHA256SUMS` and `sha256sum --check --ignore-missing SHA256SUMS`. The identity and issuer constraints ensure the signature came from the EdgeMetric/mm-pysdk release workflow rather than any valid Sigstore certificate. Inspect the verified installer before executing the local file. On Windows, compare `(Get-FileHash .\mammoth-install.ps1 -Algorithm SHA256).Hash` with its `SHA256SUMS` entry after verifying the Sigstore bundle.
           fail_on_unmatched_files: true
           files: |
             release-assets/mammoth_cli-*.whl

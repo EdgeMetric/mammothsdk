@@ -450,6 +450,12 @@ commands:
     metavar: DATA_APP_ID
     falls_back_to_field: null
     help: ID of the data app.
+  - name: email
+    type: str
+    required: true
+    metavar: EMAIL
+    falls_back_to_field: null
+    help: Email address of the shared user to remove.
   options: []
   sdk_symbol: mammoth.api.data_apps.DataAppsAPI.user_remove
   sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.user_remove with validated request fields.
@@ -465,8 +471,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth data-app user remove DATA_APP_ID --help
-  agent_example: 'mammoth data-app user remove 123 --input ''{"email": "example"}'' --output json --no-input'
+  human_example: mammoth data-app user remove DATA_APP_ID EMAIL --help
+  agent_example: mammoth data-app user remove 123 example --output json --no-input
   unit_tests:
   - UT-DATA-APP-USER-REMOVE
   contract_tests:

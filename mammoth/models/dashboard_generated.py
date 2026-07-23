@@ -14,7 +14,7 @@ class AdhocQueryParams(BaseModel):
 
 
 class AdhocQueryResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     job_id: int
     descriptor_id: str
 
@@ -60,7 +60,7 @@ class BulkWidgetDataSpec(BaseModel):
 
 
 class CanvasMeta(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     sequence: int
     artifact_version: str | None = None
     filters: dict[str, Any] | None = None
@@ -69,7 +69,7 @@ class CanvasMeta(BaseModel):
 
 
 class CanvasResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     canvas: dict[str, Any]
     plan: dict[str, Any] | None = None
     specs: dict[str, Any] | None = None
@@ -105,7 +105,7 @@ class CommentSpec(BaseModel):
 
 
 class ContextListResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     contexts: list[dict[str, Any]] | None = None
 
 
@@ -122,7 +122,7 @@ class ContextParams(BaseModel):
 
 
 class ContextResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     context: dict[str, Any]
 
 
@@ -142,7 +142,7 @@ class CreateSessionSpec(BaseModel):
 
 
 class CreatorDashboardHtmlType(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     html: str
     sources: list[int]
     messages: list[dict[str, Any]]
@@ -208,7 +208,7 @@ class DashboardActionSpec(BaseModel):
 
 
 class DashboardAnalyticsResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     total_views: int
     average_time_spent_seconds: float | None = None
     viewed_by: str
@@ -248,12 +248,12 @@ class DashboardGenerationSpec(BaseModel):
 
 
 class DashboardListSchema(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     dashboards: list[DashboardModelType]
 
 
 class DashboardModelType(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     id: int
     updated_at: str
     created_at: str
@@ -289,7 +289,7 @@ class DashboardShareSpec(BaseModel):
 
 
 class DashboardSource(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     id: int
     name: str
     rows: int
@@ -299,7 +299,7 @@ class DashboardSource(BaseModel):
 
 
 class DashboardSourcesType(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     sources: list[DashboardSource]
 
 
@@ -308,19 +308,19 @@ class DashboardStatus(RootModel[Literal["draft", "published", "archived", "delet
 
 
 class DashboardSuggestion(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     format: Literal["dashboard", "presentation", "document"]
     title: str
     intent: str
 
 
 class DashboardSuggestionsResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     suggestions: list[DashboardSuggestion] | None = None
 
 
 class DashboardViewConfigType(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     auto_sync: bool
     is_sync_pending: bool
     last_synced_at: str | None = None
@@ -332,7 +332,7 @@ class DefaultStyleParams(BaseModel):
 
 
 class DefaultStyleResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     style_id: str
 
 
@@ -347,7 +347,7 @@ class DeriveStyleParams(BaseModel):
 
 
 class DeriveStyleResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     style_tokens: dict[str, Any]
 
 
@@ -369,7 +369,7 @@ class DescriptorDataSpec(BaseModel):
 
 
 class DuplicateDashboardResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     id: int
 
 
@@ -401,7 +401,7 @@ class FigureIntentParams(BaseModel):
 
 
 class FigureIntentResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     kind: str
     added: dict[str, Any] | None = None
     spec: dict[str, Any] | None = None
@@ -431,12 +431,12 @@ class GenerateDashboardV3Spec(BaseModel):
 
 
 class JobResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     job: JobSchema
 
 
 class JobSchema(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     id: int
     status: Literal["success", "failure", "processing", "error"]
     response: dict[str, Any] | list[Any]
@@ -447,14 +447,14 @@ class JobSchema(BaseModel):
 
 
 class ObjectJobSchema(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     status_code: int | None = None
     job_id: int | None = None
     failure_reason: str | None = None
 
 
 class OkResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     ok: bool
 
 
@@ -479,7 +479,7 @@ class PlanPageParams(BaseModel):
 
 
 class PlanPageResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     page: dict[str, Any]
     composed: bool
     message: str | None = None
@@ -500,7 +500,7 @@ class PreviewTemplateParams(BaseModel):
 
 
 class PreviewTemplateResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     canvas: dict[str, Any]
     plan: dict[str, Any] | None = None
     specs: dict[str, Any] | None = None
@@ -521,7 +521,7 @@ class QaSettingsParams(BaseModel):
 
 
 class QaSettingsResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     allow_viewer_qa: bool
     can_manage: bool | None = None
 
@@ -559,7 +559,7 @@ class ResolveTemplateMappingParams(BaseModel):
 
 
 class ResolveTemplateMappingResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     mapping: dict[str, Any]
     fidelity: dict[str, Any]
     target_fields: dict[str, Any] | None = None
@@ -591,7 +591,7 @@ class RlsAssignmentEntry(BaseModel):
 
 
 class RlsAssignmentView(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     email: str
     all_access: bool
     values: list[str]
@@ -604,7 +604,7 @@ class RlsAssignmentsParams(BaseModel):
 
 
 class RlsAssignmentsResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     enabled: bool
     filter_column: str | None = None
     assignments: list[RlsAssignmentView]
@@ -616,12 +616,12 @@ class RlsAssignmentsSpec(BaseModel):
 
 
 class RlsColumnsResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     columns: list[str]
 
 
 class RlsDistinctValuesResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     column: str
     total: int
     values: list[Any]
@@ -635,7 +635,7 @@ class SaveCanvasParams(BaseModel):
 
 
 class SaveCanvasResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     sequence: int
     bake_job_id: int
     recomposed: bool | None = None
@@ -660,18 +660,18 @@ class SaveTemplateSpec(BaseModel):
 
 
 class SessionListResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     mine: list[dict[str, Any]] | None = None
     shared: list[dict[str, Any]] | None = None
 
 
 class SessionResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     session: dict[str, Any]
 
 
 class ShareDashboardHtmlType(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     html: str
     title: str
     id: int
@@ -682,7 +682,7 @@ class ShareDashboardHtmlType(BaseModel):
 
 
 class SignatureListResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     signatures: list[dict[str, Any]] | None = None
 
 
@@ -697,7 +697,7 @@ class SignatureParams(BaseModel):
 
 
 class SignatureResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     signature: dict[str, Any]
 
 
@@ -707,32 +707,32 @@ class SignatureSpec(BaseModel):
 
 
 class SqlQueryDataResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     data: list[dict[str, Any]]
 
 
 class StyleListResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     styles: list[dict[str, Any]] | None = None
 
 
 class StylePresetsResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     presets: list[dict[str, Any]] | None = None
 
 
 class StyleResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     style: dict[str, Any]
 
 
 class StyleTokensResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     tokens: dict[str, Any]
 
 
 class TemplateDetailResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     template: dict[str, Any]
     self_fit: dict[str, Any]
     sample: dict[str, Any]
@@ -741,13 +741,13 @@ class TemplateDetailResponse(BaseModel):
 
 
 class TemplateFitResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     fits: list[dict[str, Any]] | None = None
     dataview_id: int
 
 
 class TemplateListResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     templates: list[dict[str, Any]] | None = None
     use_cases: list[dict[str, Any]] | None = None
     industries: list[dict[str, Any]] | None = None
@@ -760,12 +760,12 @@ class TrackHeartbeatSpec(BaseModel):
 
 
 class TrackViewResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     session_id: str | None = None
 
 
 class V3DashboardMetaType(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     id: int
     title: str
     share: DashboardAuth | None = None
@@ -797,7 +797,7 @@ class WidgetDataParams(BaseModel):
 
 
 class WidgetDataResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     data: list[dict[str, Any]]
 
 
@@ -817,7 +817,7 @@ class mmai_dashboard_schema_PathValues(
 
 
 class mmai_dashboards_v3_schema_ChatHistoryResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
     messages: list[dict[str, Any]] | None = None
     sequence: int
     history_index: int | None = None

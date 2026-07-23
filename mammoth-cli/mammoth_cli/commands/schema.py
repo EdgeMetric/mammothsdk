@@ -116,7 +116,14 @@ def runnable_example(
     tokens: list[str] = ["mammoth", *record["command_path"].split()]
     tokens.extend(str(_sample_positional_value(p)) for p in positionals)
     excluded = frozenset(
-        {"project_id", "workspace_id"} | {item.name for item in positionals}
+        {"project_id", "workspace_id"}
+        | {item.name for item in positionals}
+        # A positional may fill a differently-named SDK parameter (e.g. the
+        # ``folder_id`` positional fills ``folder_ids``). That parameter is
+        # positional-sourced, so it must be excluded from the generated
+        # ``--input`` example too -- mirroring ``excluded_input_fields`` so the
+        # example never advertises a field the validator rejects.
+        | {item.fills_sdk_param for item in positionals if item.fills_sdk_param}
     ) | handler_owned_fields(record["command_id"])
     required = [field for field in spec.fields if field.required and field.name not in excluded]
     if required:

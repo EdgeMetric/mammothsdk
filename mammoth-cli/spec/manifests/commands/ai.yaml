@@ -6,7 +6,13 @@ commands:
   alias_of: null
   operation_ids:
   - GenerateCondition
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset to generate a condition for.
   options: []
   sdk_symbol: mammoth.api.ai.AIAPI.condition_generate
   sdk_conversion: Call mammoth.api.ai.AIAPI.condition_generate with validated request fields.
@@ -22,9 +28,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth ai condition generate --help
-  agent_example: 'mammoth ai condition generate --input ''{"intent": "example", "dataset_id": 1}'' --output
-    json --no-input'
+  human_example: mammoth ai condition generate DATASET_ID --help
+  agent_example: 'mammoth ai condition generate 123 --input ''{"intent": "example"}'' --output json --no-input'
   unit_tests:
   - UT-AI-CONDITION-GENERATE
   contract_tests:
@@ -41,7 +46,13 @@ commands:
   alias_of: null
   operation_ids:
   - GenerateExpression
-  positionals: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset to generate an expression for.
   options: []
   sdk_symbol: mammoth.api.ai.AIAPI.expression_generate
   sdk_conversion: Call mammoth.api.ai.AIAPI.expression_generate with validated request fields.
@@ -57,9 +68,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth ai expression generate --help
-  agent_example: 'mammoth ai expression generate --input ''{"intent": "example", "mode": "example", "dataset_id":
-    1}'' --output json --no-input'
+  human_example: mammoth ai expression generate DATASET_ID --help
+  agent_example: 'mammoth ai expression generate 123 --input ''{"intent": "example", "mode": "example"}''
+    --output json --no-input'
   unit_tests:
   - UT-AI-EXPRESSION-GENERATE
   contract_tests:

@@ -258,3 +258,155 @@ def test_view_transform_full_stack(
     replace = posts[0].json_body["REPLACE"]
     assert replace["SOURCE"] == ["col_item"]
     assert replace["MAPPING"] == [{"SEARCH_VALUE": ["a"], "REPLACE_VALUE": "b"}]
+
+
+def test_data_app_user_remove_email_positional_full_stack(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    """`data-app user remove <id> <email>` routes the email through the real stack.
+
+    Review finding #1: the handler requires the email as a *second positional*,
+    but the command contract exposed only one positional. A second positional
+    was rejected as ``unexpected_argument`` and ``--input`` produced
+    ``missing_argument`` -- so the command could not be invoked at all. This
+    drives real argv parsing through to the emitted HTTP request and asserts the
+    DELETE carries the email as a query parameter.
+    """
+    api = _bind_real_service(monkeypatch, real_service)
+    api.on("DELETE", r"/data-apps/123/users$", 200, {"removed": True})
+
+    result = make_runner().invoke(
+        ["data-app", "user", "remove", "123", "user@example.com", "--yes", "--output", "json"],
+        env=_ENV,
+    )
+
+    assert result.exit_code == 0, result.output
+    removals = [r for r in api.requests if r.method == "DELETE" and "/users" in r.path]
+    assert len(removals) == 1
+    assert removals[0].path.endswith("/data-apps/123/users")
+    assert removals[0].query.get("email") == ["user@example.com"]
+
+
+def test_data_app_user_remove_rejects_email_via_input(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    """The email is a required positional, not an ``--input`` field.
+
+    With the email missing from the positionals, strict validation must fail
+    before any HTTP call -- and it must not be silently satisfied by an
+    ``--input`` document (the old, unusable invocation shape).
+    """
+    api = _bind_real_service(monkeypatch, real_service)
+
+    result = make_runner().invoke(
+        [
+            "data-app",
+            "user",
+            "remove",
+            "123",
+            "--yes",
+            "--input",
+            '{"email": "user@example.com"}',
+            "--output",
+            "json",
+        ],
+        env=_ENV,
+    )
+
+    assert result.exit_code == 2, result.output
+    assert '"code": "missing_argument"' in result.output
+    assert not any(r.method == "DELETE" for r in api.requests), "no HTTP before validation"
+
+
+def test_folder_get_forwards_fields_input_full_stack(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    """`folder get` must forward the advertised ``fields`` --input field.
+
+    Review finding #5 (handler/schema drift): ``fields`` was advertised as an
+    accepted input field but the handler never forwarded it, so it was silently
+    ignored. This drives the real stack and asserts the value reaches the HTTP
+    query string.
+    """
+    api = _bind_real_service(monkeypatch, real_service)
+    api.on("GET", r"/folders/88$", 200, {"folder": {"id": 88, "name": "Reports"}})
+
+    result = make_runner().invoke(
+        [
+            "folder",
+            "get",
+            "88",
+            "--project",
+            "180",
+            "--input",
+            '{"fields": "__full"}',
+            "--output",
+            "json",
+        ],
+        env=_ENV,
+    )
+
+    assert result.exit_code == 0, result.output
+    gets = [r for r in api.requests if r.method == "GET" and r.path.endswith("/folders/88")]
+    assert len(gets) == 1
+    assert gets[0].query.get("fields") == ["__full"], "the advertised `fields` must be forwarded"
+
+
+def test_folder_delete_positional_id_full_stack(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    """`folder delete <id>` is invokable and wraps the id into ``folder_ids``.
+
+    Review finding #5 (systematic audit): the id positional was unregistered, so
+    the command was uninvokable (surplus positional rejected) while ``folder_ids``
+    was advertised as an ignored ``--input`` field. Drives the real stack and
+    asserts the DELETE carries the single id.
+    """
+    api = _bind_real_service(monkeypatch, real_service, project_id=180)
+    api.on("DELETE", r"/projects/180/folders$", 200, {"job": {"id": 1}})
+
+    result = make_runner().invoke(
+        ["folder", "delete", "7", "--project", "180", "--yes", "--output", "json"],
+        env=_ENV,
+    )
+
+    assert result.exit_code == 0, result.output
+    deletes = [r for r in api.requests if r.method == "DELETE" and r.path.endswith("/folders")]
+    assert len(deletes) == 1
+    assert deletes[0].query.get("ids") == ["7"]
+
+
+def test_ai_condition_generate_positional_dataset_full_stack(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    """`ai condition generate <dataset_id>` routes the id and the intent input.
+
+    Review finding #5 (systematic audit): ``dataset_id`` was advertised as an
+    ``--input`` field but read only positionally from an unregistered positional,
+    making the command uninvokable. Now the id is positional and ``intent`` stays
+    an ``--input`` field.
+    """
+    api = _bind_real_service(monkeypatch, real_service, project_id=180)
+    api.on("POST", r"/projects/180/sql_generation/condition$", 200, {"condition": {}})
+
+    result = make_runner().invoke(
+        [
+            "ai",
+            "condition",
+            "generate",
+            "5",
+            "--project",
+            "180",
+            "--input",
+            '{"intent": "rows where status is active"}',
+            "--output",
+            "json",
+        ],
+        env=_ENV,
+    )
+
+    assert result.exit_code == 0, result.output
+    posts = [r for r in api.requests if r.method == "POST" and "sql_generation/condition" in r.path]
+    assert len(posts) == 1
+    assert posts[0].query.get("dataset_id") == ["5"]
+    assert posts[0].json_body == {"params": {"intent": "rows where status is active"}}

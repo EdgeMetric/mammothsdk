@@ -42,9 +42,9 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 ## ai
 
 - `mammoth ai condition generate` [benign_mutation/none] -> mammoth.api.ai.AIAPI.condition_generate
-  example: mammoth ai condition generate --input '{"intent": "example", "dataset_id": 1}' --output json --no-input
+  example: mammoth ai condition generate 123 --input '{"intent": "example"}' --output json --no-input
 - `mammoth ai expression generate` [benign_mutation/none] -> mammoth.api.ai.AIAPI.expression_generate
-  example: mammoth ai expression generate --input '{"intent": "example", "mode": "example", "dataset_id": 1}' --output json --no-input
+  example: mammoth ai expression generate 123 --input '{"intent": "example", "mode": "example"}' --output json --no-input
 - `mammoth ai sql generate` [read/none] -> mammoth.api.ai.AIAPI.generate_sql
   example: mammoth ai sql generate --input '{"intent": "example"}' --output json --no-input
 - `mammoth ai suggestion list` [read/none] -> mammoth.api.ai.AIAPI.get_suggestions
@@ -462,7 +462,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth data-app user list` [read/none] -> mammoth.api.data_apps.DataAppsAPI.user_list
   example: mammoth data-app user list 123 --output json --no-input
 - `mammoth data-app user remove` [destructive/prompt_or_yes] -> mammoth.api.data_apps.DataAppsAPI.user_remove
-  example: mammoth data-app user remove 123 --input '{"email": "example"}' --output json --no-input
+  example: mammoth data-app user remove 123 example --output json --no-input
 
 ## dataset
 
@@ -541,7 +541,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth folder create` [benign_mutation/none] -> mammoth.api.folders.FoldersAPI.create
   example: mammoth folder create --input '{"name": "example"}' --output json --no-input
 - `mammoth folder delete` [destructive/prompt_or_yes] -> mammoth.api.folders.FoldersAPI.delete
-  example: mammoth folder delete --input '{"folder_ids": [1]}' --output json --no-input
+  example: mammoth folder delete 123 --output json --no-input
 - `mammoth folder get` [read/none] -> mammoth.api.folders.FoldersAPI.get
   example: mammoth folder get 123 --output json --no-input
 - `mammoth folder list` [read/none] -> mammoth.api.folders.FoldersAPI.list

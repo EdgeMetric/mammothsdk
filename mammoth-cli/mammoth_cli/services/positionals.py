@@ -60,6 +60,12 @@ class PositionalSpec:
         falls_back_to_field: When set, an omitted optional positional is filled
             from this ``--input`` document field by the handler; this is how the
             "positional OR ``--input`` field" commands stay dual-sourced.
+        fills_sdk_param: The backing SDK parameter this positional supplies when
+            its name differs from that parameter (e.g. the ``project_id``
+            positional fills the ``project`` argument of ``ProjectsAPI.get``).
+            Such a parameter is positional-sourced, so it must be excluded from
+            the accepted ``--input`` fields even though its name never appears in
+            the positional list. Defaults to ``name``.
     """
 
     name: str
@@ -67,6 +73,7 @@ class PositionalSpec:
     required: bool
     help: str
     falls_back_to_field: str | None = None
+    fills_sdk_param: str | None = None
 
     @property
     def metavar(self) -> str:
@@ -99,6 +106,11 @@ def _optional_project_id() -> tuple[PositionalSpec, ...]:
             type=int,
             required=False,
             help="ID of the project to act on; defaults to the active project.",
+            # ``project get`` names this argument ``project`` in the SDK; every
+            # other project command names it ``project_id``. Declaring the alias
+            # keeps the resource id positional-sourced (never an --input field)
+            # regardless of the backing parameter's name.
+            fills_sdk_param="project",
         ),
     )
 
@@ -136,6 +148,63 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     "project.list": (),
     "project.bulk-delete": (),
     "project.bulk-update": (),
+    # ``data-app user remove`` takes the shared user's email as a required second
+    # positional. ``email`` is not an identity-named signature parameter, so the
+    # derivation stops after ``data_app_id``; the handler reads it positionally
+    # (never from ``--input``), so it is authored here as a required locator.
+    "data-app.user.remove": (
+        PositionalSpec(
+            name="data_app_id",
+            type=int,
+            required=True,
+            help="ID of the data app.",
+        ),
+        PositionalSpec(
+            name="email",
+            type=str,
+            required=True,
+            help="Email address of the shared user to remove.",
+        ),
+    ),
+    # ``ai condition generate`` / ``ai expression generate`` take the dataset id
+    # as a positional. The SDK signature leads with the required ``intent`` (a
+    # non-identity ``str``), so the derivation stops before ``dataset_id`` and
+    # emits nothing -- leaving the command uninvokable (the positional was
+    # unregistered) while ``dataset_id`` was still advertised as an --input field
+    # the handler never reads. Author the id locator here; ``intent`` (and
+    # ``mode`` for the expression variant) remain required --input fields.
+    "ai.condition.generate": (
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=True,
+            help="ID of the dataset to generate a condition for.",
+        ),
+    ),
+    "ai.expression.generate": (
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=True,
+            help="ID of the dataset to generate an expression for.",
+        ),
+    ),
+    # ``folder delete`` takes a single folder id positionally; the handler wraps
+    # it into the SDK's ``folder_ids`` list. The signature leads with the
+    # required ``folder_ids`` (a ``list[int]``, not a scalar identity), so the
+    # derivation emits nothing -- the command was uninvokable and ``folder_ids``
+    # was advertised as an --input field the handler ignores. Author the scalar
+    # locator and mark it as filling ``folder_ids`` so that SDK parameter is
+    # excluded from the advertised --input fields.
+    "folder.delete": (
+        PositionalSpec(
+            name="folder_id",
+            type=int,
+            required=True,
+            help="ID of the folder to delete.",
+            fills_sdk_param="folder_ids",
+        ),
+    ),
 }
 
 

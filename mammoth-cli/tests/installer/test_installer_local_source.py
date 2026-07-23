@@ -113,6 +113,70 @@ def test_local_source_builds_both_wheels_and_installs_online(tmp_path: Path) -> 
     ), f"install must stay online (no --no-index) so deps resolve from PyPI: {install_lines}"
 
 
+def test_wheel_discovery_is_posix_portable_not_gnu_find() -> None:
+    """Wheel discovery must not depend on ``find ... -maxdepth`` (GNU/BSD-only).
+
+    ``-maxdepth`` is not part of POSIX ``find`` (it is a GNU/BSD extension), so
+    a strictly POSIX ``sh``/``find`` combination could break on it. The
+    installer discovers the just-built wheels with a POSIX shell glob instead.
+    This is a portability lint: before the fix the script contained
+    ``find "$wheelhouse" -maxdepth 1 ... -name 'mammoth_*.whl'`` and this
+    assertion fails; after the fix the glob loop replaces it and it passes.
+    """
+    text = _INSTALLER_SH.read_text(encoding="utf-8")
+    assert "-maxdepth" not in text, "installer must not use non-POSIX `find -maxdepth`"
+    # The portable replacement globs the wheelhouse for each distribution.
+    assert '"$wheelhouse"/mammoth_cli-*.whl' in text
+    assert '"$wheelhouse"/mammoth_io-*.whl' in text
+
+
+@pytest.mark.skipif(_SH is None, reason="POSIX sh not available")
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="the POSIX .sh --local flow defers to the .ps1 installer on Windows",
+)
+def test_local_source_selects_wheels_via_portable_glob(tmp_path: Path) -> None:
+    """The --local path still selects the built wheels correctly without GNU find.
+
+    Runs the real installer against the stubbed ``uv`` (same harness as above)
+    and asserts the exact CLI and SDK wheels the stub dropped into the
+    wheelhouse are the ones passed to ``uv tool install`` — proving the glob
+    discovery picks the right artifacts, not just that ``-maxdepth`` is gone.
+    """
+    assert _SH is not None
+    stub_dir = tmp_path / "bin"
+    home = tmp_path / "home"
+    home.mkdir(parents=True, exist_ok=True)
+    log_file = tmp_path / "uv.log"
+    _write_uv_stub(stub_dir, log_file, home / ".local" / "bin")
+    tool_python = home / ".local" / "mammoth-cli" / "bin" / "python"
+    tool_python.parent.mkdir(parents=True)
+    tool_python.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    tool_python.chmod(tool_python.stat().st_mode | stat.S_IEXEC)
+
+    result = subprocess.run(
+        [_SH, str(_INSTALLER_SH), "--local", "--cli-only"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env={"PATH": f"{stub_dir}:/usr/bin:/bin", "HOME": str(home)},
+    )
+
+    assert result.returncode == 0, f"stdout={result.stdout!r} stderr={result.stderr!r}"
+    install_lines = [
+        line
+        for line in log_file.read_text(encoding="utf-8").splitlines()
+        if line.startswith("tool install")
+    ]
+    assert install_lines, "expected a 'uv tool install' call"
+    # The stub writes mammoth_cli-0.6.0-...whl and mammoth_io-0.6.0-...whl into
+    # the wheelhouse; the glob must have selected exactly those basenames.
+    assert any("mammoth_cli-0.6.0-py3-none-any.whl" in line for line in install_lines)
+    assert any(
+        "--with" in line and "mammoth_io-0.6.0-py3-none-any.whl" in line for line in install_lines
+    )
+
+
 @pytest.mark.skipif(_SH is None or _UV is None, reason="real sh and uv are required")
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX installer test")
 def test_local_source_installs_exact_local_distributions(tmp_path: Path) -> None:

@@ -125,17 +125,25 @@ Total commands: 504.
 
 ### `mammoth ai condition generate`
 
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset to generate a condition for.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.condition_generate`
-- Agent example: `mammoth ai condition generate --input '{"intent": "example", "dataset_id": 1}' --output json --no-input`
+- Agent example: `mammoth ai condition generate 123 --input '{"intent": "example"}' --output json --no-input`
 
 ### `mammoth ai expression generate`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset to generate an expression for.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.expression_generate`
-- Agent example: `mammoth ai expression generate --input '{"intent": "example", "mode": "example", "dataset_id": 1}' --output json --no-input`
+- Agent example: `mammoth ai expression generate 123 --input '{"intent": "example", "mode": "example"}' --output json --no-input`
 
 ### `mammoth ai sql generate`
 
@@ -1971,11 +1979,12 @@ Total commands: 504.
 **Arguments**
 
 - `DATA_APP_ID` (int, required) — ID of the data app.
+- `EMAIL` (str, required) — Email address of the shared user to remove.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.user_remove`
-- Agent example: `mammoth data-app user remove 123 --input '{"email": "example"}' --output json --no-input`
+- Agent example: `mammoth data-app user remove 123 example --output json --no-input`
 
 ## dataset
 
@@ -2274,10 +2283,14 @@ Total commands: 504.
 
 ### `mammoth folder delete`
 
+**Arguments**
+
+- `FOLDER_ID` (int, required) — ID of the folder to delete.
+
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.folders.FoldersAPI.delete`
-- Agent example: `mammoth folder delete --input '{"folder_ids": [1]}' --output json --no-input`
+- Agent example: `mammoth folder delete 123 --output json --no-input`
 
 ### `mammoth folder get`
 

@@ -64,7 +64,22 @@ irm https://github.com/EdgeMetric/mm-pysdk/releases/latest/download/mammoth-inst
 ```
 
 Piping a download directly to a shell does not verify it first. For the
-verified flow and exact `cosign verify-blob` command, see the release notes.
+verified flow, download the installer, `SHA256SUMS`, and
+`SHA256SUMS.sigstore.json` from the release, then verify the bundle:
+
+```bash
+cosign verify-blob \
+  --bundle SHA256SUMS.sigstore.json \
+  --certificate-identity-regexp '^https://github\.com/EdgeMetric/mm-pysdk/\.github/workflows/cli-release\.yml@refs/tags/' \
+  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+  SHA256SUMS
+```
+
+The `--certificate-identity-regexp` and `--certificate-oidc-issuer`
+constraints ensure the signature came from the EdgeMetric/mm-pysdk release
+workflow. Without them, `cosign` accepts any valid Sigstore certificate.
+Then run `sha256sum --check --ignore-missing SHA256SUMS` and inspect the
+installer before you execute it.
 
 ## Install the agent skill
 

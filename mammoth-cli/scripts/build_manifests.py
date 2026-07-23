@@ -51,6 +51,36 @@ def _yaml_dump(data: Any) -> str:
 READ_METHODS = {"GET"}
 HIGH_IMPACT_GROUPS = {"billing", "support"}
 
+# Response component schemas that denote an async *job handle* the caller must
+# wait on (the server kicked off work and returned only a reference), as opposed
+# to a job *status record* returned by a job-read endpoint. A command whose
+# success response is one of these -- directly or as a union member -- has not
+# produced its result yet, so labelling it ``not_async`` is a lie.
+_JOB_HANDLE_SCHEMAS = frozenset({"ObjectJobSchema", "JobResponse"})
+
+
+def _operations_with_job_id(document: dict[str, Any]) -> set[str]:
+    """Return operationIds that accept a ``job_id`` parameter (path or query).
+
+    Such an operation reads a *specific, already-known* job, so its job-shaped
+    response is a status record to return verbatim -- it must never auto-wait.
+    """
+    result: set[str] = set()
+    for path_item in document.get("paths", {}).values():
+        if not isinstance(path_item, dict):
+            continue
+        shared = path_item.get("parameters", []) or []
+        for method, operation in path_item.items():
+            if method not in {"get", "put", "post", "delete", "patch"}:
+                continue
+            if not isinstance(operation, dict):
+                continue
+            params = shared + (operation.get("parameters", []) or [])
+            names = {p.get("name") for p in params if isinstance(p, dict)}
+            if "job_id" in names and operation.get("operationId"):
+                result.add(str(operation["operationId"]))
+    return result
+
 
 def derive_mutation(command_id: str, method: str) -> str:
     group = command_id.split(".", 1)[0]
@@ -341,6 +371,27 @@ def build() -> dict[str, int]:
         commands[command]["live_exemption_reason"] = spec.get(
             "live_exemption_reason", "Local CLI operation; no server call."
         )
+
+    # Correct async classification structurally: a dashboard command whose
+    # success response is a job *handle* (kicked-off work) but which is labelled
+    # not_async returns a raw job and silently ignores --job-timeout. The
+    # generated and handwritten dashboard SDK methods never wait internally, so
+    # the CLI must. Promote such commands to always_wait; exempt job-status
+    # reads (a job_id parameter) whose job-shaped body is the intended payload.
+    op_response_schemas = {meta["operation_id"]: set(meta["response_schemas"]) for meta in ops}
+    job_status_ops = _operations_with_job_id(document)
+    for command, record in commands.items():
+        if not command.startswith("dashboard."):
+            continue
+        if record.get("wait_policy") != "not_async":
+            continue
+        oids = record.get("operation_ids") or []
+        returns_handle = any(
+            op_response_schemas.get(oid, set()) & _JOB_HANDLE_SCHEMAS for oid in oids
+        )
+        is_status_read = any(oid in job_status_ops for oid in oids)
+        if returns_handle and not is_status_read:
+            record["wait_policy"] = "always_wait"
 
     # write grouped by top-level group
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)

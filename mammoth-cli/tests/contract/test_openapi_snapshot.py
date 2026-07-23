@@ -13,7 +13,6 @@ import sys
 from pathlib import Path
 
 import pytest
-from pydantic import ValidationError
 
 CLI_ROOT = Path(__file__).resolve().parent.parent.parent
 SNAPSHOT = CLI_ROOT / "spec" / "openapi" / "openapi.json"
@@ -206,15 +205,60 @@ def test_generated_dashboard_named_bodies_and_results_are_typed() -> None:
     assert type(result).__name__ == "ObjectJobSchema"
     assert result.job_id == 9
 
-    invalid_owner = type(
+    # A documented response carrying an additive server field must still be
+    # accepted and typed (response models tolerate forward-compatible fields),
+    # while its known fields keep their typed values.
+    additive_owner = type(
         "Owner",
         (),
-        {"_client": type("Client", (), {"_request_json": lambda *_a, **_kw: {"oops": 9}})()},
+        {
+            "_client": type(
+                "Client",
+                (),
+                {"_request_json": lambda *_a, **_kw: {"job_id": 9, "server_added_field": "x"}},
+            )()
+        },
     )()
-    with pytest.raises(ValidationError):
-        generated.v3_generate(
-            invalid_owner, {"params": {"dataview_id": 1, "intent": "Revenue by quarter"}}
-        )
+    additive = generated.v3_generate(
+        additive_owner, {"params": {"dataview_id": 1, "intent": "Revenue by quarter"}}
+    )
+    assert type(additive).__name__ == "ObjectJobSchema"
+    assert additive.job_id == 9
+
+
+def test_mixed_typed_untyped_response_accepts_arbitrary_object() -> None:
+    """Review finding #4: a ``dict | Model`` return must honor its untyped branch.
+
+    ``style_derive`` is declared ``dict[str, Any] | DeriveStyleResponse`` but the
+    implementation always validated as ``DeriveStyleResponse``. A valid arbitrary
+    (untyped) 201 body then failed with ``ValidationError``. The typed branch must
+    still win when the payload matches the model; the raw object is returned only
+    when no model is a positive match.
+    """
+    from mammoth.api import dashboard_generated as generated
+
+    signature = inspect.signature(generated.style_derive)
+    assert signature.return_annotation == "dict[str, Any] | DeriveStyleResponse"
+
+    def _owner(payload: object) -> object:
+        return type(
+            "Owner",
+            (),
+            {"_client": type("Client", (), {"_request_json": lambda *_a, **_kw: payload})()},
+        )()
+
+    # Typed branch: a payload matching DeriveStyleResponse is coerced to it.
+    typed = generated.style_derive(
+        _owner({"style_tokens": {"primary": "#fff"}}), {"image_url": "x"}
+    )
+    assert type(typed).__name__ == "DeriveStyleResponse"
+    assert typed.style_tokens == {"primary": "#fff"}
+
+    # Untyped branch: an arbitrary object that no model positively matches is
+    # returned verbatim instead of raising.
+    arbitrary = {"unexpected": {"nested": [1, 2, 3]}, "kind": "custom"}
+    result = generated.style_derive(_owner(arbitrary), {"image_url": "x"})
+    assert result == arbitrary
 
 
 if __name__ == "__main__":

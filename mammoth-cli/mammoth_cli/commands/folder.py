@@ -96,7 +96,22 @@ def folder_list(invocation: Invocation) -> HandlerResult:
     project_id = require_project(invocation)
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"project_id": project_id}
-    _forward_optional(document, kwargs, ("limit", "offset", "sort", "names", "statuses"))
+    _forward_optional(
+        document,
+        kwargs,
+        (
+            "limit",
+            "offset",
+            "sort",
+            "names",
+            "statuses",
+            "fields",
+            "folder_ids",
+            "created_at",
+            "updated_at",
+            "created_by",
+        ),
+    )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
@@ -106,8 +121,11 @@ def folder_get(invocation: Invocation) -> HandlerResult:
     """Get one folder by id in the active project."""
     project_id = require_project(invocation)
     folder_id = _require_int_positional(invocation, "folder id")
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {"folder_id": folder_id, "project_id": project_id}
+    _forward_optional(document, kwargs, ("fields",))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), folder_id=folder_id, project_id=project_id)
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

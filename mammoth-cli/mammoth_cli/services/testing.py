@@ -37,6 +37,8 @@ class FakeMammothService:
     call_log: list[tuple[str, dict[str, Any]]] = field(default_factory=list)
     view_responses: dict[tuple[int, str], Any] = field(default_factory=dict)
     view_call_log: list[tuple[int, str, dict[str, Any]]] = field(default_factory=list)
+    wait_log: list[Any] = field(default_factory=list)
+    job_result: Any = None
 
     def call_view(self, view_id: int, method: str, /, **kwargs: Any) -> Any:
         """Record a View-method call and return a programmed response.
@@ -80,6 +82,21 @@ class FakeMammothService:
                 raise programmed
             return programmed
         return {}
+
+    def wait_if_job(self, response: Any) -> Any:
+        """Resolve a job-shaped response like the real service would.
+
+        Records the call so handler tests can assert the CLI applied the job
+        wait, and returns ``job_result`` when programmed (mirroring the real
+        service resolving a job to its completed payload); otherwise returns the
+        response unchanged, exactly as the real ``wait_if_job`` no-ops on a
+        payload that is not a recognized job reference.
+        """
+        self.calls.append("wait_if_job")
+        self.wait_log.append(response)
+        if self.job_result is not None:
+            return self.job_result
+        return response
 
     def check_connection(self) -> dict[str, Any]:
         """Simulate a lightweight connection check."""

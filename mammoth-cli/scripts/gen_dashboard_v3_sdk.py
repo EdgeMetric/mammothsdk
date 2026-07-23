@@ -90,7 +90,8 @@ def _success_schemas(operation: dict[str, Any]) -> list[dict[str, Any]]:
     return schemas
 
 
-def _reachable_components(document: dict[str, Any]) -> set[str]:
+def _closure(document: dict[str, Any], seeds: list[dict[str, Any]]) -> set[str]:
+    """Return every component schema reachable from ``seeds`` by ``$ref``."""
     components = document.get("components", {}).get("schemas", {})
     reachable: set[str] = set()
 
@@ -106,13 +107,40 @@ def _reachable_components(document: dict[str, Any]) -> set[str]:
             for value in schema:
                 visit(value)
 
+    for seed in seeds:
+        visit(seed)
+    return reachable
+
+
+def _request_seeds(document: dict[str, Any]) -> list[dict[str, Any]]:
+    seeds = []
     for _path, _method, operation in _dashboard_operations(document):
         body = _media_schema(operation.get("requestBody", {}))
         if body:
-            visit(body)
-        for schema in _success_schemas(operation):
-            visit(schema)
-    return reachable
+            seeds.append(body)
+    return seeds
+
+
+def _response_seeds(document: dict[str, Any]) -> list[dict[str, Any]]:
+    seeds = []
+    for _path, _method, operation in _dashboard_operations(document):
+        seeds.extend(_success_schemas(operation))
+    return seeds
+
+
+def _reachable_components(document: dict[str, Any]) -> set[str]:
+    return _closure(document, _request_seeds(document) + _response_seeds(document))
+
+
+def _response_only_components(document: dict[str, Any]) -> set[str]:
+    """Components reachable only from responses (never from a request body).
+
+    Only these may safely tolerate additive server fields: request-reachable
+    components stay strict so unknown ``--input`` body fields are still rejected.
+    """
+    return _closure(document, _response_seeds(document)) - _closure(
+        document, _request_seeds(document)
+    )
 
 
 def build_models() -> str:
@@ -130,14 +158,21 @@ def build_models() -> str:
         "",
     ]
     names = sorted(_reachable_components(document))
+    response_only = _response_only_components(document)
     for name in names:
         if not name.isidentifier() or keyword.iskeyword(name):
             raise ValueError(f"OpenAPI component is not a Python identifier: {name}")
         schema = components[name]
         properties = schema.get("properties")
+        # A response-only schema whose OpenAPI definition permits additional
+        # properties (``additionalProperties`` absent or not ``false``) must
+        # tolerate additive server fields; forbidding them rejects valid,
+        # forward-compatible responses. Request-reachable schemas stay strict.
+        lenient = name in response_only and schema.get("additionalProperties") is not False
+        extra = "allow" if lenient else "forbid"
         if schema.get("type") == "object" or isinstance(properties, dict):
             lines.extend(
-                [f"class {name}(BaseModel):", '    model_config = ConfigDict(extra="forbid")']
+                [f"class {name}(BaseModel):", f'    model_config = ConfigDict(extra="{extra}")']
             )
             required = set(schema.get("required", []))
             if not properties:
@@ -197,17 +232,48 @@ def build() -> str:
         '        return body.model_dump(mode="json", by_alias=True, exclude_none=True)',
         "    return body",
         "",
-        "def _typed_response(response: Any, models: tuple[type[BaseModel], ...]) -> Any:",
+        "def _typed_response(",
+        "    response: Any,",
+        "    models: tuple[type[BaseModel], ...],",
+        "    *,",
+        "    allow_untyped: bool = False,",
+        ") -> Any:",
+        '    """Coerce ``response`` into the best-matching model.',
+        "",
+        "    Response models tolerate additive server fields, so more than one may",
+        "    validate a payload. The best match is the model that populates the most",
+        "    declared fields (ties broken toward the model with more fields). When the",
+        "    operation also documents an untyped branch (``allow_untyped``) and no model",
+        "    is a positive match, the raw response is returned instead of raising -- so a",
+        "    valid arbitrary-object response is never rejected.",
+        '    """',
         "    ranked = sorted(models, key=lambda model: len(model.model_fields), reverse=True)",
+        "    best: Any = None",
+        "    best_score = -1",
         "    last_error: ValidationError | None = None",
         "    for model in ranked:",
         "        try:",
-        "            return model.model_validate(response)",
+        "            validated = model.model_validate(response)",
         "        except ValidationError as error:",
         "            last_error = error",
-        "    if last_error is None:",
-        '        raise ValueError("typed response requires at least one model")',
-        "    raise last_error",
+        "            continue",
+        "        if isinstance(response, dict):",
+        "            score = sum(",
+        "                1",
+        "                for name, field in model.model_fields.items()",
+        "                if (field.alias or name) in response or name in response",
+        "            )",
+        "        else:",
+        "            score = 0",
+        "        if score > best_score:",
+        "            best, best_score = validated, score",
+        "    if best is not None and (best_score > 0 or not allow_untyped):",
+        "        return best",
+        "    if allow_untyped:",
+        "        return response",
+        "    if last_error is not None:",
+        "        raise last_error",
+        '    raise ValueError("typed response requires at least one model")',
         "",
     ]
     exports: list[str] = []
@@ -264,12 +330,17 @@ def build() -> str:
             "    response = self._client._request_json("
             f"{method.upper()!r}, path, params=params{body_arg})"
         )
-        named_responses = [item for item in response_types if item != "dict[str, Any]"]
+        opaque = {"dict[str, Any]", "Any"}
+        named_responses = [item for item in response_types if item not in opaque]
+        has_untyped = any(item in opaque for item in response_types)
         if named_responses:
             model_tuple = ", ".join(named_responses)
             if len(named_responses) == 1:
                 model_tuple += ","
-            lines.append(f"    return _typed_response(response, ({model_tuple}))")
+            lines.append(
+                f"    return _typed_response(response, ({model_tuple}), "
+                f"allow_untyped={has_untyped})"
+            )
         else:
             lines.append("    return response")
         lines.append("")

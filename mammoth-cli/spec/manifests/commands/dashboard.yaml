@@ -182,7 +182,7 @@ commands:
   result_model: DashboardCanvasRestoreResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
@@ -266,7 +266,7 @@ commands:
   result_model: DashboardChatEditResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
@@ -538,7 +538,7 @@ commands:
   result_model: DashboardDataDraftResult
   mutation_class: read
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_read_only
   live_test: LT-DASHBOARD-DATA-DRAFT
@@ -578,7 +578,7 @@ commands:
   result_model: DashboardDataPublishedResult
   mutation_class: read
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_read_only
   live_test: LT-DASHBOARD-DATA-PUBLISHED
@@ -659,7 +659,7 @@ commands:
   result_model: DashboardDescriptorDataResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
@@ -1115,7 +1115,7 @@ commands:
   result_model: DashboardPublishedDataByUrlResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
@@ -1197,7 +1197,7 @@ commands:
   result_model: DashboardPublishedDataResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
@@ -1499,7 +1499,7 @@ commands:
   result_model: DashboardQaAskResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
@@ -2139,7 +2139,7 @@ commands:
   result_model: DashboardRestoreResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
@@ -2830,7 +2830,7 @@ commands:
   result_model: DashboardStyleExtractBrandResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
@@ -2980,7 +2980,7 @@ commands:
   result_model: DashboardTemplateApplyResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
@@ -3328,7 +3328,7 @@ commands:
   result_model: DashboardTrashResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
@@ -3528,7 +3528,7 @@ commands:
   result_model: DashboardWidgetDataResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
@@ -3571,7 +3571,7 @@ commands:
   result_model: DashboardWidgetDataByUrlResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null

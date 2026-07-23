@@ -34,6 +34,28 @@ from mammoth_cli.services.argspec import arg_spec
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
+# Wait policies for which a job-shaped dashboard response must be resolved to
+# its completed result (honoring --job-timeout) rather than returned raw. The
+# dashboard SDK methods -- generated and handwritten alike -- never wait
+# internally, so the CLI handler is the only place this can happen.
+_JOB_WAIT_POLICIES = frozenset({"always_wait", "start_or_wait"})
+
+
+def _resolve_job(service: Any, invocation: Invocation, data: Any) -> Any:
+    """Wait for a job-shaped response when the command's wait policy opts in.
+
+    ``wait_if_job`` is a no-op for payloads that are not a recognized job
+    reference, so this is safe to apply to any dashboard response: it blocks
+    (honoring ``--job-timeout``) only when the reviewed ``wait_policy`` is
+    wait-capable *and* the server actually returned a job handle.
+    """
+    record = command_by_id(invocation.command_id)
+    if record is None or record.get("wait_policy") not in _JOB_WAIT_POLICIES:
+        return data
+    if hasattr(data, "model_dump"):
+        data = data.model_dump(mode="json")
+    return service.wait_if_job(data)
+
 
 def _symbol(invocation: Invocation) -> str:
     """Return the reviewed backing SDK symbol for this command."""
@@ -182,6 +204,7 @@ def dashboard_data_draft(invocation: Invocation) -> HandlerResult:
     sql = _require_field(document, "sql")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dashboard_id=dashboard_id, sql=sql)
+        data = _resolve_job(service, invocation, data)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -192,6 +215,7 @@ def dashboard_data_published(invocation: Invocation) -> HandlerResult:
     sql = _require_field(document, "sql")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dashboard_id=dashboard_id, sql=sql)
+        data = _resolve_job(service, invocation, data)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -211,6 +235,7 @@ def dashboard_published_data_by_url(invocation: Invocation) -> HandlerResult:
     body = _require_field(document, "body")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), url=url, body=body)
+        data = _resolve_job(service, invocation, data)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -221,6 +246,7 @@ def dashboard_widget_data(invocation: Invocation) -> HandlerResult:
     body = _require_field(document, "body")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dashboard_id=dashboard_id, body=body)
+        data = _resolve_job(service, invocation, data)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -231,6 +257,7 @@ def dashboard_widget_data_by_url(invocation: Invocation) -> HandlerResult:
     body = _require_field(document, "body")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), url=url, body=body)
+        data = _resolve_job(service, invocation, data)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -319,6 +346,7 @@ def dashboard_restore(invocation: Invocation) -> HandlerResult:
     dashboard_id = _require_int_positional(invocation, "dashboard id")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dashboard_id=dashboard_id)
+        data = _resolve_job(service, invocation, data)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -327,6 +355,7 @@ def dashboard_trash(invocation: Invocation) -> HandlerResult:
     dashboard_id = _require_int_positional(invocation, "dashboard id")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dashboard_id=dashboard_id)
+        data = _resolve_job(service, invocation, data)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -386,8 +415,5 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
 
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-        if record.get("wait_policy") in {"always_wait", "start_or_wait"}:
-            if hasattr(data, "model_dump"):
-                data = data.model_dump(mode="json")
-            data = service.wait_if_job(data)
+        data = _resolve_job(service, invocation, data)
     return data, _meta(invocation, auth.workspace_id)

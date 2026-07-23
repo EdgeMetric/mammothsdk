@@ -161,8 +161,23 @@ install_cli_local() {
     # mammoth-cli resolve to what was just built here, in addition to (not
     # instead of) the default index -- deliberately no --no-index, so every
     # other runtime dependency still resolves normally from PyPI.
-    cli_wheel="$(find "$wheelhouse" -maxdepth 1 -type f -name 'mammoth_cli-*.whl' | head -n 1)"
-    sdk_wheel="$(find "$wheelhouse" -maxdepth 1 -type f -name 'mammoth_io-*.whl' | head -n 1)"
+    # Pick the first matching wheel for each distribution with a strictly POSIX
+    # shell glob, rather than a depth-limited `find` (that flag is a GNU/BSD
+    # extension, not part of POSIX find). An unmatched glob expands to the
+    # literal pattern in sh, so guard each candidate with `[ -f ]`; if nothing
+    # matches, cli_wheel/sdk_wheel stay empty and the guard below fires.
+    cli_wheel=""
+    for candidate in "$wheelhouse"/mammoth_cli-*.whl; do
+        [ -f "$candidate" ] || continue
+        cli_wheel="$candidate"
+        break
+    done
+    sdk_wheel=""
+    for candidate in "$wheelhouse"/mammoth_io-*.whl; do
+        [ -f "$candidate" ] || continue
+        sdk_wheel="$candidate"
+        break
+    done
     [ -n "$cli_wheel" ] && [ -n "$sdk_wheel" ] || die "built wheel artifacts were not found"
     # Install the exact CLI artifact and explicitly inject the exact SDK
     # artifact. PyPI remains enabled only for their third-party dependencies;

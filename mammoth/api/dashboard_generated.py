@@ -140,17 +140,48 @@ def _json_body(body: BaseModel | dict[str, Any]) -> dict[str, Any]:
     return body
 
 
-def _typed_response(response: Any, models: tuple[type[BaseModel], ...]) -> Any:
+def _typed_response(
+    response: Any,
+    models: tuple[type[BaseModel], ...],
+    *,
+    allow_untyped: bool = False,
+) -> Any:
+    """Coerce ``response`` into the best-matching model.
+
+    Response models tolerate additive server fields, so more than one may
+    validate a payload. The best match is the model that populates the most
+    declared fields (ties broken toward the model with more fields). When the
+    operation also documents an untyped branch (``allow_untyped``) and no model
+    is a positive match, the raw response is returned instead of raising -- so a
+    valid arbitrary-object response is never rejected.
+    """
     ranked = sorted(models, key=lambda model: len(model.model_fields), reverse=True)
+    best: Any = None
+    best_score = -1
     last_error: ValidationError | None = None
     for model in ranked:
         try:
-            return model.model_validate(response)
+            validated = model.model_validate(response)
         except ValidationError as error:
             last_error = error
-    if last_error is None:
-        raise ValueError("typed response requires at least one model")
-    raise last_error
+            continue
+        if isinstance(response, dict):
+            score = sum(
+                1
+                for name, field in model.model_fields.items()
+                if (field.alias or name) in response or name in response
+            )
+        else:
+            score = 0
+        if score > best_score:
+            best, best_score = validated, score
+    if best is not None and (best_score > 0 or not allow_untyped):
+        return best
+    if allow_untyped:
+        return response
+    if last_error is not None:
+        raise last_error
+    raise ValueError("typed response requires at least one model")
 
 
 def analytics(self: Any, dashboard_id: int) -> DashboardAnalyticsResponse:
@@ -159,7 +190,7 @@ def analytics(self: Any, dashboard_id: int) -> DashboardAnalyticsResponse:
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (DashboardAnalyticsResponse,))
+    return _typed_response(response, (DashboardAnalyticsResponse,), allow_untyped=False)
 
 
 def source_list(self: Any) -> DashboardSourcesType:
@@ -167,7 +198,7 @@ def source_list(self: Any) -> DashboardSourcesType:
     path = "/dashboards/sources"
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (DashboardSourcesType,))
+    return _typed_response(response, (DashboardSourcesType,), allow_untyped=False)
 
 
 def data_draft(
@@ -178,7 +209,9 @@ def data_draft(
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (WidgetDataResponse, ObjectJobSchema, JobResponse))
+    return _typed_response(
+        response, (WidgetDataResponse, ObjectJobSchema, JobResponse), allow_untyped=False
+    )
 
 
 def data_published(
@@ -189,7 +222,9 @@ def data_published(
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (WidgetDataResponse, ObjectJobSchema, JobResponse))
+    return _typed_response(
+        response, (WidgetDataResponse, ObjectJobSchema, JobResponse), allow_untyped=False
+    )
 
 
 def rls_column_list(self: Any, dashboard_id: int) -> RlsColumnsResponse:
@@ -198,7 +233,7 @@ def rls_column_list(self: Any, dashboard_id: int) -> RlsColumnsResponse:
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (RlsColumnsResponse,))
+    return _typed_response(response, (RlsColumnsResponse,), allow_untyped=False)
 
 
 def rls_value_list(
@@ -213,7 +248,7 @@ def rls_value_list(
         if value is not None
     }
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (RlsDistinctValuesResponse,))
+    return _typed_response(response, (RlsDistinctValuesResponse,), allow_untyped=False)
 
 
 def rls_assignment_list(self: Any, dashboard_id: int) -> RlsAssignmentsResponse:
@@ -222,7 +257,7 @@ def rls_assignment_list(self: Any, dashboard_id: int) -> RlsAssignmentsResponse:
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (RlsAssignmentsResponse,))
+    return _typed_response(response, (RlsAssignmentsResponse,), allow_untyped=False)
 
 
 def rls_assignment_set(self: Any, dashboard_id: int, body: RlsAssignmentsSpec) -> dict[str, Any]:
@@ -240,7 +275,7 @@ def query(self: Any, dashboard_id: int, body: AdhocQuerySpec) -> AdhocQueryRespo
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (AdhocQueryResponse,))
+    return _typed_response(response, (AdhocQueryResponse,), allow_untyped=False)
 
 
 def template_apply(self: Any, body: ApplyTemplateSpec) -> ObjectJobSchema | JobResponse:
@@ -248,7 +283,7 @@ def template_apply(self: Any, body: ApplyTemplateSpec) -> ObjectJobSchema | JobR
     path = "/dashboards/v3/templates/apply"
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (ObjectJobSchema, JobResponse))
+    return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
 def chat_history(
@@ -259,7 +294,9 @@ def chat_history(
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = {key: value for key, value in {"sequence": sequence}.items() if value is not None}
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (mmai_dashboards_v3_schema_ChatHistoryResponse,))
+    return _typed_response(
+        response, (mmai_dashboards_v3_schema_ChatHistoryResponse,), allow_untyped=False
+    )
 
 
 def chat_edit(self: Any, dashboard_id: int, body: ChatEditSpec) -> ObjectJobSchema | JobResponse:
@@ -268,7 +305,7 @@ def chat_edit(self: Any, dashboard_id: int, body: ChatEditSpec) -> ObjectJobSche
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (ObjectJobSchema, JobResponse))
+    return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
 def suggestion_list(
@@ -282,7 +319,7 @@ def suggestion_list(
         if value is not None
     }
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (DashboardSuggestionsResponse,))
+    return _typed_response(response, (DashboardSuggestionsResponse,), allow_untyped=False)
 
 
 def descriptor_data(
@@ -293,7 +330,7 @@ def descriptor_data(
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (ObjectJobSchema, JobResponse))
+    return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
 def published_data(self: Any, url: str, body: DescriptorDataSpec) -> ObjectJobSchema | JobResponse:
@@ -302,7 +339,7 @@ def published_data(self: Any, url: str, body: DescriptorDataSpec) -> ObjectJobSc
     path = path.replace("{url}", str(url))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (ObjectJobSchema, JobResponse))
+    return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
 def duplicate(self: Any, dashboard_id: int) -> DuplicateDashboardResponse:
@@ -311,7 +348,7 @@ def duplicate(self: Any, dashboard_id: int) -> DuplicateDashboardResponse:
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("POST", path, params=params)
-    return _typed_response(response, (DuplicateDashboardResponse,))
+    return _typed_response(response, (DuplicateDashboardResponse,), allow_untyped=False)
 
 
 def pdf_export(self: Any, dashboard_id: int, body: PdfExportSpec) -> ObjectJobSchema | JobResponse:
@@ -320,7 +357,7 @@ def pdf_export(self: Any, dashboard_id: int, body: PdfExportSpec) -> ObjectJobSc
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (ObjectJobSchema, JobResponse))
+    return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
 def published_pdf_export(self: Any, url: str, body: PdfExportSpec) -> ObjectJobSchema | JobResponse:
@@ -329,7 +366,7 @@ def published_pdf_export(self: Any, url: str, body: PdfExportSpec) -> ObjectJobS
     path = path.replace("{url}", str(url))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (ObjectJobSchema, JobResponse))
+    return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
 def video_export(self: Any, dashboard_id: int) -> ObjectJobSchema | JobResponse:
@@ -338,7 +375,7 @@ def video_export(self: Any, dashboard_id: int) -> ObjectJobSchema | JobResponse:
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("POST", path, params=params)
-    return _typed_response(response, (ObjectJobSchema, JobResponse))
+    return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
 def published_video_export(self: Any, url: str) -> ObjectJobSchema | JobResponse:
@@ -347,7 +384,7 @@ def published_video_export(self: Any, url: str) -> ObjectJobSchema | JobResponse
     path = path.replace("{url}", str(url))
     params = None
     response = self._client._request_json("POST", path, params=params)
-    return _typed_response(response, (ObjectJobSchema, JobResponse))
+    return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
 def figure_intent(self: Any, dashboard_id: int, body: FigureIntentSpec) -> FigureIntentResponse:
@@ -356,7 +393,7 @@ def figure_intent(self: Any, dashboard_id: int, body: FigureIntentSpec) -> Figur
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (FigureIntentResponse,))
+    return _typed_response(response, (FigureIntentResponse,), allow_untyped=False)
 
 
 def v3_generate(self: Any, body: GenerateDashboardV3Spec) -> ObjectJobSchema | JobResponse:
@@ -364,7 +401,7 @@ def v3_generate(self: Any, body: GenerateDashboardV3Spec) -> ObjectJobSchema | J
     path = "/dashboards/v3/generate"
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (ObjectJobSchema, JobResponse))
+    return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
 def canvas_get(self: Any, dashboard_id: int, sequence: int | None = None) -> CanvasResponse:
@@ -373,7 +410,7 @@ def canvas_get(self: Any, dashboard_id: int, sequence: int | None = None) -> Can
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = {key: value for key, value in {"sequence": sequence}.items() if value is not None}
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (CanvasResponse,))
+    return _typed_response(response, (CanvasResponse,), allow_untyped=False)
 
 
 def canvas_save(self: Any, dashboard_id: int, body: SaveCanvasSpec) -> SaveCanvasResponse:
@@ -382,7 +419,7 @@ def canvas_save(self: Any, dashboard_id: int, body: SaveCanvasSpec) -> SaveCanva
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
-    return _typed_response(response, (SaveCanvasResponse,))
+    return _typed_response(response, (SaveCanvasResponse,), allow_untyped=False)
 
 
 def published_canvas(self: Any, url: str) -> CanvasResponse:
@@ -391,7 +428,7 @@ def published_canvas(self: Any, url: str) -> CanvasResponse:
     path = path.replace("{url}", str(url))
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (CanvasResponse,))
+    return _typed_response(response, (CanvasResponse,), allow_untyped=False)
 
 
 def pdf_artifact(self: Any, dashboard_id: int, job_id: int) -> dict[str, Any]:
@@ -447,7 +484,7 @@ def page_plan(self: Any, dashboard_id: int, body: PlanPageSpec) -> PlanPageRespo
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (PlanPageResponse,))
+    return _typed_response(response, (PlanPageResponse,), allow_untyped=False)
 
 
 def template_preview(self: Any, body: PreviewTemplateSpec) -> PreviewTemplateResponse:
@@ -455,7 +492,7 @@ def template_preview(self: Any, body: PreviewTemplateSpec) -> PreviewTemplateRes
     path = "/dashboards/v3/templates/preview"
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (PreviewTemplateResponse,))
+    return _typed_response(response, (PreviewTemplateResponse,), allow_untyped=False)
 
 
 def template_resolve_mapping(
@@ -465,7 +502,7 @@ def template_resolve_mapping(
     path = "/dashboards/v3/templates/resolve-mapping"
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (ResolveTemplateMappingResponse,))
+    return _typed_response(response, (ResolveTemplateMappingResponse,), allow_untyped=False)
 
 
 def canvas_restore(
@@ -476,7 +513,7 @@ def canvas_restore(
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (ObjectJobSchema, JobResponse))
+    return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
 def published_share_page(self: Any, url: str) -> dict[str, Any]:
@@ -506,7 +543,7 @@ def qa_comment_create(
     path = path.replace("{session_id}", str(session_id))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (SessionResponse,))
+    return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
 def qa_ask(
@@ -518,7 +555,7 @@ def qa_ask(
     path = path.replace("{session_id}", str(session_id))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (ObjectJobSchema, JobResponse))
+    return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
 def qa_session_list(self: Any, dashboard_id: int) -> SessionListResponse:
@@ -527,7 +564,7 @@ def qa_session_list(self: Any, dashboard_id: int) -> SessionListResponse:
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (SessionListResponse,))
+    return _typed_response(response, (SessionListResponse,), allow_untyped=False)
 
 
 def qa_session_create(self: Any, dashboard_id: int, body: CreateSessionSpec) -> SessionResponse:
@@ -536,7 +573,7 @@ def qa_session_create(self: Any, dashboard_id: int, body: CreateSessionSpec) -> 
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (SessionResponse,))
+    return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
 def qa_comment_delete(
@@ -549,7 +586,7 @@ def qa_comment_delete(
     path = path.replace("{comment_id}", str(comment_id))
     params = None
     response = self._client._request_json("DELETE", path, params=params)
-    return _typed_response(response, (SessionResponse,))
+    return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
 def qa_session_get(self: Any, dashboard_id: int, session_id: int) -> SessionResponse:
@@ -559,7 +596,7 @@ def qa_session_get(self: Any, dashboard_id: int, session_id: int) -> SessionResp
     path = path.replace("{session_id}", str(session_id))
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (SessionResponse,))
+    return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
 def qa_session_delete(self: Any, dashboard_id: int, session_id: int) -> dict[str, Any]:
@@ -579,7 +616,7 @@ def qa_session_fork(self: Any, dashboard_id: int, session_id: int) -> SessionRes
     path = path.replace("{session_id}", str(session_id))
     params = None
     response = self._client._request_json("POST", path, params=params)
-    return _typed_response(response, (SessionResponse,))
+    return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
 def qa_settings_get(self: Any, dashboard_id: int) -> QaSettingsResponse:
@@ -588,7 +625,7 @@ def qa_settings_get(self: Any, dashboard_id: int) -> QaSettingsResponse:
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (QaSettingsResponse,))
+    return _typed_response(response, (QaSettingsResponse,), allow_untyped=False)
 
 
 def qa_settings_set(self: Any, dashboard_id: int, body: QaSettingsSpec) -> QaSettingsResponse:
@@ -597,7 +634,7 @@ def qa_settings_set(self: Any, dashboard_id: int, body: QaSettingsSpec) -> QaSet
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
     response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
-    return _typed_response(response, (QaSettingsResponse,))
+    return _typed_response(response, (QaSettingsResponse,), allow_untyped=False)
 
 
 def qa_session_rename(
@@ -609,7 +646,7 @@ def qa_session_rename(
     path = path.replace("{session_id}", str(session_id))
     params = None
     response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
-    return _typed_response(response, (SessionResponse,))
+    return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
 def qa_feedback(
@@ -622,7 +659,7 @@ def qa_feedback(
     path = path.replace("{message_id}", str(message_id))
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (SessionResponse,))
+    return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
 def qa_session_set_visibility(
@@ -634,7 +671,7 @@ def qa_session_set_visibility(
     path = path.replace("{session_id}", str(session_id))
     params = None
     response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
-    return _typed_response(response, (SessionResponse,))
+    return _typed_response(response, (SessionResponse,), allow_untyped=False)
 
 
 def context_list(self: Any) -> ContextListResponse:
@@ -642,7 +679,7 @@ def context_list(self: Any) -> ContextListResponse:
     path = "/dashboards/v3/contexts"
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (ContextListResponse,))
+    return _typed_response(response, (ContextListResponse,), allow_untyped=False)
 
 
 def context_create(self: Any, body: ContextSpec) -> ContextResponse:
@@ -650,7 +687,7 @@ def context_create(self: Any, body: ContextSpec) -> ContextResponse:
     path = "/dashboards/v3/contexts"
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (ContextResponse,))
+    return _typed_response(response, (ContextResponse,), allow_untyped=False)
 
 
 def style_custom_list(self: Any) -> StyleListResponse:
@@ -658,7 +695,7 @@ def style_custom_list(self: Any) -> StyleListResponse:
     path = "/dashboards/v3/styles/custom"
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (StyleListResponse,))
+    return _typed_response(response, (StyleListResponse,), allow_untyped=False)
 
 
 def style_custom_create(self: Any, body: CustomStyleSpec) -> StyleResponse:
@@ -666,7 +703,7 @@ def style_custom_create(self: Any, body: CustomStyleSpec) -> StyleResponse:
     path = "/dashboards/v3/styles/custom"
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (StyleResponse,))
+    return _typed_response(response, (StyleResponse,), allow_untyped=False)
 
 
 def signature_list(self: Any) -> SignatureListResponse:
@@ -674,7 +711,7 @@ def signature_list(self: Any) -> SignatureListResponse:
     path = "/dashboards/v3/signatures"
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (SignatureListResponse,))
+    return _typed_response(response, (SignatureListResponse,), allow_untyped=False)
 
 
 def signature_create(self: Any, body: SignatureSpec) -> SignatureResponse:
@@ -682,7 +719,7 @@ def signature_create(self: Any, body: SignatureSpec) -> SignatureResponse:
     path = "/dashboards/v3/signatures"
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (SignatureResponse,))
+    return _typed_response(response, (SignatureResponse,), allow_untyped=False)
 
 
 def context_update(self: Any, context_id: str, body: ContextSpec) -> ContextResponse:
@@ -691,7 +728,7 @@ def context_update(self: Any, context_id: str, body: ContextSpec) -> ContextResp
     path = path.replace("{context_id}", str(context_id))
     params = None
     response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
-    return _typed_response(response, (ContextResponse,))
+    return _typed_response(response, (ContextResponse,), allow_untyped=False)
 
 
 def context_delete(self: Any, context_id: str) -> OkResponse:
@@ -700,7 +737,7 @@ def context_delete(self: Any, context_id: str) -> OkResponse:
     path = path.replace("{context_id}", str(context_id))
     params = None
     response = self._client._request_json("DELETE", path, params=params)
-    return _typed_response(response, (OkResponse,))
+    return _typed_response(response, (OkResponse,), allow_untyped=False)
 
 
 def style_custom_update(self: Any, style_id: str, body: CustomStyleSpec) -> StyleResponse:
@@ -709,7 +746,7 @@ def style_custom_update(self: Any, style_id: str, body: CustomStyleSpec) -> Styl
     path = path.replace("{style_id}", str(style_id))
     params = None
     response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
-    return _typed_response(response, (StyleResponse,))
+    return _typed_response(response, (StyleResponse,), allow_untyped=False)
 
 
 def style_custom_delete(self: Any, style_id: str) -> OkResponse:
@@ -718,7 +755,7 @@ def style_custom_delete(self: Any, style_id: str) -> OkResponse:
     path = path.replace("{style_id}", str(style_id))
     params = None
     response = self._client._request_json("DELETE", path, params=params)
-    return _typed_response(response, (OkResponse,))
+    return _typed_response(response, (OkResponse,), allow_untyped=False)
 
 
 def signature_update(self: Any, signature_id: str, body: SignatureSpec) -> SignatureResponse:
@@ -727,7 +764,7 @@ def signature_update(self: Any, signature_id: str, body: SignatureSpec) -> Signa
     path = path.replace("{signature_id}", str(signature_id))
     params = None
     response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
-    return _typed_response(response, (SignatureResponse,))
+    return _typed_response(response, (SignatureResponse,), allow_untyped=False)
 
 
 def signature_delete(self: Any, signature_id: str) -> OkResponse:
@@ -736,7 +773,7 @@ def signature_delete(self: Any, signature_id: str) -> OkResponse:
     path = path.replace("{signature_id}", str(signature_id))
     params = None
     response = self._client._request_json("DELETE", path, params=params)
-    return _typed_response(response, (OkResponse,))
+    return _typed_response(response, (OkResponse,), allow_untyped=False)
 
 
 def template_get(self: Any, template_id: str) -> TemplateDetailResponse:
@@ -745,7 +782,7 @@ def template_get(self: Any, template_id: str) -> TemplateDetailResponse:
     path = path.replace("{template_id}", str(template_id))
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (TemplateDetailResponse,))
+    return _typed_response(response, (TemplateDetailResponse,), allow_untyped=False)
 
 
 def template_delete(self: Any, template_id: str) -> OkResponse:
@@ -754,7 +791,7 @@ def template_delete(self: Any, template_id: str) -> OkResponse:
     path = path.replace("{template_id}", str(template_id))
     params = None
     response = self._client._request_json("DELETE", path, params=params)
-    return _typed_response(response, (OkResponse,))
+    return _typed_response(response, (OkResponse,), allow_untyped=False)
 
 
 def template_rename(
@@ -765,7 +802,7 @@ def template_rename(
     path = path.replace("{template_id}", str(template_id))
     params = None
     response = self._client._request_json("PATCH", path, params=params, json=_json_body(body))
-    return _typed_response(response, (TemplateDetailResponse,))
+    return _typed_response(response, (TemplateDetailResponse,), allow_untyped=False)
 
 
 def style_derive(self: Any, body: DeriveStyleSpec) -> dict[str, Any] | DeriveStyleResponse:
@@ -773,7 +810,7 @@ def style_derive(self: Any, body: DeriveStyleSpec) -> dict[str, Any] | DeriveSty
     path = "/dashboards/v3/styles/derive"
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (DeriveStyleResponse,))
+    return _typed_response(response, (DeriveStyleResponse,), allow_untyped=True)
 
 
 def style_extract_brand(self: Any, body: ExtractBrandSpec) -> ObjectJobSchema | JobResponse:
@@ -781,7 +818,7 @@ def style_extract_brand(self: Any, body: ExtractBrandSpec) -> ObjectJobSchema | 
     path = "/dashboards/v3/styles/extract-brand"
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (ObjectJobSchema, JobResponse))
+    return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
 def template_fit(
@@ -795,7 +832,7 @@ def template_fit(
         if value is not None
     }
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (TemplateFitResponse,))
+    return _typed_response(response, (TemplateFitResponse,), allow_untyped=False)
 
 
 def style_default_get(self: Any) -> DefaultStyleResponse:
@@ -803,7 +840,7 @@ def style_default_get(self: Any) -> DefaultStyleResponse:
     path = "/dashboards/v3/styles/default"
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (DefaultStyleResponse,))
+    return _typed_response(response, (DefaultStyleResponse,), allow_untyped=False)
 
 
 def style_default_set(self: Any, body: DefaultStyleSpec) -> DefaultStyleResponse:
@@ -811,7 +848,7 @@ def style_default_set(self: Any, body: DefaultStyleSpec) -> DefaultStyleResponse
     path = "/dashboards/v3/styles/default"
     params = None
     response = self._client._request_json("PUT", path, params=params, json=_json_body(body))
-    return _typed_response(response, (DefaultStyleResponse,))
+    return _typed_response(response, (DefaultStyleResponse,), allow_untyped=False)
 
 
 def style_token_list(self: Any, id: str) -> StyleTokensResponse:
@@ -819,7 +856,7 @@ def style_token_list(self: Any, id: str) -> StyleTokensResponse:
     path = "/dashboards/v3/styles/tokens"
     params = {key: value for key, value in {"id": id}.items() if value is not None}
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (StyleTokensResponse,))
+    return _typed_response(response, (StyleTokensResponse,), allow_untyped=False)
 
 
 def style_preset_list(self: Any) -> StylePresetsResponse:
@@ -827,7 +864,7 @@ def style_preset_list(self: Any) -> StylePresetsResponse:
     path = "/dashboards/v3/styles/presets"
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (StylePresetsResponse,))
+    return _typed_response(response, (StylePresetsResponse,), allow_untyped=False)
 
 
 def template_list(self: Any) -> TemplateListResponse:
@@ -835,7 +872,7 @@ def template_list(self: Any) -> TemplateListResponse:
     path = "/dashboards/v3/templates"
     params = None
     response = self._client._request_json("GET", path, params=params)
-    return _typed_response(response, (TemplateListResponse,))
+    return _typed_response(response, (TemplateListResponse,), allow_untyped=False)
 
 
 def template_create(self: Any, body: SaveTemplateSpec) -> TemplateDetailResponse:
@@ -843,7 +880,7 @@ def template_create(self: Any, body: SaveTemplateSpec) -> TemplateDetailResponse
     path = "/dashboards/v3/templates"
     params = None
     response = self._client._request_json("POST", path, params=params, json=_json_body(body))
-    return _typed_response(response, (TemplateDetailResponse,))
+    return _typed_response(response, (TemplateDetailResponse,), allow_untyped=False)
 
 
 GENERATED_METHODS = [

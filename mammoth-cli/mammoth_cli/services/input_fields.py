@@ -15,15 +15,25 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     # ``job get`` is an immediate status read; only wait commands implement
     # the CLI's timeout/polling behavior.
     "job.get": frozenset({"timeout"}),
+    # ``PipelineAPI.get_draft_status`` carries a legacy ``dataset_id`` alongside
+    # the ``dataview_id`` the handler forwards from the view positional; the
+    # handler never reads it, so it must not be advertised as an --input field.
+    "view.draft.status": frozenset({"dataset_id"}),
 }
 
 
 def excluded_input_fields(command_id: str) -> frozenset[str]:
     """Return SDK parameters that are not accepted from ``--input``."""
     context_fields = {"project_id", "workspace_id"}
-    positional_fields = {
-        item.name for item in resolve_positionals(command_id) if item.falls_back_to_field is None
-    }
+    positional_fields: set[str] = set()
+    for item in resolve_positionals(command_id):
+        if item.falls_back_to_field is not None:
+            # Dual-sourced: the field is still a legitimate --input key.
+            continue
+        positional_fields.add(item.name)
+        if item.fills_sdk_param is not None:
+            # The positional also supplies this (differently named) SDK argument.
+            positional_fields.add(item.fills_sdk_param)
     return frozenset(context_fields | positional_fields) | _HANDLER_OWNED_FIELDS.get(
         command_id, frozenset()
     )

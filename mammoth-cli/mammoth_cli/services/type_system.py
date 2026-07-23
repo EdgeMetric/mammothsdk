@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, get_args, get_origin, get_type_hints
 
 from mammoth import condition as _condition_module
+from mammoth.view import View as _View
 from pydantic import BaseModel, ValidationError
 
 from mammoth_cli.services.argspec import _sdk_type_namespace, render_type_name
@@ -20,6 +21,45 @@ _CONDITION_TYPES = (
     _condition_module.CompoundCondition,
     _condition_module.NotCondition,
 )
+# SDK domain objects that a JSON ``--input`` document can only reference by their
+# positive integer id (a live View instance cannot be expressed as JSON). A
+# field annotated with one of these -- alone or as a union member such as
+# ``int | View`` -- is a resource reference and must be a positive id.
+_RESOURCE_DOMAIN_TYPES = (_View,)
+
+
+def _is_resource_domain(annotation: Any) -> bool:
+    """Whether an annotation is an SDK domain object referenced by id."""
+    return isinstance(annotation, type) and issubclass(annotation, _RESOURCE_DOMAIN_TYPES)
+
+
+def _is_resource_reference(annotation: Any) -> bool:
+    """Whether an annotation resolves to a resource reference (id form)."""
+    if _is_resource_domain(annotation):
+        return True
+    if get_origin(annotation) in _UNIONS:
+        return any(_is_resource_domain(member) for member in get_args(annotation))
+    return False
+
+
+def _coerce_positive_id(value: Any, path: str) -> int:
+    """Coerce ``value`` to a positive resource id, or raise."""
+    if isinstance(value, bool):
+        raise TypeValidationError(path, "positive resource ID", value)
+    if isinstance(value, int):
+        number = value
+    elif isinstance(value, float) and value.is_integer():
+        number = int(value)
+    elif isinstance(value, str):
+        try:
+            number = int(value.strip())
+        except ValueError:
+            raise TypeValidationError(path, "positive resource ID", value) from None
+    else:
+        raise TypeValidationError(path, "positive resource ID", value)
+    if number <= 0:
+        raise TypeValidationError(path, "positive resource ID", value)
+    return number
 
 
 class TypeValidationError(ValueError):
@@ -115,6 +155,15 @@ def json_schema(annotation: Any, field_name: str | None = None) -> dict[str, Any
         return {}
     if annotation in _CONDITION_TYPES:
         return _condition_schema()
+    if _is_resource_reference(annotation):
+        return {
+            "type": "integer",
+            "minimum": 1,
+            "example": 1,
+            "description": "Positive id of the referenced resource.",
+        }
+    if annotation is typing.BinaryIO:
+        return {"type": "string", "format": "path", "example": "example.csv"}
     origin = get_origin(annotation)
     args = get_args(annotation)
     if origin in _UNIONS:
@@ -185,6 +234,10 @@ def sample_value(annotation: Any) -> Any:
         return "example"
     if annotation in _CONDITION_TYPES:
         return {"column": "Status", "operator": "EQ", "value": "Active"}
+    if _is_resource_reference(annotation):
+        return 1
+    if annotation is typing.BinaryIO:
+        return "example.csv"
     origin = get_origin(annotation)
     args = get_args(annotation)
     if origin in _UNIONS:
@@ -234,6 +287,12 @@ def validate_value(value: Any, annotation: Any, path: str) -> Any:
         except Exception as error:  # noqa: BLE001 - normalized to type-system error
             raise TypeValidationError(path, "a valid condition object", value) from error
         return value
+    # A resource reference (a domain object such as ``View``, alone or in a
+    # union like ``int | View``) can only be expressed in JSON as a positive id;
+    # accept nothing else, so a negative or non-numeric id is rejected here
+    # rather than by the server.
+    if _is_resource_reference(annotation):
+        return _coerce_positive_id(value, path)
     origin = get_origin(annotation)
     args = get_args(annotation)
     if origin in _UNIONS:
