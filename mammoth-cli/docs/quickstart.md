@@ -43,7 +43,7 @@ mammoth folder list --project 180
 ## Make a change safely
 
 ```bash
-mammoth folder create Reports --project 180
+mammoth folder create --input '{"name": "Reports"}' --project 180
 mammoth folder delete 7 --project 180 --yes
 ```
 
