@@ -1,6 +1,6 @@
 # Mammoth Analytics Python SDK
 
-**Version 0.3.0** | Python 3.10+ | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mm-pysdk)
+**Version 0.3.0** | Python 3.10+ | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mammothsdk)
 
 The official Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data pipelines, apply transformations, and export results -- all from Python.
 
@@ -85,5 +85,5 @@ view.export.to_csv("output.csv")
 ## Support
 
 - **Documentation**: [https://docs.mammoth.io](https://docs.mammoth.io)
-- **Issues**: [GitHub Issues](https://github.com/EdgeMetric/mm-pysdk/issues)
+- **Issues**: [GitHub Issues](https://github.com/EdgeMetric/mammothsdk/issues)
 - **Email**: support@mammoth.io

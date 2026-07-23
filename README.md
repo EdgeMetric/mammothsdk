@@ -738,7 +738,7 @@ The SDK includes a companion MCP (Model Context Protocol) server that lets AI as
 pip install mammoth-mcp
 ```
 
-See the [mammoth-mcp](https://github.com/EdgeMetric/mm-pysdk/tree/main/mammoth-mcp) directory for configuration and usage details.
+See the [mammoth-mcp](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-mcp) directory for configuration and usage details.
 
 ## Releasing
 

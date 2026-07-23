@@ -62,4 +62,4 @@
 
 ## Source
 
-- https://github.com/EdgeMetric/mm-pysdk
+- https://github.com/EdgeMetric/mammothsdk

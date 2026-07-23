@@ -2,8 +2,8 @@ site_name: Mammoth Analytics Python SDK
 site_url: https://docs.mammoth.io
 site_description: Python SDK for the Mammoth Analytics platform
 site_author: Mammoth Analytics
-repo_url: https://github.com/EdgeMetric/mm-pysdk
-repo_name: EdgeMetric/mm-pysdk
+repo_url: https://github.com/EdgeMetric/mammothsdk
+repo_name: EdgeMetric/mammothsdk
 
 theme:
   name: material

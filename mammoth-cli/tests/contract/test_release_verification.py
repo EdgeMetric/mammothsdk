@@ -2,7 +2,7 @@
 
 A keyless ``cosign verify-blob`` that omits certificate-identity and OIDC-issuer
 constraints accepts *any* valid Sigstore certificate, so it does not prove the
-artifact came from the expected EdgeMetric/mm-pysdk release workflow. Every
+artifact came from the expected EdgeMetric/mammothsdk release workflow. Every
 place that documents the verify command must pin both constraints.
 """
 

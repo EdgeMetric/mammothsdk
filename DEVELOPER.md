@@ -5,7 +5,7 @@ Development workflows for the mammoth-io SDK.
 ## Setup
 
 ```bash
-git clone git@github.com:EdgeMetric/mm-pysdk.git
+git clone git@github.com:EdgeMetric/mammothsdk.git
 cd mm-pysdk
 python -m venv venv
 source venv/bin/activate
