@@ -40,8 +40,8 @@ in `json`/`ndjson` output, or in CI, there is no prompt. A missing `--yes` or
 # normal delete
 mammoth dataset delete 2340 --project 180 --yes
 
-# high-impact: the target must match exactly
-mammoth workspace delete 9 --yes --confirm 9
+# high-impact: --confirm must match the workspace id exactly
+mammoth workspace delete --yes --confirm 9
 ```
 
 ## Other safety rules

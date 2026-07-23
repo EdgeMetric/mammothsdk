@@ -101,7 +101,7 @@ mammoth view transform bulk-replace VIEW_ID \
 
 ```bash
 mammoth dataset delete 2340 --project 180 --output json --no-input --yes
-mammoth workspace delete 9 --output json --no-input --yes --confirm 9
+mammoth workspace delete --output json --no-input --yes --confirm 9
 ```
 
 See [references/safety.md](references/safety.md).
