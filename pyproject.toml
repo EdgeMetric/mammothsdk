@@ -2,7 +2,8 @@
 name = "mammoth-io"
 version = "0.6.0"
 description = "Python SDK for Mammoth Analytics platform"
-authors = ["Ankit Kumar Pandey <ankitpandey@mammoth.io>"]
+authors = ["Mammoth Analytics <support@mammoth.io>"]
+license = "Proprietary"
 readme = "README.md"
 homepage = "https://mammoth.io"
 repository = "https://github.com/EdgeMetric/mm-pysdk"
