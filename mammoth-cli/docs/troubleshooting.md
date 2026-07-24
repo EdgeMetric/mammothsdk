@@ -31,6 +31,7 @@ next commands to run.
 | Exit | `error.code` | Next step |
 |---|---|---|
 | 4 | `not_authenticated`, `authentication_failed` | Run `mammoth auth login`. |
+| 2 | `login_input_required` | Run `mammoth auth login` in an interactive terminal, or pass `--input FILE`. The hint names why prompting was off. |
 | 2 | `project_required` | Pass `--project ID`, or run `mammoth context project use ID`. |
 | 2 | `confirmation_required` | Re-run with `--yes`. |
 | 2 | `confirmation_target_mismatch` | Re-run with `--yes` and a matching `--confirm TARGET`. |
