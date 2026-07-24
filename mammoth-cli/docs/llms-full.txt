@@ -12,9 +12,9 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 ## addon
 
 - `mammoth addon connector add` [high_impact/confirm_target] -> mammoth.api.addons.AddonsAPI.add_connector
-  example: mammoth addon connector add --output json --no-input
+  example: mammoth addon connector add --input '{"connector_id": 42}' --output json --no-input
 - `mammoth addon connector remove` [high_impact/confirm_target] -> mammoth.api.addons.AddonsAPI.remove_connector
-  example: mammoth addon connector remove --output json --no-input
+  example: mammoth addon connector remove --input '{"connector_id": 42}' --output json --no-input
 - `mammoth addon list` [read/none] -> mammoth.api.addons.AddonsAPI.list
   example: mammoth addon list --output json --no-input
 - `mammoth addon storage add` [high_impact/confirm_target] -> mammoth.api.addons.AddonsAPI.add_storage
@@ -46,7 +46,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth ai expression generate` [benign_mutation/none] -> mammoth.api.ai.AIAPI.expression_generate
   example: mammoth ai expression generate 123 --input '{"intent": "example", "mode": "example"}' --output json --no-input
 - `mammoth ai sql generate` [read/none] -> mammoth.api.ai.AIAPI.generate_sql
-  example: mammoth ai sql generate --input '{"intent": "example"}' --output json --no-input
+  example: mammoth ai sql generate example --output json --no-input
 - `mammoth ai suggestion list` [read/none] -> mammoth.api.ai.AIAPI.get_suggestions
   example: mammoth ai suggestion list --output json --no-input
 
@@ -109,7 +109,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth billing chargebee-plan` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.chargebee_plan
   example: mammoth billing chargebee-plan --output json --no-input
 - `mammoth billing hosted-page` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.hosted_page
-  example: mammoth billing hosted-page --input '{"object_type": "example"}' --output json --no-input
+  example: mammoth billing hosted-page example --output json --no-input
 - `mammoth billing invoice charge` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.invoice_charge
   example: mammoth billing invoice charge --output json --no-input
 - `mammoth billing invoice get` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.invoice_get
@@ -187,20 +187,20 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 ## completion
 
 - `mammoth completion install` [benign_mutation/none] -> mammoth_cli.commands.completion.install
-  example: mammoth completion install --output json --no-input
+  example: mammoth completion install example --output json --no-input
 - `mammoth completion show` [read/none] -> mammoth_cli.commands.completion.show
-  example: mammoth completion show --output json --no-input
+  example: mammoth completion show example --output json --no-input
 
 ## config
 
 - `mammoth config get` [read/none] -> mammoth_cli.context.config.get
-  example: mammoth config get --output json --no-input
+  example: mammoth config get output --output json --no-input
 - `mammoth config list` [read/none] -> mammoth_cli.context.config.list
   example: mammoth config list --output json --no-input
 - `mammoth config path` [read/none] -> mammoth_cli.context.config.path
   example: mammoth config path --output json --no-input
 - `mammoth config set` [benign_mutation/none] -> mammoth_cli.context.config.set
-  example: mammoth config set --output json --no-input
+  example: mammoth config set output text --output json --no-input
 
 ## connector
 
@@ -256,7 +256,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth context project status` [read/none] -> mammoth_cli.context.project.status
   example: mammoth context project status --output json --no-input
 - `mammoth context project use` [benign_mutation/none] -> mammoth_cli.context.project.use
-  example: mammoth context project use --output json --no-input
+  example: mammoth context project use 123 --output json --no-input
 
 ## dashboard
 
@@ -458,7 +458,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth data-app update` [benign_mutation/none] -> mammoth.api.data_apps.DataAppsAPI.update
   example: mammoth data-app update 123 --input '{"body": {"params": {"name": "example"}}}' --output json --no-input
 - `mammoth data-app upload` [benign_mutation/none] -> mammoth.api.data_apps.DataAppsAPI.upload
-  example: mammoth data-app upload 123 --input '{"file": "example"}' --output json --no-input
+  example: mammoth data-app upload 123 example --output json --no-input
 - `mammoth data-app user list` [read/none] -> mammoth.api.data_apps.DataAppsAPI.user_list
   example: mammoth data-app user list 123 --output json --no-input
 - `mammoth data-app user remove` [destructive/prompt_or_yes] -> mammoth.api.data_apps.DataAppsAPI.user_remove
@@ -530,9 +530,9 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth file update` [benign_mutation/none] -> mammoth.api.files.FilesAPI.update
   example: mammoth file update 123 --input '{"patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "example"}]}}' --output json --no-input
 - `mammoth file upload` [benign_mutation/none] -> mammoth.api.files.FilesAPI.upload
-  example: mammoth file upload --output json --no-input
+  example: mammoth file upload example --output json --no-input
 - `mammoth file upload-folder` [benign_mutation/none] -> mammoth.api.files.FilesAPI.upload_folder
-  example: mammoth file upload-folder --input '{"folder_path": "example"}' --output json --no-input
+  example: mammoth file upload-folder example --output json --no-input
 
 ## folder
 
@@ -645,7 +645,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth project user remove` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.remove_users
   example: mammoth project user remove 123 --input '{"user_ids": ["example"]}' --output json --no-input
 - `mammoth project user update` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.user_update
-  example: mammoth project user update 123 --input '{"role": "project_admin"}' --output json --no-input
+  example: mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --output json --no-input
 
 ## report
 
@@ -829,7 +829,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth user avatar delete` [destructive/prompt_or_yes] -> mammoth.api.users.UsersAPI.avatar_delete
   example: mammoth user avatar delete --output json --no-input
 - `mammoth user avatar upload` [benign_mutation/none] -> mammoth.api.users.UsersAPI.avatar_upload
-  example: mammoth user avatar upload --input '{"file": "example"}' --output json --no-input
+  example: mammoth user avatar upload example --output json --no-input
 - `mammoth user change-password` [high_impact/confirm_target] -> mammoth.api.user_profile.UserProfileAPI.change_password
   example: mammoth user change-password --input '{"current_password": "example", "new_password": "example"}' --output json --no-input
 - `mammoth user delete-account` [high_impact/confirm_target] -> mammoth.api.users.UsersAPI.delete_account
@@ -1106,15 +1106,15 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth workspace create` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.create
   example: mammoth workspace create --input '{"body": {}}' --output json --no-input
 - `mammoth workspace delete` [high_impact/confirm_target] -> mammoth.api.workspace.WorkspaceAPI.delete
-  example: mammoth workspace delete --output json --no-input
+  example: mammoth workspace delete 123 --output json --no-input
 - `mammoth workspace get` [read/none] -> mammoth.api.workspace.WorkspaceAPI.get
-  example: mammoth workspace get --output json --no-input
+  example: mammoth workspace get 123 --output json --no-input
 - `mammoth workspace list` [read/none] -> mammoth.api.workspace.WorkspaceAPI.list
   example: mammoth workspace list --output json --no-input
 - `mammoth workspace llm-task` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.llm_task
   example: mammoth workspace llm-task --input '{"task_type": "example", "params": {"example": "example"}}' --output json --no-input
 - `mammoth workspace reactivate` [high_impact/confirm_target] -> mammoth.api.workspace.WorkspaceAPI.reactivate
-  example: mammoth workspace reactivate --output json --no-input
+  example: mammoth workspace reactivate 123 --output json --no-input
 - `mammoth workspace segment list` [read/none] -> mammoth.api.workspaces.WorkspacesAPI.segment_list
   example: mammoth workspace segment list --output json --no-input
 - `mammoth workspace segment update` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.segment_update
@@ -1122,7 +1122,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth workspace storage-breakdown` [read/none] -> mammoth.api.workspaces.WorkspacesAPI.storage_breakdown
   example: mammoth workspace storage-breakdown --output json --no-input
 - `mammoth workspace update` [high_impact/confirm_target] -> mammoth.api.workspace.WorkspaceAPI.update
-  example: mammoth workspace update --input '{"patches": [{"op": "replace", "path": "name", "value": "example"}]}' --output json --no-input
+  example: mammoth workspace update 123 --input '{"patches": [{"op": "replace", "path": "name", "value": "example"}]}' --output json --no-input
 - `mammoth workspace user add` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.user_add
   example: mammoth workspace user add --input '{"email_ids": ["example"]}' --output json --no-input
 - `mammoth workspace user get` [read/none] -> mammoth.api.workspace.WorkspaceAPI.get_user

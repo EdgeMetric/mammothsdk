@@ -142,8 +142,9 @@ def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_p
         ),
         encoding="utf-8",
     )
+    # delete_source_ds is destructive, so the command now needs --yes.
     batch_cmd.batch_create(
-        _inv("batch.create", project=180, extra_args=["9", "5"], input_file=str(doc))
+        _inv("batch.create", project=180, extra_args=["9", "5"], input_file=str(doc), yes=True)
     )
     assert fake_service.call_log == [
         (
@@ -174,7 +175,10 @@ def test_update_requires_patch(fake_service: FakeMammothService) -> None:
 def test_update_forwards_patch(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"patch": [{"op": "remove", "value": [1, 2]}]}), encoding="utf-8")
-    batch_cmd.batch_update(_inv("batch.update", project=180, extra_args=["9"], input_file=str(doc)))
+    # A ``remove`` op is destructive, so the command now needs --yes.
+    batch_cmd.batch_update(
+        _inv("batch.update", project=180, extra_args=["9"], input_file=str(doc), yes=True)
+    )
     assert fake_service.call_log == [
         (
             _UPDATE,
@@ -185,6 +189,52 @@ def test_update_forwards_patch(fake_service: FakeMammothService, tmp_path: Path)
             },
         )
     ]
+
+
+def test_create_delete_source_blocked_without_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"mapping": {"a": "b"}, "delete_source_ds": True}), encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        batch_cmd.batch_create(
+            _inv("batch.create", project=180, extra_args=["9", "5"], input_file=str(doc))
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
+def test_create_without_delete_source_needs_no_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"mapping": {"a": "b"}}), encoding="utf-8")
+    batch_cmd.batch_create(
+        _inv("batch.create", project=180, extra_args=["9", "5"], input_file=str(doc))
+    )
+    assert fake_service.call_log[0][1]["dataset_id"] == 9
+
+
+def test_update_remove_blocked_without_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"patch": [{"op": "remove", "value": [1]}]}), encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        batch_cmd.batch_update(
+            _inv("batch.update", project=180, extra_args=["9"], input_file=str(doc))
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
+def test_update_replace_only_needs_no_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"patch": [{"op": "replace", "value": [1]}]}), encoding="utf-8")
+    batch_cmd.batch_update(_inv("batch.update", project=180, extra_args=["9"], input_file=str(doc)))
+    assert fake_service.call_log[0][1]["dataset_id"] == 9
 
 
 # ── delete ────────────────────────────────────────────────────────────────

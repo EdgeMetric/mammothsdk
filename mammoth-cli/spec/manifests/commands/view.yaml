@@ -7,18 +7,18 @@ commands:
   operation_ids:
   - GetActiveUsers
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.active_users
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.active_users with validated request fields.
@@ -34,7 +34,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view active-user list DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view active-user list VIEW_ID --help
   agent_example: mammoth view active-user list 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-ACTIVE-USER-LIST
@@ -53,18 +53,18 @@ commands:
   operation_ids:
   - MarkActiveUser
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.mark_active
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.mark_active with validated request fields.
@@ -80,7 +80,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view active-user mark DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view active-user mark VIEW_ID --help
   agent_example: mammoth view active-user mark 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-ACTIVE-USER-MARK
@@ -260,18 +260,18 @@ commands:
   operation_ids:
   - AddCheckpoint
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.create
   sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.create with validated request fields.
@@ -287,7 +287,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view checkpoint create DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view checkpoint create VIEW_ID --help
   agent_example: 'mammoth view checkpoint create 123 123 --input ''{"body": {"checkpoint_name": "example",
     "checkpoint_type": "alert"}}'' --output json --no-input'
   unit_tests:
@@ -307,24 +307,24 @@ commands:
   operation_ids:
   - DeleteCheckpoint
   positionals:
-  - name: dataset_id
+  - name: view_id
     type: int
     required: true
-    metavar: DATASET_ID
+    metavar: VIEW_ID
     falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    help: ID of the view to act on.
   - name: checkpoint_id
     type: int
     required: true
     metavar: CHECKPOINT_ID
     falls_back_to_field: null
     help: ID of the checkpoint.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.delete
   sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.delete with validated request fields.
@@ -340,7 +340,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view checkpoint delete DATASET_ID DATAVIEW_ID CHECKPOINT_ID --help
+  human_example: mammoth view checkpoint delete VIEW_ID CHECKPOINT_ID --help
   agent_example: mammoth view checkpoint delete 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-CHECKPOINT-DELETE
@@ -359,24 +359,24 @@ commands:
   operation_ids:
   - GetPipelineCheckpoint
   positionals:
-  - name: dataset_id
+  - name: view_id
     type: int
     required: true
-    metavar: DATASET_ID
+    metavar: VIEW_ID
     falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    help: ID of the view to act on.
   - name: checkpoint_id
     type: int
     required: true
     metavar: CHECKPOINT_ID
     falls_back_to_field: null
     help: ID of the checkpoint.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.get
   sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.get with validated request fields.
@@ -392,7 +392,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view checkpoint get DATASET_ID DATAVIEW_ID CHECKPOINT_ID --help
+  human_example: mammoth view checkpoint get VIEW_ID CHECKPOINT_ID --help
   agent_example: mammoth view checkpoint get 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-CHECKPOINT-GET
@@ -411,18 +411,18 @@ commands:
   operation_ids:
   - GetPipelineCheckpoints
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.list
   sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.list with validated request fields.
@@ -438,7 +438,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view checkpoint list DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view checkpoint list VIEW_ID --help
   agent_example: mammoth view checkpoint list 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-CHECKPOINT-LIST
@@ -457,24 +457,24 @@ commands:
   operation_ids:
   - EditPatches
   positionals:
-  - name: dataset_id
+  - name: view_id
     type: int
     required: true
-    metavar: DATASET_ID
+    metavar: VIEW_ID
     falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    help: ID of the view to act on.
   - name: checkpoint_id
     type: int
     required: true
     metavar: CHECKPOINT_ID
     falls_back_to_field: null
     help: ID of the checkpoint.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.update
   sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.update with validated request fields.
@@ -490,7 +490,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view checkpoint update DATASET_ID DATAVIEW_ID CHECKPOINT_ID --help
+  human_example: mammoth view checkpoint update VIEW_ID CHECKPOINT_ID --help
   agent_example: 'mammoth view checkpoint update 123 123 123 --input ''{"body": {"patches": [{"op": "replace",
     "path": "approve"}]}}'' --output json --no-input'
   unit_tests:
@@ -510,18 +510,18 @@ commands:
   operation_ids:
   - CreateConditionalFormat
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_create
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_create with validated request
@@ -538,7 +538,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view conditional-format create DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view conditional-format create VIEW_ID --help
   agent_example: 'mammoth view conditional-format create 123 123 --input ''{"rule": {"example": "example"}}''
     --output json --no-input'
   unit_tests:
@@ -559,18 +559,18 @@ commands:
   operation_ids:
   - DeleteConditionalFormat
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_delete
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_delete with validated request
@@ -587,7 +587,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view conditional-format delete-all DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view conditional-format delete-all VIEW_ID --help
   agent_example: mammoth view conditional-format delete-all 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-CONDITIONAL-FORMAT-DELETE-ALL
@@ -606,18 +606,18 @@ commands:
   operation_ids:
   - GetConditionalFormat
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_list
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_list with validated request
@@ -634,7 +634,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view conditional-format list DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view conditional-format list VIEW_ID --help
   agent_example: mammoth view conditional-format list 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-CONDITIONAL-FORMAT-LIST
@@ -653,18 +653,18 @@ commands:
   operation_ids:
   - UpdateConditionalFormat
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_update
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_update with validated request
@@ -681,7 +681,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view conditional-format update DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view conditional-format update VIEW_ID --help
   agent_example: 'mammoth view conditional-format update 123 123 --input ''{"rule": {"example": "example"}}''
     --output json --no-input'
   unit_tests:
@@ -741,18 +741,18 @@ commands:
   operation_ids:
   - AddDataCheck
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.data_checks.DataChecksAPI.create
   sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.create with validated request fields.
@@ -768,7 +768,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view data-check create DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view data-check create VIEW_ID --help
   agent_example: 'mammoth view data-check create 123 123 --input ''{"body": {"checks": [{"check_type":
     "null_percentage", "config": {"column": "example", "condition": "lt"}}], "name": "example"}}'' --output
     json --no-input'
@@ -789,24 +789,24 @@ commands:
   operation_ids:
   - DeleteDataCheck
   positionals:
-  - name: dataset_id
+  - name: view_id
     type: int
     required: true
-    metavar: DATASET_ID
+    metavar: VIEW_ID
     falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    help: ID of the view to act on.
   - name: data_check_id
     type: int
     required: true
     metavar: DATA_CHECK_ID
     falls_back_to_field: null
     help: ID of the data check.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.data_checks.DataChecksAPI.delete
   sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.delete with validated request fields.
@@ -822,7 +822,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view data-check delete DATASET_ID DATAVIEW_ID DATA_CHECK_ID --help
+  human_example: mammoth view data-check delete VIEW_ID DATA_CHECK_ID --help
   agent_example: mammoth view data-check delete 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DATA-CHECK-DELETE
@@ -841,24 +841,24 @@ commands:
   operation_ids:
   - GetPipelineDataCheck
   positionals:
-  - name: dataset_id
+  - name: view_id
     type: int
     required: true
-    metavar: DATASET_ID
+    metavar: VIEW_ID
     falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    help: ID of the view to act on.
   - name: data_check_id
     type: int
     required: true
     metavar: DATA_CHECK_ID
     falls_back_to_field: null
     help: ID of the data check.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.data_checks.DataChecksAPI.get
   sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.get with validated request fields.
@@ -874,7 +874,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view data-check get DATASET_ID DATAVIEW_ID DATA_CHECK_ID --help
+  human_example: mammoth view data-check get VIEW_ID DATA_CHECK_ID --help
   agent_example: mammoth view data-check get 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DATA-CHECK-GET
@@ -893,18 +893,18 @@ commands:
   operation_ids:
   - GetPipelineDataChecks
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.data_checks.DataChecksAPI.list
   sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.list with validated request fields.
@@ -920,7 +920,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view data-check list DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view data-check list VIEW_ID --help
   agent_example: mammoth view data-check list 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DATA-CHECK-LIST
@@ -939,24 +939,24 @@ commands:
   operation_ids:
   - EditDatacheck
   positionals:
-  - name: dataset_id
+  - name: view_id
     type: int
     required: true
-    metavar: DATASET_ID
+    metavar: VIEW_ID
     falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    help: ID of the view to act on.
   - name: data_check_id
     type: int
     required: true
     metavar: DATA_CHECK_ID
     falls_back_to_field: null
     help: ID of the data check.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.data_checks.DataChecksAPI.update
   sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.update with validated request fields.
@@ -972,7 +972,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view data-check update DATASET_ID DATAVIEW_ID DATA_CHECK_ID --help
+  human_example: mammoth view data-check update VIEW_ID DATA_CHECK_ID --help
   agent_example: 'mammoth view data-check update 123 123 123 --input ''{"body": {"patches": [{"op": "replace",
     "path": "enable"}]}}'' --output json --no-input'
   unit_tests:
@@ -992,18 +992,18 @@ commands:
   operation_ids:
   - GetDataviewData
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.get_data
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.get_data with validated request fields.
@@ -1019,7 +1019,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view data get DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view data get VIEW_ID --help
   agent_example: mammoth view data get 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DATA-GET
@@ -1038,18 +1038,18 @@ commands:
   operation_ids:
   - ExecuteVolatileQuery
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.query_data
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.query_data with validated request fields.
@@ -1065,7 +1065,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view data query DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view data query VIEW_ID --help
   agent_example: mammoth view data query 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DATA-QUERY
@@ -1125,18 +1125,18 @@ commands:
   operation_ids:
   - CreateDerivative
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.derivatives.DerivativesAPI.create
   sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.create with validated request fields.
@@ -1152,7 +1152,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view derivative create DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view derivative create VIEW_ID --help
   agent_example: 'mammoth view derivative create 123 123 --input ''{"body": {"param": {"METRIC": {"AS":
     "example", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "example", "FUNCTION": "SUM"}}]}}}}''
     --output json --no-input'
@@ -1173,24 +1173,24 @@ commands:
   operation_ids:
   - FetchDerivativeData
   positionals:
-  - name: dataset_id
+  - name: view_id
     type: int
     required: true
-    metavar: DATASET_ID
+    metavar: VIEW_ID
     falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    help: ID of the view to act on.
   - name: derivative_id
     type: int
     required: true
     metavar: DERIVATIVE_ID
     falls_back_to_field: null
     help: ID of the derivative.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.derivatives.DerivativesAPI.data
   sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.data with validated request fields.
@@ -1206,7 +1206,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view derivative data DATASET_ID DATAVIEW_ID DERIVATIVE_ID --help
+  human_example: mammoth view derivative data VIEW_ID DERIVATIVE_ID --help
   agent_example: 'mammoth view derivative data 123 123 123 --input ''{"body": {"condition": {"FILTER_TYPE":
     "SHOW"}}}'' --output json --no-input'
   unit_tests:
@@ -1226,24 +1226,24 @@ commands:
   operation_ids:
   - DeleteDerivative
   positionals:
-  - name: dataset_id
+  - name: view_id
     type: int
     required: true
-    metavar: DATASET_ID
+    metavar: VIEW_ID
     falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    help: ID of the view to act on.
   - name: derivative_id
     type: int
     required: true
     metavar: DERIVATIVE_ID
     falls_back_to_field: null
     help: ID of the derivative.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.derivatives.DerivativesAPI.delete
   sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.delete with validated request fields.
@@ -1259,7 +1259,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view derivative delete DATASET_ID DATAVIEW_ID DERIVATIVE_ID --help
+  human_example: mammoth view derivative delete VIEW_ID DERIVATIVE_ID --help
   agent_example: mammoth view derivative delete 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DERIVATIVE-DELETE
@@ -1278,18 +1278,18 @@ commands:
   operation_ids:
   - ListDerivatives
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.derivatives.DerivativesAPI.list
   sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.list with validated request fields.
@@ -1305,7 +1305,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view derivative list DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view derivative list VIEW_ID --help
   agent_example: mammoth view derivative list 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DERIVATIVE-LIST
@@ -1324,24 +1324,24 @@ commands:
   operation_ids:
   - EditDerivative
   positionals:
-  - name: dataset_id
+  - name: view_id
     type: int
     required: true
-    metavar: DATASET_ID
+    metavar: VIEW_ID
     falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    help: ID of the view to act on.
   - name: derivative_id
     type: int
     required: true
     metavar: DERIVATIVE_ID
     falls_back_to_field: null
     help: ID of the derivative.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.derivatives.DerivativesAPI.update
   sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.update with validated request fields.
@@ -1357,7 +1357,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view derivative update DATASET_ID DATAVIEW_ID DERIVATIVE_ID --help
+  human_example: mammoth view derivative update VIEW_ID DERIVATIVE_ID --help
   agent_example: 'mammoth view derivative update 123 123 123 --input ''{"body": {"patches": [{"op": "replace",
     "path": "param", "value": {"METRIC": {"AS": "example", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE":
     {"ARGUMENT": "example", "FUNCTION": "SUM"}}]}}}]}}'' --output json --no-input'
@@ -2044,18 +2044,18 @@ commands:
   operation_ids:
   - GetParameterContext
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.parameter_context
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.parameter_context with validated request fields.
@@ -2071,7 +2071,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view parameter-context DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view parameter-context VIEW_ID --help
   agent_example: mammoth view parameter-context 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-PARAMETER-CONTEXT
@@ -2291,18 +2291,18 @@ commands:
   operation_ids:
   - GetDataviewPreview
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.preview
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.preview with validated request fields.
@@ -2318,7 +2318,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view preview DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view preview VIEW_ID --help
   agent_example: mammoth view preview 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-PREVIEW
@@ -2337,18 +2337,18 @@ commands:
   operation_ids:
   - RestoreDataview
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.restore
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.restore with validated request fields.
@@ -2364,7 +2364,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view restore DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view restore VIEW_ID --help
   agent_example: mammoth view restore 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-RESTORE
@@ -3885,18 +3885,18 @@ commands:
   operation_ids:
   - TrashDataview
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.trash
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.trash with validated request fields.
@@ -3912,7 +3912,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view trash DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view trash VIEW_ID --help
   agent_example: mammoth view trash 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-TRASH
@@ -3931,18 +3931,18 @@ commands:
   operation_ids:
   - Patch
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.update
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.update with validated request fields.
@@ -3958,7 +3958,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view update DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view update VIEW_ID --help
   agent_example: 'mammoth view update 123 123 --input ''{"patch_data": [{"example": "example"}]}'' --output
     json --no-input'
   unit_tests:
@@ -3979,24 +3979,24 @@ commands:
   operation_ids:
   - ApplyPipelineVersion
   positionals:
-  - name: dataset_id
+  - name: view_id
     type: int
     required: true
-    metavar: DATASET_ID
+    metavar: VIEW_ID
     falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    help: ID of the view to act on.
   - name: version_id
     type: int
     required: true
     metavar: VERSION_ID
     falls_back_to_field: null
-    help: ID of the version.
+    help: ID of the pipeline version.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.apply
   sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.apply with validated request
@@ -4013,7 +4013,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view version apply DATASET_ID DATAVIEW_ID VERSION_ID --help
+  human_example: mammoth view version apply VIEW_ID VERSION_ID --help
   agent_example: mammoth view version apply 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-VERSION-APPLY
@@ -4032,24 +4032,24 @@ commands:
   operation_ids:
   - DeletePipelineVersion
   positionals:
-  - name: dataset_id
+  - name: view_id
     type: int
     required: true
-    metavar: DATASET_ID
+    metavar: VIEW_ID
     falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    help: ID of the view to act on.
   - name: version_id
     type: int
     required: true
     metavar: VERSION_ID
     falls_back_to_field: null
-    help: ID of the version.
+    help: ID of the pipeline version.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.delete
   sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.delete with validated request
@@ -4066,7 +4066,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view version delete DATASET_ID DATAVIEW_ID VERSION_ID --help
+  human_example: mammoth view version delete VIEW_ID VERSION_ID --help
   agent_example: mammoth view version delete 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-VERSION-DELETE
@@ -4085,24 +4085,24 @@ commands:
   operation_ids:
   - GetPipelineVersion
   positionals:
-  - name: dataset_id
+  - name: view_id
     type: int
     required: true
-    metavar: DATASET_ID
+    metavar: VIEW_ID
     falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    help: ID of the view to act on.
   - name: version_id
     type: int
     required: true
     metavar: VERSION_ID
     falls_back_to_field: null
-    help: ID of the version.
+    help: ID of the pipeline version.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.get
   sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.get with validated request fields.
@@ -4118,7 +4118,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view version get DATASET_ID DATAVIEW_ID VERSION_ID --help
+  human_example: mammoth view version get VIEW_ID VERSION_ID --help
   agent_example: mammoth view version get 123 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-VERSION-GET
@@ -4137,18 +4137,18 @@ commands:
   operation_ids:
   - GetPipelineVersions
   positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
   - name: dataset_id
     type: int
-    required: true
+    required: false
     metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.list
   sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.list with validated request fields.
@@ -4164,7 +4164,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view version list DATASET_ID DATAVIEW_ID --help
+  human_example: mammoth view version list VIEW_ID --help
   agent_example: mammoth view version list 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-VERSION-LIST
@@ -4183,24 +4183,24 @@ commands:
   operation_ids:
   - EditPipelineVersion
   positionals:
-  - name: dataset_id
+  - name: view_id
     type: int
     required: true
-    metavar: DATASET_ID
+    metavar: VIEW_ID
     falls_back_to_field: null
-    help: ID of the dataset.
-  - name: dataview_id
-    type: int
-    required: true
-    metavar: DATAVIEW_ID
-    falls_back_to_field: null
-    help: ID of the dataview.
+    help: ID of the view to act on.
   - name: version_id
     type: int
     required: true
     metavar: VERSION_ID
     falls_back_to_field: null
-    help: ID of the version.
+    help: ID of the pipeline version.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
   options: []
   sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.update
   sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.update with validated request
@@ -4217,7 +4217,7 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth view version update DATASET_ID DATAVIEW_ID VERSION_ID --help
+  human_example: mammoth view version update VIEW_ID VERSION_ID --help
   agent_example: 'mammoth view version update 123 123 123 --input ''{"body": {"patches": [{"op": "replace",
     "path": "name"}]}}'' --output json --no-input'
   unit_tests:

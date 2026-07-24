@@ -374,6 +374,7 @@ class View(
         columns: list[str] | None = None,
         condition: Condition | CompoundCondition | None = None,
         sort: str | None = None,
+        sequence: int | None = None,
     ) -> dict[str, Any]:
         """Fetch data rows from the dataview.
 
@@ -383,6 +384,9 @@ class View(
             columns: List of display names to fetch. ``None`` fetches all.
             condition: Filter condition — only matching rows are returned.
             sort: Sort specification string.
+            sequence: Pipeline step to read at (default: latest, so rows
+                include every pipeline-derived column; pass ``0`` for the
+                original dataset).
 
         Returns:
             Dict with ``data`` (list of row dicts), ``columns``, and
@@ -403,6 +407,7 @@ class View(
         return self._client.dataviews.query_data(
             dataset_id=self.dataset_id,
             dataview_id=self.id,
+            sequence=sequence,
             limit=limit,
             offset=offset,
             columns=resolved_cols,

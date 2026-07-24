@@ -149,6 +149,14 @@ def batch_create(invocation: Invocation) -> HandlerResult:
         kwargs,
         ("new_ds_params", "is_validation_required", "change_map", "delete_source_ds"),
     )
+    # Deleting the source dataset is destructive, so gate it behind a
+    # prompt/``--yes`` even though creating a batch is otherwise benign.
+    if kwargs.get("delete_source_ds"):
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_PROMPT_OR_YES,
+            action=f"create a batch on dataset {dataset_id} and DELETE the source dataset",
+        )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
@@ -160,6 +168,16 @@ def batch_update(invocation: Invocation) -> HandlerResult:
     dataset_id = _require_int_positional_at(invocation, 0, "dataset id")
     document = invocation.load_input()
     patch = _require_field(document, "patch")
+    # A ``remove`` op deletes batches, so gate any patch containing one behind a
+    # prompt/``--yes``; pure ``replace``/``add`` patches stay unconfirmed.
+    if isinstance(patch, list) and any(
+        isinstance(op, dict) and op.get("op") == "remove" for op in patch
+    ):
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_PROMPT_OR_YES,
+            action=f"remove batches of dataset {dataset_id}",
+        )
     with open_service(invocation) as (service, auth):
         data = service.call(
             _symbol(invocation), dataset_id=dataset_id, patch=patch, project_id=project_id

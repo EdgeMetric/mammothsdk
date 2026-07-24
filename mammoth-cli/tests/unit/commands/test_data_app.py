@@ -237,8 +237,18 @@ def test_share_forwards_id_and_body(fake_service: FakeMammothService, tmp_path: 
 def test_upload_requires_file(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         data_app_cmd.data_app_upload(_inv("data-app.upload", extra_args=["7"]))
-    assert excinfo.value.code == "missing_field"
+    # File is dual-sourced (positional OR 'file' field); when both are absent the
+    # handler raises the same missing-argument usage error as its sibling
+    # dual-source uploads (file.upload-folder, billing.hosted-page).
+    assert excinfo.value.code == "missing_argument"
     assert fake_service.call_log == []
+
+
+def test_upload_reads_file_from_second_positional(
+    fake_service: FakeMammothService,
+) -> None:
+    data_app_cmd.data_app_upload(_inv("data-app.upload", extra_args=["7", "/tmp/data.csv"]))
+    assert fake_service.call_log == [(_UPLOAD, {"data_app_id": 7, "file": "/tmp/data.csv"})]
 
 
 def test_upload_without_id_is_usage_error(fake_service: FakeMammothService) -> None:

@@ -7,7 +7,18 @@ ever crashes on or silently mangles a legitimate JSON-shaped argument.
 
 from __future__ import annotations
 
+from mammoth.api.automations import AutomationsAPI
+from mammoth.api.clientapps import ClientAppsAPI
+from mammoth.api.external_keys import ExternalKeysAPI
+from mammoth.api.projects import ProjectsAPI
 from mammoth.condition import Condition
+from mammoth.models.automations import (
+    AutomationConditionMode,
+    AutomationPatchItem,
+    AutomationTaskSpec,
+)
+from mammoth.models.clientapps import PatchRequest
+from mammoth.models.external_keys import ExternalKeyType, ModelConfigSpec
 from mammoth.models.pipeline import SetValue, SortDirection
 from mammoth.view import View
 
@@ -61,3 +72,76 @@ def test_dataclass_condition_field_is_compiled_not_left_as_raw_dict() -> None:
     assert set_value.condition.column == "Sales"
     assert set_value.condition.operator == "GTE"
     assert set_value.condition.value == 10000
+
+
+def test_pydantic_list_field_becomes_models_for_automation_create() -> None:
+    """``automation create`` task dicts must become ``AutomationTaskSpec`` models.
+
+    ``AutomationsAPI.create`` types ``tasks`` as ``list[AutomationTaskSpec]``
+    (pydantic v2) and ``condition_mode`` as the ``AutomationConditionMode``
+    enum. The generic (non-View) command path must coerce JSON input into these
+    types, or the SDK crashes on the raw dict. This is the Batch A HIGH fix.
+    """
+    result = coerce_arguments(
+        AutomationsAPI.create,
+        {
+            "name": "n",
+            "description": "d",
+            "tasks": [{"task_type": "send_an_alert", "details": {}}],
+            "condition_mode": "and",
+        },
+    )
+
+    assert isinstance(result["tasks"][0], AutomationTaskSpec)
+    assert result["condition_mode"] is AutomationConditionMode.AND
+
+
+def test_pydantic_list_field_becomes_models_for_automation_update() -> None:
+    """``automation update`` patch dicts must become ``AutomationPatchItem`` models."""
+    result = coerce_arguments(
+        AutomationsAPI.update,
+        {"automation_id": 5, "patch": [{"op": "replace", "path": "status", "value": "active"}]},
+    )
+
+    assert isinstance(result["patch"][0], AutomationPatchItem)
+
+
+def test_enum_and_pydantic_model_coerced_for_external_key_create() -> None:
+    """``external-key create`` coerces the key-type enum and the settings model."""
+    result = coerce_arguments(
+        ExternalKeysAPI.create,
+        {
+            "key_type": "open_ai",
+            "key_name": "k",
+            "secure_key": "s",
+            "model_settings": {"web_search": True},
+        },
+    )
+
+    assert isinstance(result["key_type"], ExternalKeyType)
+    assert isinstance(result["model_settings"], ModelConfigSpec)
+
+
+def test_type_checking_only_pydantic_annotation_resolves_for_client_app_update() -> None:
+    """``client-app update`` resolves a ``PatchRequest`` imported only under TYPE_CHECKING.
+
+    ``ClientAppsAPI.update`` annotates ``patch_request`` with a model its module
+    imports solely under ``TYPE_CHECKING``. Coercion must still resolve the name
+    via the SDK-model namespace and build the model from JSON input.
+    """
+    result = coerce_arguments(
+        ClientAppsAPI.update,
+        {
+            "client_key": "ck",
+            "patch_request": {"patch": [{"op": "replace", "path": "/name", "value": "x"}]},
+        },
+    )
+
+    assert isinstance(result["patch_request"], PatchRequest)
+
+
+def test_plain_arguments_pass_through_unchanged() -> None:
+    """A method with no coercible annotations leaves its arguments untouched."""
+    result = coerce_arguments(ProjectsAPI.create, {"name": "p"})
+
+    assert result["name"] == "p"

@@ -20,7 +20,11 @@ from typing import Any
 
 from mammoth_cli.manifest.loader import command_by_id, load_commands
 from mammoth_cli.services.argspec import FieldSpec, arg_spec
-from mammoth_cli.services.input_fields import excluded_input_fields, handler_owned_fields
+from mammoth_cli.services.input_fields import (
+    example_input_hints,
+    excluded_input_fields,
+    handler_owned_fields,
+)
 from mammoth_cli.services.openapi_types import openapi_body_schema_for, sample_from_schema
 from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
 from mammoth_cli.services.type_system import is_opaque_mapping, json_schema, sample_value
@@ -133,7 +137,8 @@ def runnable_example(
         | {item.fills_sdk_param for item in positionals if item.fills_sdk_param}
     ) | handler_owned_fields(record["command_id"])
     required = [field for field in spec.fields if field.required and field.name not in excluded]
-    if required:
+    hints = example_input_hints(record["command_id"])
+    if required or hints:
         body_schema = openapi_body_schema_for(
             tuple(str(item) for item in record.get("operation_ids", []))
         )
@@ -147,6 +152,10 @@ def runnable_example(
             )
             for field in required
         }
+        # A command with a runtime "one of" / identifier requirement the signature
+        # cannot express supplies the missing accepted field here, so the
+        # documented example is actually runnable rather than just well-formed.
+        document.update(hints)
         tokens.extend(["--input", json.dumps(document)])
     tokens.extend(_OUTPUT_JSON_NO_INPUT)
     return shlex.join(tokens)

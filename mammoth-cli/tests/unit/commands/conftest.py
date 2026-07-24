@@ -22,6 +22,7 @@ def fake_service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
         job_timeout: float | None = None,
         pipeline_timeout: float | None = None,
         project_id: int | None = None,
+        progress: bool = False,
     ) -> FakeMammothService:
         return service
 

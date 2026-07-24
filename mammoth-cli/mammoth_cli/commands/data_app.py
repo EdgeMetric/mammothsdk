@@ -78,6 +78,13 @@ def _require_int_positional(invocation: Invocation, name: str) -> int:
     return _require_int_positional_at(invocation, 0, name)
 
 
+def _string_positional_at(invocation: Invocation, index: int, name: str) -> str | None:
+    """Return the positional argument at ``index`` as a string, or None."""
+    if len(invocation.extra_args) <= index:
+        return None
+    return invocation.extra_args[index]
+
+
 def _require_string_positional_at(invocation: Invocation, index: int, name: str) -> str:
     """Return the required positional argument at ``index``, or raise usage."""
     if len(invocation.extra_args) <= index:
@@ -201,12 +208,22 @@ def data_app_share(invocation: Invocation) -> HandlerResult:
 
 
 def data_app_upload(invocation: Invocation) -> HandlerResult:
-    """Upload a file to a data app. Data app id is positional; file is required input."""
+    """Upload a file to a data app.
+
+    The data app id is the first positional argument; the file path is the
+    optional second positional, falling back to the ``file`` --input field.
+    """
     data_app_id = _require_int_positional(invocation, "data app id")
-    document = invocation.load_input()
-    file = _require_field(document, "file")
+    document = invocation.load_input() or {}
+    file = _string_positional_at(invocation, 1, "file") or document.get("file")
+    if file is None:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="This command requires a file to upload.",
+            exit_status=EXIT_USAGE,
+            hint="Pass the file path as a positional argument or a 'file' input field.",
+        )
     kwargs: dict[str, Any] = {"data_app_id": data_app_id, "file": file}
-    assert document is not None
     _forward_optional(document, kwargs, ("append_to_ds_id",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)

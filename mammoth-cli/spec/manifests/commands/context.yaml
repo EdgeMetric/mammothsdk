@@ -71,7 +71,13 @@ commands:
   disposition: command
   alias_of: null
   operation_ids: []
-  positionals: []
+  positionals:
+  - name: project_id
+    type: int
+    required: true
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: Positive project id to make active.
   options: []
   sdk_symbol: mammoth_cli.context.project.use
   sdk_conversion: Call mammoth_cli.context.project.use with validated request fields.
@@ -87,8 +93,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth context project use --help
-  agent_example: mammoth context project use --output json --no-input
+  human_example: mammoth context project use PROJECT_ID --help
+  agent_example: mammoth context project use 123 --output json --no-input
   unit_tests:
   - UT-CONTEXT-PROJECT-USE
   contract_tests:

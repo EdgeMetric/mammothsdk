@@ -101,6 +101,9 @@ def user_avatar_upload(invocation: Invocation) -> HandlerResult:
         )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), file=file)
+        # Avatar upload returns a job handle for the processing job; wait so the
+        # caller sees the settled result (no-op for non-job payloads).
+        data = service.wait_if_job(data)
     return data, _meta(invocation, auth.workspace_id)
 
 

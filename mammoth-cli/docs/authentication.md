@@ -23,14 +23,15 @@ defaults to `app`. Most users leave it alone. See
 
 ## Log in interactively
 
-Run the login command with your workspace id:
+Run the login command:
 
 ```bash
-mammoth auth login -w 4
+mammoth auth login
 ```
 
-The CLI prompts for the API key and then the API secret. The secret prompt stays
-hidden as you type. On success the CLI saves the login and confirms.
+The CLI prompts for three things in order: your API key, your API secret, and
+then your workspace id. The two secret prompts stay hidden as you type. On
+success the CLI saves the login and confirms.
 
 Two flags fine-tune the login:
 
@@ -109,7 +110,7 @@ One DNS label picks your endpoint. The default `app` resolves to
 Set the prefix at login time:
 
 ```bash
-mammoth auth login -w 4 --server-prefix app
+mammoth auth login --server-prefix app
 ```
 
 Or change it later on the active profile:

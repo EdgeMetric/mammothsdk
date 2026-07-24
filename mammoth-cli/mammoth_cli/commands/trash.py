@@ -91,6 +91,9 @@ def trash_add(invocation: Invocation) -> HandlerResult:
     items = _require_field(document, "items")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), items=items, project_id=project_id)
+        # Bulk trash/restore returns a job handle; wait so the caller sees the
+        # settled result rather than an in-flight job (no-op for non-job payloads).
+        data = service.wait_if_job(data)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -112,4 +115,7 @@ def trash_restore(invocation: Invocation) -> HandlerResult:
     items = _require_field(document, "items")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), items=items, project_id=project_id)
+        # Bulk trash/restore returns a job handle; wait so the caller sees the
+        # settled result rather than an in-flight job (no-op for non-job payloads).
+        data = service.wait_if_job(data)
     return data, _meta(invocation, auth.workspace_id, project_id)

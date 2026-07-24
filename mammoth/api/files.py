@@ -305,8 +305,13 @@ class FilesAPI:
             f"/workspaces/{ws}/projects/{proj}/files/{file_id}",
             json=patch_request.model_dump(),
         )
-        self._client._wait_if_job(response)
-        return ObjectJobSchema(**response)
+        # Wait for the kicked-off job, then build the result from the completed
+        # payload so a terminal ``status_code``/``failure_reason`` is surfaced
+        # rather than the enqueue-time handle. The original response is kept as a
+        # base so ``job_id`` survives when the completed payload omits it.
+        completed = self._client._wait_if_job(response)
+        merged = {**response, **completed} if isinstance(completed, dict) else response
+        return ObjectJobSchema(**merged)
 
     def set_password(self, file_id: int, password: str) -> ObjectJobSchema:
         """Set password for a password-protected file.

@@ -5,7 +5,13 @@ commands:
   disposition: command
   alias_of: null
   operation_ids: []
-  positionals: []
+  positionals:
+  - name: key
+    type: str
+    required: true
+    metavar: KEY
+    falls_back_to_field: null
+    help: Configuration key to read (e.g. output, timeout).
   options: []
   sdk_symbol: mammoth_cli.context.config.get
   sdk_conversion: Call mammoth_cli.context.config.get with validated request fields.
@@ -21,8 +27,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth config get --help
-  agent_example: mammoth config get --output json --no-input
+  human_example: mammoth config get KEY --help
+  agent_example: mammoth config get output --output json --no-input
   unit_tests:
   - UT-CONFIG-GET
   contract_tests:
@@ -104,7 +110,19 @@ commands:
   disposition: command
   alias_of: null
   operation_ids: []
-  positionals: []
+  positionals:
+  - name: key
+    type: str
+    required: true
+    metavar: KEY
+    falls_back_to_field: null
+    help: Configuration key to set (e.g. output, timeout).
+  - name: value
+    type: str
+    required: true
+    metavar: VALUE
+    falls_back_to_field: null
+    help: New value for the configuration key.
   options: []
   sdk_symbol: mammoth_cli.context.config.set
   sdk_conversion: Call mammoth_cli.context.config.set with validated request fields.
@@ -120,8 +138,8 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth config set --help
-  agent_example: mammoth config set --output json --no-input
+  human_example: mammoth config set KEY VALUE --help
+  agent_example: mammoth config set output text --output json --no-input
   unit_tests:
   - UT-CONFIG-SET
   contract_tests:

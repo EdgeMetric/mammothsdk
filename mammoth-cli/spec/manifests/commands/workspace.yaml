@@ -143,7 +143,13 @@ commands:
   alias_of: null
   operation_ids:
   - DeleteUserWorkspace
-  positionals: []
+  positionals:
+  - name: workspace_id
+    type: int
+    required: false
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace to act on; defaults to the client's own workspace.
   options: []
   sdk_symbol: mammoth.api.workspace.WorkspaceAPI.delete
   sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.delete with validated request fields.
@@ -160,7 +166,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace delete --help
-  agent_example: mammoth workspace delete --output json --no-input
+  agent_example: mammoth workspace delete 123 --output json --no-input
   unit_tests:
   - UT-WORKSPACE-DELETE
   contract_tests:
@@ -177,7 +183,13 @@ commands:
   alias_of: null
   operation_ids:
   - GetWorkspace
-  positionals: []
+  positionals:
+  - name: workspace_id
+    type: int
+    required: false
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace to act on; defaults to the client's own workspace.
   options: []
   sdk_symbol: mammoth.api.workspace.WorkspaceAPI.get
   sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.get with validated request fields.
@@ -194,7 +206,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace get --help
-  agent_example: mammoth workspace get --output json --no-input
+  agent_example: mammoth workspace get 123 --output json --no-input
   unit_tests:
   - UT-WORKSPACE-GET
   contract_tests:
@@ -280,7 +292,13 @@ commands:
   alias_of: null
   operation_ids:
   - ReactivateWorkspace
-  positionals: []
+  positionals:
+  - name: workspace_id
+    type: int
+    required: false
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace to act on; defaults to the client's own workspace.
   options: []
   sdk_symbol: mammoth.api.workspace.WorkspaceAPI.reactivate
   sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.reactivate with validated request fields.
@@ -297,7 +315,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace reactivate --help
-  agent_example: mammoth workspace reactivate --output json --no-input
+  agent_example: mammoth workspace reactivate 123 --output json --no-input
   unit_tests:
   - UT-WORKSPACE-REACTIVATE
   contract_tests:
@@ -417,7 +435,13 @@ commands:
   alias_of: null
   operation_ids:
   - UpdateWorkspace
-  positionals: []
+  positionals:
+  - name: workspace_id
+    type: int
+    required: false
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace to act on; defaults to the client's own workspace.
   options: []
   sdk_symbol: mammoth.api.workspace.WorkspaceAPI.update
   sdk_conversion: Call mammoth.api.workspace.WorkspaceAPI.update with validated request fields.
@@ -434,8 +458,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace update --help
-  agent_example: 'mammoth workspace update --input ''{"patches": [{"op": "replace", "path": "name", "value":
-    "example"}]}'' --output json --no-input'
+  agent_example: 'mammoth workspace update 123 --input ''{"patches": [{"op": "replace", "path": "name",
+    "value": "example"}]}'' --output json --no-input'
   unit_tests:
   - UT-WORKSPACE-UPDATE
   contract_tests:

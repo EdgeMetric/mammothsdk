@@ -87,7 +87,13 @@ commands:
   alias_of: null
   operation_ids:
   - GenerateSql
-  positionals: []
+  positionals:
+  - name: intent
+    type: str
+    required: false
+    metavar: INTENT
+    falls_back_to_field: intent
+    help: Generation intent for the SQL query; or pass it via the 'intent' input field.
   options: []
   sdk_symbol: mammoth.api.ai.AIAPI.generate_sql
   sdk_conversion: Call mammoth.api.ai.AIAPI.generate_sql with validated request fields.
@@ -104,7 +110,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth ai sql generate --help
-  agent_example: 'mammoth ai sql generate --input ''{"intent": "example"}'' --output json --no-input'
+  agent_example: mammoth ai sql generate example --output json --no-input
   unit_tests:
   - UT-AI-SQL-GENERATE
   contract_tests:

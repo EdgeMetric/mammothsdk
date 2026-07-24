@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 1.0.4.
+Generated from the reviewed command manifests for mammoth-cli 1.0.5.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 
 Total commands: 505.
@@ -28,14 +28,14 @@ Total commands: 505.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.addons.AddonsAPI.add_connector`
-- Agent example: `mammoth addon connector add --output json --no-input`
+- Agent example: `mammoth addon connector add --input '{"connector_id": 42}' --output json --no-input`
 
 ### `mammoth addon connector remove`
 
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.addons.AddonsAPI.remove_connector`
-- Agent example: `mammoth addon connector remove --output json --no-input`
+- Agent example: `mammoth addon connector remove --input '{"connector_id": 42}' --output json --no-input`
 
 ### `mammoth addon list`
 
@@ -147,10 +147,14 @@ Total commands: 505.
 
 ### `mammoth ai sql generate`
 
+**Arguments**
+
+- `INTENT` (str, optional) — Generation intent for the SQL query; or pass it via the 'intent' input field.
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.generate_sql`
-- Agent example: `mammoth ai sql generate --input '{"intent": "example"}' --output json --no-input`
+- Agent example: `mammoth ai sql generate example --output json --no-input`
 
 ### `mammoth ai suggestion list`
 
@@ -388,10 +392,14 @@ Total commands: 505.
 
 ### `mammoth billing hosted-page`
 
+**Arguments**
+
+- `OBJECT_TYPE` (str, optional) — Type of hosted page to generate; or pass it via the 'object_type' input field.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.hosted_page`
-- Agent example: `mammoth billing hosted-page --input '{"object_type": "example"}' --output json --no-input`
+- Agent example: `mammoth billing hosted-page example --output json --no-input`
 
 ### `mammoth billing invoice charge`
 
@@ -667,26 +675,38 @@ Total commands: 505.
 
 ### `mammoth completion install`
 
+**Arguments**
+
+- `SHELL` (str, optional) — Shell to target (bash/zsh/fish); or pass it via the 'shell' input field.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.completion.install`
-- Agent example: `mammoth completion install --output json --no-input`
+- Agent example: `mammoth completion install example --output json --no-input`
 
 ### `mammoth completion show`
+
+**Arguments**
+
+- `SHELL` (str, optional) — Shell to target (bash/zsh/fish); or pass it via the 'shell' input field.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.completion.show`
-- Agent example: `mammoth completion show --output json --no-input`
+- Agent example: `mammoth completion show example --output json --no-input`
 
 ## config
 
 ### `mammoth config get`
 
+**Arguments**
+
+- `KEY` (str, required) — Configuration key to read (e.g. output, timeout).
+
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.context.config.get`
-- Agent example: `mammoth config get --output json --no-input`
+- Agent example: `mammoth config get output --output json --no-input`
 
 ### `mammoth config list`
 
@@ -704,10 +724,15 @@ Total commands: 505.
 
 ### `mammoth config set`
 
+**Arguments**
+
+- `KEY` (str, required) — Configuration key to set (e.g. output, timeout).
+- `VALUE` (str, required) — New value for the configuration key.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.context.config.set`
-- Agent example: `mammoth config set --output json --no-input`
+- Agent example: `mammoth config set output text --output json --no-input`
 
 ## connector
 
@@ -961,10 +986,14 @@ Total commands: 505.
 
 ### `mammoth context project use`
 
+**Arguments**
+
+- `PROJECT_ID` (int, required) — Positive project id to make active.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.context.project.use`
-- Agent example: `mammoth context project use --output json --no-input`
+- Agent example: `mammoth context project use 123 --output json --no-input`
 
 ## dashboard
 
@@ -1972,12 +2001,13 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATA_APP_ID` (int, required) — ID of the data app.
+- `DATA_APP_ID` (int, required) — ID of the data app to upload into.
+- `FILE` (str, optional) — Path to a local file to upload; or pass it via the 'file' input field.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.upload`
-- Agent example: `mammoth data-app upload 123 --input '{"file": "example"}' --output json --no-input`
+- Agent example: `mammoth data-app upload 123 example --output json --no-input`
 
 ### `mammoth data-app user list`
 
@@ -2269,17 +2299,25 @@ Total commands: 505.
 
 ### `mammoth file upload`
 
+**Arguments**
+
+- `FILES` (str, optional) — Path to a local file to upload; or pass one or more via the 'files' field.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.files.FilesAPI.upload`
-- Agent example: `mammoth file upload --output json --no-input`
+- Agent example: `mammoth file upload example --output json --no-input`
 
 ### `mammoth file upload-folder`
+
+**Arguments**
+
+- `FOLDER_PATH` (str, optional) — Path to a local folder to upload; or pass it via the 'folder_path' input field.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.files.FilesAPI.upload_folder`
-- Agent example: `mammoth file upload-folder --input '{"folder_path": "example"}' --output json --no-input`
+- Agent example: `mammoth file upload-folder example --output json --no-input`
 
 ## folder
 
@@ -2764,7 +2802,7 @@ Total commands: 505.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.user_update`
-- Agent example: `mammoth project user update 123 --input '{"role": "project_admin"}' --output json --no-input`
+- Agent example: `mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --output json --no-input`
 
 ## report
 
@@ -3527,10 +3565,14 @@ Total commands: 505.
 
 ### `mammoth user avatar upload`
 
+**Arguments**
+
+- `FILE` (str, optional) — Path to a local image to upload; or pass it via the 'file' input field.
+
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.users.UsersAPI.avatar_upload`
-- Agent example: `mammoth user avatar upload --input '{"file": "example"}' --output json --no-input`
+- Agent example: `mammoth user avatar upload example --output json --no-input`
 
 ### `mammoth user change-password`
 
@@ -3589,8 +3631,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -3601,8 +3643,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -3657,8 +3699,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -3669,9 +3711,9 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
 - `CHECKPOINT_ID` (int, required) — ID of the checkpoint.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
@@ -3682,9 +3724,9 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
 - `CHECKPOINT_ID` (int, required) — ID of the checkpoint.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -3695,8 +3737,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -3707,9 +3749,9 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
 - `CHECKPOINT_ID` (int, required) — ID of the checkpoint.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -3720,8 +3762,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -3732,8 +3774,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
@@ -3744,8 +3786,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -3756,8 +3798,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -3779,8 +3821,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -3791,8 +3833,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -3803,8 +3845,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -3815,9 +3857,9 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
 - `DATA_CHECK_ID` (int, required) — ID of the data check.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
@@ -3828,9 +3870,9 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
 - `DATA_CHECK_ID` (int, required) — ID of the data check.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -3841,8 +3883,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -3853,9 +3895,9 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
 - `DATA_CHECK_ID` (int, required) — ID of the data check.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -3877,8 +3919,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -3889,9 +3931,9 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
 - `DERIVATIVE_ID` (int, required) — ID of the derivative.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -3902,9 +3944,9 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
 - `DERIVATIVE_ID` (int, required) — ID of the derivative.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
@@ -3915,8 +3957,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -3927,9 +3969,9 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
 - `DERIVATIVE_ID` (int, required) — ID of the derivative.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4119,8 +4161,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -4186,8 +4228,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -4198,8 +4240,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4609,8 +4651,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4621,8 +4663,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4633,9 +4675,9 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
-- `VERSION_ID` (int, required) — ID of the version.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `VERSION_ID` (int, required) — ID of the pipeline version.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4646,9 +4688,9 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
-- `VERSION_ID` (int, required) — ID of the version.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `VERSION_ID` (int, required) — ID of the pipeline version.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
@@ -4659,9 +4701,9 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
-- `VERSION_ID` (int, required) — ID of the version.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `VERSION_ID` (int, required) — ID of the pipeline version.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -4672,8 +4714,8 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `read`
 - Confirmation: `none`
@@ -4684,9 +4726,9 @@ Total commands: 505.
 
 **Arguments**
 
-- `DATASET_ID` (int, required) — ID of the dataset.
-- `DATAVIEW_ID` (int, required) — ID of the dataview.
-- `VERSION_ID` (int, required) — ID of the version.
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `VERSION_ID` (int, required) — ID of the pipeline version.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4949,17 +4991,25 @@ Total commands: 505.
 
 ### `mammoth workspace delete`
 
+**Arguments**
+
+- `WORKSPACE_ID` (int, optional) — ID of the workspace to act on; defaults to the client's own workspace.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.workspace.WorkspaceAPI.delete`
-- Agent example: `mammoth workspace delete --output json --no-input`
+- Agent example: `mammoth workspace delete 123 --output json --no-input`
 
 ### `mammoth workspace get`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, optional) — ID of the workspace to act on; defaults to the client's own workspace.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workspace.WorkspaceAPI.get`
-- Agent example: `mammoth workspace get --output json --no-input`
+- Agent example: `mammoth workspace get 123 --output json --no-input`
 
 ### `mammoth workspace list`
 
@@ -4977,10 +5027,14 @@ Total commands: 505.
 
 ### `mammoth workspace reactivate`
 
+**Arguments**
+
+- `WORKSPACE_ID` (int, optional) — ID of the workspace to act on; defaults to the client's own workspace.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.workspace.WorkspaceAPI.reactivate`
-- Agent example: `mammoth workspace reactivate --output json --no-input`
+- Agent example: `mammoth workspace reactivate 123 --output json --no-input`
 
 ### `mammoth workspace segment list`
 
@@ -5005,10 +5059,14 @@ Total commands: 505.
 
 ### `mammoth workspace update`
 
+**Arguments**
+
+- `WORKSPACE_ID` (int, optional) — ID of the workspace to act on; defaults to the client's own workspace.
+
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.workspace.WorkspaceAPI.update`
-- Agent example: `mammoth workspace update --input '{"patches": [{"op": "replace", "path": "name", "value": "example"}]}' --output json --no-input`
+- Agent example: `mammoth workspace update 123 --input '{"patches": [{"op": "replace", "path": "name", "value": "example"}]}' --output json --no-input`
 
 ### `mammoth workspace user add`
 

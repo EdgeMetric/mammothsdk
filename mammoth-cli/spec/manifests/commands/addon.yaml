@@ -23,7 +23,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth addon connector add --help
-  agent_example: mammoth addon connector add --output json --no-input
+  agent_example: 'mammoth addon connector add --input ''{"connector_id": 42}'' --output json --no-input'
   unit_tests:
   - UT-ADDON-CONNECTOR-ADD
   contract_tests:
@@ -57,7 +57,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth addon connector remove --help
-  agent_example: mammoth addon connector remove --output json --no-input
+  agent_example: 'mammoth addon connector remove --input ''{"connector_id": 42}'' --output json --no-input'
   unit_tests:
   - UT-ADDON-CONNECTOR-REMOVE
   contract_tests:
