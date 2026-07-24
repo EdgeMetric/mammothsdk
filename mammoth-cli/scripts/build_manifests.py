@@ -123,6 +123,7 @@ def derive_confirmation(mutation_class: str) -> str:
 # families the audit confirmed return unfinished state.
 _ASYNC_JOB_COMMANDS = frozenset(
     {
+        "dataset.create",
         "folder.trash",
         "trash.add",
         "trash.restore",
@@ -133,6 +134,11 @@ _ASYNC_JOB_COMMANDS = frozenset(
 
 
 def derive_wait(command_id: str, method: str, catalog_value: str | None) -> str:
+    # A hand-reviewed async-job command is authoritative: its handler blocks on
+    # the kicked-off job and returns the finished result, so the manifest must
+    # advertise a waiting policy even when a stale catalog entry says otherwise.
+    if command_id in _ASYNC_JOB_COMMANDS:
+        return "always_wait"
     if catalog_value:
         return catalog_value
     if command_id.startswith("view.transform.") and method != "GET":
@@ -140,8 +146,6 @@ def derive_wait(command_id: str, method: str, catalog_value: str | None) -> str:
     if command_id.startswith("view.task.") and method == "POST":
         return "always_wait"
     if command_id in {"job.wait", "job.wait-many", "view.pipeline.wait"}:
-        return "always_wait"
-    if command_id in _ASYNC_JOB_COMMANDS:
         return "always_wait"
     return "not_async"
 

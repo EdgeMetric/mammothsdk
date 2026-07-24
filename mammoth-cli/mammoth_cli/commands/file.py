@@ -222,7 +222,28 @@ def file_upload(invocation: Invocation) -> HandlerResult:
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+    # The SDK waits for the upload to finish and returns the created dataset
+    # id(s) as a bare int/list. Wrap it in a labeled result so the output reads
+    # as a finished dataset rather than an anonymous number. When the caller
+    # opts out of waiting (``wait_for_completion: false``) the bare job id is
+    # returned unchanged.
+    if not document.get("wait_for_completion", True):
+        return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+    return _upload_result(data), _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def _upload_result(value: Any) -> dict[str, Any]:
+    """Shape the SDK upload return (int | list[int] | None) into a labeled result."""
+    if isinstance(value, list):
+        ids = [int(v) for v in value]
+    elif isinstance(value, int):
+        ids = [value]
+    else:
+        ids = []
+    result: dict[str, Any] = {"status": "ready", "dataset_ids": ids}
+    if len(ids) == 1:
+        result["dataset_id"] = ids[0]
+    return result
 
 
 def file_upload_folder(invocation: Invocation) -> HandlerResult:

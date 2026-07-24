@@ -296,8 +296,15 @@ def validate_value(value: Any, annotation: Any, path: str) -> Any:
     origin = get_origin(annotation)
     args = get_args(annotation)
     if origin in _UNIONS:
+        # For a numeric value, try non-``str`` members first so a ``str | int``
+        # union keeps the number as a number; ``str`` only wins (coercing to
+        # text) when no numeric member accepts it, as in a ``str | None`` id
+        # field the server returned as a number.
+        members = list(args)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            members = sorted(args, key=lambda member: member is str)
         errors: list[TypeValidationError] = []
-        for member in args:
+        for member in members:
             try:
                 return validate_value(value, member, path)
             except TypeValidationError as error:
@@ -410,9 +417,21 @@ def validate_value(value: Any, annotation: Any, path: str) -> Any:
                 pass
         raise TypeValidationError(path, "number", value)
     if annotation is str:
-        if not isinstance(value, str):
+        if isinstance(value, str):
+            return value
+        # Accept a JSON number where a string is expected and coerce it to its
+        # string form. Servers return id-like fields (for example a folder's
+        # ``resource_id``) as numbers, but the SDK types the corresponding
+        # input (``folder_resource_id``) as a string; without this a user who
+        # pastes the number straight from a create response hits a spurious
+        # type error. Booleans are never strings here.
+        if isinstance(value, bool):
             raise TypeValidationError(path, "string", value)
-        return value
+        if isinstance(value, int):
+            return str(value)
+        if isinstance(value, float) and value.is_integer():
+            return str(int(value))
+        raise TypeValidationError(path, "string", value)
     if annotation is Path or (isinstance(annotation, type) and issubclass(annotation, Path)):
         if not isinstance(value, (str, Path)):
             raise TypeValidationError(path, "path string", value)

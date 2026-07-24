@@ -206,7 +206,36 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("folder_resource_id",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-    return data, _meta(invocation, auth.workspace_id, project_id)
+        # ``datasets.create`` returns a bare job handle and never waits. Block on
+        # it here (honoring ``--job-timeout``) so the command reports a finished
+        # dataset id instead of a job id the caller must poll separately.
+        settled = service.wait_if_job(data)
+    return _created_dataset(data, settled), _meta(invocation, auth.workspace_id, project_id)
+
+
+def _created_dataset(handle: Any, settled: Any) -> dict[str, Any]:
+    """Shape a create job (handle + settled result) into a labeled result.
+
+    ``wait_if_job`` returns the completed job's inner response, where the new
+    dataset id lives under ``ds_id``. Falls back to the raw job handle when the
+    server returned something unrecognized, so no information is lost.
+    """
+    job_id = handle.get("job_id") if isinstance(handle, dict) else None
+    ds_id = None
+    if isinstance(settled, dict):
+        ds_id = settled.get("ds_id") or settled.get("dataset_id")
+        nested = settled.get("response")
+        if ds_id is None and isinstance(nested, dict):
+            ds_id = nested.get("ds_id") or nested.get("dataset_id")
+        job_id = settled.get("job_id", job_id)
+    if ds_id is None:
+        # No recognizable dataset id: surface the settled payload untouched
+        # rather than claim a readiness we cannot confirm.
+        return settled if isinstance(settled, dict) else {"job_id": job_id}
+    result: dict[str, Any] = {"status": "ready", "dataset_id": ds_id}
+    if job_id is not None:
+        result["job_id"] = job_id
+    return result
 
 
 def dataset_create_from_pdf(invocation: Invocation) -> HandlerResult:

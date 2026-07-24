@@ -3,9 +3,9 @@
 [Documentation index](llms.txt)
 
 The mammoth CLI drives the Mammoth Analytics platform from your shell. This
-guide runs the whole loop end to end in about two minutes. You load a sample
-CSV, organize it in a folder, add a calculated column, preview the result, and
-download it back as a CSV.
+guide runs the whole loop end to end in about two minutes. You pick a project,
+make a folder, load a sample CSV into that folder, add a calculated column,
+preview the result, and download it back as a CSV.
 
 Output defaults to `auto`. A terminal gets a readable table. A pipe or redirect
 gets JSON. So the examples below need no output flag.
@@ -37,33 +37,37 @@ command to target a different project without switching.
 mammoth folder create "Quickstart Demo"
 ```
 
-The response includes the folder's `resource_id`. Keep it to drop the dataset
-into this folder in the next step.
+The response includes the folder's `resource_id`. Copy it; the next step drops
+the dataset straight into this folder.
 
-## 4. Load a CSV
+## 4. Load a CSV into the folder
 
-Load the sample retail dataset straight from its URL:
-
-```bash
-mammoth dataset create --input '{"ds_creation_type": "weburl", "dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"}}'
-```
-
-The command returns a `job_id`. Wait for the load to finish; the completed job
-reports the new dataset id under `response.ds_id`:
+Load the sample retail dataset from its URL, and pass the `resource_id` from
+step 3 as `folder_resource_id` so it lands in your folder:
 
 ```bash
-mammoth job wait JOB_ID
+mammoth dataset create --input '{
+  "ds_creation_type": "weburl",
+  "dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"},
+  "folder_resource_id": "FOLDER_RESOURCE_ID"
+}'
 ```
 
-Have the file on disk instead? Upload it directly. The upload creates the
-dataset in one step and returns its id:
+The command waits for the load to finish and reports the result:
+
+```json
+{"status": "ready", "dataset_id": 303686, "job_id": 14794754}
+```
+
+Take the `dataset_id` into the next step. Have the file on disk instead? Upload
+it directly — same folder field, same finished result:
 
 ```bash
-mammoth file upload ./Multi-Store_Retail_Sales.csv
+mammoth file upload ./Multi-Store_Retail_Sales.csv --input '{"folder_resource_id": "FOLDER_RESOURCE_ID"}'
 ```
 
-To place either one inside the folder from step 3, add
-`--input '{"folder_resource_id": "FOLDER_RESOURCE_ID"}'`.
+Both commands block until the dataset is ready, so there is no job id to poll by
+hand.
 
 ## 5. Find the view
 

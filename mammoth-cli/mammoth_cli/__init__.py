@@ -6,7 +6,7 @@ not implement a second HTTP client and does not call private SDK members.
 
 from __future__ import annotations
 
-__version__ = "1.0.5"
+__version__ = "1.0.6"
 
 # The versioned machine output envelope contract.
 SCHEMA_VERSION = 1

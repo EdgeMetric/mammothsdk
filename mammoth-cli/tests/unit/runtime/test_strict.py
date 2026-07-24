@@ -130,10 +130,12 @@ def test_recursive_collection_validation_rejects_malformed_values(
 
 
 def test_nested_dataclass_requires_and_validates_members() -> None:
+    # ``replace`` is a string field; a bool is never coerced to a string, so a
+    # nested member of the wrong type is still reported by its path.
     with pytest.raises(CliError) as excinfo:
         validate_input_fields(
             _BULK_REPLACE,
-            {"columns": ["Item"], "mapping": [{"search": [], "replace": 42}]},
+            {"columns": ["Item"], "mapping": [{"search": [], "replace": True}]},
         )
     assert excinfo.value.code == "invalid_input_field_type"
     assert "mapping[0].replace" in excinfo.value.message
