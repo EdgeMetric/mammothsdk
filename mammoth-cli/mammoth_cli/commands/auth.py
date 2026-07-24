@@ -38,7 +38,7 @@ from mammoth_cli.errors.envelope import (
     EXIT_USAGE,
     CliError,
 )
-from mammoth_cli.output.policy import resolve_policy
+from mammoth_cli.output.policy import MACHINE_OUTPUTS
 from mammoth_cli.runtime import executor
 from mammoth_cli.runtime import options as go
 from mammoth_cli.runtime.invocation import Invocation
@@ -185,6 +185,27 @@ def _validate_login_document(document: dict[str, Any]) -> LoginRequest:
         ) from exc
 
 
+def _prompt_blockers(invocation: Invocation) -> list[str]:
+    """Reasons this invocation cannot interactively prompt, in report order.
+
+    Mirrors the ``can_prompt`` rule used by
+    :func:`mammoth_cli.runtime.confirm.enforce_confirmation` — a real TTY,
+    without ``--no-input`` and not a machine output format. A genuine
+    interactive terminal is ground truth for "a human is present," so it
+    intentionally does NOT consult the ``CI``/``TERM=dumb`` heuristic: those
+    only proxy for the absence of a human, which a real TTY disproves. Returns
+    an empty list when prompting is possible.
+    """
+    reasons: list[str] = []
+    if not sys.stdin.isatty():
+        reasons.append("stdin is not an interactive terminal")
+    if invocation.no_input:
+        reasons.append("--no-input is set")
+    if invocation.output in MACHINE_OUTPUTS:
+        reasons.append(f"--output {invocation.output} is a machine format")
+    return reasons
+
+
 def _run_login(
     invocation: Invocation,
     *,
@@ -201,13 +222,7 @@ def _run_login(
             hint=f"Use one of: {', '.join(_STORAGE_MODES)}.",
         )
 
-    policy = resolve_policy(
-        output=invocation.output,
-        no_input=invocation.no_input,
-        no_progress=invocation.no_progress,
-        is_tty=sys.stdin.isatty(),
-        color=invocation.color,
-    )
+    blockers = _prompt_blockers(invocation)
 
     effective_workspace: int | None
     if invocation.input_file is not None:
@@ -216,7 +231,7 @@ def _run_login(
         api_key, api_secret = request.api_key, request.api_secret
         effective_workspace = workspace if workspace is not None else request.workspace_id
         effective_prefix = server_prefix if server_prefix is not None else request.server_prefix
-    elif not policy.prompts_disabled:
+    elif not blockers:
         api_key = typer.prompt("API key", hide_input=True)
         api_secret = typer.prompt("API secret", hide_input=True)
         effective_workspace = workspace
@@ -226,7 +241,12 @@ def _run_login(
             code="login_input_required",
             message="Non-interactive login requires --input.",
             exit_status=EXIT_USAGE,
-            hint="Pass --input FILE|- (with --input-format for stdin), or run in a terminal.",
+            hint=(
+                "Interactive prompting is off because "
+                + "; ".join(blockers)
+                + ". Pass --input FILE|- (with --input-format for stdin), "
+                "or run in an interactive terminal."
+            ),
         )
 
     if effective_workspace is None or effective_workspace <= 0:
@@ -271,7 +291,7 @@ def _run_login(
         api_key,
         api_secret,
         storage=cast(credentials.StorageMode, storage),
-        interactive=not policy.prompts_disabled,
+        interactive=not blockers,
     )
     profiles.set_selected(profile_name)
 
@@ -431,20 +451,18 @@ def _run_logout(
             exit_status=EXIT_USAGE,
         )
 
-    policy = resolve_policy(
-        output=invocation.output,
-        no_input=invocation.no_input,
-        no_progress=invocation.no_progress,
-        is_tty=sys.stdin.isatty(),
-        color=invocation.color,
-    )
     if not yes:
-        if policy.prompts_disabled:
+        blockers = _prompt_blockers(invocation)
+        if blockers:
             raise CliError(
                 code=CODE_CONFIRMATION_REQUIRED,
                 message="auth logout requires --yes in non-interactive mode.",
                 exit_status=EXIT_USAGE,
-                hint="Re-run with --yes.",
+                hint=(
+                    "Interactive confirmation is off because "
+                    + "; ".join(blockers)
+                    + ". Re-run with --yes, or run in an interactive terminal."
+                ),
             )
         if not typer.confirm("Remove the stored credentials?", default=False):
             raise CliError(

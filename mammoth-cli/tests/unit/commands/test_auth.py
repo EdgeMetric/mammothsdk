@@ -11,6 +11,7 @@ import pytest
 
 from mammoth_cli.commands import auth as auth_cmd
 from mammoth_cli.context import credentials, profiles
+from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import make_runner
@@ -148,10 +149,10 @@ def test_login_prompt_path_when_interactive(
     fake_service: FakeMammothService,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # Force a genuinely interactive policy regardless of the ambient CI-like
-    # sandbox environment this test happens to run in.
-    monkeypatch.delenv("CI", raising=False)
-    monkeypatch.setenv("TERM", "xterm")
+    # A real TTY must win over the ambient CI-like heuristic: even with CI set,
+    # a genuine interactive terminal prompts rather than demanding --input.
+    monkeypatch.setenv("CI", "true")
+    monkeypatch.setenv("TERM", "dumb")
     monkeypatch.setattr(auth_cmd.sys.stdin, "isatty", lambda: True)
     monkeypatch.setattr(auth_cmd.typer, "prompt", lambda text, hide_input=False: "prompted-" + text)
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
@@ -160,6 +161,36 @@ def test_login_prompt_path_when_interactive(
     )
     assert data["workspace_id"] == 4
     assert credentials.load_credentials("default") == ("prompted-API key", "prompted-API secret")
+
+
+def test_login_no_tty_names_the_reason(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Without a source and without a TTY, the error must name the concrete
+    # blocker (not a terminal) rather than the misleading "run in a terminal".
+    monkeypatch.setattr(auth_cmd.sys.stdin, "isatty", lambda: False)
+    invocation = Invocation(command_id="auth.login", output="table", no_input=False)
+    with pytest.raises(CliError) as excinfo:
+        auth_cmd._run_login(invocation, workspace=4, server_prefix=None, storage="file")
+    assert excinfo.value.code == "login_input_required"
+    assert "stdin is not an interactive terminal" in (excinfo.value.hint or "")
+
+
+def test_logout_prompt_path_wins_over_ci(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Same rule for the logout confirmation: a real TTY confirms even under CI.
+    _saved_login(server_prefix="release")
+    monkeypatch.setenv("CI", "true")
+    monkeypatch.setattr(auth_cmd.sys.stdin, "isatty", lambda: True)
+    monkeypatch.setattr(auth_cmd.typer, "confirm", lambda text, default=False: True)
+    invocation = Invocation(command_id="auth.logout", output="table", no_input=False)
+    auth_cmd._run_logout(invocation, all_profiles=False, yes=False)
+    assert credentials.load_credentials("default") is None
 
 
 def test_status_reports_no_credentials_when_never_logged_in(isolated_cli_config: Path) -> None:

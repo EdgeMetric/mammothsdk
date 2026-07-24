@@ -39,6 +39,9 @@ Two flags fine-tune the login:
 
 Leave `--storage` at `auto` and the CLI picks the OS keyring when one exists.
 
+A real terminal always prompts, even when `CI` is set in your shell. Without a
+terminal the CLI needs `--input` instead, as shown below.
+
 ## Log in without a terminal (agents and CI)
 
 An agent or CI job cannot answer hidden prompts. Feed a credentials file instead:
