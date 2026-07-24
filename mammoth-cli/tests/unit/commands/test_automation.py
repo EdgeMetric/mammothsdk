@@ -107,12 +107,23 @@ def test_create_requires_name(fake_service: FakeMammothService, tmp_path: Path) 
     assert fake_service.call_log == []
 
 
-def test_create_requires_description(fake_service: FakeMammothService, tmp_path: Path) -> None:
+def test_create_defaults_description_to_empty(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # ``description`` is optional: when omitted it defaults to an empty string,
+    # so the common quick case needs only a name and tasks.
     doc = _write_doc(tmp_path, {"name": "Nightly", "tasks": [{"task_type": "run_data_retrieval"}]})
-    with pytest.raises(CliError) as excinfo:
-        automation_cmd.automation_create(_inv("automation.create", input_file=doc, yes=True))
-    assert excinfo.value.code == "missing_field"
-    assert fake_service.call_log == []
+    automation_cmd.automation_create(_inv("automation.create", input_file=doc, yes=True))
+    assert fake_service.call_log == [
+        (
+            _CREATE,
+            {
+                "name": "Nightly",
+                "description": "",
+                "tasks": [{"task_type": "run_data_retrieval"}],
+            },
+        )
+    ]
 
 
 def test_create_requires_tasks(fake_service: FakeMammothService, tmp_path: Path) -> None:

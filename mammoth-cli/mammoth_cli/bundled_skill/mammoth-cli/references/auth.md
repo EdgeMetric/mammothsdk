@@ -13,7 +13,7 @@ override.
 
 ## Commands
 ```bash
-mammoth auth login -w 4 --output json --no-input          # prompts for key + secret
+mammoth auth login                                        # interactive: prompts key, secret, workspace id
 mammoth auth login --input creds.json --output json --no-input   # non-interactive
 mammoth auth status --output json --no-input
 mammoth auth logout --profile default --output json --no-input --yes

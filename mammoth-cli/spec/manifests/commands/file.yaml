@@ -277,7 +277,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreateFileDataset
-  positionals: []
+  positionals:
+  - name: files
+    type: str
+    required: false
+    metavar: FILES
+    falls_back_to_field: files
+    help: Path to a local file to upload; or pass one or more via the 'files' field.
   options: []
   sdk_symbol: mammoth.api.files.FilesAPI.upload
   sdk_conversion: Call mammoth.api.files.FilesAPI.upload with validated request fields.
@@ -294,7 +300,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file upload --help
-  agent_example: mammoth file upload --output json --no-input
+  agent_example: mammoth file upload example --output json --no-input
   unit_tests:
   - UT-FILE-UPLOAD
   contract_tests:
@@ -311,7 +317,13 @@ commands:
   alias_of: null
   operation_ids:
   - CreateFileDataset
-  positionals: []
+  positionals:
+  - name: folder_path
+    type: str
+    required: false
+    metavar: FOLDER_PATH
+    falls_back_to_field: folder_path
+    help: Path to a local folder to upload; or pass it via the 'folder_path' input field.
   options: []
   sdk_symbol: mammoth.api.files.FilesAPI.upload_folder
   sdk_conversion: Call mammoth.api.files.FilesAPI.upload_folder with validated request fields.
@@ -328,7 +340,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth file upload-folder --help
-  agent_example: 'mammoth file upload-folder --input ''{"folder_path": "example"}'' --output json --no-input'
+  agent_example: mammoth file upload-folder example --output json --no-input
   unit_tests:
   - UT-FILE-UPLOAD-FOLDER
   contract_tests:

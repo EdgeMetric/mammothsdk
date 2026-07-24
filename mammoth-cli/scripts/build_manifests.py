@@ -116,6 +116,22 @@ def derive_confirmation(mutation_class: str) -> str:
     }[mutation_class]
 
 
+# Commands whose success response is a job handle (kicked-off async work) but
+# whose backing SDK method does not wait internally, so the CLI handler must wait
+# and the reviewed wait policy must say so. Structurally the same case the
+# dashboard promotion below handles, enumerated here for the non-dashboard
+# families the audit confirmed return unfinished state.
+_ASYNC_JOB_COMMANDS = frozenset(
+    {
+        "folder.trash",
+        "trash.add",
+        "trash.restore",
+        "user.avatar.upload",
+        "view.pipeline.edit",
+    }
+)
+
+
 def derive_wait(command_id: str, method: str, catalog_value: str | None) -> str:
     if catalog_value:
         return catalog_value
@@ -124,6 +140,8 @@ def derive_wait(command_id: str, method: str, catalog_value: str | None) -> str:
     if command_id.startswith("view.task.") and method == "POST":
         return "always_wait"
     if command_id in {"job.wait", "job.wait-many", "view.pipeline.wait"}:
+        return "always_wait"
+    if command_id in _ASYNC_JOB_COMMANDS:
         return "always_wait"
     return "not_async"
 

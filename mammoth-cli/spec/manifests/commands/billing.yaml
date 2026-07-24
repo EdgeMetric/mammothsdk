@@ -40,7 +40,13 @@ commands:
   alias_of: null
   operation_ids:
   - FetchHostedPage
-  positionals: []
+  positionals:
+  - name: object_type
+    type: str
+    required: false
+    metavar: OBJECT_TYPE
+    falls_back_to_field: object_type
+    help: Type of hosted page to generate; or pass it via the 'object_type' input field.
   options: []
   sdk_symbol: mammoth.api.billing.BillingAPI.hosted_page
   sdk_conversion: Call mammoth.api.billing.BillingAPI.hosted_page with validated request fields.
@@ -57,7 +63,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing hosted-page --help
-  agent_example: 'mammoth billing hosted-page --input ''{"object_type": "example"}'' --output json --no-input'
+  agent_example: mammoth billing hosted-page example --output json --no-input
   unit_tests:
   - UT-BILLING-HOSTED-PAGE
   contract_tests:

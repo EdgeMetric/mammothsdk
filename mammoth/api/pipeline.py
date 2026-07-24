@@ -29,6 +29,18 @@ PIPELINE_TERMINAL_STATES = frozenset({"ready", "runtime_error", "ref_error"})
 
 ERR_FROM_SEQUENCE_NON_NEGATIVE = "`from_sequence` must be >= 0, got {0}."
 
+# Pipeline-item keys used to resolve the latest task sequence. Reads (data,
+# metadata) are scoped to a sequence: sequence 0 is the original dataset, and
+# each task adds one. Columns produced by a task exist only at that task's
+# sequence and later, so reads must target the latest to see them.
+_ITEMS_KEY = "items"
+_ITEM_TYPE_KEY = "item_type"
+_ITEM_TYPE_TASK = "task"
+_ITEM_SEQUENCE_KEY = "sequence"
+_ITEM_STATUS_KEY = "status"
+_ITEM_STATUS_DELETED = "deleted"
+_ITEMS_FIELDS_STANDARD = "__standard"
+
 # OpenAPI `dataview_pipeline_consts_PipelineDraftMode` enum values (pinned in
 # `mammoth-cli/spec/openapi/openapi.json`) for which the dataview IS in draft.
 # "clean" = draft with no unsaved changes yet; "dirty" = unsaved changes
@@ -46,6 +58,13 @@ class PipelineAPI:
 
     def __init__(self, client: MammothClient) -> None:
         self._client = client
+        # Cache dataview -> dataset resolutions. The browse-based lookup in
+        # ``_find_dataset_for_dataview`` scans every dataset in the project, so
+        # it is expensive; a dataview belongs to exactly one dataset for its
+        # lifetime, so the mapping is stable and safe to memoize per client.
+        # Keyed by (workspace_id, project_id, dataview_id) so a client that
+        # switches project or workspace never returns a stale dataset.
+        self._dataview_dataset_cache: dict[tuple[int, int, int], int] = {}
 
     def _resolve_ids(
         self, dataview_id: int, dataset_id: int | None = None
@@ -104,6 +123,11 @@ class PipelineAPI:
         if project_id is None:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
 
+        cache_key = (workspace_id, project_id, dataview_id)
+        cached = self._dataview_dataset_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         # Use workspace browse to get project's children (datasets + folders)
         browse_response = self._client.browse.workspace_resources(
             workspace_id=workspace_id, level=2
@@ -120,12 +144,18 @@ class PipelineAPI:
         # Check each dataset for the dataview
         for dataset_id in dataset_ids:
             try:
+                # This is an existence probe only (found vs 404), so pin
+                # ``sequence=0`` to skip the latest-task-sequence resolution the
+                # default would trigger — one saved round trip per dataset
+                # scanned, which matters when a project holds many datasets.
                 self._client.dataviews.get(
                     dataset_id=dataset_id,
                     dataview_id=dataview_id,
                     workspace_id=workspace_id,
                     project_id=project_id,
+                    sequence=0,
                 )
+                self._dataview_dataset_cache[cache_key] = dataset_id
                 return dataset_id
             except MammothAPIError as exc:
                 # Only a proven 404 means "this dataset does not contain the
@@ -533,6 +563,32 @@ class PipelineAPI:
         return self._client._request_json(
             "GET", f"{self._base_url(ws, proj, ds, dv)}/items", params=params or None
         )
+
+    def latest_task_sequence(self, dataview_id: int, dataset_id: int | None = None) -> int:
+        """Return the highest non-deleted task sequence in the pipeline.
+
+        Data and metadata reads are scoped to a task *sequence*. Sequence 0 is
+        the original dataset; each task adds a sequence, and the columns a task
+        produces exist only from its sequence onward. Reading at the latest
+        sequence is therefore what surfaces every pipeline-derived column
+        (math, add_column, etc.).
+
+        Args:
+            dataview_id: ID of the dataview.
+            dataset_id: Dataset ID (auto-detected if not provided).
+
+        Returns:
+            The highest task sequence, or ``0`` when the view has no tasks.
+        """
+        page = self.items(dataview_id, dataset_id, fields=_ITEMS_FIELDS_STANDARD)
+        sequences = [
+            item.get(_ITEM_SEQUENCE_KEY)
+            for item in page.get(_ITEMS_KEY) or []
+            if item.get(_ITEM_TYPE_KEY) == _ITEM_TYPE_TASK
+            and isinstance(item.get(_ITEM_SEQUENCE_KEY), int)
+            and item.get(_ITEM_STATUS_KEY) != _ITEM_STATUS_DELETED
+        ]
+        return max(sequences) if sequences else 0
 
     def rerun(
         self,

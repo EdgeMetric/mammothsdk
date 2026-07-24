@@ -14,7 +14,7 @@ commands:
   result_model: TrashAddResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
   live_test: LT-TRASH-ADD
@@ -82,7 +82,7 @@ commands:
   result_model: TrashRestoreResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
   live_test: LT-TRASH-RESTORE

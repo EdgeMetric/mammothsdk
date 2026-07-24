@@ -397,3 +397,53 @@ def test_ai_condition_generate_positional_dataset_full_stack(
     assert len(posts) == 1
     assert posts[0].query.get("dataset_id") == ["5"]
     assert posts[0].json_body == {"params": {"intent": "rows where status is active"}}
+
+
+def test_automation_create_coerces_pydantic_task_specs_full_stack(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    """`automation create` builds pydantic task models from JSON --input.
+
+    Batch A (audit) HIGH fix: ``AutomationsAPI.create`` types ``tasks`` as
+    ``list[AutomationTaskSpec]`` (pydantic v2) and validates each via attribute
+    access. The generic (non-View) command path never coerced JSON input, so a
+    raw task dict crashed the SDK with ``AttributeError`` before any request.
+    This drives real argv through to the emitted POST and asserts the task
+    survived model round-trip into the request body.
+    """
+    api = _bind_real_service(monkeypatch, real_service, project_id=180)
+    api.on("POST", r"/automations$", 200, {"id": 99})
+    task = {
+        "task_type": "send_an_alert",
+        "details": {
+            "alert_type": "email",
+            "recipients": ["ops@example.com"],
+            "subject": "Nightly run finished",
+        },
+    }
+    body = {"description": "d", "tasks": [task], "condition_mode": "and"}
+
+    result = make_runner().invoke(
+        [
+            "automation",
+            "create",
+            "Nightly",
+            "--project",
+            "180",
+            "--input",
+            json.dumps(body),
+            "--yes",
+            "--output",
+            "json",
+            "--no-input",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    posts = [r for r in api.requests if r.method == "POST" and r.path.endswith("/automations")]
+    assert len(posts) == 1
+    sent = posts[0].json_body
+    assert sent["name"] == "Nightly"
+    assert sent["condition_mode"] == "and"
+    assert sent["tasks"][0]["task_type"] == "send_an_alert"
+    assert sent["tasks"][0]["details"]["recipients"] == ["ops@example.com"]

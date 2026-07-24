@@ -65,7 +65,7 @@ def test_login_noninteractive_without_source_requires_input(
 ) -> None:
     runner = make_runner()
     result = runner.invoke(
-        ["auth", "login", "--workspace", "4", "--output", "json", "--no-input"], env={}
+        ["auth", "login", "--output", "json", "--no-input"], env={}
     )
     assert result.exit_code == 2
     envelope = json.loads(result.stderr)
@@ -154,12 +154,38 @@ def test_login_prompt_path_when_interactive(
     monkeypatch.setenv("CI", "true")
     monkeypatch.setenv("TERM", "dumb")
     monkeypatch.setattr(auth_cmd.sys.stdin, "isatty", lambda: True)
-    monkeypatch.setattr(auth_cmd.typer, "prompt", lambda text, hide_input=False: "prompted-" + text)
+
+    def fake_prompt(text: str, hide_input: bool = False, type: object = None) -> object:
+        return 4 if "Workspace" in text else "prompted-" + text
+
+    monkeypatch.setattr(auth_cmd.typer, "prompt", fake_prompt)
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
-    data, meta = auth_cmd._run_login(
-        invocation, workspace=4, server_prefix=None, storage="file"
-    )
+    data, _meta = auth_cmd._run_login(invocation, server_prefix=None, storage="file")
     assert data["workspace_id"] == 4
+    assert credentials.load_credentials("default") == ("prompted-API key", "prompted-API secret")
+
+
+def test_login_bare_prompts_for_workspace(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # There is no --workspace flag: interactive login must PROMPT for the
+    # workspace id (last, after the credentials), not fail with
+    # invalid_workspace_id after the hidden prompts.
+    monkeypatch.setattr(auth_cmd.sys.stdin, "isatty", lambda: True)
+    asked: list[str] = []
+
+    def fake_prompt(text: str, hide_input: bool = False, type: object = None) -> object:
+        asked.append(text)
+        return 7 if "Workspace" in text else "prompted-" + text
+
+    monkeypatch.setattr(auth_cmd.typer, "prompt", fake_prompt)
+    invocation = Invocation(command_id="auth.login", output="table", no_input=False)
+    data, _meta = auth_cmd._run_login(invocation, server_prefix=None, storage="file")
+    # credentials asked before the workspace id
+    assert asked == ["API key", "API secret", "Workspace id"], asked
+    assert data["workspace_id"] == 7
     assert credentials.load_credentials("default") == ("prompted-API key", "prompted-API secret")
 
 
@@ -173,7 +199,7 @@ def test_login_no_tty_names_the_reason(
     monkeypatch.setattr(auth_cmd.sys.stdin, "isatty", lambda: False)
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
     with pytest.raises(CliError) as excinfo:
-        auth_cmd._run_login(invocation, workspace=4, server_prefix=None, storage="file")
+        auth_cmd._run_login(invocation, server_prefix=None, storage="file")
     assert excinfo.value.code == "login_input_required"
     assert "stdin is not an interactive terminal" in (excinfo.value.hint or "")
 

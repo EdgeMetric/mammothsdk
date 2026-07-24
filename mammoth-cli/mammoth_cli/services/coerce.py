@@ -16,6 +16,8 @@ here.
 from __future__ import annotations
 
 import enum
+import importlib
+import pkgutil
 import types
 import typing
 from collections.abc import Callable
@@ -24,8 +26,10 @@ from functools import lru_cache
 from typing import Any, get_args, get_origin, get_type_hints
 
 from mammoth import condition as _condition_module
+from mammoth import models as _models_package
 from mammoth import view as _view_module
 from mammoth.models import pipeline as _pipeline_module
+from pydantic import BaseModel
 
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 
@@ -44,19 +48,27 @@ _CONDITION_TYPES = (
 def _sdk_type_namespace() -> dict[str, Any]:
     """Return the SDK types needed to resolve View-method annotations.
 
-    View transform methods live in mixin modules that import their annotated
-    types (``Condition``, ``View``, and the ``mammoth.models.pipeline``
-    dataclasses and enums) only under ``TYPE_CHECKING``. Those names are
-    therefore absent from each bound method's ``__globals__`` at runtime, so
+    View transform methods (and public API methods) live in modules that
+    import their annotated types (``Condition``, ``View``, the
+    ``mammoth.models.*`` dataclasses/enums, and pydantic models such as
+    ``PatchRequest``) only under ``TYPE_CHECKING``. Those names are therefore
+    absent from each bound method's ``__globals__`` at runtime, so
     :func:`typing.get_type_hints` cannot resolve them on its own. This provides
-    them as an explicit namespace.
+    them as an explicit namespace spanning every ``mammoth.models`` submodule
+    plus the condition and view modules.
 
     Returns:
-        A mapping of type name to type object, drawn from the SDK's condition,
-        view, and pipeline-model modules.
+        A mapping of type name to type object, drawn from the SDK's condition
+        and view modules and every ``mammoth.models`` submodule.
     """
     namespace: dict[str, Any] = {}
-    for module in (_pipeline_module, _condition_module, _view_module):
+    modules: list[Any] = [_pipeline_module, _condition_module, _view_module]
+    for info in pkgutil.iter_modules(_models_package.__path__):
+        try:
+            modules.append(importlib.import_module(f"{_models_package.__name__}.{info.name}"))
+        except Exception:  # noqa: S112 # pragma: no cover - skip a non-importable submodule
+            continue
+    for module in modules:
         for name in dir(module):
             if not name.startswith("_"):
                 namespace[name] = getattr(module, name)
@@ -116,6 +128,15 @@ def _coerce(value: Any, annotation: Any) -> Any:
 
     if is_dataclass(annotation) and isinstance(value, dict):
         return _coerce_dataclass(value, annotation)
+
+    if (
+        isinstance(annotation, type)
+        and issubclass(annotation, BaseModel)
+        and isinstance(value, (dict, list))
+    ):
+        # pydantic v2 validates and recurses into nested models itself, so a
+        # single ``model_validate`` builds the whole tree from JSON-shaped input.
+        return annotation.model_validate(value)
 
     return value
 

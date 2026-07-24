@@ -74,7 +74,11 @@ def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
 
 
 def addon_connector_add(invocation: Invocation) -> HandlerResult:
-    """Add one or more connector addons. High-impact: ``--yes --confirm WORKSPACE_ID``."""
+    """Add connector addon(s): pass ``connector_id`` or ``connector_ids``.
+
+    Exactly one of ``connector_id``/``connector_ids`` is required. High-impact:
+    ``--yes --confirm WORKSPACE_ID``.
+    """
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("connector_id", "connector_ids"))
@@ -90,7 +94,11 @@ def addon_connector_add(invocation: Invocation) -> HandlerResult:
 
 
 def addon_connector_remove(invocation: Invocation) -> HandlerResult:
-    """Remove one or more connector addons. High-impact: ``--yes --confirm WORKSPACE_ID``."""
+    """Remove connector addon(s): pass ``connector_id`` or ``connector_ids``.
+
+    Exactly one of ``connector_id``/``connector_ids`` is required. High-impact:
+    ``--yes --confirm WORKSPACE_ID``.
+    """
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("connector_id", "connector_ids"))

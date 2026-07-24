@@ -145,6 +145,27 @@ def test_401_during_resolution_propagates_as_auth_error() -> None:
         client.close()
 
 
+def test_successful_resolution_is_cached_across_calls() -> None:
+    """The expensive browse-based scan runs once; repeats hit the cache.
+
+    A dataview belongs to one dataset for its lifetime, so a second resolution
+    of the same dataview must not scan again.
+    """
+    transport = _FakeTransport(200, {"id": DATAVIEW_ID})
+    client = _client_with_transport(transport)
+    try:
+        first = client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
+        calls_after_first = transport.dataview_calls
+        second = client.pipeline.find_dataset_for_dataview(DATAVIEW_ID)
+        assert first == second == DATASET_ID
+        # The first resolution scanned; the second added ZERO dataview calls
+        # because it was served from the per-client cache.
+        assert calls_after_first >= 1
+        assert transport.dataview_calls == calls_after_first
+    finally:
+        client.close()
+
+
 def test_genuine_404_still_yields_not_found() -> None:
     """A real 404 (dataview absent) must keep the not-found ValueError path."""
     transport = _FakeTransport(404, {"detail": "Not found"})

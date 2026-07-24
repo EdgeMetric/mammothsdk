@@ -5,7 +5,13 @@ commands:
   disposition: command
   alias_of: null
   operation_ids: []
-  positionals: []
+  positionals:
+  - name: shell
+    type: str
+    required: false
+    metavar: SHELL
+    falls_back_to_field: shell
+    help: Shell to target (bash/zsh/fish); or pass it via the 'shell' input field.
   options: []
   sdk_symbol: mammoth_cli.commands.completion.install
   sdk_conversion: Call mammoth_cli.commands.completion.install with validated request fields.
@@ -22,7 +28,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth completion install --help
-  agent_example: mammoth completion install --output json --no-input
+  agent_example: mammoth completion install example --output json --no-input
   unit_tests:
   - UT-COMPLETION-INSTALL
   contract_tests:
@@ -38,7 +44,13 @@ commands:
   disposition: command
   alias_of: null
   operation_ids: []
-  positionals: []
+  positionals:
+  - name: shell
+    type: str
+    required: false
+    metavar: SHELL
+    falls_back_to_field: shell
+    help: Shell to target (bash/zsh/fish); or pass it via the 'shell' input field.
   options: []
   sdk_symbol: mammoth_cli.commands.completion.show
   sdk_conversion: Call mammoth_cli.commands.completion.show with validated request fields.
@@ -55,7 +67,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth completion show --help
-  agent_example: mammoth completion show --output json --no-input
+  agent_example: mammoth completion show example --output json --no-input
   unit_tests:
   - UT-COMPLETION-SHOW
   contract_tests:

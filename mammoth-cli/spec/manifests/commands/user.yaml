@@ -40,7 +40,13 @@ commands:
   alias_of: null
   operation_ids:
   - UploadProfilePic
-  positionals: []
+  positionals:
+  - name: file
+    type: str
+    required: false
+    metavar: FILE
+    falls_back_to_field: file
+    help: Path to a local image to upload; or pass it via the 'file' input field.
   options: []
   sdk_symbol: mammoth.api.users.UsersAPI.avatar_upload
   sdk_conversion: Call mammoth.api.users.UsersAPI.avatar_upload with validated request fields.
@@ -48,7 +54,7 @@ commands:
   result_model: UserAvatarUploadResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
   live_test: null
@@ -57,7 +63,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth user avatar upload --help
-  agent_example: 'mammoth user avatar upload --input ''{"file": "example"}'' --output json --no-input'
+  agent_example: mammoth user avatar upload example --output json --no-input
   unit_tests:
   - UT-USER-AVATAR-UPLOAD
   contract_tests:

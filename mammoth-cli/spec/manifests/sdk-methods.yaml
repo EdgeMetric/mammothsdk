@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 545
+method_count: 546
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -3448,7 +3448,8 @@ methods:
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.get
   implementation_origin: mammoth.api.dataviews.DataviewsAPI.get
   signature: 'get(self, dataset_id: ''int'', dataview_id: ''int'', workspace_id: ''int | None'' = None,
-    project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+    project_id: ''int | None'' = None, sequence: ''int | None'' = None, fields: ''str | None'' = None)
+    -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: view.get
@@ -3462,7 +3463,7 @@ methods:
   implementation_origin: mammoth.api.dataviews.DataviewsAPI.get_data
   signature: 'get_data(self, dataset_id: ''int'', dataview_id: ''int'', workspace_id: ''int | None'' =
     None, project_id: ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''int'' =
-    2) -> ''dict[str, Any]'''
+    2, sequence: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.data.get
   alias_of: null
@@ -3527,10 +3528,10 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.query_data
   implementation_origin: mammoth.api.dataviews.DataviewsAPI.query_data
-  signature: 'query_data(self, dataset_id: ''int'', dataview_id: ''int'', sequence: ''int'' = 0, offset:
-    ''int'' = 1, limit: ''int'' = 400, columns: ''_list[str] | None'' = None, condition: ''dict[str, Any]
-    | None'' = None, sort: ''str | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int
-    | None'' = None) -> ''dict[str, Any]'''
+  signature: 'query_data(self, dataset_id: ''int'', dataview_id: ''int'', sequence: ''int | None'' = None,
+    offset: ''int'' = 1, limit: ''int'' = 400, columns: ''_list[str] | None'' = None, condition: ''dict[str,
+    Any] | None'' = None, sort: ''str | None'' = None, workspace_id: ''int | None'' = None, project_id:
+    ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.data.query
   alias_of: null
@@ -4496,6 +4497,18 @@ methods:
   canonical_command: view.pipeline.items
   alias_of: null
   no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.pipeline.PipelineAPI.latest_task_sequence
+  implementation_origin: mammoth.api.pipeline.PipelineAPI.latest_task_sequence
+  signature: 'latest_task_sequence(self, dataview_id: ''int'', dataset_id: ''int | None'' = None) -> ''int'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
   mutation_class: null
   wait_policy: null
   pagination_policy: null
@@ -6530,8 +6543,8 @@ methods:
 - sdk_symbol: mammoth.view.View.data
   implementation_origin: mammoth.view.View.data
   signature: 'data(self, limit: ''int'' = 400, offset: ''int'' = 1, columns: ''list[str] | None'' = None,
-    condition: ''Condition | CompoundCondition | None'' = None, sort: ''str | None'' = None) -> ''dict[str,
-    Any]'''
+    condition: ''Condition | CompoundCondition | None'' = None, sort: ''str | None'' = None, sequence:
+    ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.data.query
   alias_of: null

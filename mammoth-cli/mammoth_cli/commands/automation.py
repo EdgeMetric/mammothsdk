@@ -204,8 +204,9 @@ def automation_delete(invocation: Invocation) -> HandlerResult:
 def automation_create(invocation: Invocation) -> HandlerResult:
     """Create an automation. Name comes from a positional or the ``name`` field.
 
-    ``description`` and ``tasks`` are required ``--input`` fields; ``conditions``
-    and ``condition_mode`` are forwarded when present. Requires ``--yes``.
+    ``tasks`` is the only required ``--input`` field; ``description`` defaults to
+    an empty string, and ``conditions``/``condition_mode`` are forwarded when
+    present. Requires ``--yes``.
     """
     document = invocation.load_input() or {}
     name = _string_positional(invocation) or document.get("name")
@@ -216,7 +217,7 @@ def automation_create(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
             hint="Pass the name as a positional argument or a 'name' input field.",
         )
-    description = _require_field(document, "description")
+    description = document.get("description", "")
     tasks = _require_field(document, "tasks")
     kwargs: dict[str, Any] = {"name": name, "description": description, "tasks": tasks}
     _forward_optional(document, kwargs, ("conditions", "condition_mode"))

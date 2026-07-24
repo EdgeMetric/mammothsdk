@@ -28,10 +28,10 @@ deterministic machine output, promptless operation, and stable error envelopes.
 ## Authenticate
 
 Login is the only way to authenticate. Interactive login prompts for the API
-key and secret (hidden input):
+key, the API secret, and then the workspace id (there is no `-w` flag):
 
 ```bash
-mammoth auth login -w 4                          # -w is the workspace id
+mammoth auth login                               # prompts: key, secret, workspace id
 ```
 
 For agents, log in non-interactively from a `0600` JSON file:

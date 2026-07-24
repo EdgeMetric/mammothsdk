@@ -74,22 +74,38 @@ class DataviewsAPI:
         dataview_id: int,
         workspace_id: int | None = None,
         project_id: int | None = None,
+        sequence: int | None = None,
+        fields: str | None = None,
     ) -> dict[str, Any]:
         """Get dataview information.
+
+        Metadata is scoped to a pipeline task *sequence*. When ``sequence`` is
+        omitted it defaults to the latest task sequence, so the returned
+        ``metadata`` reflects every pipeline-derived column (math, add_column,
+        etc.). Pass ``sequence=0`` for the original dataset columns.
 
         Args:
             dataset_id: ID of the dataset.
             dataview_id: ID of the dataview.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
+            sequence: Pipeline step to read metadata at (default: latest).
+            fields: Field set to return (e.g. ``"__full"``); server default if omitted.
 
         Returns:
             Dict with complete dataview information.
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
+        if sequence is None:
+            sequence = self._client.pipeline.latest_task_sequence(dataview_id, dataset_id)
+        params: dict[str, Any] = {"sequence": sequence}
+        if fields is not None:
+            params["fields"] = fields
         return self._client._request_json(
-            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}"
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}",
+            params=params,
         )
 
     def create(
@@ -225,8 +241,13 @@ class DataviewsAPI:
         project_id: int | None = None,
         timeout: int | None = None,
         poll_interval: int = 2,
+        sequence: int | None = None,
     ) -> dict[str, Any]:
         """Get dataview data (GET method).
+
+        Data is scoped to a pipeline task *sequence*. When ``sequence`` is
+        omitted it defaults to the latest task sequence, so rows include every
+        pipeline-derived column. Pass ``sequence=0`` for the original dataset.
 
         Args:
             dataset_id: ID of the dataset.
@@ -235,15 +256,19 @@ class DataviewsAPI:
             project_id: ID of the project (uses client default if not provided).
             timeout: Max job wait time in seconds (default: client.job_timeout).
             poll_interval: Seconds between job polls (default: 2).
+            sequence: Pipeline step to read data at (default: latest).
 
         Returns:
             Dict with dataview data.
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
+        if sequence is None:
+            sequence = self._client.pipeline.latest_task_sequence(dataview_id, dataset_id)
         response = self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/data",
+            params={"sequence": sequence},
         )
         return self._client._wait_if_job(response, timeout=timeout, poll_interval=poll_interval)
 
@@ -251,7 +276,7 @@ class DataviewsAPI:
         self,
         dataset_id: int,
         dataview_id: int,
-        sequence: int = 0,
+        sequence: int | None = None,
         offset: int = 1,
         limit: int = 400,
         columns: _list[str] | None = None,
@@ -265,7 +290,9 @@ class DataviewsAPI:
         Args:
             dataset_id: ID of the dataset.
             dataview_id: ID of the dataview.
-            sequence: Pipeline step to fetch data at (default 0).
+            sequence: Pipeline step to fetch data at (default: latest task
+                sequence, so rows include every pipeline-derived column; pass
+                ``0`` for the original dataset).
             offset: One-indexed starting row (default 1).
             limit: Number of rows to fetch (default 400).
             columns: List of column names to fetch (optional).
@@ -279,6 +306,8 @@ class DataviewsAPI:
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
+        if sequence is None:
+            sequence = self._client.pipeline.latest_task_sequence(dataview_id, dataset_id)
         payload: dict[str, Any] = {"sequence": sequence, "offset": offset, "limit": limit}
         if columns is not None:
             payload["columns"] = columns

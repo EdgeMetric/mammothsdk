@@ -21,6 +21,7 @@ def build_service(
     job_timeout: float | None = None,
     pipeline_timeout: float | None = None,
     project_id: int | None = None,
+    progress: bool = False,
 ) -> MammothService:
     """Build the production SDK-backed service for ``auth``.
 
@@ -32,6 +33,7 @@ def build_service(
             seconds.
         project_id: Active project id to bind on the client for SDK methods
             that read project context implicitly.
+        progress: Whether the service shows a stderr spinner during calls.
 
     Returns:
         A :class:`MammothService` implementation backed by ``MammothClient``.
@@ -42,4 +44,5 @@ def build_service(
         job_timeout=job_timeout,
         pipeline_timeout=pipeline_timeout,
         project_id=project_id,
+        progress=progress,
     )

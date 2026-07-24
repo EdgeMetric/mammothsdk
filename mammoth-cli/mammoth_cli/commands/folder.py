@@ -188,6 +188,9 @@ def folder_trash(invocation: Invocation) -> HandlerResult:
     folder_id = _require_int_positional(invocation, "folder id")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), folder_id=folder_id, project_id=project_id)
+        # Trashing a folder returns a job handle; wait so the caller sees the
+        # settled result (no-op for non-job payloads).
+        data = service.wait_if_job(data)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

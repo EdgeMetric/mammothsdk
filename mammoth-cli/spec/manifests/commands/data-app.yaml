@@ -369,7 +369,13 @@ commands:
     required: true
     metavar: DATA_APP_ID
     falls_back_to_field: null
-    help: ID of the data app.
+    help: ID of the data app to upload into.
+  - name: file
+    type: str
+    required: false
+    metavar: FILE
+    falls_back_to_field: file
+    help: Path to a local file to upload; or pass it via the 'file' input field.
   options: []
   sdk_symbol: mammoth.api.data_apps.DataAppsAPI.upload
   sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.upload with validated request fields.
@@ -386,7 +392,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app upload DATA_APP_ID --help
-  agent_example: 'mammoth data-app upload 123 --input ''{"file": "example"}'' --output json --no-input'
+  agent_example: mammoth data-app upload 123 example --output json --no-input
   unit_tests:
   - UT-DATA-APP-UPLOAD
   contract_tests:

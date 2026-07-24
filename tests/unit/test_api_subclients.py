@@ -406,8 +406,21 @@ class TestDataviewsAPI:
         )
 
     def test_get(self, client: MammothClient):
-        client.dataviews.get(dataset_id=500, dataview_id=42)
+        # sequence=0 pins the read to the base dataset so no latest-sequence
+        # resolution call is made (that path has its own test below).
+        client.dataviews.get(dataset_id=500, dataview_id=42, sequence=0)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/dataviews/42")
+
+    def test_get_resolves_latest_sequence_when_omitted(self, client: MammothClient):
+        # Omitting sequence resolves the latest task sequence first (one extra
+        # call), then reads metadata at that sequence.
+        client._request_json.return_value = {
+            "items": [{"item_type": "task", "sequence": 3, "status": "executed"}]
+        }
+        client.dataviews.get(dataset_id=500, dataview_id=42)
+        calls = client._request_json.call_args_list
+        assert "/items" in calls[0][0][1]
+        assert calls[-1][1]["params"]["sequence"] == 3
 
     def test_create(self, client: MammothClient):
         client.dataviews.create(dataset_id=500, name="New View")
@@ -430,7 +443,9 @@ class TestDataviewsAPI:
         )
 
     def test_query_data(self, client: MammothClient):
-        client.dataviews.query_data(dataset_id=500, dataview_id=42)
+        # sequence=0 pins to the base dataset so no latest-sequence resolution
+        # call is made.
+        client.dataviews.query_data(dataset_id=500, dataview_id=42, sequence=0)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/dataviews/42/data")
 
     def test_active_users(self, client: MammothClient):
@@ -627,6 +642,33 @@ class TestFilesAPI:
     def test_bulk_delete(self, client: MammothClient):
         client.files.bulk_delete(file_ids=[10, 11])
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/files")
+
+    def test_update_surfaces_completed_job_status(self, client: MammothClient):
+        # The PATCH enqueues a job (the handle carries the job id); waiting yields
+        # the completed payload, whose terminal status must be surfaced on the
+        # returned schema while the original job id is preserved.
+        from mammoth.models.files import (
+            FilePatchData,
+            FilePatchOperation,
+            FilePatchPath,
+            FilePatchRequest,
+        )
+
+        client._request_json.return_value = {"job_id": 77, "status_code": 202}
+        client._wait_if_job = MagicMock(side_effect=lambda r, **kw: {"status_code": 200})
+        request = FilePatchRequest(
+            patch=[
+                FilePatchData(
+                    op=FilePatchOperation.REPLACE,
+                    path=FilePatchPath.PASSWORD,
+                    value="secret",
+                )
+            ]
+        )
+        result = client.files.update(file_id=10, patch_request=request)
+        assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/files/10")
+        assert result.job_id == 77  # preserved from the enqueue handle
+        assert result.status_code == 200  # surfaced from the completed payload
 
 
 # ======================================================================

@@ -209,7 +209,6 @@ def _prompt_blockers(invocation: Invocation) -> list[str]:
 def _run_login(
     invocation: Invocation,
     *,
-    workspace: int | None,
     server_prefix: str | None,
     storage: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -229,12 +228,15 @@ def _run_login(
         document = _load_login_document(invocation.input_file, invocation.input_format)
         request = _validate_login_document(document)
         api_key, api_secret = request.api_key, request.api_secret
-        effective_workspace = workspace if workspace is not None else request.workspace_id
+        effective_workspace = request.workspace_id
         effective_prefix = server_prefix if server_prefix is not None else request.server_prefix
     elif not blockers:
+        # Two flows, nothing else: a terminal prompts for everything (key,
+        # secret, then workspace id), and non-interactive uses --input. The
+        # workspace is asked last, after the credentials.
         api_key = typer.prompt("API key", hide_input=True)
         api_secret = typer.prompt("API secret", hide_input=True)
-        effective_workspace = workspace
+        effective_workspace = typer.prompt("Workspace id", type=int)
         effective_prefix = server_prefix
     else:
         raise CliError(
@@ -317,12 +319,6 @@ def auth_login(
     debug: bool = go.debug_option(),
     input_file: str | None = go.input_file_option(),
     input_format: str | None = go.input_format_option(),
-    workspace: int | None = typer.Option(
-        None,
-        "--workspace",
-        "-w",
-        help="Workspace id. Required unless --input supplies it.",
-    ),
     server_prefix: str | None = typer.Option(
         None, "--server-prefix", help="Server prefix (one DNS label). Default 'app'."
     ),
@@ -356,7 +352,6 @@ def auth_login(
     def producer() -> tuple[Any, dict[str, Any]]:
         return _run_login(
             invocation,
-            workspace=workspace,
             server_prefix=server_prefix,
             storage=storage,
         )

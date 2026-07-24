@@ -12,12 +12,14 @@ network directly.
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
 
 from mammoth_cli.context import profiles
 from mammoth_cli.context.resolver import ResolvedAuth, resolve_auth, resolve_project
 from mammoth_cli.errors.envelope import missing_project_error
+from mammoth_cli.output.policy import resolve_policy
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services import factory
 from mammoth_cli.services.protocol import MammothService
@@ -38,12 +40,22 @@ def open_service(invocation: Invocation) -> Iterator[tuple[MammothService, Resol
             available or the endpoint cannot be resolved.
     """
     auth = resolve_auth(invocation)
+    # The spinner renders on stderr, so gate it on stderr being a terminal
+    # (stdout may be piped while stderr is still a tty).
+    policy = resolve_policy(
+        output=invocation.output,
+        no_input=invocation.no_input,
+        no_progress=invocation.no_progress,
+        is_tty=sys.stderr.isatty(),
+        color=invocation.color,
+    )
     service = factory.build_service(
         auth,
         timeout=invocation.timeout,
         job_timeout=invocation.job_timeout,
         pipeline_timeout=invocation.pipeline_timeout,
         project_id=resolved_project(invocation),
+        progress=not policy.progress_disabled,
     )
     try:
         yield service, auth

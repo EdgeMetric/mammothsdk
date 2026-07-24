@@ -20,6 +20,7 @@ from mammoth_cli.errors.envelope import (
     EXIT_USAGE,
     CliError,
 )
+from mammoth_cli.output.progress import spinner
 from mammoth_cli.services.coerce import coerce_arguments
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dispatch import resolve_sdk_method
@@ -37,6 +38,7 @@ class SdkMammothService:
         job_timeout: float | None = None,
         pipeline_timeout: float | None = None,
         project_id: int | None = None,
+        progress: bool = False,
     ) -> None:
         """Build the service from resolved authentication.
 
@@ -50,7 +52,11 @@ class SdkMammothService:
             project_id: Active project id to bind on the client, so SDK methods
                 that read the client's project context (rather than taking an
                 explicit ``project_id`` argument) resolve to it.
+            progress: Whether to show a stderr spinner while a call is in
+                flight. Set from the resolved output policy; false for machine
+                output, ``--no-progress``, non-terminals, and CI.
         """
+        self._progress = progress
         kwargs: dict[str, Any] = {}
         if timeout is not None:
             kwargs["timeout"] = int(timeout)
@@ -84,8 +90,10 @@ class SdkMammothService:
                 method signature; otherwise the mapped SDK exception.
         """
         method = resolve_sdk_method(self._client, sdk_symbol)
+        kwargs = self._coerce_call_arguments(method, kwargs)
         try:
-            return method(**kwargs)
+            with spinner(self._progress):
+                return method(**kwargs)
         except TypeError as exc:
             raise CliError(
                 code=CODE_INVALID_ARGUMENTS,
@@ -97,10 +105,41 @@ class SdkMammothService:
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
+    @staticmethod
+    def _coerce_call_arguments(method: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
+        """Coerce generic-``call`` kwargs to the method's annotated types.
+
+        The rich ``View`` path coerces JSON-shaped input into the dataclasses,
+        enums, and pydantic models the SDK expects; the generic ``call`` path
+        used by every non-View command must do the same, or a command whose SDK
+        method takes a pydantic model (``automation create``, ``client-app
+        update``, ``external-key create``) crashes on the raw dict.
+
+        Coercion is best-effort: a method whose annotations cannot be resolved
+        (for example an API module that imports its types only under
+        ``TYPE_CHECKING`` and names one this module's namespace does not carry)
+        falls back to the raw kwargs, so currently-working commands are never
+        broken by a resolution failure. A genuinely bad value still surfaces as
+        the SDK's own ``TypeError``/validation error at call time.
+
+        Args:
+            method: The resolved bound SDK method about to be invoked.
+            kwargs: The raw JSON-shaped keyword arguments.
+
+        Returns:
+            The coerced kwargs, or the original kwargs if coercion is not
+            possible for this method.
+        """
+        try:
+            return coerce_arguments(method, kwargs)
+        except Exception:
+            return kwargs
+
     def wait_if_job(self, response: Any) -> Any:
         """Wait for a recognized job response using the client's configured timeout."""
         try:
-            return self._client.wait_if_job(response)
+            with spinner(self._progress):
+                return self._client.wait_if_job(response)
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 
@@ -124,7 +163,8 @@ class SdkMammothService:
                 otherwise the mapped SDK exception.
         """
         try:
-            view = self._client.get_view(view_id)
+            with spinner(self._progress):
+                view = self._client.get_view(view_id)
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
         if method.startswith("_"):
@@ -147,7 +187,8 @@ class SdkMammothService:
         if kwargs.get(CONDITION_KWARG) is not None:
             kwargs[CONDITION_KWARG] = compile_condition(kwargs[CONDITION_KWARG])
         try:
-            return attribute(**kwargs)
+            with spinner(self._progress):
+                return attribute(**kwargs)
         except TypeError as exc:
             raise CliError(
                 code=CODE_INVALID_ARGUMENTS,
