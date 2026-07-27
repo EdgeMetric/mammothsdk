@@ -51,7 +51,10 @@ def _poetry_build(project_dir: Path, out_dir: Path) -> None:
     # Keep its explicit env selection under the temporary wheelhouse so this
     # test neither reads nor changes the developer's configured Poetry env.
     env = dict(os.environ)
-    env["POETRY_VIRTUALENVS_PATH"] = str(out_dir / ".poetry-venvs")
+    poetry_venvs = out_dir / ".poetry-venvs"
+    poetry_venvs.mkdir(exist_ok=True)
+    env["POETRY_VIRTUALENVS_CREATE"] = "true"
+    env["POETRY_VIRTUALENVS_PATH"] = str(poetry_venvs)
     selected = subprocess.run(
         [poetry, "env", "use", sys.executable],
         cwd=project_dir,
