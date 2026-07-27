@@ -96,6 +96,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
+    env:
+      # Keep redirected JSON UTF-8 on Windows, whose legacy console encoding
+      # would otherwise encode punctuation as cp1252.
+      PYTHONUTF8: "1"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
