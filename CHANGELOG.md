@@ -4,17 +4,6 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.2]
-
-### Fixed
-- **`views.get()` no longer fails in restricted workspaces.** Some workspaces
-  permit the dataset-scoped dataview listing the web app uses but deny the
-  single-dataview metadata endpoint, so `client.views.get(view_id)` (and
-  `get_view`) raised a 403 even though the caller could see the view. It now
-  falls back to the listing, whose record carries the state pipeline operations
-  need. Every other API failure still propagates, and the original 403 is
-  preserved when the view is genuinely absent from the permitted listing.
-
 ## [0.5.1]
 
 ### Fixed
