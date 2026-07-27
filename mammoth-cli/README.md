@@ -22,22 +22,40 @@ SDK. It adds no second HTTP client and calls no private SDK members.
 
 ## Install
 
+One step, no prerequisites. This installs `uv` if you do not already have it,
+the `mammoth` CLI, and the agent skill for Claude Code, Codex, and Cursor:
+
 ```bash
-uv tool install mammoth-cli      # recommended: isolated, on your PATH
-# or
-pipx install mammoth-cli
-# or
-python -m pip install mammoth-cli
+curl -fsSL https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.sh | sh
 ```
 
-Then confirm the install:
+Windows PowerShell:
+
+```powershell
+irm https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.ps1 | iex
+```
+
+Then confirm it works:
 
 ```bash
 mammoth --version
+mammoth doctor          # checks config, credentials, endpoint, connectivity
 ```
 
-The CLI supports Python 3.12, 3.13, and 3.14. For the one-line installers and
-the verified (signed) install flow, see [docs/installation.md](docs/installation.md).
+<details>
+<summary>Already have a Python tool manager?</summary>
+
+```bash
+uv tool install mammoth-cli      # isolated, on your PATH
+pipx install mammoth-cli
+python -m pip install mammoth-cli
+```
+
+</details>
+
+The CLI supports Python 3.12, 3.13, and 3.14. These one-line commands execute
+downloaded code; for the verified (checksummed and signed) flow, see
+[docs/installation.md](docs/installation.md).
 
 ## Quick start
 
@@ -81,7 +99,8 @@ mammoth view transform math 1039 --project 180 \
   --input '{"expression": "price * qty", "new_column": "total"}'
 ```
 
-Install the bundled agent skill for Claude Code, Codex, and Cursor:
+The one-line installer already set up the bundled agent skill for Claude Code,
+Codex, and Cursor. If you installed with `uv`, `pipx`, or `pip` instead:
 
 ```bash
 mammoth skill install

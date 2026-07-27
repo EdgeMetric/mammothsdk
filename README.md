@@ -6,8 +6,14 @@ Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data 
 [![Python](https://img.shields.io/pypi/pyversions/mammoth-io)](https://pypi.org/project/mammoth-io/)
 
 > **Prefer the terminal?** This repository also ships **`mammoth-cli`**, a
-> command-line interface built for both people and autonomous agents. See
-> [Command-line interface](#command-line-interface-mammoth-cli) below.
+> command-line interface built for both people and autonomous agents. Install it
+> in one step -- no prerequisites:
+>
+> ```bash
+> curl -fsSL https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.sh | sh
+> ```
+>
+> See [Command-line interface](#command-line-interface-mammoth-cli) below.
 
 ## Installation
 
@@ -741,12 +747,20 @@ data, run transformations, organize work, and automate repeatable operations.
 It renders for people in a terminal and switches to a versioned JSON envelope
 when output is piped, making the same command useful in CI and agent workflows.
 
+Install in one step -- this brings `uv` if you lack it, the `mammoth` CLI, and
+the bundled agent skill (Windows PowerShell: `irm
+https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.ps1 | iex`):
+
 ```bash
-uv tool install mammoth-cli      # or: pipx install mammoth-cli / pip install mammoth-cli
+curl -fsSL https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.sh | sh
+
 mammoth auth login               # prompts for API key, API secret, and workspace id
 mammoth doctor                   # verify the saved profile and endpoint
 mammoth project list             # a table in a terminal, JSON when piped
 ```
+
+Already have a Python tool manager? `uv tool install mammoth-cli`, `pipx install
+mammoth-cli`, or `pip install mammoth-cli` work too.
 
 For promptless work, log in from a protected JSON file with `mammoth auth login
 --input creds.json --output json --no-input`; do not put secrets on a command
