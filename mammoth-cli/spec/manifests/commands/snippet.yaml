@@ -29,7 +29,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth snippet create --help
-  agent_example: 'mammoth snippet create example --input ''{"code": "example", "language": "example"}''
+  agent_example: 'mammoth snippet create ''Revenue report'' --input ''{"code": "sample", "language": "sample"}''
     --output json --no-input'
   unit_tests:
   - UT-SNIPPET-CREATE

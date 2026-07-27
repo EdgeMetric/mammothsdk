@@ -63,7 +63,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth user avatar upload --help
-  agent_example: mammoth user avatar upload example --output json --no-input
+  agent_example: mammoth user avatar upload ./sales.csv --output json --no-input
   unit_tests:
   - UT-USER-AVATAR-UPLOAD
   contract_tests:
@@ -98,8 +98,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth user change-password --help
-  agent_example: 'mammoth user change-password --input ''{"current_password": "example", "new_password":
-    "example"}'' --output json --no-input'
+  agent_example: 'mammoth user change-password --input ''{"current_password": "replace-with-secret", "new_password":
+    "replace-with-secret"}'' --output json --no-input'
   unit_tests:
   - UT-USER-CHANGE-PASSWORD
   contract_tests:

@@ -2,9 +2,10 @@
 
 [Documentation index](../llms.txt)
 
-Every command accepts the same global flags. This holds for generic commands and
-bespoke commands alike. The flags below control output, credentials, timeouts,
-confirmations, and input.
+Commands expose a shared set of global flags. They control rendering, profile
+selection, time limits, structured input, and confirmations. Command-specific
+arguments remain discoverable through `mammoth COMMAND --help` or `mammoth
+schema get COMMAND.ID`.
 
 | Flag | Purpose |
 |---|---|
@@ -15,7 +16,7 @@ confirmations, and input.
 | `--job-timeout` | Job-wait timeout in seconds. |
 | `--pipeline-timeout` | Pipeline-wait timeout in seconds. |
 | `--color` | Color policy: `auto`, `always`, or `never`. Default `auto`. |
-| `--no-input` | Never prompt. Fail instead. On automatically off a terminal. |
+| `--no-input` | Never prompt; fail instead. It turns on automatically off a terminal. |
 | `--no-progress` | Never render progress. |
 | `--debug` | Emit diagnostic detail to stderr. |
 | `--input` | Strict JSON or YAML request document path, or `-` for stdin. |
@@ -36,6 +37,12 @@ for the envelope shape.
 The `--color` flag defaults to `auto`. Color turns off when stdout is not a
 terminal. Color turns off in machine output. The flag honors the `NO_COLOR`
 environment variable.
+
+For automation, make the three important choices visible in every command:
+
+```bash
+mammoth project list --output json --no-input --profile production
+```
 
 ## Confirmations
 
@@ -60,4 +67,5 @@ mammoth addon storage add --input request.yaml --input-format yaml --yes
 ## Related pages
 
 See [safety](../safety.md) for confirmations and mutation classes. See
-[authentication](../authentication.md) for profiles and credentials.
+[authentication](../authentication.md) for profiles and credentials, and
+[output and errors](output-and-errors.md) for the parsing contract.

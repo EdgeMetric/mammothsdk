@@ -1,9 +1,9 @@
 # mammoth-cli
 
-Drive the [Mammoth Analytics](https://mammoth.io) platform from your terminal.
-The `mammoth` command uploads data, runs pipeline transformations, manages
-projects and dashboards, and exports results — for people at a shell and for
-autonomous agents alike.
+Use [Mammoth Analytics](https://mammoth.io) from a terminal. The `mammoth`
+command covers data import and export, transformations, project organization,
+automation, and administration. Its interface is designed to be readable at a
+shell and predictable in scripts and agent runs.
 
 [![PyPI](https://img.shields.io/pypi/v/mammoth-cli)](https://pypi.org/project/mammoth-cli/)
 [![Python](https://img.shields.io/pypi/pyversions/mammoth-cli)](https://pypi.org/project/mammoth-cli/)
@@ -12,8 +12,8 @@ autonomous agents alike.
 - **Human-friendly by default.** In a terminal, commands print a readable table.
 - **Agent-native.** When output is piped, you get a stable JSON envelope with a
   documented schema, exit codes, and error codes — no flags required.
-- **Safe.** Every mutation carries a reviewed confirmation policy, so a
-  destructive command never runs unattended by accident.
+- **Guarded mutations.** Commands expose their confirmation policy; promptless
+  destructive operations require an explicit `--yes`.
 - **Discoverable.** `mammoth capability list` and `mammoth schema get` describe
   every command, so an agent can learn the surface at runtime.
 
@@ -42,13 +42,21 @@ the verified (signed) install flow, see [docs/installation.md](docs/installation
 ## Quick start
 
 ```bash
-mammoth auth login -w 4          # log in once; the secret goes to your OS keyring
+mammoth auth login               # prompts for API key, API secret, workspace id
 mammoth doctor                   # confirm credentials resolve and the API answers
 mammoth project list             # a table in a terminal, JSON when piped
 mammoth dataset list --project 180
 ```
 
 Full walkthrough: [docs/quickstart.md](docs/quickstart.md).
+
+The login command has no workspace shortcut flag. For CI or an agent, use a
+protected request document instead:
+
+```bash
+chmod 600 creds.json
+mammoth auth login --input creds.json --output json --no-input
+```
 
 ## Built for agents and CI
 
@@ -82,6 +90,27 @@ mammoth skill install
 See [docs/agents.md](docs/agents.md) and the
 [agent skill](mammoth_cli/bundled_skill/mammoth-cli/SKILL.md).
 
+## Give your coding agent the CLI playbook
+
+The bundled skill describes authentication, discovery, structured input, job
+handling, and confirmations. Install it for the supported coding-agent tools:
+
+```bash
+mammoth skill install
+mammoth skill list
+```
+
+The default target is user scope. To inspect destinations before writing, run
+`mammoth skill path`. To install only for one agent in the current project, use
+structured input:
+
+```bash
+mammoth skill install --input '{"agents": ["codex"], "scope": "project"}'
+```
+
+Use `mammoth skill update` after a CLI upgrade. It refreshes copies owned by the
+installer and reports modified copies instead of silently replacing them.
+
 ## What you can do
 
 | Area | Command families |
@@ -109,6 +138,11 @@ The full generated list is in [docs/reference/commands.md](docs/reference/comman
 | [Troubleshooting](docs/troubleshooting.md) | Exit codes, error envelopes, recovery. |
 | [Upgrade](docs/upgrade.md) / [Uninstall](docs/uninstall.md) | Keep the CLI current, or remove it. |
 | [Command reference](docs/reference/commands.md) | Every command, grouped by family. |
+
+Start with **Quick start** for a copy-paste workflow, **Authentication** for
+profiles and non-interactive login, or **Agent and CI usage** for schema-driven
+automation. The command reference is generated; use `mammoth schema get
+COMMAND.ID` to verify a request shape against the installed CLI.
 
 Agent-readable indexes: [`docs/llms.txt`](docs/llms.txt) and
 [`docs/llms-full.txt`](docs/llms-full.txt).

@@ -123,7 +123,7 @@ Aliases must appear in the parity manifest but must not duplicate handlers.
 Interactive login example:
 
 ```bash
-mammoth auth login --workspace WORKSPACE_ID
+mammoth auth login
 ```
 
 This command prompts securely for the API key and secret. The default prefix is

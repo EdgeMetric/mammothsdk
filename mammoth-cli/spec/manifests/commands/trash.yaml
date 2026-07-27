@@ -23,7 +23,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth trash add --help
-  agent_example: 'mammoth trash add --input ''{"items": [{"example": "example"}]}'' --output json --no-input'
+  agent_example: 'mammoth trash add --input ''{"items": [{"sample_key": "Status"}]}'' --output json --no-input'
   unit_tests:
   - UT-TRASH-ADD
   contract_tests:
@@ -91,7 +91,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth trash restore --help
-  agent_example: 'mammoth trash restore --input ''{"items": [{"example": "example"}]}'' --output json
+  agent_example: 'mammoth trash restore --input ''{"items": [{"sample_key": "Status"}]}'' --output json
     --no-input'
   unit_tests:
   - UT-TRASH-RESTORE

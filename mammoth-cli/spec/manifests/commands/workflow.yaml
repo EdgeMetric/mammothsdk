@@ -29,7 +29,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow block add WORKFLOW_ID --help
-  agent_example: 'mammoth workflow block add 123 --input ''{"block_type": "example"}'' --output json --no-input'
+  agent_example: 'mammoth workflow block add 123 --input ''{"block_type": "sample"}'' --output json --no-input'
   unit_tests:
   - UT-WORKFLOW-BLOCK-ADD
   contract_tests:
@@ -75,7 +75,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow block auth WORKFLOW_ID BLOCK_ID --help
-  agent_example: 'mammoth workflow block auth 123 123 --input ''{"auth_data": {"example": "example"}}''
+  agent_example: 'mammoth workflow block auth 123 123 --input ''{"auth_data": {"sample_key": "Status"}}''
     --output json --no-input'
   unit_tests:
   - UT-WORKFLOW-BLOCK-AUTH
@@ -168,7 +168,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow block type WORKFLOW_ID BLOCK_ID --help
-  agent_example: 'mammoth workflow block type 123 123 --input ''{"connection_type": "example"}'' --output
+  agent_example: 'mammoth workflow block type 123 123 --input ''{"connection_type": "sample"}'' --output
     json --no-input'
   unit_tests:
   - UT-WORKFLOW-BLOCK-TYPE
@@ -209,7 +209,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow canvas WORKFLOW_ID --help
-  agent_example: 'mammoth workflow canvas 123 --input ''{"canvas_state": {"example": "example"}}'' --output
+  agent_example: 'mammoth workflow canvas 123 --input ''{"canvas_state": {"sample_key": "Status"}}'' --output
     json --no-input'
   unit_tests:
   - UT-WORKFLOW-CANVAS
@@ -284,7 +284,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow create --help
-  agent_example: mammoth workflow create example --output json --no-input
+  agent_example: mammoth workflow create 'Revenue report' --output json --no-input
   unit_tests:
   - UT-WORKFLOW-CREATE
   contract_tests:
@@ -364,7 +364,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow from-template TEMPLATE_ID --help
-  agent_example: 'mammoth workflow from-template 123 --input ''{"workflow_name": "example"}'' --output
+  agent_example: 'mammoth workflow from-template 123 --input ''{"workflow_name": "Revenue report"}'' --output
     json --no-input'
   unit_tests:
   - UT-WORKFLOW-FROM-TEMPLATE

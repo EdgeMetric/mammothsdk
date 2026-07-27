@@ -29,7 +29,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth client-app create --help
-  agent_example: mammoth client-app create example --output json --no-input
+  agent_example: mammoth client-app create 'Revenue report' --output json --no-input
   unit_tests:
   - UT-CLIENT-APP-CREATE
   contract_tests:
@@ -70,7 +70,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth client-app delete CLIENT_KEY --help
-  agent_example: mammoth client-app delete example --output json --no-input
+  agent_example: mammoth client-app delete sample --output json --no-input
   unit_tests:
   - UT-CLIENT-APP-DELETE
   contract_tests:
@@ -110,7 +110,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth client-app get CLIENT_KEY --help
-  agent_example: mammoth client-app get example --output json --no-input
+  agent_example: mammoth client-app get sample --output json --no-input
   unit_tests:
   - UT-CLIENT-APP-GET
   contract_tests:
@@ -184,7 +184,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth client-app update CLIENT_KEY --help
-  agent_example: 'mammoth client-app update example --input ''{"patch_request": {"patch": [{"op": "replace",
+  agent_example: 'mammoth client-app update sample --input ''{"patch_request": {"patch": [{"op": "replace",
     "path": "role"}]}}'' --output json --no-input'
   unit_tests:
   - UT-CLIENT-APP-UPDATE

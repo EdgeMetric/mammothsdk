@@ -23,8 +23,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent chat --help
-  agent_example: 'mammoth agent chat --input ''{"message": "example", "scope": {"example": "example"}}''
-    --output json --no-input'
+  agent_example: 'mammoth agent chat --input ''{"message": "Summarize revenue by region", "scope": {"sample_key":
+    "Status"}}'' --output json --no-input'
   unit_tests:
   - UT-AGENT-CHAT
   contract_tests:
@@ -64,7 +64,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent session delete SESSION_ID --help
-  agent_example: mammoth agent session delete example --output json --no-input
+  agent_example: mammoth agent session delete resource-123 --output json --no-input
   unit_tests:
   - UT-AGENT-SESSION-DELETE
   contract_tests:
@@ -138,7 +138,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent session messages SESSION_ID --help
-  agent_example: mammoth agent session messages example --output json --no-input
+  agent_example: mammoth agent session messages resource-123 --output json --no-input
   unit_tests:
   - UT-AGENT-SESSION-MESSAGES
   contract_tests:
@@ -178,8 +178,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent session set-visibility SESSION_ID --help
-  agent_example: 'mammoth agent session set-visibility example --input ''{"visibility": "example"}'' --output
-    json --no-input'
+  agent_example: 'mammoth agent session set-visibility resource-123 --input ''{"visibility": "sample"}''
+    --output json --no-input'
   unit_tests:
   - UT-AGENT-SESSION-SET-VISIBILITY
   contract_tests:

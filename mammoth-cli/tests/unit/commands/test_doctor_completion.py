@@ -26,6 +26,7 @@ def test_doctor_reports_no_credentials_when_unauthenticated(
     assert names["credentials"] is False
     assert names["connection"] is False
     assert "cli_version" in data
+    assert "mammoth auth login" in data["recommendations"]
 
 
 def test_doctor_connection_ok_with_fake_service(

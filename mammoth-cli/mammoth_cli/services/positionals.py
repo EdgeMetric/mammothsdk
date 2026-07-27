@@ -169,6 +169,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             required=False,
             help="Path to a local file to upload; or pass one or more via the 'files' field.",
             falls_back_to_field="files",
+            example_value="./sales.csv",
         ),
     ),
     # ``data-app user remove`` takes the shared user's email as a required second
@@ -286,6 +287,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             # placeholder must be a genuine, resolvable command id -- the generic
             # ``example`` would resolve to nothing and exit non-zero.
             example_value="view.transform.bulk-replace",
+        ),
+    ),
+    "schema.find": (
+        PositionalSpec(
+            name="query",
+            type=str,
+            required=True,
+            help="Match command names, examples, or purpose (e.g. view transform).",
+            example_value="view transform",
         ),
     ),
     "capability.get": (

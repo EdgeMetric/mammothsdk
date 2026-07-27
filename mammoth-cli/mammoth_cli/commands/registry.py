@@ -112,6 +112,18 @@ def _schema_get(invocation: Invocation) -> HandlerResult:
     return entry, {}
 
 
+def _schema_find(invocation: Invocation) -> HandlerResult:
+    query = _require_arg(invocation, "search query")
+    if not query.strip():
+        raise CliError(
+            code="empty_search_query",
+            message="The schema search query must contain at least one word.",
+            exit_status=EXIT_USAGE,
+            hint="For the complete inventory, use 'mammoth schema list --output json'.",
+        )
+    return schema_cmd.find_schemas(query), {}
+
+
 HANDLERS: dict[str, Handler] = {
     "version": _version,
     "doctor": doctor_cmd.doctor,
@@ -126,6 +138,7 @@ HANDLERS: dict[str, Handler] = {
     "capability.get": _capability_get,
     "schema.list": _schema_list,
     "schema.get": _schema_get,
+    "schema.find": _schema_find,
     # project family (read-only)
     "project.list": project_cmd.project_list,
     "project.get": project_cmd.project_get,

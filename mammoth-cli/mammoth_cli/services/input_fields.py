@@ -35,6 +35,15 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # ``connector_id``/``connector_ids``; both are optional in the signature.
     "addon.connector.add": {"connector_id": 42},
     "addon.connector.remove": {"connector_id": 42},
+    # The generic SDK types cannot express the creation-type-specific dataset
+    # shape. Use the public sample CSV so help and generated references show a
+    # request a new customer can understand and run.
+    "dataset.create": {
+        "ds_creation_type": "weburl",
+        "dataset_spec": {
+            "url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"
+        },
+    },
     # project user update targets a specific member: the handler requires ``role``
     # (auto-filled) plus one of ``user_id``/``invite_id`` to say *which* member.
     "project.user.update": {"user_id": 123},

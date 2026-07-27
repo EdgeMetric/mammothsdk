@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from mammoth.client import MammothClient
+from mammoth.exceptions import MammothAPIError
 
 
 class TestClientInit:
@@ -155,6 +156,37 @@ class TestViewsResource:
         view = client.views.get(42)
         client.pipeline._find_dataset_for_dataview.assert_called_once_with(42)
         client.dataviews.get.assert_called_once_with(dataset_id=500, dataview_id=42)
+        assert view.id == 42
+
+    def test_get_falls_back_to_allowed_dataset_view_list_on_403(self, client):
+        """Restricted workspaces can resolve a view through the list endpoint."""
+        client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
+        client.dataviews.get = MagicMock(
+            side_effect=MammothAPIError("forbidden", status_code=403)
+        )
+        client.dataviews.list = MagicMock(
+            return_value={
+                "dataviews": [
+                    {
+                        "id": 42,
+                        "name": "Test View",
+                        "properties": {
+                            "columns": [
+                                {
+                                    "display_name": "Sales",
+                                    "internal_name": "column_aaa",
+                                    "type": "NUMERIC",
+                                }
+                            ]
+                        },
+                    }
+                ]
+            }
+        )
+
+        view = client.views.get(42)
+
+        client.dataviews.list.assert_called_once_with(dataset_id=500)
         assert view.id == 42
 
     def test_delete_auto_detects_dataset(self, client):

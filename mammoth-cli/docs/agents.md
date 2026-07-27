@@ -2,7 +2,9 @@
 
 [Documentation index](llms.txt)
 
-This CLI targets autonomous agents and CI jobs.
+This guide is for automation that must be safe to repeat and straightforward to diagnose.
+Use the human guides for concepts; use runtime schemas rather than guessing an
+operation's request fields.
 
 ## Machine behavior is automatic
 
@@ -42,6 +44,15 @@ mammoth <command> --input request.yaml
 echo '{"...": "..."}' | mammoth <command> --input - --input-format json
 ```
 
+Keep credentials out of arguments. Login once from a `0600` file, then verify
+the profile before making changes:
+
+```bash
+chmod 600 creds.json
+mammoth auth login --input creds.json --output json --no-input
+mammoth doctor --output json --no-input
+```
+
 ## Confirmations without a terminal
 
 Destructive commands need `--yes`. High-impact commands also need `--confirm TARGET`. There is no prompt off a terminal. See [safety](safety.md).
@@ -53,6 +64,14 @@ mammoth capability list      # every operation
 mammoth schema list          # every command's schema
 mammoth schema get <command.id>
 ```
+
+## A reliable operation loop
+
+1. Discover the command and request shape with `schema get`.
+2. Run reads with `--output json --no-input` and retain returned IDs.
+3. For a mutation, supply its structured input and required `--yes` / `--confirm`.
+4. Inspect the exit code and `error.code`; retry only exit code `7`.
+5. Delete temporary resources when the run is complete.
 
 ## Machine-readable docs
 

@@ -2,8 +2,9 @@
 
 [Documentation index](llms.txt)
 
-Every command carries a reviewed mutation class and confirmation policy.
-Discover both with `mammoth schema get <command.id>`.
+Every command exposes a mutation class and confirmation policy. Check both with
+`mammoth schema get <command.id>` before an automated write. This gives a run
+the same preflight information as the generated command reference.
 
 ## Mutation classes
 
@@ -52,3 +53,14 @@ mammoth workspace delete --yes --confirm 9
   needs `--overwrite`.
 - An interruption returns exit code `130` and closes sessions and files.
 - Secrets never appear on the command line, in logs, or in any envelope.
+
+## A safe cleanup pattern
+
+Use IDs returned by the run, list or preview the target if the run may have
+been interrupted, and then delete explicitly. Do not use broad name matching in
+cleanup scripts.
+
+```bash
+mammoth dataset list --project 180 --output json --no-input
+mammoth dataset delete DATASET_ID --project 180 --yes --output json --no-input
+```

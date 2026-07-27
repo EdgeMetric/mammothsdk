@@ -2,6 +2,10 @@
 
 [Documentation index](llms.txt)
 
+Install `mammoth-cli` as an isolated command-line tool, then confirm that the
+`mammoth` executable is on your PATH. Choose one installation method; do not
+install the same CLI with more than one tool manager.
+
 ## Recommended: uv tool
 
 Linux/macOS quick install:
@@ -27,6 +31,9 @@ mammoth --version
 
 `uv tool` puts the `mammoth` executable on your PATH in an isolated environment.
 Use `uv tool dir --bin` to find that directory.
+
+If `mammoth` is not found after installation, open a new shell or add the tool
+bin directory reported by `uv tool dir --bin` to your PATH.
 
 ## From PyPI with pip
 
@@ -92,7 +99,12 @@ mammoth skill list --output json --no-input
 The skill installs for Codex, Claude Code, and Cursor. Pass an `--input`
 document with `{"agents": ["claude"], "scope": "project"}` to narrow the target.
 
+Use `mammoth skill path` before a project-scoped install to review its target.
+`mammoth skill list` reports whether installed copies are intact; `mammoth skill
+update` refreshes copies that the installer owns.
+
 ## Next steps
 
 - [Five-minute quick start](quickstart.md)
 - [Authentication and profiles](authentication.md)
+- [Agent and CI operation](agents.md)

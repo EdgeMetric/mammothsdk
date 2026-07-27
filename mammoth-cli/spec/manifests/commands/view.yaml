@@ -121,7 +121,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view ai generate-data DATAVIEW_ID --help
-  agent_example: 'mammoth view ai generate-data 123 --input ''{"prompt": "example"}'' --output json --no-input'
+  agent_example: 'mammoth view ai generate-data 123 --input ''{"prompt": "Summarize revenue by region"}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-AI-GENERATE-DATA
   contract_tests:
@@ -288,8 +289,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view checkpoint create VIEW_ID --help
-  agent_example: 'mammoth view checkpoint create 123 123 --input ''{"body": {"checkpoint_name": "example",
-    "checkpoint_type": "alert"}}'' --output json --no-input'
+  agent_example: 'mammoth view checkpoint create 123 123 --input ''{"body": {"checkpoint_name": "Revenue
+    report", "checkpoint_type": "alert"}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-CHECKPOINT-CREATE
   contract_tests:
@@ -539,7 +540,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view conditional-format create VIEW_ID --help
-  agent_example: 'mammoth view conditional-format create 123 123 --input ''{"rule": {"example": "example"}}''
+  agent_example: 'mammoth view conditional-format create 123 123 --input ''{"rule": {"sample_key": "Status"}}''
     --output json --no-input'
   unit_tests:
   - UT-VIEW-CONDITIONAL-FORMAT-CREATE
@@ -682,7 +683,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view conditional-format update VIEW_ID --help
-  agent_example: 'mammoth view conditional-format update 123 123 --input ''{"rule": {"example": "example"}}''
+  agent_example: 'mammoth view conditional-format update 123 123 --input ''{"rule": {"sample_key": "Status"}}''
     --output json --no-input'
   unit_tests:
   - UT-VIEW-CONDITIONAL-FORMAT-UPDATE
@@ -770,8 +771,8 @@ commands:
   secret_fields: []
   human_example: mammoth view data-check create VIEW_ID --help
   agent_example: 'mammoth view data-check create 123 123 --input ''{"body": {"checks": [{"check_type":
-    "null_percentage", "config": {"column": "example", "condition": "lt"}}], "name": "example"}}'' --output
-    json --no-input'
+    "null_percentage", "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report"}}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-DATA-CHECK-CREATE
   contract_tests:
@@ -1154,7 +1155,7 @@ commands:
   secret_fields: []
   human_example: mammoth view derivative create VIEW_ID --help
   agent_example: 'mammoth view derivative create 123 123 --input ''{"body": {"param": {"METRIC": {"AS":
-    "example", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "example", "FUNCTION": "SUM"}}]}}}}''
+    "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}}''
     --output json --no-input'
   unit_tests:
   - UT-VIEW-DERIVATIVE-CREATE
@@ -1359,8 +1360,8 @@ commands:
   secret_fields: []
   human_example: mammoth view derivative update VIEW_ID DERIVATIVE_ID --help
   agent_example: 'mammoth view derivative update 123 123 123 --input ''{"body": {"patches": [{"op": "replace",
-    "path": "param", "value": {"METRIC": {"AS": "example", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE":
-    {"ARGUMENT": "example", "FUNCTION": "SUM"}}]}}}]}}'' --output json --no-input'
+    "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE":
+    {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}]}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-DERIVATIVE-UPDATE
   contract_tests:
@@ -1440,7 +1441,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view draft command DATAVIEW_ID --help
-  agent_example: 'mammoth view draft command 123 --input ''{"command": "example"}'' --output json --no-input'
+  agent_example: 'mammoth view draft command 123 --input ''{"command": "sample"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-DRAFT-COMMAND
   contract_tests:
@@ -1642,7 +1643,7 @@ commands:
   secret_fields: []
   human_example: mammoth view export create DATAVIEW_ID --help
   agent_example: 'mammoth view export create 123 --input ''{"export_spec": {"DATAVIEW_ID": 1, "handler_type":
-    "postgres", "trigger_type": "none", "target_properties": {"file": "example", "file_type": "example",
+    "postgres", "trigger_type": "none", "target_properties": {"file": "./sales.csv", "file_type": "./sales.csv",
     "include_hidden": true, "is_format_set": true, "use_format": true}, "additional_properties": {}, "run_immediately":
     true}}'' --output json --no-input'
   unit_tests:
@@ -1858,7 +1859,7 @@ commands:
   secret_fields: []
   human_example: mammoth view export publish-db DATAVIEW_ID --help
   agent_example: 'mammoth view export publish-db 123 --input ''{"odbc_type": "postgres", "target_properties":
-    {"example": "example"}}'' --output json --no-input'
+    {"sample_key": "Status"}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-EXPORT-PUBLISH-DB
   contract_tests:
@@ -1898,7 +1899,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export publish-db-update DATAVIEW_ID --help
-  agent_example: 'mammoth view export publish-db-update 123 --input ''{"patch": [{"example": "example"}]}''
+  agent_example: 'mammoth view export publish-db-update 123 --input ''{"patch": [{"sample_key": "Status"}]}''
     --output json --no-input'
   unit_tests:
   - UT-VIEW-EXPORT-PUBLISH-DB-UPDATE
@@ -1945,7 +1946,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export update DATAVIEW_ID EXPORT_ID --help
-  agent_example: 'mammoth view export update 123 123 --input ''{"patches": [{"example": "example"}]}''
+  agent_example: 'mammoth view export update 123 123 --input ''{"patches": [{"sample_key": "Status"}]}''
     --output json --no-input'
   unit_tests:
   - UT-VIEW-EXPORT-UPDATE
@@ -2112,7 +2113,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view pipeline edit DATAVIEW_ID --help
-  agent_example: 'mammoth view pipeline edit 123 --input ''{"patches": [{"example": "example"}]}'' --output
+  agent_example: 'mammoth view pipeline edit 123 --input ''{"patches": [{"sample_key": "Status"}]}'' --output
     json --no-input'
   unit_tests:
   - UT-VIEW-PIPELINE-EDIT
@@ -2405,7 +2406,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view task add DATAVIEW_ID --help
-  agent_example: 'mammoth view task add 123 --input ''{"task_spec": {"example": "example"}}'' --output
+  agent_example: 'mammoth view task add 123 --input ''{"task_spec": {"sample_key": "Status"}}'' --output
     json --no-input'
   unit_tests:
   - UT-VIEW-TASK-ADD
@@ -2578,7 +2579,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view task preview DATAVIEW_ID --help
-  agent_example: 'mammoth view task preview 123 --input ''{"task_spec": {"example": "example"}}'' --output
+  agent_example: 'mammoth view task preview 123 --input ''{"task_spec": {"sample_key": "Status"}}'' --output
     json --no-input'
   unit_tests:
   - UT-VIEW-TASK-PREVIEW
@@ -2625,8 +2626,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view task update DATAVIEW_ID TASK_ID --help
-  agent_example: 'mammoth view task update 123 123 --input ''{"task_spec": {"example": "example"}}'' --output
-    json --no-input'
+  agent_example: 'mammoth view task update 123 123 --input ''{"task_spec": {"sample_key": "Status"}}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-TASK-UPDATE
   contract_tests:
@@ -2666,8 +2667,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform add-column VIEW_ID --help
-  agent_example: 'mammoth view transform add-column 123 --input ''{"name": "example"}'' --output json
-    --no-input'
+  agent_example: 'mammoth view transform add-column 123 --input ''{"name": "Revenue report"}'' --output
+    json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-ADD-COLUMN
   contract_tests:
@@ -2707,7 +2708,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform add-sql VIEW_ID --help
-  agent_example: 'mammoth view transform add-sql 123 --input ''{"query": "example"}'' --output json --no-input'
+  agent_example: 'mammoth view transform add-sql 123 --input ''{"query": "SELECT region, SUM(revenue)
+    FROM data GROUP BY region"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-ADD-SQL
   contract_tests:
@@ -2747,8 +2749,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform ai VIEW_ID --help
-  agent_example: 'mammoth view transform ai 123 --input ''{"prompt": "example", "context_columns": ["example"]}''
-    --output json --no-input'
+  agent_example: 'mammoth view transform ai 123 --input ''{"prompt": "Summarize revenue by region", "context_columns":
+    ["Status"]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-AI
   contract_tests:
@@ -2789,8 +2791,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform bulk-replace VIEW_ID --help
-  agent_example: 'mammoth view transform bulk-replace 123 --input ''{"columns": ["example"], "mapping":
-    [{"search": ["example"], "replace": "example"}]}'' --output json --no-input'
+  agent_example: 'mammoth view transform bulk-replace 123 --input ''{"columns": ["Status"], "mapping":
+    [{"search": ["sample"], "replace": "sample"}]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-BULK-REPLACE
   contract_tests:
@@ -2832,7 +2834,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform combine-columns VIEW_ID --help
-  agent_example: 'mammoth view transform combine-columns 123 --input ''{"sources": ["example"]}'' --output
+  agent_example: 'mammoth view transform combine-columns 123 --input ''{"sources": ["Status"]}'' --output
     json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-COMBINE-COLUMNS
@@ -2875,7 +2877,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform convert-type VIEW_ID --help
-  agent_example: 'mammoth view transform convert-type 123 --input ''{"conversions": [{"column": "example",
+  agent_example: 'mammoth view transform convert-type 123 --input ''{"conversions": [{"column": "Status",
     "to": "TEXT"}]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-CONVERT-TYPE
@@ -2917,7 +2919,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform copy-columns VIEW_ID --help
-  agent_example: 'mammoth view transform copy-columns 123 --input ''{"copies": [{"source": "example"}]}''
+  agent_example: 'mammoth view transform copy-columns 123 --input ''{"copies": [{"source": "Status"}]}''
     --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-COPY-COLUMNS
@@ -2959,8 +2961,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform crosstab VIEW_ID --help
-  agent_example: 'mammoth view transform crosstab 123 --input ''{"rows": ["example"], "pivot_column":
-    "example", "select": {"function": "SUM"}, "dataset_name": "example"}'' --output json --no-input'
+  agent_example: 'mammoth view transform crosstab 123 --input ''{"rows": ["sample"], "pivot_column": "Status",
+    "select": {"function": "SUM"}, "dataset_name": "Revenue report"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-CROSSTAB
   contract_tests:
@@ -3001,8 +3003,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform date-diff VIEW_ID --help
-  agent_example: 'mammoth view transform date-diff 123 --input ''{"component": "YEAR", "start": "example",
-    "end": "example"}'' --output json --no-input'
+  agent_example: 'mammoth view transform date-diff 123 --input ''{"component": "YEAR", "start": "sample",
+    "end": "sample"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-DATE-DIFF
   contract_tests:
@@ -3043,7 +3045,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform delete-columns VIEW_ID --help
-  agent_example: 'mammoth view transform delete-columns 123 --input ''{"columns": ["example"]}'' --output
+  agent_example: 'mammoth view transform delete-columns 123 --input ''{"columns": ["Status"]}'' --output
     json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-DELETE-COLUMNS
@@ -3126,7 +3128,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform extract-date VIEW_ID --help
-  agent_example: 'mammoth view transform extract-date 123 --input ''{"column": "example", "component":
+  agent_example: 'mammoth view transform extract-date 123 --input ''{"column": "Status", "component":
     "year"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-EXTRACT-DATE
@@ -3167,7 +3169,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform fill-missing VIEW_ID --help
-  agent_example: 'mammoth view transform fill-missing 123 --input ''{"column": "example", "direction":
+  agent_example: 'mammoth view transform fill-missing 123 --input ''{"column": "Status", "direction":
     "FIRST_VALUE"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-FILL-MISSING
@@ -3250,8 +3252,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform generate-sql VIEW_ID --help
-  agent_example: 'mammoth view transform generate-sql 123 --input ''{"intent": "example"}'' --output json
-    --no-input'
+  agent_example: 'mammoth view transform generate-sql 123 --input ''{"intent": "Summarize revenue by region"}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-GENERATE-SQL
   contract_tests:
@@ -3292,7 +3294,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform increment-date VIEW_ID --help
-  agent_example: 'mammoth view transform increment-date 123 --input ''{"column": "example", "delta": {}}''
+  agent_example: 'mammoth view transform increment-date 123 --input ''{"column": "Status", "delta": {}}''
     --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-INCREMENT-DATE
@@ -3334,7 +3336,7 @@ commands:
   secret_fields: []
   human_example: mammoth view transform join VIEW_ID --help
   agent_example: 'mammoth view transform join 123 --input ''{"foreign_view": 1, "join_type": "INNER",
-    "on": [{"left": "example", "right": "example"}], "select": ["example"]}'' --output json --no-input'
+    "on": [{"left": "sample", "right": "sample"}], "select": ["sample"]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-JOIN
   contract_tests:
@@ -3375,7 +3377,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform json-extract VIEW_ID --help
-  agent_example: 'mammoth view transform json-extract 123 --input ''{"column": "example"}'' --output json
+  agent_example: 'mammoth view transform json-extract 123 --input ''{"column": "Status"}'' --output json
     --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-JSON-EXTRACT
@@ -3456,8 +3458,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform lookup VIEW_ID --help
-  agent_example: 'mammoth view transform lookup 123 --input ''{"source": "example", "lookup_view_id":
-    1, "key": "example", "value": "example"}'' --output json --no-input'
+  agent_example: 'mammoth view transform lookup 123 --input ''{"source": "Status", "lookup_view_id": 1,
+    "key": "Status", "value": "sample"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-LOOKUP
   contract_tests:
@@ -3497,8 +3499,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform math VIEW_ID --help
-  agent_example: 'mammoth view transform math 123 --input ''{"expression": "example"}'' --output json
-    --no-input'
+  agent_example: 'mammoth view transform math 123 --input ''{"expression": "price * quantity"}'' --output
+    json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-MATH
   contract_tests:
@@ -3538,8 +3540,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform pivot VIEW_ID --help
-  agent_example: 'mammoth view transform pivot 123 --input ''{"group_by": ["example"], "aggregations":
-    [{"column": "example", "function": "SUM"}]}'' --output json --no-input'
+  agent_example: 'mammoth view transform pivot 123 --input ''{"group_by": ["sample"], "aggregations":
+    [{"column": "Status", "function": "SUM"}]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-PIVOT
   contract_tests:
@@ -3579,8 +3581,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform replace VIEW_ID --help
-  agent_example: 'mammoth view transform replace 123 --input ''{"columns": ["example"], "find": "example",
-    "replace": "example"}'' --output json --no-input'
+  agent_example: 'mammoth view transform replace 123 --input ''{"columns": ["Status"], "find": "sample",
+    "replace": "sample"}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-REPLACE
   contract_tests:
@@ -3620,7 +3622,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform set-values VIEW_ID --help
-  agent_example: 'mammoth view transform set-values 123 --input ''{"values": [{"value": "example"}]}''
+  agent_example: 'mammoth view transform set-values 123 --input ''{"values": [{"value": "sample"}]}''
     --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-SET-VALUES
@@ -3661,7 +3663,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform small-large VIEW_ID --help
-  agent_example: 'mammoth view transform small-large 123 --input ''{"function": "SMALL", "columns": ["example"]}''
+  agent_example: 'mammoth view transform small-large 123 --input ''{"function": "SMALL", "columns": ["Status"]}''
     --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-SMALL-LARGE
@@ -3702,8 +3704,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform split VIEW_ID --help
-  agent_example: 'mammoth view transform split 123 --input ''{"column": "example", "delimiter": "example",
-    "new_columns": [{"name": "example"}]}'' --output json --no-input'
+  agent_example: 'mammoth view transform split 123 --input ''{"column": "Status", "delimiter": "sample",
+    "new_columns": [{"name": "Revenue report"}]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-SPLIT
   contract_tests:
@@ -3743,7 +3745,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform substring VIEW_ID --help
-  agent_example: 'mammoth view transform substring 123 --input ''{"column": "example"}'' --output json
+  agent_example: 'mammoth view transform substring 123 --input ''{"column": "Status"}'' --output json
     --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-SUBSTRING
@@ -3784,7 +3786,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform text VIEW_ID --help
-  agent_example: 'mammoth view transform text 123 --input ''{"columns": ["example"]}'' --output json --no-input'
+  agent_example: 'mammoth view transform text 123 --input ''{"columns": ["Status"]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-TEXT
   contract_tests:
@@ -3824,7 +3826,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform unnest VIEW_ID --help
-  agent_example: 'mammoth view transform unnest 123 --input ''{"columns": ["example"]}'' --output json
+  agent_example: 'mammoth view transform unnest 123 --input ''{"columns": ["Status"]}'' --output json
     --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-UNNEST
@@ -3959,7 +3961,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view update VIEW_ID --help
-  agent_example: 'mammoth view update 123 123 --input ''{"patch_data": [{"example": "example"}]}'' --output
+  agent_example: 'mammoth view update 123 123 --input ''{"patch_data": [{"sample_key": "Status"}]}'' --output
     json --no-input'
   unit_tests:
   - UT-VIEW-UPDATE

@@ -73,7 +73,7 @@ def test_bulk_replace_runnable_example_includes_the_positional_and_input() -> No
     assert "--output json --no-input" in example
     tokens = shlex.split(example)
     document = json.loads(tokens[tokens.index("--input") + 1])
-    assert document["mapping"] == [{"search": ["example"], "replace": "example"}]
+    assert document["mapping"] == [{"search": ["sample"], "replace": "sample"}]
 
 
 def test_optional_positional_command_has_no_required_positional_in_example() -> None:
@@ -92,7 +92,7 @@ def test_fallback_positional_is_accepted_but_not_duplicated_in_example() -> None
     assert schema is not None
     assert "name" in {field["name"] for field in schema["accepted_fields"]}
     tokens = shlex.split(schema["runnable_example"])
-    assert tokens[:4] == ["mammoth", "project", "create", "example"]
+    assert tokens[:4] == ["mammoth", "project", "create", "Revenue report"]
     assert "--input" not in tokens
 
 
@@ -144,4 +144,4 @@ def test_build_time_example_uses_explicit_operation_ids_not_generated_manifest(
     )
     assert example is not None
     document = json.loads(shlex.split(example)[5])
-    assert document == {"body": {"params": {"name": "example"}}}
+    assert document == {"body": {"params": {"name": "Revenue report"}}}

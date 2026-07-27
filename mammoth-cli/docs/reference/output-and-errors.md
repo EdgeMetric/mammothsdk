@@ -2,9 +2,10 @@
 
 [Documentation index](../llms.txt)
 
-Every command returns a stable, versioned envelope. Success envelopes print to
-stdout. Error envelopes print to stderr. Both carry `schema_version`, which is a
-compatibility contract you can depend on.
+Machine modes return a versioned envelope: successes go to stdout and failures
+to stderr. Both carry `schema_version`. Treat the process exit code and the
+stable error `code` as the control-flow interface; the prose message is for a
+human reader.
 
 ## Output modes
 
@@ -81,6 +82,9 @@ Branch on `error.code`, never on the message text. The `code` value is stable
 across releases. The `message` text may change. See [troubleshooting](../troubleshooting.md)
 for common codes and their recovery steps. See [agents](../agents.md) for the
 scripted error-handling pattern.
+
+When you save a successful result, save the `data` you need and preserve the
+associated IDs. Do not assume a table layout or scrape the human renderer.
 
 ## Exit codes
 

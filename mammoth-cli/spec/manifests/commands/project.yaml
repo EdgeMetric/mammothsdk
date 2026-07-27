@@ -57,7 +57,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project bulk-update --help
-  agent_example: 'mammoth project bulk-update --input ''{"patch_data": {"example": "example"}}'' --output
+  agent_example: 'mammoth project bulk-update --input ''{"patch_data": {"sample_key": "Status"}}'' --output
     json --no-input'
   unit_tests:
   - UT-PROJECT-BULK-UPDATE
@@ -139,7 +139,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project create --help
-  agent_example: mammoth project create example --output json --no-input
+  agent_example: mammoth project create 'Revenue report' --output json --no-input
   unit_tests:
   - UT-PROJECT-CREATE
   contract_tests:
@@ -413,7 +413,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project resource-dependencies --help
-  agent_example: 'mammoth project resource-dependencies 123 --input ''{"resource_ids": ["example"]}''
+  agent_example: 'mammoth project resource-dependencies 123 --input ''{"resource_ids": ["resource-123"]}''
     --output json --no-input'
   unit_tests:
   - UT-PROJECT-RESOURCE-DEPENDENCIES
@@ -574,7 +574,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project user add --help
-  agent_example: 'mammoth project user add 123 --input ''{"user_ids": ["example"]}'' --output json --no-input'
+  agent_example: 'mammoth project user add 123 --input ''{"user_ids": ["resource-123"]}'' --output json
+    --no-input'
   unit_tests:
   - UT-PROJECT-USER-ADD
   contract_tests:
@@ -614,8 +615,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project user remove --help
-  agent_example: 'mammoth project user remove 123 --input ''{"user_ids": ["example"]}'' --output json
-    --no-input'
+  agent_example: 'mammoth project user remove 123 --input ''{"user_ids": ["resource-123"]}'' --output
+    json --no-input'
   unit_tests:
   - UT-PROJECT-USER-REMOVE
   contract_tests:

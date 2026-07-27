@@ -29,8 +29,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter create --help
-  agent_example: 'mammoth parameter create example --input ''{"param_type": "example", "value": "example"}''
-    --output json --no-input'
+  agent_example: 'mammoth parameter create ''Revenue report'' --input ''{"param_type": "sample", "value":
+    "sample"}'' --output json --no-input'
   unit_tests:
   - UT-PARAMETER-CREATE
   contract_tests:
@@ -230,7 +230,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter group create --help
-  agent_example: mammoth parameter group create example --output json --no-input
+  agent_example: mammoth parameter group create 'Revenue report' --output json --no-input
   unit_tests:
   - UT-PARAMETER-GROUP-CREATE
   contract_tests:

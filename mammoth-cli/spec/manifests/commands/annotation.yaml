@@ -29,7 +29,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth annotation comment add ANNOTATION_ID --help
-  agent_example: 'mammoth annotation comment add 123 --input ''{"body": "example"}'' --output json --no-input'
+  agent_example: 'mammoth annotation comment add 123 --input ''{"body": "sample"}'' --output json --no-input'
   unit_tests:
   - UT-ANNOTATION-COMMENT-ADD
   contract_tests:
@@ -63,8 +63,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth annotation create --help
-  agent_example: 'mammoth annotation create --input ''{"target_type": "example", "target_id": 1, "body":
-    "example"}'' --output json --no-input'
+  agent_example: 'mammoth annotation create --input ''{"target_type": "sample", "target_id": 1, "body":
+    "sample"}'' --output json --no-input'
   unit_tests:
   - UT-ANNOTATION-CREATE
   contract_tests:
@@ -178,7 +178,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth annotation update ANNOTATION_ID --help
-  agent_example: 'mammoth annotation update 123 --input ''{"status": "example"}'' --output json --no-input'
+  agent_example: 'mammoth annotation update 123 --input ''{"status": "sample"}'' --output json --no-input'
   unit_tests:
   - UT-ANNOTATION-UPDATE
   contract_tests:

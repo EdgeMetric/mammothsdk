@@ -4,9 +4,9 @@
 
 ## Upgrade the CLI
 
-The simplest path is the built-in command, which detects how the CLI was
-installed (uv tool, pipx, or pip) and upgrades it in place. It never needs
-administrator rights.
+The built-in command detects the `uv tool`, `pipx`, or `pip` installation
+method, then uses the matching upgrade path. Check first when a
+reproducible environment matters.
 
 ```bash
 mammoth upgrade --check --output json --no-input   # report installed vs latest; changes nothing
@@ -17,6 +17,13 @@ mammoth upgrade --version X.Y.Z --yes               # pin an exact version
 `--check` is read-only. The upgrade itself is a mutation with an external
 effect, so at a terminal it prompts for confirmation and in non-interactive
 (`--no-input` / machine-output) mode it requires `--yes`.
+
+After an upgrade, verify both the executable and connectivity:
+
+```bash
+mammoth --version
+mammoth doctor
+```
 
 Under the hood this runs the same command you can also run by hand:
 
