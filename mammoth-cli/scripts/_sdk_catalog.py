@@ -69,6 +69,7 @@ CLI_ONLY_COMMANDS: dict[str, dict[str, Any]] = {
     "auth.login": {
         "sdk_symbol": "mammoth_cli.context.auth.login",
         "mutation_class": "benign_mutation",
+        "agent_example": "mammoth auth login --input creds.json --output json --no-input",
         "live_exemption_reason": "Local credential storage; no mutating server call.",
     },
     "auth.logout": {
@@ -149,6 +150,11 @@ CLI_ONLY_COMMANDS: dict[str, dict[str, Any]] = {
         "sdk_symbol": "mammoth_cli.commands.schema.get",
         "mutation_class": "read",
         "live_exemption_reason": "Local manifest read.",
+    },
+    "schema.find": {
+        "sdk_symbol": "mammoth_cli.commands.schema.find",
+        "mutation_class": "read",
+        "live_exemption_reason": "Local manifest search.",
     },
     "completion.install": {
         "sdk_symbol": "mammoth_cli.commands.completion.install",

@@ -736,15 +736,23 @@ ds_config = client.connectors.create_ds_config(
 
 ## Command-line interface (mammoth-cli)
 
-`mammoth-cli` drives the same platform from your terminal — for people at a shell and for autonomous agents. In a terminal it prints readable tables; when output is piped it emits a stable JSON envelope with documented exit and error codes, so agents and CI need no special flags.
+`mammoth-cli` is the terminal companion to this SDK. Use it to inspect and move
+data, run transformations, organize work, and automate repeatable operations.
+It renders for people in a terminal and switches to a versioned JSON envelope
+when output is piped, making the same command useful in CI and agent workflows.
 
 ```bash
 uv tool install mammoth-cli      # or: pipx install mammoth-cli / pip install mammoth-cli
-mammoth auth login -w 4          # log in once; the secret goes to your OS keyring
+mammoth auth login               # prompts for API key, API secret, and workspace id
+mammoth doctor                   # verify the saved profile and endpoint
 mammoth project list             # a table in a terminal, JSON when piped
 ```
 
-It covers uploads, pipeline transformations, dashboards, automation, and administration, and it installs a bundled agent skill for Claude Code, Codex, and Cursor (`mammoth skill install`). See the [mammoth-cli](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli) directory and its [documentation](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli/docs).
+For promptless work, log in from a protected JSON file with `mammoth auth login
+--input creds.json --output json --no-input`; do not put secrets on a command
+line. The CLI also ships a bundled agent skill (`mammoth skill install`). Start
+with the [CLI README](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli)
+or its [documentation](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli/docs).
 
 ## MCP Server
 

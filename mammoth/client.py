@@ -119,10 +119,32 @@ class ViewsResource:
 
         dataset_id = self._client.pipeline.find_dataset_for_dataview(view_id)
 
-        data = self._client.dataviews.get(
-            dataset_id=dataset_id,
-            dataview_id=view_id,
-        )
+        try:
+            data = self._client.dataviews.get(
+                dataset_id=dataset_id,
+                dataview_id=view_id,
+            )
+        except MammothAPIError as error:
+            # Some restricted workspaces allow the dataset-scoped dataview
+            # listing used by the web app but deny the single-dataview metadata
+            # endpoint. The list record still carries the View state required
+            # for pipeline operations, so use it as a compatibility fallback.
+            # Preserve every other API failure, and preserve the original 403
+            # when the requested view is not present in the allowed listing.
+            if error.status_code != 403:
+                raise
+            listed = self._client.dataviews.list(dataset_id=dataset_id)
+            fallback = next(
+                (
+                    item
+                    for item in listed.get("dataviews", [])
+                    if int(item.get("id", 0)) == view_id
+                ),
+                None,
+            )
+            if fallback is None:
+                raise
+            data = fallback
         return View(self._client, data, dataset_id)
 
     def list(self, dataset_id: int) -> _list[View]:

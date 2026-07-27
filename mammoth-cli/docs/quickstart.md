@@ -2,10 +2,10 @@
 
 [Documentation index](llms.txt)
 
-The mammoth CLI drives the Mammoth Analytics platform from your shell. This
-guide runs the whole loop end to end in about two minutes. You pick a project,
-make a folder, load a sample CSV into that folder, add a calculated column,
-preview the result, and download it back as a CSV.
+This guide completes a small, isolated loop. Choose a project, create a folder,
+load a CSV, transform its default view, preview it, export it, and clean up.
+The IDs in the snippets are placeholders. Keep IDs returned by your commands;
+do not copy the example values into a shared project.
 
 Output defaults to `auto`. A terminal gets a readable table. A pipe or redirect
 gets JSON. So the examples below need no output flag.
@@ -16,10 +16,10 @@ gets JSON. So the examples below need no output flag.
 mammoth auth login
 ```
 
-The CLI prompts for your API key, then your API secret, then your workspace id.
-It saves the login in your OS keyring and reuses it on later commands. Agents
-and CI pass a file instead with `mammoth auth login --input creds.json`. See
-[authentication](authentication.md).
+The CLI prompts for your API key, API secret, and workspace id, then saves the
+login for later commands. There is no `-w` login flag. Agents and CI pass a
+protected file instead: `mammoth auth login --input creds.json --output json
+--no-input`. See [authentication](authentication.md).
 
 ## 2. Pick a working project
 
@@ -115,6 +115,27 @@ mammoth view export csv VIEW_ID
 
 The CLI runs the export, waits for it, and writes the file to the current
 directory. Choose the path with `--input '{"output_path": "./revenue.csv"}'`.
+
+## 9. Clean up the demo
+
+If this was a disposable exercise, remove the dataset you created. Deletion is
+intentional: inspect the ID first, then pass `--yes`.
+
+```bash
+mammoth dataset delete DATASET_ID --yes
+```
+
+The folder may then be empty. Delete it only if it contains no work you need:
+
+```bash
+mammoth folder delete FOLDER_ID --yes --input '{"remove_contents": false}'
+```
+
+If a command needs an input you have not seen here, ask the installed CLI:
+
+```bash
+mammoth schema get view.transform.math --output json --no-input
+```
 
 ## Where to go next
 

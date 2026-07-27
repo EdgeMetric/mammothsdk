@@ -17,6 +17,7 @@ Regeneration is deterministic: re-running must produce no diff.
 
 from __future__ import annotations
 
+import shlex
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -218,7 +219,7 @@ def build_command_record(
             return str(spec.example_value)
         return "123" if spec.type is int else "example"
 
-    positional_samples = "".join(f" {_sample(p)}" for p in positionals)
+    positional_samples = "".join(f" {shlex.quote(_sample(p))}" for p in positionals)
 
     record: dict[str, Any] = {
         "command_id": command_id,
@@ -243,8 +244,10 @@ def build_command_record(
         "contract_fixture": None,
         "required_fixture_guard": None,
         "secret_fields": list((catalog or {}).get("secret_fields") or []),
-        "human_example": f"mammoth {command_path}{required_metavars} --help",
-        "agent_example": f"mammoth {command_path}{positional_samples} --output json --no-input",
+        "human_example": (catalog or {}).get("human_example")
+        or f"mammoth {command_path}{required_metavars} --help",
+        "agent_example": (catalog or {}).get("agent_example")
+        or f"mammoth {command_path}{positional_samples} --output json --no-input",
         "unit_tests": [f"UT-{op_token}"],
         "contract_tests": [f"CT-{op_token}-HUMAN", f"CT-{op_token}-JSON", f"CT-{op_token}-ERROR"],
         "draft_test": None,
@@ -257,9 +260,10 @@ def build_command_record(
     # syntactically valid but semantically incomplete invocation.
     from mammoth_cli.commands.schema import runnable_example
 
-    record["agent_example"] = (
-        runnable_example(record, sdk_symbol, positionals) or record["agent_example"]
-    )
+    if not (catalog or {}).get("agent_example"):
+        record["agent_example"] = (
+            runnable_example(record, sdk_symbol, positionals) or record["agent_example"]
+        )
     if command_id.startswith("view.transform.") or command_id.startswith("view.draft."):
         record["draft_test"] = f"LT-{op_token}-DRAFT"
     if mutation == "reversible_pipeline":

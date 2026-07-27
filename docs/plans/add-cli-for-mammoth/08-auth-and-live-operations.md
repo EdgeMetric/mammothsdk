@@ -9,7 +9,7 @@ configuration.
 Canonical commands:
 
 ```text
-mammoth auth login [--profile NAME] --workspace ID [--server-prefix PREFIX]
+mammoth auth login [--profile NAME] [--server-prefix PREFIX]
                    [--storage auto|keyring|file] [--from-env|--input FILE|-]
 mammoth auth status [--profile NAME] [--check]
 mammoth auth profile list

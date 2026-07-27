@@ -1,5 +1,44 @@
 manifest_schema_version: 1
 commands:
+- command_id: schema.find
+  command_path: schema find
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: query
+    type: str
+    required: true
+    metavar: QUERY
+    falls_back_to_field: null
+    help: Match command names, examples, or purpose (e.g. view transform).
+  options: []
+  sdk_symbol: mammoth_cli.commands.schema.find
+  sdk_conversion: Call mammoth_cli.commands.schema.find with validated request fields.
+  request_model: SchemaFindRequest
+  result_model: SchemaFindResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local manifest search.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth schema find QUERY --help
+  agent_example: mammoth schema find 'view transform' --output json --no-input
+  unit_tests:
+  - UT-SCHEMA-FIND
+  contract_tests:
+  - CT-SCHEMA-FIND-HUMAN
+  - CT-SCHEMA-FIND-JSON
+  - CT-SCHEMA-FIND-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
 - command_id: schema.get
   command_path: schema get
   disposition: command

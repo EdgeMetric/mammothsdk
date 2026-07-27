@@ -29,8 +29,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth automation create --help
-  agent_example: 'mammoth automation create example --input ''{"description": "example", "tasks": [{"task_type":
-    "run_data_retrieval"}]}'' --output json --no-input'
+  agent_example: 'mammoth automation create ''Revenue report'' --input ''{"description": "sample", "tasks":
+    [{"task_type": "run_data_retrieval"}]}'' --output json --no-input'
   unit_tests:
   - UT-AUTOMATION-CREATE
   contract_tests:
@@ -266,7 +266,7 @@ commands:
   secret_fields: []
   human_example: mammoth automation update AUTOMATION_ID --help
   agent_example: 'mammoth automation update 123 --input ''{"patch": [{"op": "replace", "path": "details",
-    "value": "example"}]}'' --output json --no-input'
+    "value": "sample"}]}'' --output json --no-input'
   unit_tests:
   - UT-AUTOMATION-UPDATE
   contract_tests:

@@ -276,8 +276,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard chat edit DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard chat edit 123 --input ''{"body": {"params": {"prompt": "example"}}}''
-    --output json --no-input'
+  agent_example: 'mammoth dashboard chat edit 123 --input ''{"body": {"params": {"prompt": "Summarize
+    revenue by region"}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-CHAT-EDIT
   contract_tests:
@@ -352,7 +352,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard context create --help
-  agent_example: 'mammoth dashboard context create --input ''{"body": {"params": {"name": "example"}}}''
+  agent_example: 'mammoth dashboard context create --input ''{"body": {"params": {"name": "Revenue report"}}}''
     --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-CONTEXT-CREATE
@@ -394,7 +394,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard context delete CONTEXT_ID --help
-  agent_example: mammoth dashboard context delete example --output json --no-input
+  agent_example: mammoth dashboard context delete resource-123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-CONTEXT-DELETE
   contract_tests:
@@ -469,8 +469,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard context update CONTEXT_ID --help
-  agent_example: 'mammoth dashboard context update example --input ''{"body": {"params": {"name": "example"}}}''
-    --output json --no-input'
+  agent_example: 'mammoth dashboard context update resource-123 --input ''{"body": {"params": {"name":
+    "Revenue report"}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-CONTEXT-UPDATE
   contract_tests:
@@ -511,7 +511,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard create --help
-  agent_example: 'mammoth dashboard create example --input ''{"source": [1]}'' --output json --no-input'
+  agent_example: 'mammoth dashboard create ''Summarize revenue by region'' --input ''{"source": [1]}''
+    --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-CREATE
   contract_tests:
@@ -552,7 +553,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard data draft DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard data draft 123 --input ''{"sql": "example"}'' --output json --no-input'
+  agent_example: 'mammoth dashboard data draft 123 --input ''{"sql": "SELECT region, SUM(revenue) FROM
+    data GROUP BY region"}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-DATA-DRAFT
   contract_tests:
@@ -592,7 +594,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard data published DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard data published 123 --input ''{"sql": "example"}'' --output json --no-input'
+  agent_example: 'mammoth dashboard data published 123 --input ''{"sql": "SELECT region, SUM(revenue)
+    FROM data GROUP BY region"}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-DATA-PUBLISHED
   contract_tests:
@@ -675,7 +678,7 @@ commands:
   secret_fields: []
   human_example: mammoth dashboard descriptor-data DASHBOARD_ID --help
   agent_example: 'mammoth dashboard descriptor-data 123 --input ''{"body": {"params": {"descriptor_ids":
-    ["example"]}}}'' --output json --no-input'
+    ["resource-123"]}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-DESCRIPTOR-DATA
   contract_tests:
@@ -757,8 +760,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard figure-intent DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard figure-intent 123 --input ''{"body": {"params": {"intent": "example"}}}''
-    --output json --no-input'
+  agent_example: 'mammoth dashboard figure-intent 123 --input ''{"body": {"params": {"intent": "Summarize
+    revenue by region"}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-FIGURE-INTENT
   contract_tests:
@@ -838,7 +841,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard get-by-url URL --help
-  agent_example: mammoth dashboard get-by-url example --output json --no-input
+  agent_example: mammoth dashboard get-by-url https://example.com/data.csv --output json --no-input
   unit_tests:
   - UT-DASHBOARD-GET-BY-URL
   contract_tests:
@@ -884,7 +887,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard job-by-url URL JOB_ID --help
-  agent_example: mammoth dashboard job-by-url example 123 --output json --no-input
+  agent_example: mammoth dashboard job-by-url https://example.com/data.csv 123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-JOB-BY-URL
   contract_tests:
@@ -999,8 +1002,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard page plan DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard page plan 123 --input ''{"body": {"params": {"intent": "example"}}}''
-    --output json --no-input'
+  agent_example: 'mammoth dashboard page plan 123 --input ''{"body": {"params": {"intent": "Summarize
+    revenue by region"}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-PAGE-PLAN
   contract_tests:
@@ -1130,8 +1133,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard published-data-by-url URL --help
-  agent_example: 'mammoth dashboard published-data-by-url example --input ''{"body": {"params": {"widget_id":
-    "00000000-0000-4000-8000-000000000001"}}}'' --output json --no-input'
+  agent_example: 'mammoth dashboard published-data-by-url https://example.com/data.csv --input ''{"body":
+    {"params": {"widget_id": "00000000-0000-4000-8000-000000000001"}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-PUBLISHED-DATA-BY-URL
   contract_tests:
@@ -1171,7 +1174,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard published canvas URL --help
-  agent_example: mammoth dashboard published canvas example --output json --no-input
+  agent_example: mammoth dashboard published canvas https://example.com/data.csv --output json --no-input
   unit_tests:
   - UT-DASHBOARD-PUBLISHED-CANVAS
   contract_tests:
@@ -1212,8 +1215,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard published data URL --help
-  agent_example: 'mammoth dashboard published data example --input ''{"body": {"params": {"descriptor_ids":
-    ["example"]}}}'' --output json --no-input'
+  agent_example: 'mammoth dashboard published data https://example.com/data.csv --input ''{"body": {"params":
+    {"descriptor_ids": ["resource-123"]}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-PUBLISHED-DATA
   contract_tests:
@@ -1253,7 +1256,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard published og-card URL --help
-  agent_example: mammoth dashboard published og-card example --output json --no-input
+  agent_example: mammoth dashboard published og-card https://example.com/data.csv --output json --no-input
   unit_tests:
   - UT-DASHBOARD-PUBLISHED-OG-CARD
   contract_tests:
@@ -1300,7 +1303,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard published pdf-artifact URL JOB_ID --help
-  agent_example: mammoth dashboard published pdf-artifact example 123 --output json --no-input
+  agent_example: mammoth dashboard published pdf-artifact https://example.com/data.csv 123 --output json
+    --no-input
   unit_tests:
   - UT-DASHBOARD-PUBLISHED-PDF-ARTIFACT
   contract_tests:
@@ -1342,8 +1346,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard published pdf export URL --help
-  agent_example: 'mammoth dashboard published pdf export example --input ''{"body": {"params": {"data":
-    {}}}}'' --output json --no-input'
+  agent_example: 'mammoth dashboard published pdf export https://example.com/data.csv --input ''{"body":
+    {"params": {"data": {}}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-PUBLISHED-PDF-EXPORT
   contract_tests:
@@ -1384,7 +1388,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard published share-page URL --help
-  agent_example: mammoth dashboard published share-page example --output json --no-input
+  agent_example: mammoth dashboard published share-page https://example.com/data.csv --output json --no-input
   unit_tests:
   - UT-DASHBOARD-PUBLISHED-SHARE-PAGE
   contract_tests:
@@ -1425,7 +1429,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard published video-artifact URL --help
-  agent_example: mammoth dashboard published video-artifact example --output json --no-input
+  agent_example: mammoth dashboard published video-artifact https://example.com/data.csv --output json
+    --no-input
   unit_tests:
   - UT-DASHBOARD-PUBLISHED-VIDEO-ARTIFACT
   contract_tests:
@@ -1467,7 +1472,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard published video export URL --help
-  agent_example: mammoth dashboard published video export example --output json --no-input
+  agent_example: mammoth dashboard published video export https://example.com/data.csv --output json --no-input
   unit_tests:
   - UT-DASHBOARD-PUBLISHED-VIDEO-EXPORT
   contract_tests:
@@ -1514,8 +1519,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa ask DASHBOARD_ID SESSION_ID --help
-  agent_example: 'mammoth dashboard qa ask 123 123 --input ''{"body": {"params": {"question": "example"}}}''
-    --output json --no-input'
+  agent_example: 'mammoth dashboard qa ask 123 123 --input ''{"body": {"params": {"question": "Summarize
+    revenue by region"}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-QA-ASK
   contract_tests:
@@ -1562,7 +1567,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa comment create DASHBOARD_ID SESSION_ID --help
-  agent_example: 'mammoth dashboard qa comment create 123 123 --input ''{"body": {"params": {"body": "example"}}}''
+  agent_example: 'mammoth dashboard qa comment create 123 123 --input ''{"body": {"params": {"body": "sample"}}}''
     --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-QA-COMMENT-CREATE
@@ -1711,8 +1716,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard qa session create DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard qa session create 123 --input ''{"body": {"params": {"title": "example"}}}''
-    --output json --no-input'
+  agent_example: 'mammoth dashboard qa session create 123 --input ''{"body": {"params": {"title": "Revenue
+    report"}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-QA-SESSION-CREATE
   contract_tests:
@@ -1940,7 +1945,7 @@ commands:
   secret_fields: []
   human_example: mammoth dashboard qa session rename DASHBOARD_ID SESSION_ID --help
   agent_example: 'mammoth dashboard qa session rename 123 123 --input ''{"body": {"params": {"title":
-    "example"}}}'' --output json --no-input'
+    "Revenue report"}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-QA-SESSION-RENAME
   contract_tests:
@@ -1989,7 +1994,7 @@ commands:
   secret_fields: []
   human_example: mammoth dashboard qa session set-visibility DASHBOARD_ID SESSION_ID --help
   agent_example: 'mammoth dashboard qa session set-visibility 123 123 --input ''{"body": {"params": {"visibility":
-    "example"}}}'' --output json --no-input'
+    "sample"}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-QA-SESSION-SET-VISIBILITY
   contract_tests:
@@ -2238,7 +2243,7 @@ commands:
   secret_fields: []
   human_example: mammoth dashboard rls assignment set DASHBOARD_ID --help
   agent_example: 'mammoth dashboard rls assignment set 123 --input ''{"body": {"params": {"assignments":
-    [{"email": "example"}]}}}'' --output json --no-input'
+    [{"email": "analyst@example.com"}]}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-RLS-ASSIGNMENT-SET
   contract_tests:
@@ -2318,7 +2323,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard rls value list DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard rls value list 123 --input ''{"column": "example"}'' --output json
+  agent_example: 'mammoth dashboard rls value list 123 --input ''{"column": "Status"}'' --output json
     --no-input'
   unit_tests:
   - UT-DASHBOARD-RLS-VALUE-LIST
@@ -2395,7 +2400,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard signature create --help
-  agent_example: 'mammoth dashboard signature create --input ''{"body": {"params": {"name": "example"}}}''
+  agent_example: 'mammoth dashboard signature create --input ''{"body": {"params": {"name": "Revenue report"}}}''
     --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-SIGNATURE-CREATE
@@ -2437,7 +2442,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard signature delete SIGNATURE_ID --help
-  agent_example: mammoth dashboard signature delete example --output json --no-input
+  agent_example: mammoth dashboard signature delete resource-123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-SIGNATURE-DELETE
   contract_tests:
@@ -2512,8 +2517,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard signature update SIGNATURE_ID --help
-  agent_example: 'mammoth dashboard signature update example --input ''{"body": {"params": {"name": "example"}}}''
-    --output json --no-input'
+  agent_example: 'mammoth dashboard signature update resource-123 --input ''{"body": {"params": {"name":
+    "Revenue report"}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-SIGNATURE-UPDATE
   contract_tests:
@@ -2626,7 +2631,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard style custom delete STYLE_ID --help
-  agent_example: mammoth dashboard style custom delete example --output json --no-input
+  agent_example: mammoth dashboard style custom delete resource-123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-STYLE-CUSTOM-DELETE
   contract_tests:
@@ -2702,7 +2707,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard style custom update STYLE_ID --help
-  agent_example: 'mammoth dashboard style custom update example --input ''{"body": {"params": {"signals":
+  agent_example: 'mammoth dashboard style custom update resource-123 --input ''{"body": {"params": {"signals":
     {}}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-STYLE-CUSTOM-UPDATE
@@ -2772,7 +2777,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard style default set --help
-  agent_example: 'mammoth dashboard style default set --input ''{"body": {"params": {"styleId": "example"}}}''
+  agent_example: 'mammoth dashboard style default set --input ''{"body": {"params": {"styleId": "sample"}}}''
     --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-STYLE-DEFAULT-SET
@@ -2845,7 +2850,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard style extract-brand --help
-  agent_example: 'mammoth dashboard style extract-brand --input ''{"body": {"params": {"url": "example"}}}''
+  agent_example: 'mammoth dashboard style extract-brand --input ''{"body": {"params": {"url": "https://example.com/data.csv"}}}''
     --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-STYLE-EXTRACT-BRAND
@@ -2920,7 +2925,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard style token list ID --help
-  agent_example: mammoth dashboard style token list example --output json --no-input
+  agent_example: mammoth dashboard style token list resource-123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-STYLE-TOKEN-LIST
   contract_tests:
@@ -3032,7 +3037,7 @@ commands:
   secret_fields: []
   human_example: mammoth dashboard template create --help
   agent_example: 'mammoth dashboard template create --input ''{"body": {"params": {"dashboard_id": 1,
-    "title": "example"}}}'' --output json --no-input'
+    "title": "Revenue report"}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-TEMPLATE-CREATE
   contract_tests:
@@ -3073,7 +3078,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard template delete TEMPLATE_ID --help
-  agent_example: mammoth dashboard template delete example --output json --no-input
+  agent_example: mammoth dashboard template delete resource-123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-TEMPLATE-DELETE
   contract_tests:
@@ -3153,7 +3158,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard template get TEMPLATE_ID --help
-  agent_example: mammoth dashboard template get example --output json --no-input
+  agent_example: mammoth dashboard template get resource-123 --output json --no-input
   unit_tests:
   - UT-DASHBOARD-TEMPLATE-GET
   contract_tests:
@@ -3264,8 +3269,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard template rename TEMPLATE_ID --help
-  agent_example: 'mammoth dashboard template rename example --input ''{"body": {"params": {"title": "example"}}}''
-    --output json --no-input'
+  agent_example: 'mammoth dashboard template rename resource-123 --input ''{"body": {"params": {"title":
+    "Revenue report"}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-TEMPLATE-RENAME
   contract_tests:
@@ -3385,7 +3390,7 @@ commands:
   secret_fields: []
   human_example: mammoth dashboard update DASHBOARD_ID --help
   agent_example: 'mammoth dashboard update 123 --input ''{"patch": [{"op": "add", "path": "intent", "value":
-    "example"}]}'' --output json --no-input'
+    "sample"}]}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-UPDATE
   contract_tests:
@@ -3420,8 +3425,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard v3 generate --help
-  agent_example: 'mammoth dashboard v3 generate --input ''{"body": {"params": {"intent": "example", "dataview_id":
-    1}}}'' --output json --no-input'
+  agent_example: 'mammoth dashboard v3 generate --input ''{"body": {"params": {"intent": "Summarize revenue
+    by region", "dataview_id": 1}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-V3-GENERATE
   contract_tests:
@@ -3586,8 +3591,9 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard widget-data-by-url URL --help
-  agent_example: 'mammoth dashboard widget-data-by-url example --input ''{"body": {"params": {"widgets":
-    [{"widget_id": "00000000-0000-4000-8000-000000000001"}]}}}'' --output json --no-input'
+  agent_example: 'mammoth dashboard widget-data-by-url https://example.com/data.csv --input ''{"body":
+    {"params": {"widgets": [{"widget_id": "00000000-0000-4000-8000-000000000001"}]}}}'' --output json
+    --no-input'
   unit_tests:
   - UT-DASHBOARD-WIDGET-DATA-BY-URL
   contract_tests:

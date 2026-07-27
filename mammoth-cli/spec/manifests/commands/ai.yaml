@@ -29,7 +29,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth ai condition generate DATASET_ID --help
-  agent_example: 'mammoth ai condition generate 123 --input ''{"intent": "example"}'' --output json --no-input'
+  agent_example: 'mammoth ai condition generate 123 --input ''{"intent": "Summarize revenue by region"}''
+    --output json --no-input'
   unit_tests:
   - UT-AI-CONDITION-GENERATE
   contract_tests:
@@ -69,8 +70,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth ai expression generate DATASET_ID --help
-  agent_example: 'mammoth ai expression generate 123 --input ''{"intent": "example", "mode": "example"}''
-    --output json --no-input'
+  agent_example: 'mammoth ai expression generate 123 --input ''{"intent": "Summarize revenue by region",
+    "mode": "sample"}'' --output json --no-input'
   unit_tests:
   - UT-AI-EXPRESSION-GENERATE
   contract_tests:
@@ -110,7 +111,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth ai sql generate --help
-  agent_example: mammoth ai sql generate example --output json --no-input
+  agent_example: mammoth ai sql generate 'Summarize revenue by region' --output json --no-input
   unit_tests:
   - UT-AI-SQL-GENERATE
   contract_tests:

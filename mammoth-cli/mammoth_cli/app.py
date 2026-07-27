@@ -44,6 +44,97 @@ from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
 
 OUTPUT_MODES = VALID_OUTPUTS
 
+# Root help is the first piece of discovery most people (and agents) see.  The
+# command tree itself remains manifest-driven; these labels only organize the
+# existing top-level families into a small set of tasks rather than a flat list
+# of several dozen nouns.
+_GROUP_DESCRIPTIONS = {
+    "activity": "Inspect workspace activity and audit history.",
+    "addon": "Manage workspace add-ons.",
+    "agent": "Work with Mammoth agent sessions and messages.",
+    "ai": "Generate AI-assisted expressions and conditions.",
+    "annotation": "Manage annotations on Mammoth resources.",
+    "auth": "Sign in, sign out, and inspect credentials.",
+    "automation": "Create and manage automations.",
+    "batch": "Run and inspect batch operations.",
+    "billing": "Manage billing and hosted checkout flows.",
+    "browse": "Browse projects and workspace resources.",
+    "capability": "Discover API operation support and policies.",
+    "client-app": "Manage client applications.",
+    "completion": "Install or print shell completion.",
+    "config": "Read and update local CLI configuration.",
+    "connector": "Manage data connectors and connector profiles.",
+    "context": "Inspect and select the active project context.",
+    "dashboard": "Build, query, and publish dashboards.",
+    "data-app": "Create and manage data applications.",
+    "dataset": "Create, inspect, and manage datasets.",
+    "external-key": "Manage external keys.",
+    "file": "Upload and manage source files.",
+    "folder": "Organize folders and their contents.",
+    "job": "Inspect and wait for asynchronous jobs.",
+    "notification": "Manage workspace notifications.",
+    "parameter": "Manage parameters and parameter groups.",
+    "project": "Create and manage projects.",
+    "report": "Create and manage reports.",
+    "schedule": "Manage scheduled work.",
+    "schema": "Find concise command input guidance or fetch full schemas.",
+    "skill": "Install and manage the Mammoth agent skill.",
+    "snippet": "Manage reusable snippets.",
+    "support": "Manage support and administration resources.",
+    "template": "Manage templates.",
+    "trash": "Inspect, restore, and remove trashed resources.",
+    "user": "Manage users and account settings.",
+    "view": "Transform, query, and publish data views.",
+    "webhook": "Manage webhooks.",
+    "workflow": "Create and manage workflows.",
+    "workspace": "Manage workspace settings and members.",
+}
+
+_ROOT_HELP_PANELS = {
+    "auth": "Start here",
+    "context": "Start here",
+    "doctor": "Start here",
+    "project": "Start here",
+    "schema": "Discover commands",
+    "capability": "Discover commands",
+    "browse": "Discover commands",
+    "dataset": "Work with data",
+    "file": "Work with data",
+    "folder": "Work with data",
+    "view": "Work with data",
+    "job": "Work with data",
+    "batch": "Work with data",
+    "dashboard": "Build and share",
+    "data-app": "Build and share",
+    "report": "Build and share",
+    "template": "Build and share",
+    "snippet": "Build and share",
+    "automation": "Automate and integrate",
+    "schedule": "Automate and integrate",
+    "webhook": "Automate and integrate",
+    "workflow": "Automate and integrate",
+    "connector": "Automate and integrate",
+    "addon": "Manage resources",
+    "agent": "Manage resources",
+    "ai": "Manage resources",
+    "annotation": "Manage resources",
+    "billing": "Manage resources",
+    "client-app": "Manage resources",
+    "external-key": "Manage resources",
+    "notification": "Manage resources",
+    "parameter": "Manage resources",
+    "trash": "Manage resources",
+    "user": "Manage resources",
+    "workspace": "Manage resources",
+    "activity": "Manage resources",
+    "support": "Manage resources",
+    "config": "CLI and agent tools",
+    "completion": "CLI and agent tools",
+    "skill": "CLI and agent tools",
+    "upgrade": "CLI and agent tools",
+    "version": "CLI and agent tools",
+}
+
 # Typer (pinned >=0.27,<0.28) ships a *vendored* click fork (``typer._click``)
 # and does NOT depend on the external ``click`` package. Command resolution
 # raises that fork's ``UsageError``/``Abort``, so the interceptor keys on the
@@ -177,29 +268,56 @@ def _shared_option_params() -> list[inspect.Parameter]:
                     "-o",
                     help="Output format. 'auto' picks a table on a terminal, JSON when piped.",
                     metavar="|".join(SELECTABLE_OUTPUTS),
+                    rich_help_panel="Output and automation",
                 ),
             ],
         ),
         opt(
             "profile",
             None,
-            Annotated[str | None, typer.Option("--profile", help="Credential profile name.")],
+            Annotated[
+                str | None,
+                typer.Option(
+                    "--profile",
+                    help="Credential profile name.",
+                    rich_help_panel="Context and timeouts",
+                ),
+            ],
         ),
         opt(
             "project",
             None,
-            Annotated[int | None, typer.Option("--project", help="Active project id override.")],
+            Annotated[
+                int | None,
+                typer.Option(
+                    "--project",
+                    help="Active project id override.",
+                    rich_help_panel="Context and timeouts",
+                ),
+            ],
         ),
         opt(
             "timeout",
             None,
-            Annotated[float | None, typer.Option("--timeout", help="Per-request timeout seconds.")],
+            Annotated[
+                float | None,
+                typer.Option(
+                    "--timeout",
+                    help="Per-request timeout seconds.",
+                    rich_help_panel="Context and timeouts",
+                ),
+            ],
         ),
         opt(
             "job_timeout",
             None,
             Annotated[
-                float | None, typer.Option("--job-timeout", help="Job wait timeout seconds.")
+                float | None,
+                typer.Option(
+                    "--job-timeout",
+                    help="Job wait timeout seconds.",
+                    rich_help_panel="Context and timeouts",
+                ),
             ],
         ),
         opt(
@@ -207,36 +325,73 @@ def _shared_option_params() -> list[inspect.Parameter]:
             None,
             Annotated[
                 float | None,
-                typer.Option("--pipeline-timeout", help="Pipeline wait timeout seconds."),
+                typer.Option(
+                    "--pipeline-timeout",
+                    help="Pipeline wait timeout seconds.",
+                    rich_help_panel="Context and timeouts",
+                ),
             ],
         ),
         opt(
             "color",
             "auto",
             Annotated[
-                str, typer.Option("--color", help="Color policy.", metavar="|".join(COLOR_MODES))
+                str,
+                typer.Option(
+                    "--color",
+                    help="Color policy.",
+                    metavar="|".join(COLOR_MODES),
+                    rich_help_panel="Output and automation",
+                ),
             ],
         ),
         opt(
             "no_input",
             False,
-            Annotated[bool, typer.Option("--no-input", help="Never prompt; fail instead.")],
+            Annotated[
+                bool,
+                typer.Option(
+                    "--no-input",
+                    help="Never prompt; fail instead.",
+                    rich_help_panel="Output and automation",
+                ),
+            ],
         ),
         opt(
             "no_progress",
             False,
-            Annotated[bool, typer.Option("--no-progress", help="Never render progress.")],
+            Annotated[
+                bool,
+                typer.Option(
+                    "--no-progress",
+                    help="Never render progress.",
+                    rich_help_panel="Output and automation",
+                ),
+            ],
         ),
         opt(
             "debug",
             False,
-            Annotated[bool, typer.Option("--debug", help="Emit diagnostic detail to stderr.")],
+            Annotated[
+                bool,
+                typer.Option(
+                    "--debug",
+                    help="Emit diagnostic detail to stderr.",
+                    rich_help_panel="Output and automation",
+                ),
+            ],
         ),
         opt(
             "yes",
             False,
             Annotated[
-                bool, typer.Option("--yes", "-y", help="Confirm a mutation without prompting.")
+                bool,
+                typer.Option(
+                    "--yes",
+                    "-y",
+                    help="Confirm a mutation without prompting.",
+                    rich_help_panel="Safety",
+                ),
             ],
         ),
         opt(
@@ -245,7 +400,9 @@ def _shared_option_params() -> list[inspect.Parameter]:
             Annotated[
                 str | None,
                 typer.Option(
-                    "--confirm", help="Exact target name required for high-impact actions."
+                    "--confirm",
+                    help="Exact target name required for high-impact actions.",
+                    rich_help_panel="Safety",
                 ),
             ],
         ),
@@ -255,7 +412,9 @@ def _shared_option_params() -> list[inspect.Parameter]:
             Annotated[
                 str | None,
                 typer.Option(
-                    "--input", help="Strict JSON/YAML request document, or '-' for stdin."
+                    "--input",
+                    help="Strict JSON/YAML request document, or '-' for stdin.",
+                    rich_help_panel="Request input",
                 ),
             ],
         ),
@@ -264,7 +423,11 @@ def _shared_option_params() -> list[inspect.Parameter]:
             None,
             Annotated[
                 str | None,
-                typer.Option("--input-format", help="Required for stdin: json or yaml."),
+                typer.Option(
+                    "--input-format",
+                    help="Required for stdin: json or yaml.",
+                    rich_help_panel="Request input",
+                ),
             ],
         ),
     ]
@@ -409,7 +572,11 @@ def build_app() -> typer.Typer:
     """Construct the full Typer command tree from the command manifests."""
     root = typer.Typer(
         name="mammoth",
-        help="Command-line interface for the Mammoth Analytics platform.",
+        help=(
+            "Command-line interface for the Mammoth Analytics platform.\n\n"
+            "Start with 'mammoth doctor' to check access, 'mammoth schema find QUERY' "
+            "to locate a command, and 'mammoth schema get COMMAND_ID' for its full input schema."
+        ),
         no_args_is_help=True,
         add_completion=True,
         cls=_EnvelopeGroup,
@@ -451,6 +618,7 @@ def build_app() -> typer.Typer:
             sub.callback()(_build_leaf(command_id, is_group_callback=True))
         else:
             sub = typer.Typer(
+                help=_GROUP_DESCRIPTIONS.get(tokens[0], f"Commands for {' '.join(tokens)}."),
                 no_args_is_help=True,
                 context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
             )
@@ -461,7 +629,13 @@ def build_app() -> typer.Typer:
             return groups[tokens]
         parent = _group_for(tokens[:-1])
         sub = _make_group(tokens)
-        parent.add_typer(sub, name=tokens[-1])
+        top_level = tokens[0]
+        parent.add_typer(
+            sub,
+            name=tokens[-1],
+            help=_GROUP_DESCRIPTIONS.get(top_level, f"Commands for {' '.join(tokens)}."),
+            rich_help_panel=_ROOT_HELP_PANELS.get(top_level) if len(tokens) == 1 else None,
+        )
         groups[tokens] = sub
         return sub
 
@@ -481,6 +655,7 @@ def build_app() -> typer.Typer:
         _group_for(tokens[:-1]).command(
             name=tokens[-1],
             help=_command_help(command_id, record),
+            rich_help_panel=_ROOT_HELP_PANELS.get(tokens[0]) if len(tokens) == 1 else None,
             context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
         )(callback)
 

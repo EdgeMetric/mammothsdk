@@ -8,6 +8,7 @@ value is ever included. The command never mutates anything and never prompts.
 
 from __future__ import annotations
 
+import os
 import platform
 import sys
 from typing import Any
@@ -39,6 +40,21 @@ def doctor(invocation: Invocation) -> HandlerResult:
     """
     profile_name = invocation.profile or profiles.get_selected()
     checks: list[dict[str, Any]] = []
+
+    config_directory = profiles.config_dir()
+    writable_target = config_directory if config_directory.exists() else config_directory.parent
+    config_ok = os.access(writable_target, os.W_OK | os.X_OK)
+    checks.append(
+        _check(
+            "config_directory",
+            config_ok,
+            (
+                f"{config_directory} is writable"
+                if config_ok
+                else f"cannot write configuration below {writable_target}"
+            ),
+        )
+    )
 
     record = profiles.get_profile(profile_name)
     checks.append(
@@ -78,6 +94,14 @@ def doctor(invocation: Invocation) -> HandlerResult:
             connection_detail = error.code
     checks.append(_check("connection", connection_ok, connection_detail))
 
+    recommendations: list[str] = []
+    if record is None or not credentials.has_credentials(profile_name):
+        recommendations.append("mammoth auth login")
+    elif resolved_project(invocation) is None:
+        recommendations.append("mammoth context project use PROJECT_ID")
+    if not connection_ok and auth_ok:
+        recommendations.append("mammoth doctor --debug --output json --no-input")
+
     data = {
         "cli_version": __version__,
         "python_version": platform.python_version(),
@@ -85,6 +109,7 @@ def doctor(invocation: Invocation) -> HandlerResult:
         "profile": profile_name,
         "project_id": resolved_project(invocation),
         "checks": checks,
+        "recommendations": recommendations,
         "ok": all(c["ok"] for c in checks),
     }
     return data, {"profile": profile_name, "project_id": resolved_project(invocation)}

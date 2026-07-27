@@ -63,7 +63,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing hosted-page --help
-  agent_example: mammoth billing hosted-page example --output json --no-input
+  agent_example: mammoth billing hosted-page sample --output json --no-input
   unit_tests:
   - UT-BILLING-HOSTED-PAGE
   contract_tests:
@@ -239,8 +239,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe checkout-url --help
-  agent_example: 'mammoth billing stripe checkout-url --input ''{"success_url": "example", "cancel_url":
-    "example"}'' --output json --no-input'
+  agent_example: 'mammoth billing stripe checkout-url --input ''{"success_url": "https://example.com/data.csv",
+    "cancel_url": "https://example.com/data.csv"}'' --output json --no-input'
   unit_tests:
   - UT-BILLING-STRIPE-CHECKOUT-URL
   contract_tests:
@@ -423,7 +423,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe payment-method delete PAYMENT_METHOD_ID --help
-  agent_example: mammoth billing stripe payment-method delete example --output json --no-input
+  agent_example: mammoth billing stripe payment-method delete resource-123 --output json --no-input
   unit_tests:
   - UT-BILLING-STRIPE-PAYMENT-METHOD-DELETE
   contract_tests:
@@ -499,7 +499,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe payment-method set-default PAYMENT_METHOD_ID --help
-  agent_example: mammoth billing stripe payment-method set-default example --output json --no-input
+  agent_example: mammoth billing stripe payment-method set-default resource-123 --output json --no-input
   unit_tests:
   - UT-BILLING-STRIPE-PAYMENT-METHOD-SET-DEFAULT
   contract_tests:
@@ -805,7 +805,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing subscription update --help
-  agent_example: 'mammoth billing subscription update --input ''{"patch": [{"example": "example"}]}''
+  agent_example: 'mammoth billing subscription update --input ''{"patch": [{"sample_key": "Status"}]}''
     --output json --no-input'
   unit_tests:
   - UT-BILLING-SUBSCRIPTION-UPDATE

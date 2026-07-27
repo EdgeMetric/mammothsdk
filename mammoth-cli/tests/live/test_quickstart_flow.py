@@ -32,17 +32,11 @@ _SAMPLE_CSV_URL = "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"
 
 # Response-shape keys parsed here, named to avoid magic strings.
 _DATA_KEY = "data"
-_JOB_ID_KEY = "job_id"
-_JOB_KEY = "job"
-_RESPONSE_KEY = "response"
-_DS_ID_KEY = "ds_id"
+_STATUS_KEY = "status"
+_DATASET_ID_KEY = "dataset_id"
 _COLUMNS_KEY = "columns"
 _DATAVIEWS_KEY = "dataviews"
-_METADATA_KEY = "metadata"
-_DISPLAY_NAME_KEY = "display_name"
-_TYPE_KEY = "type"
 _ID_KEY = "id"
-_NUMERIC_TYPE = "NUMERIC"
 
 _INTERNAL_COL_RE = re.compile(r"^column_\d+$")
 
@@ -96,50 +90,38 @@ def test_quickstart_flow_end_to_end(
             if isinstance(status, dict) and int(status.get("status_code", 0)) >= 500:
                 pytest.skip(f"tenant could not ingest the sample URL (server-side): {created}")
             pytest.fail(f"dataset create failed client-side: {created}")
-        job_id = int(created[_DATA_KEY][_JOB_ID_KEY])
-
-        # 3) Wait for the ingestion job; it carries the new dataset id.
-        job = _run(["job", "wait", str(job_id)], env)[_DATA_KEY]
-        job_body = job.get(_JOB_KEY, job)
-        dataset_id = int(job_body[_RESPONSE_KEY][_DS_ID_KEY])
+        # 3) Dataset create has been an ``always_wait`` command since 1.0.6. Its
+        # completed response gives the dataset id directly; polling the job a
+        # second time would test an obsolete quickstart story instead.
+        created_data = created[_DATA_KEY]
+        assert created_data[_STATUS_KEY] == "ready", created_data
+        dataset_id = int(created_data[_DATASET_ID_KEY])
 
         # 4) Find the dataset's default view.
         views = _run(["view", "list", str(dataset_id)], env)[_DATA_KEY][_DATAVIEWS_KEY]
         assert views, "dataset has no default view"
         view_id = int(views[0][_ID_KEY])
 
-        # 5) Column metadata drives a schema-robust transformation: double the
-        #    first NUMERIC column (by its DISPLAY name), else filter non-empty.
-        meta = _run(["view", "get", str(view_id)], env)[_DATA_KEY].get(_METADATA_KEY) or []
-        numeric = next(
-            (c[_DISPLAY_NAME_KEY] for c in meta
-             if isinstance(c, dict) and c.get(_TYPE_KEY) == _NUMERIC_TYPE
-             and isinstance(c.get(_DISPLAY_NAME_KEY), str)),
-            None,
+        # 5) Exercise the exact transform shown in the public quickstart. Avoid
+        # a separate metadata endpoint: the release tenant intentionally denies
+        # that administrative read, while transforms and previews are supported.
+        transformed_column = "revenue"
+        _run(
+            [
+                "view",
+                "transform",
+                "math",
+                str(view_id),
+                "--input",
+                json.dumps(
+                    {
+                        "expression": "quantity_sold * unit_price",
+                        "new_column": transformed_column,
+                    }
+                ),
+            ],
+            env,
         )
-        first_display = next(
-            (c[_DISPLAY_NAME_KEY] for c in meta
-             if isinstance(c, dict) and isinstance(c.get(_DISPLAY_NAME_KEY), str)),
-            None,
-        )
-        assert first_display and not _INTERNAL_COL_RE.match(first_display), (
-            f"metadata should expose display names, got {first_display!r}"
-        )
-        transformed_column = "doubled"
-        if numeric is not None:
-            _run(["view", "transform", "math", str(view_id),
-                  "--input", json.dumps({"expression": f"{numeric} * 2",
-                                         "new_column": transformed_column})], env)
-            # The metadata now reflects the latest pipeline sequence, so the
-            # column a transform just added is present without any extra step.
-            after = _run(["view", "get", str(view_id)], env)[_DATA_KEY].get(_METADATA_KEY) or []
-            names = [c.get(_DISPLAY_NAME_KEY) for c in after if isinstance(c, dict)]
-            assert transformed_column in names, f"transformed column missing: {names}"
-        else:
-            transformed_column = None
-            _run(["view", "transform", "filter", str(view_id),
-                  "--input", json.dumps({"condition": {"column": first_display,
-                                                       "operator": "IS_NOT_EMPTY"}})], env)
 
         # 6) Preview with no --input and no dataset id: default 50 rows and
         #    *every* column, by display name — never internal column_N ids,
@@ -151,10 +133,9 @@ def test_quickstart_flow_end_to_end(
             f"preview leaked internal column ids: {cols}"
         )
         assert "hash" not in cols, f"preview leaked the system hash column: {cols}"
-        if transformed_column is not None:
-            assert transformed_column in cols, (
-                f"preview missing the transformed column {transformed_column!r}: {cols}"
-            )
+        assert transformed_column in cols, (
+            f"preview missing the transformed column {transformed_column!r}: {cols}"
+        )
 
         # 7) Export the view to a local CSV file (explicit path for cleanup).
         out = tmp_path / "quickstart_export.csv"

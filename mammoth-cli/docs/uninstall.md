@@ -44,3 +44,7 @@ Non-secret settings live under the platform config directory
 file fallback lives beside them with `0600` permissions. Delete that directory
 to remove profiles and settings. Credentials stored in the OS keyring are
 removed by `mammoth auth logout --all --yes` or through your keyring tool.
+
+Before deleting configuration, make sure no scheduled CI job relies on the
+profile. Prefer `mammoth auth logout --all --yes` first: it removes stored
+credentials while leaving the remaining local settings inspectable.

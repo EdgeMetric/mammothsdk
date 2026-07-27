@@ -2,9 +2,9 @@
 
 [Documentation index](llms.txt)
 
-Every session starts the same way: run `mammoth auth login` once. The CLI keeps
-your secret in the OS keyring and reuses it on later commands. There is no
-environment-variable shortcut. A stored login is the only way to authenticate.
+Every session starts with `mammoth auth login`. The CLI stores a profile and
+reuses it on later commands. Authentication is deliberately explicit: there is
+no environment-variable shortcut and no workspace `-w` login flag.
 
 New here? Install first with the [installation guide](installation.md), then
 follow the [quick start](quickstart.md).
@@ -79,6 +79,9 @@ You can also pipe the document straight from stdin:
 cat creds.json | mammoth auth login --input - --input-format json --output json --no-input
 ```
 
+Remove or securely rotate the input file once your runner has stored the
+profile. Do not place the JSON in shell history, a repository, or build logs.
+
 ## Credential precedence
 
 The CLI resolves credentials in a short, fixed order:
@@ -135,6 +138,10 @@ endpoint in use. Add `--check` to test a live authenticated request:
 ```bash
 mammoth auth status --check
 ```
+
+When that check fails, start with `mammoth doctor`; it reports configuration and
+connectivity without displaying secrets. See [troubleshooting](troubleshooting.md)
+for the exit code and recovery path.
 
 Remove a single profile when you no longer need it:
 
