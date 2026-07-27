@@ -6,23 +6,34 @@ Install `mammoth-cli` as an isolated command-line tool, then confirm that the
 `mammoth` executable is on your PATH. Choose one installation method; do not
 install the same CLI with more than one tool manager.
 
-## Recommended: uv tool
+## One-line installer (recommended)
 
-Linux/macOS quick install:
+This is the shortest path and needs no prerequisites. It installs `uv` if you do
+not have it, the `mammoth` CLI, and the bundled agent skill.
+
+Linux and macOS:
 
 ```sh
 curl -fsSL https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.sh | sh
 ```
 
-Windows PowerShell quick install:
+Windows PowerShell:
 
 ```powershell
 irm https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.ps1 | iex
 ```
 
+Confirm the result:
+
+```bash
+mammoth --version
+```
+
 These one-line commands execute downloaded code. For a verified install,
 download the installer and `SHA256SUMS` first, verify its SHA-256 entry and the
 Sigstore bundle attached to the release, inspect the script, then execute it.
+
+## With uv
 
 ```bash
 uv tool install mammoth-cli

@@ -15,6 +15,7 @@ positionals and options are added per family as each handler is implemented.
 from __future__ import annotations
 
 import inspect
+import re
 import sys
 from collections.abc import Callable, Sequence
 from functools import cache
@@ -143,6 +144,14 @@ _ROOT_HELP_PANELS = {
 _USAGE_ERRORS: tuple[type[BaseException], ...] = (_typer_click_exceptions.UsageError,)
 _ABORT_ERRORS: tuple[type[BaseException], ...] = (_typer_click_exceptions.Abort,)
 
+# Raised by a group invoked with no subcommand (``no_args_is_help``). Click has
+# already printed the help text by then, so it carries a deliberately *empty*
+# message -- which would reach an agent as a ``usage_error`` saying nothing.
+_NO_ARGS_ERROR: type[BaseException] | None = getattr(
+    _typer_click_exceptions, "NoArgsIsHelpError", None
+)
+_NO_SUCH_COMMAND = re.compile(r"No such command '(?P<name>[^']*)'")
+
 
 def _output_mode_from_argv(argv: Sequence[str] | None) -> str:
     """Recover the requested ``--output`` mode from raw argv tokens.
@@ -170,6 +179,117 @@ def _output_mode_from_argv(argv: Sequence[str] | None) -> str:
             mode = token[2:]
         index += 1
     return resolve_output(mode, is_tty=sys.stdout.isatty())
+
+
+@cache
+def _global_option_flags() -> tuple[frozenset[str], frozenset[str]]:
+    """Return every global option spelling, and the subset that takes a value.
+
+    Derived from :func:`_shared_option_params` so the two stay in lockstep: a
+    global option added there is recognized here without a second edit. Typer
+    stores the first declaration string in ``default`` and any alias in
+    ``param_decls``, so both are collected.
+    """
+    every: set[str] = set()
+    valued: set[str] = set()
+    for param in _shared_option_params():
+        decls: list[str] = []
+        for meta in getattr(param.annotation, "__metadata__", ()):
+            first = getattr(meta, "default", None)
+            if isinstance(first, str) and first.startswith("-"):
+                decls.append(first)
+            decls.extend(d for d in getattr(meta, "param_decls", None) or () if d.startswith("-"))
+        if not decls:
+            continue
+        every.update(decls)
+        # A boolean flag takes no value, so it must not swallow the next token
+        # when the corrected command line is rebuilt.
+        if getattr(param.annotation, "__origin__", None) is not bool:
+            valued.update(decls)
+    return frozenset(every), frozenset(valued)
+
+
+def _corrected_command(tokens: Sequence[str]) -> str | None:
+    """Rebuild an invocation with leading global options moved after the command.
+
+    ``mammoth --profile prod doctor`` becomes ``mammoth doctor --profile prod``.
+    Returns None when there is nothing to move or nothing to move it behind.
+    """
+    every, valued = _global_option_flags()
+    leading: list[str] = []
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        name = token.split("=", 1)[0]
+        if name not in every:
+            break
+        leading.append(token)
+        index += 1
+        if "=" not in token and name in valued and index < len(tokens):
+            leading.append(tokens[index])
+            index += 1
+    rest = list(tokens[index:])
+    if not leading or not rest:
+        return None
+    return " ".join(["mammoth", *rest, *leading])
+
+
+def _usage_error_report(error: Any, tokens: Sequence[str]) -> CliError | None:
+    """Classify a usage error whose own Click message is empty or misleading.
+
+    Returns None when Click's message already reads well, so the generic
+    ``usage_error`` envelope and Click's own human rendering are kept.
+    """
+    if _NO_ARGS_ERROR is not None and isinstance(error, _NO_ARGS_ERROR):
+        context = getattr(error, "ctx", None)
+        path = getattr(context, "command_path", None) or "mammoth"
+        # The root group is the one with no parent context; the program name
+        # itself can contain spaces (``python -m mammoth_cli``), so it is not a
+        # reliable signal.
+        is_root = context is not None and getattr(context, "parent", None) is None
+        subject = "command" if is_root else "subcommand"
+        # No recovery command: the caller has to choose a command, and there is
+        # no single runnable one to replay. The message and hint carry it.
+        return CliError(
+            code="usage_error",
+            message=f"No {subject} given for '{path}'.",
+            exit_status=EXIT_USAGE,
+            hint=f"Run '{path} --help' to list the available {subject}s.",
+            details={"command_path": path},
+        )
+
+    match = _NO_SUCH_COMMAND.search(error.format_message() or "")
+    if match is None:
+        return None
+    name = match.group("name").split("=", 1)[0]
+    if not name.startswith("-") or name not in _global_option_flags()[0]:
+        return None
+    # Only leaf commands declare the global options, so a group reads one as a
+    # subcommand name and reports a misleading "No such command '--profile'".
+    context = getattr(error, "ctx", None)
+    path = getattr(context, "command_path", None) or "mammoth"
+    if context is not None and getattr(context, "parent", None) is not None:
+        # The option sits after a group that still needs a subcommand.
+        return CliError(
+            code="usage_error",
+            message=f"'{path}' is a command group; it needs a subcommand before '{name}'.",
+            exit_status=EXIT_USAGE,
+            hint=f"Run '{path} --help' to list its subcommands.",
+            details={"option": name, "command_path": path},
+        )
+    corrected = _corrected_command(tokens)
+    return CliError(
+        code="usage_error",
+        message=f"Global option '{name}' must come after the command, not before it.",
+        exit_status=EXIT_USAGE,
+        hint=(
+            f"Try: {corrected}"
+            if corrected
+            else "Every command declares the global options itself, so they follow the command."
+        ),
+        details={"option": name},
+        recovery_commands=[corrected] if corrected else [],
+    )
 
 
 class _EnvelopeGroup(TyperGroup):
@@ -222,20 +342,33 @@ class _EnvelopeGroup(TyperGroup):
         their real requiredness) or by a handler that reads it from
         ``extra_args``. Every other usage error (unknown command, bad option or
         argument value, an id read as a subcommand) stays ``usage_error``.
+
+        Two Click messages are unusable as-is and are replaced by
+        :func:`_usage_error_report`: the empty one a group raises when invoked
+        with no subcommand, and the "No such command '--profile'" a global
+        option written before the command produces.
         """
+        tokens = list(argv) if argv is not None else sys.argv[1:]
+        report = _usage_error_report(error, tokens)
         if _output_mode_from_argv(argv) in MACHINE_OUTPUTS:
-            missing = isinstance(error, _typer_click_exceptions.MissingParameter)
-            executor.emit_error(
-                CliError(
+            if report is None:
+                missing = isinstance(error, _typer_click_exceptions.MissingParameter)
+                report = CliError(
                     code="missing_argument" if missing else "usage_error",
                     message=error.format_message(),
                     exit_status=EXIT_USAGE,
                     hint="Check the command schema with 'mammoth schema get'.",
-                ),
-                machine=True,
-            )
-        else:
+                )
+            executor.emit_error(report, machine=True)
+        elif report is None:
             error.show()
+        else:
+            typer.echo(f"Error: {report.message}", err=True)
+            # A no-subcommand error arrives with the help text already on
+            # screen, so repeating "run --help" below it would be noise.
+            no_args = _NO_ARGS_ERROR is not None and isinstance(error, _NO_ARGS_ERROR)
+            if report.hint and not no_args:
+                typer.echo(report.hint, err=True)
 
 
 def _version_callback(value: bool) -> None:
