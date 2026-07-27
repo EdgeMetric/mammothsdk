@@ -83,7 +83,7 @@ commands:
   result_model: DatasetCreateResult
   mutation_class: benign_mutation
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
   live_test: LT-DATASET-CREATE

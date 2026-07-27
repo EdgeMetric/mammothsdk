@@ -251,6 +251,34 @@ def test_upload_with_no_files_omits_files_kwarg(fake_service: FakeMammothService
     assert fake_service.call_log == [(_UPLOAD, {})]
 
 
+def test_upload_reports_ready_dataset(fake_service: FakeMammothService) -> None:
+    # The SDK waits and returns the new dataset id as a bare int; the handler
+    # labels it so the output reads as a finished dataset, not a raw number.
+    fake_service.responses[_UPLOAD] = 303694
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv"]))
+    assert data == {"status": "ready", "dataset_ids": [303694], "dataset_id": 303694}
+
+
+def test_upload_reports_multiple_dataset_ids(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_UPLOAD] = [11, 22]
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv", "b.csv"]))
+    assert data == {"status": "ready", "dataset_ids": [11, 22]}
+
+
+def test_upload_without_wait_returns_raw_handle(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # With wait_for_completion=false the SDK returns a bare job id; the handler
+    # passes it through unchanged rather than claiming a ready dataset.
+    fake_service.responses[_UPLOAD] = 99
+    doc = tmp_path / "in.json"
+    doc.write_text(
+        json.dumps({"files": ["a.csv"], "wait_for_completion": False}), encoding="utf-8"
+    )
+    data, _ = file_cmd.file_upload(_inv("file.upload", input_file=str(doc)))
+    assert data == 99
+
+
 def test_upload_folder_requires_folder_path(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         file_cmd.file_upload_folder(_inv("file.upload-folder"))

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mammoth-cli"
-version = "1.0.5"
+version = "1.0.6"
 description = "Command-line interface for the Mammoth Analytics platform"
 authors = ["Mammoth Analytics <support@mammoth.io>"]
 readme = "README.md"

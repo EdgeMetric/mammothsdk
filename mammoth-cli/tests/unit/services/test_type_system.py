@@ -59,6 +59,32 @@ def test_resource_reference_rejects_bool_and_non_numeric() -> None:
         validate_value("not-a-number", int | View, "foreign_view")
 
 
+def test_string_field_coerces_json_number() -> None:
+    # Servers return id-like fields (e.g. a folder resource_id) as numbers, but
+    # the SDK types the input as a string; a pasted number is coerced.
+    assert validate_value(916050, str, "folder_resource_id") == "916050"
+    assert validate_value(916050.0, str, "folder_resource_id") == "916050"
+    assert validate_value("916050", str, "folder_resource_id") == "916050"
+
+
+def test_string_field_rejects_bool_and_non_integral() -> None:
+    with pytest.raises(TypeValidationError):
+        validate_value(True, str, "folder_resource_id")
+    with pytest.raises(TypeValidationError):
+        validate_value(1.5, str, "folder_resource_id")
+
+
+def test_union_keeps_number_numeric_over_string() -> None:
+    # A ``str | int`` value stays a number; the lenient str coercion only wins
+    # when no numeric member of the union accepts the value.
+    assert validate_value(5, str | int, "value") == 5
+    assert validate_value(5, int | str, "value") == 5
+    # str | None (an id field) has no numeric member, so a number coerces.
+    assert validate_value(916050, str | None, "folder_resource_id") == "916050"
+    # A genuine string is unaffected either way.
+    assert validate_value("apparel", str | int, "value") == "apparel"
+
+
 def test_resource_reference_schema_and_sample_are_positive_int() -> None:
     schema = json_schema(int | View)
     assert schema["type"] == "integer"

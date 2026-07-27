@@ -214,6 +214,23 @@ def test_create_forwards_folder_resource_id(
     ]
 
 
+def test_create_waits_and_reports_dataset_id(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # ``datasets.create`` returns a bare job handle; the handler must block on it
+    # and report the finished dataset id, not the job id the caller would poll.
+    fake_service.responses[_CREATE] = {"job_id": 14}
+    fake_service.job_result = {"ds_id": 303686}
+    input_file = _write(
+        tmp_path, {"dataset_spec": {"url": "x"}, "ds_creation_type": "weburl"}
+    )
+    data, _ = dataset_cmd.dataset_create(
+        _inv("dataset.create", project=180, input_file=input_file)
+    )
+    assert "wait_if_job" in fake_service.calls
+    assert data == {"status": "ready", "dataset_id": 303686, "job_id": 14}
+
+
 # -- create-from-pdf --------------------------------------------------------
 
 
