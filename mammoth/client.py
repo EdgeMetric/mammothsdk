@@ -134,7 +134,7 @@ class ViewsResource:
             if error.status_code != 403:
                 raise
             listed = self._client.dataviews.list(dataset_id=dataset_id)
-            data = next(
+            fallback = next(
                 (
                     item
                     for item in listed.get("dataviews", [])
@@ -142,8 +142,9 @@ class ViewsResource:
                 ),
                 None,
             )
-            if data is None:
+            if fallback is None:
                 raise
+            data = fallback
         return View(self._client, data, dataset_id)
 
     def list(self, dataset_id: int) -> _list[View]:
