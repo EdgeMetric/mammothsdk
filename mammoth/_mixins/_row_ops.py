@@ -125,6 +125,7 @@ class RowOpsMixin(ViewHost):
         columns: list[str],
         label_column: str = "Label",
         value_column: str = "Value",
+        value_type: str | None = None,
     ) -> dict[str, Any]:
         """Unpivot (melt) columns to rows (UNNEST task).
 
@@ -137,6 +138,11 @@ class RowOpsMixin(ViewHost):
                 original column names (default ``"Label"``).
             value_column: Name for the new value column that holds the
                 original cell values (default ``"Value"``).
+            value_type: Type of the value column. Left unset (the default) the type is
+                derived — when every unnested column shares one type the value column
+                gets that type, and only genuinely mixed inputs fall back to TEXT.
+                Previously this was always TEXT, so melting numeric columns produced
+                a string column that would not sum or sort numerically.
 
         Returns:
             API response dict.
@@ -154,6 +160,22 @@ class RowOpsMixin(ViewHost):
                 self._internal_names,
                 label_column=label_column,
                 value_column=value_column,
+                value_type=value_type or self._common_column_type(columns),
                 name_gen=self._next_internal_name,
             )
         )
+
+    def _common_column_type(self, columns: list[str]) -> str:
+        """The one type shared by every column in *columns*, else ``"TEXT"``.
+
+        TEXT is the correct fallback rather than a give-up: a value column holding both
+        numbers and free text can only be TEXT. Columns whose type cannot be looked up are
+        treated as unknown, which also collapses to TEXT — this must never raise, since a
+        derived convenience has no business failing a call the user could previously make.
+        """
+        types = {self.column_types.get(c) for c in columns}
+        if len(types) == 1:
+            only = types.pop()
+            if only:
+                return only
+        return "TEXT"

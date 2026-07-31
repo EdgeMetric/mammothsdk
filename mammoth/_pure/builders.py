@@ -447,15 +447,48 @@ def build_substring_params(
 # Date operations
 # ---------------------------------------------------------------------------
 
-_TEXT_DATE_COMPONENTS = frozenset(
+# Component -> emitted AS.TYPE.
+#
+# This replaces a BINARY rule (a five-member "text" set, everything else NUMERIC) that could
+# not express DATE at all and mis-typed two composite components. The classification is not
+# invented here: it mirrors the executor's own three lists in
+# ``DBAdapter/adapters/duckdb/constants.py`` -- EXTRACT_DATE_OPS_DATE, EXTRACT_DATE_OPS_NUMERIC,
+# and "anything else in EXTRACT_DATE_FORMAT_MAPS is a strftime-formatted string, so TEXT".
+# Restated rather than imported because that constant lives in the backend repo, which this
+# SDK does not depend on; ``test_every_date_component_has_an_explicit_output_type`` keeps the
+# map total over the enum so a new component cannot silently inherit a default.
+#
+# Cross-checked against production: the rule reproduces the observed AS.TYPE for all 13
+# components that actually occur across 16259 real task rows, including the three the old
+# rule got wrong (year_month_day_as_date -> DATE, year_month_day and year_month -> TEXT).
+_DATE_COMPONENTS_NUMERIC = frozenset(
     {
-        DateComponent.WEEKDAY_TEXT.value,
-        DateComponent.MONTH_TEXT.value,
-        DateComponent.MONTH_DAY_YEAR_HOUR_MINUTE_SECOND.value,
-        DateComponent.YEAR_MONTH_DAY_AS_DATE.value,
-        DateComponent.YEAR_MONTH_NUMBER.value,
+        DateComponent.YEAR.value,
+        DateComponent.MONTH.value,
+        DateComponent.DAY.value,
+        DateComponent.HOUR.value,
+        DateComponent.MINUTE.value,
+        DateComponent.SECOND.value,
+        DateComponent.WEEK.value,
+        DateComponent.QUARTER.value,
+        DateComponent.DAY_OF_WEEK.value,
+        DateComponent.DAY_OF_YEAR.value,
     }
 )
+_DATE_COMPONENTS_DATE = frozenset({DateComponent.YEAR_MONTH_DAY_AS_DATE.value})
+
+# Every remaining component is a formatted string. ``DATE_ONLY`` is the one judgement call
+# here: it is absent from BOTH the executor's lists and from production, so it is typed by
+# the same fallback as the other unobserved composites rather than being special-cased on a
+# guess about its name.
+DATE_COMPONENT_TYPE: dict[str, str] = {
+    c.value: (
+        "DATE"
+        if c.value in _DATE_COMPONENTS_DATE
+        else "NUMERIC" if c.value in _DATE_COMPONENTS_NUMERIC else "TEXT"
+    )
+    for c in DateComponent
+}
 
 
 def build_extract_date_params(
@@ -468,7 +501,7 @@ def build_extract_date_params(
     name_gen: Callable[[], str] | None = None,
 ) -> dict[str, Any]:
     """Build an EXTRACT_DATE task payload."""
-    output_type = "TEXT" if component.value in _TEXT_DATE_COMPONENTS else "NUMERIC"
+    output_type = DATE_COMPONENT_TYPE[component.value]
     ed_spec: dict[str, Any] = {
         "SOURCE": resolve_column(column, col_map, internal_names),
         "COMPONENT": component.value,
@@ -702,12 +735,20 @@ def build_unnest_params(
     internal_names: list[str],
     label_column: str = "Label",
     value_column: str = "Value",
+    value_type: str = "TEXT",
     name_gen: Callable[[], str] | None = None,
 ) -> dict[str, Any]:
     """Build an UNNEST (unpivot) task payload.
 
     The LABEL and VALUE output-column dicts each carry ``INTERNAL_NAME``
     (backend UNNEST validator KeyErrors without it).
+
+    Args:
+        value_type: Type of the melted VALUE column — the common type of *columns*.
+            Was previously hardcoded TEXT with no override, which silently stringified
+            every numeric unpivot; across production UNNEST rows VALUE.TYPE is
+            NUMERIC 85 / TEXT 28 / DATE 1. LABEL is deliberately NOT configurable: it
+            holds the melted column NAMES and is TEXT in every production row.
     """
     internal_to_display = {v: k for k, v in col_map.items()}
     col_specs: list[dict[str, str]] = []
@@ -726,7 +767,7 @@ def build_unnest_params(
             },
             "VALUE": {
                 "COLUMN": value_column,
-                "TYPE": "TEXT",
+                "TYPE": value_type,
                 "INTERNAL_NAME": next_internal_name(name_gen),
             },
         }
@@ -1059,10 +1100,21 @@ def build_lookup_params(
     col_map: dict[str, str],
     internal_names: list[str],
     new_column: str | None = None,
+    new_column_type: str = "TEXT",
     existing_column: str | None = None,
     name_gen: Callable[[], str] | None = None,
 ) -> dict[str, Any]:
-    """Build a LOOKUP task payload."""
+    """Build a LOOKUP task payload.
+
+    Args:
+        new_column_type: Type of the created column, which is the type of the FOREIGN
+            view's ``value`` column. This builder is pure and cannot see the foreign
+            view, so the caller supplies it. Defaults to TEXT for backward
+            compatibility, but passing the real type matters: across production LOOKUP
+            rows the created column is TEXT 254 / NUMERIC 244 / DATE 17, so the old
+            unconditional TEXT was wrong on about half of them, and a numeric lookup
+            value landed in the view as a string.
+    """
     lookup_spec: dict[str, Any] = {
         "DATAVIEW_ID": lookup_view_id,
         "SOURCE": resolve_column(source, col_map, internal_names),
@@ -1070,7 +1122,7 @@ def build_lookup_params(
         "VALUE": value,
     }
     if new_column:
-        lookup_spec["AS"] = build_as_column(new_column, "TEXT", name_gen=name_gen)
+        lookup_spec["AS"] = build_as_column(new_column, new_column_type, name_gen=name_gen)
     elif existing_column:
         lookup_spec["DESTINATION"] = resolve_column(existing_column, col_map, internal_names)
     return {"LOOKUP": lookup_spec}
