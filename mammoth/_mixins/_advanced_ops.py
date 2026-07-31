@@ -109,6 +109,7 @@ class AdvancedOpsMixin(ViewHost):
         key: str,
         value: str,
         new_column: str | None = None,
+        new_column_type: str = "TEXT",
         existing_column: str | None = None,
     ) -> dict[str, Any]:
         """VLOOKUP-style value lookup from another dataview (LOOKUP task).
@@ -124,6 +125,12 @@ class AdvancedOpsMixin(ViewHost):
             value: Column name of the value in the lookup view (display name
                 or internal name — both are accepted).
             new_column: Name for a new result column.
+            new_column_type: Type of that new column, i.e. the type of ``value`` in
+                the LOOKUP view. Defaults to TEXT, which is what this always used to
+                emit unconditionally — pass the real type when looking up numbers or
+                dates, otherwise they arrive as strings and will not sum or sort.
+                It is not derived here because ``value`` lives in a different view,
+                whose metadata this call does not fetch.
             existing_column: Display name of existing column to overwrite.
 
         Returns:
@@ -148,6 +155,7 @@ class AdvancedOpsMixin(ViewHost):
                 self.columns,
                 self._internal_names,
                 new_column=new_column,
+                new_column_type=new_column_type,
                 existing_column=existing_column,
                 name_gen=self._next_internal_name,
             )

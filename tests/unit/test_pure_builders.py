@@ -324,7 +324,11 @@ class TestFilterSet:
         assert spec == {
             "SET": {
                 "VALUES": [
-                    {"PROVIDER_TYPE": "FIXED", "PROVIDER": "High", "CONDITION": {"FILTER_TYPE": "SHOW", **built_cond(10000)}},
+                    {
+                        "PROVIDER_TYPE": "FIXED",
+                        "PROVIDER": "High",
+                        "CONDITION": {"FILTER_TYPE": "SHOW", **built_cond(10000)},
+                    },
                     {"PROVIDER_TYPE": "FIXED", "PROVIDER": "Low"},
                 ],
                 "AS": {"COLUMN": "Risk", "TYPE": "TEXT", "INTERNAL_NAME": "gen1"},
@@ -540,6 +544,51 @@ class TestDateOps:
         spec = b.build_extract_date_params("Order Date", DateComponent.MONTH, COLS, INTERNALS)
         assert "AS" not in spec["EXTRACT_DATE"] and "DESTINATION" not in spec["EXTRACT_DATE"]
 
+    # The component -> AS.TYPE rule used to be BINARY: a five-member "text" set, everything
+    # else NUMERIC. That cannot express DATE, and it mis-typed two composite components.
+    # These expectations are not invented -- they are what production actually stores,
+    # counted over 16259 real task rows:
+    #
+    #   year_month_day_as_date -> DATE     (5 rows)   was TEXT      -- DATE unrepresentable
+    #   year_month_day         -> TEXT     (6 rows)   was NUMERIC   -- absent from the set
+    #   year_month             -> TEXT     (5 rows)   was NUMERIC   -- absent from the set
+    #   year_month_number      -> TEXT    (31 rows)   already right
+    #   weekday_text/month_text-> TEXT (5+18 rows)    already right
+    #   year/month/week/quarter/day/hour/day_of_year -> NUMERIC     already right
+    @pytest.mark.parametrize(
+        ("component", "expected_type"),
+        [
+            (DateComponent.YEAR_MONTH_DAY_AS_DATE, "DATE"),
+            (DateComponent.YEAR_MONTH_DAY, "TEXT"),
+            (DateComponent.YEAR_MONTH, "TEXT"),
+            (DateComponent.YEAR_MONTH_NUMBER, "TEXT"),
+            (DateComponent.WEEKDAY_TEXT, "TEXT"),
+            (DateComponent.MONTH_TEXT, "TEXT"),
+            (DateComponent.YEAR, "NUMERIC"),
+            (DateComponent.MONTH, "NUMERIC"),
+            (DateComponent.WEEK, "NUMERIC"),
+            (DateComponent.QUARTER, "NUMERIC"),
+            (DateComponent.DAY, "NUMERIC"),
+            (DateComponent.HOUR, "NUMERIC"),
+            (DateComponent.DAY_OF_YEAR, "NUMERIC"),
+        ],
+    )
+    def test_extract_date_output_type_matches_production(
+        self, component: DateComponent, expected_type: str
+    ) -> None:
+        spec = b.build_extract_date_params(
+            "Order Date", component, COLS, INTERNALS, new_column="Out", name_gen=gen()
+        )
+        assert spec["EXTRACT_DATE"]["AS"]["TYPE"] == expected_type
+
+    def test_every_date_component_has_an_explicit_output_type(self) -> None:
+        """No silent default. The old rule's ``else NUMERIC`` meant a newly added component
+        was typed NUMERIC without anyone deciding that -- which is exactly how
+        ``year_month_day`` and ``year_month`` came to be mis-typed. The map must be TOTAL
+        over the enum, so adding a component without classifying it fails here."""
+        missing = [c.value for c in DateComponent if c.value not in b.DATE_COMPONENT_TYPE]
+        assert not missing, f"unclassified DateComponent(s): {missing}"
+
     def test_date_diff_new(self) -> None:
         spec = b.build_date_diff_params(
             DateDiffUnit.DAY,
@@ -687,6 +736,27 @@ class TestRowOps:
         # Passing an internal name resolves LABEL back to the display name.
         spec = b.build_unnest_params(["c1"], COLS, INTERNALS, name_gen=gen())
         assert spec["UNNEST"]["COLUMNS"] == [{"COLUMN": "c1", "LABEL": "Sales"}]
+
+    @pytest.mark.parametrize("value_type", ["NUMERIC", "DATE", "TEXT"])
+    def test_unnest_value_type_is_caller_supplied(self, value_type: str) -> None:
+        """VALUE.TYPE was hardcoded "TEXT" with NO way to override, so unpivoting numeric
+        columns produced a TEXT value column. Production disagrees on the majority of rows:
+        VALUE.TYPE is NUMERIC 85 / TEXT 28 / DATE 1 across the 114 real UNNEST rows -- i.e.
+        the hardcoded default was wrong ~75% of the time and DATE was unreachable.
+        """
+        spec = b.build_unnest_params(
+            ["Sales", "Region"], COLS, INTERNALS, value_type=value_type, name_gen=gen()
+        )
+        assert spec["UNNEST"]["VALUE"]["TYPE"] == value_type
+
+    def test_unnest_label_type_stays_text(self) -> None:
+        """LABEL holds the melted COLUMN NAMES, so TEXT is correct, not a hardcode to fix --
+        all 114 production rows have LABEL.TYPE == TEXT. Asserted so a future "make the
+        types configurable" sweep does not make a right answer configurable-and-wrong."""
+        spec = b.build_unnest_params(
+            ["Sales", "Region"], COLS, INTERNALS, value_type="NUMERIC", name_gen=gen()
+        )
+        assert spec["UNNEST"]["LABEL"]["TYPE"] == "TEXT"
 
 
 # ===============================================================
@@ -1078,6 +1148,26 @@ class TestAdvanced:
             existing_column="Notes",
         )
         assert spec["LOOKUP"]["DESTINATION"] == "c4"
+
+    @pytest.mark.parametrize("column_type", ["NUMERIC", "DATE", "TEXT"])
+    def test_lookup_new_column_type_is_caller_supplied(self, column_type: str) -> None:
+        """AS.TYPE was the literal "TEXT" with no override, so a lookup that fetches a
+        number or a date created a TEXT column and the values arrived as strings.
+        Production: TEXT 254 / NUMERIC 244 / DATE 17 -- the hardcode was wrong on roughly
+        half of all real LOOKUP rows. The type belongs to the FOREIGN view's value column,
+        which this pure builder cannot see, so the caller supplies it."""
+        spec = b.build_lookup_params(
+            "Region",
+            2055,
+            key="k",
+            value="v",
+            col_map=COLS,
+            internal_names=INTERNALS,
+            new_column="Looked Up",
+            new_column_type=column_type,
+            name_gen=gen(),
+        )
+        assert spec["LOOKUP"]["AS"]["TYPE"] == column_type
 
     def test_lookup_neither(self) -> None:
         spec = b.build_lookup_params(

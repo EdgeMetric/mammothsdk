@@ -687,13 +687,19 @@ class TestExtractDate:
         assert p["EXTRACT_DATE"]["AS"]["TYPE"] == "TEXT"
 
     def test_year_month_day_as_date(self, mock_view):
+        """REVISED: asserted TEXT, which encoded the very defect this component is named
+        for — ``..._AS_DATE`` produced a TEXT column, so the result sorted and filtered as
+        a string. Two independent sources say DATE: the executor lists it as the sole
+        member of ``EXTRACT_DATE_OPS_DATE`` (DBAdapter/adapters/duckdb/constants.py), and
+        all 5 production rows using this component store ``AS.TYPE == "DATE"``.
+        """
         mock_view.extract_date(
             column="joining_date",
             component=DateComponent.YEAR_MONTH_DAY_AS_DATE,
             new_column="date_only",
         )
         p = last_payload(mock_view)
-        assert p["EXTRACT_DATE"]["AS"]["TYPE"] == "TEXT"
+        assert p["EXTRACT_DATE"]["AS"]["TYPE"] == "DATE"
 
     def test_existing_column(self, mock_view):
         mock_view.extract_date(
@@ -898,6 +904,36 @@ class TestUnnest:
         mock_view.unnest(columns=["base_salary"])
         p = last_payload(mock_view)
         assert len(p["UNNEST"]["COLUMNS"]) == 1
+
+    def test_value_type_derived_from_uniform_numeric_columns(self, mock_view):
+        """VALUE.TYPE used to be the literal "TEXT" with no way to change it, so melting
+        numeric columns produced a value column that would not sum or sort numerically.
+        Both of these are NUMERIC in the fixture, so nothing needs to be passed."""
+        mock_view.unnest(columns=["base_salary", "bonus_pct"])
+        assert last_payload(mock_view)["UNNEST"]["VALUE"]["TYPE"] == "NUMERIC"
+
+    def test_value_type_falls_back_to_text_when_columns_disagree(self, mock_view):
+        """A value column holding both numbers and free text can only be TEXT, so the
+        fallback is the right answer here rather than a failure to derive."""
+        mock_view.unnest(columns=["base_salary", "gender"])
+        assert last_payload(mock_view)["UNNEST"]["VALUE"]["TYPE"] == "TEXT"
+
+    def test_value_type_explicit_override_wins(self, mock_view):
+        mock_view.unnest(columns=["base_salary", "bonus_pct"], value_type="TEXT")
+        assert last_payload(mock_view)["UNNEST"]["VALUE"]["TYPE"] == "TEXT"
+
+    def test_unknown_column_type_does_not_raise(self, mock_view):
+        """Derivation is a convenience; it must never fail a call that used to work.
+        ``unnest`` resolves internal names, so passing one (absent from the display-keyed
+        ``column_types``) must degrade to TEXT rather than KeyError."""
+        mock_view.unnest(columns=["column_jkl1234567"])
+        assert last_payload(mock_view)["UNNEST"]["VALUE"]["TYPE"] == "TEXT"
+
+    def test_label_type_is_always_text(self, mock_view):
+        """LABEL holds the melted column NAMES — TEXT is correct and deliberately not
+        configurable, so a numeric derivation must not leak into it."""
+        mock_view.unnest(columns=["base_salary", "bonus_pct"])
+        assert last_payload(mock_view)["UNNEST"]["LABEL"]["TYPE"] == "TEXT"
 
 
 # ── Aggregation ──────────────────────────────────────────────
@@ -1174,6 +1210,34 @@ class TestLookup:
         assert p["LOOKUP"]["KEY"] == "col_key"
         assert p["LOOKUP"]["VALUE"] == "col_val"
         assert p["LOOKUP"]["AS"]["COLUMN"] == "looked_up"
+
+    def test_new_column_type_defaults_to_text(self, mock_view):
+        """Unchanged behaviour, pinned deliberately: TEXT stays the default so existing
+        callers are unaffected, even though it is the wrong type about half the time in
+        production. The fix is that it is now OVERRIDABLE, not that the default moved —
+        moving it would silently change the column type of every existing caller's lookup."""
+        mock_view.lookup(
+            source="emp_id",
+            lookup_view_id=3000,
+            key="col_key",
+            value="col_val",
+            new_column="looked_up",
+        )
+        assert last_payload(mock_view)["LOOKUP"]["AS"]["TYPE"] == "TEXT"
+
+    @pytest.mark.parametrize("column_type", ["NUMERIC", "DATE"])
+    def test_new_column_type_override(self, mock_view, column_type):
+        """The type belongs to the FOREIGN view's value column, which this call does not
+        fetch — so it is a parameter, not a derivation."""
+        mock_view.lookup(
+            source="emp_id",
+            lookup_view_id=3000,
+            key="col_key",
+            value="col_val",
+            new_column="looked_up",
+            new_column_type=column_type,
+        )
+        assert last_payload(mock_view)["LOOKUP"]["AS"]["TYPE"] == column_type
 
     def test_existing_column(self, mock_view):
         mock_view.lookup(
