@@ -143,8 +143,8 @@ class DateComponent(str, Enum):
     Basic components:
         year, month, day, hour, minute, second, week, quarter
 
-    Text-based extractions (return TEXT columns):
-        weekday_text, month_text
+    Text-based extractions (return TEXT columns) include names and composite formats.
+    Numeric extractions include ``weekday`` and ``millisecond``.
 
     Composite date formats (return DATE or TEXT):
         year_month_day_as_date, month_day_year_hour_minute_second
@@ -161,14 +161,19 @@ class DateComponent(str, Enum):
     DAY_OF_WEEK = "day_of_week"
     DAY_OF_YEAR = "day_of_year"
     WEEKDAY_TEXT = "weekday_text"
+    WEEKDAY = "weekday"
     MONTH_TEXT = "month_text"
+    MONTH_YEAR = "month_year"
     YEAR_MONTH = "year_month"
     YEAR_MONTH_NUMBER = "year_month_number"
     YEAR_WEEK = "year_week"
     YEAR_QUARTER = "year_quarter"
     MONTH_DAY = "month_day"
+    MONTH_DAY_YEAR = "month_day_year"
     HOUR_MINUTE = "hour_minute"
     HOUR_MINUTE_SECOND = "hour_minute_second"
+    MILLISECOND = "millisecond"
+    HOUR_MINUTE_SECOND_MILLISECOND = "hour_minute_second_millisecond"
     YEAR_MONTH_DAY = "year_month_day"
     YEAR_MONTH_DAY_AS_DATE = "year_month_day_as_date"
     MONTH_DAY_YEAR_HOUR_MINUTE_SECOND = "month_day_year_hour_minute_second"
@@ -209,7 +214,9 @@ class WindowFunction(str, Enum):
     STDDEV = "STDDEV"
     VARIANCE = "VARIANCE"
     PERCENT_RANK = "PERCENT_RANK"
+    CUMULATIVE_PERCENT_RANK = "CUMULATIVE_PERCENT_RANK"
     NTILE = "NTILE"
+    NTH_VALUE = "NTH_VALUE"
 
 
 class WindowRange(str, Enum):
@@ -241,6 +248,7 @@ class AggregateFunction(str, Enum):
     FIRST = "FIRST"
     LAST = "LAST"
     CONCAT = "CONCAT"
+    PERCENTAGE = "PERCENTAGE"
 
 
 class SmallLargeFunction(str, Enum):
@@ -545,6 +553,7 @@ class AggregationSpec:
     function: AggregateFunction
     as_name: str | None = None
     delimiter: str | None = None
+    aggregation: AggregateFunction | None = None  # Base function for PERCENTAGE only.
 
 
 @dataclass

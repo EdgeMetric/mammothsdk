@@ -156,6 +156,20 @@ view.pivot(
 )
 ```
 
+Percentage is always relative to an explicit base aggregation:
+
+```python
+view.pivot(
+    group_by=["Region"],
+    aggregations=[AggregationSpec(
+        column="Sales",
+        function=AggregateFunction.PERCENTAGE,
+        aggregation=AggregateFunction.SUM,
+        as_name="Sales %",
+    )],
+)
+```
+
 ### Crosstab / pivot table
 
 ```python
@@ -202,7 +216,21 @@ view.window(
     new_column="Previous Sales",
     partition_by=["Region"],
     order_by=[["Date", SortDirection.ASC]],
+    offset=1,
 )
+```
+
+`NTH_VALUE` also requires `offset`; `NTILE` requires `bucket_count`:
+
+```python
+view.window(
+    function=WindowFunction.NTH_VALUE,
+    column="Sales",
+    new_column="Second Sale",
+    order_by=[["Date", SortDirection.ASC]],
+    offset=2,
+)
+view.window(function=WindowFunction.NTILE, new_column="Quartile", bucket_count=4)
 ```
 
 ---
@@ -398,8 +426,14 @@ view.json_extract(
     ],
 )
 
-# JSON list to rows
-view.json_extract("items", json_type=JsonType.LIST)
+# JSON list to rows (emits the required item/index output pair)
+view.json_extract(
+    "items",
+    json_type=JsonType.LIST,
+    item_column="Value",
+    index_column="Position",
+    item_type=ColumnType.NUMERIC,
+)
 ```
 
 ### AI-powered transformation

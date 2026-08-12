@@ -473,6 +473,8 @@ _DATE_COMPONENTS_NUMERIC = frozenset(
         DateComponent.QUARTER.value,
         DateComponent.DAY_OF_WEEK.value,
         DateComponent.DAY_OF_YEAR.value,
+        DateComponent.WEEKDAY.value,
+        DateComponent.MILLISECOND.value,
     }
 )
 _DATE_COMPONENTS_DATE = frozenset({DateComponent.YEAR_MONTH_DAY_AS_DATE.value})
@@ -778,6 +780,18 @@ def build_unnest_params(
 # Aggregation
 # ---------------------------------------------------------------------------
 
+_PERCENTAGE_BASES = frozenset(
+    {
+        AggregateFunction.COUNT,
+        AggregateFunction.SUM,
+        AggregateFunction.MIN,
+        AggregateFunction.MAX,
+        AggregateFunction.AVG,
+        AggregateFunction.STDDEV,
+        AggregateFunction.COUNT_DISTINCT,
+    }
+)
+
 
 def build_pivot_params(
     group_by: list[str],
@@ -796,6 +810,18 @@ def build_pivot_params(
     select_specs: list[dict[str, Any]] = []
     for idx, agg in enumerate(aggregations):
         func_str = agg.function.value
+        if (
+            agg.function is AggregateFunction.PERCENTAGE
+            and agg.aggregation not in _PERCENTAGE_BASES
+        ):
+            raise MammothValidationError(
+                "PERCENTAGE requires a base aggregation (COUNT, SUM, MIN, MAX, AVG, "
+                "STDDEV, or COUNT_DISTINCT)"
+            )
+        if agg.function is not AggregateFunction.PERCENTAGE and agg.aggregation is not None:
+            raise MammothValidationError(
+                "aggregation is only valid when function is PERCENTAGE"
+            )
         sel: dict[str, Any] = {
             "ORDER": base_order + idx,
             "FUNCTION": func_str,
@@ -804,6 +830,12 @@ def build_pivot_params(
         }
         if agg.delimiter is not None:
             sel["DELIMITER"] = agg.delimiter
+        if agg.aggregation is not None:
+            sel["AGGREGATION"] = (
+                "DISTINCT_COUNT"
+                if agg.aggregation is AggregateFunction.COUNT_DISTINCT
+                else agg.aggregation.value
+            )
         select_specs.append(sel)
 
     pivot_spec: dict[str, Any] = {"GROUP_BY": group_specs, "SELECT": select_specs}
@@ -811,6 +843,26 @@ def build_pivot_params(
     if built is not None:
         pivot_spec["CONDITION"] = built
     return {"PIVOT": pivot_spec}
+
+
+_WINDOW_SOURCE_FUNCTIONS = frozenset(
+    {
+        WindowFunction.SUM,
+        WindowFunction.AVG,
+        WindowFunction.MIN,
+        WindowFunction.MAX,
+        WindowFunction.STDDEV,
+        WindowFunction.VARIANCE,
+        WindowFunction.FIRST_VALUE,
+        WindowFunction.LAST_VALUE,
+        WindowFunction.LAG,
+        WindowFunction.LEAD,
+        WindowFunction.NTH_VALUE,
+    }
+)
+_WINDOW_OFFSET_FUNCTIONS = frozenset(
+    {WindowFunction.LAG, WindowFunction.LEAD, WindowFunction.NTH_VALUE}
+)
 
 
 def build_window_params(
@@ -826,13 +878,41 @@ def build_window_params(
     range_type: WindowRange = WindowRange.UNBOUNDED,
     name_gen: Callable[[], str] | None = None,
     limit: int | None = None,
+    offset: int | None = None,
+    bucket_count: int | None = None,
 ) -> dict[str, Any]:
-    """Build a WINDOW (window function) task payload."""
+    """Build a stageable WINDOW task payload with exact function arguments."""
+    if (function in _WINDOW_SOURCE_FUNCTIONS) != bool(column):
+        requirement = (
+            "requires" if function in _WINDOW_SOURCE_FUNCTIONS else "does not accept"
+        )
+        raise MammothValidationError(f"{function.value} {requirement} a source column")
+    if function in _WINDOW_OFFSET_FUNCTIONS:
+        if offset is None or offset < 1:
+            raise MammothValidationError(
+                f"{function.value} requires a positive row offset"
+            )
+    elif offset is not None:
+        raise MammothValidationError(
+            f"row offset is not valid for {function.value}"
+        )
+    if function is WindowFunction.NTILE:
+        if bucket_count is None or bucket_count < 1:
+            raise MammothValidationError("NTILE requires a positive bucket count")
+    elif bucket_count is not None:
+        raise MammothValidationError(
+            f"bucket count is not valid for {function.value}"
+        )
+
     evaluate: dict[str, Any] = {"FUNCTION": function.value}
     if column:
         resolved = resolve_column(column, col_map, internal_names)
         evaluate["SOURCES"] = resolved
         evaluate["ARGUMENTS"] = [resolved]
+    if offset is not None:
+        evaluate.setdefault("ARGUMENTS", []).append(offset)
+    if bucket_count is not None:
+        evaluate.setdefault("ARGUMENTS", []).append(bucket_count)
 
     window_spec: dict[str, Any] = {"EVALUATE": evaluate, "RANGE": range_type.value}
     if new_column:
@@ -1143,6 +1223,9 @@ def build_json_extract_params(
     extractions: list[JsonExtractionSpec] | None = None,
     keep_source: bool = False,
     op_type: JsonOpType | None = None,
+    item_column: str = "Item",
+    index_column: str = "Index",
+    item_type: ColumnType = ColumnType.TEXT,
     name_gen: Callable[[], str] | None = None,
 ) -> dict[str, Any]:
     """Build a JSON_HANDLE (JSON extraction) task payload.
@@ -1150,7 +1233,7 @@ def build_json_extract_params(
     Each extraction item carries ``INTERNAL_NAME`` (backend JSON_HANDLE
     validator requires it) and a ``TYPE`` in {NUMERIC, TEXT}.
     """
-    extract_specs: list[dict[str, str]] = []
+    extract_specs: list[dict[str, Any]] = []
     if extractions:
         for e in extractions:
             extract_specs.append(
@@ -1173,12 +1256,42 @@ def build_json_extract_params(
             )
 
     backend_type, default_op, op_key = _JSON_TYPE_MAP[json_type]
+    selected_op = op_type or default_op
+    if selected_op is not default_op:
+        raise MammothValidationError(
+            f"{selected_op.value} is incompatible with json_type {json_type.value}"
+        )
+    if selected_op is JsonOpType.JSON_LIST_TO_ROWS:
+        if json_type is not JsonType.LIST:
+            raise MammothValidationError("JSON_LIST_TO_ROWS requires json_type LIST")
+        if extract_specs:
+            raise MammothValidationError(
+                "LIST-to-rows does not accept key extractions; name its item/index outputs"
+            )
+        extract_specs = [
+            {
+                "COLUMN": item_column,
+                "TYPE": item_type.value,
+                "INTERNAL_NAME": next_internal_name(name_gen),
+                "_IS_ITEM": 0,
+            },
+            {
+                "COLUMN": index_column,
+                "TYPE": "NUMERIC",
+                "INTERNAL_NAME": next_internal_name(name_gen),
+                "_IS_INDEX": 0,
+            },
+        ]
+    elif json_type is JsonType.OBJECT and not extract_specs:
+        raise MammothValidationError(
+            "OBJECT-to-columns requires at least one named key extraction"
+        )
     json_handle_spec: dict[str, Any] = {
         "SOURCE": resolve_column(column, col_map, internal_names),
         "TYPE": backend_type,
         "JSON_EXTRACT": extract_specs,
         "JSON_KEEP_SOURCE": keep_source,
-        op_key: (op_type or default_op).value,
+        op_key: selected_op.value,
     }
     return {"JSON_HANDLE": json_handle_spec}
 

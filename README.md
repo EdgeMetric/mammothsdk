@@ -163,6 +163,9 @@ view.window(
 )
 ```
 
+Argument-bearing functions are explicit: pass `offset` for `LAG`, `LEAD`, and
+`NTH_VALUE`; pass `bucket_count` for `NTILE`.
+
 ### Text Operations
 
 ```python

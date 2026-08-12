@@ -108,6 +108,8 @@ class TestWindowFunction:
         assert WindowFunction.SUM == "SUM"
         assert WindowFunction.AVG == "AVG"
         assert WindowFunction.COUNT == "COUNT"
+        assert WindowFunction.NTH_VALUE == "NTH_VALUE"
+        assert WindowFunction.CUMULATIVE_PERCENT_RANK == "CUMULATIVE_PERCENT_RANK"
 
 
 class TestAggregateFunction:
@@ -117,6 +119,7 @@ class TestAggregateFunction:
         assert AggregateFunction.COUNT == "COUNT"
         assert AggregateFunction.COUNT_DISTINCT == "COUNT_DISTINCT"
         assert AggregateFunction.MEDIAN == "MEDIAN"
+        assert AggregateFunction.PERCENTAGE == "PERCENTAGE"
 
 
 class TestFilterType:

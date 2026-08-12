@@ -571,6 +571,11 @@ class TestDateOps:
             (DateComponent.DAY, "NUMERIC"),
             (DateComponent.HOUR, "NUMERIC"),
             (DateComponent.DAY_OF_YEAR, "NUMERIC"),
+            (DateComponent.WEEKDAY, "NUMERIC"),
+            (DateComponent.MONTH_YEAR, "TEXT"),
+            (DateComponent.MONTH_DAY_YEAR, "TEXT"),
+            (DateComponent.MILLISECOND, "NUMERIC"),
+            (DateComponent.HOUR_MINUTE_SECOND_MILLISECOND, "TEXT"),
         ],
     )
     def test_extract_date_output_type_matches_production(
@@ -798,6 +803,38 @@ class TestAggregation:
         assert "DELIMITER" not in spec["PIVOT"]["SELECT"][0]
         assert "CONDITION" not in spec["PIVOT"]
 
+    def test_pivot_percentage_carries_base_aggregation(self) -> None:
+        aggs = [
+            AggregationSpec(
+                column="Sales",
+                function=AggregateFunction.PERCENTAGE,
+                aggregation=AggregateFunction.SUM,
+                as_name="Share of sales",
+            )
+        ]
+        spec = b.build_pivot_params(["Region"], aggs, COLS, INTERNALS)
+        assert spec["PIVOT"]["SELECT"][0] == {
+            "ORDER": 1,
+            "FUNCTION": "PERCENTAGE",
+            "COLUMN": "c1",
+            "AS": "Share of sales",
+            "AGGREGATION": "SUM",
+        }
+
+    def test_pivot_percentage_maps_count_distinct_wire_name(self) -> None:
+        agg = AggregationSpec(
+            column="Sales",
+            function=AggregateFunction.PERCENTAGE,
+            aggregation=AggregateFunction.COUNT_DISTINCT,
+        )
+        spec = b.build_pivot_params(["Region"], [agg], COLS, INTERNALS)
+        assert spec["PIVOT"]["SELECT"][0]["AGGREGATION"] == "DISTINCT_COUNT"
+
+    def test_pivot_percentage_requires_base_aggregation(self) -> None:
+        agg = AggregationSpec(column="Sales", function=AggregateFunction.PERCENTAGE)
+        with pytest.raises(MammothValidationError, match="base aggregation"):
+            b.build_pivot_params(["Region"], [agg], COLS, INTERNALS)
+
     def test_window_column_partition_order_new(self) -> None:
         spec = b.build_window_params(
             WindowFunction.SUM,
@@ -830,6 +867,39 @@ class TestAggregation:
         assert "SOURCES" not in spec["WINDOW"]["EVALUATE"]
         assert spec["WINDOW"]["DESTINATION"] == "c1"
         assert spec["WINDOW"]["RANGE"] == "UNBOUNDED"
+
+    def test_window_nth_value_carries_offset(self) -> None:
+        spec = b.build_window_params(
+            WindowFunction.NTH_VALUE,
+            COLS,
+            INTERNALS,
+            column="Sales",
+            new_column="Second",
+            offset=2,
+            name_gen=gen(),
+        )
+        assert spec["WINDOW"]["EVALUATE"]["ARGUMENTS"] == ["c1", 2]
+
+    def test_window_ntile_carries_bucket_count(self) -> None:
+        spec = b.build_window_params(
+            WindowFunction.NTILE,
+            COLS,
+            INTERNALS,
+            new_column="Quartile",
+            bucket_count=4,
+            name_gen=gen(),
+        )
+        assert spec["WINDOW"]["EVALUATE"]["ARGUMENTS"] == [4]
+
+    def test_window_argument_schemes_fail_before_api_call(self) -> None:
+        with pytest.raises(MammothValidationError, match="source column"):
+            b.build_window_params(WindowFunction.SUM, COLS, INTERNALS)
+        with pytest.raises(MammothValidationError, match="row offset"):
+            b.build_window_params(
+                WindowFunction.NTH_VALUE, COLS, INTERNALS, column="Sales"
+            )
+        with pytest.raises(MammothValidationError, match="bucket count"):
+            b.build_window_params(WindowFunction.NTILE, COLS, INTERNALS)
 
     def test_window_neither_dest(self) -> None:
         spec = b.build_window_params(WindowFunction.RANK, COLS, INTERNALS)
@@ -1195,15 +1265,17 @@ class TestAdvanced:
             {"COLUMN": "Age", "KEY": "age", "TYPE": "NUMERIC", "INTERNAL_NAME": "gen2"},
         ]
 
-    def test_json_extract_keys_list_op_override(self) -> None:
+    def test_json_extract_list_to_rows_emits_required_item_and_index(self) -> None:
         spec = b.build_json_extract_params(
             "Notes",
             COLS,
             INTERNALS,
             json_type=JsonType.LIST,
-            keys=["a"],
             keep_source=True,
             op_type=JsonOpType.JSON_LIST_TO_ROWS,
+            item_column="Value",
+            index_column="Position",
+            item_type=ColumnType.NUMERIC,
             name_gen=gen(),
         )
         jh = spec["JSON_HANDLE"]
@@ -1211,12 +1283,23 @@ class TestAdvanced:
         assert jh["JSON_KEEP_SOURCE"] is True
         assert jh["JSON_LIST_OP_TYPE"] == "JSON_LIST_TO_ROWS"
         assert jh["JSON_EXTRACT"] == [
-            {"COLUMN": "a", "KEY": "a", "TYPE": "TEXT", "INTERNAL_NAME": "gen1"}
+            {
+                "COLUMN": "Value",
+                "TYPE": "NUMERIC",
+                "INTERNAL_NAME": "gen1",
+                "_IS_ITEM": 0,
+            },
+            {
+                "COLUMN": "Position",
+                "TYPE": "NUMERIC",
+                "INTERNAL_NAME": "gen2",
+                "_IS_INDEX": 0,
+            },
         ]
 
-    def test_json_extract_empty(self) -> None:
-        spec = b.build_json_extract_params("Notes", COLS, INTERNALS)
-        assert spec["JSON_HANDLE"]["JSON_EXTRACT"] == []
+    def test_json_extract_object_requires_named_keys(self) -> None:
+        with pytest.raises(MammothValidationError, match="named key"):
+            b.build_json_extract_params("Notes", COLS, INTERNALS)
 
     def test_gen_ai_with_assistant_data_and_derivation(self) -> None:
         spec = b.build_gen_ai_params(

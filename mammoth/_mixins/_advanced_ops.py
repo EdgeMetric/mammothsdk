@@ -169,6 +169,9 @@ class AdvancedOpsMixin(ViewHost):
         extractions: list[JsonExtractionSpec] | None = None,
         keep_source: bool = False,
         op_type: JsonOpType | None = None,
+        item_column: str = "Item",
+        index_column: str = "Index",
+        item_type: ColumnType = ColumnType.TEXT,
     ) -> dict[str, Any]:
         """Extract data from JSON column (JSON_HANDLE task).
 
@@ -184,6 +187,9 @@ class AdvancedOpsMixin(ViewHost):
 
             keep_source: Keep the original JSON column (default False).
             op_type: Operation type override.
+            item_column: Output name for LIST items (default ``"Item"``).
+            index_column: Output name for LIST positions (default ``"Index"``).
+            item_type: LIST item output type (TEXT or NUMERIC).
 
         Returns:
             API response dict.
@@ -212,6 +218,9 @@ class AdvancedOpsMixin(ViewHost):
                 extractions=extractions,
                 keep_source=keep_source,
                 op_type=op_type,
+                item_column=item_column,
+                index_column=index_column,
+                item_type=item_type,
                 name_gen=self._next_internal_name,
             )
         )

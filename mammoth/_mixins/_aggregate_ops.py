@@ -83,6 +83,8 @@ class AggregateOpsMixin(ViewHost):
         partition_by: list[str] | None = None,
         order_by: list[list[str | SortDirection]] | None = None,
         range_type: WindowRange = WindowRange.UNBOUNDED,
+        offset: int | None = None,
+        bucket_count: int | None = None,
     ) -> dict[str, Any]:
         """Apply window function (WINDOW task).
 
@@ -98,6 +100,8 @@ class AggregateOpsMixin(ViewHost):
                 [["column_name", SortDirection.DESC]]
 
             range_type: Window range (default WindowRange.UNBOUNDED).
+            offset: Positive row position for LAG, LEAD, or NTH_VALUE.
+            bucket_count: Positive number of buckets for NTILE.
 
         Returns:
             API response dict.
@@ -123,6 +127,8 @@ class AggregateOpsMixin(ViewHost):
                 partition_by=partition_by,
                 order_by=order_by,
                 range_type=range_type,
+                offset=offset,
+                bucket_count=bucket_count,
                 name_gen=self._next_internal_name,
             )
         )
