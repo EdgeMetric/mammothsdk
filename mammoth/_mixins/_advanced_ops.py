@@ -12,6 +12,7 @@ from mammoth._pure.builders import (
     build_sql_params,
 )
 from mammoth.models.pipeline import (
+    ColumnType,
     JoinKeySpec,
     JoinSelectSpec,
     JoinType,
