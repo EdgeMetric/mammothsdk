@@ -141,17 +141,18 @@
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
     - [`active_connectors(self) -> '_list[dict[str, Any]]'`](#active_connectorsself---_listdictstr-any)
     - [`create_connection(self, connector_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#create_connectionself-connector_key-str-config-dictstr-any-project_id-int-none-none---dictstr-any)
-    - [`create_ds_config(self, connector_key: 'str', connection_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#create_ds_configself-connector_key-str-connection_key-str-config-dictstr-any-project_id-int-none-none---dictstr-any)
+    - [`create_ds_config(self, connector_key: 'str', connection_key: 'str', *, query: 'str | None' = None, file_source: 'str | None' = None, table: 'str | None' = None, profile: 'str | None' = None, validate: 'bool' = True, data_sample: 'bool' = False, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#create_ds_configself-connector_key-str-connection_key-str-query-str-none-none-file_source-str-none-none-table-str-none-none-profile-str-none-none-validate-bool-true-data_sample-bool-false-project_id-int-none-none---dictstr-any)
     - [`delete_connection(self, connector_key: 'str', connection_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#delete_connectionself-connector_key-str-connection_key-str-project_id-int-none-none---dictstr-any)
     - [`delete_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#delete_ds_configself-connector_key-str-connection_key-str-ds_config_key-str-project_id-int-none-none---dictstr-any)
+    - [`ds_config_delete_all(self, connector_key: 'str', connection_key: 'str', config_ids: '_list[str] | str', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#ds_config_delete_allself-connector_key-str-connection_key-str-config_ids-_liststr-str-project_id-int-none-none---dictstr-any)
     - [`get(self, connector_key: 'str') -> 'dict[str, Any]'`](#getself-connector_key-str---dictstr-any)
     - [`get_connection(self, connector_key: 'str', connection_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_connectionself-connector_key-str-connection_key-str-project_id-int-none-none---dictstr-any)
     - [`get_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_ds_configself-connector_key-str-connection_key-str-ds_config_key-str-project_id-int-none-none---dictstr-any)
     - [`list(self) -> '_list[dict[str, Any]]'`](#listself---_listdictstr-any)
     - [`list_connections(self, connector_key: 'str', project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`](#list_connectionsself-connector_key-str-project_id-int-none-none---_listdictstr-any)
     - [`list_ds_configs(self, connector_key: 'str', connection_key: 'str', project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`](#list_ds_configsself-connector_key-str-connection_key-str-project_id-int-none-none---_listdictstr-any)
-    - [`update_connection(self, connector_key: 'str', connection_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#update_connectionself-connector_key-str-connection_key-str-config-dictstr-any-project_id-int-none-none---dictstr-any)
-    - [`update_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#update_ds_configself-connector_key-str-connection_key-str-ds_config_key-str-config-dictstr-any-project_id-int-none-none---dictstr-any)
+    - [`update_connection(self, connector_key: 'str', connection_key: 'str', credentials: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#update_connectionself-connector_key-str-connection_key-str-credentials-dictstr-any-project_id-int-none-none---dictstr-any)
+    - [`update_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str', patch: '_list[DsConfigPatchOp]', project_id: 'int | None' = None) -> 'dict[str, Any]'`](#update_ds_configself-connector_key-str-connection_key-str-ds_config_key-str-patch-_listdsconfigpatchop-project_id-int-none-none---dictstr-any)
 - [Transformation Reference](#transformation-reference)
   - [Setup](#setup)
   - [Filtering and labeling](#filtering-and-labeling)
@@ -219,19 +220,30 @@
     - [`browse(self, project_id: 'int', workspace_id: 'int | None' = None, fields: 'str | None' = None, name: 'str | None' = None, browse_type: 'str | None' = None, sort: 'str | None' = None, offset: 'int | None' = None, limit: 'int | None' = None) -> 'dict[str, Any]'`](#browseself-project_id-int-workspace_id-int-none-none-fields-str-none-none-name-str-none-none-browse_type-str-none-none-sort-str-none-none-offset-int-none-none-limit-int-none-none---dictstr-any)
     - [`bulk_delete(self, project_ids: '_list[int]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#bulk_deleteself-project_ids-_listint-workspace_id-int-none-none---dictstr-any)
     - [`bulk_update(self, patch_data: 'dict[str, Any]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#bulk_updateself-patch_data-dictstr-any-workspace_id-int-none-none---dictstr-any)
+    - [`checkpoint_list(self, project_id: 'int', workspace_id: 'int | None' = None, fields: 'str | None' = None, sort: 'str | None' = None, dataview_id: 'int | None' = None, sequence: 'int | None' = None, status: 'str | None' = None) -> 'dict[str, Any]'`](#checkpoint_listself-project_id-int-workspace_id-int-none-none-fields-str-none-none-sort-str-none-none-dataview_id-int-none-none-sequence-int-none-none-status-str-none-none---dictstr-any)
     - [`create(self, name: 'str', color: 'str | None' = None, project_access: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#createself-name-str-color-str-none-none-project_access-str-none-none-workspace_id-int-none-none---dictstr-any)
+    - [`data_check_list(self, project_id: 'int', workspace_id: 'int | None' = None, fields: 'str | None' = None, sort: 'str | None' = None, dataview_id: 'int | None' = None, sequence: 'int | None' = None, status: 'str | None' = None) -> 'dict[str, Any]'`](#data_check_listself-project_id-int-workspace_id-int-none-none-fields-str-none-none-sort-str-none-none-dataview_id-int-none-none-sequence-int-none-none-status-str-none-none---dictstr-any)
     - [`delete(self, project_id: 'int', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#deleteself-project_id-int-workspace_id-int-none-none---dictstr-any)
     - [`get(self, project: 'int | str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#getself-project-int-str-none-none-workspace_id-int-none-none---dictstr-any)
     - [`list(self, workspace_id: 'int | None' = None, limit: 'int' = 100) -> 'dict[str, Any]'`](#listself-workspace_id-int-none-none-limit-int-100---dictstr-any)
+    - [`pending_changes(self, project_id: 'int', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#pending_changesself-project_id-int-workspace_id-int-none-none---dictstr-any)
+    - [`publish_credentials(self, project_id: 'int', odbc_type: "Literal['postgres', 'bigquery']", workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#publish_credentialsself-project_id-int-odbc_type-literalpostgres-bigquery-workspace_id-int-none-none---dictstr-any)
     - [`remove_users(self, project_id: 'int', user_ids: '_list[str]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#remove_usersself-project_id-int-user_ids-_liststr-workspace_id-int-none-none---dictstr-any)
+    - [`resource_dependencies(self, project_id: 'int', resource_ids: '_list[str]', is_recursive: 'bool | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#resource_dependenciesself-project_id-int-resource_ids-_liststr-is_recursive-bool-none-none-workspace_id-int-none-none---dictstr-any)
+    - [`resource_status(self, project_id: 'int', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#resource_statusself-project_id-int-workspace_id-int-none-none---dictstr-any)
+    - [`sample_flow(self, project_id: 'int', label_resource_id: 'int | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#sample_flowself-project_id-int-label_resource_id-int-none-none-workspace_id-int-none-none---dictstr-any)
     - [`update(self, project_id: 'int', name: 'str | None' = None, color: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#updateself-project_id-int-name-str-none-none-color-str-none-none-workspace_id-int-none-none---dictstr-any)
+    - [`user_update(self, project_id: 'int', role: "Literal['project_admin', 'project_analyst']", user_id: 'int | None' = None, invite_id: 'int | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#user_updateself-project_id-int-role-literalproject_admin-project_analyst-user_id-int-none-none-invite_id-int-none-none-workspace_id-int-none-none---dictstr-any)
 - [Datasets](#datasets)
   - [`DatasetsAPI`](#datasetsapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
     - [`bulk_delete(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'None'`](#bulk_deleteself-workspace_id-int-none-none-project_id-int-none-none---none)
     - [`bulk_update(self, patch_data: 'dict[str, Any]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#bulk_updateself-patch_data-dictstr-any-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`create(self, dataset_spec: 'dict[str, Any]', ds_creation_type: 'str', folder_resource_id: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#createself-dataset_spec-dictstr-any-ds_creation_type-str-folder_resource_id-str-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`create_from_pdf(self, file_object_id: 'int', file_name: 'str', file_id: 'str | None' = None, table_list: '_list[int] | None' = None, delete_file_after_extract: 'bool' = False, is_preview_needed: 'bool | None' = None, user_instruction: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#create_from_pdfself-file_object_id-int-file_name-str-file_id-str-none-none-table_list-_listint-none-none-delete_file_after_extract-bool-false-is_preview_needed-bool-none-none-user_instruction-str-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`delete(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'None'`](#deleteself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none---none)
+    - [`file_settings_undo(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#file_settings_undoself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`file_settings_update(self, dataset_id: 'int', delimiter: 'str', has_header: 'bool', initial_skip_count: 'int', quotechar: 'str', date_format: 'str | None' = None, preview_mode: 'bool' = False, skip_auto_process_check: 'bool' = True, date_formats: 'dict[str, str] | None' = None, set_project_level_date_format: 'bool' = False, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#file_settings_updateself-dataset_id-int-delimiter-str-has_header-bool-initial_skip_count-int-quotechar-str-date_format-str-none-none-preview_mode-bool-false-skip_auto_process_check-bool-true-date_formats-dictstr-str-none-none-set_project_level_date_format-bool-false-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`get(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#getself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`get_batch(self, dataset_id: 'int', batch_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_batchself-dataset_id-int-batch_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`get_data(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int' = 300, poll_interval: 'int' = 2) -> 'dict[str, Any]'`](#get_dataself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none-timeout-int-300-poll_interval-int-2---dictstr-any)
@@ -239,6 +251,8 @@
     - [`list(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None, limit: 'int' = 100, sort: 'str' = '(created_at:desc)') -> 'dict[str, Any]'`](#listself-workspace_id-int-none-none-project_id-int-none-none-limit-int-100-sort-str-created_atdesc---dictstr-any)
     - [`list_batches(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`](#list_batchesself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none---_listdictstr-any)
     - [`rename(self, dataset_id: 'int', name: 'str', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#renameself-dataset_id-int-name-str-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`restore(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#restoreself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`trash(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#trashself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`update(self, patch_data: '_list[dict[str, Any]]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#updateself-patch_data-_listdictstr-any-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
 - [Dataviews](#dataviews)
   - [`DataviewsAPI`](#dataviewsapi)
@@ -252,23 +266,33 @@
     - [`create(self, dataset_id: 'int', name: 'str | None' = 'View', clone_config_from: 'int | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#createself-dataset_id-int-name-str-none-view-clone_config_from-int-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`delete(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#deleteself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`draft_mode(self, dataset_id: 'int', dataview_id: 'int', command: 'str', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#draft_modeself-dataset_id-int-dataview_id-int-command-str-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
-    - [`get(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#getself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
-    - [`get_data(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 2) -> 'dict[str, Any]'`](#get_dataself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none-timeout-int-none-none-poll_interval-int-2---dictstr-any)
+    - [`get(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, sequence: 'int | None' = None, fields: 'str | None' = None) -> 'dict[str, Any]'`](#getself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none-sequence-int-none-none-fields-str-none-none---dictstr-any)
+    - [`get_data(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 2, sequence: 'int | None' = None) -> 'dict[str, Any]'`](#get_dataself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none-timeout-int-none-none-poll_interval-int-2-sequence-int-none-none---dictstr-any)
     - [`list(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, limit: 'int' = 100, sort: 'str' = '(created_at:desc)') -> 'dict[str, Any]'`](#listself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none-limit-int-100-sort-str-created_atdesc---dictstr-any)
     - [`mark_active(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#mark_activeself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
-    - [`query_data(self, dataset_id: 'int', dataview_id: 'int', sequence: 'int' = 0, offset: 'int' = 1, limit: 'int' = 400, columns: '_list[str] | None' = None, condition: 'dict[str, Any] | None' = None, sort: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#query_dataself-dataset_id-int-dataview_id-int-sequence-int-0-offset-int-1-limit-int-400-columns-_liststr-none-none-condition-dictstr-any-none-none-sort-str-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`parameter_context(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#parameter_contextself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`preview(self, dataset_id: 'int', dataview_id: 'int', rows: 'int | None' = None, cols: 'int | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#previewself-dataset_id-int-dataview_id-int-rows-int-none-none-cols-int-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`query_data(self, dataset_id: 'int', dataview_id: 'int', sequence: 'int | None' = None, offset: 'int' = 1, limit: 'int' = 400, columns: '_list[str] | None' = None, condition: 'dict[str, Any] | None' = None, sort: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#query_dataself-dataset_id-int-dataview_id-int-sequence-int-none-none-offset-int-1-limit-int-400-columns-_liststr-none-none-condition-dictstr-any-none-none-sort-str-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`restore(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#restoreself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`trash(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#trashself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`update(self, dataset_id: 'int', dataview_id: 'int', patch_data: '_list[dict[str, Any]]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#updateself-dataset_id-int-dataview_id-int-patch_data-_listdictstr-any-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
 - [Pipeline](#pipeline)
   - [`PipelineAPI`](#pipelineapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
     - [`add_task(self, dataview_id: 'int', task_spec: 'dict[str, Any]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#add_taskself-dataview_id-int-task_spec-dictstr-any-dataset_id-int-none-none---dictstr-any)
+    - [`command(self, dataview_id: 'int', command: 'str', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#commandself-dataview_id-int-command-str-dataset_id-int-none-none---dictstr-any)
     - [`delete_task(self, dataview_id: 'int', task_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#delete_taskself-dataview_id-int-task_id-int-dataset_id-int-none-none---dictstr-any)
     - [`draft_mode(self, dataview_id: 'int', command: 'str', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#draft_modeself-dataview_id-int-command-str-dataset_id-int-none-none---dictstr-any)
     - [`edit_pipeline(self, dataview_id: 'int', patches: '_list[dict[str, Any]]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#edit_pipelineself-dataview_id-int-patches-_listdictstr-any-dataset_id-int-none-none---dictstr-any)
+    - [`find_dataset_for_dataview(self, dataview_id: 'int') -> 'int'`](#find_dataset_for_dataviewself-dataview_id-int---int)
+    - [`get_draft_status(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_draft_statusself-dataview_id-int-dataset_id-int-none-none---dictstr-any)
     - [`get_pipeline(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_pipelineself-dataview_id-int-dataset_id-int-none-none---dictstr-any)
     - [`get_task(self, dataview_id: 'int', task_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_taskself-dataview_id-int-task_id-int-dataset_id-int-none-none---dictstr-any)
+    - [`items(self, dataview_id: 'int', dataset_id: 'int | None' = None, fields: 'str | None' = None, limit: 'int | None' = None, offset: 'int | None' = None, sort: 'str | None' = None, sequence: 'int | None' = None, status: 'str | None' = None) -> 'dict[str, Any]'`](#itemsself-dataview_id-int-dataset_id-int-none-none-fields-str-none-none-limit-int-none-none-offset-int-none-none-sort-str-none-none-sequence-int-none-none-status-str-none-none---dictstr-any)
+    - [`latest_task_sequence(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'int'`](#latest_task_sequenceself-dataview_id-int-dataset_id-int-none-none---int)
     - [`list_tasks(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#list_tasksself-dataview_id-int-dataset_id-int-none-none---dictstr-any)
     - [`preview_task(self, dataview_id: 'int', task_spec: 'dict[str, Any]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#preview_taskself-dataview_id-int-task_spec-dictstr-any-dataset_id-int-none-none---dictstr-any)
+    - [`rerun(self, dataview_id: 'int', from_sequence: 'int | None' = None, dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#rerunself-dataview_id-int-from_sequence-int-none-none-dataset_id-int-none-none---dictstr-any)
     - [`update_task(self, dataview_id: 'int', task_id: 'int', task_spec: 'dict[str, Any]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#update_taskself-dataview_id-int-task_id-int-task_spec-dictstr-any-dataset_id-int-none-none---dictstr-any)
     - [`wait_for_pipeline(self, dataview_id: 'int', dataset_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 3) -> 'dict[str, Any]'`](#wait_for_pipelineself-dataview_id-int-dataset_id-int-none-none-timeout-int-none-none-poll_interval-int-3---dictstr-any)
 - [Jobs](#jobs)
@@ -281,18 +305,98 @@
 - [Dashboards](#dashboards)
   - [`DashboardsAPI`](#dashboardsapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
-    - [`action(self, dashboard_id: 'int', action_config: 'dict[str, Any]') -> 'dict[str, Any]'`](#actionself-dashboard_id-int-action_config-dictstr-any---dictstr-any)
-    - [`create(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`](#createself-config-dictstr-any---dictstr-any)
+    - [`action(self, dashboard_id: 'int', action: 'DashboardActionType', params_enabled: 'bool | None' = None, params_view_id: 'int | None' = None) -> 'dict[str, Any]'`](#actionself-dashboard_id-int-action-dashboardactiontype-params_enabled-bool-none-none-params_view_id-int-none-none---dictstr-any)
+    - [`analytics(self: 'Any', dashboard_id: 'int') -> 'DashboardAnalyticsResponse'`](#analyticsself-any-dashboard_id-int---dashboardanalyticsresponse)
+    - [`cancel_generation(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#cancel_generationself-dashboard_id-int---dictstr-any)
+    - [`canvas_get(self: 'Any', dashboard_id: 'int', sequence: 'int | None' = None) -> 'CanvasResponse'`](#canvas_getself-any-dashboard_id-int-sequence-int-none-none---canvasresponse)
+    - [`canvas_restore(self: 'Any', dashboard_id: 'int', body: 'RestoreCanvasSpec') -> 'ObjectJobSchema | JobResponse'`](#canvas_restoreself-any-dashboard_id-int-body-restorecanvasspec---objectjobschema-jobresponse)
+    - [`canvas_save(self: 'Any', dashboard_id: 'int', body: 'SaveCanvasSpec') -> 'SaveCanvasResponse'`](#canvas_saveself-any-dashboard_id-int-body-savecanvasspec---savecanvasresponse)
+    - [`chat_edit(self: 'Any', dashboard_id: 'int', body: 'ChatEditSpec') -> 'ObjectJobSchema | JobResponse'`](#chat_editself-any-dashboard_id-int-body-chateditspec---objectjobschema-jobresponse)
+    - [`chat_history(self: 'Any', dashboard_id: 'int', sequence: 'int | None' = None) -> 'mmai_dashboards_v3_schema_ChatHistoryResponse'`](#chat_historyself-any-dashboard_id-int-sequence-int-none-none---mmai_dashboards_v3_schema_chathistoryresponse)
+    - [`context_create(self: 'Any', body: 'ContextSpec') -> 'ContextResponse'`](#context_createself-any-body-contextspec---contextresponse)
+    - [`context_delete(self: 'Any', context_id: 'str') -> 'OkResponse'`](#context_deleteself-any-context_id-str---okresponse)
+    - [`context_list(self: 'Any') -> 'ContextListResponse'`](#context_listself-any---contextlistresponse)
+    - [`context_update(self: 'Any', context_id: 'str', body: 'ContextSpec') -> 'ContextResponse'`](#context_updateself-any-context_id-str-body-contextspec---contextresponse)
+    - [`create(self, intent: 'str', source: '_list[int]', enable_filters: 'bool' = True, enable_pages: 'bool' = False) -> 'dict[str, Any]'`](#createself-intent-str-source-_listint-enable_filters-bool-true-enable_pages-bool-false---dictstr-any)
+    - [`data_draft(self: 'Any', dashboard_id: 'int', body: 'WidgetDataSpec') -> 'WidgetDataResponse | ObjectJobSchema | JobResponse'`](#data_draftself-any-dashboard_id-int-body-widgetdataspec---widgetdataresponse-objectjobschema-jobresponse)
+    - [`data_published(self: 'Any', dashboard_id: 'int', body: 'WidgetDataSpec') -> 'WidgetDataResponse | ObjectJobSchema | JobResponse'`](#data_publishedself-any-dashboard_id-int-body-widgetdataspec---widgetdataresponse-objectjobschema-jobresponse)
     - [`delete(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#deleteself-dashboard_id-int---dictstr-any)
+    - [`descriptor_data(self: 'Any', dashboard_id: 'int', body: 'DescriptorDataSpec') -> 'ObjectJobSchema | JobResponse'`](#descriptor_dataself-any-dashboard_id-int-body-descriptordataspec---objectjobschema-jobresponse)
+    - [`duplicate(self: 'Any', dashboard_id: 'int') -> 'DuplicateDashboardResponse'`](#duplicateself-any-dashboard_id-int---duplicatedashboardresponse)
+    - [`figure_intent(self: 'Any', dashboard_id: 'int', body: 'FigureIntentSpec') -> 'FigureIntentResponse'`](#figure_intentself-any-dashboard_id-int-body-figureintentspec---figureintentresponse)
     - [`get(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#getself-dashboard_id-int---dictstr-any)
     - [`get_analytics(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#get_analyticsself-dashboard_id-int---dictstr-any)
     - [`get_by_url(self, url: 'str') -> 'dict[str, Any]'`](#get_by_urlself-url-str---dictstr-any)
     - [`get_draft_data(self, dashboard_id: 'int', sql: 'str') -> 'dict[str, Any]'`](#get_draft_dataself-dashboard_id-int-sql-str---dictstr-any)
     - [`get_publish_data(self, dashboard_id: 'int', sql: 'str') -> 'dict[str, Any]'`](#get_publish_dataself-dashboard_id-int-sql-str---dictstr-any)
     - [`get_sources(self) -> '_list[dict[str, Any]]'`](#get_sourcesself---_listdictstr-any)
-    - [`list(self) -> '_list[dict[str, Any]]'`](#listself---_listdictstr-any)
-    - [`share(self, dashboard_id: 'int', config: 'dict[str, Any]') -> 'dict[str, Any]'`](#shareself-dashboard_id-int-config-dictstr-any---dictstr-any)
-    - [`update(self, dashboard_id: 'int', config: 'dict[str, Any]') -> 'dict[str, Any]'`](#updateself-dashboard_id-int-config-dictstr-any---dictstr-any)
+    - [`job_by_url(self, url: 'str', job_id: 'int') -> 'dict[str, Any]'`](#job_by_urlself-url-str-job_id-int---dictstr-any)
+    - [`list(self, project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`](#listself-project_id-int-none-none---_listdictstr-any)
+    - [`og_card(self: 'Any', dashboard_id: 'int') -> 'dict[str, Any]'`](#og_cardself-any-dashboard_id-int---dictstr-any)
+    - [`page_plan(self: 'Any', dashboard_id: 'int', body: 'PlanPageSpec') -> 'PlanPageResponse'`](#page_planself-any-dashboard_id-int-body-planpagespec---planpageresponse)
+    - [`pdf_artifact(self: 'Any', dashboard_id: 'int', job_id: 'int') -> 'dict[str, Any]'`](#pdf_artifactself-any-dashboard_id-int-job_id-int---dictstr-any)
+    - [`pdf_export(self: 'Any', dashboard_id: 'int', body: 'PdfExportSpec') -> 'ObjectJobSchema | JobResponse'`](#pdf_exportself-any-dashboard_id-int-body-pdfexportspec---objectjobschema-jobresponse)
+    - [`published_canvas(self: 'Any', url: 'str') -> 'CanvasResponse'`](#published_canvasself-any-url-str---canvasresponse)
+    - [`published_data(self: 'Any', url: 'str', body: 'DescriptorDataSpec') -> 'ObjectJobSchema | JobResponse'`](#published_dataself-any-url-str-body-descriptordataspec---objectjobschema-jobresponse)
+    - [`published_data_by_url(self, url: 'str', body: 'dict[str, Any]') -> 'dict[str, Any]'`](#published_data_by_urlself-url-str-body-dictstr-any---dictstr-any)
+    - [`published_og_card(self: 'Any', url: 'str') -> 'dict[str, Any]'`](#published_og_cardself-any-url-str---dictstr-any)
+    - [`published_pdf_artifact(self: 'Any', url: 'str', job_id: 'int') -> 'dict[str, Any]'`](#published_pdf_artifactself-any-url-str-job_id-int---dictstr-any)
+    - [`published_pdf_export(self: 'Any', url: 'str', body: 'PdfExportSpec') -> 'ObjectJobSchema | JobResponse'`](#published_pdf_exportself-any-url-str-body-pdfexportspec---objectjobschema-jobresponse)
+    - [`published_share_page(self: 'Any', url: 'str') -> 'dict[str, Any]'`](#published_share_pageself-any-url-str---dictstr-any)
+    - [`published_video_artifact(self: 'Any', url: 'str') -> 'dict[str, Any]'`](#published_video_artifactself-any-url-str---dictstr-any)
+    - [`published_video_export(self: 'Any', url: 'str') -> 'ObjectJobSchema | JobResponse'`](#published_video_exportself-any-url-str---objectjobschema-jobresponse)
+    - [`qa_ask(self: 'Any', dashboard_id: 'int', session_id: 'int', body: 'AskSpec') -> 'ObjectJobSchema | JobResponse'`](#qa_askself-any-dashboard_id-int-session_id-int-body-askspec---objectjobschema-jobresponse)
+    - [`qa_comment_create(self: 'Any', dashboard_id: 'int', session_id: 'int', body: 'CommentSpec') -> 'SessionResponse'`](#qa_comment_createself-any-dashboard_id-int-session_id-int-body-commentspec---sessionresponse)
+    - [`qa_comment_delete(self: 'Any', dashboard_id: 'int', session_id: 'int', comment_id: 'int') -> 'SessionResponse'`](#qa_comment_deleteself-any-dashboard_id-int-session_id-int-comment_id-int---sessionresponse)
+    - [`qa_feedback(self: 'Any', dashboard_id: 'int', session_id: 'int', message_id: 'int', body: 'FeedbackSpec') -> 'SessionResponse'`](#qa_feedbackself-any-dashboard_id-int-session_id-int-message_id-int-body-feedbackspec---sessionresponse)
+    - [`qa_session_create(self: 'Any', dashboard_id: 'int', body: 'CreateSessionSpec') -> 'SessionResponse'`](#qa_session_createself-any-dashboard_id-int-body-createsessionspec---sessionresponse)
+    - [`qa_session_delete(self: 'Any', dashboard_id: 'int', session_id: 'int') -> 'dict[str, Any]'`](#qa_session_deleteself-any-dashboard_id-int-session_id-int---dictstr-any)
+    - [`qa_session_fork(self: 'Any', dashboard_id: 'int', session_id: 'int') -> 'SessionResponse'`](#qa_session_forkself-any-dashboard_id-int-session_id-int---sessionresponse)
+    - [`qa_session_get(self: 'Any', dashboard_id: 'int', session_id: 'int') -> 'SessionResponse'`](#qa_session_getself-any-dashboard_id-int-session_id-int---sessionresponse)
+    - [`qa_session_list(self: 'Any', dashboard_id: 'int') -> 'SessionListResponse'`](#qa_session_listself-any-dashboard_id-int---sessionlistresponse)
+    - [`qa_session_rename(self: 'Any', dashboard_id: 'int', session_id: 'int', body: 'RenameSessionSpec') -> 'SessionResponse'`](#qa_session_renameself-any-dashboard_id-int-session_id-int-body-renamesessionspec---sessionresponse)
+    - [`qa_session_set_visibility(self: 'Any', dashboard_id: 'int', session_id: 'int', body: 'VisibilitySpec') -> 'SessionResponse'`](#qa_session_set_visibilityself-any-dashboard_id-int-session_id-int-body-visibilityspec---sessionresponse)
+    - [`qa_settings_get(self: 'Any', dashboard_id: 'int') -> 'QaSettingsResponse'`](#qa_settings_getself-any-dashboard_id-int---qasettingsresponse)
+    - [`qa_settings_set(self: 'Any', dashboard_id: 'int', body: 'QaSettingsSpec') -> 'QaSettingsResponse'`](#qa_settings_setself-any-dashboard_id-int-body-qasettingsspec---qasettingsresponse)
+    - [`query(self: 'Any', dashboard_id: 'int', body: 'AdhocQuerySpec') -> 'AdhocQueryResponse'`](#queryself-any-dashboard_id-int-body-adhocqueryspec---adhocqueryresponse)
+    - [`restore(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#restoreself-dashboard_id-int---dictstr-any)
+    - [`rls_assignment_list(self: 'Any', dashboard_id: 'int') -> 'RlsAssignmentsResponse'`](#rls_assignment_listself-any-dashboard_id-int---rlsassignmentsresponse)
+    - [`rls_assignment_set(self: 'Any', dashboard_id: 'int', body: 'RlsAssignmentsSpec') -> 'dict[str, Any]'`](#rls_assignment_setself-any-dashboard_id-int-body-rlsassignmentsspec---dictstr-any)
+    - [`rls_column_list(self: 'Any', dashboard_id: 'int') -> 'RlsColumnsResponse'`](#rls_column_listself-any-dashboard_id-int---rlscolumnsresponse)
+    - [`rls_value_list(self: 'Any', dashboard_id: 'int', column: 'str', search: 'str | None' = None) -> 'RlsDistinctValuesResponse'`](#rls_value_listself-any-dashboard_id-int-column-str-search-str-none-none---rlsdistinctvaluesresponse)
+    - [`share(self, dashboard_id: 'int', type_of_auth: 'DashboardAuthType', users: '_list[DashboardShareUser] | None' = None) -> 'dict[str, Any]'`](#shareself-dashboard_id-int-type_of_auth-dashboardauthtype-users-_listdashboardshareuser-none-none---dictstr-any)
+    - [`signature_create(self: 'Any', body: 'SignatureSpec') -> 'SignatureResponse'`](#signature_createself-any-body-signaturespec---signatureresponse)
+    - [`signature_delete(self: 'Any', signature_id: 'str') -> 'OkResponse'`](#signature_deleteself-any-signature_id-str---okresponse)
+    - [`signature_list(self: 'Any') -> 'SignatureListResponse'`](#signature_listself-any---signaturelistresponse)
+    - [`signature_update(self: 'Any', signature_id: 'str', body: 'SignatureSpec') -> 'SignatureResponse'`](#signature_updateself-any-signature_id-str-body-signaturespec---signatureresponse)
+    - [`source_list(self: 'Any') -> 'DashboardSourcesType'`](#source_listself-any---dashboardsourcestype)
+    - [`style_custom_create(self: 'Any', body: 'CustomStyleSpec') -> 'StyleResponse'`](#style_custom_createself-any-body-customstylespec---styleresponse)
+    - [`style_custom_delete(self: 'Any', style_id: 'str') -> 'OkResponse'`](#style_custom_deleteself-any-style_id-str---okresponse)
+    - [`style_custom_list(self: 'Any') -> 'StyleListResponse'`](#style_custom_listself-any---stylelistresponse)
+    - [`style_custom_update(self: 'Any', style_id: 'str', body: 'CustomStyleSpec') -> 'StyleResponse'`](#style_custom_updateself-any-style_id-str-body-customstylespec---styleresponse)
+    - [`style_default_get(self: 'Any') -> 'DefaultStyleResponse'`](#style_default_getself-any---defaultstyleresponse)
+    - [`style_default_set(self: 'Any', body: 'DefaultStyleSpec') -> 'DefaultStyleResponse'`](#style_default_setself-any-body-defaultstylespec---defaultstyleresponse)
+    - [`style_derive(self: 'Any', body: 'DeriveStyleSpec') -> 'dict[str, Any] | DeriveStyleResponse'`](#style_deriveself-any-body-derivestylespec---dictstr-any-derivestyleresponse)
+    - [`style_extract_brand(self: 'Any', body: 'ExtractBrandSpec') -> 'ObjectJobSchema | JobResponse'`](#style_extract_brandself-any-body-extractbrandspec---objectjobschema-jobresponse)
+    - [`style_preset_list(self: 'Any') -> 'StylePresetsResponse'`](#style_preset_listself-any---stylepresetsresponse)
+    - [`style_token_list(self: 'Any', id: 'str') -> 'StyleTokensResponse'`](#style_token_listself-any-id-str---styletokensresponse)
+    - [`suggestion_list(self: 'Any', dataview_id: 'int', table_item_id: 'int | None' = None) -> 'DashboardSuggestionsResponse'`](#suggestion_listself-any-dataview_id-int-table_item_id-int-none-none---dashboardsuggestionsresponse)
+    - [`template_apply(self: 'Any', body: 'ApplyTemplateSpec') -> 'ObjectJobSchema | JobResponse'`](#template_applyself-any-body-applytemplatespec---objectjobschema-jobresponse)
+    - [`template_create(self: 'Any', body: 'SaveTemplateSpec') -> 'TemplateDetailResponse'`](#template_createself-any-body-savetemplatespec---templatedetailresponse)
+    - [`template_delete(self: 'Any', template_id: 'str') -> 'OkResponse'`](#template_deleteself-any-template_id-str---okresponse)
+    - [`template_fit(self: 'Any', dataview_id: 'int', table_item_id: 'int | None' = None) -> 'TemplateFitResponse'`](#template_fitself-any-dataview_id-int-table_item_id-int-none-none---templatefitresponse)
+    - [`template_get(self: 'Any', template_id: 'str') -> 'TemplateDetailResponse'`](#template_getself-any-template_id-str---templatedetailresponse)
+    - [`template_list(self: 'Any') -> 'TemplateListResponse'`](#template_listself-any---templatelistresponse)
+    - [`template_preview(self: 'Any', body: 'PreviewTemplateSpec') -> 'PreviewTemplateResponse'`](#template_previewself-any-body-previewtemplatespec---previewtemplateresponse)
+    - [`template_rename(self: 'Any', template_id: 'str', body: 'RenameTemplateSpec') -> 'TemplateDetailResponse'`](#template_renameself-any-template_id-str-body-renametemplatespec---templatedetailresponse)
+    - [`template_resolve_mapping(self: 'Any', body: 'ResolveTemplateMappingSpec') -> 'ResolveTemplateMappingResponse'`](#template_resolve_mappingself-any-body-resolvetemplatemappingspec---resolvetemplatemappingresponse)
+    - [`trash(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#trashself-dashboard_id-int---dictstr-any)
+    - [`update(self, dashboard_id: 'int', patch: '_list[DashboardPatchItem]') -> 'dict[str, Any]'`](#updateself-dashboard_id-int-patch-_listdashboardpatchitem---dictstr-any)
+    - [`v3_generate(self: 'Any', body: 'GenerateDashboardV3Spec') -> 'ObjectJobSchema | JobResponse'`](#v3_generateself-any-body-generatedashboardv3spec---objectjobschema-jobresponse)
+    - [`video_export(self: 'Any', dashboard_id: 'int') -> 'ObjectJobSchema | JobResponse'`](#video_exportself-any-dashboard_id-int---objectjobschema-jobresponse)
+    - [`video_state(self: 'Any', dashboard_id: 'int') -> 'dict[str, Any]'`](#video_stateself-any-dashboard_id-int---dictstr-any)
+    - [`widget_data(self, dashboard_id: 'int', body: 'dict[str, Any]') -> 'dict[str, Any]'`](#widget_dataself-dashboard_id-int-body-dictstr-any---dictstr-any)
+    - [`widget_data_by_url(self, url: 'str', body: 'dict[str, Any]') -> 'dict[str, Any]'`](#widget_data_by_urlself-url-str-body-dictstr-any---dictstr-any)
 - [Webhooks](#webhooks)
   - [`WebhooksAPI`](#webhooksapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
@@ -427,7 +531,7 @@
 
 # Mammoth Analytics Python SDK
 
-**Version 0.3.0** | Python 3.10+ | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mammothsdk)
+Python 3.12-3.14 | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mammothsdk)
 
 The official Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data pipelines, apply transformations, and export results -- all from Python.
 
@@ -523,20 +627,26 @@ view.export.to_csv("output.csv")
 
 ## Requirements
 
-- Python 3.10 or higher
+- Python 3.12, 3.13, or 3.14 (the package declares `>=3.12,<3.15`)
 - pip or Poetry package manager
+
+The SDK and `mammoth-cli` ship from the same monorepo and deliberately support
+the same interpreters, so a machine that can run one can run the other.
 
 ## Install from PyPI
 
 ```bash
-pip install mammoth-io==0.3.7
+pip install mammoth-io
 ```
 
 Or with Poetry:
 
 ```bash
-poetry add mammoth-io==0.3.7
+poetry add mammoth-io
 ```
+
+Install the latest release rather than pinning here. If your project needs a
+pin, pin it in your own dependency file against the version you tested.
 
 ## Dependencies
 
@@ -544,8 +654,11 @@ The SDK has two runtime dependencies, installed automatically:
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `requests` | ^2.32.0 | HTTP client for API requests |
-| `pydantic` | ^2.11.0 | Data validation and response models |
+| `requests` | `>=2.32,<3` | HTTP client for API requests |
+| `pydantic` | `>=2.10,<3` | Data validation and response models |
+
+These are ranges rather than exact pins on purpose: as a library, `mammoth-io`
+has to compose with whatever versions the consuming application already pins.
 
 ## Development installation
 
@@ -553,7 +666,7 @@ Clone the repository and install with dev dependencies:
 
 ```bash
 git clone https://github.com/EdgeMetric/mammothsdk.git
-cd mm-pysdk
+cd mammothsdk
 poetry install
 ```
 
@@ -1086,18 +1199,22 @@ Example::
 
     dataset_id = client.find_dataset_for_dataview(1039)
 
-#### `branch_out(self, view_id: 'int', dest_dataset_id: 'int', column_mapping: 'dict[str, str] | None' = None, **kwargs: 'Any') -> 'dict[str, Any]'`
+#### `branch_out(self, view_id: 'int', dataset_name: 'str', *, target_ds_id: 'int | None' = None, column_mapping: 'dict[str, str] | None' = None, **kwargs: 'Any') -> 'int'`
 
-Branch out a view to another dataset.
+Branch out a view — save its data as a Mammoth dataset.
 
 Args:
     view_id: Source dataview ID.
-    dest_dataset_id: Target dataset ID.
-    column_mapping: Column mapping dict (optional).
-    **kwargs: Additional export options.
+    dataset_name: Name for the new dataset (display name when writing
+        into an existing one).
+    target_ds_id: Existing dataset to write into; None creates a new one.
+    column_mapping: Source -> destination column-name map (optional).
+    **kwargs: Additional options forwarded to :meth:`View.branch_out`
+        (``save_as_mode``, ``label_ids``, ``condition``, ``timeout``).
 
 Returns:
-    Export result dict.
+    The id of the dataset written to (new when ``target_ds_id`` is None,
+    otherwise ``target_ds_id``).
 
 #### `test_connection(self) -> 'bool'`
 
@@ -1337,7 +1454,7 @@ Transformation methods (SET, FILTER, MATH, JOIN, PIVOT, WINDOW, etc.)
 send the task to the pipeline API and automatically refresh metadata.
 Each method returns the API response dict.
 
-#### `data(self, limit: 'int' = 400, offset: 'int' = 1, columns: 'list[str] | None' = None, condition: 'Condition | CompoundCondition | None' = None, sort: 'str | None' = None) -> 'dict[str, Any]'`
+#### `data(self, limit: 'int' = 400, offset: 'int' = 1, columns: 'list[str] | None' = None, condition: 'Condition | CompoundCondition | None' = None, sort: 'str | None' = None, sequence: 'int | None' = None) -> 'dict[str, Any]'`
 
 Fetch data rows from the dataview.
 
@@ -1347,6 +1464,9 @@ Args:
     columns: List of display names to fetch. ``None`` fetches all.
     condition: Filter condition — only matching rows are returned.
     sort: Sort specification string.
+    sequence: Pipeline step to read at (default: latest, so rows
+        include every pipeline-derived column; pass ``0`` for the
+        original dataset).
 
 Returns:
     Dict with ``data`` (list of row dicts), ``columns``, and
@@ -1520,23 +1640,31 @@ Returns:
 
 Whether this view is currently in draft mode.
 
-#### `branch_out(self, dest_dataset_id: 'int', column_mapping: 'dict[str, str] | None' = None, **kwargs: 'Any') -> 'dict[str, Any]'`
+#### `branch_out(self, dataset_name: 'str', *, target_ds_id: 'int | None' = None, save_as_mode: 'SaveAsDatasetMode' = <SaveAsDatasetMode.REPLACE: 'REPLACE_IN_DS'>, column_mapping: 'dict[str, str] | None' = None, label_ids: 'list[int] | None' = None, condition: 'Condition | CompoundCondition | NotCondition | None' = None, timeout: 'int | None' = None) -> 'int'`
 
-Branch out (export) this view's data to another dataset.
+Branch out — save this view's data as a Mammoth dataset.
 
-Shortcut for ``view.export.to_dataset(dest_dataset_id)``.
+Shortcut for :meth:`ViewExport.to_dataset`. ``target_ds_id`` None
+creates a new dataset named *dataset_name*; an int replaces/appends
+into that existing dataset (per *save_as_mode*).
 
 Args:
-    dest_dataset_id: Target dataset ID to receive the data.
-    column_mapping: Column mapping dict (optional).
-    **kwargs: Additional export options.
+    dataset_name: Name for the new dataset (display name when writing
+        into an existing one).
+    target_ds_id: Existing dataset to write into; None creates a new one.
+    save_as_mode: Replace or append when writing the output dataset.
+    column_mapping: Source -> destination column-name map (empty = all).
+    label_ids: Folder/label ids for the new dataset.
+    condition: Optional row filter applied before copying.
+    timeout: Max seconds to wait for the job.
 
 Returns:
-    Export result dict.
+    The id of the dataset written to (new when ``target_ds_id`` is None,
+    otherwise ``target_ds_id``).
 
 Example::
 
-    view.branch_out(dest_dataset_id=42)
+    new_id = view.branch_out(dataset_name="Q1 snapshot")
 
 #### `filter_rows(self, condition: 'Condition | CompoundCondition | NotCondition', filter_type: 'FilterType' = <FilterType.SHOW: 'SHOW'>, prompt: 'str' = '') -> 'dict[str, Any]'`
 
@@ -1645,20 +1773,18 @@ Examples::
         select=[JoinSelectSpec(column="column_7", alias="Category")],
     )
 
-#### `pivot(self, group_by: 'list[str]', aggregations: 'list[AggregationSpec | dict[str, Any]]', condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> 'dict[str, Any]'`
+#### `pivot(self, group_by: 'list[str]', aggregations: 'list[AggregationSpec]', condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> 'dict[str, Any]'`
 
 Group / aggregate / pivot (PIVOT task).
 
 Args:
     group_by: List of display names to group by.
-    aggregations: List of :class:`AggregationSpec` objects or dicts
-        with matching keys (``column``, ``function``, ``as_name``)::
+    aggregations: List of :class:`AggregationSpec` objects::
 
             [AggregationSpec(
                 column="Sales", function=AggregateFunction.SUM,
                 as_name="Total",
             )]
-            [{"column": "Sales", "function": "SUM", "as_name": "Total"}]
 
     condition: Condition to apply.
 
@@ -1705,29 +1831,35 @@ Example::
         order_by=[["Sales", SortDirection.DESC]],
     )
 
-#### `crosstab(self, rows: 'list[str]', pivot_column: 'str', select: 'CrosstabSpec') -> 'dict[str, Any]'`
+#### `crosstab(self, rows: 'list[str]', pivot_column: 'str', select: 'CrosstabSpec | list[CrosstabSpec]', *, dataset_name: 'str', save_as_mode: 'SaveAsDatasetMode' = <SaveAsDatasetMode.REPLACE: 'REPLACE_IN_DS'>, target_ds_id: 'int | None' = None, condition: 'Condition | CompoundCondition | NotCondition | None' = None, timeout: 'int | None' = None) -> 'int'`
 
-Crosstab / pivot table (CROSSTAB task).
+Crosstab / group-and-pivot — materialise a new pivoted dataset.
 
-Creates a matrix where row grouping columns define the rows, the
-``pivot_column``'s distinct values become new columns, and cells
-contain the aggregated result.
+Row grouping columns define the rows, the ``pivot_column``'s distinct
+values become new columns, and cells hold the aggregated result.
 
-.. note::
-
-    Crosstab uses the exports endpoint internally rather than
-    standard pipeline tasks. Some post-crosstab operations may
-    behave differently from standard pipeline views.
+Unlike standard transforms, a crosstab produces a NEW dataset, so it is
+submitted through the internal-dataset export handler and run as an
+async job. This method blocks until the dataset is materialised.
 
 Args:
-    rows: List of display names for row grouping.
-    pivot_column: Display name of column whose distinct values
+    rows: Display names of the row-grouping columns.
+    pivot_column: Display name of the column whose distinct values
         become the output columns.
-    select: :class:`CrosstabSpec` defining the aggregation function
-        and (optionally) the value column.
+    select: A :class:`CrosstabSpec` (or list of them) defining each
+        aggregation function and (except for COUNT) its value column.
+    dataset_name: Name for the dataset the crosstab creates.
+    save_as_mode: Whether to replace or append when writing the output
+        dataset (defaults to :attr:`SaveAsDatasetMode.REPLACE`).
+    target_ds_id: Existing dataset to write into; ``None`` creates a
+        new one.
+    condition: Optional row filter applied before aggregating.
+    timeout: Max seconds to wait for the job (defaults to the client's
+        ``job_timeout``).
 
 Returns:
-    API response dict.
+    The id of the dataset the crosstab wrote to (the new dataset when
+    ``target_ds_id`` is None, otherwise ``target_ds_id``).
 
 Example::
 
@@ -1736,9 +1868,8 @@ Example::
     view.crosstab(
         rows=["Region"],
         pivot_column="Product",
-        select=CrosstabSpec(
-            function=AggregateFunction.SUM, column="Sales",
-        ),
+        select=CrosstabSpec(function=AggregateFunction.SUM, column="Sales"),
+        dataset_name="Sales by Region x Product",
     )
 
 #### `add_column(self, name: 'str', column_type: 'ColumnType' = <ColumnType.TEXT: 'TEXT'>) -> 'dict[str, Any]'`
@@ -1773,16 +1904,14 @@ Examples::
     view.delete_columns(["Temp"])
     view.delete_columns(["Notes", "Internal ID", "Debug"])
 
-#### `copy_columns(self, copies: 'list[CopySpec | dict[str, Any]]') -> 'dict[str, Any]'`
+#### `copy_columns(self, copies: 'list[CopySpec]') -> 'dict[str, Any]'`
 
 Duplicate columns (COPY task).
 
 Args:
-    copies: List of :class:`CopySpec` objects or dicts with
-        matching keys (``source``, ``as_name``, ``type``)::
+    copies: List of :class:`CopySpec` objects::
 
             [CopySpec(source="Sales", as_name="Sales Copy")]
-            [{"source": "Sales", "as_name": "Sales Copy"}]
 
 Returns:
     API response dict.
@@ -1819,16 +1948,14 @@ Examples::
         existing_column="Address", separator=", ",
     )
 
-#### `convert_type(self, conversions: 'list[ConversionSpec | dict[str, Any]]') -> 'dict[str, Any]'`
+#### `convert_type(self, conversions: 'list[ConversionSpec]') -> 'dict[str, Any]'`
 
 Convert column data types (CONVERT task).
 
 Args:
-    conversions: List of :class:`ConversionSpec` objects or dicts with
-        matching keys (``column``, ``to``, ``format``)::
+    conversions: List of :class:`ConversionSpec` objects::
 
             [ConversionSpec(column="Sales", to=ColumnType.NUMERIC)]
-            [{"column": "Sales", "to": "NUMERIC"}]
 
 Returns:
     API response dict.
@@ -1839,9 +1966,6 @@ Examples::
 
     # Text to numeric
     view.convert_type([ConversionSpec(column="Sales", to=ColumnType.NUMERIC)])
-
-    # Using plain dicts
-    view.convert_type([{"column": "Sales", "to": "NUMERIC"}])
 
     # Text to date (specify the source format)
     view.convert_type([
@@ -1896,7 +2020,7 @@ Examples::
         match_case=True, match_words=True,
     )
 
-#### `bulk_replace(self, columns: 'list[str]', mapping: 'list[BulkReplaceMapping | dict[str, Any]]', match_case: 'bool' = True, match_words: 'bool' = False, condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> 'dict[str, Any]'`
+#### `bulk_replace(self, columns: 'list[str]', mapping: 'list[BulkReplaceMapping]', match_case: 'bool' = True, match_words: 'bool' = False, condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> 'dict[str, Any]'`
 
 Bulk find-and-replace across one or more columns (REPLACE with MAPPING).
 
@@ -1904,11 +2028,9 @@ Each mapping entry maps multiple search values to a single replacement.
 
 Args:
     columns: Display names of columns to search in.
-    mapping: List of :class:`BulkReplaceMapping` objects or dicts
-        with matching keys (``search``, ``replace``)::
+    mapping: List of :class:`BulkReplaceMapping` objects::
 
             [BulkReplaceMapping(search=["val1", "val2"], replace="replacement")]
-            [{"search": ["val1", "val2"], "replace": "replacement"}]
 
     match_case: Case-sensitive matching (default True).
     match_words: Whole-word matching (default False).
@@ -1926,7 +2048,7 @@ Example::
         ],
     )
 
-#### `split_column(self, column: 'str', delimiter: 'str', new_columns: 'list[SplitColumnSpec | dict[str, Any]]') -> 'dict[str, Any]'`
+#### `split_column(self, column: 'str', delimiter: 'str', new_columns: 'list[SplitColumnSpec]') -> 'dict[str, Any]'`
 
 Split a column into multiple columns by delimiter (SPLIT task).
 
@@ -1936,11 +2058,9 @@ has fewer segments than columns, the extra columns are empty.
 Args:
     column: Display name of column to split.
     delimiter: Delimiter string (e.g. ``" "``, ``","``).
-    new_columns: List of :class:`SplitColumnSpec` objects or dicts
-        with matching keys (``name``, ``type``)::
+    new_columns: List of :class:`SplitColumnSpec` objects::
 
             [SplitColumnSpec("First"), SplitColumnSpec("Last")]
-            [{"name": "First"}, {"name": "Last"}]
 
 Returns:
     API response dict.
@@ -2185,8 +2305,10 @@ and returns the corresponding ``value``.
 Args:
     source: Display name of the key column in *this* view.
     lookup_view_id: ID of the dataview to look up from.
-    key: Internal column name of the key in the lookup view.
-    value: Internal column name of the value in the lookup view.
+    key: Column name of the key in the lookup view (display name
+        or internal name — both are accepted).
+    value: Column name of the value in the lookup view (display name
+        or internal name — both are accepted).
     new_column: Name for a new result column.
     existing_column: Display name of existing column to overwrite.
 
@@ -2435,10 +2557,21 @@ Args:
     column: Display name of the column (e.g. "Sales", "Region").
     operator: Operator enum value (e.g. Operator.GTE, Operator.IN_LIST).
     value: Comparison value. Required for most operators, omit for IS_EMPTY.
+        For IN_RANGE, pass a 2-element list: ``[lower_bound, upper_bound]``.
+        For date-relative functions, pass a ``DateFunction`` with
+        ``value_is_date_fn=True``.
     case_sensitive: Controls string comparison case sensitivity.
         ``None`` (default) — don't emit STRING_PROP (backend default: case-sensitive).
         ``True`` — emit CASE-SENSITIVE.
         ``False`` — emit CASE-INSENSITIVE.
+    value_is_column: If ``True``, ``value`` names another column (column-to-column
+        comparison) rather than a literal.
+    component: Date component string (e.g. "year", "month") for date component
+        filtering.
+    truncate: Date truncation unit (e.g. "DAY", "MONTH") for truncated date
+        comparison.
+    value_is_date_fn: If ``True``, ``value`` is a ``DateFunction`` enum member and
+        is emitted as ``{"VALUE": {"FUNCTION": "<fn>"}}`` in the wire payload.
 
 Examples::
 
@@ -2446,6 +2579,12 @@ Examples::
     Condition("Sales", Operator.GTE, 1000)
     Condition("Region", Operator.IN_LIST, ["West", "East"])
     Condition("Name", Operator.IS_NOT_EMPTY)
+
+    # Range filter (numeric or date, not TEXT)
+    Condition("Amount", Operator.IN_RANGE, [100, 500])
+
+    # Case-insensitive contains (always case-insensitive, no STRING_PROP needed)
+    Condition("City", Operator.ICONTAINS, "york")
 
     # Combine with & (AND), | (OR), ~ (NOT)
     Condition("Sales", Operator.GTE, 1000) & Condition("Region", Operator.EQ, "West")
@@ -2463,10 +2602,15 @@ Examples::
     # Case-insensitive string matching
     Condition("City", Operator.EQ, "new york", case_sensitive=False)
 
-Raises:
-    ValueError: If column is empty or a non-null operator is used without a value.
+    # Date-relative function operand
+    Condition("Order Date", Operator.GT, DateFunction.TODAY, value_is_date_fn=True)
+    Condition("Date", Operator.GTE, DateFunction.NOW, value_is_date_fn=True)
 
-#### `__init__(self, column: 'str', operator: 'str | Any', value: 'Any' = None, case_sensitive: 'bool | None' = None, value_is_column: 'bool' = False, component: 'str | None' = None, truncate: 'str | None' = None) -> 'None'`
+Raises:
+    ValueError: If column is empty, a non-null operator is used without a value,
+        or IN_RANGE is not given exactly 2 bounds.
+
+#### `__init__(self, column: 'str', operator: 'str | Any', value: 'Any' = None, case_sensitive: 'bool | None' = None, value_is_column: 'bool' = False, component: 'str | None' = None, truncate: 'str | None' = None, value_is_date_fn: 'bool' = False) -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
@@ -2614,7 +2758,25 @@ Use with Condition to build row filters::
     Condition("Sales", Operator.GTE, 1000)
     Condition("Region", Operator.IN_LIST, ["West", "East"])
 
+#### `ICONTAINS`
+
+Filter operators for conditions.
+
+Use with Condition to build row filters::
+
+    Condition("Sales", Operator.GTE, 1000)
+    Condition("Region", Operator.IN_LIST, ["West", "East"])
+
 #### `IN_LIST`
+
+Filter operators for conditions.
+
+Use with Condition to build row filters::
+
+    Condition("Sales", Operator.GTE, 1000)
+    Condition("Region", Operator.IN_LIST, ["West", "East"])
+
+#### `IN_RANGE`
 
 Filter operators for conditions.
 
@@ -2749,6 +2911,374 @@ Use with Condition to build row filters::
     Condition("Sales", Operator.GTE, 1000)
     Condition("Region", Operator.IN_LIST, ["West", "East"])
 
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
+
 ### `ColumnType`
 
 Column data types for new columns and conversions.
@@ -2764,6 +3294,374 @@ Column data types for new columns and conversions.
 #### `TEXT`
 
 Column data types for new columns and conversions.
+
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
 
 ### `FilterType`
 
@@ -2789,6 +3687,374 @@ Controls whether matching rows are kept or removed:
     SHOW — keep rows that match the condition.
     REMOVE — discard rows that match the condition.
 
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
+
 ### `JoinType`
 
 Join types for combining dataviews.
@@ -2809,6 +4075,374 @@ Join types for combining dataviews.
 
 Join types for combining dataviews.
 
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
+
 ### `TextCase`
 
 Text case transformations.
@@ -2824,6 +4458,374 @@ Text case transformations.
 #### `UPPER`
 
 Text case transformations.
+
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
 
 ### `DateComponent`
 
@@ -3161,6 +5163,22 @@ Text-based extractions (return TEXT columns):
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
 
+#### `YEAR_MONTH_NUMBER`
+
+Date components for extraction.
+
+Backend uses lowercase values. The enum values are lowercase
+to match the expected COMPONENT payload format.
+
+Basic components:
+    year, month, day, hour, minute, second, week, quarter
+
+Text-based extractions (return TEXT columns):
+    weekday_text, month_text
+
+Composite date formats (return DATE or TEXT):
+    year_month_day_as_date, month_day_year_hour_minute_second
+
 #### `YEAR_QUARTER`
 
 Date components for extraction.
@@ -3192,6 +5210,374 @@ Text-based extractions (return TEXT columns):
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
+
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
 
 ### `DateDiffUnit`
 
@@ -3247,6 +5633,374 @@ Date units for date_diff calculations.
 
 Uses UPPERCASE values (distinct from DateComponent which is lowercase).
 
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
+
 ### `AggregateFunction`
 
 Aggregate functions for pivot/group operations.
@@ -3298,6 +6052,374 @@ Aggregate functions for pivot/group operations.
 #### `VARIANCE`
 
 Aggregate functions for pivot/group operations.
+
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
 
 ### `WindowFunction`
 
@@ -3367,6 +6489,374 @@ Window function types.
 
 Window function types.
 
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
+
 ### `WindowRange`
 
 Window range types.
@@ -3378,6 +6868,374 @@ Window range types.
 #### `UNBOUNDED`
 
 Window range types.
+
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
 
 ### `FillDirection`
 
@@ -3391,6 +7249,374 @@ Fill directions for missing value imputation.
 
 Fill directions for missing value imputation.
 
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
+
 ### `SortDirection`
 
 Sort direction for order_by clauses.
@@ -3402,6 +7628,374 @@ Sort direction for order_by clauses.
 #### `DESC`
 
 Sort direction for order_by clauses.
+
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
 
 ### `MathOperator`
 
@@ -3426,6 +8020,374 @@ Arithmetic operators for math expressions.
 #### `SUBTRACT`
 
 Arithmetic operators for math expressions.
+
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
 
 ### `SubstringDirection`
 
@@ -3462,6 +8424,374 @@ Extraction direction for substring operations.
 START/END: extract first/last N characters (use with num_char).
 LEFT/RIGHT: extract characters before/after position (use with char_position).
 
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
+
 ### `JsonType`
 
 JSON structure types for json_extract.
@@ -3474,6 +8804,374 @@ JSON structure types for json_extract.
 
 JSON structure types for json_extract.
 
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
+
 ### `JsonOpType`
 
 JSON operation types for json_extract.
@@ -3485,6 +9183,374 @@ JSON operation types for json_extract.
 #### `JSON_OBJECT_TO_COLUMNS`
 
 JSON operation types for json_extract.
+
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
 
 ### `ExportFileType`
 
@@ -3501,6 +9567,374 @@ File types for S3 and file-based exports.
 #### `PARQUET`
 
 File types for S3 and file-based exports.
+
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
 
 ### `ProviderType`
 
@@ -3525,6 +9959,374 @@ Value provider types for SET task VALUES items.
 Use in set_values() value specs to control how the value is determined:
     FIXED — a literal value (e.g. "High", 42).
     EXPRESSION — a system expression (e.g. "__TIME__" for current timestamp).
+
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
 
 ### `TaskType`
 
@@ -3638,6 +10440,374 @@ Pipeline task types.
 
 Pipeline task types.
 
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
+
 ### `DraftCommand`
 
 Draft mode commands for pipeline task batching.
@@ -3703,6 +10873,374 @@ Use via ``view.draft()`` context manager or explicit methods::
     view.submit_draft()       # uses SUBMIT then EXIT
     view.discard_draft()      # uses DISCARD then EXIT
 
+#### `__init__(self, /, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+#### `capitalize(self, /)`
+
+Return a capitalized version of the string.
+
+More specifically, make the first character have upper case and the rest lower
+case.
+
+#### `casefold(self, /)`
+
+Return a version of the string suitable for caseless comparisons.
+
+#### `center(self, width, fillchar=' ', /)`
+
+Return a centered string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `count`
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+
+#### `encode(self, /, encoding='utf-8', errors='strict')`
+
+Encode the string using the codec registered for encoding.
+
+encoding
+  The encoding in which to encode the string.
+errors
+  The error handling scheme to use for encoding errors.
+  The default is 'strict' meaning that encoding errors raise a
+  UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+  'xmlcharrefreplace' as well as any other name registered with
+  codecs.register_error that can handle UnicodeEncodeErrors.
+
+#### `endswith`
+
+Return True if the string ends with the specified suffix, False otherwise.
+
+suffix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `expandtabs(self, /, tabsize=8)`
+
+Return a copy where all tab characters are expanded using spaces.
+
+If tabsize is not given, a tab size of 8 characters is assumed.
+
+#### `find`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `format(self, /, *args, **kwargs)`
+
+Return a formatted version of the string, using substitutions from args and kwargs.
+The substitutions are identified by braces ('{' and '}').
+
+#### `format_map(self, mapping, /)`
+
+Return a formatted version of the string, using substitutions from mapping.
+The substitutions are identified by braces ('{' and '}').
+
+#### `index`
+
+Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `isalnum(self, /)`
+
+Return True if the string is an alpha-numeric string, False otherwise.
+
+A string is alpha-numeric if all characters in the string are alpha-numeric and
+there is at least one character in the string.
+
+#### `isalpha(self, /)`
+
+Return True if the string is an alphabetic string, False otherwise.
+
+A string is alphabetic if all characters in the string are alphabetic and there
+is at least one character in the string.
+
+#### `isascii(self, /)`
+
+Return True if all characters in the string are ASCII, False otherwise.
+
+ASCII characters have code points in the range U+0000-U+007F.
+Empty string is ASCII too.
+
+#### `isdecimal(self, /)`
+
+Return True if the string is a decimal string, False otherwise.
+
+A string is a decimal string if all characters in the string are decimal and
+there is at least one character in the string.
+
+#### `isdigit(self, /)`
+
+Return True if the string is a digit string, False otherwise.
+
+A string is a digit string if all characters in the string are digits and there
+is at least one character in the string.
+
+#### `isidentifier(self, /)`
+
+Return True if the string is a valid Python identifier, False otherwise.
+
+Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
+such as "def" or "class".
+
+#### `islower(self, /)`
+
+Return True if the string is a lowercase string, False otherwise.
+
+A string is lowercase if all cased characters in the string are lowercase and
+there is at least one cased character in the string.
+
+#### `isnumeric(self, /)`
+
+Return True if the string is a numeric string, False otherwise.
+
+A string is numeric if all characters in the string are numeric and there is at
+least one character in the string.
+
+#### `isprintable(self, /)`
+
+Return True if all characters in the string are printable, False otherwise.
+
+A character is printable if repr() may use it in its output.
+
+#### `isspace(self, /)`
+
+Return True if the string is a whitespace string, False otherwise.
+
+A string is whitespace if all characters in the string are whitespace and there
+is at least one character in the string.
+
+#### `istitle(self, /)`
+
+Return True if the string is a title-cased string, False otherwise.
+
+In a title-cased string, upper- and title-case characters may only
+follow uncased characters and lowercase characters only cased ones.
+
+#### `isupper(self, /)`
+
+Return True if the string is an uppercase string, False otherwise.
+
+A string is uppercase if all cased characters in the string are uppercase and
+there is at least one cased character in the string.
+
+#### `join(self, iterable, /)`
+
+Concatenate any number of strings.
+
+The string whose method is called is inserted in between each given string.
+The result is returned as a new string.
+
+Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+
+#### `ljust(self, width, fillchar=' ', /)`
+
+Return a left-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `lower(self, /)`
+
+Return a copy of the string converted to lowercase.
+
+#### `lstrip(self, chars=None, /)`
+
+Return a copy of the string with leading whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `maketrans`
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+
+#### `partition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string.  If the separator is found,
+returns a 3-tuple containing the part before the separator, the separator
+itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing the original string
+and two empty strings.
+
+#### `removeprefix(self, prefix, /)`
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+
+#### `removesuffix(self, suffix, /)`
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+
+#### `replace(self, old, new, /, count=-1)`
+
+Return a copy with all occurrences of substring old replaced by new.
+
+  count
+    Maximum number of occurrences to replace.
+    -1 (the default value) means replace all occurrences.
+
+If the optional argument count is given, only the first count occurrences are
+replaced.
+
+#### `rfind`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
+
+#### `rindex`
+
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+
+#### `rjust(self, width, fillchar=' ', /)`
+
+Return a right-justified string of length width.
+
+Padding is done using the specified fill character (default is a space).
+
+#### `rpartition(self, sep, /)`
+
+Partition the string into three parts using the given separator.
+
+This will search for the separator in the string, starting at the end. If
+the separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
+
+If the separator is not found, returns a 3-tuple containing two empty strings
+and the original string.
+
+#### `rsplit(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the end of the string and works to the front.
+
+#### `rstrip(self, chars=None, /)`
+
+Return a copy of the string with trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `split(self, /, sep=None, maxsplit=-1)`
+
+Return a list of the substrings in the string, using sep as the separator string.
+
+  sep
+    The separator used to split the string.
+
+    When set to None (the default value), will split on any whitespace
+    character (including \n \r \t \f and spaces) and will discard
+    empty strings from the result.
+  maxsplit
+    Maximum number of splits.
+    -1 (the default value) means no limit.
+
+Splitting starts at the front of the string and works to the end.
+
+Note, str.split() is mainly useful for data that has been intentionally
+delimited.  With natural text that includes punctuation, consider using
+the regular expression module.
+
+#### `splitlines(self, /, keepends=False)`
+
+Return a list of the lines in the string, breaking at line boundaries.
+
+Line breaks are not included in the resulting list unless keepends is given and
+true.
+
+#### `startswith`
+
+Return True if the string starts with the specified prefix, False otherwise.
+
+prefix
+  A string or a tuple of strings to try.
+start
+  Optional start position. Default: start of the string.
+end
+  Optional stop position. Default: end of the string.
+
+#### `strip(self, chars=None, /)`
+
+Return a copy of the string with leading and trailing whitespace removed.
+
+If chars is given and not None, remove characters in chars instead.
+
+#### `swapcase(self, /)`
+
+Convert uppercase characters to lowercase and lowercase characters to uppercase.
+
+#### `title(self, /)`
+
+Return a version of the string where each word is titlecased.
+
+More specifically, words start with uppercased characters and all remaining
+cased characters have lower case.
+
+#### `translate(self, table, /)`
+
+Replace each character in the string using the given translation table.
+
+  table
+    Translation table, which must be a mapping of Unicode ordinals to
+    Unicode ordinals, strings, or None.
+
+The table must implement lookup/indexing via __getitem__, for instance a
+dictionary or list.  If this operation raises LookupError, the character is
+left untouched.  Characters mapped to None are deleted.
+
+#### `upper(self, /)`
+
+Return a copy of the string converted to uppercase.
+
+#### `zfill(self, width, /)`
+
+Pad a numeric string with zeros on the left, to fill a field of the given width.
+
+The string is never truncated.
+
 ---
 
 ## Data Classes
@@ -3733,11 +11271,27 @@ Initialize self.  See help(type(self)) for accurate signature.
 
 Specification for a single column copy in :meth:`View.copy_columns`.
 
-Example::
+Two mutually exclusive destination modes:
 
+* **AS** (new column): set *as_name* (and optionally *type*) to create a
+  brand-new column.  This is the default when neither field is set — the
+  backend will auto-name the new column ``"<source> Copy"``.
+* **DESTINATION** (existing column): set *destination* to the display name
+  (or internal name) of an **existing** column whose values should be
+  replaced.  When *destination* is set, *as_name* and *type* are ignored
+  by the builder.
+
+Providing **both** *as_name* and *destination* raises :exc:`ValueError`.
+
+Examples::
+
+    # Copy into a brand-new column
     view.copy_columns([CopySpec(source="Sales", as_name="Sales Copy", type=ColumnType.NUMERIC)])
 
-#### `__init__(self, source: 'str', as_name: 'str | None' = None, type: 'ColumnType' = <ColumnType.TEXT: 'TEXT'>, condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> None`
+    # Overwrite an existing column's values
+    view.copy_columns([CopySpec(source="Sales", destination="Sales Backup")])
+
+#### `__init__(self, source: 'str', as_name: 'str | None' = None, type: 'ColumnType' = <ColumnType.TEXT: 'TEXT'>, condition: 'Condition | CompoundCondition | NotCondition | None' = None, destination: 'str | None' = None) -> None`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
@@ -3810,7 +11364,7 @@ int([x]) -> integer
 int(x, base=10) -> integer
 
 Convert a number or string to an integer, or return 0 if no arguments
-are given.  If x is a number, return x.__int__().  For floating point
+are given.  If x is a number, return x.__int__().  For floating-point
 numbers, this truncates towards zero.
 
 If x is not a number or if base is given, then x must be a string,
@@ -3827,7 +11381,7 @@ int([x]) -> integer
 int(x, base=10) -> integer
 
 Convert a number or string to an integer, or return 0 if no arguments
-are given.  If x is a number, return x.__int__().  For floating point
+are given.  If x is a number, return x.__int__().  For floating-point
 numbers, this truncates towards zero.
 
 If x is not a number or if base is given, then x must be a string,
@@ -3844,7 +11398,7 @@ int([x]) -> integer
 int(x, base=10) -> integer
 
 Convert a number or string to an integer, or return 0 if no arguments
-are given.  If x is a number, return x.__int__().  For floating point
+are given.  If x is a number, return x.__int__().  For floating-point
 numbers, this truncates towards zero.
 
 If x is not a number or if base is given, then x must be a string,
@@ -3861,7 +11415,7 @@ int([x]) -> integer
 int(x, base=10) -> integer
 
 Convert a number or string to an integer, or return 0 if no arguments
-are given.  If x is a number, return x.__int__().  For floating point
+are given.  If x is a number, return x.__int__().  For floating-point
 numbers, this truncates towards zero.
 
 If x is not a number or if base is given, then x must be a string,
@@ -3878,7 +11432,7 @@ int([x]) -> integer
 int(x, base=10) -> integer
 
 Convert a number or string to an integer, or return 0 if no arguments
-are given.  If x is a number, return x.__int__().  For floating point
+are given.  If x is a number, return x.__int__().  For floating-point
 numbers, this truncates towards zero.
 
 If x is not a number or if base is given, then x must be a string,
@@ -3899,7 +11453,7 @@ int([x]) -> integer
 int(x, base=10) -> integer
 
 Convert a number or string to an integer, or return 0 if no arguments
-are given.  If x is a number, return x.__int__().  For floating point
+are given.  If x is a number, return x.__int__().  For floating-point
 numbers, this truncates towards zero.
 
 If x is not a number or if base is given, then x must be a string,
@@ -3916,7 +11470,7 @@ int([x]) -> integer
 int(x, base=10) -> integer
 
 Convert a number or string to an integer, or return 0 if no arguments
-are given.  If x is a number, return x.__int__().  For floating point
+are given.  If x is a number, return x.__int__().  For floating-point
 numbers, this truncates towards zero.
 
 If x is not a number or if base is given, then x must be a string,
@@ -4075,10 +11629,13 @@ Attributes:
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `with_traceback`
+#### `add_note(self, note, /)`
 
-Exception.with_traceback(tb) --
-set self.__traceback__ to tb and return self.
+Add a note to the exception
+
+#### `with_traceback(self, tb, /)`
+
+Set self.__traceback__ to tb and return self.
 
 ### `MammothAPIError`
 
@@ -4101,10 +11658,13 @@ Example::
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `with_traceback`
+#### `add_note(self, note, /)`
 
-Exception.with_traceback(tb) --
-set self.__traceback__ to tb and return self.
+Add a note to the exception
+
+#### `with_traceback(self, tb, /)`
+
+Set self.__traceback__ to tb and return self.
 
 ### `MammothAuthError`
 
@@ -4118,10 +11678,13 @@ Attributes:
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `with_traceback`
+#### `add_note(self, note, /)`
 
-Exception.with_traceback(tb) --
-set self.__traceback__ to tb and return self.
+Add a note to the exception
+
+#### `with_traceback(self, tb, /)`
+
+Set self.__traceback__ to tb and return self.
 
 ### `MammothJobTimeoutError`
 
@@ -4135,10 +11698,13 @@ Attributes:
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `with_traceback`
+#### `add_note(self, note, /)`
 
-Exception.with_traceback(tb) --
-set self.__traceback__ to tb and return self.
+Add a note to the exception
+
+#### `with_traceback(self, tb, /)`
+
+Set self.__traceback__ to tb and return self.
 
 ### `MammothJobFailedError`
 
@@ -4152,10 +11718,13 @@ Attributes:
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `with_traceback`
+#### `add_note(self, note, /)`
 
-Exception.with_traceback(tb) --
-set self.__traceback__ to tb and return self.
+Add a note to the exception
+
+#### `with_traceback(self, tb, /)`
+
+Set self.__traceback__ to tb and return self.
 
 ### `MammothTransformError`
 
@@ -4170,10 +11739,13 @@ Attributes:
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `with_traceback`
+#### `add_note(self, note, /)`
 
-Exception.with_traceback(tb) --
-set self.__traceback__ to tb and return self.
+Add a note to the exception
+
+#### `with_traceback(self, tb, /)`
+
+Set self.__traceback__ to tb and return self.
 
 ### `MammothColumnError`
 
@@ -4196,10 +11768,13 @@ Example::
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `with_traceback`
+#### `add_note(self, note, /)`
 
-Exception.with_traceback(tb) --
-set self.__traceback__ to tb and return self.
+Add a note to the exception
+
+#### `with_traceback(self, tb, /)`
+
+Set self.__traceback__ to tb and return self.
 
 ## See also
 
@@ -4387,26 +11962,62 @@ Returns:
 
 Create a new connection for a connector.
 
+The ``config`` shape is per-connector and varies across the 25+ supported
+connector types. The SDK forwards it verbatim — the backend validates per
+connector_key. Common examples:
+
+- **DB connectors** (postgres, mysql, mssql, mongodb):
+  ``{hostname, port, database, username, password}``
+- **Extended DB** (postgres, redshift):
+  adds ``ssh_enabled``, ``proxy_*``, ``ssh_auth_type``, ``private_key``
+- **OAuth connectors** (salesforce, hubspot, facebook, …):
+  ``{code}``
+- **Snowflake**: ``{url, username, password, database, warehouse, account, role}``
+- **BigQuery**: ``{connection_data}`` (JSON string)
+- **DataBricks**: ``{host, port, http_path, personal_access_token, catalog}``
+- **SFTP**: ``{username, domain, port, password | private_key}``
+
 Args:
     connector_key: Key identifying the connector type.
-    config: Connection configuration (host, port, database, credentials, etc.).
+    config: Non-empty dict of connection credentials. Shape varies by
+        connector_key — see above for common examples.
     project_id: Project ID (uses client default if not provided).
 
 Returns:
     Dict with created connection info.
 
-### `create_ds_config(self, connector_key: 'str', connection_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If ``config`` is empty.
+
+### `create_ds_config(self, connector_key: 'str', connection_key: 'str', *, query: 'str | None' = None, file_source: 'str | None' = None, table: 'str | None' = None, profile: 'str | None' = None, validate: 'bool' = True, data_sample: 'bool' = False, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Create a data source configuration.
+
+Exactly one of ``query`` or ``file_source`` must be provided (mirrors the
+backend ``ValidateAndSampleDataSpec`` validator). ``validate`` and
+``data_sample`` are mutually exclusive.
 
 Args:
     connector_key: Key identifying the connector type.
     connection_key: Key identifying the connection.
-    config: Data source configuration.
+    query: SQL query or table reference (required for DB connectors).
+    file_source: File path or source identifier (required for file connectors
+        such as SFTP or Google Drive).
+    table: Optional table name hint.
+    profile: Optional connector-specific profile (e.g. schema name for DB
+        connectors, or ``"project_id.dataset_id"`` for BigQuery).
+    validate: If ``True`` (default), the backend validates the config.
+        Mutually exclusive with ``data_sample``.
+    data_sample: If ``True``, the backend returns a data sample.
+        Mutually exclusive with ``validate``.
     project_id: Project ID (uses client default if not provided).
 
 Returns:
     Dict with created data source config.
+
+Raises:
+    MammothValidationError: If neither ``query`` nor ``file_source`` is
+        provided, or if both ``validate`` and ``data_sample`` are ``True``.
 
 ### `delete_connection(self, connector_key: 'str', connection_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -4428,6 +12039,20 @@ Args:
     connector_key: Key identifying the connector type.
     connection_key: Key identifying the connection.
     ds_config_key: Key identifying the data source config.
+    project_id: Project ID (uses client default if not provided).
+
+Returns:
+    Dict with deletion result.
+
+### `ds_config_delete_all(self, connector_key: 'str', connection_key: 'str', config_ids: '_list[str] | str', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Bulk-delete data source configurations for a connection.
+
+Args:
+    connector_key: Key identifying the connector type.
+    connection_key: Key identifying the connection.
+    config_ids: List of data source config keys (or comma-separated
+        string) to delete.
     project_id: Project ID (uses client default if not provided).
 
 Returns:
@@ -4498,32 +12123,53 @@ Args:
 Returns:
     List of data source config dicts.
 
-### `update_connection(self, connector_key: 'str', connection_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `update_connection(self, connector_key: 'str', connection_key: 'str', credentials: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
-Update a connection's configuration.
+Update a connection's credentials.
+
+The backend expects a JSON-patch envelope:
+``{"patch": [{"op": "replace", "path": "connection", "value": <credentials>}]}``.
+This method accepts the raw credentials dict and wraps it internally.
 
 Args:
     connector_key: Key identifying the connector type.
     connection_key: Key identifying the connection.
-    config: Updated connection configuration.
+    credentials: Non-empty dict of updated connection credentials. Shape
+        is the same as for ``create_connection`` (varies by connector_key).
     project_id: Project ID (uses client default if not provided).
 
 Returns:
     Dict with updated connection info.
 
-### `update_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If ``credentials`` is empty.
 
-Update a data source configuration.
+### `update_ds_config(self, connector_key: 'str', connection_key: 'str', ds_config_key: 'str', patch: '_list[DsConfigPatchOp]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Update a data source configuration via JSON-patch operations.
+
+The backend accepts a patch envelope:
+``{"patch": [{"op": "replace", "path": "<path>", "value": <value>}]}``.
+
+Note: only ``path='query'`` is currently implemented on the backend;
+``profile``, ``on_refresh_action``, and ``unique_sequence_column`` are
+accepted by the SDK but the server returns ``not_implemented_error``.
 
 Args:
     connector_key: Key identifying the connector type.
     connection_key: Key identifying the connection.
     ds_config_key: Key identifying the data source config.
-    config: Updated data source configuration.
+    patch: Non-empty list of :class:`~mammoth.models.connectors.DsConfigPatchOp`
+        instances.
     project_id: Project ID (uses client default if not provided).
 
 Returns:
     Dict with updated config.
+
+Raises:
+    MammothValidationError: If ``patch`` is empty, any op is not
+        ``"replace"``, or any path is not a valid
+        :class:`~mammoth.models.connectors.DsConfigPatchPath` value.
 
 
 ---
@@ -5146,7 +12792,7 @@ Example::
     path = view.export.to_csv("output.csv")
     print(f"Downloaded to {path}")
 
-#### `to_s3(self, file_name: 'str | None' = None, file_type: 'ExportFileType' = <ExportFileType.CSV: 'csv'>, include_hidden: 'bool' = False, **kwargs: 'Any') -> 'dict[str, Any]'`
+#### `to_s3(self, file_name: 'str | None' = None, file_type: 'ExportFileType' = <ExportFileType.CSV: 'csv'>, include_hidden: 'bool' = False, **kwargs: 'Any') -> 'ExportResult'`
 
 Export to S3 (Mammoth-managed bucket).
 
@@ -5166,7 +12812,7 @@ Example::
     result = view.export.to_s3(file_name="report.csv")
     view.export.to_s3(file_type=ExportFileType.PARQUET)
 
-#### `to_postgres(self, host: 'str', port: 'int', database: 'str', table: 'str', username: 'str', password: 'str', **kwargs: 'Any') -> 'dict[str, Any]'`
+#### `to_postgres(self, host: 'str', port: 'int', database: 'str', table: 'str', username: 'str', password: 'str', **kwargs: 'Any') -> 'ExportResult'`
 
 Export to a PostgreSQL database.
 
@@ -5194,7 +12840,7 @@ Example::
         username="user", password="pass",
     )
 
-#### `to_mysql(self, host: 'str', port: 'int', database: 'str', table: 'str', username: 'str', password: 'str', **kwargs: 'Any') -> 'dict[str, Any]'`
+#### `to_mysql(self, host: 'str', port: 'int', database: 'str', table: 'str', username: 'str', password: 'str', **kwargs: 'Any') -> 'ExportResult'`
 
 Export to MySQL database.
 
@@ -5205,103 +12851,216 @@ Args:
     table: Target table name.
     username: Database username.
     password: Database password.
+    **kwargs: Additional export options (``trigger_type``,
+        ``run_immediately``, ``validate_only``,
+        ``end_of_pipeline``, ``additional_properties``,
+        ``condition``).
 
 Returns:
     Export result dict.
 
-#### `to_dataset(self, dest_dataset_id: 'int', column_mapping: 'dict[str, str] | None' = None, **kwargs: 'Any') -> 'dict[str, Any]'`
+#### `to_dataset(self, dataset_name: 'str', *, target_ds_id: 'int | None' = None, save_as_mode: 'SaveAsDatasetMode' = <SaveAsDatasetMode.REPLACE: 'REPLACE_IN_DS'>, column_mapping: 'dict[str, str] | None' = None, label_ids: 'list[int] | None' = None, condition: 'Condition | CompoundCondition | NotCondition | None' = None, timeout: 'int | None' = None) -> 'int'`
 
-Export (branch out) to another Mammoth dataset.
+Save this view's data as an internal Mammoth dataset (branch out).
+
+Runs through the ``internal_dataset`` export handler and blocks until
+the dataset is materialised.
 
 Args:
-    dest_dataset_id: Target dataset ID to receive the data.
-    column_mapping: Optional column mapping dict.
-    **kwargs: Additional export options.
+    dataset_name: Name for the new dataset (display name when writing
+        into an existing one).
+    target_ds_id: Existing dataset to write into; None creates a new one.
+    save_as_mode: Replace or append when writing the output dataset.
+    column_mapping: Source -> destination column-name map (empty = all).
+    label_ids: Folder/label ids for the new dataset.
+    condition: Optional row filter applied before copying.
+    timeout: Max seconds to wait for the job.
 
 Returns:
-    Export result dict.
+    The id of the dataset written to (new when ``target_ds_id`` is None,
+    otherwise ``target_ds_id``).
 
 Example::
 
-    view.export.to_dataset(dest_dataset_id=42)
+    new_id = view.export.to_dataset("Sales snapshot")
 
-#### `to_ftp(self, host: 'str', path: 'str', username: 'str', password: 'str', port: 'int' = 21, **kwargs: 'Any') -> 'dict[str, Any]'`
+#### `to_ftp(self, domain: 'str', directory: 'str', file: 'str', username: 'str', password: 'str', port: 'int' = 21, **kwargs: 'Any') -> 'ExportResult'`
 
-Export to FTP server.
+Export to an FTP server.
 
 Args:
-    host: FTP host.
-    path: Remote file path.
+    domain: FTP server hostname.
+    directory: Remote directory to write into.
+    file: Remote filename to write.
     username: FTP username.
     password: FTP password.
     port: FTP port (default 21).
+    **kwargs: Additional export options (``trigger_type``,
+        ``run_immediately``, ``validate_only``,
+        ``end_of_pipeline``, ``additional_properties``,
+        ``condition``).
 
 Returns:
-    Export result dict.
+    The created export trigger record or its tracking job.
 
-#### `to_sftp(self, host: 'str', path: 'str', username: 'str', password: 'str', port: 'int' = 22, **kwargs: 'Any') -> 'dict[str, Any]'`
+Example::
 
-Export to SFTP server.
+    view.export.to_ftp(
+        domain="ftp.example.com", directory="/exports",
+        file="sales.csv", username="user", password="pass",
+    )
+
+#### `to_sftp(self, host: 'str', username: 'str', password: 'str' = '', directory: 'str' = '', file_name: 'str' = '', port: 'int' = 22, randomize_file_name: 'bool' = False, ssh_key_authentication: 'bool' = False, private_key: 'str' = '', passphrase: 'str' = '', **kwargs: 'Any') -> 'ExportResult'`
+
+Export to an SFTP server.
+
+Supports both password and private-key authentication. For key auth,
+set *ssh_key_authentication* and provide *private_key* (PEM string)
+plus an optional *passphrase*.
 
 Args:
-    host: SFTP host.
-    path: Remote file path.
+    host: SFTP server hostname.
     username: SFTP username.
-    password: SFTP password.
+    password: SFTP password (omit when using key auth).
+    directory: Remote directory; defaults server-side to the user home.
+    file_name: Output filename; defaults server-side to
+        ``{dataset}_{view}.csv``.
     port: SFTP port (default 22).
+    randomize_file_name: Append a random suffix to the filename.
+    ssh_key_authentication: Authenticate with a private key.
+    private_key: PEM-format private key string (key auth).
+    passphrase: Passphrase protecting *private_key*, if any.
+    **kwargs: Additional export options (``trigger_type``,
+        ``run_immediately``, ``validate_only``,
+        ``end_of_pipeline``, ``additional_properties``,
+        ``condition``).
 
 Returns:
-    Export result dict.
+    The created export trigger record or its tracking job.
 
-#### `to_email(self, recipients: 'list[str]', **kwargs: 'Any') -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If key authentication is requested without a
+        ``private_key``.
 
-Export via email.
+#### `to_email(self, emails: 'list[str]', subject: 'str' = '', message: 'str' = '', resource: 'str' = '', **kwargs: 'Any') -> 'ExportResult'`
+
+Export by emailing a download link to recipients.
 
 Args:
-    recipients: List of email addresses.
+    emails: Recipient email addresses.
+    subject: Email subject (defaults server-side).
+    message: Body message appended to the email.
+    resource: Display name of the exported resource in the email.
+    **kwargs: Additional export options (``trigger_type``,
+        ``run_immediately``, ``validate_only``,
+        ``end_of_pipeline``, ``additional_properties``,
+        ``condition``).
 
 Returns:
-    Export result dict.
+    The created export trigger record or its tracking job.
 
-#### `to_bigquery(self, **kwargs: 'Any') -> 'dict[str, Any]'`
+Example::
+
+    view.export.to_email(emails=["analyst@example.com"], subject="Q1")
+
+Raises:
+    MammothValidationError: If *emails* is empty.
+
+#### `to_bigquery(self, selected_profile: 'dict[str, Any]', selected_identity: 'dict[str, Any]', table: 'str', export_type: 'BigQueryExportType' = <BigQueryExportType.REPLACE: 'REPLACE'>, upsert_keys: 'list[dict[str, Any]] | None' = None, partition: 'dict[str, Any] | None' = None, **kwargs: 'Any') -> 'ExportResult'`
 
 Export to Google BigQuery.
 
-Args:
-    **kwargs: BigQuery connection and table configuration.
-
-Returns:
-    Export result dict.
-
-#### `to_redshift(self, **kwargs: 'Any') -> 'dict[str, Any]'`
-
-Export to Amazon Redshift.
+Uses an existing Mammoth BigQuery integration; *selected_profile*
+and *selected_identity* are obtained from that integration rather
+than passed as raw credentials here.
 
 Args:
-    **kwargs: Redshift connection and table configuration.
+    selected_profile: Project/dataset selection, shaped as
+        ``{"name": "<dataset>", "value": [[project_id, dataset_id]]}``.
+    selected_identity: Service-account identity config, shaped as
+        ``{"identity_config": {...}, "host": "<sa-email>"}``.
+    table: Destination table name.
+    export_type: Write mode (REPLACE, COMBINE, or UPSERT).
+    upsert_keys: Required when *export_type* is UPSERT — a list of
+        ``{"column": {"display_name": "<col>"}}`` dicts.
+    partition: Optional partitioning spec. For datetime partitioning,
+        ``{"FIELD": str, "GRANULARITY": "DAY"|"MONTH"|"YEAR"}``; for
+        integer-range partitioning, ``{"FIELD": str, "START": int,
+        "END": int, "INTERVAL": int}``.
+    **kwargs: Additional export options (``trigger_type``,
+        ``run_immediately``, ``validate_only``,
+        ``end_of_pipeline``, ``additional_properties``,
+        ``condition``).
 
 Returns:
-    Export result dict.
+    The created export trigger record or its tracking job.
 
-#### `to_elasticsearch(self, **kwargs: 'Any') -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If *export_type* is UPSERT but no
+        *upsert_keys* are given.
 
-Export to Elasticsearch.
+#### `to_redshift(self, host: 'str', port: 'int', database: 'str', table: 'str', username: 'str', password: 'str', **kwargs: 'Any') -> 'ExportResult'`
+
+Export to an Amazon Redshift cluster.
+
+Data is staged through a Mammoth-managed S3 bucket and then
+``COPY``-ed into the target table.
 
 Args:
-    **kwargs: Elasticsearch connection and index configuration.
+    host: Cluster endpoint host.
+    port: Cluster port (Redshift default is 5439).
+    database: Database name.
+    table: Target table name.
+    username: Database username.
+    password: Database password.
+    **kwargs: Additional export options (``trigger_type``,
+        ``run_immediately``, ``validate_only``,
+        ``end_of_pipeline``, ``additional_properties``,
+        ``condition``).
 
 Returns:
-    Export result dict.
+    The created export trigger record or its tracking job.
 
-#### `publish_to_db(self, **kwargs: 'Any') -> 'dict[str, Any]'`
+#### `to_elasticsearch(self, host: 'str', username: 'str', password: 'str', index: 'str', port: 'int' = 9243, connection: 'str' = 'https', chunksize: 'int' = 200, **kwargs: 'Any') -> 'ExportResult'`
 
-Publish dataview to database.
+Export to an Elasticsearch index.
 
 Args:
-    **kwargs: Database connection and table configuration.
+    host: Elasticsearch host.
+    username: Auth username.
+    password: Auth password.
+    index: Destination index name.
+    port: Port (default 9243).
+    connection: Protocol, ``"http"`` or ``"https"`` (default).
+    chunksize: Bulk-insert batch size (default 200).
+    **kwargs: Additional export options (``trigger_type``,
+        ``run_immediately``, ``validate_only``,
+        ``end_of_pipeline``, ``additional_properties``,
+        ``condition``).
 
 Returns:
-    Export result dict.
+    The created export trigger record or its tracking job.
+
+#### `publish_to_db(self, table: 'str', odbc_type: 'OdbcType' = <OdbcType.POSTGRES: 'postgres'>) -> 'dict[str, Any]'`
+
+Publish this view to a Mammoth-managed database for dashboards.
+
+Unlike the other export helpers, publish-to-db uses
+Mammoth-managed connection credentials (configured once per
+workspace) — you only name the target *table* and connection type.
+It posts to the dedicated ``publish-to-db`` endpoint, not the
+pipeline-exports endpoint.
+
+Args:
+    table: Destination table name.
+    odbc_type: Managed connection type (postgres or bigquery).
+
+Returns:
+    Dict with the tracking ``job_id`` for the publish job.
+
+Example::
+
+    view.export.publish_to_db(table="sales_dashboard")
 
 #### `list(self) -> '_list[dict[str, Any]]'`
 
@@ -5364,6 +13123,42 @@ Args:
 Returns:
     PipelineExportsModificationResp or JobResponse.
 
+#### `delete(self, dataview_id: 'int', export_id: 'int', skip_validation: 'bool | None' = None, dataset_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Delete a pipeline export.
+
+Args:
+    dataview_id: ID of the dataview (must be > 0).
+    export_id: ID of the export (must be > 0).
+    skip_validation: Skip server-side validation of the deletion (optional).
+    dataset_id: ID of the dataset (auto-detected if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with the deletion result, or an empty dict if the server
+    returns no content.
+
+Raises:
+    MammothValidationError: If *dataview_id* or *export_id* ≤ 0.
+
+#### `get(self, dataview_id: 'int', export_id: 'int', fields: 'str | None' = None, dataset_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Get a single pipeline export.
+
+Args:
+    dataview_id: ID of the dataview (must be > 0).
+    export_id: ID of the export (must be > 0).
+    fields: Comma-separated fields to return, or one of the presets
+        ``"__full"``, ``"__standard"``, ``"__min"`` (optional).
+    dataset_id: ID of the dataset (auto-detected if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with export details.
+
+Raises:
+    MammothValidationError: If *dataview_id* or *export_id* ≤ 0.
+
 #### `list(self, dataview_id: 'int', fields: 'str | None' = None, limit: 'int' = 50, offset: 'int' = 0, sort: 'str | None' = None, sequence: 'int | None' = None, status: 'ExportStatus | None' = None, reordered: 'bool | None' = None, handler_type: 'HandlerType | None' = None, end_of_pipeline: 'bool | None' = None, runnable: 'bool | None' = None) -> 'PipelineExportsPaginated'`
 
 Get dataview pipeline exports with optional filtering and pagination.
@@ -5383,6 +13178,41 @@ Args:
 
 Returns:
     PipelineExportsPaginated with paginated list of exports.
+
+#### `publish_db(self, dataview_id: 'int', odbc_type: 'OdbcType', target_properties: 'dict[str, Any]', dataset_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Create a publish-to-database subscription for a dataview.
+
+Args:
+    dataview_id: ID of the dataview (must be > 0).
+    odbc_type: Managed-connection type of the destination database.
+    target_properties: Destination properties, e.g. ``{"table": "my_table"}``.
+    dataset_id: ID of the dataset (auto-detected if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with the created publish-to-db job/result.
+
+Raises:
+    MammothValidationError: If *dataview_id* ≤ 0.
+
+#### `publish_db_update(self, dataview_id: 'int', patch: '_list[dict[str, Any]]', dataset_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Update a dataview's publish-to-database subscription via patch operations.
+
+Args:
+    dataview_id: ID of the dataview (must be > 0).
+    patch: List of patch operation dicts, e.g.
+        ``[{"op": "replace", "path": "credentials",
+        "value": {"odbc_type": "postgres"}}]``.
+    dataset_id: ID of the dataset (auto-detected if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with the updated publish-to-db job/result.
+
+Raises:
+    MammothValidationError: If *dataview_id* ≤ 0.
 
 #### `to_csv(self, dataview_id: 'int', output_path: 'str | Path | None' = None, timeout: 'int' = 300, dataset_id: 'int | None' = None) -> 'Path'`
 
@@ -5442,6 +13272,26 @@ Args:
 
 Returns:
     Dict with URL and trigger_id if job completes.
+
+#### `update(self, dataview_id: 'int', export_id: 'int', patches: '_list[dict[str, Any]]', skip_validation: 'bool | None' = None, dataset_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Edit a pipeline export via patch operations.
+
+Args:
+    dataview_id: ID of the dataview (must be > 0).
+    export_id: ID of the export (must be > 0).
+    patches: List of patch operation dicts, e.g.
+        ``[{"op": "command", "path": "suspend", "value": None}]``.
+    skip_validation: Skip server-side validation of the patch (optional).
+    dataset_id: ID of the dataset (auto-detected if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with the updated export, or an empty dict if the server
+    returns no content.
+
+Raises:
+    MammothValidationError: If *dataview_id* or *export_id* ≤ 0.
 
 ## See also
 
@@ -5542,6 +13392,25 @@ Args:
 Returns:
     Dict with bulk update result.
 
+### `checkpoint_list(self, project_id: 'int', workspace_id: 'int | None' = None, fields: 'str | None' = None, sort: 'str | None' = None, dataview_id: 'int | None' = None, sequence: 'int | None' = None, status: 'str | None' = None) -> 'dict[str, Any]'`
+
+List pipeline checkpoints across all dataviews in a project.
+
+Args:
+    project_id: ID of the project (must be a positive integer).
+    workspace_id: ID of the workspace (uses client default if not provided).
+    fields: Fields to return (e.g., "__standard", "__full", "__min").
+    sort: Sort specification.
+    dataview_id: Filter to checkpoints for a specific dataview.
+    sequence: Filter by pipeline task sequence number.
+    status: Filter by checkpoint status.
+
+Returns:
+    Dict with the checkpoints list.
+
+Raises:
+    MammothValidationError: If project_id is not a positive integer.
+
 ### `create(self, name: 'str', color: 'str | None' = None, project_access: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Create a new project.
@@ -5555,6 +13424,25 @@ Args:
 
 Returns:
     Dict with created project info including id, name, properties, etc.
+
+### `data_check_list(self, project_id: 'int', workspace_id: 'int | None' = None, fields: 'str | None' = None, sort: 'str | None' = None, dataview_id: 'int | None' = None, sequence: 'int | None' = None, status: 'str | None' = None) -> 'dict[str, Any]'`
+
+List data checks across all dataviews in a project.
+
+Args:
+    project_id: ID of the project (must be a positive integer).
+    workspace_id: ID of the workspace (uses client default if not provided).
+    fields: Fields to return (e.g., "__standard", "__full", "__min").
+    sort: Sort specification.
+    dataview_id: Filter to data checks for a specific dataview.
+    sequence: Filter by pipeline task sequence number.
+    status: Filter by data check status.
+
+Returns:
+    Dict with the data checks list.
+
+Raises:
+    MammothValidationError: If project_id is not a positive integer.
 
 ### `delete(self, project_id: 'int', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -5597,6 +13485,35 @@ Args:
 Returns:
     Dict containing projects list with id and name.
 
+### `pending_changes(self, project_id: 'int', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Get pending (uncommitted) changes for a project.
+
+Args:
+    project_id: ID of the project (must be a positive integer).
+    workspace_id: ID of the workspace (uses client default if not provided).
+
+Returns:
+    Dict describing the project's pending changes.
+
+Raises:
+    MammothValidationError: If project_id is not a positive integer.
+
+### `publish_credentials(self, project_id: 'int', odbc_type: "Literal['postgres', 'bigquery']", workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Get ODBC publish credentials for a project.
+
+Args:
+    project_id: ID of the project (must be a positive integer).
+    odbc_type: ODBC connector type — "postgres" or "bigquery".
+    workspace_id: ID of the workspace (uses client default if not provided).
+
+Returns:
+    Dict with the publish credentials.
+
+Raises:
+    MammothValidationError: If project_id is not a positive integer.
+
 ### `remove_users(self, project_id: 'int', user_ids: '_list[str]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Remove users from a project.
@@ -5608,6 +13525,52 @@ Args:
 
 Returns:
     Dict with result.
+
+### `resource_dependencies(self, project_id: 'int', resource_ids: '_list[str]', is_recursive: 'bool | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Get the dependency graph for a set of resources in a project.
+
+Args:
+    project_id: ID of the project (must be a positive integer).
+    resource_ids: Resource IDs to look up dependencies for.
+    is_recursive: Recursively traverse the dependency graph.
+    workspace_id: ID of the workspace (uses client default if not provided).
+
+Returns:
+    Dict keyed by resource_id with each resource's dependency graph.
+
+Raises:
+    MammothValidationError: If project_id is not a positive integer.
+
+### `resource_status(self, project_id: 'int', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Get resource status summary for a project.
+
+Args:
+    project_id: ID of the project (must be a positive integer).
+    workspace_id: ID of the workspace (uses client default if not provided).
+
+Returns:
+    Dict with the project's resource status summary.
+
+Raises:
+    MammothValidationError: If project_id is not a positive integer.
+
+### `sample_flow(self, project_id: 'int', label_resource_id: 'int | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Create a sample flow: ingest a sample file into the project.
+
+Args:
+    project_id: ID of the project (must be a positive integer).
+    label_resource_id: Parent folder resource ID to place the imported
+        file under (optional; defaults to the project root).
+    workspace_id: ID of the workspace (uses client default if not provided).
+
+Returns:
+    Dict with the created sample file's name and ingestion job_id.
+
+Raises:
+    MammothValidationError: If project_id is not a positive integer.
 
 ### `update(self, project_id: 'int', name: 'str | None' = None, color: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -5625,6 +13588,27 @@ Args:
 
 Returns:
     Dict with updated project info.
+
+### `user_update(self, project_id: 'int', role: "Literal['project_admin', 'project_analyst']", user_id: 'int | None' = None, invite_id: 'int | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Update a project user's or pending invite's role.
+
+Exactly one of *user_id* or *invite_id* must be given to identify the
+target of the role change.
+
+Args:
+    project_id: ID of the project (must be a positive integer).
+    role: New role — "project_admin" or "project_analyst".
+    user_id: ID of the existing project user to update.
+    invite_id: ID of the pending invite to update.
+    workspace_id: ID of the workspace (uses client default if not provided).
+
+Returns:
+    Dict with the update result.
+
+Raises:
+    MammothValidationError: If project_id is not a positive integer, or
+        if *user_id* and *invite_id* are not given exactly one at a time.
 
 
 ---
@@ -5693,6 +13677,32 @@ Args:
 Returns:
     Dict with created dataset information.
 
+### `create_from_pdf(self, file_object_id: 'int', file_name: 'str', file_id: 'str | None' = None, table_list: '_list[int] | None' = None, delete_file_after_extract: 'bool' = False, is_preview_needed: 'bool | None' = None, user_instruction: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Create one or more datasets from tables extracted out of a PDF file.
+
+Args:
+    file_object_id: Internal ID of the uploaded PDF file object (must be > 0).
+    file_name: Original name of the uploaded PDF file.
+    file_id: Unique identifier for the uploaded PDF file in pdf2csv (optional).
+    table_list: Indices of the tables to extract and convert into datasets
+        (optional; all tables are extracted if not provided).
+    delete_file_after_extract: Delete the file from storage after
+        extraction completes (default False).
+    is_preview_needed: Whether a preview is required before dataset
+        creation (optional).
+    user_instruction: User-provided instruction for custom extraction
+        logic (optional).
+    workspace_id: ID of the workspace (uses client default if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with created dataset(s) information (may include a job ID for
+    async extraction).
+
+Raises:
+    MammothValidationError: If *file_object_id* ≤ 0.
+
 ### `delete(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'None'`
 
 Delete a dataset.
@@ -5701,6 +13711,49 @@ Args:
     dataset_id: ID of the dataset to delete.
     workspace_id: ID of the workspace (uses client default if not provided).
     project_id: ID of the project (uses client default if not provided).
+
+### `file_settings_undo(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Undo the last file data settings change for a dataset.
+
+Args:
+    dataset_id: ID of the dataset (must be > 0).
+    workspace_id: ID of the workspace (uses client default if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with the restored file settings.
+
+Raises:
+    MammothValidationError: If *dataset_id* ≤ 0.
+
+### `file_settings_update(self, dataset_id: 'int', delimiter: 'str', has_header: 'bool', initial_skip_count: 'int', quotechar: 'str', date_format: 'str | None' = None, preview_mode: 'bool' = False, skip_auto_process_check: 'bool' = True, date_formats: 'dict[str, str] | None' = None, set_project_level_date_format: 'bool' = False, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Update file data settings for a dataset (delimiter, header, dates, ...).
+
+Args:
+    dataset_id: ID of the dataset (must be > 0).
+    delimiter: Delimiter used in the file (one of ``,``, ``\t``, ``|``, ``;``).
+    has_header: Whether the file has a header row.
+    initial_skip_count: Number of initial rows to skip in the file.
+    quotechar: Quote character used in the file (one of ``'``, ``"``, ``""``).
+    date_format: Default date format used in the source file, e.g. "US"
+        or "UK" (optional).
+    preview_mode: Whether to preview the changes before applying (default False).
+    skip_auto_process_check: Whether to skip the automatic processing
+        check (default True).
+    date_formats: Per-column date format overrides, e.g.
+        ``{"column_3": "UK"}`` (optional).
+    set_project_level_date_format: Whether to set the date format at the
+        project level (default False).
+    workspace_id: ID of the workspace (uses client default if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with updated file settings.
+
+Raises:
+    MammothValidationError: If *dataset_id* ≤ 0.
 
 ### `get(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -5793,6 +13846,36 @@ Args:
 
 Returns:
     Dict with update result.
+
+### `restore(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Restore a trashed dataset.
+
+Args:
+    dataset_id: ID of the dataset (must be > 0).
+    workspace_id: ID of the workspace (uses client default if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with restore result.
+
+Raises:
+    MammothValidationError: If *dataset_id* ≤ 0.
+
+### `trash(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Move a dataset to trash.
+
+Args:
+    dataset_id: ID of the dataset (must be > 0).
+    workspace_id: ID of the workspace (uses client default if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with trash result.
+
+Raises:
+    MammothValidationError: If *dataset_id* ≤ 0.
 
 ### `update(self, patch_data: '_list[dict[str, Any]]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -5969,22 +14052,33 @@ Args:
 Returns:
     Dict with draft mode state.
 
-### `get(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `get(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, sequence: 'int | None' = None, fields: 'str | None' = None) -> 'dict[str, Any]'`
 
 Get dataview information.
+
+Metadata is scoped to a pipeline task *sequence*. When ``sequence`` is
+omitted it defaults to the latest task sequence, so the returned
+``metadata`` reflects every pipeline-derived column (math, add_column,
+etc.). Pass ``sequence=0`` for the original dataset columns.
 
 Args:
     dataset_id: ID of the dataset.
     dataview_id: ID of the dataview.
     workspace_id: ID of the workspace (uses client default if not provided).
     project_id: ID of the project (uses client default if not provided).
+    sequence: Pipeline step to read metadata at (default: latest).
+    fields: Field set to return (e.g. ``"__full"``); server default if omitted.
 
 Returns:
     Dict with complete dataview information.
 
-### `get_data(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 2) -> 'dict[str, Any]'`
+### `get_data(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 2, sequence: 'int | None' = None) -> 'dict[str, Any]'`
 
 Get dataview data (GET method).
+
+Data is scoped to a pipeline task *sequence*. When ``sequence`` is
+omitted it defaults to the latest task sequence, so rows include every
+pipeline-derived column. Pass ``sequence=0`` for the original dataset.
 
 Args:
     dataset_id: ID of the dataset.
@@ -5993,6 +14087,7 @@ Args:
     project_id: ID of the project (uses client default if not provided).
     timeout: Max job wait time in seconds (default: client.job_timeout).
     poll_interval: Seconds between job polls (default: 2).
+    sequence: Pipeline step to read data at (default: latest).
 
 Returns:
     Dict with dataview data.
@@ -6024,14 +14119,50 @@ Args:
 Returns:
     Dict with updated active users.
 
-### `query_data(self, dataset_id: 'int', dataview_id: 'int', sequence: 'int' = 0, offset: 'int' = 1, limit: 'int' = 400, columns: '_list[str] | None' = None, condition: 'dict[str, Any] | None' = None, sort: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `parameter_context(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Get the parameter context available to a dataview's pipeline.
+
+Args:
+    dataset_id: ID of the dataset.
+    dataview_id: ID of the dataview (must be > 0).
+    workspace_id: ID of the workspace (uses client default if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with the available parameter context.
+
+Raises:
+    MammothValidationError: If *dataview_id* ≤ 0.
+
+### `preview(self, dataset_id: 'int', dataview_id: 'int', rows: 'int | None' = None, cols: 'int | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Get a lightweight preview of a dataview's data.
+
+Args:
+    dataset_id: ID of the dataset.
+    dataview_id: ID of the dataview (must be > 0).
+    rows: Maximum number of rows to include in the preview (optional).
+    cols: Maximum number of columns to include in the preview (optional).
+    workspace_id: ID of the workspace (uses client default if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with the preview data.
+
+Raises:
+    MammothValidationError: If *dataview_id* ≤ 0.
+
+### `query_data(self, dataset_id: 'int', dataview_id: 'int', sequence: 'int | None' = None, offset: 'int' = 1, limit: 'int' = 400, columns: '_list[str] | None' = None, condition: 'dict[str, Any] | None' = None, sort: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Get dataview data with filtering options (POST method).
 
 Args:
     dataset_id: ID of the dataset.
     dataview_id: ID of the dataview.
-    sequence: Pipeline step to fetch data at (default 0).
+    sequence: Pipeline step to fetch data at (default: latest task
+        sequence, so rows include every pipeline-derived column; pass
+        ``0`` for the original dataset).
     offset: One-indexed starting row (default 1).
     limit: Number of rows to fetch (default 400).
     columns: List of column names to fetch (optional).
@@ -6042,6 +14173,38 @@ Args:
 
 Returns:
     Dict with filtered dataview data.
+
+### `restore(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Restore a trashed dataview.
+
+Args:
+    dataset_id: ID of the dataset.
+    dataview_id: ID of the dataview (must be > 0).
+    workspace_id: ID of the workspace (uses client default if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with restore result.
+
+Raises:
+    MammothValidationError: If *dataview_id* ≤ 0.
+
+### `trash(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Move a dataview to trash.
+
+Args:
+    dataset_id: ID of the dataset.
+    dataview_id: ID of the dataview (must be > 0).
+    workspace_id: ID of the workspace (uses client default if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with trash result.
+
+Raises:
+    MammothValidationError: If *dataview_id* ≤ 0.
 
 ### `update(self, dataset_id: 'int', dataview_id: 'int', patch_data: '_list[dict[str, Any]]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -6106,6 +14269,21 @@ Args:
 Returns:
     Dict with created task info or job info.
 
+### `command(self, dataview_id: 'int', command: 'str', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Execute a draft-mode command on a dataview's pipeline.
+
+This wraps the OpenAPI ``ExecutePipelineDraftCommand`` operation, which
+is the same ``.../draft-mode`` endpoint used by :meth:`draft_mode`.
+
+Args:
+    dataview_id: ID of the dataview.
+    command: Draft mode command ("enter", "exit", "submit", "discard").
+    dataset_id: Dataset ID (auto-detected if not provided).
+
+Returns:
+    Draft mode state dict.
+
 ### `delete_task(self, dataview_id: 'int', task_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Delete a pipeline task.
@@ -6142,6 +14320,37 @@ Args:
 Returns:
     Updated pipeline state dict.
 
+### `find_dataset_for_dataview(self, dataview_id: 'int') -> 'int'`
+
+Public typed resolver: find the dataset that contains a dataview.
+
+This is the supported public seam for dataview-to-dataset resolution.
+Callers must not reach into the private ``_find_dataset_for_dataview``
+helper across sub-clients.
+
+Args:
+    dataview_id: ID of the dataview to resolve.
+
+Returns:
+    The dataset_id that contains this dataview.
+
+### `get_draft_status(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Read server-backed draft state for a dataview pipeline.
+
+Draft state must be read from the server so it is consistent across
+separate processes. This reads the current pipeline and reports whether
+the dataview is in draft mode, using the server's own pipeline state
+rather than any process-local flag.
+
+Args:
+    dataview_id: ID of the dataview.
+    dataset_id: Dataset ID (auto-detected if not provided).
+
+Returns:
+    A dict with ``dataview_id``, ``is_draft``, and the raw pipeline
+    ``draft`` section when the server provides one.
+
 ### `get_pipeline(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Get pipeline state for a dataview.
@@ -6165,6 +14374,40 @@ Args:
 Returns:
     Task details dict.
 
+### `items(self, dataview_id: 'int', dataset_id: 'int | None' = None, fields: 'str | None' = None, limit: 'int | None' = None, offset: 'int | None' = None, sort: 'str | None' = None, sequence: 'int | None' = None, status: 'str | None' = None) -> 'dict[str, Any]'`
+
+Get pipeline items (tasks and exports, interleaved) for a dataview.
+
+Args:
+    dataview_id: ID of the dataview.
+    dataset_id: Dataset ID (auto-detected if not provided).
+    fields: Fields to return (e.g., "__standard", "__full", "__min").
+    limit: Maximum number of results.
+    offset: Number of results to skip.
+    sort: Sort specification.
+    sequence: Filter to a specific pipeline task sequence number.
+    status: Filter by item status.
+
+Returns:
+    Dict with the pipeline items list.
+
+### `latest_task_sequence(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'int'`
+
+Return the highest non-deleted task sequence in the pipeline.
+
+Data and metadata reads are scoped to a task *sequence*. Sequence 0 is
+the original dataset; each task adds a sequence, and the columns a task
+produces exist only from its sequence onward. Reading at the latest
+sequence is therefore what surfaces every pipeline-derived column
+(math, add_column, etc.).
+
+Args:
+    dataview_id: ID of the dataview.
+    dataset_id: Dataset ID (auto-detected if not provided).
+
+Returns:
+    The highest task sequence, or ``0`` when the view has no tasks.
+
 ### `list_tasks(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 List all pipeline tasks for a dataview.
@@ -6187,6 +14430,26 @@ Args:
 
 Returns:
     Preview result dict with sample data.
+
+### `rerun(self, dataview_id: 'int', from_sequence: 'int | None' = None, dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Rerun the pipeline starting from a specific task sequence.
+
+Useful for rerunning a stale pipeline from the step where a parameter
+is used, instead of rerunning the whole pipeline from scratch.
+
+Args:
+    dataview_id: ID of the dataview.
+    from_sequence: Task sequence number to start the rerun from (>= 0).
+        If not provided, the server reruns from step 0 (the full
+        pipeline).
+    dataset_id: Dataset ID (auto-detected if not provided).
+
+Returns:
+    Dict with the rerun job info.
+
+Raises:
+    MammothValidationError: If from_sequence is negative.
 
 ### `update_task(self, dataview_id: 'int', task_id: 'int', task_spec: 'dict[str, Any]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -6322,36 +14585,124 @@ The `DashboardsAPI` manages interactive dashboards in Mammoth. Dashboards visual
 
 Client for managing Mammoth dashboards.
 
-Access via client.dashboards:
+Access via ``client.dashboards``::
+
     dashboards = client.dashboards.list()
-    dashboard = client.dashboards.create(config={...})
-    client.dashboards.share(dashboard_id, config={...})
-    client.dashboards.delete(dashboard_id)
+    dashboard = client.dashboards.create(
+        intent="Show quarterly revenue by region",
+        source=[101, 102],
+    )
+    client.dashboards.share(
+        dashboard_id=5,
+        type_of_auth=DashboardAuthType.PUBLIC,
+    )
+    client.dashboards.delete(dashboard_id=5)
 
 ### `__init__(self, client: 'MammothClient') -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-### `action(self, dashboard_id: 'int', action_config: 'dict[str, Any]') -> 'dict[str, Any]'`
+### `action(self, dashboard_id: 'int', action: 'DashboardActionType', params_enabled: 'bool | None' = None, params_view_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Perform an action on a dashboard.
 
 Args:
-    dashboard_id: ID of the dashboard.
-    action_config: Action configuration.
+    dashboard_id: ID of the dashboard (must be > 0).
+    action: The action to execute.
+    params_enabled: Required for ``auto-sync`` and ``auto-publish``;
+        enables or disables the behaviour.
+    params_view_id: Required (> 0) for ``delete-source``;
+        optional for ``sync`` and ``auto-sync`` to scope to one source.
 
 Returns:
     Dict with action result.
 
-### `create(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If *dashboard_id* ≤ 0, ``auto-sync`` /
+        ``auto-publish`` are called without *params_enabled*, or
+        ``delete-source`` is called without a positive *params_view_id*.
 
-Create a new dashboard.
+### `analytics(self: 'Any', dashboard_id: 'int') -> 'DashboardAnalyticsResponse'`
+
+Get Dashboard Analytics.
+
+### `cancel_generation(self, dashboard_id: 'int') -> 'dict[str, Any]'`
+
+Cancel an in-progress AI dashboard generation.
 
 Args:
-    config: Dashboard configuration (name, sources, layout, etc.).
+    dashboard_id: ID of the dashboard (must be > 0).
 
 Returns:
-    Dict with created dashboard info (may include job ID for async creation).
+    Dict with cancellation result.
+
+Raises:
+    MammothValidationError: If *dashboard_id* ≤ 0.
+
+### `canvas_get(self: 'Any', dashboard_id: 'int', sequence: 'int | None' = None) -> 'CanvasResponse'`
+
+Editor canvas (draft).
+
+### `canvas_restore(self: 'Any', dashboard_id: 'int', body: 'RestoreCanvasSpec') -> 'ObjectJobSchema | JobResponse'`
+
+Undo / redo / revert the canvas to a target version.
+
+### `canvas_save(self: 'Any', dashboard_id: 'int', body: 'SaveCanvasSpec') -> 'SaveCanvasResponse'`
+
+Save the canvas (append a draft version).
+
+### `chat_edit(self: 'Any', dashboard_id: 'int', body: 'ChatEditSpec') -> 'ObjectJobSchema | JobResponse'`
+
+One chat-edit turn.
+
+### `chat_history(self: 'Any', dashboard_id: 'int', sequence: 'int | None' = None) -> 'mmai_dashboards_v3_schema_ChatHistoryResponse'`
+
+Editor chat transcript.
+
+### `context_create(self: 'Any', body: 'ContextSpec') -> 'ContextResponse'`
+
+Create a context.
+
+### `context_delete(self: 'Any', context_id: 'str') -> 'OkResponse'`
+
+Delete a context.
+
+### `context_list(self: 'Any') -> 'ContextListResponse'`
+
+The workspace's contexts.
+
+### `context_update(self: 'Any', context_id: 'str', body: 'ContextSpec') -> 'ContextResponse'`
+
+Update a context.
+
+### `create(self, intent: 'str', source: '_list[int]', enable_filters: 'bool' = True, enable_pages: 'bool' = False) -> 'dict[str, Any]'`
+
+Create a new AI-generated dashboard.
+
+Args:
+    intent: Natural-language description of what the dashboard should
+        show (minimum 10 characters).
+    source: Non-empty list of dataview IDs to use as the data source.
+        All IDs must be positive integers; existence is validated
+        server-side.
+    enable_filters: Whether to include filter widgets (default ``True``).
+    enable_pages: Whether to generate multiple pages (default ``False``).
+
+Returns:
+    Dict with created dashboard info (may include a job ID for async
+    creation).
+
+Raises:
+    MammothValidationError: If *intent* is shorter than 10 characters,
+        *source* is empty, or any source ID is not a positive integer.
+
+### `data_draft(self: 'Any', dashboard_id: 'int', body: 'WidgetDataSpec') -> 'WidgetDataResponse | ObjectJobSchema | JobResponse'`
+
+Get draft data from given SQL query.
+
+### `data_published(self: 'Any', dashboard_id: 'int', body: 'WidgetDataSpec') -> 'WidgetDataResponse | ObjectJobSchema | JobResponse'`
+
+Get published data from given SQL query.
 
 ### `delete(self, dashboard_id: 'int') -> 'dict[str, Any]'`
 
@@ -6362,6 +14713,18 @@ Args:
 
 Returns:
     Dict with deletion result.
+
+### `descriptor_data(self: 'Any', dashboard_id: 'int', body: 'DescriptorDataSpec') -> 'ObjectJobSchema | JobResponse'`
+
+Descriptor data — future-request.
+
+### `duplicate(self: 'Any', dashboard_id: 'int') -> 'DuplicateDashboardResponse'`
+
+Duplicate a v3 dashboard.
+
+### `figure_intent(self: 'Any', dashboard_id: 'int', body: 'FigureIntentSpec') -> 'FigureIntentResponse'`
+
+Resolve an AI-add figure from an intent.
 
 ### `get(self, dashboard_id: 'int') -> 'dict[str, Any]'`
 
@@ -6426,34 +14789,365 @@ Get available dashboard data sources.
 Returns:
     List of source dicts.
 
-### `list(self) -> '_list[dict[str, Any]]'`
+### `job_by_url(self, url: 'str', job_id: 'int') -> 'dict[str, Any]'`
+
+Get the status/result of an async dashboard job, addressed by URL slug.
+
+Args:
+    url: Dashboard URL slug.
+    job_id: ID of the job (must be > 0).
+
+Returns:
+    Dict with job status/result.
+
+Raises:
+    MammothValidationError: If *job_id* ≤ 0.
+
+### `list(self, project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`
 
 List all dashboards.
 
 Returns:
     List of dashboard dicts.
 
-### `share(self, dashboard_id: 'int', config: 'dict[str, Any]') -> 'dict[str, Any]'`
+### `og_card(self: 'Any', dashboard_id: 'int') -> 'dict[str, Any]'`
+
+Dashboard card thumbnail (draft or published PNG).
+
+### `page_plan(self: 'Any', dashboard_id: 'int', body: 'PlanPageSpec') -> 'PlanPageResponse'`
+
+Compose a new page from an intent.
+
+### `pdf_artifact(self: 'Any', dashboard_id: 'int', job_id: 'int') -> 'dict[str, Any]'`
+
+Download a completed draft PDF export.
+
+### `pdf_export(self: 'Any', dashboard_id: 'int', body: 'PdfExportSpec') -> 'ObjectJobSchema | JobResponse'`
+
+Kick a draft-dashboard PDF export.
+
+### `published_canvas(self: 'Any', url: 'str') -> 'CanvasResponse'`
+
+Published viewer canvas.
+
+### `published_data(self: 'Any', url: 'str', body: 'DescriptorDataSpec') -> 'ObjectJobSchema | JobResponse'`
+
+Descriptor data for a published dashboard.
+
+### `published_data_by_url(self, url: 'str', body: 'dict[str, Any]') -> 'dict[str, Any]'`
+
+Get published dashboard widget data via SQL, addressed by URL slug.
+
+Args:
+    url: Dashboard URL slug.
+    body: Widget data request payload (``WidgetDataSpec``), e.g.
+        ``{"params": {"widget_id": ..., "global_filters": {...},
+        "drilldown_filters": {...}}}``.
+
+Returns:
+    Dict with query results (may include a job ID for async execution).
+
+### `published_og_card(self: 'Any', url: 'str') -> 'dict[str, Any]'`
+
+Published dashboard's link-unfurl OG card (baked PNG).
+
+### `published_pdf_artifact(self: 'Any', url: 'str', job_id: 'int') -> 'dict[str, Any]'`
+
+Download a completed published PDF export.
+
+### `published_pdf_export(self: 'Any', url: 'str', body: 'PdfExportSpec') -> 'ObjectJobSchema | JobResponse'`
+
+Kick a published-dashboard PDF export.
+
+### `published_share_page(self: 'Any', url: 'str') -> 'dict[str, Any]'`
+
+Published dashboard's link-unfurl share page (crawler-facing HTML).
+
+### `published_video_artifact(self: 'Any', url: 'str') -> 'dict[str, Any]'`
+
+Stream a published motion-story video (Range-enabled).
+
+### `published_video_export(self: 'Any', url: 'str') -> 'ObjectJobSchema | JobResponse'`
+
+Kick a motion-story video export (published view).
+
+### `qa_ask(self: 'Any', dashboard_id: 'int', session_id: 'int', body: 'AskSpec') -> 'ObjectJobSchema | JobResponse'`
+
+One Q&A ask turn (async).
+
+### `qa_comment_create(self: 'Any', dashboard_id: 'int', session_id: 'int', body: 'CommentSpec') -> 'SessionResponse'`
+
+Comment on a shared Q&A session.
+
+### `qa_comment_delete(self: 'Any', dashboard_id: 'int', session_id: 'int', comment_id: 'int') -> 'SessionResponse'`
+
+Delete a comment (author or session owner).
+
+### `qa_feedback(self: 'Any', dashboard_id: 'int', session_id: 'int', message_id: 'int', body: 'FeedbackSpec') -> 'SessionResponse'`
+
+Rate an assistant answer (up/down; null clears).
+
+### `qa_session_create(self: 'Any', dashboard_id: 'int', body: 'CreateSessionSpec') -> 'SessionResponse'`
+
+Create a Q&A session.
+
+### `qa_session_delete(self: 'Any', dashboard_id: 'int', session_id: 'int') -> 'dict[str, Any]'`
+
+Delete a Q&A session (owner only).
+
+### `qa_session_fork(self: 'Any', dashboard_id: 'int', session_id: 'int') -> 'SessionResponse'`
+
+Fork a shared Q&A session into a private copy.
+
+### `qa_session_get(self: 'Any', dashboard_id: 'int', session_id: 'int') -> 'SessionResponse'`
+
+Read a Q&A session (replayable — carries baked answers).
+
+### `qa_session_list(self: 'Any', dashboard_id: 'int') -> 'SessionListResponse'`
+
+List Q&A sessions.
+
+### `qa_session_rename(self: 'Any', dashboard_id: 'int', session_id: 'int', body: 'RenameSessionSpec') -> 'SessionResponse'`
+
+Rename a Q&A session (owner only).
+
+### `qa_session_set_visibility(self: 'Any', dashboard_id: 'int', session_id: 'int', body: 'VisibilitySpec') -> 'SessionResponse'`
+
+Share/unshare a Q&A session (owner only).
+
+### `qa_settings_get(self: 'Any', dashboard_id: 'int') -> 'QaSettingsResponse'`
+
+This dashboard's Q&A settings.
+
+### `qa_settings_set(self: 'Any', dashboard_id: 'int', body: 'QaSettingsSpec') -> 'QaSettingsResponse'`
+
+Update this dashboard's Q&A settings (editors only).
+
+### `query(self: 'Any', dashboard_id: 'int', body: 'AdhocQuerySpec') -> 'AdhocQueryResponse'`
+
+Editor ad-hoc descriptor query.
+
+### `restore(self, dashboard_id: 'int') -> 'dict[str, Any]'`
+
+Restore a trashed dashboard.
+
+Args:
+    dashboard_id: ID of the dashboard (must be > 0).
+
+Returns:
+    Dict with restore result.
+
+Raises:
+    MammothValidationError: If *dashboard_id* ≤ 0.
+
+### `rls_assignment_list(self: 'Any', dashboard_id: 'int') -> 'RlsAssignmentsResponse'`
+
+List RLS viewer assignments.
+
+### `rls_assignment_set(self: 'Any', dashboard_id: 'int', body: 'RlsAssignmentsSpec') -> 'dict[str, Any]'`
+
+Replace RLS viewer assignments.
+
+### `rls_column_list(self: 'Any', dashboard_id: 'int') -> 'RlsColumnsResponse'`
+
+Candidate columns for the RLS filter.
+
+### `rls_value_list(self: 'Any', dashboard_id: 'int', column: 'str', search: 'str | None' = None) -> 'RlsDistinctValuesResponse'`
+
+Distinct values for an RLS filter column.
+
+### `share(self, dashboard_id: 'int', type_of_auth: 'DashboardAuthType', users: '_list[DashboardShareUser] | None' = None) -> 'dict[str, Any]'`
 
 Share a dashboard.
 
 Args:
-    dashboard_id: ID of the dashboard.
-    config: Sharing configuration (users, permissions, etc.).
+    dashboard_id: ID of the dashboard (must be > 0).
+    type_of_auth: Authentication model for the shared link.
+    users: Optional list of :class:`~mammoth.models.dashboards.DashboardShareUser`
+        granting per-user access.  Only used when *type_of_auth* is
+        :attr:`~mammoth.models.dashboards.DashboardAuthType.MAMMOTH`;
+        ignored for ``public`` / ``password``.  Each user must have a
+        non-empty ``email``.
 
 Returns:
     Dict with sharing result.
 
-### `update(self, dashboard_id: 'int', config: 'dict[str, Any]') -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If *dashboard_id* ≤ 0 or any user has an
+        empty ``email``.
 
-Update a dashboard.
+### `signature_create(self: 'Any', body: 'SignatureSpec') -> 'SignatureResponse'`
+
+Create a signature.
+
+### `signature_delete(self: 'Any', signature_id: 'str') -> 'OkResponse'`
+
+Delete a signature.
+
+### `signature_list(self: 'Any') -> 'SignatureListResponse'`
+
+The workspace's signatures.
+
+### `signature_update(self: 'Any', signature_id: 'str', body: 'SignatureSpec') -> 'SignatureResponse'`
+
+Update a signature.
+
+### `source_list(self: 'Any') -> 'DashboardSourcesType'`
+
+Get Dashboard Sources.
+
+### `style_custom_create(self: 'Any', body: 'CustomStyleSpec') -> 'StyleResponse'`
+
+Create a custom style.
+
+### `style_custom_delete(self: 'Any', style_id: 'str') -> 'OkResponse'`
+
+Delete a custom style.
+
+### `style_custom_list(self: 'Any') -> 'StyleListResponse'`
+
+The workspace's custom styles.
+
+### `style_custom_update(self: 'Any', style_id: 'str', body: 'CustomStyleSpec') -> 'StyleResponse'`
+
+Update a custom style.
+
+### `style_default_get(self: 'Any') -> 'DefaultStyleResponse'`
+
+The workspace default style id.
+
+### `style_default_set(self: 'Any', body: 'DefaultStyleSpec') -> 'DefaultStyleResponse'`
+
+Set the workspace default style id.
+
+### `style_derive(self: 'Any', body: 'DeriveStyleSpec') -> 'dict[str, Any] | DeriveStyleResponse'`
+
+Derive a full Style bundle from signals.
+
+### `style_extract_brand(self: 'Any', body: 'ExtractBrandSpec') -> 'ObjectJobSchema | JobResponse'`
+
+Kick a brand extraction from a URL.
+
+### `style_preset_list(self: 'Any') -> 'StylePresetsResponse'`
+
+Style presets (stock + custom).
+
+### `style_token_list(self: 'Any', id: 'str') -> 'StyleTokensResponse'`
+
+Full Style bundle by id (stock or custom).
+
+### `suggestion_list(self: 'Any', dataview_id: 'int', table_item_id: 'int | None' = None) -> 'DashboardSuggestionsResponse'`
+
+Data-grounded starting points for the create screen.
+
+### `template_apply(self: 'Any', body: 'ApplyTemplateSpec') -> 'ObjectJobSchema | JobResponse'`
+
+Apply a template to a target dataset.
+
+### `template_create(self: 'Any', body: 'SaveTemplateSpec') -> 'TemplateDetailResponse'`
+
+Save a dashboard as a workspace template.
+
+### `template_delete(self: 'Any', template_id: 'str') -> 'OkResponse'`
+
+Delete a saved workspace template.
+
+### `template_fit(self: 'Any', dataview_id: 'int', table_item_id: 'int | None' = None) -> 'TemplateFitResponse'`
+
+Fit-score the whole catalog against one dataset.
+
+### `template_get(self: 'Any', template_id: 'str') -> 'TemplateDetailResponse'`
+
+One template's metadata + self-fit recipe.
+
+### `template_list(self: 'Any') -> 'TemplateListResponse'`
+
+Curated template catalog.
+
+### `template_preview(self: 'Any', body: 'PreviewTemplateSpec') -> 'PreviewTemplateResponse'`
+
+Preview a template mapping applied to a target dataset.
+
+### `template_rename(self: 'Any', template_id: 'str', body: 'RenameTemplateSpec') -> 'TemplateDetailResponse'`
+
+Rename a saved workspace template.
+
+### `template_resolve_mapping(self: 'Any', body: 'ResolveTemplateMappingSpec') -> 'ResolveTemplateMappingResponse'`
+
+Propose a template mapping onto a target dataset.
+
+### `trash(self, dashboard_id: 'int') -> 'dict[str, Any]'`
+
+Move a dashboard to trash.
 
 Args:
-    dashboard_id: ID of the dashboard.
-    config: Updated dashboard configuration.
+    dashboard_id: ID of the dashboard (must be > 0).
+
+Returns:
+    Dict with trash result.
+
+Raises:
+    MammothValidationError: If *dashboard_id* ≤ 0.
+
+### `update(self, dashboard_id: 'int', patch: '_list[DashboardPatchItem]') -> 'dict[str, Any]'`
+
+Update a dashboard via JSON-patch operations.
+
+Args:
+    dashboard_id: ID of the dashboard (must be > 0).
+    patch: Non-empty list of :class:`~mammoth.models.dashboards.DashboardPatchItem`
+        describing the operations to apply.
+
+        Supported combos:
+
+        * ``op=add, path=intent`` — trigger AI edit; value must be str ≥ 10 chars.
+        * ``op=replace, path=title`` — rename dashboard; value must be str.
+        * ``op=replace, path=theme`` — change theme; value must be str.
 
 Returns:
     Dict with updated dashboard info.
+
+Raises:
+    MammothValidationError: If *dashboard_id* ≤ 0, *patch* is empty, or
+        an ``intent`` value is too short / a ``title``/``theme`` value is
+        not a string.
+
+### `v3_generate(self: 'Any', body: 'GenerateDashboardV3Spec') -> 'ObjectJobSchema | JobResponse'`
+
+Generate a v3 dashboard.
+
+### `video_export(self: 'Any', dashboard_id: 'int') -> 'ObjectJobSchema | JobResponse'`
+
+Kick a motion-story video export.
+
+### `video_state(self: 'Any', dashboard_id: 'int') -> 'dict[str, Any]'`
+
+Motion-story video export state (never kicks a render).
+
+### `widget_data(self, dashboard_id: 'int', body: 'dict[str, Any]') -> 'dict[str, Any]'`
+
+Get data for multiple dashboard widgets in bulk.
+
+Args:
+    dashboard_id: ID of the dashboard (must be > 0).
+    body: Bulk widget data request payload (``BulkWidgetDataSpec``).
+
+Returns:
+    Dict with per-widget data results.
+
+Raises:
+    MammothValidationError: If *dashboard_id* ≤ 0.
+
+### `widget_data_by_url(self, url: 'str', body: 'dict[str, Any]') -> 'dict[str, Any]'`
+
+Get data for multiple dashboard widgets in bulk, addressed by URL slug.
+
+Args:
+    url: Dashboard URL slug.
+    body: Bulk widget data request payload (``BulkWidgetDataSpec``).
+
+Returns:
+    Dict with per-widget data results.
 
 
 ---
@@ -6581,35 +15275,58 @@ The SDK provides two sub-clients for automation workflows:
 
 Client for managing automations and schedules.
 
-Access via client.automations:
+Access via ``client.automations``::
+
     automations = client.automations.list()
-    automation = client.automations.create(config={...})
+    automation = client.automations.create(
+        name="Nightly refresh",
+        description="Pulls cloud data every night",
+        tasks=[AutomationTaskSpec(
+            task_type=AutomationTaskType.RUN_DATA_RETRIEVAL,
+            details=TaskDetailsSpec(ds_details=[DataRefreshConfig(ds_id=42)]),
+        )],
+    )
     schedules = client.automations.list_schedules()
-    client.automations.create_schedule(config={...})
 
 #### `__init__(self, client: 'MammothClient') -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `create(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+#### `create(self, name: 'str', description: 'str', tasks: '_list[AutomationTaskSpec]', conditions: '_list[AutomationConditionSpec] | None' = None, condition_mode: 'AutomationConditionMode' = <AutomationConditionMode.AND: 'and'>) -> 'dict[str, Any]'`
 
 Create a new automation.
 
 Args:
-    config: Automation configuration (name, triggers, actions, etc.).
+    name: Automation name (non-empty).
+    description: Human-readable description (may be empty string).
+    tasks: Non-empty list of :class:`~mammoth.models.automations.AutomationTaskSpec`.
+        Each task must supply the fields required by its ``task_type``.
+    conditions: Optional list of
+        :class:`~mammoth.models.automations.AutomationConditionSpec`.
+    condition_mode: How multiple conditions are combined
+        (``"and"`` or ``"or"``; default ``"and"``).
 
 Returns:
     Dict with created automation info.
 
-#### `create_schedule(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If *name* is empty, *tasks* is empty,
+        a task is missing required fields for its type, or a condition
+        is missing required fields for its type.
+
+#### `create_schedule(self, spec: 'ScheduleCreateSpec') -> 'dict[str, Any]'`
 
 Create a new schedule.
 
 Args:
-    config: Schedule configuration (cron, timezone, actions, etc.).
+    spec: :class:`~mammoth.models.automations.ScheduleCreateSpec` describing
+        the recurrence rule and optional work items.
 
 Returns:
     Dict with created schedule info.
+
+Raises:
+    MammothValidationError: If ``rrule.interval`` ≤ 0.
 
 #### `delete(self, automation_id: 'int') -> 'dict[str, Any]'`
 
@@ -6655,27 +15372,72 @@ List all schedules.
 Returns:
     List of schedule dicts.
 
-#### `update(self, automation_id: 'int', config: 'dict[str, Any]') -> 'dict[str, Any]'`
+#### `restore(self, automation_id: 'int') -> 'dict[str, Any]'`
 
-Update an automation.
+Restore a trashed automation.
 
 Args:
     automation_id: ID of the automation.
-    config: Updated automation configuration.
+
+Returns:
+    Dict with the restored automation info.
+
+#### `trash(self, automation_id: 'int') -> 'dict[str, Any]'`
+
+Move an automation to trash.
+
+Args:
+    automation_id: ID of the automation.
+
+Returns:
+    Dict with the trashed automation info.
+
+#### `update(self, automation_id: 'int', patch: '_list[AutomationPatchItem]') -> 'dict[str, Any]'`
+
+Update an automation via JSON-patch operations.
+
+Args:
+    automation_id: ID of the automation (must be > 0).
+    patch: Non-empty list of :class:`~mammoth.models.automations.AutomationPatchItem`.
+
+        Supported combos:
+
+        * ``op=command, path=run`` — trigger the automation immediately.
+        * ``op=replace, path=status`` — suspend or resume; ``value``
+          must be ``"suspend"`` or ``"resume"``.
+        * ``op=replace, path=details`` — update fields; ``value`` must
+          be a :class:`~mammoth.models.automations.PatchAutomationDetails`
+          with at least one of name/description/tasks/conditions set.
 
 Returns:
     Dict with updated automation info.
 
-#### `update_schedule(self, schedule_id: 'int', config: 'dict[str, Any]') -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If *automation_id* ≤ 0, *patch* is empty,
+        or an op+path+value combination is invalid.
 
-Update a schedule.
+#### `update_schedule(self, schedule_id: 'int', patch: '_list[SchedulePatchItem]') -> 'dict[str, Any]'`
+
+Update a schedule via JSON-patch operations.
 
 Args:
-    schedule_id: ID of the schedule.
-    config: Updated schedule configuration.
+    schedule_id: ID of the schedule (must be > 0).
+    patch: Non-empty list of :class:`SchedulePatchItem`.
+
+        Supported combos:
+
+        * ``op=replace, path=rrule`` — update recurrence rule + work items;
+          ``value`` must be a
+          :class:`~mammoth.models.automations.SchedulePatchValue`.
+        * ``op=replace, path=status`` — pause or resume; ``value`` must
+          be ``"pause"`` or ``"resume"``.
 
 Returns:
     Dict with updated schedule info.
+
+Raises:
+    MammothValidationError: If *schedule_id* ≤ 0, *patch* is empty,
+        or an op+path+value combination is invalid.
 
 ---
 
@@ -6685,26 +15447,35 @@ Returns:
 
 Client for managing schedules under projects.
 
-Access via client.schedules::
+Access via ``client.schedules``::
 
     schedules = client.schedules.list()
-    schedule = client.schedules.create(config={...})
+    schedule = client.schedules.create(
+        spec=ScheduleCreateSpec(
+            rrule=RruleSpec(frequency=RruleFrequency.DAILY, start=datetime(2025, 1, 1)),
+        )
+    )
     client.schedules.delete(schedule_id)
 
 #### `__init__(self, client: 'MammothClient') -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `create(self, config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `create(self, spec: 'ScheduleCreateSpec', project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Create a new schedule.
 
 Args:
-    config: Schedule configuration.
-    project_id: Project ID (uses client default if not provided).
+    spec: :class:`~mammoth.models.automations.ScheduleCreateSpec` describing
+        the recurrence rule and optional work items.
+    project_id: Project ID (uses client default if not provided; must
+        be > 0 if given).
 
 Returns:
     Dict with created schedule info.
+
+Raises:
+    MammothValidationError: If *project_id* ≤ 0 or ``rrule.interval`` ≤ 0.
 
 #### `delete(self, schedule_id: 'int', project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -6745,17 +15516,31 @@ Args:
 Returns:
     Dict with schedules list and pagination info.
 
-#### `update(self, schedule_id: 'int', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `update(self, schedule_id: 'int', patch: '_list[SchedulePatchItem]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
-Update a schedule.
+Update a schedule via JSON-patch operations.
 
 Args:
-    schedule_id: ID of the schedule.
-    config: Updated schedule configuration.
-    project_id: Project ID (uses client default if not provided).
+    schedule_id: ID of the schedule (must be > 0).
+    patch: Non-empty list of :class:`~mammoth.api.automations.SchedulePatchItem`.
+
+        Supported combos:
+
+        * ``op=replace, path=rrule`` — update recurrence rule + work items;
+          ``value`` must be a
+          :class:`~mammoth.models.automations.SchedulePatchValue`.
+        * ``op=replace, path=status`` — pause or resume; ``value`` must
+          be ``"pause"`` or ``"resume"``.
+
+    project_id: Project ID (uses client default if not provided; must
+        be > 0 if given).
 
 Returns:
     Dict with updated schedule info.
+
+Raises:
+    MammothValidationError: If *schedule_id* ≤ 0, *project_id* ≤ 0,
+        *patch* is empty, or an op+path+value combination is invalid.
 
 
 ---
@@ -6851,28 +15636,54 @@ Args:
 Returns:
     Dict with reactivation result.
 
-#### `update(self, config: 'dict[str, Any]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `update(self, patches: '_list[WorkspacePatchOp]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
 
-Update workspace settings.
+Update workspace settings via JSON-patch operations.
+
+The backend expects ``{"patches": [<ops>]}``.  Each op has:
+
+- ``op``: ``"replace"`` (only supported op).
+- ``path``: one of ``name``, ``metadata``, ``plan_id``, ``billing_cycle``.
+- ``value``: type depends on path:
+
+  - ``name`` → ``str`` 1–50 chars
+  - ``metadata`` → ``dict``
+  - ``plan_id`` → ``int``
+  - ``billing_cycle`` → ``"monthly"``, ``"yearly"``, or ``"annual"``
 
 Args:
-    config: Patch operations for the workspace.
+    patches: Non-empty list of
+        :class:`~mammoth.models.workspaces.WorkspacePatchOp` instances.
     workspace_id: ID of the workspace (uses client default if not provided).
 
 Returns:
     Dict with updated workspace info.
 
-#### `update_user(self, user_id: 'str', config: 'dict[str, Any]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If ``patches`` is empty.
 
-Update a user's settings in the workspace.
+#### `update_user(self, user_id: 'str', patches: '_list[UserRolePatchOp]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Update a user's role in the workspace via JSON-patch operations.
+
+The backend expects ``{"patches": [{"op": "replace", "path": "role",
+"value": "<role>"}]}``.
+
+Allowed role values (:class:`~mammoth.models.workspaces.WorkspaceRoleType`):
+``workspace_member``, ``workspace_admin``, ``workspace_owner``,
+``workspace_guest``.
 
 Args:
-    user_id: ID of the user.
-    config: Patch operations for the user.
+    user_id: Non-empty ID of the user to update.
+    patches: Non-empty list of
+        :class:`~mammoth.models.workspaces.UserRolePatchOp` instances.
     workspace_id: ID of the workspace (uses client default if not provided).
 
 Returns:
     Dict with updated user info.
+
+Raises:
+    MammothValidationError: If ``user_id`` is empty or ``patches`` is empty.
 
 ---
 
@@ -6964,6 +15775,23 @@ Access via client.folders:
 
 Initialize self.  See help(type(self)) for accurate signature.
 
+#### `bulk_delete(self, folder_ids: '_list[int] | None' = None, check_dependency: 'bool | None' = None, remove_contents: 'bool | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'None'`
+
+Bulk delete folders, matching the ``DeleteFolders`` operation directly.
+
+Unlike :meth:`delete`, every query parameter here is optional — omitting
+``folder_ids`` lets the server apply its own default deletion scope.
+
+Args:
+    folder_ids: Folder IDs to delete (optional).
+    check_dependency: Whether to check for dependencies before deleting.
+    remove_contents: Whether to remove folder contents before deleting.
+    workspace_id: ID of the workspace (uses client default if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    None.
+
 #### `create(self, name: 'str', parent_resource_id: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'FolderSchema'`
 
 Create a new folder.
@@ -6987,6 +15815,22 @@ Args:
     project_id: ID of the project (uses client default if not provided).
     check_dependency: Check for dependency before deleting.
     remove_contents: Remove folder contents before deleting.
+
+#### `get(self, folder_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, fields: 'str | None' = None) -> 'FolderSchema'`
+
+Get a single folder by ID.
+
+Args:
+    folder_id: ID of the folder (must be a positive integer).
+    workspace_id: ID of the workspace (uses client default if not provided).
+    project_id: ID of the project (uses client default if not provided).
+    fields: Fields to return (e.g., "__standard", "__full", "__min").
+
+Returns:
+    FolderSchema with the folder's details.
+
+Raises:
+    MammothValidationError: If folder_id is not a positive integer.
 
 #### `get_project_root(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'FolderSchema'`
 
@@ -7040,6 +15884,37 @@ Args:
 Returns:
     ObjectJobSchema with job information for the move.
 
+#### `trash(self, folder_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'JobResponse'`
+
+Trash a folder's contents and hard-delete the now-empty folder.
+
+Args:
+    folder_id: ID of the folder to trash (must be a positive integer).
+    workspace_id: ID of the workspace (uses client default if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    JobResponse with job information for the trash operation.
+
+Raises:
+    MammothValidationError: If folder_id is not a positive integer.
+
+#### `update(self, folder_id: 'int', name: 'str', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'FolderSchema'`
+
+Update folder details (currently supports renaming only).
+
+Args:
+    folder_id: ID of the folder to update (must be a positive integer).
+    name: New name for the folder.
+    workspace_id: ID of the workspace (uses client default if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    FolderSchema with the updated folder details.
+
+Raises:
+    MammothValidationError: If folder_id is not a positive integer.
+
 ---
 
 ## BatchesAPI
@@ -7057,17 +15932,44 @@ Access via client.batches::
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `create(self, dataset_id: 'int', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `bulk_delete(self, dataset_id: 'int', ids: '_list[int] | str | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
-Create a new batch for a dataset.
+Bulk-delete batches for a dataset.
 
 Args:
     dataset_id: ID of the dataset.
-    config: Batch configuration.
+    ids: Optional list of batch IDs (or comma-separated string) to
+        delete. If omitted, all batches for the dataset are deleted.
     project_id: Project ID (uses client default if not provided).
 
 Returns:
+    Dict with deletion result.
+
+#### `create(self, dataset_id: 'int', source_id: 'int', mapping: 'dict[str, str]', project_id: 'int | None' = None, new_ds_params: 'dict[str, Any] | None' = None, is_validation_required: 'bool | None' = None, change_map: 'dict[str, Any] | None' = None, delete_source_ds: 'bool' = False) -> 'dict[str, Any]'`
+
+Create a new batch for a dataset.
+
+The ``source`` field is hardcoded to ``"datasource"`` — the only
+supported source type.
+
+Args:
+    dataset_id: ID of the destination dataset.
+    source_id: ID of the source dataset (must be a positive integer).
+    mapping: Non-empty dict mapping source column names to destination
+        column names, e.g. ``{"src_col": "dst_col"}``.
+    project_id: Project ID (uses client default if not provided).
+    new_ds_params: Optional params for creating a new dataset.
+    is_validation_required: Whether to validate the batch.
+    change_map: Optional change-tracking column map.
+    delete_source_ds: Whether to delete the source dataset after batch
+        (default ``False``).
+
+Returns:
     Dict with created batch info.
+
+Raises:
+    MammothValidationError: If ``source_id`` is not positive or ``mapping``
+        is empty.
 
 #### `delete(self, dataset_id: 'int', batch_id: 'int', project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -7106,17 +16008,28 @@ Args:
 Returns:
     Dict with batches list and pagination info.
 
-#### `update(self, dataset_id: 'int', config: 'dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `update(self, dataset_id: 'int', patch: '_list[dict[str, Any]]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
-Update batches for a dataset.
+Update batches for a dataset via patch operations.
+
+The backend expects ``{"patch": [<ops>]}``. Each op has:
+
+- ``op``: ``"replace"`` or ``"remove"``
+- ``value``: for ``replace`` — a dict mapping operation name to list of
+  batch IDs; for ``remove`` — a list of batch IDs.
 
 Args:
     dataset_id: ID of the dataset.
-    config: Updated batch configuration.
+    patch: Non-empty list of patch operation dicts.  Each dict must
+        include ``"op"`` (``"replace"`` or ``"remove"``) and ``"value"``.
     project_id: Project ID (uses client default if not provided).
 
 Returns:
     Dict with updated batch info.
+
+Raises:
+    MammothValidationError: If ``patch`` is empty or any op has an
+        invalid ``op`` value.
 
 ---
 
@@ -7182,6 +16095,29 @@ Args:
 
 Returns:
     Dict with project resources.
+
+#### `root(self, fields: 'str | None' = None, name: 'str | None' = None, browse_type: 'str | None' = None, created_at: 'str | None' = None, updated_at: 'str | None' = None, sort: 'str | None' = None, offset: 'int | None' = None, limit: 'int | None' = None, ids: 'str | None' = None, include_hidden: 'bool | None' = None, level: 'int | None' = None, permissions: 'str | None' = None) -> 'dict[str, Any]'`
+
+Browse resources across all workspaces the caller has access to.
+
+This is the top-level, non-workspace-scoped browse endpoint (``/browse``).
+
+Args:
+    fields: Comma-separated list of fields to include in the response.
+    name: Filter by resource name.
+    browse_type: Filter by resource type (e.g. "workspace", "project").
+    created_at: Filter by creation date.
+    updated_at: Filter by last-updated date.
+    sort: Sort order for results.
+    offset: Number of results to skip.
+    limit: Maximum number of results.
+    ids: Comma-separated list of resource IDs to filter by.
+    include_hidden: Whether to include hidden resources.
+    level: Depth of children to include.
+    permissions: Filter by permission level.
+
+Returns:
+    Dict with browse resources.
 
 #### `workspace_resources(self, workspace_id: 'int | None' = None, level: 'int' = 2, fields: 'str' = '__min', limit: 'int' = 100) -> 'dict[str, Any]'`
 
@@ -7300,15 +16236,34 @@ Access via client.external_keys::
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `create(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+#### `create(self, key_type: 'ExternalKeyType', key_name: 'str', secure_key: 'str', description: 'str | None' = None, model_id: 'str | None' = None, model_settings: 'ModelConfigSpec | None' = None) -> 'dict[str, Any]'`
 
-Create a new external API key.
+Create a new external (LLM provider) API key.
 
 Args:
-    config: Key configuration (name, permissions, etc.).
+    key_type: Provider the key authenticates against.
+    key_name: Human-readable name for the key.
+    secure_key: The secret key value (>= 3 characters).
+    description: Optional description of the key's purpose.
+    model_id: Optional specific model to use (defaults to the
+        provider's recommended model server-side).
+    model_settings: Optional per-key model configuration overrides;
+        requires *model_id* to be set.
 
 Returns:
     Dict with created key info.
+
+Raises:
+    MammothValidationError: If *key_name* is empty, *secure_key* is too
+        short, or *model_settings* is given without *model_id*.
+
+Example::
+
+    client.external_keys.create(
+        key_type=ExternalKeyType.ANTHROPIC,
+        key_name="My Claude key",
+        secure_key="sk-ant-...",
+    )
 
 #### `delete(self, key_id: 'int') -> 'dict[str, Any]'`
 
@@ -7388,46 +16343,57 @@ Client for managing workspace addons (connectors, storage, users).
 
 Access via client.addons::
 
-    client.addons.add_connector(config={...})
-    client.addons.remove_connector(config={...})
-    client.addons.add_storage(config={...})
-    client.addons.remove_storage(config={...})
-    client.addons.add_users(config={...})
-    client.addons.remove_users(config={...})
+    client.addons.add_connector(connector_id=42)
+    client.addons.add_connector(connector_ids=[42, 43])
+    client.addons.add_storage(additional_storage_gb=50)
+    client.addons.add_users(user_count=5)
 
 #### `__init__(self, client: 'MammothClient') -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `add_connector(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+#### `add_connector(self, connector_id: 'int | None' = None, connector_ids: '_list[int] | None' = None) -> 'dict[str, Any]'`
 
-Add a connector addon to the workspace.
+Add one or more connector addons to the workspace.
+
+Provide exactly one of *connector_id* (single) or *connector_ids* (bulk).
 
 Args:
-    config: Connector addon configuration.
+    connector_id: A single connector id to add.
+    connector_ids: A non-empty list of connector ids to add.
 
 Returns:
     Dict with addon result.
 
-#### `add_storage(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If neither or both arguments are given, or
+        any id is not a positive integer.
 
-Add a storage addon to the workspace.
+#### `add_storage(self, additional_storage_gb: 'int') -> 'dict[str, Any]'`
+
+Add storage capacity to the workspace.
 
 Args:
-    config: Storage addon configuration.
+    additional_storage_gb: GB of storage to add (positive integer).
 
 Returns:
     Dict with addon result.
 
-#### `add_users(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If *additional_storage_gb* is not positive.
 
-Add a users addon to the workspace.
+#### `add_users(self, user_count: 'int' = 1) -> 'dict[str, Any]'`
+
+Add user seats to the workspace.
 
 Args:
-    config: Users addon configuration.
+    user_count: Number of seats to add (positive integer, default 1).
 
 Returns:
     Dict with addon result.
+
+Raises:
+    MammothValidationError: If *user_count* is not positive.
 
 #### `list(self) -> 'dict[str, Any]'`
 
@@ -7436,35 +16402,48 @@ List active addons for the workspace.
 Returns:
     Dict with addon information.
 
-#### `remove_connector(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+#### `remove_connector(self, connector_id: 'int | None' = None, connector_ids: '_list[int] | None' = None) -> 'dict[str, Any]'`
 
-Remove a connector addon from the workspace.
+Remove one or more connector addons from the workspace.
+
+Provide exactly one of *connector_id* (single) or *connector_ids* (bulk).
 
 Args:
-    config: Connector addon identification (connector_id, etc.).
+    connector_id: A single connector id to remove.
+    connector_ids: A non-empty list of connector ids to remove.
 
 Returns:
     Dict with removal result.
 
-#### `remove_storage(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If neither or both arguments are given, or
+        any id is not a positive integer.
 
-Remove a storage addon from the workspace.
+#### `remove_storage(self, removal_storage_gb: 'int') -> 'dict[str, Any]'`
+
+Remove storage capacity from the workspace.
 
 Args:
-    config: Storage addon identification.
+    removal_storage_gb: GB of storage to remove (positive integer).
 
 Returns:
     Dict with removal result.
 
-#### `remove_users(self, config: 'dict[str, Any]') -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If *removal_storage_gb* is not positive.
 
-Remove a users addon from the workspace.
+#### `remove_users(self, user_count: 'int') -> 'dict[str, Any]'`
+
+Remove user seats from the workspace.
 
 Args:
-    config: Users addon identification.
+    user_count: Number of seats to remove (positive integer).
 
 Returns:
     Dict with removal result.
+
+Raises:
+    MammothValidationError: If *user_count* is not positive.
 
 ---
 
@@ -7510,17 +16489,65 @@ Access via client.ai:
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-#### `generate_data(self, dataview_id: 'int', config: 'dict[str, Any]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `condition_generate(self, intent: 'str', dataset_id: 'int', dataview_id: 'int | None' = None, sequence_number: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Generate a filter condition from a natural language intent.
+
+Corresponds to the backend ``ConditionGenerationSpec``:
+``{params: {intent, sequence_number}}``.
+
+Args:
+    intent: Natural language description of the desired condition.
+    dataset_id: ID of the dataset to generate the condition against.
+    dataview_id: Optional ID of the dataview for column context.
+    sequence_number: Optional sequence order in the pipeline.
+    project_id: Project ID (uses client default if not provided).
+
+Returns:
+    Dict with the generated condition.
+
+#### `expression_generate(self, intent: 'str', mode: 'str', dataset_id: 'int', dataview_id: 'int | None' = None, sequence_number: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Generate a math/metric expression from a natural language intent.
+
+Corresponds to the backend ``ExpressionGenerationSpec``:
+``{params: {intent, mode, sequence_number}}``.
+
+Args:
+    intent: Natural language description of the desired expression.
+    mode: ``"math"`` for a row-level numeric expression, or ``"metric"``
+        for an aggregate 1-row-1-column expression.
+    dataset_id: ID of the dataset to generate the expression against.
+    dataview_id: Optional ID of the dataview for column context.
+    sequence_number: Optional sequence order in the pipeline.
+    project_id: Project ID (uses client default if not provided).
+
+Returns:
+    Dict with the generated expression.
+
+Raises:
+    MammothValidationError: If ``mode`` is not ``"math"`` or ``"metric"``.
+
+#### `generate_data(self, dataview_id: 'int', prompt: 'str', no_of_rows: 'int' = 10, columns: 'list[str] | None' = None, dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Generate synthetic data for a dataview.
 
+Corresponds to the backend ``GenAISpec``:
+``{prompt, no_of_rows (1–100), columns}``.
+
 Args:
     dataview_id: ID of the dataview.
-    config: Generation configuration (rows, columns, patterns).
+    prompt: Non-empty string describing what data to generate.
+    no_of_rows: Number of rows to generate (1–100, default 10).
+    columns: Optional list of column names to fill.
     dataset_id: ID of the dataset (auto-detected if not provided).
 
 Returns:
     Dict with generation result or job info.
+
+Raises:
+    MammothValidationError: If ``prompt`` is empty or ``no_of_rows``
+        is outside the 1–100 range.
 
 #### `generate_profile(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -7577,6 +16604,18 @@ Args:
 Returns:
     Dict with generated query.
 
+#### `status(self, connector_key: 'str', connection_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Get the status of an AI chat session for a connector connection.
+
+Args:
+    connector_key: Key identifying the connector type.
+    connection_key: Key identifying the connection.
+    project_id: Project ID (uses client default if not provided).
+
+Returns:
+    Dict with chat status information.
+
 
 ---
 
@@ -7591,7 +16630,7 @@ This guide walks through a complete Mammoth SDK workflow: install, authenticate,
 pip install mammoth-io
 ```
 
-Requires Python 3.10+.
+Requires Python 3.12, 3.13, or 3.14.
 
 ## 2. Authenticate
 
@@ -8695,7 +17734,7 @@ client = MammothClient(..., timeout=120)  # 2 minutes per request
 **Solutions**:
 
 - Ensure the package is installed: `pip install mammoth-io`
-- Verify Python 3.10+: `python --version`
+- Verify Python 3.12-3.14: `python --version`
 - Check you are importing from the correct package: `from mammoth import MammothClient`
 
 ## See also

@@ -4,6 +4,30 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1]
+
+### Changed
+- **BREAKING — `views.get` no longer falls back on a 403.** The restricted-workspace
+  fallback added in the unreleased 0.6.2 was removed and the version rolled back to
+  0.6.1, so **0.6.2 was never published**. If you relied on `views.get` degrading
+  gracefully when the caller lacks workspace access, it now raises instead.
+
+## [0.6.0]
+
+### Changed
+- Version bump for `mammoth-io`; `mammoth-cli` pinned to it, and CI validated
+  against the in-repo SDK rather than a published wheel.
+
+> **Note on 0.6.2.** A 0.6.2 was prepared (restricted-workspace view fallback) and
+> then withdrawn before release — the fallback was dropped and the version reverted
+> to 0.6.1. There is no 0.6.2 on PyPI, and there should not be one later; the next
+> release after 0.6.1 skips it.
+
+> **Unreleased at HEAD.** Builder fix: new columns are no longer forced to `TEXT` in
+> `LOOKUP`, `UNNEST` and `EXTRACT_DATE`. This landed without a version bump, so repo
+> HEAD and the published 0.6.1 share a version string but not their contents. It goes
+> out with the next release.
+
 ## [0.5.1]
 
 ### Fixed
