@@ -2,20 +2,26 @@
 
 ## Requirements
 
-- Python 3.10 or higher
+- Python 3.12, 3.13, or 3.14 (the package declares `>=3.12,<3.15`)
 - pip or Poetry package manager
+
+The SDK and `mammoth-cli` ship from the same monorepo and deliberately support
+the same interpreters, so a machine that can run one can run the other.
 
 ## Install from PyPI
 
 ```bash
-pip install mammoth-io==0.3.7
+pip install mammoth-io
 ```
 
 Or with Poetry:
 
 ```bash
-poetry add mammoth-io==0.3.7
+poetry add mammoth-io
 ```
+
+Install the latest release rather than pinning here. If your project needs a
+pin, pin it in your own dependency file against the version you tested.
 
 ## Dependencies
 
@@ -23,8 +29,11 @@ The SDK has two runtime dependencies, installed automatically:
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `requests` | ^2.32.0 | HTTP client for API requests |
-| `pydantic` | ^2.11.0 | Data validation and response models |
+| `requests` | `>=2.32,<3` | HTTP client for API requests |
+| `pydantic` | `>=2.10,<3` | Data validation and response models |
+
+These are ranges rather than exact pins on purpose: as a library, `mammoth-io`
+has to compose with whatever versions the consuming application already pins.
 
 ## Development installation
 
@@ -32,7 +41,7 @@ Clone the repository and install with dev dependencies:
 
 ```bash
 git clone https://github.com/EdgeMetric/mammothsdk.git
-cd mm-pysdk
+cd mammothsdk
 poetry install
 ```
 

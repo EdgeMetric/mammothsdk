@@ -120,7 +120,7 @@ client = MammothClient(..., timeout=120)  # 2 minutes per request
 **Solutions**:
 
 - Ensure the package is installed: `pip install mammoth-io`
-- Verify Python 3.10+: `python --version`
+- Verify Python 3.12-3.14: `python --version`
 - Check you are importing from the correct package: `from mammoth import MammothClient`
 
 ## See also

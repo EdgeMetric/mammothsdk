@@ -21,7 +21,7 @@ Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data 
 pip install mammoth-io
 ```
 
-Requires Python 3.10+.
+Requires Python 3.12, 3.13, or 3.14 (the package declares `>=3.12,<3.15`).
 
 ## Quick Start
 

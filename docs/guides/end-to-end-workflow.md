@@ -8,7 +8,7 @@ This guide walks through a complete Mammoth SDK workflow: install, authenticate,
 pip install mammoth-io
 ```
 
-Requires Python 3.10+.
+Requires Python 3.12, 3.13, or 3.14.
 
 ## 2. Authenticate
 

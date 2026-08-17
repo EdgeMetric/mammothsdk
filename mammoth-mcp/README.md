@@ -1,5 +1,23 @@
 # mammoth-mcp
 
+> # ⛔ OBSOLETE — DO NOT USE, DO NOT DEPLOY
+>
+> **This is a superseded first prototype. It is not maintained, it was never released, and it is not
+> on a path to release.**
+>
+> - **`pip install mammoth-mcp` does not work.** The package has never been published; PyPI returns
+>   404. The installation instructions below are historical.
+> - **`mcp.mammoth.io` is not deployed.** The remote-mode deployment guide describes an intended
+>   setup, not running infrastructure.
+> - **The prerequisites below say "Python 3.10+".** That is wrong regardless — the `mammoth-io` SDK
+>   this depends on requires Python >= 3.12.
+> - **The clone instructions reference `mm-pysdk`**, a repository name superseded by `mammothsdk`.
+>
+> The rest of this file is kept because the tool inventory is a useful record of what was built. It
+> is **not** documentation of an available capability, and nothing outward-facing should describe
+> Mammoth as having an MCP server on the strength of it. If MCP support is revisited, it should start
+> from a new design rather than from these instructions.
+
 MCP server for [Mammoth Analytics](https://mammoth.io) -- expose data exploration, transformation, and export tools to any MCP-compatible client (Claude Desktop, Claude Code, Claude UI, etc.) via the [Model Context Protocol](https://modelcontextprotocol.io/).
 
 Built on top of the [mammoth-io](https://pypi.org/project/mammoth-io/) Python SDK.

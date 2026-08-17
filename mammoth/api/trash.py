@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from mammoth.exceptions import MammothValidationError
@@ -64,36 +65,49 @@ class TrashAPI:
     def list(
         self,
         project_id: int | None = None,
-        type: str | None = None,
+        type: str | Sequence[str] | None = None,
         sort: str | None = None,
         order: str | None = None,
         limit: int | None = None,
         offset: int | None = None,
         q: str | None = None,
-        trashed_by: int | None = None,
+        trashed_by: int | Sequence[int] | None = None,
         trashed_after: str | None = None,
         trashed_before: str | None = None,
         expiring_within_days: int | None = None,
-        folder_path: str | None = None,
-        folder_root: str | None = None,
+        folder_path: str | Sequence[str] | None = None,
+        folder_root: bool | None = None,
     ) -> dict[str, Any]:
         """List trashed resources in a project.
 
         Args:
             project_id: Project ID (uses client default if not provided).
-            type: Filter by resource type (``"dataview"``, ``"dataset"``,
-                ``"dashboard"``, or ``"automation"``).
-            sort: Sort specification.
-            order: Sort order (e.g. ``"asc"`` or ``"desc"``).
-            limit: Maximum number of results.
+            type: Filter by resource type. Accepts one value or several —
+                the endpoint takes a repeated query parameter. Valid values are
+                ``"dataview"``, ``"dataset"``, ``"dashboard"``, ``"automation"``
+                and ``"data"`` (the data-library bucket: datasets plus their
+                dataviews). Omit to return all types.
+            sort: Sort field -- ``"name"``, ``"trashed_at"`` or ``"size"``.
+                The "expires" axis is ``"trashed_at"`` with ``order="asc"`` for
+                soonest, since expiry is a fixed offset from ``trashed_at``.
+            order: Sort order, ``"asc"`` or ``"desc"`` (server default ``"desc"``).
+            limit: Page size, 1-500 (server default 50).
             offset: Number of results to skip.
-            q: Free-text search query.
-            trashed_by: Filter by the user ID who trashed the item.
-            trashed_after: Only items trashed after this timestamp.
-            trashed_before: Only items trashed before this timestamp.
-            expiring_within_days: Only items expiring within this many days.
-            folder_path: Filter by originating folder path.
-            folder_root: Filter by originating folder root.
+            q: Case-insensitive substring match on item name.
+            trashed_by: Filter by the user ID who trashed the item. Accepts one
+                user ID or several.
+            trashed_after: ISO timestamp, inclusive lower bound on ``trashed_at``.
+                The server treats what it receives as UTC.
+            trashed_before: ISO timestamp, exclusive upper bound on ``trashed_at``.
+            expiring_within_days: Only items whose remaining retention is
+                <= this many days.
+            folder_path: Restrict to datasets (and their dataviews) whose
+                location-at-trash-time folder chain matches these names,
+                outermost first. Accepts one level or several. Dashboards and
+                automations are excluded when set.
+            folder_root: Restrict to datasets (and their dataviews) that were at
+                the project root at trash time. The counterpart of
+                ``folder_path`` -- pass one or the other, not both.
 
         Returns:
             Dict with the trashed items list and pagination info.
