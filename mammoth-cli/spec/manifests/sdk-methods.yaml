@@ -70,7 +70,8 @@ methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.lookup
   implementation_origin: mammoth._mixins._advanced_ops.AdvancedOpsMixin.lookup
   signature: 'lookup(self, source: ''str'', lookup_view_id: ''int'', key: ''str'', value: ''str'', new_column:
-    ''str | None'' = None, existing_column: ''str | None'' = None) -> ''dict[str, Any]'''
+    ''str | None'' = None, new_column_type: ''str'' = ''TEXT'', existing_column: ''str | None'' = None)
+    -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.transform.lookup
   alias_of: null
@@ -348,7 +349,7 @@ methods:
 - sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.unnest
   implementation_origin: mammoth._mixins._row_ops.RowOpsMixin.unnest
   signature: 'unnest(self, columns: ''list[str]'', label_column: ''str'' = ''Label'', value_column: ''str''
-    = ''Value'') -> ''dict[str, Any]'''
+    = ''Value'', value_type: ''str | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.transform.unnest
   alias_of: null
@@ -5717,11 +5718,12 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.trash.TrashAPI.list
   implementation_origin: mammoth.api.trash.TrashAPI.list
-  signature: 'list(self, project_id: ''int | None'' = None, type: ''str | None'' = None, sort: ''str |
-    None'' = None, order: ''str | None'' = None, limit: ''int | None'' = None, offset: ''int | None''
-    = None, q: ''str | None'' = None, trashed_by: ''int | None'' = None, trashed_after: ''str | None''
-    = None, trashed_before: ''str | None'' = None, expiring_within_days: ''int | None'' = None, folder_path:
-    ''str | None'' = None, folder_root: ''str | None'' = None) -> ''dict[str, Any]'''
+  signature: 'list(self, project_id: ''int | None'' = None, type: ''str | Sequence[str] | None'' = None,
+    sort: ''str | None'' = None, order: ''str | None'' = None, limit: ''int | None'' = None, offset: ''int
+    | None'' = None, q: ''str | None'' = None, trashed_by: ''int | Sequence[int] | None'' = None, trashed_after:
+    ''str | None'' = None, trashed_before: ''str | None'' = None, expiring_within_days: ''int | None''
+    = None, folder_path: ''str | Sequence[str] | None'' = None, folder_root: ''bool | None'' = None) ->
+    ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: trash.list
   alias_of: null

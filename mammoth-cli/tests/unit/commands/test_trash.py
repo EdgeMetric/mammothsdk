@@ -78,7 +78,7 @@ def test_list_forwards_optional_filters(fake_service: FakeMammothService, tmp_pa
                 "trashed_before": "2024-06-01",
                 "expiring_within_days": 7,
                 "folder_path": "/Reports",
-                "folder_root": "workspace",
+                "folder_root": True,
             }
         ),
         encoding="utf-8",
@@ -100,7 +100,7 @@ def test_list_forwards_optional_filters(fake_service: FakeMammothService, tmp_pa
                 "trashed_before": "2024-06-01",
                 "expiring_within_days": 7,
                 "folder_path": "/Reports",
-                "folder_root": "workspace",
+                "folder_root": True,
             },
         )
     ]
