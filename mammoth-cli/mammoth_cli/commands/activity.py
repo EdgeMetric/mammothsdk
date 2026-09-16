@@ -17,6 +17,7 @@ from mammoth_cli.errors.envelope import CODE_SDK_SYMBOL_UNRESOLVED, EXIT_USAGE, 
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.services.command_contract import bind_command_inputs
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -70,19 +71,30 @@ def _symbol(invocation: Invocation) -> str:
     return str(record["sdk_symbol"])
 
 
+def _bound_document(invocation: Invocation) -> dict[str, Any]:
+    """Return admitted input after the shared S7 contract binding boundary."""
+    document = bind_command_inputs(invocation.command_id, invocation.load_input() or {})
+    # ``workspace_id`` remains a legacy-admitted filter for compatibility with
+    # the public command contract, but the authenticated service already owns
+    # workspace scope and the SDK method must never receive this override.
+    document.pop("workspace_id", None)
+    return document
+
+
 def _forward_optional(
     document: dict[str, Any], kwargs: dict[str, Any], fields: tuple[str, ...]
 ) -> None:
-    """Copy each present field from ``document`` into ``kwargs`` unchanged.
+    """Copy every admitted input field into ``kwargs`` unchanged.
 
     Args:
         document: The parsed ``--input`` document.
         kwargs: The keyword-argument mapping being built for the SDK call.
         fields: The optional field names to forward when present.
     """
-    for field in fields:
-        if field in document:
-            kwargs[field] = document[field]
+    for field, value in document.items():
+        if field in kwargs and field not in fields:
+            continue
+        kwargs[field] = value
 
 
 def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> dict[str, Any]:
@@ -105,7 +117,7 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> 
 
 def activity_list(invocation: Invocation) -> HandlerResult:
     """List activity logs in the active workspace, with optional filters."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, _LIST_OPTIONAL)
     with open_service(invocation) as (service, auth):
@@ -115,7 +127,7 @@ def activity_list(invocation: Invocation) -> HandlerResult:
 
 def activity_export(invocation: Invocation) -> HandlerResult:
     """Export activity logs from the active workspace, with optional filters."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, _EXPORT_OPTIONAL)
     with open_service(invocation) as (service, auth):

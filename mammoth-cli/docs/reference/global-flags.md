@@ -10,8 +10,8 @@ schema get COMMAND.ID`.
 | Flag | Purpose |
 |---|---|
 | `--output`, `-o` | Output format: `auto`, `table`, `json`, `yaml`, `ndjson`, or `plain`. Default `auto`. |
-| `--profile` | Credential profile name to use. |
-| `--project` | Active project id override. |
+| `--profile` | Credential profile name to use; record it in a handoff. |
+| `--project` | Explicit project id scope for this operation. Prefer it for automation. |
 | `--timeout` | Per-request timeout in seconds. |
 | `--job-timeout` | Job-wait timeout in seconds. |
 | `--pipeline-timeout` | Pipeline-wait timeout in seconds. |
@@ -44,6 +44,11 @@ For automation, make the three important choices visible in every command:
 mammoth project list --output json --no-input --profile production
 ```
 
+For data operations, the project is only one part of scope. Resolve and retain
+the exact workspace, dataset, and view (and any parent ID accepted by the
+command); do not infer a view from a dataset or use a similarly named resource.
+Column fields in structured input are display names from the selected view.
+
 ## Confirmations
 
 Mutations that change data require confirmation. Pass `--yes` to confirm a
@@ -68,4 +73,5 @@ mammoth addon storage add --input request.yaml --input-format yaml --yes
 
 See [safety](../safety.md) for confirmations and mutation classes. See
 [authentication](../authentication.md) for profiles and credentials, and
-[output and errors](output-and-errors.md) for the parsing contract.
+[output and errors](output-and-errors.md) for the parsing contract. See
+[portable handoff](../agent-handoff.md) for a nonsecret checkpoint format.

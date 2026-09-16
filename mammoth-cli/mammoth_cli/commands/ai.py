@@ -30,6 +30,7 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.services.command_contract import bind_command_inputs
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -54,6 +55,11 @@ def _symbol(invocation: Invocation) -> str:
             exit_status=EXIT_USAGE,
         )
     return str(record["sdk_symbol"])
+
+
+def _bound_document(invocation: Invocation) -> dict[str, Any]:
+    """Return admitted input after the shared S7 contract binding boundary."""
+    return bind_command_inputs(invocation.command_id, invocation.load_input() or {})
 
 
 def _int_positional(invocation: Invocation, name: str) -> int | None:
@@ -133,16 +139,17 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
 def _forward_optional(
     document: dict[str, Any], kwargs: dict[str, Any], fields: tuple[str, ...]
 ) -> None:
-    """Copy any present ``fields`` from ``document`` into ``kwargs``.
+    """Copy every admitted input field into ``kwargs`` unchanged.
 
     Args:
         document: The parsed ``--input`` request document.
         kwargs: The keyword argument mapping being built for ``service.call``.
         fields: The optional field names to forward when present.
     """
-    for field in fields:
-        if field in document:
-            kwargs[field] = document[field]
+    for field, value in document.items():
+        if field in kwargs and field not in fields:
+            continue
+        kwargs[field] = value
 
 
 def _meta(invocation: Invocation, workspace_id: int, project_id: int) -> dict[str, Any]:
@@ -178,7 +185,7 @@ def ai_condition_generate(invocation: Invocation) -> HandlerResult:
     """
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     intent = _require_field(document, "intent")
     kwargs: dict[str, Any] = {
         "intent": intent,
@@ -207,7 +214,7 @@ def ai_expression_generate(invocation: Invocation) -> HandlerResult:
     """
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     intent = _require_field(document, "intent")
     mode = _require_field(document, "mode")
     kwargs: dict[str, Any] = {
@@ -239,7 +246,7 @@ def ai_sql_generate(invocation: Invocation) -> HandlerResult:
         The raw generated-SQL response and envelope metadata.
     """
     project_id = require_project(invocation)
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     intent = (invocation.extra_args[0] if invocation.extra_args else None) or document.get("intent")
     if not intent:
         raise CliError(
@@ -250,6 +257,48 @@ def ai_sql_generate(invocation: Invocation) -> HandlerResult:
         )
     kwargs: dict[str, Any] = {"intent": intent}
     _forward_optional(document, kwargs, ("sequence_number",))
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def ai_retention_condition(invocation: Invocation) -> HandlerResult:
+    """Generate or test a retention-policy WHERE clause for a dataset."""
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    if dataset_id < 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The dataset id must be >= 0.",
+            exit_status=EXIT_USAGE,
+        )
+    document = _bound_document(invocation)
+    mode = _require_field(document, "mode")
+    if mode not in ("generate", "test"):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="'mode' must be either 'generate' or 'test'.",
+            exit_status=EXIT_USAGE,
+        )
+    required = "intent" if mode == "generate" else "condition_sql"
+    other = "condition_sql" if mode == "generate" else "intent"
+    value = _require_field(document, required)
+    if not isinstance(value, str) or not value.strip():
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"'{required}' must be a non-empty string when mode is '{mode}'.",
+            exit_status=EXIT_USAGE,
+        )
+    if other in document and document[other] is not None:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=(
+                f"'{other}' is only valid when mode is "
+                f"'{'test' if mode == 'generate' else 'generate'}'."
+            ),
+            exit_status=EXIT_USAGE,
+        )
+    kwargs = {"dataset_id": dataset_id, "mode": mode, "project_id": project_id, required: value}
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)

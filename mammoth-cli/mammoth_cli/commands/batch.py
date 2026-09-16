@@ -162,6 +162,52 @@ def batch_create(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def batch_create_spec(invocation: Invocation) -> HandlerResult:
+    """Create a batch using the release ``BatchesPostRequest`` envelope."""
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional_at(invocation, 0, "dataset id")
+    document = invocation.load_input()
+    if document is None:
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message="This command requires a JSON batch spec object.",
+            exit_status=EXIT_USAGE,
+        )
+    if not isinstance(document, dict):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The batch spec must be a JSON object.",
+            exit_status=EXIT_USAGE,
+        )
+    # ``dataset_id`` is positional context admitted by Invocation; it is not
+    # part of the release BatchesPostRequest body.
+    document = {key: value for key, value in document.items() if key != "dataset_id"}
+    if document.get("delete_source_ds"):
+        source_id = document.get("source_id")
+        if source_id is None:
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message="delete_source_ds requires source_id for target confirmation.",
+                exit_status=EXIT_USAGE,
+            )
+        from mammoth_cli.runtime.confirm import POLICY_CONFIRM_TARGET
+
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_CONFIRM_TARGET,
+            target=str(source_id),
+            action=f"create a batch and delete source dataset {source_id}",
+        )
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            "mammoth.api.batches.BatchesAPI.create_spec",
+            dataset_id=dataset_id,
+            spec=document,
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
 def batch_update(invocation: Invocation) -> HandlerResult:
     """Apply patch operations to a dataset's batches. ``patch`` is required."""
     project_id = require_project(invocation)

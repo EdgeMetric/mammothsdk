@@ -344,4 +344,9 @@ def upgrade_command(
     def producer() -> tuple[Any, dict[str, Any]]:
         return perform(invocation, check=check, target_version=version)
 
-    executor.run(invocation.command_id, invocation.output, producer)
+    executor.run(
+        invocation.command_id,
+        invocation.output,
+        producer,
+        agent_mode=invocation.no_input,
+    )

@@ -117,6 +117,7 @@ def build_condition(
     condition: Any,
     columns: dict[str, str],
     column_types: dict[str, str] | None = None,
+    internal_names: list[str] | None = None,
 ) -> dict[str, Any] | None:
     """Build a condition dict from a Condition object or raw dict.
 
@@ -134,8 +135,41 @@ def build_condition(
         return None
     if isinstance(condition, dict):
         return condition
-    # Condition / CompoundCondition / NotCondition all implement .build(columns, column_types)
+    # Condition / CompoundCondition / NotCondition all implement .build(columns, column_types).
+    # ``internal_names`` is intentionally an opt-in strictness seam: legacy
+    # direct Condition.build callers may still use backend names, while View
+    # operations validate every typed reference before submitting a task.
+    if columns:
+        _validate_condition_columns(
+            condition,
+            columns,
+            internal_names if internal_names is not None else list(columns.values()),
+        )
     return condition.build(columns, column_types)
+
+
+def _validate_condition_columns(
+    condition: Any, columns: dict[str, str], internal_names: list[str]
+) -> None:
+    """Validate all typed condition references without mutating a payload.
+
+    Conditions can be nested and may compare one column to another. Walking
+    the already-parsed condition object keeps this check scoped to identifiers;
+    it never performs the unsafe substring replacement used by old callers.
+    """
+    from mammoth.condition import CompoundCondition, Condition, NotCondition
+
+    if isinstance(condition, Condition):
+        resolve_column(condition.column, columns, internal_names)
+        if condition.value_is_column:
+            if not isinstance(condition.value, str):
+                raise ValueError("column-to-column condition value must be a column name")
+            resolve_column(condition.value, columns, internal_names)
+    elif isinstance(condition, CompoundCondition):
+        for child in condition.conditions:
+            _validate_condition_columns(child, columns, internal_names)
+    elif isinstance(condition, NotCondition):
+        _validate_condition_columns(condition.condition, columns, internal_names)
 
 
 def resolve_order_by(

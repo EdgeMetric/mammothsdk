@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from mammoth.exceptions import MammothValidationError
+from mammoth.models.batches import BatchesPostRequest
 
 if TYPE_CHECKING:
     from ..client import MammothClient
@@ -155,6 +156,59 @@ class BatchesAPI:
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches",
             json=body,
+        )
+
+    def create_spec(
+        self,
+        dataset_id: int,
+        spec: BatchesPostRequest | dict[str, Any],
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Create a batch using the release ``BatchesPostRequest`` shape.
+
+        This additive method preserves the older ``create`` contract while
+        supporting either ``source_id`` plus array ``mapping`` or ``file_id``
+        alone.  The CLI owns confirmation policy for destructive calls.
+        """
+        if isinstance(dataset_id, bool) or not isinstance(dataset_id, int) or dataset_id <= 0:
+            raise MammothValidationError(
+                f"`dataset_id` must be a positive integer, got {dataset_id}."
+            )
+        if project_id is not None and (
+            isinstance(project_id, bool) or not isinstance(project_id, int) or project_id <= 0
+        ):
+            raise MammothValidationError(
+                f"`project_id` must be a positive integer, got {project_id}."
+            )
+        if isinstance(self._ws(), bool) or not isinstance(self._ws(), int) or self._ws() <= 0:
+            raise MammothValidationError(
+                f"`workspace_id` must be a positive integer, got {self._ws()}."
+            )
+        try:
+            typed = BatchesPostRequest.model_validate(spec)
+        except Exception as exc:
+            raise MammothValidationError(f"Invalid release batch spec: {exc}") from exc
+        source_id = typed.source_id
+        file_id = typed.file_id
+        if source_id is None and file_id is None:
+            raise MammothValidationError("Either `source_id` or `file_id` is required.")
+        if source_id is not None and file_id is not None:
+            raise MammothValidationError("`source_id` and `file_id` are mutually exclusive.")
+        if source_id is not None and source_id <= 0:
+            raise MammothValidationError(ERR_BATCH_SOURCE_ID_POSITIVE.format(source_id))
+        if file_id is not None and file_id <= 0:
+            raise MammothValidationError(f"`file_id` must be a positive integer, got {file_id}.")
+        mapping = typed.mapping
+        if source_id is not None and not mapping:
+            raise MammothValidationError("`mapping` must be a non-empty release mapping array.")
+        if file_id is not None and mapping is not None:
+            raise MammothValidationError("`mapping` must be omitted when `file_id` is provided.")
+        ws = self._ws()
+        proj = self._proj(project_id)
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches",
+            json=typed.model_dump(mode="json", exclude_unset=True),
         )
 
     def update(

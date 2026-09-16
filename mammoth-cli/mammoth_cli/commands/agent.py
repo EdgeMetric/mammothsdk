@@ -24,6 +24,7 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.services.command_contract import bind_command_inputs
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -48,6 +49,11 @@ def _symbol(invocation: Invocation) -> str:
             exit_status=EXIT_USAGE,
         )
     return str(record["sdk_symbol"])
+
+
+def _bound_document(invocation: Invocation) -> dict[str, Any]:
+    """Return admitted input after the shared S7 contract binding boundary."""
+    return bind_command_inputs(invocation.command_id, invocation.load_input() or {})
 
 
 def _string_positional(invocation: Invocation) -> str | None:
@@ -113,16 +119,17 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
 def _forward_optional(
     document: dict[str, Any], kwargs: dict[str, Any], fields: tuple[str, ...]
 ) -> None:
-    """Copy each present field from ``document`` into ``kwargs``, unchanged.
+    """Copy every admitted input field into ``kwargs`` unchanged.
 
     Args:
         document: The parsed ``--input`` document.
         kwargs: The keyword-argument mapping being built for the SDK call.
         fields: The optional field names to forward when present.
     """
-    for field in fields:
-        if field in document:
-            kwargs[field] = document[field]
+    for field, value in document.items():
+        if field in kwargs and field not in fields:
+            continue
+        kwargs[field] = value
 
 
 def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> dict[str, Any]:
@@ -145,7 +152,7 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> 
 
 def agent_chat(invocation: Invocation) -> HandlerResult:
     """Send a chat message to an agent. ``message``/``scope`` are required."""
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     message = _require_field(document, "message")
     scope = _require_field(document, "scope")
     assert document is not None
@@ -173,7 +180,7 @@ def agent_session_list(invocation: Invocation) -> HandlerResult:
     ``workspace_id`` is never forwarded even if present in the input document:
     the authenticated client already scopes every call to its own workspace.
     """
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("agent_key", "limit", "offset", "include_shared"))
     with open_service(invocation) as (service, auth):
@@ -192,7 +199,7 @@ def agent_session_messages(invocation: Invocation) -> HandlerResult:
 def agent_session_set_visibility(invocation: Invocation) -> HandlerResult:
     """Set an agent session's visibility. ``visibility`` comes from ``--input``."""
     session_id = _require_string_positional(invocation, "session id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     visibility = _require_field(document, "visibility")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), session_id=session_id, visibility=visibility)

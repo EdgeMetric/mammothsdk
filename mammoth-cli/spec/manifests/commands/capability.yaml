@@ -1,5 +1,44 @@
 manifest_schema_version: 1
 commands:
+- command_id: capability.find
+  command_path: capability find
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: query
+    type: str
+    required: true
+    metavar: QUERY
+    falls_back_to_field: null
+    help: Match operation names, commands, examples, or purpose.
+  options: []
+  sdk_symbol: mammoth_cli.commands.capability.find_capabilities
+  sdk_conversion: Call mammoth_cli.commands.capability.find_capabilities with validated request fields.
+  request_model: CapabilityFindRequest
+  result_model: CapabilityFindResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: offset
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local manifest search.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth capability find QUERY --help
+  agent_example: mammoth capability find 'show projects' --output json --no-input
+  unit_tests:
+  - UT-CAPABILITY-FIND
+  contract_tests:
+  - CT-CAPABILITY-FIND-HUMAN
+  - CT-CAPABILITY-FIND-JSON
+  - CT-CAPABILITY-FIND-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
 - command_id: capability.get
   command_path: capability get
   disposition: command

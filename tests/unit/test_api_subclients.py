@@ -47,6 +47,7 @@ from mammoth.models.automations import (
 )
 from mammoth.models.connectors import DsConfigPatchOp, DsConfigPatchPath
 from mammoth.models.dashboards import (
+    CreateBlankParams,
     DashboardActionType,
     DashboardAuthType,
     DashboardPatchItem,
@@ -57,6 +58,7 @@ from mammoth.models.dashboards import (
 )
 from mammoth.models.exports import OdbcType
 from mammoth.models.external_keys import ExternalKeyType, ModelConfigSpec
+from mammoth.models.projects import DataSyncPatchItem
 from mammoth.models.workspaces import (
     BillingCycle,
     UserRolePatchOp,
@@ -140,7 +142,7 @@ class TestProjectsAPI:
     def test_delete(self, client: MammothClient):
         client.projects.delete(project_id=42)
         assert_called_with_method_and_endpoint(
-            client._request_json, "DELETE", "/workspaces/1/projects"
+            client._request_json, "DELETE", "/workspaces/1/projects/42"
         )
 
     def test_browse(self, client: MammothClient):
@@ -244,6 +246,79 @@ class TestProjectsAPI:
                 project_id=42, role="project_admin", user_id=9, invite_id=10
             )
 
+    def test_resource_dependencies_update_emits_release_patch_wire(self, client: MammothClient):
+        patches = [
+            DataSyncPatchItem(
+                op="replace",
+                path="data_sync",
+                value={
+                    "context_type": "dataview",
+                    "context_id": 42,
+                    "data_pass_through": None,
+                    "run_pending_update": True,
+                },
+            )
+        ]
+        client.projects.resource_dependencies_update(7, patches, workspace_id=4)
+        assert_called_with_method_and_endpoint(
+            client._request_json,
+            "PATCH",
+            "/workspaces/4/projects/7/resource-dependencies",
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "patches": [
+                    {
+                        "op": "replace",
+                        "path": "data_sync",
+                        "value": {
+                            "context_type": "dataview",
+                            "context_id": 42,
+                            "data_pass_through": None,
+                            "run_pending_update": True,
+                        },
+                    }
+                ]
+            },
+        )
+
+    def test_resource_dependencies_update_rejects_invalid_before_request(
+        self, client: MammothClient
+    ):
+        with pytest.raises(MammothValidationError):
+            client.projects.resource_dependencies_update(
+                7,
+                [
+                    {
+                        "op": "replace",
+                        "path": "wrong",
+                        "value": {"context_type": "task", "context_id": 9},
+                    }
+                ],
+            )
+        with pytest.raises(MammothValidationError):
+            client.projects.resource_dependencies_update(
+                7, [{"path": "data_sync", "value": {"context_type": "task", "context_id": 9}}]
+            )
+        with pytest.raises(MammothValidationError):
+            client.projects.resource_dependencies_update(
+                7, [{"op": "replace", "value": {"context_type": "task", "context_id": 9}}]
+            )
+        with pytest.raises(MammothValidationError):
+            client.projects.resource_dependencies_update(
+                7,
+                [
+                    {
+                        "op": "replace",
+                        "path": "data_sync",
+                        "value": {"context_type": "task", "context_id": 9},
+                    }
+                ],
+                workspace_id=0,
+            )
+        client._request_json.assert_not_called()
+
 
 # ======================================================================
 # DatasetsAPI
@@ -282,6 +357,25 @@ class TestDatasetsAPI:
     def test_get_batch(self, client: MammothClient):
         client.datasets.get_batch(dataset_id=500, batch_id=10)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/batches/10")
+
+    def test_get_batch_data(self, client: MammothClient):
+        client._request_json.return_value = {"job_id": 77, "status": "pending"}
+        client.datasets.get_batch_data(
+            dataset_id=500, batch_id=10, columns="a,b", limit=10, offset=3
+        )
+        assert_called_with_method_and_endpoint(client._request_json, "GET", "/batches/10/data")
+        assert client._request_json.call_args.kwargs["params"] == {
+            "limit": 10,
+            "offset": 3,
+            "columns": "a,b",
+        }
+
+    def test_get_batch_data_rejects_invalid_paging(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="between 0 and 100"):
+            client.datasets.get_batch_data(dataset_id=500, batch_id=10, limit=101)
+        with pytest.raises(MammothValidationError, match="non-negative"):
+            client.datasets.get_batch_data(dataset_id=500, batch_id=10, offset=-1)
+        client._request_json.assert_not_called()
 
     def test_get_file_settings(self, client: MammothClient):
         client.datasets.get_file_settings(dataset_id=500)
@@ -448,6 +542,36 @@ class TestDataviewsAPI:
         client.dataviews.query_data(dataset_id=500, dataview_id=42, sequence=0)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/dataviews/42/data")
 
+    def test_exportable_config_get(self, client: MammothClient):
+        client.dataviews.get_exportable_config(dataset_id=500, dataview_id=42)
+        assert_called_with_method_and_endpoint(
+            client._request_json, "GET", "/dataviews/42/exportable-config"
+        )
+
+    def test_exportable_config_apply_requires_exactly_one_source(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="Exactly one"):
+            client.dataviews.apply_exportable_config(dataset_id=500, dataview_id=42)
+        with pytest.raises(MammothValidationError, match="Exactly one"):
+            client.dataviews.apply_exportable_config(
+                dataset_id=500, dataview_id=42, items=[], config={}
+            )
+        client._request_json.assert_not_called()
+
+    def test_exportable_config_apply(self, client: MammothClient):
+        client.dataviews.apply_exportable_config(
+            dataset_id=500,
+            dataview_id=42,
+            config={"tasks": []},
+            is_paste_mode=True,
+        )
+        assert_called_with_method_and_endpoint(
+            client._request_json, "POST", "/dataviews/42/exportable-config"
+        )
+        assert_json_body(
+            client._request_json,
+            {"config": {"tasks": []}, "is_paste_mode": True},
+        )
+
     def test_active_users(self, client: MammothClient):
         client.dataviews.active_users(dataset_id=500, dataview_id=42)
         assert_called_with_method_and_endpoint(
@@ -579,6 +703,11 @@ class TestPipelineAPI:
         client.pipeline.draft_mode(dataview_id=42, command="enter", dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/draft-mode")
 
+    def test_draft_mode_rejects_unknown_operation_before_transport(self, client: MammothClient):
+        with pytest.raises(ValueError, match="enter, exit, submit, discard"):
+            client.pipeline.draft_mode(dataview_id=42, command="status", dataset_id=500)
+        client._request_json.assert_not_called()
+
     def test_edit_pipeline(self, client: MammothClient):
         client.pipeline.edit_pipeline(dataview_id=42, patches=[{"op": "command"}], dataset_id=500)
         assert_called_with_method_and_endpoint(
@@ -599,6 +728,86 @@ class TestPipelineAPI:
             "sequence": 3,
             "status": "pending",
         }
+
+    def test_items_all_collects_pages_with_same_exact_parent(self, client: MammothClient):
+        client._request_json.side_effect = [
+            {
+                "items": [{"id": 1}],
+                "next": (
+                    "/api/v2/workspaces/1/projects/100/datasets/500/dataviews/42/"
+                    "pipeline/items?limit=1&offset=1"
+                ),
+            },
+            {"items": [{"id": 2}], "next": ""},
+        ]
+
+        result = client.pipeline.items_all(
+            dataview_id=42, dataset_id=500, limit=1, fields="__full", status="success"
+        )
+
+        assert result["items"] == [{"id": 1}, {"id": 2}]
+        assert result["pages"] == 2
+        calls = client._request_json.call_args_list
+        assert [call.args[:2] for call in calls] == [
+            ("GET", "/workspaces/1/projects/100/datasets/500/dataviews/42/pipeline/items"),
+            ("GET", "/workspaces/1/projects/100/datasets/500/dataviews/42/pipeline/items"),
+        ]
+        assert calls[0].kwargs["params"] == {
+            "fields": "__full", "limit": 1, "offset": 0, "status": "success"
+        }
+        assert calls[1].kwargs["params"] == {
+            "fields": "__full", "limit": 1, "offset": 1, "status": "success"
+        }
+
+    def test_items_all_rejects_repeated_offset(self, client: MammothClient):
+        from mammoth.exceptions import MammothPaginationError
+
+        client._request_json.return_value = {
+            "items": [{"id": 1}],
+            "next": (
+                "/api/v2/workspaces/1/projects/100/datasets/500/dataviews/42/"
+                "pipeline/items?offset=0"
+            ),
+        }
+        with pytest.raises(MammothPaginationError, match="non-advancing"):
+            client.pipeline.items_all(dataview_id=42, dataset_id=500, limit=1)
+
+    @pytest.mark.parametrize(
+        "next_hint",
+        [
+            "/api/v2/workspaces/1/projects/100/datasets/500/dataviews/42/pipeline/items?limit=1",
+            "/api/v2/workspaces/1/projects/100/datasets/999/dataviews/42/pipeline/items?offset=1",
+        ],
+    )
+    def test_items_all_rejects_unverifiable_continuation(
+        self, client: MammothClient, next_hint: str
+    ):
+        from mammoth.exceptions import MammothPaginationError
+
+        client._request_json.return_value = {"items": [{"id": 1}], "next": next_hint}
+        with pytest.raises(MammothPaginationError, match="unsupported pipeline-items"):
+            client.pipeline.items_all(dataview_id=42, dataset_id=500, limit=1)
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"dataset_id": 0},
+            {"dataset_id": True},
+            {"limit": 0},
+            {"limit": 101},
+            {"max_pages": 0},
+            {"max_pages": 1001},
+        ],
+    )
+    def test_items_all_rejects_invalid_bounds_before_transport(
+        self, client: MammothClient, kwargs: dict[str, object]
+    ):
+        from mammoth.exceptions import MammothValidationError
+
+        call_kwargs = {"dataset_id": 500, **kwargs}
+        with pytest.raises(MammothValidationError):
+            client.pipeline.items_all(dataview_id=42, **call_kwargs)
+        client._request_json.assert_not_called()
 
     def test_rerun(self, client: MammothClient):
         client.pipeline.rerun(dataview_id=42, from_sequence=2, dataset_id=500)
@@ -769,6 +978,28 @@ class TestExportsAPILowLevel:
         }
         client.exports.list(dataview_id=42)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/pipeline/exports")
+
+    def test_list_with_explicit_dataset_id_bypasses_parent_discovery(self, client: MammothClient):
+        client.pipeline._find_dataset_for_dataview = MagicMock(side_effect=AssertionError)
+        client._request_json.return_value = {
+            "exports": [],
+            "limit": 50,
+            "offset": 0,
+            "next": "",
+        }
+        client.exports.list(dataview_id=42, dataset_id=500, limit=23, offset=4)
+        assert_called_with_method_and_endpoint(
+            client._request_json, "GET", "/datasets/500/dataviews/42/pipeline/exports"
+        )
+        assert client._request_json.call_args.kwargs["params"] == {
+            "limit": 23,
+            "offset": 4,
+        }
+
+    def test_list_rejects_nonpositive_explicit_dataset_id(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="dataset_id"):
+            client.exports.list(dataview_id=42, dataset_id=0)
+        client._request_json.assert_not_called()
 
     def test_get(self, client: MammothClient):
         client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
@@ -1074,6 +1305,20 @@ class TestDashboardsAPI:
         client.dashboards.delete(dashboard_id=5)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/dashboards/5")
 
+    @pytest.mark.parametrize("archived", [True, False])
+    def test_archive_sets_archived_state(self, client: MammothClient, archived: bool):
+        client.dashboards.archive(dashboard_id=5, archived=archived)
+        client._request_json.assert_called_once_with(
+            "POST", "/dashboards/5/archive", json={"archived": archived}
+        )
+
+    def test_archive_rejects_invalid_inputs(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="dashboard_id"):
+            client.dashboards.archive(dashboard_id=0, archived=True)
+        with pytest.raises(MammothValidationError, match="archived"):
+            client.dashboards.archive(dashboard_id=5, archived="true")  # type: ignore[arg-type]
+        client._request_json.assert_not_called()
+
     def test_get_sources(self, client: MammothClient):
         client.dashboards.get_sources()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/dashboards/sources")
@@ -1140,6 +1385,29 @@ class TestDashboardsAPI:
                 }
             },
         )
+
+    def test_create_blank_sends_release_wire(self, client: MammothClient):
+        client.dashboards.create_blank(
+            CreateBlankParams(dataview_id=42, style="presentation", title="Revenue")
+        )
+        assert_called_with_method_and_endpoint(
+            client._request_json, "POST", "/dashboards/v3/blank"
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "params": {
+                    "dataview_id": 42,
+                    "style": "presentation",
+                    "title": "Revenue",
+                }
+            },
+        )
+
+    def test_create_blank_rejects_nonpositive_dataview_before_request(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="dataview_id"):
+            client.dashboards.create_blank({"dataview_id": 0})
+        client._request_json.assert_not_called()
 
     def test_create_rejects_short_intent(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="intent"):
@@ -2447,4 +2715,50 @@ class TestAIAPI:
     def test_expression_generate_rejects_invalid_mode(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="mode"):
             client.ai.expression_generate(intent="total revenue", mode="bogus", dataset_id=500)
+        client._request_json.assert_not_called()
+
+    def test_retention_condition_generate(self, client: MammothClient):
+        client.ai.retention_condition(
+            dataset_id=0, mode="generate", intent="completed payments older than 90 days"
+        )
+        assert_called_with_method_and_endpoint(
+            client._request_json, "POST", "/sql_generation/retention_policy"
+        )
+        assert client._request_json.call_args.kwargs["params"] == {"dataset_id": 0}
+        assert_json_body(
+            client._request_json,
+            {
+                "mode": "generate",
+                "intent": "completed payments older than 90 days",
+                "condition_sql": None,
+            },
+        )
+
+    def test_retention_condition_test(self, client: MammothClient):
+        client.ai.retention_condition(
+            dataset_id=500, mode="test", condition_sql="status = 'completed'"
+        )
+        assert_json_body(
+            client._request_json,
+            {"mode": "test", "intent": None, "condition_sql": "status = 'completed'"},
+        )
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"dataset_id": 500, "mode": "other", "intent": "x"},
+            {"dataset_id": 500, "mode": "generate"},
+            {"dataset_id": 500, "mode": "test"},
+            {"dataset_id": 500, "mode": "generate", "intent": "x", "condition_sql": "y"},
+            {"dataset_id": 500, "mode": "test", "condition_sql": "y", "intent": "x"},
+            {"dataset_id": 500, "mode": "test", "condition_sql": "y", "project_id": 0},
+            {"dataset_id": 500, "mode": "test", "condition_sql": "y", "project_id": -1},
+            {"dataset_id": 500, "mode": "test", "condition_sql": "y", "project_id": True},
+        ],
+    )
+    def test_retention_condition_rejects_invalid_payload(
+        self, client: MammothClient, kwargs: dict[str, object]
+    ):
+        with pytest.raises(MammothValidationError, match="mode|intent|condition_sql|project_id"):
+            client.ai.retention_condition(**kwargs)
         client._request_json.assert_not_called()

@@ -33,6 +33,7 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
+from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.conditions import CONDITION_KWARG
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -83,6 +84,50 @@ def _view_id(invocation: Invocation) -> int:
     return _require_int_positional(invocation, "view id")
 
 
+def _delete_dataset_id(
+    invocation: Invocation, view_id: int, document: dict[str, Any]
+) -> int | None:
+    """Resolve an optional exact parent for ``view delete``.
+
+    A resource reference is the strongest form of scope and therefore wins
+    over the command's dual-sourced positional/input value.  Supplying the
+    parent is important: ``ViewsResource.delete`` only invokes its legacy
+    parent discovery when ``dataset_id`` is omitted, and that discovery can
+    select a different dataset for the same view id.
+    """
+    resource = invocation.resource_ref
+    if resource is not None and resource.view_id not in (None, view_id):
+        raise CliError(
+            code="invalid_resource_context",
+            message="The resource reference view_id does not match the target view.",
+            exit_status=EXIT_USAGE,
+            hint="Use a resource reference for the same view id as the command target.",
+        )
+    if resource is not None and resource.dataset_id is not None:
+        return int(resource.dataset_id)
+
+    raw = invocation.positional("dataset_id")
+    if raw is None:
+        raw = document.get("dataset_id")
+    if raw is None:
+        return None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"The dataset id argument '{raw}' is not an integer.",
+            exit_status=EXIT_USAGE,
+        ) from exc
+    if value <= 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The dataset id must be a positive integer.",
+            exit_status=EXIT_USAGE,
+        )
+    return value
+
+
 def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     """Return a required field from the ``--input`` document, or raise usage."""
     if document is None or field not in document:
@@ -117,9 +162,61 @@ def _dispatch_view(
     invocation: Invocation, view_id: int, method: str, **kwargs: Any
 ) -> HandlerResult:
     """Open the service, dispatch a View method call, and build the envelope."""
+    # ``dataset_id`` is invocation-local resource context.  It is not a View
+    # transform argument, but passing it through lets the service fetch the
+    # exact parent endpoint and prevents the SDK's legacy bare-view resolver
+    # from probing an unrelated dataset.
+    document = invocation.load_input() or {}
+    dataset_id = (
+        invocation.resource_ref.dataset_id
+        if invocation.resource_ref is not None
+        else document.get("dataset_id")
+    )
+    if (
+        invocation.resource_ref is not None
+        and invocation.resource_ref.view_id not in (None, view_id)
+    ):
+        raise CliError(
+            code="invalid_resource_context",
+            message="The resource reference view_id does not match the target view.",
+            exit_status=EXIT_USAGE,
+            hint="Use a resource reference for the same view id as the command target.",
+        )
     with open_service(invocation) as (service, auth):
-        data = service.call_view(view_id, method, **kwargs)
+        if dataset_id is None:
+            data = service.call_view(view_id, method, **kwargs)
+        else:
+            data = service.call_view(view_id, method, dataset_id=int(dataset_id), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _without_resource_context(document: dict[str, Any]) -> dict[str, Any]:
+    """Remove target-resource context before binding transform SDK arguments."""
+    # ``Invocation.load_input`` now applies the shared contract to the whole
+    # S3 family, which materializes positional locators in the returned
+    # mapping.  These identifiers select the View receiver and are not method
+    # kwargs; strip both parent and receiver identities before the transform
+    # adapter forwards the document.
+    return {
+        key: value for key, value in document.items() if key not in {"dataset_id", "view_id"}
+    }
+
+
+def _bind_transform_inputs(
+    invocation: Invocation, document: dict[str, Any]
+) -> dict[str, Any]:
+    """Bind every admitted transform field through its reviewed contract.
+
+    Transform handlers still own domain-specific required-field checks and the
+    exact View method they call.  They do not, however, maintain a second
+    hand-written allow-list of optional fields: the shared contract is the
+    destination ledger used by admission, discovery, and this SDK call.  The
+    optional ``dataset_id`` is resource identity context for resolving the
+    target view and must never be passed to a View transform method.
+    """
+    return bind_command_inputs(
+        invocation.command_id, _without_resource_context(document)
+    )
 
 
 # --- ViewsResource CRUD (generic ``service.call`` seam) --------------------
@@ -129,27 +226,59 @@ def view_create(invocation: Invocation) -> HandlerResult:
     """Create a view from a dataset. Dataset id is positional; name/clone_from optional."""
     dataset_id = _require_int_positional(invocation, "dataset id")
     document = invocation.load_input() or {}
-    kwargs: dict[str, Any] = {"dataset_id": dataset_id}
-    _forward_optional(document, kwargs, ("name", "clone_from"))
+    kwargs = bind_command_inputs(invocation.command_id, document, dataset_id=dataset_id)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
 
 
 def view_get(invocation: Invocation) -> HandlerResult:
-    """Get one view by id."""
+    """Get one view by id, optionally scoped to an exact dataset parent."""
     view_id = _view_id(invocation)
+    document = invocation.load_input() or {}
+    dataset_id = _delete_dataset_id(invocation, view_id, document)
+    if dataset_id is not None:
+        # The release operation is dataset-scoped.  Bypass the rich-object
+        # resolver when the caller supplied the exact parent so no discovery
+        # probe can escape the requested project/dataset.
+        kwargs: dict[str, Any] = {"dataset_id": dataset_id, "dataview_id": view_id}
+        if "fields" in document:
+            kwargs["fields"] = document["fields"]
+        with open_service(invocation) as (service, auth):
+            data = service.call("mammoth.api.dataviews.DataviewsAPI.get", **kwargs)
+        return data, _meta(invocation, auth.workspace_id)
+    context: dict[str, Any] = {"view_id": view_id}
+    if dataset_id is not None:
+        context["dataset_id"] = dataset_id
+    # The generated contract predates the optional parent context; preserve
+    # its declared fields, then add the validated SDK parent explicitly.
+    binding_document = {key: value for key, value in document.items() if key != "dataset_id"}
+    kwargs = bind_command_inputs(invocation.command_id, binding_document, view_id=view_id)
+    if dataset_id is not None:
+        kwargs["dataset_id"] = dataset_id
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), view_id=view_id)
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
 
 
 def view_delete(invocation: Invocation) -> HandlerResult:
-    """Permanently delete one view by id. Prompt or ``--yes`` required."""
+    """Permanently delete one view by id. Prompt or ``--yes`` required.
+
+    ``dataset_id`` may be supplied as the trailing positional, in structured
+    input, or by a typed resource reference.  When present it is forwarded to
+    the SDK so deletion uses exactly that parent endpoint and never performs a
+    workspace-wide parent probe.
+    """
     view_id = _view_id(invocation)
     enforce_confirmation(invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete view {view_id}")
+    document = invocation.load_input() or {}
+    dataset_id = _delete_dataset_id(invocation, view_id, document)
+    context: dict[str, Any] = {"view_id": view_id}
+    if dataset_id is not None:
+        context["dataset_id"] = dataset_id
+    kwargs = bind_command_inputs(invocation.command_id, document, **context)
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), view_id=view_id)
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -205,10 +334,9 @@ def view_transform_add_column(invocation: Invocation) -> HandlerResult:
     """Add a new column. ``name`` is required; ``column_type`` is optional."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    name = _require_field(document, "name")
+    _require_field(document, "name")
     assert document is not None
-    kwargs: dict[str, Any] = {"name": name}
-    _forward_optional(document, kwargs, ("column_type",))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "add_column", **kwargs)
 
 
@@ -216,21 +344,20 @@ def view_transform_add_sql(invocation: Invocation) -> HandlerResult:
     """Add a column via a raw SQL expression. ``query`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    query = _require_field(document, "query")
-    return _dispatch_view(invocation, view_id, "add_sql", query=query)
+    _require_field(document, "query")
+    assert document is not None
+    kwargs = _bind_transform_inputs(invocation, document)
+    return _dispatch_view(invocation, view_id, "add_sql", **kwargs)
 
 
 def view_transform_ai(invocation: Invocation) -> HandlerResult:
     """Generate a column with an AI prompt. ``prompt``/``context_columns`` required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    prompt = _require_field(document, "prompt")
-    context_columns = _require_field(document, "context_columns")
+    _require_field(document, "prompt")
+    _require_field(document, "context_columns")
     assert document is not None
-    kwargs: dict[str, Any] = {"prompt": prompt, "context_columns": context_columns}
-    _forward_optional(
-        document, kwargs, ("new_column", "assistant_data", "context_columns_derivation")
-    )
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "gen_ai", **kwargs)
 
 
@@ -238,11 +365,10 @@ def view_transform_bulk_replace(invocation: Invocation) -> HandlerResult:
     """Bulk-replace values. ``columns``/``mapping`` required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    columns = _require_field(document, "columns")
-    mapping = _require_field(document, "mapping")
+    _require_field(document, "columns")
+    _require_field(document, "mapping")
     assert document is not None
-    kwargs: dict[str, Any] = {"columns": columns, "mapping": mapping}
-    _forward_optional(document, kwargs, ("match_case", "match_words", CONDITION_KWARG))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "bulk_replace", **kwargs)
 
 
@@ -250,14 +376,9 @@ def view_transform_combine_columns(invocation: Invocation) -> HandlerResult:
     """Combine columns into one. ``sources`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    sources = _require_field(document, "sources")
+    _require_field(document, "sources")
     assert document is not None
-    kwargs: dict[str, Any] = {"sources": sources}
-    _forward_optional(
-        document,
-        kwargs,
-        ("new_column", "column_type", "existing_column", "separator", CONDITION_KWARG),
-    )
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "combine_columns", **kwargs)
 
 
@@ -265,16 +386,20 @@ def view_transform_convert_type(invocation: Invocation) -> HandlerResult:
     """Convert column types. ``conversions`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    conversions = _require_field(document, "conversions")
-    return _dispatch_view(invocation, view_id, "convert_type", conversions=conversions)
+    _require_field(document, "conversions")
+    assert document is not None
+    kwargs = _bind_transform_inputs(invocation, document)
+    return _dispatch_view(invocation, view_id, "convert_type", **kwargs)
 
 
 def view_transform_copy_columns(invocation: Invocation) -> HandlerResult:
     """Copy columns. ``copies`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    copies = _require_field(document, "copies")
-    return _dispatch_view(invocation, view_id, "copy_columns", copies=copies)
+    _require_field(document, "copies")
+    assert document is not None
+    kwargs = _bind_transform_inputs(invocation, document)
+    return _dispatch_view(invocation, view_id, "copy_columns", **kwargs)
 
 
 def view_transform_crosstab(invocation: Invocation) -> HandlerResult:
@@ -282,20 +407,12 @@ def view_transform_crosstab(invocation: Invocation) -> HandlerResult:
     ``dataset_name`` are required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    rows = _require_field(document, "rows")
-    pivot_column = _require_field(document, "pivot_column")
-    select = _require_field(document, "select")
-    dataset_name = _require_field(document, "dataset_name")
+    _require_field(document, "rows")
+    _require_field(document, "pivot_column")
+    _require_field(document, "select")
+    _require_field(document, "dataset_name")
     assert document is not None
-    kwargs: dict[str, Any] = {
-        "rows": rows,
-        "pivot_column": pivot_column,
-        "select": select,
-        "dataset_name": dataset_name,
-    }
-    _forward_optional(
-        document, kwargs, ("save_as_mode", "target_ds_id", CONDITION_KWARG, "timeout")
-    )
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "crosstab", **kwargs)
 
 
@@ -303,12 +420,11 @@ def view_transform_date_diff(invocation: Invocation) -> HandlerResult:
     """Compute the difference between two dates. ``component``/``start``/``end`` required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    component = _require_field(document, "component")
-    start = _require_field(document, "start")
-    end = _require_field(document, "end")
+    _require_field(document, "component")
+    _require_field(document, "start")
+    _require_field(document, "end")
     assert document is not None
-    kwargs: dict[str, Any] = {"component": component, "start": start, "end": end}
-    _forward_optional(document, kwargs, ("new_column", "existing_column"))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "date_diff", **kwargs)
 
 
@@ -316,16 +432,17 @@ def view_transform_delete_columns(invocation: Invocation) -> HandlerResult:
     """Delete columns. ``columns`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    columns = _require_field(document, "columns")
-    return _dispatch_view(invocation, view_id, "delete_columns", columns=columns)
+    _require_field(document, "columns")
+    assert document is not None
+    kwargs = _bind_transform_inputs(invocation, document)
+    return _dispatch_view(invocation, view_id, "delete_columns", **kwargs)
 
 
 def view_transform_discard_duplicates(invocation: Invocation) -> HandlerResult:
     """Discard duplicate rows. ``ignore_columns`` is optional."""
     view_id = _view_id(invocation)
     document = invocation.load_input() or {}
-    kwargs: dict[str, Any] = {}
-    _forward_optional(document, kwargs, ("ignore_columns",))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "discard_duplicates", **kwargs)
 
 
@@ -333,11 +450,10 @@ def view_transform_extract_date(invocation: Invocation) -> HandlerResult:
     """Extract a date component into a column. ``column``/``component`` required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    column = _require_field(document, "column")
-    component = _require_field(document, "component")
+    _require_field(document, "column")
+    _require_field(document, "component")
     assert document is not None
-    kwargs: dict[str, Any] = {"column": column, "component": component}
-    _forward_optional(document, kwargs, ("new_column", "existing_column"))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "extract_date", **kwargs)
 
 
@@ -345,11 +461,10 @@ def view_transform_fill_missing(invocation: Invocation) -> HandlerResult:
     """Fill missing values. ``column``/``direction`` required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    column = _require_field(document, "column")
-    direction = _require_field(document, "direction")
+    _require_field(document, "column")
+    _require_field(document, "direction")
     assert document is not None
-    kwargs: dict[str, Any] = {"column": column, "direction": direction}
-    _forward_optional(document, kwargs, ("partition_by", "order_by"))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "fill_missing", **kwargs)
 
 
@@ -357,10 +472,9 @@ def view_transform_filter(invocation: Invocation) -> HandlerResult:
     """Filter rows. ``condition`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    condition = _require_field(document, CONDITION_KWARG)
+    _require_field(document, CONDITION_KWARG)
     assert document is not None
-    kwargs: dict[str, Any] = {CONDITION_KWARG: condition}
-    _forward_optional(document, kwargs, ("filter_type", "prompt"))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "filter_rows", **kwargs)
 
 
@@ -368,19 +482,20 @@ def view_transform_generate_sql(invocation: Invocation) -> HandlerResult:
     """Generate a SQL query from a natural-language intent. ``intent`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    intent = _require_field(document, "intent")
-    return _dispatch_view(invocation, view_id, "generate_sql", intent=intent)
+    _require_field(document, "intent")
+    assert document is not None
+    kwargs = _bind_transform_inputs(invocation, document)
+    return _dispatch_view(invocation, view_id, "generate_sql", **kwargs)
 
 
 def view_transform_increment_date(invocation: Invocation) -> HandlerResult:
     """Increment a date column. ``column``/``delta`` required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    column = _require_field(document, "column")
-    delta = _require_field(document, "delta")
+    _require_field(document, "column")
+    _require_field(document, "delta")
     assert document is not None
-    kwargs: dict[str, Any] = {"column": column, "delta": delta}
-    _forward_optional(document, kwargs, ("new_column", "existing_column", CONDITION_KWARG))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "increment_date", **kwargs)
 
 
@@ -388,18 +503,12 @@ def view_transform_join(invocation: Invocation) -> HandlerResult:
     """Join another view. ``foreign_view``/``join_type``/``on``/``select`` required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    foreign_view = _require_field(document, "foreign_view")
-    join_type = _require_field(document, "join_type")
-    on = _require_field(document, "on")
-    select = _require_field(document, "select")
+    _require_field(document, "foreign_view")
+    _require_field(document, "join_type")
+    _require_field(document, "on")
+    _require_field(document, "select")
     assert document is not None
-    kwargs: dict[str, Any] = {
-        "foreign_view": foreign_view,
-        "join_type": join_type,
-        "on": on,
-        "select": select,
-    }
-    _forward_optional(document, kwargs, ("column_prefix",))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "join", **kwargs)
 
 
@@ -407,12 +516,9 @@ def view_transform_json_extract(invocation: Invocation) -> HandlerResult:
     """Extract fields from a JSON column. ``column`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    column = _require_field(document, "column")
+    _require_field(document, "column")
     assert document is not None
-    kwargs: dict[str, Any] = {"column": column}
-    _forward_optional(
-        document, kwargs, ("json_type", "keys", "extractions", "keep_source", "op_type")
-    )
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "json_extract", **kwargs)
 
 
@@ -420,10 +526,9 @@ def view_transform_limit_rows(invocation: Invocation) -> HandlerResult:
     """Limit the row count. ``n`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    n = _require_field(document, "n")
+    _require_field(document, "n")
     assert document is not None
-    kwargs: dict[str, Any] = {"n": n}
-    _forward_optional(document, kwargs, ("bottom", "order_by"))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "limit_rows", **kwargs)
 
 
@@ -432,18 +537,12 @@ def view_transform_lookup(invocation: Invocation) -> HandlerResult:
     ``value`` required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    source = _require_field(document, "source")
-    lookup_view_id = _require_field(document, "lookup_view_id")
-    key = _require_field(document, "key")
-    value = _require_field(document, "value")
+    _require_field(document, "source")
+    _require_field(document, "lookup_view_id")
+    _require_field(document, "key")
+    _require_field(document, "value")
     assert document is not None
-    kwargs: dict[str, Any] = {
-        "source": source,
-        "lookup_view_id": lookup_view_id,
-        "key": key,
-        "value": value,
-    }
-    _forward_optional(document, kwargs, ("new_column", "existing_column"))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "lookup", **kwargs)
 
 
@@ -451,12 +550,9 @@ def view_transform_math(invocation: Invocation) -> HandlerResult:
     """Evaluate a math expression into a column. ``expression`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    expression = _require_field(document, "expression")
+    _require_field(document, "expression")
     assert document is not None
-    kwargs: dict[str, Any] = {"expression": expression}
-    _forward_optional(
-        document, kwargs, ("new_column", "column_type", "existing_column", CONDITION_KWARG)
-    )
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "math", **kwargs)
 
 
@@ -464,11 +560,10 @@ def view_transform_pivot(invocation: Invocation) -> HandlerResult:
     """Pivot with aggregations. ``group_by``/``aggregations`` required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    group_by = _require_field(document, "group_by")
-    aggregations = _require_field(document, "aggregations")
+    _require_field(document, "group_by")
+    _require_field(document, "aggregations")
     assert document is not None
-    kwargs: dict[str, Any] = {"group_by": group_by, "aggregations": aggregations}
-    _forward_optional(document, kwargs, (CONDITION_KWARG,))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "pivot", **kwargs)
 
 
@@ -476,12 +571,11 @@ def view_transform_replace(invocation: Invocation) -> HandlerResult:
     """Find and replace values. ``columns``/``find``/``replace`` required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    columns = _require_field(document, "columns")
-    find = _require_field(document, "find")
-    replace = _require_field(document, "replace")
+    _require_field(document, "columns")
+    _require_field(document, "find")
+    _require_field(document, "replace")
     assert document is not None
-    kwargs: dict[str, Any] = {"columns": columns, "find": find, "replace": replace}
-    _forward_optional(document, kwargs, ("match_case", "match_words", CONDITION_KWARG))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "replace_values", **kwargs)
 
 
@@ -489,12 +583,9 @@ def view_transform_set_values(invocation: Invocation) -> HandlerResult:
     """Set values conditionally. ``values`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    values = _require_field(document, "values")
+    _require_field(document, "values")
     assert document is not None
-    kwargs: dict[str, Any] = {"values": values}
-    _forward_optional(
-        document, kwargs, ("new_column", "column_type", "existing_column", CONDITION_KWARG)
-    )
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "set_values", **kwargs)
 
 
@@ -502,11 +593,10 @@ def view_transform_small_large(invocation: Invocation) -> HandlerResult:
     """Compute a small/large-N function. ``function``/``columns`` required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    function = _require_field(document, "function")
-    columns = _require_field(document, "columns")
+    _require_field(document, "function")
+    _require_field(document, "columns")
     assert document is not None
-    kwargs: dict[str, Any] = {"function": function, "columns": columns}
-    _forward_optional(document, kwargs, ("index", "constants", "new_column", "existing_column"))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "small_large", **kwargs)
 
 
@@ -514,40 +604,21 @@ def view_transform_split(invocation: Invocation) -> HandlerResult:
     """Split a column. ``column``/``delimiter``/``new_columns`` required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    column = _require_field(document, "column")
-    delimiter = _require_field(document, "delimiter")
-    new_columns = _require_field(document, "new_columns")
-    return _dispatch_view(
-        invocation,
-        view_id,
-        "split_column",
-        column=column,
-        delimiter=delimiter,
-        new_columns=new_columns,
-    )
+    _require_field(document, "column")
+    _require_field(document, "delimiter")
+    _require_field(document, "new_columns")
+    assert document is not None
+    kwargs = _bind_transform_inputs(invocation, document)
+    return _dispatch_view(invocation, view_id, "split_column", **kwargs)
 
 
 def view_transform_substring(invocation: Invocation) -> HandlerResult:
     """Extract a substring. ``column`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    column = _require_field(document, "column")
+    _require_field(document, "column")
     assert document is not None
-    kwargs: dict[str, Any] = {"column": column}
-    _forward_optional(
-        document,
-        kwargs,
-        (
-            "direction",
-            "num_char",
-            "char_position",
-            "regex_pattern",
-            "regex_invert",
-            "new_column",
-            "existing_column",
-            CONDITION_KWARG,
-        ),
-    )
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "substring", **kwargs)
 
 
@@ -555,10 +626,9 @@ def view_transform_text(invocation: Invocation) -> HandlerResult:
     """Apply text transforms. ``columns`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    columns = _require_field(document, "columns")
+    _require_field(document, "columns")
     assert document is not None
-    kwargs: dict[str, Any] = {"columns": columns}
-    _forward_optional(document, kwargs, ("case", "trim", CONDITION_KWARG))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "text_transform", **kwargs)
 
 
@@ -566,10 +636,9 @@ def view_transform_unnest(invocation: Invocation) -> HandlerResult:
     """Unnest columns into label/value rows. ``columns`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    columns = _require_field(document, "columns")
+    _require_field(document, "columns")
     assert document is not None
-    kwargs: dict[str, Any] = {"columns": columns}
-    _forward_optional(document, kwargs, ("label_column", "value_column"))
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "unnest", **kwargs)
 
 
@@ -577,20 +646,7 @@ def view_transform_window(invocation: Invocation) -> HandlerResult:
     """Compute a window function. ``function`` is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
-    function = _require_field(document, "function")
+    _require_field(document, "function")
     assert document is not None
-    kwargs: dict[str, Any] = {"function": function}
-    _forward_optional(
-        document,
-        kwargs,
-        (
-            "column",
-            "new_column",
-            "column_type",
-            "existing_column",
-            "partition_by",
-            "order_by",
-            "range_type",
-        ),
-    )
+    kwargs = _bind_transform_inputs(invocation, document)
     return _dispatch_view(invocation, view_id, "window", **kwargs)

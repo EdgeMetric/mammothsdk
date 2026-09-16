@@ -1092,6 +1092,12 @@ commands:
     metavar: VIEW_ID
     falls_back_to_field: null
     help: ID of the view.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; or pass it via the 'dataset_id' input field.
   options: []
   sdk_symbol: mammoth.client.ViewsResource.delete
   sdk_conversion: Call mammoth.client.ViewsResource.delete with validated request fields.
@@ -1108,7 +1114,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view delete VIEW_ID --help
-  agent_example: mammoth view delete 123 --output json --no-input
+  agent_example: mammoth view delete 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-DELETE
   contract_tests:
@@ -1117,7 +1123,8 @@ commands:
   - CT-VIEW-DELETE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Immutable view-ID confirmation. BLOCKED[B10 VIEW_DATASET_RESOLUTION].
+  known_restrictions: Immutable view-ID confirmation. Supplying dataset_id uses the exact nested endpoint
+    and skips parent discovery; omitting it retains legacy parent discovery.
   reviewed_by: primary
 - command_id: view.derivative.create
   command_path: view derivative create
@@ -1613,6 +1620,100 @@ commands:
   undo_test: LT-VIEW-DRAFT-SUBMIT-UNDO
   known_restrictions: Requires server draft state before mutation.
   reviewed_by: primary
+- command_id: view.export.azure-blob
+  command_path: view export azure-blob
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_azure_blob
+  sdk_conversion: Call mammoth.view.ViewExport.to_azure_blob with validated request fields.
+  request_model: ViewExportAzureBlobRequest
+  result_model: ViewExportAzureBlobResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields:
+  - client_secret
+  human_example: mammoth view export azure-blob VIEW_ID --help
+  agent_example: 'mammoth view export azure-blob 123 123 --input ''{"storage_account_name": "storage-account",
+    "tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret", "container_name":
+    "exports"}'' --output json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-AZURE-BLOB
+  contract_tests:
+  - CT-VIEW-EXPORT-AZURE-BLOB-HUMAN
+  - CT-VIEW-EXPORT-AZURE-BLOB-JSON
+  - CT-VIEW-EXPORT-AZURE-BLOB-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.export.bigquery
+  command_path: view export bigquery
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_bigquery
+  sdk_conversion: Call mammoth.view.ViewExport.to_bigquery with validated request fields.
+  request_model: ViewExportBigqueryRequest
+  result_model: ViewExportBigqueryResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export bigquery VIEW_ID --help
+  agent_example: 'mammoth view export bigquery 123 123 --input ''{"selected_profile": {}, "selected_identity":
+    {}, "table": "exports"}'' --output json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-BIGQUERY
+  contract_tests:
+  - CT-VIEW-EXPORT-BIGQUERY-HUMAN
+  - CT-VIEW-EXPORT-BIGQUERY-JSON
+  - CT-VIEW-EXPORT-BIGQUERY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Require upsert keys for UPSERT and type both partition variants.
+  reviewed_by: primary
 - command_id: view.export.create
   command_path: view export create
   disposition: command
@@ -1697,6 +1798,53 @@ commands:
   known_restrictions: SDK target for view export csv VIEW_ID; uses partial file, fsync, atomic rename,
     and explicit --overwrite. Live dataset permission is currently blocked.
   reviewed_by: primary
+- command_id: view.export.dataset
+  command_path: view export dataset
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_dataset
+  sdk_conversion: Call mammoth.view.ViewExport.to_dataset with validated request fields.
+  request_model: ViewExportDatasetRequest
+  result_model: ViewExportDatasetResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-EXPORT-DATASET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export dataset VIEW_ID --help
+  agent_example: 'mammoth view export dataset 123 123 --input ''{"dataset_name": "snapshot"}'' --output
+    json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-DATASET
+  contract_tests:
+  - CT-VIEW-EXPORT-DATASET-HUMAN
+  - CT-VIEW-EXPORT-DATASET-JSON
+  - CT-VIEW-EXPORT-DATASET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Mutation class dynamic: benign_mutation for a new target, destructive when replacing
+    an existing target.'
+  reviewed_by: primary
 - command_id: view.export.delete
   command_path: view export delete
   disposition: command
@@ -1739,6 +1887,147 @@ commands:
   - CT-VIEW-EXPORT-DELETE-HUMAN
   - CT-VIEW-EXPORT-DELETE-JSON
   - CT-VIEW-EXPORT-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.export.elasticsearch
+  command_path: view export elasticsearch
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_elasticsearch
+  sdk_conversion: Call mammoth.view.ViewExport.to_elasticsearch with validated request fields.
+  request_model: ViewExportElasticsearchRequest
+  result_model: ViewExportElasticsearchResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields:
+  - password
+  human_example: mammoth view export elasticsearch VIEW_ID --help
+  agent_example: 'mammoth view export elasticsearch 123 123 --input ''{"host": "elastic.example", "username":
+    "agent", "password": "replace-with-secret", "index": "exports"}'' --output json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-ELASTICSEARCH
+  contract_tests:
+  - CT-VIEW-EXPORT-ELASTICSEARCH-HUMAN
+  - CT-VIEW-EXPORT-ELASTICSEARCH-JSON
+  - CT-VIEW-EXPORT-ELASTICSEARCH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Validate protocol and positive chunk size.
+  reviewed_by: primary
+- command_id: view.export.email
+  command_path: view export email
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_email
+  sdk_conversion: Call mammoth.view.ViewExport.to_email with validated request fields.
+  request_model: ViewExportEmailRequest
+  result_model: ViewExportEmailResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export email VIEW_ID --help
+  agent_example: 'mammoth view export email 123 123 --input ''{"emails": ["recipient@example.com"]}''
+    --output json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-EMAIL
+  contract_tests:
+  - CT-VIEW-EXPORT-EMAIL-HUMAN
+  - CT-VIEW-EXPORT-EMAIL-JSON
+  - CT-VIEW-EXPORT-EMAIL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Outbound email stays contract-only until a dedicated sink and recipient allowlist
+    exist.
+  reviewed_by: primary
+- command_id: view.export.ftp
+  command_path: view export ftp
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_ftp
+  sdk_conversion: Call mammoth.view.ViewExport.to_ftp with validated request fields.
+  request_model: ViewExportFtpRequest
+  result_model: ViewExportFtpResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields:
+  - password
+  human_example: mammoth view export ftp VIEW_ID --help
+  agent_example: 'mammoth view export ftp 123 123 --input ''{"domain": "ftp.example", "directory": "/exports",
+    "file": "report.csv", "username": "agent", "password": "replace-with-secret"}'' --output json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-FTP
+  contract_tests:
+  - CT-VIEW-EXPORT-FTP-HUMAN
+  - CT-VIEW-EXPORT-FTP-JSON
+  - CT-VIEW-EXPORT-FTP-ERROR
   draft_test: null
   undo_test: null
   known_restrictions: null
@@ -1802,6 +2091,12 @@ commands:
     metavar: DATAVIEW_ID
     falls_back_to_field: null
     help: ID of the dataview.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: Optional parent dataset ID; avoids parent discovery when supplied.
   options: []
   sdk_symbol: mammoth.api.exports.ExportsAPI.list
   sdk_conversion: Call mammoth.api.exports.ExportsAPI.list with validated request fields.
@@ -1818,7 +2113,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export list DATAVIEW_ID --help
-  agent_example: mammoth view export list 123 --output json --no-input
+  agent_example: mammoth view export list 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-LIST
   contract_tests:
@@ -1828,6 +2123,292 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: Fix the wire key audit for current 'reorderd' field spelling.
+  reviewed_by: primary
+- command_id: view.export.managed-s3
+  command_path: view export managed-s3
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_s3
+  sdk_conversion: Call mammoth.view.ViewExport.to_s3 with validated request fields.
+  request_model: ViewExportManagedS3Request
+  result_model: ViewExportManagedS3Result
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export managed-s3 VIEW_ID --help
+  agent_example: 'mammoth view export managed-s3 123 123 --input ''{"file_name": "report.csv"}'' --output
+    json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-MANAGED-S3
+  contract_tests:
+  - CT-VIEW-EXPORT-MANAGED-S3-HUMAN
+  - CT-VIEW-EXPORT-MANAGED-S3-JSON
+  - CT-VIEW-EXPORT-MANAGED-S3-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Alias `view export s3`. Destination policy is dynamic: start_or_wait/benign_mutation/live_disposable_project
+    for download-only, otherwise external_effect/live_dedicated_external_fixture.'
+  reviewed_by: primary
+- command_id: view.export.mssql
+  command_path: view export mssql
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_mssql
+  sdk_conversion: Call mammoth.view.ViewExport.to_mssql with validated request fields.
+  request_model: ViewExportMssqlRequest
+  result_model: ViewExportMssqlResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields:
+  - password
+  human_example: mammoth view export mssql VIEW_ID --help
+  agent_example: 'mammoth view export mssql 123 123 --input ''{"host": "db.example", "port": 1433, "database":
+    "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}'' --output
+    json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-MSSQL
+  contract_tests:
+  - CT-VIEW-EXPORT-MSSQL-HUMAN
+  - CT-VIEW-EXPORT-MSSQL-JSON
+  - CT-VIEW-EXPORT-MSSQL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.export.mysql
+  command_path: view export mysql
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_mysql
+  sdk_conversion: Call mammoth.view.ViewExport.to_mysql with validated request fields.
+  request_model: ViewExportMysqlRequest
+  result_model: ViewExportMysqlResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields:
+  - password
+  human_example: mammoth view export mysql VIEW_ID --help
+  agent_example: 'mammoth view export mysql 123 123 --input ''{"host": "db.example", "port": 3306, "database":
+    "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}'' --output
+    json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-MYSQL
+  contract_tests:
+  - CT-VIEW-EXPORT-MYSQL-HUMAN
+  - CT-VIEW-EXPORT-MYSQL-JSON
+  - CT-VIEW-EXPORT-MYSQL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.export.onedrive
+  command_path: view export onedrive
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_onedrive
+  sdk_conversion: Call mammoth.view.ViewExport.to_onedrive with validated request fields.
+  request_model: ViewExportOnedriveRequest
+  result_model: ViewExportOnedriveResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields:
+  - client_secret
+  human_example: mammoth view export onedrive VIEW_ID --help
+  agent_example: 'mammoth view export onedrive 123 123 --input ''{"tenant_id": "tenant-id", "client_id":
+    "client-id", "client_secret": "replace-with-secret", "user_id": "user-id"}'' --output json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-ONEDRIVE
+  contract_tests:
+  - CT-VIEW-EXPORT-ONEDRIVE-HUMAN
+  - CT-VIEW-EXPORT-ONEDRIVE-JSON
+  - CT-VIEW-EXPORT-ONEDRIVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.export.postgres
+  command_path: view export postgres
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_postgres
+  sdk_conversion: Call mammoth.view.ViewExport.to_postgres with validated request fields.
+  request_model: ViewExportPostgresRequest
+  result_model: ViewExportPostgresResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields:
+  - password
+  human_example: mammoth view export postgres VIEW_ID --help
+  agent_example: 'mammoth view export postgres 123 123 --input ''{"host": "db.example", "port": 5432,
+    "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}''
+    --output json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-POSTGRES
+  contract_tests:
+  - CT-VIEW-EXPORT-POSTGRES-HUMAN
+  - CT-VIEW-EXPORT-POSTGRES-JSON
+  - CT-VIEW-EXPORT-POSTGRES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.export.powerbi
+  command_path: view export powerbi
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_powerbi
+  sdk_conversion: Call mammoth.view.ViewExport.to_powerbi with validated request fields.
+  request_model: ViewExportPowerbiRequest
+  result_model: ViewExportPowerbiResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields:
+  - password
+  human_example: mammoth view export powerbi VIEW_ID --help
+  agent_example: 'mammoth view export powerbi 123 123 --input ''{"username": "agent", "password": "replace-with-secret",
+    "client_id": "client-id", "dataset": "dataset", "table": "exports"}'' --output json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-POWERBI
+  contract_tests:
+  - CT-VIEW-EXPORT-POWERBI-HUMAN
+  - CT-VIEW-EXPORT-POWERBI-JSON
+  - CT-VIEW-EXPORT-POWERBI-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: The handler enum and helper exist, but the pure contract omits it; confirm camel-case
+    clientId against the pinned server before enabling. See IO-EXPORT-HANDLERS blocker.
   reviewed_by: primary
 - command_id: view.export.publish-db
   command_path: view export publish-db
@@ -1911,6 +2492,246 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: view.export.redshift
+  command_path: view export redshift
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_redshift
+  sdk_conversion: Call mammoth.view.ViewExport.to_redshift with validated request fields.
+  request_model: ViewExportRedshiftRequest
+  result_model: ViewExportRedshiftResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields:
+  - password
+  human_example: mammoth view export redshift VIEW_ID --help
+  agent_example: 'mammoth view export redshift 123 123 --input ''{"host": "db.example", "port": 5439,
+    "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}''
+    --output json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-REDSHIFT
+  contract_tests:
+  - CT-VIEW-EXPORT-REDSHIFT-HUMAN
+  - CT-VIEW-EXPORT-REDSHIFT-JSON
+  - CT-VIEW-EXPORT-REDSHIFT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.export.rest
+  command_path: view export rest
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_rest_api
+  sdk_conversion: Call mammoth.view.ViewExport.to_rest_api with validated request fields.
+  request_model: ViewExportRestRequest
+  result_model: ViewExportRestResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields:
+  - auth
+  human_example: mammoth view export rest VIEW_ID --help
+  agent_example: 'mammoth view export rest 123 123 --input ''{"base_url": "https://api.example", "endpoint_path":
+    "/records"}'' --output json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-REST
+  contract_tests:
+  - CT-VIEW-EXPORT-REST-HUMAN
+  - CT-VIEW-EXPORT-REST-JSON
+  - CT-VIEW-EXPORT-REST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Alias `view export rest-api`. Type all auth variants, reject secrets in static headers/query/body,
+    allow insecure TLS only with --yes.
+  reviewed_by: primary
+- command_id: view.export.sftp
+  command_path: view export sftp
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_sftp
+  sdk_conversion: Call mammoth.view.ViewExport.to_sftp with validated request fields.
+  request_model: ViewExportSftpRequest
+  result_model: ViewExportSftpResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields:
+  - password
+  - private_key
+  - passphrase
+  human_example: mammoth view export sftp VIEW_ID --help
+  agent_example: 'mammoth view export sftp 123 123 --input ''{"host": "sftp.example", "username": "agent"}''
+    --output json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-SFTP
+  contract_tests:
+  - CT-VIEW-EXPORT-SFTP-HUMAN
+  - CT-VIEW-EXPORT-SFTP-JSON
+  - CT-VIEW-EXPORT-SFTP-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Enforce authentication-mode union (password vs key) and forbid irrelevant secrets.
+  reviewed_by: primary
+- command_id: view.export.sharepoint
+  command_path: view export sharepoint
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_sharepoint
+  sdk_conversion: Call mammoth.view.ViewExport.to_sharepoint with validated request fields.
+  request_model: ViewExportSharepointRequest
+  result_model: ViewExportSharepointResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields:
+  - client_secret
+  human_example: mammoth view export sharepoint VIEW_ID --help
+  agent_example: 'mammoth view export sharepoint 123 123 --input ''{"tenant_id": "tenant-id", "client_id":
+    "client-id", "client_secret": "replace-with-secret", "site_url": "https://sharepoint.example/site"}''
+    --output json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-SHAREPOINT
+  contract_tests:
+  - CT-VIEW-EXPORT-SHAREPOINT-HUMAN
+  - CT-VIEW-EXPORT-SHAREPOINT-JSON
+  - CT-VIEW-EXPORT-SHAREPOINT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Validate site URL.
+  reviewed_by: primary
+- command_id: view.export.tableau
+  command_path: view export tableau
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to export.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the parent dataset; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.view.ViewExport.to_tableau
+  sdk_conversion: Call mammoth.view.ViewExport.to_tableau with validated request fields.
+  request_model: ViewExportTableauRequest
+  result_model: ViewExportTableauResult
+  mutation_class: external_effect
+  confirmation: yes_always
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields:
+  - token_secret
+  human_example: mammoth view export tableau VIEW_ID --help
+  agent_example: 'mammoth view export tableau 123 123 --input ''{"server_url": "https://tableau.example",
+    "token_name": "token", "token_secret": "replace-with-secret"}'' --output json --no-input'
+  unit_tests:
+  - UT-VIEW-EXPORT-TABLEAU
+  contract_tests:
+  - CT-VIEW-EXPORT-TABLEAU-HUMAN
+  - CT-VIEW-EXPORT-TABLEAU-JSON
+  - CT-VIEW-EXPORT-TABLEAU-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Alias `view export tableau-server`. Prohibit secret in CA bundle file.
+  reviewed_by: primary
 - command_id: view.export.update
   command_path: view export update
   disposition: command
@@ -1958,6 +2779,99 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: view.exportable-config.apply
+  command_path: view exportable-config apply
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: Optional parent dataset ID; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.apply_exportable_config
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.apply_exportable_config with validated request
+    fields.
+  request_model: ViewExportableConfigApplyRequest
+  result_model: ViewExportableConfigApplyResult
+  mutation_class: reversible_pipeline
+  confirmation: none
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-EXPORTABLE-CONFIG-APPLY
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view exportable-config apply VIEW_ID --help
+  agent_example: 'mammoth view exportable-config apply 123 --input-format json --input ''{"config": {"tasks":
+    []}}'' --output json --no-input --yes --confirm 123'
+  unit_tests:
+  - UT-VIEW-EXPORTABLE-CONFIG-APPLY
+  contract_tests:
+  - CT-VIEW-EXPORTABLE-CONFIG-APPLY-HUMAN
+  - CT-VIEW-EXPORTABLE-CONFIG-APPLY-JSON
+  - CT-VIEW-EXPORTABLE-CONFIG-APPLY-ERROR
+  draft_test: null
+  undo_test: LT-VIEW-EXPORTABLE-CONFIG-APPLY-UNDO
+  known_restrictions: Exactly one of items or config is required; explicit dataset parent is preferred.
+  reviewed_by: primary
+- command_id: view.exportable-config.get
+  command_path: view exportable-config get
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: Optional parent dataset ID; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.get_exportable_config
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.get_exportable_config with validated request
+    fields.
+  request_model: ViewExportableConfigGetRequest
+  result_model: ViewExportableConfigGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-EXPORTABLE-CONFIG-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view exportable-config get VIEW_ID --help
+  agent_example: mammoth view exportable-config get 123 --output json --no-input
+  unit_tests:
+  - UT-VIEW-EXPORTABLE-CONFIG-GET
+  contract_tests:
+  - CT-VIEW-EXPORTABLE-CONFIG-GET-HUMAN
+  - CT-VIEW-EXPORTABLE-CONFIG-GET-JSON
+  - CT-VIEW-EXPORTABLE-CONFIG-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: View-centric read; dataset_id may be supplied as the explicit parent.
+  reviewed_by: primary
 - command_id: view.get
   command_path: view get
   disposition: command
@@ -1971,6 +2885,12 @@ commands:
     metavar: VIEW_ID
     falls_back_to_field: null
     help: ID of the view.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: Optional exact parent dataset ID; omit to retain legacy discovery.
   options: []
   sdk_symbol: mammoth.client.ViewsResource.get
   sdk_conversion: Call mammoth.client.ViewsResource.get with validated request fields.
@@ -1987,7 +2907,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view get VIEW_ID --help
-  agent_example: mammoth view get 123 --output json --no-input
+  agent_example: mammoth view get 123 123 --output json --no-input
   unit_tests:
   - UT-VIEW-GET
   contract_tests:
@@ -2204,7 +3124,54 @@ commands:
   - CT-VIEW-PIPELINE-ITEMS-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Requires the exact parent dataset_id through --input; follow and validate every
+    next-page URL before counting saved task definitions. The CLI does not paginate automatically.
+  reviewed_by: primary
+- command_id: view.pipeline.items-all
+  command_path: view pipeline items-all
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: Exact parent dataset ID; pass it via the 'dataset_id' input field.
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.items_all
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.items_all with validated request fields.
+  request_model: ViewPipelineItemsAllRequest
+  result_model: ViewPipelineItemsAllResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: offset
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-PIPELINE-ITEMS-ALL
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view pipeline items-all DATAVIEW_ID --help
+  agent_example: mammoth view pipeline items-all 123 123 --output json --no-input
+  unit_tests:
+  - UT-VIEW-PIPELINE-ITEMS-ALL
+  contract_tests:
+  - CT-VIEW-PIPELINE-ITEMS-ALL-HUMAN
+  - CT-VIEW-PIPELINE-ITEMS-ALL-JSON
+  - CT-VIEW-PIPELINE-ITEMS-ALL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Reuses the exact-parent items route with bounded offset pagination; rejects repeated/non-advancing
+    pages and excessive page counts. The CLI view.pipeline.items command remains single-page.
   reviewed_by: primary
 - command_id: view.pipeline.rerun
   command_path: view pipeline rerun
@@ -2406,8 +3373,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view task add DATAVIEW_ID --help
-  agent_example: 'mammoth view task add 123 --input ''{"task_spec": {"sample_key": "Status"}}'' --output
-    json --no-input'
+  agent_example: 'mammoth view task add 123 --input ''{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER":
+    1, "COPY": {}}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TASK-ADD
   contract_tests:
@@ -2508,7 +3475,8 @@ commands:
   - CT-VIEW-TASK-GET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Requires the exact parent dataset_id through --input; do not rely on implicit parent
+    discovery when reconciling saved task definitions.
   reviewed_by: primary
 - command_id: view.task.list
   command_path: view task list
@@ -2548,7 +3516,8 @@ commands:
   - CT-VIEW-TASK-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: single_page until B5; no --all until continuation is proven.
+  known_restrictions: single_page until B5; no --all until continuation is proven. Requires the exact
+    parent dataset_id through --input; do not rely on implicit parent discovery for saved-task reads.
   reviewed_by: primary
 - command_id: view.task.preview
   command_path: view task preview
@@ -2579,8 +3548,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view task preview DATAVIEW_ID --help
-  agent_example: 'mammoth view task preview 123 --input ''{"task_spec": {"sample_key": "Status"}}'' --output
-    json --no-input'
+  agent_example: 'mammoth view task preview 123 --input ''{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER":
+    1, "COPY": {}}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TASK-PREVIEW
   contract_tests:
@@ -2626,8 +3595,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view task update DATAVIEW_ID TASK_ID --help
-  agent_example: 'mammoth view task update 123 123 --input ''{"task_spec": {"sample_key": "Status"}}''
-    --output json --no-input'
+  agent_example: 'mammoth view task update 123 123 --input ''{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER":
+    1, "COPY": {}}, "dataset_id": 456}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TASK-UPDATE
   contract_tests:

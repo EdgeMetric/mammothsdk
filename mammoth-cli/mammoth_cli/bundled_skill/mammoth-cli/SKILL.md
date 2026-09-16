@@ -9,6 +9,20 @@ The `mammoth` command controls the Mammoth Analytics platform through the public
 `mammoth-io` SDK. It is built for autonomous agents: every command supports
 deterministic machine output, promptless operation, and stable error envelopes.
 
+Examples in this skill are nonexhaustive. Discover the installed command
+contract and compose the operation sequence required by the task.
+
+For a cold start outside a repository or prior chat, begin with the portable
+[task-start playbook](references/task-start.md). It explains pinned
+installation, skill discovery, protected configuration, capability discovery,
+verification, recovery, and cleanup.
+
+**Evaluated/isolated-agent warning:** when a controller provides an
+authentication broker or sidecar, use that controller path. Do not mount or
+read a saved profile in the evaluated shell. If the broker/sidecar is absent,
+stop before authenticated actions. The saved-profile examples below remain
+for ordinary operator use and do not establish evaluated credential isolation.
+
 ## Golden rules for agents
 
 1. Always pass `--output json` and `--no-input`. Machine output is automatic
@@ -16,14 +30,28 @@ deterministic machine output, promptless operation, and stable error envelopes.
    terminal, but keeping both flags explicit is fine. Never rely on a prompt.
 2. Discover, do not guess. Use `mammoth capability list` and `mammoth schema get`
    to learn a command before you run it.
-3. Read the exit code, not the text. `0` ok, `2` usage, `4` auth, `5` not found,
-   `6` conflict, `7` retryable, `1` other API error, `130` interrupt.
+3. Read the exit code and envelope, not the text. `0` is a reported success;
+   `2` usage, `4` auth/authorization, `5` not found, `6` conflict, `7` a
+   retryable read or known-job timeout that still needs inspection, `1` other
+   API/job/artifact error, and `130` interrupt. Also inspect
+   `details.operation_state` (`not_started`, `running`, `succeeded`, `failed`,
+   or `outcome_unknown`).
 4. Confirm mutations explicitly. Destructive commands need `--yes`; high-impact
    commands also need `--confirm TARGET`. There is no interactive fallback under
    `--no-input`.
 5. Never put a secret on the command line. Pass credentials through
    `mammoth auth login` (interactive) or `mammoth auth login --input creds.json`
    (non-interactive), and structured secrets through `--input`.
+
+6. Operate in an explicit scope: profile, workspace, project, dataset, and
+   view/parent IDs come from observed reads. A dataset does not imply a usable
+   default view; list views and choose one explicitly. Column fields and
+   expressions use display names from the exact view schema, never backend
+   internal names.
+
+7. Follow discover → schema/scope → compose → verify → recover/cleanup. A
+   read-back result, schema, artifact, or terminal job state proves the task;
+   process exit 0 alone does not.
 
 ## Authenticate
 
@@ -57,6 +85,7 @@ Most dataset, folder, view, and pipeline commands run inside a project.
 ```bash
 mammoth context project use 180 --output json --no-input   # save the active project
 mammoth project list --output json --no-input              # or pass --project 180
+mammoth view list DATASET_ID --project 180 --output json --no-input  # choose explicitly
 ```
 
 ## Machine output and structured input
@@ -66,8 +95,8 @@ Every command returns `{schema_version, data, meta}` on stdout and a stable
 requests through one document:
 
 ```bash
-mammoth view transform math 1039 --project 180 --output json --no-input \
-  --input '{"expression": "price * qty", "new_column": "total"}'
+mammoth view transform math VIEW_ID --project PROJECT_ID --output json --no-input \
+  --input '{"expression": "Unit Price * Quantity", "new_column": "Revenue"}'
 ```
 
 See [references/machine-output.md](references/machine-output.md) and
@@ -111,10 +140,15 @@ See [references/safety.md](references/safety.md).
 Long operations return a job. A command's `wait_policy` (see `mammoth schema
 get`) tells you what to expect: `always_wait` and `start_or_wait` commands
 resolve the job for you and return the final result; only a `returns_job`
-command normally needs you to wait on the job id explicitly. Draft mode batches
-pipeline edits before submitting. Always delete resources you created in a
-shared project. See [references/jobs-drafts.md](references/jobs-drafts.md) and
-[references/recovery.md](references/recovery.md).
+command normally needs you to wait on the job id explicitly. A timeout with a
+known job handle means inspect/wait that job, not resubmit the mutation. A
+mutation transport failure without a confirmed handle is `outcome_unknown`:
+reconcile the exact target before replaying it. Exit 7 is not blanket retry
+permission. Draft mode batches pipeline edits before submitting. Always delete
+resources you created in a shared project. See
+[references/jobs-drafts.md](references/jobs-drafts.md),
+[references/recovery.md](references/recovery.md), and
+[references/handoff.md](references/handoff.md).
 
 ## Discover everything
 

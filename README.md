@@ -45,7 +45,7 @@ print(view.column_types)    # {"Customer": "TEXT", "Region": "TEXT", "Sales": "N
 # Use get_metadata() to inspect the full list:
 view.math("Sales * 1.1", new_column="Revenue")
 print(view.display_names)   # now includes "Revenue"
-meta = view.get_metadata()  # [{"display_name": "Revenue", "internal_name": "column_x1y2", "type": "NUMERIC"}, ...]
+meta = view.get_metadata()  # [{"display_name": "Revenue", "type": "NUMERIC"}, ...]
 
 # Fetch data — returns {"data": [rows...], "paging": {...}}
 result = view.data(limit=100)
@@ -77,7 +77,7 @@ The `View` object is the central interface. It wraps a single dataview and expos
 view.math(expression="Price * Quantity", new_column="Revenue")
 print("Revenue" in view.display_names)   # True — refreshed automatically
 
-# Inspect full column list (display_name, internal_name, type)
+# Inspect full column list (display_name and type)
 for col in view.get_metadata():
     print(col)
 ```
@@ -746,6 +746,12 @@ ds_config = client.connectors.create_ds_config(
 data, run transformations, organize work, and automate repeatable operations.
 It renders for people in a terminal and switches to a versioned JSON envelope
 when output is piped, making the same command useful in CI and agent workflows.
+For unattended work, an agent should discover the capability and schema, resolve
+the exact workspace/project/dataset/view scope, compose operations from observed
+IDs, verify the result, and record a checkpoint before handing the task over.
+View and transformation inputs use the display names shown by Mammoth; agents do
+not need to find or manufacture backend column identifiers. A dataset is not
+assumed to have a usable default view: list views and choose one explicitly.
 
 Install in one step -- this brings `uv` if you lack it, the `mammoth` CLI, and
 the bundled agent skill (Windows PowerShell: `irm
@@ -765,8 +771,15 @@ mammoth-cli`, or `pip install mammoth-cli` work too.
 For promptless work, log in from a protected JSON file with `mammoth auth login
 --input creds.json --output json --no-input`; do not put secrets on a command
 line. The CLI also ships a bundled agent skill (`mammoth skill install`). Start
-with the [CLI README](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli)
-or its [documentation](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli/docs).
+with the [CLI README](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli),
+the [agent guide](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli/docs/agents.md),
+or the [portable handoff format](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli/docs/agent-handoff.md).
+
+The CLI's examples are deliberately nonexhaustive. Use `mammoth capability list`
+and `mammoth schema get COMMAND_ID` for the installed version, and treat a
+timeout or transport failure on a mutation as an unknown outcome until a read
+or job inspection proves what happened. Exit 7 is not a blanket permission to
+replay a write.
 
 ## MCP Server
 

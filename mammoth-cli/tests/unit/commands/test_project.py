@@ -16,6 +16,7 @@ from mammoth_cli.testing import login_default_profile
 _LIST_SYMBOL = "mammoth.api.projects.ProjectsAPI.list"
 _GET_SYMBOL = "mammoth.api.projects.ProjectsAPI.get"
 _DEPS_SYMBOL = "mammoth.api.projects.ProjectsAPI.resource_dependencies"
+_DEPS_UPDATE_SYMBOL = "mammoth.api.projects.ProjectsAPI.resource_dependencies_update"
 _PUBCRED_SYMBOL = "mammoth.api.projects.ProjectsAPI.publish_credentials"
 
 
@@ -95,6 +96,89 @@ def test_resource_dependencies_forwards_optional_recursive(
     assert fake_service.call_log == [
         (_DEPS_SYMBOL, {"project_id": 7, "resource_ids": ["a", "b"], "is_recursive": True})
     ]
+
+
+def test_resource_dependencies_update_requires_project_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(
+        json.dumps(
+            {
+                "patches": [
+                    {
+                        "op": "replace",
+                        "path": "data_sync",
+                        "value": {"context_type": "dataview", "context_id": 42},
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(CliError) as excinfo:
+        project_cmd.project_resource_dependencies_update(
+            _invocation("project.resource-dependencies.update", project=7, input_file=str(doc))
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
+def test_resource_dependencies_update_forwards_patch_and_waits(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    patches = [
+        {
+            "op": "replace",
+            "path": "data_sync",
+            "value": {"context_type": "task", "context_id": 9, "data_pass_through": None},
+        }
+    ]
+    doc.write_text(json.dumps({"patches": patches}), encoding="utf-8")
+    fake_service.responses[_DEPS_UPDATE_SYMBOL] = {"job_id": 801}
+    fake_service.job_result = {"status": "completed"}
+    data, meta = project_cmd.project_resource_dependencies_update(
+        _invocation(
+            "project.resource-dependencies.update",
+            project=7,
+            input_file=str(doc),
+            yes=True,
+            confirm="7",
+            no_input=True,
+            output="json",
+        )
+    )
+    assert data == {"job_id": 801, "status": "completed"}
+    assert fake_service.call_log[0] == (_DEPS_UPDATE_SYMBOL, {"project_id": 7, "patches": patches})
+    assert fake_service.wait_log == [{"job_id": 801}]
+    assert meta["project_id"] == 7
+
+
+def test_resource_dependencies_update_rejects_duplicate_target(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    patch = {
+        "op": "replace",
+        "path": "data_sync",
+        "value": {"context_type": "action", "context_id": 3},
+    }
+    doc.write_text(json.dumps({"patches": [patch, patch]}), encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        project_cmd.project_resource_dependencies_update(
+            _invocation(
+                "project.resource-dependencies.update",
+                project=7,
+                input_file=str(doc),
+                yes=True,
+                confirm="7",
+                no_input=True,
+                output="json",
+            )
+        )
+    assert excinfo.value.code == "invalid_argument"
+    assert fake_service.call_log == []
 
 
 def test_publish_credentials_requires_odbc_type(fake_service: FakeMammothService) -> None:

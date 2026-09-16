@@ -37,6 +37,7 @@ class AdvancedOpsMixin(ViewHost):
         on: list[JoinKeySpec],
         select: list[str | JoinSelectSpec],
         column_prefix: str | None = None,
+        foreign_dataset_id: int | None = None,
     ) -> dict[str, Any]:
         """Join with another dataview (JOIN task).
 
@@ -56,6 +57,9 @@ class AdvancedOpsMixin(ViewHost):
                     [JoinSelectSpec(column="Category", alias="Cat")]
 
             column_prefix: Prefix for joined columns (optional).
+            foreign_dataset_id: Parent dataset for an ID-only foreign view.
+                When supplied, metadata is fetched in that exact dataset so
+                display-name resolution never probes unrelated parents.
 
         Returns:
             API response dict.
@@ -82,12 +86,17 @@ class AdvancedOpsMixin(ViewHost):
         # Resolve foreign view
         foreign_view_id: int
         foreign_columns: dict[str, str] | None = None
+        foreign_internal_names: list[str] | None = None
+
+        if isinstance(foreign_view, int) and foreign_dataset_id is not None:
+            foreign_view = self._client.views.get(foreign_view, dataset_id=foreign_dataset_id)
 
         if isinstance(foreign_view, int):
             foreign_view_id = foreign_view
         else:
             foreign_view_id = foreign_view.id
             foreign_columns = foreign_view.columns
+            foreign_internal_names = foreign_view._internal_names
 
         return self._add_task(
             build_join_params(
@@ -98,6 +107,7 @@ class AdvancedOpsMixin(ViewHost):
                 self.columns,
                 self._internal_names,
                 foreign_columns=foreign_columns,
+                foreign_internal_names=foreign_internal_names,
                 column_prefix=column_prefix,
             )
         )
@@ -105,12 +115,13 @@ class AdvancedOpsMixin(ViewHost):
     def lookup(
         self,
         source: str,
-        lookup_view_id: int,
+        lookup_view_id: int | View,
         key: str,
         value: str,
         new_column: str | None = None,
         new_column_type: str = "TEXT",
         existing_column: str | None = None,
+        lookup_dataset_id: int | None = None,
     ) -> dict[str, Any]:
         """VLOOKUP-style value lookup from another dataview (LOOKUP task).
 
@@ -132,6 +143,9 @@ class AdvancedOpsMixin(ViewHost):
                 It is not derived here because ``value`` lives in a different view,
                 whose metadata this call does not fetch.
             existing_column: Display name of existing column to overwrite.
+            lookup_dataset_id: Parent dataset for an ID-only lookup view. If
+                provided, the foreign view metadata is fetched in that exact
+                dataset before resolving ``key`` and ``value``.
 
         Returns:
             API response dict.
@@ -146,16 +160,38 @@ class AdvancedOpsMixin(ViewHost):
                 new_column="Product Name",
             )
         """
+        foreign_columns: dict[str, str] | None = None
+        foreign_internal_names: list[str] | None = None
+        foreign_view: int | View = lookup_view_id
+        effective_type = new_column_type
+        if isinstance(lookup_view_id, int) and lookup_dataset_id is not None:
+            foreign_view = self._client.views.get(lookup_view_id, dataset_id=lookup_dataset_id)
+        if isinstance(foreign_view, int):
+            foreign_id = foreign_view
+        else:
+            foreign_id = foreign_view.id
+            foreign_columns = foreign_view.columns
+            foreign_internal_names = foreign_view._internal_names
+            if new_column and new_column_type == "TEXT":
+                effective_type = foreign_view.column_types.get(value, "TEXT")
+                if value in foreign_internal_names and effective_type == "TEXT":
+                    for display, internal in foreign_columns.items():
+                        if internal == value:
+                            effective_type = foreign_view.column_types.get(display, "TEXT")
+                            break
+
         return self._add_task(
             build_lookup_params(
                 source,
-                lookup_view_id,
+                foreign_id,
                 key,
                 value,
                 self.columns,
                 self._internal_names,
+                foreign_columns=foreign_columns,
+                foreign_internal_names=foreign_internal_names,
                 new_column=new_column,
-                new_column_type=new_column_type,
+                new_column_type=effective_type,
                 existing_column=existing_column,
                 name_gen=self._next_internal_name,
             )

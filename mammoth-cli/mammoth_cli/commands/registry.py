@@ -64,14 +64,18 @@ Handler = Callable[[Invocation], HandlerResult]
 
 
 def _require_arg(invocation: Invocation, name: str) -> str:
-    if not invocation.extra_args:
+    bound = invocation.bound_input()
+    value = bound.get(name)
+    if value is None and invocation.extra_args:
+        value = invocation.extra_args[0]
+    if value is None:
         raise CliError(
             code=CODE_MISSING_ARGUMENT,
             message=f"This command requires a {name} argument.",
             exit_status=EXIT_USAGE,
             hint=f"Pass the {name} as a positional argument.",
         )
-    return invocation.extra_args[0]
+    return str(value)
 
 
 def _version(_: Invocation) -> HandlerResult:
@@ -93,6 +97,18 @@ def _capability_get(invocation: Invocation) -> HandlerResult:
             hint="List operations with 'mammoth capability list --output json'.",
         )
     return entry, {}
+
+
+def _capability_find(invocation: Invocation) -> HandlerResult:
+    query = _require_arg(invocation, "search query")
+    if not query.strip():
+        raise CliError(
+            code="empty_search_query",
+            message="The capability search query must contain at least one word.",
+            exit_status=EXIT_USAGE,
+            hint="For the complete inventory, use 'mammoth capability list --output json'.",
+        )
+    return capability_cmd.find_capabilities(query), {}
 
 
 def _schema_list(_: Invocation) -> HandlerResult:
@@ -136,6 +152,7 @@ HANDLERS: dict[str, Handler] = {
     "skill.update": skill_cmd.skill_update,
     "capability.list": _capability_list,
     "capability.get": _capability_get,
+    "capability.find": _capability_find,
     "schema.list": _schema_list,
     "schema.get": _schema_get,
     "schema.find": _schema_find,
@@ -145,6 +162,7 @@ HANDLERS: dict[str, Handler] = {
     "project.pending-changes": project_cmd.project_pending_changes,
     "project.resource-status": project_cmd.project_resource_status,
     "project.resource-dependencies": project_cmd.project_resource_dependencies,
+    "project.resource-dependencies.update": project_cmd.project_resource_dependencies_update,
     "project.publish-credentials": project_cmd.project_publish_credentials,
     # project family (mutations)
     "project.create": project_cmd.project_create,
@@ -192,6 +210,7 @@ HANDLERS: dict[str, Handler] = {
     # dataset family
     "dataset.list": dataset_cmd.dataset_list,
     "dataset.get": dataset_cmd.dataset_get,
+    "dataset.batch-data": dataset_cmd.dataset_batch_data,
     "dataset.data": dataset_cmd.dataset_data,
     "dataset.file-settings.get": dataset_cmd.dataset_file_settings,
     "dataset.file-settings.update": dataset_cmd.dataset_file_settings_update,
@@ -224,6 +243,7 @@ HANDLERS: dict[str, Handler] = {
     "batch.list": batch_cmd.batch_list,
     "batch.get": batch_cmd.batch_get,
     "batch.create": batch_cmd.batch_create,
+    "batch.create-spec": batch_cmd.batch_create_spec,
     "batch.update": batch_cmd.batch_update,
     "batch.delete": batch_cmd.batch_delete,
     "batch.bulk-delete": batch_cmd.batch_bulk_delete,
@@ -273,9 +293,11 @@ HANDLERS: dict[str, Handler] = {
     "connector.query.status": connector_cmd.connector_query_status,
     # dashboard family
     "dashboard.action": dashboard_cmd.dashboard_action,
+    "dashboard.archive": dashboard_cmd.dashboard_archive,
     "dashboard.analytics": dashboard_cmd.dashboard_analytics,
     "dashboard.cancel-generation": dashboard_cmd.dashboard_cancel_generation,
     "dashboard.create": dashboard_cmd.dashboard_create,
+    "dashboard.create-blank": dashboard_cmd.generated_dashboard,
     "dashboard.data.draft": dashboard_cmd.dashboard_data_draft,
     "dashboard.data.published": dashboard_cmd.dashboard_data_published,
     "dashboard.delete": dashboard_cmd.dashboard_delete,
@@ -283,6 +305,11 @@ HANDLERS: dict[str, Handler] = {
     "dashboard.get-by-url": dashboard_cmd.dashboard_get_by_url,
     "dashboard.job-by-url": dashboard_cmd.dashboard_job_by_url,
     "dashboard.list": dashboard_cmd.dashboard_list,
+    "dashboard.tags.list": dashboard_cmd.dashboard_tags_list,
+    "dashboard.tags.rename": dashboard_cmd.dashboard_tags_rename,
+    "dashboard.tags.set": dashboard_cmd.dashboard_tags_set,
+    "dashboard.tags.delete": dashboard_cmd.dashboard_tags_delete,
+    "dashboard.tags.merge": dashboard_cmd.dashboard_tags_merge,
     "dashboard.published-data-by-url": dashboard_cmd.dashboard_published_data_by_url,
     "dashboard.restore": dashboard_cmd.dashboard_restore,
     "dashboard.share": dashboard_cmd.dashboard_share,
@@ -291,6 +318,8 @@ HANDLERS: dict[str, Handler] = {
     "dashboard.update": dashboard_cmd.dashboard_update,
     "dashboard.widget-data": dashboard_cmd.dashboard_widget_data,
     "dashboard.widget-data-by-url": dashboard_cmd.dashboard_widget_data_by_url,
+    "dashboard.pages.add": dashboard_cmd.generated_dashboard,
+    "dashboard.context.extract": dashboard_cmd.generated_dashboard,
     # workflow family
     "workflow.block.add": workflow_cmd.workflow_block_add,
     "workflow.block.auth": workflow_cmd.workflow_block_auth,
@@ -392,6 +421,7 @@ HANDLERS: dict[str, Handler] = {
     "ai.condition.generate": ai_cmd.ai_condition_generate,
     "ai.expression.generate": ai_cmd.ai_expression_generate,
     "ai.sql.generate": ai_cmd.ai_sql_generate,
+    "ai.retention.condition": ai_cmd.ai_retention_condition,
     "ai.suggestion.list": ai_cmd.ai_suggestion_list,
     # addon family
     "addon.connector.add": addon_cmd.addon_connector_add,
@@ -500,6 +530,8 @@ HANDLERS: dict[str, Handler] = {
     "view.update": view_cmd.view_update,
     "view.data.get": view_cmd.view_data_get,
     "view.data.query": view_cmd.view_data_query,
+    "view.exportable-config.get": view_cmd.view_exportable_config_get,
+    "view.exportable-config.apply": view_cmd.view_exportable_config_apply,
     "view.conditional-format.create": view_cmd.view_conditional_format_create,
     "view.conditional-format.delete-all": view_cmd.view_conditional_format_delete_all,
     "view.conditional-format.list": view_cmd.view_conditional_format_list,
@@ -531,6 +563,7 @@ HANDLERS: dict[str, Handler] = {
     "view.pipeline.edit": view_cmd.view_pipeline_edit,
     "view.pipeline.get": view_cmd.view_pipeline_get,
     "view.pipeline.items": view_cmd.view_pipeline_items,
+    "view.pipeline.items-all": view_cmd.view_pipeline_items_all,
     "view.pipeline.rerun": view_cmd.view_pipeline_rerun,
     "view.pipeline.wait": view_cmd.view_pipeline_wait,
     "view.task.add": view_cmd.view_task_add,
@@ -547,6 +580,23 @@ HANDLERS: dict[str, Handler] = {
     "view.export.publish-db": view_cmd.view_export_publish_db,
     "view.export.publish-db-update": view_cmd.view_export_publish_db_update,
     "view.export.update": view_cmd.view_export_update,
+    "view.export.dataset": view_cmd.view_export_specialized,
+    "view.export.managed-s3": view_cmd.view_export_specialized,
+    "view.export.azure-blob": view_cmd.view_export_specialized,
+    "view.export.bigquery": view_cmd.view_export_specialized,
+    "view.export.elasticsearch": view_cmd.view_export_specialized,
+    "view.export.email": view_cmd.view_export_specialized,
+    "view.export.ftp": view_cmd.view_export_specialized,
+    "view.export.mssql": view_cmd.view_export_specialized,
+    "view.export.mysql": view_cmd.view_export_specialized,
+    "view.export.onedrive": view_cmd.view_export_specialized,
+    "view.export.postgres": view_cmd.view_export_specialized,
+    "view.export.powerbi": view_cmd.view_export_specialized,
+    "view.export.redshift": view_cmd.view_export_specialized,
+    "view.export.rest": view_cmd.view_export_specialized,
+    "view.export.sftp": view_cmd.view_export_specialized,
+    "view.export.sharepoint": view_cmd.view_export_specialized,
+    "view.export.tableau": view_cmd.view_export_specialized,
     # view family (View-object: create/get/delete, draft, transforms)
     "view.create": view_ops_cmd.view_create,
     "view.get": view_ops_cmd.view_get,

@@ -9,14 +9,18 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
+from urllib.parse import parse_qs, urlparse
 
 from ..exceptions import (
     MammothAPIError,
     MammothJobTimeoutError,
+    MammothPaginationError,
     MammothTransformError,
     MammothValidationError,
 )
+from ._pagination import collect_offset_pages
 
 _list = list  # Alias to avoid shadowing by method name
 
@@ -26,6 +30,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 PIPELINE_TERMINAL_STATES = frozenset({"ready", "runtime_error", "ref_error"})
+# States emitted while a pipeline is settling after a mutation.  Keep this
+# allow-list deliberately small: an unrecognised value is not evidence that a
+# submit is safe to replay.
+PIPELINE_RUNNING_STATES = frozenset({"modifying", "modified", "running"})
 
 ERR_FROM_SEQUENCE_NON_NEGATIVE = "`from_sequence` must be >= 0, got {0}."
 
@@ -88,7 +96,9 @@ class PipelineAPI:
 
         return workspace_id, project_id, dataset_id, dataview_id
 
-    def find_dataset_for_dataview(self, dataview_id: int) -> int:
+    def find_dataset_for_dataview(
+        self, dataview_id: int, dataset_id: int | None = None
+    ) -> int:
         """Public typed resolver: find the dataset that contains a dataview.
 
         This is the supported public seam for dataview-to-dataset resolution.
@@ -97,10 +107,15 @@ class PipelineAPI:
 
         Args:
             dataview_id: ID of the dataview to resolve.
+            dataset_id: Known parent dataset ID. This is an identity hint,
+                not a request to search: it is returned as-is so callers do
+                not probe unrelated datasets.
 
         Returns:
             The dataset_id that contains this dataview.
         """
+        if dataset_id is not None:
+            return dataset_id
         return self._find_dataset_for_dataview(dataview_id)
 
     def _find_dataset_for_dataview(self, dataview_id: int) -> int:
@@ -313,7 +328,7 @@ class PipelineAPI:
         dataview_id: int,
         task_id: int,
         task_spec: dict[str, Any],
-        dataset_id: int | None = None,
+        dataset_id: int,
     ) -> dict[str, Any]:
         """Update an existing pipeline task.
 
@@ -377,12 +392,14 @@ class PipelineAPI:
 
         Args:
             dataview_id: ID of the dataview.
-            command: Draft mode command ("enter", "commit", "discard").
+            command: Draft mode command ("enter", "exit", "submit", "discard").
             dataset_id: Dataset ID (auto-detected if not provided).
 
         Returns:
             Draft mode state dict.
         """
+        if command not in {"enter", "exit", "submit", "discard"}:
+            raise ValueError("command must be one of: enter, exit, submit, discard")
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
         response = self._client._request_json(
             "POST",
@@ -408,21 +425,96 @@ class PipelineAPI:
             ``draft`` section when the server provides one.
         """
         pipeline = self.get_pipeline(dataview_id, dataset_id)
-        draft_section = pipeline.get("draft")
+        # Some API revisions wrap the pipeline resource in a top-level
+        # ``pipeline`` object.  Normalize that shape once and use the same
+        # resource for state and draft fields; reading state from the outer
+        # envelope while reading draft mode from the nested resource makes a
+        # committed draft look unknown and can replay SUBMIT.
+        resource: Mapping[str, Any] = pipeline
+        nested = pipeline.get("pipeline")
+        if isinstance(nested, Mapping):
+            resource = nested
+
+        draft_section = resource.get("draft")
         if draft_section is None:
-            draft_section = pipeline.get("draft_mode")
-        is_draft = bool(
-            (isinstance(draft_section, str) and draft_section in DRAFT_MODE_ACTIVE_VALUES)
-            or (isinstance(draft_section, dict) and draft_section.get("active"))
-            or (isinstance(draft_section, dict) and draft_section.get("is_draft"))
-            or pipeline.get("is_draft")
-            or pipeline.get("in_draft_mode")
+            draft_section = resource.get("draft_mode")
+        if draft_section is None and resource is not pipeline:
+            # Preserve compatibility with wrappers that keep the draft marker
+            # on the envelope while nesting only the state resource.
+            draft_section = pipeline.get("draft", pipeline.get("draft_mode"))
+
+        mode: str | None = None
+        if isinstance(draft_section, str):
+            mode = draft_section.lower()
+        elif isinstance(draft_section, dict):
+            raw_mode = draft_section.get("mode", draft_section.get("status"))
+            if isinstance(raw_mode, str):
+                mode = raw_mode.lower()
+        draft_flags = (
+            resource.get("is_draft"),
+            resource.get("in_draft_mode"),
+            pipeline.get("is_draft"),
+            pipeline.get("in_draft_mode"),
         )
+        is_draft = bool(
+            (mode in DRAFT_MODE_ACTIVE_VALUES)
+            or (isinstance(draft_section, dict) and draft_section.get("active") is True)
+            or (isinstance(draft_section, dict) and draft_section.get("is_draft") is True)
+            or any(flag is True for flag in draft_flags)
+        )
+        raw_state = resource.get("state")
+        if "state" not in resource and resource is not pipeline:
+            raw_state = pipeline.get("state")
+        state = raw_state.lower() if isinstance(raw_state, str) else None
         return {
             "dataview_id": dataview_id,
             "is_draft": is_draft,
+            "mode": mode,
+            "has_pending_changes": mode == DRAFT_MODE_DIRTY,
+            "pipeline_state": state,
             "draft": draft_section,
+            "pipeline": pipeline,
         }
+
+    def reconcile_draft_submission(
+        self, dataview_id: int, dataset_id: int | None = None
+    ) -> dict[str, Any]:
+        """Read the server state after an interrupted draft submission.
+
+        This performs no mutation. A caller can safely invoke it from a fresh
+        process before deciding whether another SUBMIT is necessary.
+        """
+        status = self.get_draft_status(dataview_id, dataset_id)
+        state = status.get("pipeline_state")
+        mode = status.get("mode")
+        is_draft = status.get("is_draft") is True
+        if state == "ready":
+            if is_draft and mode == DRAFT_MODE_DIRTY:
+                outcome = "pending"
+            elif (is_draft and mode == DRAFT_MODE_CLEAN) or not is_draft:
+                outcome = "succeeded"
+            else:
+                # A draft flag without a valid mode is not enough evidence to
+                # replay a write.
+                outcome = "unknown"
+        elif state in PIPELINE_TERMINAL_STATES:
+            outcome = "failed"
+        elif state in PIPELINE_RUNNING_STATES:
+            outcome = "running"
+        else:
+            # Missing, non-string, or newly introduced server states must be
+            # reconciled by a caller rather than guessed into a mutation.
+            outcome = "unknown"
+        result = {**status, "outcome": outcome}
+        if outcome == "unknown":
+            result.update(
+                {
+                    "operation_state": "outcome_unknown",
+                    "mutation_blocked": True,
+                    "recovery_action": "re-read draft status before replaying SUBMIT",
+                }
+            )
+        return result
 
     def edit_pipeline(
         self,
@@ -449,8 +541,8 @@ class PipelineAPI:
         self,
         dataview_id: int,
         dataset_id: int | None = None,
-        timeout: int | None = None,
-        poll_interval: int = 3,
+        timeout: float | None = None,
+        poll_interval: float = 3,
     ) -> dict[str, Any]:
         """Poll pipeline state until it reaches a terminal state.
 
@@ -475,7 +567,7 @@ class PipelineAPI:
             MammothJobTimeoutError: If timeout is exceeded.
         """
         effective_timeout = (
-            timeout if timeout is not None else int(getattr(self._client, "pipeline_timeout", 3600))
+            timeout if timeout is not None else getattr(self._client, "pipeline_timeout", 3600)
         )
 
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
@@ -562,6 +654,75 @@ class PipelineAPI:
             params["status"] = status
         return self._client._request_json(
             "GET", f"{self._base_url(ws, proj, ds, dv)}/items", params=params or None
+        )
+
+    def items_all(
+        self,
+        dataview_id: int,
+        dataset_id: int,
+        fields: str | None = None,
+        limit: int = 100,
+        sort: str | None = None,
+        sequence: int | None = None,
+        status: str | None = None,
+        max_pages: int = 1000,
+    ) -> dict[str, Any]:
+        """Read the complete bounded pipeline-item listing.
+
+        ``items`` intentionally mirrors the CLI's single-page
+        ``view.pipeline.items`` operation.  Use this method when a readback
+        needs completeness: every page is requested through :meth:`items`,
+        which re-resolves the same workspace/project/dataset/dataview parent,
+        while the shared paginator rejects repeated pages, non-advancing
+        offsets, empty pages with a continuation, and excessive page counts.
+        No mutation or server-provided URL is followed directly.
+        """
+        if isinstance(dataview_id, bool) or not isinstance(dataview_id, int) or dataview_id <= 0:
+            raise MammothValidationError("`dataview_id` must be a positive integer")
+        if isinstance(dataset_id, bool) or not isinstance(dataset_id, int) or dataset_id <= 0:
+            raise MammothValidationError("`dataset_id` must be a positive integer")
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise MammothValidationError("`limit` must be an integer from 1 through 100")
+        if (
+            isinstance(max_pages, bool)
+            or not isinstance(max_pages, int)
+            or not 1 <= max_pages <= 1000
+        ):
+            raise MammothValidationError("`max_pages` must be an integer from 1 through 1000")
+        ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
+        expected_path = f"{self._base_url(ws, proj, ds, dv)}/items"
+
+        def fetch(offset: int) -> dict[str, Any]:
+            page = self.items(
+                dataview_id=dataview_id,
+                dataset_id=dataset_id,
+                fields=fields,
+                limit=limit,
+                offset=offset,
+                sort=sort,
+                sequence=sequence,
+                status=status,
+            )
+            hint = page.get("next")
+            if hint:
+                parsed = urlparse(str(hint))
+                # The paginator uses only the offset from ``next``; still
+                # require the server's hint to identify this exact parent
+                # route and to carry the documented offset cursor.
+                if not parsed.path.endswith(expected_path) or "offset" not in parse_qs(
+                    parsed.query
+                ):
+                    raise MammothPaginationError(
+                        "The API returned an unsupported pipeline-items continuation URL.",
+                        {"next": str(hint), "expected_path": expected_path},
+                    )
+            return page
+
+        return collect_offset_pages(
+            fetch,
+            item_key=_ITEMS_KEY,
+            limit=limit,
+            max_pages=max_pages,
         )
 
     def latest_task_sequence(self, dataview_id: int, dataset_id: int | None = None) -> int:

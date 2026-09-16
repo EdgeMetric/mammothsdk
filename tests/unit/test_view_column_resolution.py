@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import pytest
 
+from mammoth.condition import Condition
 from mammoth.exceptions import MammothColumnError
+from mammoth.models.pipeline import Operator
+from mammoth.view import View
 
 
 class TestColumnMaps:
@@ -91,3 +94,60 @@ class TestViewMetadata:
         r = repr(mock_view)
         assert "1001" in r
         assert "Test View" in r
+
+
+def test_math_display_name_wins_over_internal_alias(mock_client):
+    """A display name that equals another internal id must remain exact."""
+    view = View(
+        mock_client,
+        {
+            "id": 1,
+            "metadata": [
+                {"display_name": "A", "internal_name": "B", "type": "NUMERIC"},
+                {"display_name": "B", "internal_name": "column_2", "type": "NUMERIC"},
+            ],
+        },
+        2,
+    )
+    captured: list[dict] = []
+    view._add_task = captured.append  # type: ignore[assignment]
+
+    view.math(
+        "B",
+        existing_column="B",
+        condition=Condition("B", Operator.GTE, 1),
+    )
+
+    payload = captured[0]
+    assert payload["MATH"]["EXPRESSION"] == [{"TYPE": "COLUMN", "VALUE": "column_2"}]
+    assert payload["MATH"]["DESTINATION"] == "column_2"
+    assert "column_2" in payload["CONDITION"]
+    assert "B" not in payload["CONDITION"]
+
+
+@pytest.mark.parametrize("internals", [("first", "second", "third"), ("third", "first", "second")])
+def test_three_duplicate_display_names_are_never_resolvable(mock_client, internals):
+    """Ambiguity remains sticky when a third duplicate is encountered later."""
+    view = View(
+        mock_client,
+        {
+            "id": 1,
+            "metadata": [
+                {"display_name": "Amount", "internal_name": internal, "type": "NUMERIC"}
+                for internal in internals
+            ],
+        },
+        2,
+    )
+    captured: list[dict] = []
+    view._add_task = captured.append  # type: ignore[assignment]
+
+    assert "Amount" not in view.columns
+    assert "Amount" in view._ambiguous_columns
+    with pytest.raises((MammothColumnError, ValueError)):
+        view.math(
+            "Amount",
+            existing_column="Amount",
+            condition=Condition("Amount", Operator.GTE, 1),
+        )
+    assert captured == []

@@ -1,9 +1,9 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 1.0.8.
+Generated from the reviewed command manifests for mammoth-cli 1.1.0.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 
-Total commands: 506.
+Total commands: 540.
 
 ## activity
 
@@ -144,6 +144,17 @@ Total commands: 506.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.expression_generate`
 - Agent example: `mammoth ai expression generate 123 --input '{"intent": "Summarize revenue by region", "mode": "sample"}' --output json --no-input`
+
+### `mammoth ai retention condition`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.ai.AIAPI.retention_condition`
+- Agent example: `mammoth ai retention condition 123 --input '{"mode": "generate", "intent": "completed payments older than 90 days"}' --output json --no-input --project 456`
 
 ### `mammoth ai sql generate`
 
@@ -334,6 +345,17 @@ Total commands: 506.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.create`
 - Agent example: `mammoth batch create 123 123 --input '{"mapping": {"sample_key": "Status"}}' --output json --no-input`
+
+### `mammoth batch create-spec`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.batches.BatchesAPI.create_spec`
+- Agent example: `mammoth batch create-spec 123 --input '{"file_id": 94}' --output json --no-input`
 
 ### `mammoth batch delete`
 
@@ -600,6 +622,17 @@ Total commands: 506.
 
 ## capability
 
+### `mammoth capability find`
+
+**Arguments**
+
+- `QUERY` (str, required) — Match operation names, commands, examples, or purpose.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.capability.find_capabilities`
+- Agent example: `mammoth capability find 'show projects' --output json --no-input`
+
 ### `mammoth capability get`
 
 **Arguments**
@@ -682,7 +715,7 @@ Total commands: 506.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.completion.install`
-- Agent example: `mammoth completion install example --output json --no-input`
+- Agent example: `mammoth completion install bash --output json --no-input`
 
 ### `mammoth completion show`
 
@@ -693,7 +726,7 @@ Total commands: 506.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.completion.show`
-- Agent example: `mammoth completion show example --output json --no-input`
+- Agent example: `mammoth completion show bash --output json --no-input`
 
 ## config
 
@@ -1019,6 +1052,17 @@ Total commands: 506.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.get_analytics`
 - Agent example: `mammoth dashboard analytics 123 --output json --no-input`
 
+### `mammoth dashboard archive`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.archive`
+- Agent example: `mammoth dashboard archive 123 --input '{"archived": true}' --output json --no-input --yes --confirm 123`
+
 ### `mammoth dashboard cancel-generation`
 
 **Arguments**
@@ -1103,6 +1147,13 @@ Total commands: 506.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.context_delete`
 - Agent example: `mammoth dashboard context delete resource-123 --output json --no-input`
 
+### `mammoth dashboard context extract`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.extract_context`
+- Agent example: `mammoth dashboard context extract --input '{"body": {"params": {"name": "Revenue report"}}}' --output json --no-input`
+
 ### `mammoth dashboard context list`
 
 - Mutation class: `read`
@@ -1131,6 +1182,13 @@ Total commands: 506.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.create`
 - Agent example: `mammoth dashboard create 'Summarize revenue by region' --input '{"source": [1]}' --output json --no-input`
+
+### `mammoth dashboard create-blank`
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.create_blank`
+- Agent example: `mammoth dashboard create-blank --input '{"params": {"dataview_id": 1}}' --output json --no-input --yes`
 
 ### `mammoth dashboard data draft`
 
@@ -1260,6 +1318,17 @@ Total commands: 506.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.page_plan`
 - Agent example: `mammoth dashboard page plan 123 --input '{"body": {"params": {"intent": "Summarize revenue by region"}}}' --output json --no-input`
+
+### `mammoth dashboard pages add`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.add_pages`
+- Agent example: `mammoth dashboard pages add 123 --input '{"body": {"params": {"pages": [{}]}}}' --output json --no-input`
 
 ### `mammoth dashboard pdf export`
 
@@ -1751,6 +1820,57 @@ Total commands: 506.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.suggestion_list`
 - Agent example: `mammoth dashboard suggestion list 123 --output json --no-input`
 
+### `mammoth dashboard tags delete`
+
+**Arguments**
+
+- `TAG_ID` (int, required) — ID of the tag.
+
+- Mutation class: `destructive`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.delete_tag`
+- Agent example: `mammoth dashboard tags delete 123 --output json --no-input --yes --confirm 123`
+
+### `mammoth dashboard tags list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.list_tags`
+- Agent example: `mammoth dashboard tags list --output json --no-input`
+
+### `mammoth dashboard tags merge`
+
+**Arguments**
+
+- `TAG_ID` (int, required) — ID of the source tag.
+
+- Mutation class: `destructive`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.merge_tag`
+- Agent example: `mammoth dashboard tags merge 123 --input '{"target_id": 456}' --output json --no-input --yes --confirm 123`
+
+### `mammoth dashboard tags rename`
+
+**Arguments**
+
+- `TAG_ID` (int, required) — ID of the tag.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.rename_tag`
+- Agent example: `mammoth dashboard tags rename 123 --input '{"name": "Revenue"}' --output json --no-input --yes --confirm 123`
+
+### `mammoth dashboard tags set`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.set_tags`
+- Agent example: `mammoth dashboard tags set 123 --input '{"tags": ["Revenue"]}' --output json --no-input --yes --confirm 123`
+
 ### `mammoth dashboard template apply`
 
 - Mutation class: `benign_mutation`
@@ -2033,6 +2153,18 @@ Total commands: 506.
 - Agent example: `mammoth data-app user remove 123 analyst@example.com --output json --no-input`
 
 ## dataset
+
+### `mammoth dataset batch-data`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+- `BATCH_ID` (int, required) — ID of the batch.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.get_batch_data`
+- Agent example: `mammoth dataset batch-data 123 123 --output json --no-input`
 
 ### `mammoth dataset bulk-delete`
 
@@ -2737,6 +2869,17 @@ Total commands: 506.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.resource_dependencies`
 - Agent example: `mammoth project resource-dependencies 123 --input '{"resource_ids": ["resource-123"]}' --output json --no-input`
+
+### `mammoth project resource-dependencies update`
+
+**Arguments**
+
+- `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.projects.ProjectsAPI.resource_dependencies_update`
+- Agent example: `mammoth project resource-dependencies update 123 --input '{"patches": [{"op": "replace", "path": "data_sync", "value": {"context_type": "dataview", "context_id": 1}}]}' --output json --no-input --yes --confirm 123`
 
 ### `mammoth project resource-status`
 
@@ -3920,11 +4063,12 @@ Total commands: 506.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; or pass it via the 'dataset_id' input field.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.client.ViewsResource.delete`
-- Agent example: `mammoth view delete 123 --output json --no-input`
+- Agent example: `mammoth view delete 123 123 --output json --no-input`
 
 ### `mammoth view derivative create`
 
@@ -4055,6 +4199,30 @@ Total commands: 506.
 - Backing SDK: `mammoth.view.View.submit_draft`
 - Agent example: `mammoth view draft submit 123 --output json --no-input`
 
+### `mammoth view export azure-blob`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_azure_blob`
+- Agent example: `mammoth view export azure-blob 123 123 --input '{"storage_account_name": "storage-account", "tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret", "container_name": "exports"}' --output json --no-input`
+
+### `mammoth view export bigquery`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_bigquery`
+- Agent example: `mammoth view export bigquery 123 123 --input '{"selected_profile": {}, "selected_identity": {}, "table": "exports"}' --output json --no-input`
+
 ### `mammoth view export create`
 
 **Arguments**
@@ -4077,6 +4245,18 @@ Total commands: 506.
 - Backing SDK: `mammoth.api.exports.ExportsAPI.to_csv`
 - Agent example: `mammoth view export csv 123 --output json --no-input`
 
+### `mammoth view export dataset`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.view.ViewExport.to_dataset`
+- Agent example: `mammoth view export dataset 123 123 --input '{"dataset_name": "snapshot"}' --output json --no-input`
+
 ### `mammoth view export delete`
 
 **Arguments**
@@ -4088,6 +4268,42 @@ Total commands: 506.
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.delete`
 - Agent example: `mammoth view export delete 123 123 --output json --no-input`
+
+### `mammoth view export elasticsearch`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_elasticsearch`
+- Agent example: `mammoth view export elasticsearch 123 123 --input '{"host": "elastic.example", "username": "agent", "password": "replace-with-secret", "index": "exports"}' --output json --no-input`
+
+### `mammoth view export email`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_email`
+- Agent example: `mammoth view export email 123 123 --input '{"emails": ["recipient@example.com"]}' --output json --no-input`
+
+### `mammoth view export ftp`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_ftp`
+- Agent example: `mammoth view export ftp 123 123 --input '{"domain": "ftp.example", "directory": "/exports", "file": "report.csv", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`
 
 ### `mammoth view export get`
 
@@ -4106,11 +4322,84 @@ Total commands: 506.
 **Arguments**
 
 - `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `DATASET_ID` (int, optional) — Optional parent dataset ID; avoids parent discovery when supplied.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.list`
-- Agent example: `mammoth view export list 123 --output json --no-input`
+- Agent example: `mammoth view export list 123 123 --output json --no-input`
+
+### `mammoth view export managed-s3`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_s3`
+- Agent example: `mammoth view export managed-s3 123 123 --input '{"file_name": "report.csv"}' --output json --no-input`
+
+### `mammoth view export mssql`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_mssql`
+- Agent example: `mammoth view export mssql 123 123 --input '{"host": "db.example", "port": 1433, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`
+
+### `mammoth view export mysql`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_mysql`
+- Agent example: `mammoth view export mysql 123 123 --input '{"host": "db.example", "port": 3306, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`
+
+### `mammoth view export onedrive`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_onedrive`
+- Agent example: `mammoth view export onedrive 123 123 --input '{"tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret", "user_id": "user-id"}' --output json --no-input`
+
+### `mammoth view export postgres`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_postgres`
+- Agent example: `mammoth view export postgres 123 123 --input '{"host": "db.example", "port": 5432, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`
+
+### `mammoth view export powerbi`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_powerbi`
+- Agent example: `mammoth view export powerbi 123 123 --input '{"username": "agent", "password": "replace-with-secret", "client_id": "client-id", "dataset": "dataset", "table": "exports"}' --output json --no-input`
 
 ### `mammoth view export publish-db`
 
@@ -4134,6 +4423,66 @@ Total commands: 506.
 - Backing SDK: `mammoth.api.exports.ExportsAPI.publish_db_update`
 - Agent example: `mammoth view export publish-db-update 123 --input '{"patch": [{"sample_key": "Status"}]}' --output json --no-input`
 
+### `mammoth view export redshift`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_redshift`
+- Agent example: `mammoth view export redshift 123 123 --input '{"host": "db.example", "port": 5439, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`
+
+### `mammoth view export rest`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_rest_api`
+- Agent example: `mammoth view export rest 123 123 --input '{"base_url": "https://api.example", "endpoint_path": "/records"}' --output json --no-input`
+
+### `mammoth view export sftp`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_sftp`
+- Agent example: `mammoth view export sftp 123 123 --input '{"host": "sftp.example", "username": "agent"}' --output json --no-input`
+
+### `mammoth view export sharepoint`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_sharepoint`
+- Agent example: `mammoth view export sharepoint 123 123 --input '{"tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret", "site_url": "https://sharepoint.example/site"}' --output json --no-input`
+
+### `mammoth view export tableau`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to export.
+- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.view.ViewExport.to_tableau`
+- Agent example: `mammoth view export tableau 123 123 --input '{"server_url": "https://tableau.example", "token_name": "token", "token_secret": "replace-with-secret"}' --output json --no-input`
+
 ### `mammoth view export update`
 
 **Arguments**
@@ -4146,16 +4495,41 @@ Total commands: 506.
 - Backing SDK: `mammoth.api.exports.ExportsAPI.update`
 - Agent example: `mammoth view export update 123 123 --input '{"patches": [{"sample_key": "Status"}]}' --output json --no-input`
 
+### `mammoth view exportable-config apply`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the dataview.
+- `DATASET_ID` (int, optional) — Optional parent dataset ID; resolved from the view when omitted.
+
+- Mutation class: `reversible_pipeline`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.apply_exportable_config`
+- Agent example: `mammoth view exportable-config apply 123 --input-format json --input '{"config": {"tasks": []}}' --output json --no-input --yes --confirm 123`
+
+### `mammoth view exportable-config get`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the dataview.
+- `DATASET_ID` (int, optional) — Optional parent dataset ID; resolved from the view when omitted.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.get_exportable_config`
+- Agent example: `mammoth view exportable-config get 123 --output json --no-input`
+
 ### `mammoth view get`
 
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view.
+- `DATASET_ID` (int, optional) — Optional exact parent dataset ID; omit to retain legacy discovery.
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.client.ViewsResource.get`
-- Agent example: `mammoth view get 123 --output json --no-input`
+- Agent example: `mammoth view get 123 123 --output json --no-input`
 
 ### `mammoth view list`
 
@@ -4213,6 +4587,18 @@ Total commands: 506.
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.items`
 - Agent example: `mammoth view pipeline items 123 --output json --no-input`
 
+### `mammoth view pipeline items-all`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID; pass it via the 'dataset_id' input field.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.pipeline.PipelineAPI.items_all`
+- Agent example: `mammoth view pipeline items-all 123 123 --output json --no-input`
+
 ### `mammoth view pipeline rerun`
 
 **Arguments**
@@ -4268,7 +4654,13 @@ Total commands: 506.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.add_task`
-- Agent example: `mammoth view task add 123 --input '{"task_spec": {"sample_key": "Status"}}' --output json --no-input`
+- Agent example: `mammoth view task add 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": {}}}' --output json --no-input`
+
+  **Agent note:** this is an illustrative low-level expert envelope, not
+  a guaranteed executable task. `task_spec` is opaque here and its
+  task-specific union is not fully discoverable from this contract.
+  Prefer typed view transform commands, and inspect
+  their individual schemas before composing a transformation.
 
 ### `mammoth view task delete`
 
@@ -4314,7 +4706,13 @@ Total commands: 506.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.preview_task`
-- Agent example: `mammoth view task preview 123 --input '{"task_spec": {"sample_key": "Status"}}' --output json --no-input`
+- Agent example: `mammoth view task preview 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": {}}}' --output json --no-input`
+
+  **Agent note:** this is an illustrative low-level expert envelope, not
+  a guaranteed executable task. `task_spec` is opaque here and its
+  task-specific union is not fully discoverable from this contract.
+  Prefer typed view transform commands, and inspect
+  their individual schemas before composing a transformation.
 
 ### `mammoth view task update`
 
@@ -4326,7 +4724,13 @@ Total commands: 506.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.update_task`
-- Agent example: `mammoth view task update 123 123 --input '{"task_spec": {"sample_key": "Status"}}' --output json --no-input`
+- Agent example: `mammoth view task update 123 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": {}}, "dataset_id": 456}' --output json --no-input`
+
+  **Agent note:** this is an illustrative low-level expert envelope, not
+  a guaranteed executable task. `task_spec` is opaque here and its
+  task-specific union is not fully discoverable from this contract.
+  Prefer typed view transform commands, and inspect
+  their individual schemas before composing a transformation.
 
 ### `mammoth view transform add-column`
 

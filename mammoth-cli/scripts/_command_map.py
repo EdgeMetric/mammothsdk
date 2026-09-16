@@ -211,6 +211,11 @@ OVERRIDES: dict[str, str] = {
     "ShareDashboard": "dashboard.share",
     "TrashDashboard": "dashboard.trash",
     "BulkWidgetData": "dashboard.widget-data",
+    "ListDashboardTags": "dashboard.tags.list",
+    "RenameDashboardTag": "dashboard.tags.rename",
+    "SetDashboardTags": "dashboard.tags.set",
+    "DeleteDashboardTag": "dashboard.tags.delete",
+    "MergeDashboardTags": "dashboard.tags.merge",
     # Data apps.
     "ListDataApps": "data-app.list",
     "CreateDataApp": "data-app.create",

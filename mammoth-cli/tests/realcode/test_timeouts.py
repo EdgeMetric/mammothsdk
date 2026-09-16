@@ -26,11 +26,21 @@ _AUTH = ResolvedAuth(
 
 def test_service_forwards_timeouts_to_the_real_client() -> None:
     """The SDK client is built with the job/pipeline timeouts the service got."""
-    service = SdkMammothService(_AUTH, timeout=5, job_timeout=11, pipeline_timeout=22)
+    service = SdkMammothService(_AUTH, timeout=0.5, job_timeout=0.5, pipeline_timeout=0.5)
     try:
-        assert service._client.timeout == 5
-        assert service._client.job_timeout == 11
-        assert service._client.pipeline_timeout == 22
+        assert service._client.timeout == 0.5
+        assert service._client.job_timeout == 0.5
+        assert service._client.pipeline_timeout == 0.5
+    finally:
+        service.close()
+
+
+def test_service_preserves_sixty_second_request_timeout() -> None:
+    service = SdkMammothService(_AUTH, timeout=60, job_timeout=60, pipeline_timeout=60)
+    try:
+        assert service._client.timeout == 60
+        assert service._client.job_timeout == 60
+        assert service._client.pipeline_timeout == 60
     finally:
         service.close()
 

@@ -14,9 +14,11 @@ from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
 _ACTION = "mammoth.api.dashboards.DashboardsAPI.action"
+_ARCHIVE = "mammoth.api.dashboards.DashboardsAPI.archive"
 _ANALYTICS = "mammoth.api.dashboards.DashboardsAPI.get_analytics"
 _CANCEL_GENERATION = "mammoth.api.dashboards.DashboardsAPI.cancel_generation"
 _CREATE = "mammoth.api.dashboards.DashboardsAPI.create"
+_CREATE_BLANK = "mammoth.api.dashboards.DashboardsAPI.create_blank"
 _DATA_DRAFT = "mammoth.api.dashboards.DashboardsAPI.get_draft_data"
 _DATA_PUBLISHED = "mammoth.api.dashboards.DashboardsAPI.get_publish_data"
 _DELETE = "mammoth.api.dashboards.DashboardsAPI.delete"
@@ -32,6 +34,8 @@ _TRASH = "mammoth.api.dashboards.DashboardsAPI.trash"
 _UPDATE = "mammoth.api.dashboards.DashboardsAPI.update"
 _WIDGET_DATA = "mammoth.api.dashboards.DashboardsAPI.widget_data"
 _WIDGET_DATA_BY_URL = "mammoth.api.dashboards.DashboardsAPI.widget_data_by_url"
+_ADD_PAGES = "mammoth.api.dashboards.DashboardsAPI.add_pages"
+_EXTRACT_CONTEXT = "mammoth.api.dashboards.DashboardsAPI.extract_context"
 
 
 @pytest.fixture(autouse=True)
@@ -48,6 +52,125 @@ def _write_doc(tmp_path: Path, payload: dict[str, object]) -> str:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps(payload), encoding="utf-8")
     return str(doc)
+
+
+def test_archive_requires_target_confirmation_and_forwards_set_state(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_doc(tmp_path, {"archived": True})
+    invocation = _inv(
+        "dashboard.archive",
+        extra_args=["7"],
+        input_file=doc,
+        yes=True,
+        confirm="7",
+    )
+    dashboard_cmd.dashboard_archive(invocation)
+    assert fake_service.call_log == [(_ARCHIVE, {"dashboard_id": 7, "archived": True})]
+
+
+def test_archive_rejects_non_boolean_state(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_doc(tmp_path, {"archived": "true"})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.dashboard_archive(
+            _inv("dashboard.archive", extra_args=["7"], input_file=doc, yes=True, confirm="7")
+        )
+    assert excinfo.value.code == "invalid_input_field_type"
+    assert fake_service.call_log == []
+
+
+def test_archive_requires_confirmation(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write_doc(tmp_path, {"archived": False})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.dashboard_archive(_inv("dashboard.archive", extra_args=["7"], input_file=doc))
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
+def test_pages_add_forwards_exact_body_and_target_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_doc(
+        tmp_path,
+        {
+            "body": {
+                "params": {
+                    "pages": [{"title": "Revenue", "type": "summary"}],
+                    "base_sequence": 3,
+                }
+            }
+        },
+    )
+    dashboard_cmd.generated_dashboard(
+        _inv("dashboard.pages.add", extra_args=["7"], input_file=doc, yes=True, confirm="7")
+    )
+    assert fake_service.call_log == [
+        (
+            _ADD_PAGES,
+            {
+                "dashboard_id": 7,
+                "body": {
+                    "params": {
+                        "pages": [{"title": "Revenue", "type": "summary"}],
+                        "base_sequence": 3,
+                    }
+                },
+            },
+        )
+    ]
+
+
+def test_context_extract_requires_body_wrapper_and_dispatches_exact_symbol(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    bare = _write_doc(tmp_path, {"params": {"name": "context.txt"}})
+    with pytest.raises(CliError):
+        dashboard_cmd.generated_dashboard(_inv("dashboard.context.extract", input_file=bare))
+    assert fake_service.call_log == []
+
+    wrapped = _write_doc(tmp_path, {"body": {"params": {"name": "context.txt", "size": 0}}})
+    dashboard_cmd.generated_dashboard(_inv("dashboard.context.extract", input_file=wrapped))
+    assert fake_service.call_log == [
+        (_EXTRACT_CONTEXT, {"body": {"params": {"name": "context.txt", "size": 0}}})
+    ]
+
+
+def test_pages_add_requires_exact_confirmation_before_transport(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_doc(tmp_path, {"body": {"params": {"pages": [{}]}}})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.generated_dashboard(
+            _inv("dashboard.pages.add", extra_args=["7"], input_file=doc)
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
+def test_pages_add_rejects_empty_pages_before_confirmation_or_transport(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_doc(tmp_path, {"body": {"params": {"pages": []}}})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.generated_dashboard(
+            _inv("dashboard.pages.add", extra_args=["7"], input_file=doc, yes=True, confirm="7")
+        )
+    assert excinfo.value.code in {"invalid_argument", "invalid_input_field_type"}
+    assert fake_service.call_log == []
+
+
+def test_pages_add_returns_async_bake_without_waiting(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_ADD_PAGES] = {"sequence": 4, "bake_job_id": 99}
+    doc = _write_doc(tmp_path, {"body": {"params": {"pages": [{"title": "Revenue"}]}}})
+    data, _ = dashboard_cmd.generated_dashboard(
+        _inv("dashboard.pages.add", extra_args=["7"], input_file=doc, yes=True, confirm="7")
+    )
+    assert data == {"sequence": 4, "bake_job_id": 99}
+    assert fake_service.wait_log == []
 
 
 # --- dashboard list / get -------------------------------------------------
@@ -285,6 +408,32 @@ def test_create_forwards_optional_flags(fake_service: FakeMammothService, tmp_pa
     ]
 
 
+def test_create_blank_requires_yes_before_request(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_doc(tmp_path, {"params": {"dataview_id": 42}})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.generated_dashboard(_inv("dashboard.create-blank", input_file=doc))
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
+
+
+def test_create_blank_forwards_typed_params_after_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_doc(
+        tmp_path,
+        {"params": {"dataview_id": 42, "style": "presentation", "title": "Revenue"}},
+    )
+    dashboard_cmd.generated_dashboard(_inv("dashboard.create-blank", input_file=doc, yes=True))
+    assert fake_service.call_log == [
+        (
+            _CREATE_BLANK,
+            {"params": {"dataview_id": 42, "style": "presentation", "title": "Revenue"}},
+        )
+    ]
+
+
 # --- dashboard update ---------------------------------------------------------
 
 
@@ -478,3 +627,13 @@ def test_flipped_dashboard_commands_are_always_wait() -> None:
         record = command_by_id(command_id)
         assert record is not None, command_id
         assert record["wait_policy"] == "always_wait", command_id
+
+
+def test_dashboard_tag_merge_is_destructive_and_target_confirmed() -> None:
+    """Merging consumes the source tag and requires exact-target confirmation."""
+    from mammoth_cli.manifest.loader import command_by_id
+
+    record = command_by_id("dashboard.tags.merge")
+    assert record is not None
+    assert record["mutation_class"] == "destructive"
+    assert record["confirmation"] == "confirm_target"

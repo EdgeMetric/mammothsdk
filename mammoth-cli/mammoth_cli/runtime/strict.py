@@ -22,20 +22,27 @@ derived positional shape (see :mod:`mammoth_cli.services.positionals`):
   mistyped field fails cleanly instead of reaching the SDK as a raw string or
   being blanket-``bool()``-ed into the wrong truth value.
 
-Both no-op when the command has no resolvable signature, so bespoke and
-not-yet-backed commands keep their prior behavior rather than being guessed at.
+Commands with no resolvable signature remain extensible by default.  The one
+intentional exception is the local ``config.get`` command: it is a reviewed
+closed, zero-input contract (its key is a positional), so an ``--input``
+document must be rejected explicitly.  This keeps that M2 contract honest
+without taking away the compatibility escape hatch used by genuinely bespoke
+or not-yet-backed commands.
 """
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+import math
+from collections.abc import Iterable, Mapping
 from typing import Any
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
-from mammoth_cli.manifest.loader import command_by_id
-from mammoth_cli.services.argspec import FieldSpec, arg_spec
-from mammoth_cli.services.input_fields import excluded_input_fields
-from mammoth_cli.services.openapi_types import openapi_body_schema
+from mammoth_cli.services.argspec import FieldSpec
+from mammoth_cli.services.command_contract import (
+    resolve_command_contract,
+    thaw_contract_metadata,
+)
+from mammoth_cli.services.input_fields import is_closed_zero_input
 from mammoth_cli.services.positionals import resolve_positionals
 from mammoth_cli.services.type_system import TypeValidationError, is_opaque_mapping, validate_value
 
@@ -52,16 +59,6 @@ CODE_INVALID_INPUT_FIELD_TYPE = "invalid_input_field_type"
 # true.
 _TRUE_STRINGS = frozenset({"true", "1", "yes", "y", "on"})
 _FALSE_STRINGS = frozenset({"false", "0", "no", "n", "off"})
-
-
-def _sdk_symbol(command_id: str) -> str | None:
-    """Return the backing SDK symbol for a command id, or None if unrecorded."""
-    record = command_by_id(command_id)
-    if record is None:
-        return None
-    symbol = record.get("sdk_symbol")
-    return str(symbol) if symbol else None
-
 
 def validate_extra_args(command_id: str, extra_args: Iterable[str]) -> None:
     """Reject unrecognized options and surplus positional tokens.
@@ -111,7 +108,7 @@ def _invalid_field_type_error(command_id: str, field: str, value: Any, expected:
         code=CODE_INVALID_INPUT_FIELD_TYPE,
         message=(
             f"Input field '{field}' for '{command_id.replace('.', ' ')}' must be a "
-            f"{expected}, got {value!r}."
+            f"{expected}."
         ),
         exit_status=EXIT_USAGE,
         hint=f"Pass '{field}' as a {expected} value.",
@@ -151,17 +148,25 @@ def _coerce_float(value: Any, *, command_id: str, field: str) -> float:
     if isinstance(value, bool):
         raise _invalid_field_type_error(command_id, field, value, "number")
     if isinstance(value, (int, float)):
-        return float(value)
+        result = float(value)
+        if math.isfinite(result):
+            return result
+        raise _invalid_field_type_error(command_id, field, value, "number")
     if isinstance(value, str):
         try:
-            return float(value.strip())
+            result = float(value.strip())
+            if math.isfinite(result):
+                return result
         except ValueError:
-            raise _invalid_field_type_error(command_id, field, value, "number") from None
+            pass
     raise _invalid_field_type_error(command_id, field, value, "number")
 
 
 def _coerce_document_fields(
-    command_id: str, document: dict[str, Any], fields_by_name: dict[str, FieldSpec]
+    command_id: str,
+    document: dict[str, Any],
+    fields_by_name: dict[str, FieldSpec],
+    input_schema: Mapping[str, Any] | None,
 ) -> None:
     """Recursively validate/coerce recognized fields in place."""
     for key in document:
@@ -171,17 +176,24 @@ def _coerce_document_fields(
         if (
             key == "body"
             and is_opaque_mapping(field.annotation)
-            and (body_schema := openapi_body_schema(command_id)) is not None
+            and input_schema is not None
+            and (
+                body_schema := input_schema.get("properties", {}).get("body")
+            )
+            is not None
         ):
             from jsonschema import ValidationError, validate  # type: ignore[import-untyped]
 
             try:
-                validate(document[key], body_schema)
+                validate(document[key], thaw_contract_metadata(body_schema))
             except ValidationError as error:
                 path = ".".join(str(part) for part in error.absolute_path)
                 field_path = f"body.{path}" if path else "body"
                 raise _invalid_field_type_error(
-                    command_id, field_path, error.instance, error.message
+                    command_id,
+                    field_path,
+                    error.instance,
+                    "a value matching the declared schema",
                 ) from None
             continue
         try:
@@ -210,21 +222,27 @@ def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> N
             ``invalid_input_field_type`` with :data:`EXIT_USAGE` when a
             recognized field's value cannot be coerced to its annotated
             ``bool``/``int``/``float`` type. No-op when the command has no
-            resolvable signature or the method accepts arbitrary keyword
+            resolvable signature (except for an explicitly reviewed closed
+            zero-input command) or the method accepts arbitrary keyword
             arguments.
     """
-    if not document:
+    if document is None:
         return
-    symbol = _sdk_symbol(command_id)
-    if symbol is None:
+    # ArchiveDashboard's OpenAPI body is a strict boolean set-state field;
+    # unlike ordinary CLI convenience scalars, string coercion would change
+    # the wire contract (and make ``"false"`` truthy).
+    if command_id == "dashboard.archive" and "archived" in document:
+        if type(document["archived"]) is not bool:
+            raise _invalid_field_type_error(command_id, "archived", document["archived"], "boolean")
+    contract = resolve_command_contract(command_id)
+    if contract is None:
         return
-    spec = arg_spec(symbol)
-    if spec is None or spec.accepts_extra:
+    if contract.accepts_extra:
         return
-    externally_supplied = excluded_input_fields(command_id)
-    fields_by_name = {
-        field.name: field for field in spec.fields if field.name not in externally_supplied
-    }
+    # Admission is owned by the resolved contract.  Do not reconstruct the
+    # accepted set from the raw SDK symbol here: positional/context exclusions
+    # and explicitly reviewed adapter inputs are contract decisions.
+    fields_by_name = {field.name: field for field in contract.accepted_fields}
     unknown = sorted(key for key in document if key not in fields_by_name)
     if unknown:
         raise CliError(
@@ -234,7 +252,23 @@ def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> N
                 f"{', '.join(unknown)}."
             ),
             exit_status=EXIT_USAGE,
-            hint=f"Accepted fields: {', '.join(sorted(fields_by_name)) or '(none)'}.",
+            hint=f"Accepted fields: {', '.join(sorted(fields_by_name)) or '(none)' }.",
             details={"unknown": unknown, "accepted": sorted(fields_by_name)},
         )
-    _coerce_document_fields(command_id, document, fields_by_name)
+    if is_closed_zero_input(command_id) and document == {}:
+        raise CliError(
+            code=CODE_UNKNOWN_INPUT_FIELD,
+            message=(
+                f"This command does not declare structured input fields for "
+                f"'{command_id.replace('.', ' ')}'."
+            ),
+            exit_status=EXIT_USAGE,
+            hint="Remove --input or check the command schema.",
+            details={"unknown": unknown, "accepted": sorted(fields_by_name)},
+        )
+    _coerce_document_fields(
+        command_id,
+        document,
+        fields_by_name,
+        contract.input_schema,
+    )

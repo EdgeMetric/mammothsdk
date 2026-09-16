@@ -106,11 +106,13 @@ def test_update_requires_webhook_id(fake_service: FakeMammothService) -> None:
     assert excinfo.value.code == "missing_argument"
 
 
-def test_update_passes_only_webhook_id_when_no_fields(
+def test_update_rejects_empty_patch_before_service_dispatch(
     fake_service: FakeMammothService,
 ) -> None:
-    webhook_cmd.webhook_update(_inv("webhook.update", extra_args=["7"]))
-    assert fake_service.call_log == [(_UPDATE, {"webhook_id": 7})]
+    with pytest.raises(CliError) as excinfo:
+        webhook_cmd.webhook_update(_inv("webhook.update", extra_args=["7"]))
+    assert excinfo.value.code == "missing_field"
+    assert fake_service.call_log == []
 
 
 def test_update_forwards_optional_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
@@ -183,3 +185,14 @@ def test_send_get_forwards_params(fake_service: FakeMammothService, tmp_path: Pa
     assert fake_service.call_log == [
         (_SEND_GET, {"webhook_uri": "abc123", "params": {"col1": "val1"}})
     ]
+
+
+def test_send_get_rejects_explicit_empty_params_before_service_dispatch(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"webhook_uri": "abc123", "params": {}}), encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        webhook_cmd.webhook_send_get(_inv("webhook.send-get", input_file=str(doc)))
+    assert excinfo.value.code == "invalid_argument"
+    assert fake_service.call_log == []

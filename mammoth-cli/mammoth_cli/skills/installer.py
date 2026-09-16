@@ -14,7 +14,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
+import tempfile
+import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -34,12 +39,46 @@ _AGENT_SUBDIR = {
     "cursor": ".cursor/skills",
 }
 
+# Installation updates both a destination tree and a shared ownership state
+# file.  Keep concurrent threads/processes from interleaving those operations;
+# the per-invocation staging/displacement names below still provide the
+# recoverability boundary if an operation fails after moving the destination.
+_INSTALL_LOCK = threading.RLock()
+
+
+@contextmanager
+def _installation_lock() -> Iterator[None]:
+    """Serialize skill installs while remaining portable across platforms."""
+    with _INSTALL_LOCK:
+        lock_path = _state_path().with_name(f".{STATE_FILENAME}.lock")
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        with lock_path.open("a+", encoding="utf-8") as stream:
+            if os.name == "posix":
+                import fcntl
+
+                fcntl.flock(stream.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                if os.name == "posix":
+                    fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+
 
 @dataclass(frozen=True)
 class _Target:
     agent: str
     scope: str
     path: Path
+
+
+@dataclass(frozen=True)
+class _InstallPlan:
+    """Preflight result for one destination in a multi-target install."""
+
+    target: _Target
+    record: dict[str, str] | None
+    identical: bool
+    needs_backup: bool
 
 
 def canonical_skill_dir() -> Path:
@@ -64,7 +103,20 @@ def _save_state(installs: dict[str, dict[str, str]]) -> None:
     path = _state_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     document = {"schema_version": STATE_SCHEMA_VERSION, "installs": installs}
-    path.write_text(json.dumps(document, indent=1, sort_keys=True), encoding="utf-8")
+    payload = json.dumps(document, indent=1, sort_keys=True) + "\n"
+    # A fixed ``.tmp`` name lets concurrent invocations overwrite one another
+    # before ``os.replace``.  A unique same-directory file is both collision
+    # safe and still gives readers an atomic old-or-new state file.
+    fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _sha256(path: Path) -> str:
@@ -110,9 +162,7 @@ def _targets(agents: list[str], scope: str, home: Path, cwd: Path) -> list[_Targ
             hint=f"Choose from: {', '.join(SCOPES)}.",
         )
     base = home if scope == "user" else _project_root(cwd)
-    return [
-        _Target(agent, scope, base / _AGENT_SUBDIR[agent] / SKILL_NAME) for agent in agents
-    ]
+    return [_Target(agent, scope, base / _AGENT_SUBDIR[agent] / SKILL_NAME) for agent in agents]
 
 
 def _key(target: _Target) -> str:
@@ -120,15 +170,91 @@ def _key(target: _Target) -> str:
 
 
 def _copy_tree(source: Path, destination: Path) -> None:
-    if destination.exists():
-        shutil.rmtree(destination)
-    shutil.copytree(source, destination)
+    """Replace a destination from a staged copy, keeping replacement recoverable."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    staging_root = Path(tempfile.mkdtemp(prefix=f".{SKILL_NAME}-", dir=destination.parent))
+    staged = staging_root / destination.name
+    # Never use a predictable sibling such as ``.mammoth-cli.previous``: it
+    # may be a user's unrelated backup.  The directory is invocation-owned and
+    # its UUID makes a pre-existing collision harmless.
+    displacement_root = Path(
+        tempfile.mkdtemp(prefix=f".{destination.name}.displaced-", dir=destination.parent)
+    )
+    displaced = displacement_root / destination.name
+    replaced = False
+    restored = False
+    displaced_moved = False
+    try:
+        shutil.copytree(source, staged)
+        if destination.exists() or destination.is_symlink():
+            shutil.move(str(destination), str(displaced))
+            displaced_moved = True
+        try:
+            os.replace(staged, destination)
+            replaced = True
+        except Exception:
+            if displaced.exists() or displaced.is_symlink():
+                shutil.move(str(displaced), str(destination))
+                restored = True
+            raise
+    finally:
+        shutil.rmtree(staging_root, ignore_errors=True)
+        # On a successful replacement the old tree is no longer needed because
+        # callers that explicitly force an unowned replacement already made a
+        # durable, timestamped backup.  If replacement failed and restoration
+        # also failed, leave the invocation-owned displacement in place so the
+        # old user tree remains recoverable for manual repair.
+        if replaced or restored or not displaced_moved:
+            shutil.rmtree(displacement_root, ignore_errors=True)
 
 
 def _timestamped_backup(path: Path, stamp: str) -> Path:
     backup = path.with_name(f"{path.name}.backup-{stamp}")
+    suffix = 1
+    while backup.exists() or backup.is_symlink():
+        backup = path.with_name(f"{path.name}.backup-{stamp}-{suffix}")
+        suffix += 1
     shutil.move(str(path), str(backup))
     return backup
+
+
+def _preflight_install(
+    targets: list[_Target],
+    state: dict[str, dict[str, str]],
+    canonical_hashes: dict[str, str],
+    *,
+    force: bool,
+) -> list[_InstallPlan]:
+    """Validate every target before mutating any destination.
+
+    Multi-agent installs must not leave an unrecorded early target merely
+    because a later target conflicts.  Build the complete plan first so all
+    ownership conflicts are reported before the first copy or backup move.
+    """
+    plans: list[_InstallPlan] = []
+    for target in targets:
+        record = state.get(_key(target))
+        identical = False
+        needs_backup = False
+        if target.path.exists() or target.path.is_symlink():
+            current = _hash_tree(target.path)
+            identical = current == canonical_hashes
+            if not identical:
+                owned = (
+                    record is not None
+                    and {k: v for k, v in record.items() if k != "skill"} == current
+                )
+                needs_backup = not owned
+                if needs_backup and not force:
+                    raise CliError(
+                        code="skill_conflict",
+                        message=f"'{target.path}' is not owned by the installer.",
+                        exit_status=EXIT_CONFLICT,
+                        hint="Re-run with force to back up and replace it.",
+                        details={"path": str(target.path)},
+                    )
+        plans.append(_InstallPlan(target, record, identical, needs_backup))
+    return plans
 
 
 def install(
@@ -160,46 +286,40 @@ def install(
     """
     home = home or Path.home()
     cwd = cwd or Path.cwd()
-    canonical = canonical_skill_dir()
-    canonical_hashes = _hash_tree(canonical)
-    state = _load_state()
-    results: list[dict[str, object]] = []
+    with _installation_lock():
+        canonical = canonical_skill_dir()
+        canonical_hashes = _hash_tree(canonical)
+        state = _load_state()
+        results: list[dict[str, object]] = []
+        targets = _targets(_resolve_agents(agents), scope, home, cwd)
+        plans = _preflight_install(targets, state, canonical_hashes, force=force)
 
-    for target in _targets(_resolve_agents(agents), scope, home, cwd):
-        key = _key(target)
-        record = state.get(key)
-        backup: str | None = None
-        if target.path.exists():
-            current = _hash_tree(target.path)
-            if current == canonical_hashes:
+        for plan in plans:
+            target = plan.target
+            key = _key(target)
+            backup: str | None = None
+            if plan.identical:
                 results.append({"target": str(target.path), "status": "identical"})
                 state[key] = {"skill": SKILL_NAME, **canonical_hashes}
+                _save_state(state)
                 continue
-            owned = record is not None and {
-                k: v for k, v in record.items() if k != "skill"
-            } == current
-            if not owned:
-                if not force:
-                    raise CliError(
-                        code="skill_conflict",
-                        message=f"'{target.path}' is not owned by the installer.",
-                        exit_status=EXIT_CONFLICT,
-                        hint="Re-run with force to back up and replace it.",
-                        details={"path": str(target.path)},
-                    )
+            if plan.needs_backup:
                 backup = str(_timestamped_backup(target.path, timestamp))
-        _copy_tree(canonical, target.path)
-        state[key] = {"skill": SKILL_NAME, **canonical_hashes}
-        results.append(
-            {
-                "target": str(target.path),
-                "status": "updated" if record is not None else "installed",
-                "backup": backup,
-            }
-        )
+            _copy_tree(canonical, target.path)
+            state[key] = {"skill": SKILL_NAME, **canonical_hashes}
+            # Persist each completed target before attempting the next one.
+            # If a later filesystem operation fails, list/update/uninstall can
+            # still identify and manage every destination already written.
+            _save_state(state)
+            results.append(
+                {
+                    "target": str(target.path),
+                    "status": "updated" if plan.record is not None else "installed",
+                    "backup": backup,
+                }
+            )
 
-    _save_state(state)
-    return {"skill": SKILL_NAME, "results": results}
+        return {"skill": SKILL_NAME, "results": results}
 
 
 def list_() -> dict[str, object]:
@@ -245,9 +365,7 @@ def path(
     return {
         "skill": SKILL_NAME,
         "canonical": str(canonical_skill_dir()),
-        "targets": [
-            {"agent": t.agent, "scope": t.scope, "path": str(t.path)} for t in targets
-        ],
+        "targets": [{"agent": t.agent, "scope": t.scope, "path": str(t.path)} for t in targets],
     }
 
 
@@ -274,24 +392,25 @@ def uninstall(
     """
     home = home or Path.home()
     cwd = cwd or Path.cwd()
-    state = _load_state()
-    results: list[dict[str, object]] = []
-    for target in _targets(_resolve_agents(agents), scope, home, cwd):
-        key = _key(target)
-        record = state.get(key)
-        if record is None or not target.path.exists():
-            results.append({"target": str(target.path), "status": "absent"})
+    with _installation_lock():
+        state = _load_state()
+        results: list[dict[str, object]] = []
+        for target in _targets(_resolve_agents(agents), scope, home, cwd):
+            key = _key(target)
+            record = state.get(key)
+            if record is None or not target.path.exists():
+                results.append({"target": str(target.path), "status": "absent"})
+                state.pop(key, None)
+                continue
+            owned = {k: v for k, v in record.items() if k != "skill"} == _hash_tree(target.path)
+            if not owned:
+                results.append({"target": str(target.path), "status": "modified"})
+                continue
+            shutil.rmtree(target.path)
             state.pop(key, None)
-            continue
-        owned = {k: v for k, v in record.items() if k != "skill"} == _hash_tree(target.path)
-        if not owned:
-            results.append({"target": str(target.path), "status": "modified"})
-            continue
-        shutil.rmtree(target.path)
-        state.pop(key, None)
-        results.append({"target": str(target.path), "status": "removed"})
-    _save_state(state)
-    return {"skill": SKILL_NAME, "results": results}
+            results.append({"target": str(target.path), "status": "removed"})
+        _save_state(state)
+        return {"skill": SKILL_NAME, "results": results}
 
 
 def update(
@@ -316,6 +435,4 @@ def update(
     Returns:
         The same summary shape as :func:`install`.
     """
-    return install(
-        agents, scope, force=force, home=home, cwd=cwd, timestamp=timestamp
-    )
+    return install(agents, scope, force=force, home=home, cwd=cwd, timestamp=timestamp)

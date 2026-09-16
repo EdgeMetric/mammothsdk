@@ -139,3 +139,18 @@ def test_pkg_no_local_url(built_dist: BuiltDist) -> None:
     for dep in requires_dist:
         for token in forbidden:
             assert token not in dep, f"local dependency URL in {dep!r}"
+
+
+def test_pkg_runtime_admission_dependencies_are_declared(built_dist: BuiltDist) -> None:
+    """Strict input admission must work in a runtime-only installation."""
+    requires_dist = _wheel_metadata(built_dist.wheel).get("requires-dist", [])
+    assert any(dep.lower().startswith("jsonschema") for dep in requires_dist), requires_dist
+
+
+def test_pkg_typer_compatibility_is_a_supported_range(built_dist: BuiltDist) -> None:
+    """The wheel declares a tested Typer compatibility range, not a dev-only pin."""
+    requires_dist = _wheel_metadata(built_dist.wheel).get("requires-dist", [])
+    typer_requirements = [dep for dep in requires_dist if dep.lower().startswith("typer")]
+    assert typer_requirements
+    assert ">=0.27" in typer_requirements[0]
+    assert "<0.28" in typer_requirements[0]

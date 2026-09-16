@@ -42,3 +42,32 @@ def test_agent_examples_use_json_no_input() -> None:
             continue
         assert "--output json" in record["agent_example"], record["command_id"]
         assert "--no-input" in record["agent_example"], record["command_id"]
+
+
+def test_generic_pipeline_task_examples_are_structural_and_warn_about_typed_routes() -> None:
+    records = {
+        record["command_id"]: record
+        for record in load_commands()
+        if record["command_id"] in {"view.task.add", "view.task.preview", "view.task.update"}
+    }
+    assert set(records) == {"view.task.add", "view.task.preview", "view.task.update"}
+    for record in records.values():
+        example = record["agent_example"]
+        assert "sample_key" not in example
+        assert '"DATAVIEW_ID": 123' in example
+        assert '"COPY": {}' in example
+
+
+def test_generated_task_docs_do_not_present_opaque_examples_as_usable_tasks() -> None:
+    from pathlib import Path
+
+    docs = Path(__file__).parents[2] / "docs" / "reference" / "commands.md"
+    text = docs.read_text(encoding="utf-8")
+    for command in ("view task add", "view task preview", "view task update"):
+        start = text.index(f"### `mammoth {command}`")
+        end = text.find("\n### `mammoth ", start + 1)
+        block = text[start:] if end == -1 else text[start:end]
+        assert '"sample_key"' not in block
+        assert "illustrative low-level expert envelope" in block
+        assert "Prefer typed view transform commands" in block
+        assert "`mammoth view transform ...`" not in block

@@ -1049,6 +1049,7 @@ def build_join_params(
     foreign_columns: dict[str, str] | None = None,
     column_prefix: str | None = None,
     join_id: str | None = None,
+    foreign_internal_names: list[str] | None = None,
 ) -> dict[str, Any]:
     """Build a JOIN task payload.
 
@@ -1056,14 +1057,22 @@ def build_join_params(
     when provided) or :class:`JoinSelectSpec` objects. *join_id* defaults to a
     fresh 8-char id; pass an explicit value for deterministic output.
     """
+    foreign_internal_names = foreign_internal_names or (
+        list(foreign_columns.values()) if foreign_columns else []
+    )
+
+    def resolve_foreign(name: str) -> str:
+        # An omitted foreign map means the caller supplied backend identity
+        # explicitly. Once metadata is available, however, every reference is
+        # resolved strictly so an unknown/ambiguous name cannot submit a task.
+        if foreign_columns is None:
+            return name
+        return resolve_column(name, foreign_columns, foreign_internal_names)
+
     on_specs = [
         {
             "LEFT": resolve_column(j.left, col_map, internal_names),
-            "RIGHT": (
-                foreign_columns[j.right]
-                if foreign_columns and j.right in foreign_columns
-                else j.right
-            ),
+            "RIGHT": resolve_foreign(j.right),
         }
         for j in on
     ]
@@ -1071,13 +1080,12 @@ def build_join_params(
     select_specs: list[dict[str, str]] = []
     for s in select:
         if isinstance(s, str):
-            col = foreign_columns[s] if foreign_columns and s in foreign_columns else s
+            col = resolve_foreign(s)
             select_specs.append({"COLUMN": col, "ALIAS": s})
         else:
             col = s.column
             alias = s.alias or col
-            if foreign_columns and col in foreign_columns:
-                col = foreign_columns[col]
+            col = resolve_foreign(col)
             select_specs.append({"COLUMN": col, "ALIAS": alias})
 
     join_spec: dict[str, Any] = {
@@ -1103,6 +1111,8 @@ def build_lookup_params(
     new_column_type: str = "TEXT",
     existing_column: str | None = None,
     name_gen: Callable[[], str] | None = None,
+    foreign_columns: dict[str, str] | None = None,
+    foreign_internal_names: list[str] | None = None,
 ) -> dict[str, Any]:
     """Build a LOOKUP task payload.
 
@@ -1115,11 +1125,20 @@ def build_lookup_params(
             unconditional TEXT was wrong on about half of them, and a numeric lookup
             value landed in the view as a string.
     """
+    foreign_internal_names = foreign_internal_names or (
+        list(foreign_columns.values()) if foreign_columns else []
+    )
+
+    def resolve_foreign(name: str) -> str:
+        if foreign_columns is None:
+            return name
+        return resolve_column(name, foreign_columns, foreign_internal_names)
+
     lookup_spec: dict[str, Any] = {
         "DATAVIEW_ID": lookup_view_id,
         "SOURCE": resolve_column(source, col_map, internal_names),
-        "KEY": key,
-        "VALUE": value,
+        "KEY": resolve_foreign(key),
+        "VALUE": resolve_foreign(value),
     }
     if new_column:
         lookup_spec["AS"] = build_as_column(new_column, new_column_type, name_gen=name_gen)

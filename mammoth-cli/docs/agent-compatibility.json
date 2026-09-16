@@ -1,0 +1,90 @@
+{
+  "artifact": "mammoth-cli-agent-compatibility",
+  "as_of": "2026-09-15",
+  "audited_product_revision": "303aebdd7c1be7a80967b2d975a79975119f6f30",
+  "command_surface": {
+    "aliases_in_command_manifest": 0,
+    "command_record_count": 524,
+    "schema_version": 1,
+    "skill_owner": "mammoth_cli/bundled_skill/mammoth-cli/SKILL.md"
+  },
+  "context_precedence": {
+    "profile": "explicit login/current command profile, then selected profile",
+    "project": "explicit --project, then profile saved active project, then none",
+    "workspace": "credential/profile context; no general workspace flag is documented"
+  },
+  "credentials": {
+    "entrypoint": "auth login",
+    "migration_status": "not independently qualified across installed versions",
+    "noninteractive": "0600 input file or stdin; no secrets in argv",
+    "storage": [
+      "keyring",
+      "permission-checked file fallback"
+    ]
+  },
+  "exit_codes": {
+    "0": "success",
+    "1": "API or other error",
+    "130": "interrupted",
+    "2": "usage/input/confirmation",
+    "4": "authentication",
+    "5": "not found",
+    "6": "conflict",
+    "7": "retryable network or timeout"
+  },
+  "framing": {
+    "auto_behavior": "table on TTY, JSON when redirected or piped",
+    "error_envelope": {
+      "error": "stable code/message/hint/details/recovery fields",
+      "schema_version": 1
+    },
+    "error_stream": "stderr",
+    "human_outputs": [
+      "table",
+      "yaml",
+      "plain"
+    ],
+    "machine_outputs": [
+      "json",
+      "ndjson"
+    ],
+    "ndjson_semantics": "documented as one JSON object per line; stream-specific command qualification remains open",
+    "success_envelope": {
+      "data": "result",
+      "meta": "context and pagination",
+      "schema_version": 1
+    },
+    "success_stream": "stdout"
+  },
+  "input_and_requiredness": {
+    "discovery": "mammoth capability list; mammoth schema list/get",
+    "requiredness_source": "command manifest and runtime schema; semantic parity remains an M2 gate",
+    "structured_input": "--input path or stdin with explicit --input-format for stdin",
+    "unknown_fields": "runtime/schema contract is authoritative; this M0 artifact does not certify every field binding"
+  },
+  "intended_changes": [
+    "Resolve display-name column inputs internally and reject ambiguous/stale names before mutation.",
+    "Freeze one resolved command contract for discovery, validation and SDK binding.",
+    "Preserve typed job/unknown-write outcomes and dependency-aware cleanup.",
+    "Keep all SDK methods without canonical commands classified; dedicated typed export routes are now represented in the command manifest."
+  ],
+  "limitations": [
+    "This is a compatibility baseline, not a promise that every command is semantically or live qualified.",
+    "A backend/API revision and OS support matrix are not present in the reviewed sources."
+  ],
+  "package": {
+    "declared_python_classifiers": [
+      "3.12",
+      "3.13",
+      "3.14"
+    ],
+    "name": "mammoth-cli",
+    "os_support_declared": false,
+    "os_support_status": "unknown; packaging metadata does not declare an OS matrix",
+    "pyproject_contains_python_requirement": true,
+    "pyproject_sha256": "3aac1f89f3e506eed962cef381aadfb3fab461cc0881b329c14c8d0b6f9a13ee",
+    "python_requirement": ">=3.12,<3.15",
+    "version": "1.1.0"
+  },
+  "schema_version": 1
+}

@@ -5,7 +5,9 @@
 Machine modes return a versioned envelope: successes go to stdout and failures
 to stderr. Both carry `schema_version`. Treat the process exit code and the
 stable error `code` as the control-flow interface; the prose message is for a
-human reader.
+human reader. For resource operations, also inspect `details.operation_state`
+and the returned resource/job identity. A zero exit is not a substitute for
+read-back verification.
 
 ## Output modes
 
@@ -26,6 +28,11 @@ terminal, `auto` renders a table. Off a terminal, `auto` emits JSON.
 
 The `json` and `ndjson` modes are the machine contract. They always emit the
 envelope. They never add color or progress output.
+
+`json` emits exactly one complete object. `ndjson` emits one complete envelope
+per result item, each terminated by a newline; diagnostics remain on stderr.
+Do not concatenate partial objects or infer continuation from a truncated
+stream. Use the command's `meta.pagination` or documented continuation fields.
 
 ## Success envelope
 
@@ -78,6 +85,11 @@ Each field has a fixed meaning.
 | `authorization_required` | `true` when the caller must authenticate. |
 | `recovery_commands` | Exact commands to run next. |
 
+When present in `details`, `operation_state` is one of `not_started`, `running`,
+`succeeded`, `failed`, or `outcome_unknown`. A known job is safe to inspect or
+wait by its returned handle. `outcome_unknown` means a mutation may have
+committed; reconcile the exact target and scope before replaying it.
+
 Branch on `error.code`, never on the message text. The `code` value is stable
 across releases. The `message` text may change. See [troubleshooting](../troubleshooting.md)
 for common codes and their recovery steps. See [agents](../agents.md) for the
@@ -98,7 +110,7 @@ The process exit code mirrors the error class. There is no exit code 3.
 | 4 | Authentication failure. |
 | 5 | Not found. |
 | 6 | Conflict. |
-| 7 | Retryable (network or timeout). |
+| 7 | Retryable read/transport condition, or a timed-out known job; inspect the envelope before acting. |
 | 130 | Interrupted. |
 
 ## Schema version

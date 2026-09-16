@@ -142,7 +142,10 @@ _ROOT_HELP_PANELS = {
 # vendored classes only -- importing the external ``click`` here would add a
 # phantom dependency that is absent from a clean wheel install.
 _USAGE_ERRORS: tuple[type[BaseException], ...] = (_typer_click_exceptions.UsageError,)
-_ABORT_ERRORS: tuple[type[BaseException], ...] = (_typer_click_exceptions.Abort,)
+_abort_type = getattr(_typer_click_exceptions, "Abort", None)
+_ABORT_ERRORS: tuple[type[BaseException], ...] = (
+    (_abort_type,) if isinstance(_abort_type, type) else ()
+)
 
 # Raised by a group invoked with no subcommand (``no_args_is_help``). Click has
 # already printed the help text by then, so it carries a deliberately *empty*
@@ -349,16 +352,72 @@ class _EnvelopeGroup(TyperGroup):
         option written before the command produces.
         """
         tokens = list(argv) if argv is not None else sys.argv[1:]
-        report = _usage_error_report(error, tokens)
+        # Missing required parameters must not be rewritten by the generic
+        # group-level classifier (schema get and nested commands rely on the
+        # stable missing_argument envelope).
+        error_message = error.format_message()
+        is_missing_parameter = isinstance(
+            error, _typer_click_exceptions.MissingParameter
+        ) or error.__class__.__name__ == "MissingParameter" or bool(
+            re.match(r"^Missing argument '[^']+'\.", error_message)
+        )
+        report = None if is_missing_parameter else _usage_error_report(error, tokens)
         if _output_mode_from_argv(argv) in MACHINE_OUTPUTS:
             if report is None:
-                missing = isinstance(error, _typer_click_exceptions.MissingParameter)
-                report = CliError(
-                    code="missing_argument" if missing else "usage_error",
-                    message=error.format_message(),
-                    exit_status=EXIT_USAGE,
-                    hint="Check the command schema with 'mammoth schema get'.",
-                )
+                missing = is_missing_parameter
+                if missing:
+                    report = CliError(
+                        code="missing_argument",
+                        message=error_message,
+                        exit_status=EXIT_USAGE,
+                        hint="Check the command schema with 'mammoth schema get'.",
+                    )
+                elif isinstance(error, _typer_click_exceptions.NoSuchOption):
+                    option = getattr(error, "option_name", None) or "unknown"
+                    report = CliError(
+                        code="unknown_option",
+                        message=f"Unknown option '{option}'.",
+                        exit_status=EXIT_USAGE,
+                        hint="Check the command schema with 'mammoth schema get'.",
+                        details={"option": option},
+                    )
+                elif isinstance(error, _typer_click_exceptions.BadParameter):
+                    # With optional typed positionals Click may consume an
+                    # unknown option token as the positional value. Only
+                    # classify an argv flag that is not a known global option;
+                    # a known option's malformed value remains usage_error.
+                    known, _valued = _global_option_flags()
+                    option = next(
+                        (
+                            token.split("=", 1)[0]
+                            for token in tokens
+                            if token.startswith("--")
+                            and token.split("=", 1)[0] not in known
+                        ),
+                        None,
+                    )
+                    if option:
+                        report = CliError(
+                            code="unknown_option",
+                            message=f"Unknown option '{option}'.",
+                            exit_status=EXIT_USAGE,
+                            hint="Check the command schema with 'mammoth schema get'.",
+                            details={"option": option},
+                        )
+                    else:
+                        report = CliError(
+                            code="usage_error",
+                            message=error.format_message(),
+                            exit_status=EXIT_USAGE,
+                            hint="Check the command schema with 'mammoth schema get'.",
+                        )
+                else:
+                    report = CliError(
+                        code="missing_argument" if missing else "usage_error",
+                        message=error.format_message(),
+                        exit_status=EXIT_USAGE,
+                        hint="Check the command schema with 'mammoth schema get'.",
+                    )
             executor.emit_error(report, machine=True)
         elif report is None:
             error.show()
@@ -664,6 +723,19 @@ def _execute(invocation: Invocation) -> None:
         validate.validate_invocation(invocation)
         validate_extra_args(invocation.command_id, invocation.extra_args)
         validate.validate_positional_ids(invocation.command_id, invocation.extra_args)
+        # Admit structured input before resolving a handler or opening a
+        # service.  Handlers retain ``load_input`` for compatibility, but it
+        # now returns this invocation-local prepared value.
+        invocation.prepare_input()
+        # S2 API-backed families use the same resolved contract for the final
+        # input-to-SDK binding.  Run that boundary before dispatch even for a
+        # zero-input/positional-only handler so every migrated route has one
+        # admission and binding path and a binding defect cannot become a
+        # late network-side error.
+        from mammoth_cli.services.command_contract import S2_COMMANDS
+
+        if invocation.command_id in S2_COMMANDS:
+            invocation.bound_input()
         handler = HANDLERS.get(invocation.command_id)
         if handler is None:
             record = command_by_id(invocation.command_id)
@@ -671,7 +743,12 @@ def _execute(invocation: Invocation) -> None:
             raise not_implemented_error(invocation.command_id, sdk_symbol)
         return handler(invocation)
 
-    executor.run(invocation.command_id, invocation.output, producer)
+    executor.run(
+        invocation.command_id,
+        invocation.output,
+        producer,
+        agent_mode=invocation.no_input,
+    )
 
 
 def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:

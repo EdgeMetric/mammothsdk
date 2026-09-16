@@ -117,6 +117,23 @@ def test_installed_wheel_runs(wheelhouse: Path, tmp_path: Path) -> None:
     venv = tmp_path / "venv"
     subprocess.run([sys.executable, "-m", "venv", str(venv)], check=True, timeout=120)
     interpreter = _venv_bin(venv, "python")
+    # Install the freshly built SDK wheel first and pass the CLI wheel by its
+    # exact path.  Installing by the project name allows an index artifact with
+    # the same version to win over the wheel under test, masking source changes
+    # (and, in particular, runtime-only dependency declarations).
+    sdk_wheel = next(wheelhouse.glob("mammoth_io-*.whl"))
+    sdk_install = subprocess.run(
+        [str(interpreter), "-m", "pip", "install", "--no-deps", str(sdk_wheel)],
+        capture_output=True,
+        text=True,
+        timeout=300,
+        cwd=tmp_path,
+        env=_isolated_python_env(),
+    )
+    assert sdk_install.returncode == 0, (
+        f"SDK wheel install failed:\n{sdk_install.stdout}\n{sdk_install.stderr}"
+    )
+    cli_wheel = next(wheelhouse.glob("mammoth_cli-*.whl"))
     install = subprocess.run(
         [
             str(interpreter),
@@ -125,7 +142,7 @@ def test_installed_wheel_runs(wheelhouse: Path, tmp_path: Path) -> None:
             "install",
             "--find-links",
             str(wheelhouse),
-            "mammoth-cli",
+            str(cli_wheel),
         ],
         capture_output=True,
         text=True,
@@ -159,7 +176,37 @@ def test_installed_wheel_runs(wheelhouse: Path, tmp_path: Path) -> None:
         env=_isolated_python_env(),
     )
     assert imported.returncode == 0, imported.stderr
-    assert Path(imported.stdout.strip()).resolve().is_relative_to(venv.resolve())
+    package_dir = Path(imported.stdout.strip()).resolve().parent
+    assert package_dir.is_relative_to(venv.resolve())
+    installed_skill = package_dir / "bundled_skill" / "mammoth-cli"
+    assert (installed_skill / "SKILL.md").is_file()
+    assert (installed_skill / "references" / "handoff.md").is_file()
+    task_start = installed_skill / "references" / "task-start.md"
+    assert task_start.is_file()
+    task_start_text = task_start.read_text(encoding="utf-8")
+    assert "mammoth skill path" in task_start_text
+    assert "mammoth capability list" in task_start_text
+    assert "PINNED_VERSION" in task_start_text
+    assert "python -m venv .mammoth-cli-env" in task_start_text
+    assert "authorized/mammoth_cli-PINNED_VERSION" in task_start_text
+    assert "install an unpinned latest version" in task_start_text
+    assert "outcome_unknown" in (installed_skill / "SKILL.md").read_text(encoding="utf-8")
+
+    skill_path = subprocess.run(
+        [str(mammoth), "skill", "path", "--output", "json", "--no-input"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        cwd=tmp_path,
+        env=_isolated_python_env(),
+    )
+    assert skill_path.returncode == 0, skill_path.stderr
+    skill_envelope = json.loads(skill_path.stdout)
+    assert Path(skill_envelope["data"]["canonical"]).resolve() == installed_skill
+
+    # The installed CLI must make the cold-start playbook discoverable from
+    # outside the checkout; this is packaging/onboarding evidence only.
+    assert task_start.resolve().is_relative_to(venv.resolve())
 
     listing = subprocess.run(
         [str(mammoth), "schema", "list", "--output", "json", "--no-input"],

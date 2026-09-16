@@ -21,6 +21,7 @@ from mammoth_cli.errors.envelope import (
     CODE_SDK_SYMBOL_UNRESOLVED,
     EXIT_USAGE,
     CliError,
+    interrupted_error,
 )
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.invocation import Invocation
@@ -125,8 +126,19 @@ def job_wait(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"job_id": job_id}
     _forward_optional(document, kwargs, _WAIT_OPTIONAL)
-    with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+    try:
+        with open_service(invocation) as (service, auth):
+            data = service.call(_symbol(invocation), **kwargs)
+    except KeyboardInterrupt as exc:
+        # Keep the explicit handle even when the polling implementation raises
+        # a bare SIGINT.  A caller can inspect/resume it without replaying the
+        # operation that produced the job.
+        raise interrupted_error(
+            job_id=job_id,
+            operation_state="running",
+            phase="polling",
+            details={"interrupted": True},
+        ) from exc
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -142,6 +154,15 @@ def job_wait_many(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"job_ids": job_ids}
     assert document is not None
     _forward_optional(document, kwargs, _WAIT_OPTIONAL)
-    with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+    try:
+        with open_service(invocation) as (service, auth):
+            data = service.call(_symbol(invocation), **kwargs)
+    except KeyboardInterrupt as exc:
+        job_ids_for_recovery = job_ids if isinstance(job_ids, list) else str(job_ids)
+        raise interrupted_error(
+            job_id=job_ids_for_recovery,
+            operation_state="running",
+            phase="polling",
+            details={"interrupted": True, "job_ids": job_ids_for_recovery},
+        ) from exc
     return data, _meta(invocation, auth.workspace_id)

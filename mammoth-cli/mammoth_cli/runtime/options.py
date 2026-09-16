@@ -11,6 +11,7 @@ declarations in every function.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import cast
 
 import typer
@@ -140,6 +141,7 @@ def make_invocation(
     input_format: str | None,
     yes: bool = False,
     confirm: str | None = None,
+    input_preflight: Callable[[str | None], None] | None = None,
 ) -> Invocation:
     """Build an :class:`Invocation` from one bespoke command's global options.
 
@@ -177,4 +179,5 @@ def make_invocation(
         confirm=confirm,
         input_file=input_file,
         input_format=input_format,
+        input_preflight=input_preflight,
     )

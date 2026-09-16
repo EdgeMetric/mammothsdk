@@ -88,7 +88,12 @@ def context_project_status(
     def producer() -> tuple[Any, dict[str, Any]]:
         return _run_status(invocation)
 
-    executor.run(invocation.command_id, invocation.output, producer)
+    executor.run(
+        invocation.command_id,
+        invocation.output,
+        producer,
+        agent_mode=invocation.no_input,
+    )
 
 
 def _run_use(invocation: Invocation, *, project_id: int) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -147,9 +152,16 @@ def context_project_use(
     )
 
     def producer() -> tuple[Any, dict[str, Any]]:
-        return _run_use(invocation, project_id=project_id)
+        bound = invocation.bound_input()
+        resolved_project = bound.get("project_id", project_id)
+        return _run_use(invocation, project_id=int(resolved_project))
 
-    executor.run(invocation.command_id, invocation.output, producer)
+    executor.run(
+        invocation.command_id,
+        invocation.output,
+        producer,
+        agent_mode=invocation.no_input,
+    )
 
 
 def _run_clear(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -202,4 +214,9 @@ def context_project_clear(
     def producer() -> tuple[Any, dict[str, Any]]:
         return _run_clear(invocation)
 
-    executor.run(invocation.command_id, invocation.output, producer)
+    executor.run(
+        invocation.command_id,
+        invocation.output,
+        producer,
+        agent_mode=invocation.no_input,
+    )

@@ -72,6 +72,24 @@ def _require_int_positional(invocation: Invocation, name: str) -> int:
     return value
 
 
+def _require_int_positional_at(invocation: Invocation, index: int, name: str) -> int:
+    """Parse a positional integer at an explicit index."""
+    if len(invocation.extra_args) <= index:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message=f"This command requires a {name} argument.",
+            exit_status=EXIT_USAGE,
+        )
+    try:
+        return int(invocation.extra_args[index])
+    except ValueError as exc:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"The {name} argument must be an integer.",
+            exit_status=EXIT_USAGE,
+        ) from exc
+
+
 def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     """Return a required field from the ``--input`` document, or raise usage."""
     if document is None or field not in document:
@@ -107,7 +125,7 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
     project_id = require_project(invocation)
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"project_id": project_id}
-    _forward_optional(document, kwargs, ("limit", "sort"))
+    _forward_optional(document, kwargs, ("limit", "offset", "sort"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
@@ -134,10 +152,47 @@ def dataset_data(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def dataset_batch_data(invocation: Invocation) -> HandlerResult:
+    """Fetch data for a specific dataset batch."""
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    batch_id = _require_int_positional_at(invocation, 1, "batch id")
+    document = invocation.load_input() or {}
+    for field, minimum, maximum in (("limit", 0, 100), ("offset", 0, None)):
+        value = document.get(field)
+        if value is not None and (
+            isinstance(value, bool)
+            or not isinstance(value, int)
+            or value < minimum
+            or (maximum is not None and value > maximum)
+        ):
+            bound = "between 0 and 100" if maximum is not None else "non-negative"
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=f"'{field}' must be {bound}.",
+                exit_status=EXIT_USAGE,
+            )
+    kwargs: dict[str, Any] = {
+        "dataset_id": dataset_id,
+        "batch_id": batch_id,
+        "project_id": project_id,
+    }
+    _forward_optional(document, kwargs, ("columns", "limit", "offset", "timeout", "poll_interval"))
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
 def dataset_file_settings(invocation: Invocation) -> HandlerResult:
     """Get file settings (delimiter, header, dates, ...) for a dataset."""
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
+    if dataset_id <= 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="dataset id must be positive.",
+            exit_status=EXIT_USAGE,
+        )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
     return data, _meta(invocation, auth.workspace_id, project_id)

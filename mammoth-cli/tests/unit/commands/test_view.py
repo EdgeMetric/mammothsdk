@@ -25,6 +25,8 @@ _TRASH = "mammoth.api.dataviews.DataviewsAPI.trash"
 _UPDATE = "mammoth.api.dataviews.DataviewsAPI.update"
 _DATA_GET = "mammoth.api.dataviews.DataviewsAPI.get_data"
 _DATA_QUERY = "mammoth.api.dataviews.DataviewsAPI.query_data"
+_EXPORTABLE_GET = "mammoth.api.dataviews.DataviewsAPI.get_exportable_config"
+_EXPORTABLE_APPLY = "mammoth.api.dataviews.DataviewsAPI.apply_exportable_config"
 _FIND_DATASET = "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"
 _CF_CREATE = "mammoth.api.dataviews.DataviewsAPI.conditional_format_create"
 _CF_DELETE_ALL = "mammoth.api.dataviews.DataviewsAPI.conditional_format_delete"
@@ -63,6 +65,7 @@ _DRAFT_COMMAND = "mammoth.api.pipeline.PipelineAPI.command"
 _PIPE_EDIT = "mammoth.api.pipeline.PipelineAPI.edit_pipeline"
 _PIPE_GET = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
 _PIPE_ITEMS = "mammoth.api.pipeline.PipelineAPI.items"
+_PIPE_ITEMS_ALL = "mammoth.api.pipeline.PipelineAPI.items_all"
 _PIPE_RERUN = "mammoth.api.pipeline.PipelineAPI.rerun"
 _PIPE_WAIT = "mammoth.api.pipeline.PipelineAPI.wait_for_pipeline"
 
@@ -223,6 +226,63 @@ def test_preview_forwards_rows_cols(fake_service: FakeMammothService, tmp_path: 
     ]
 
 
+def test_preview_trims_unheaded_system_value_from_positional_rows(
+    fake_service: FakeMammothService,
+) -> None:
+    """Keep array rows aligned when the backend appends its identity value."""
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [
+            {"internal_name": "column_1", "display_name": "name"},
+            {"internal_name": "column_2", "display_name": "amount"},
+        ]
+    }
+    fake_service.responses[_PREVIEW] = {
+        "columns": ["column_1", "column_2"],
+        "data": [["A", "10", 987654321]],
+    }
+    data, _ = view_cmd.view_preview(_inv("view.preview", project=180, extra_args=["7", "9"]))
+    assert data == {"columns": ["name", "amount"], "data": [["A", "10"]]}
+
+
+def test_preview_trims_unheaded_system_value_from_real_rows_shape(
+    fake_service: FakeMammothService,
+) -> None:
+    """Handle the live preview envelope's ``columns`` plus ``rows`` keys."""
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [
+            {"internal_name": "column_1", "display_name": "name"},
+            {"internal_name": "column_2", "display_name": "amount"},
+        ]
+    }
+    fake_service.responses[_PREVIEW] = {
+        "columns": ["column_1", "column_2"],
+        "rows": [["A", "10", 987654321]],
+    }
+    data, _ = view_cmd.view_preview(_inv("view.preview", project=180, extra_args=["7", "9"]))
+    assert data == {"columns": ["name", "amount"], "rows": [["A", "10"]]}
+
+
+def test_preview_preserves_unknown_multiple_extra_values(
+    fake_service: FakeMammothService,
+) -> None:
+    """Do not silently discard more than the one known identity value."""
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [
+            {"internal_name": "column_1", "display_name": "name"},
+            {"internal_name": "column_2", "display_name": "amount"},
+        ]
+    }
+    fake_service.responses[_PREVIEW] = {
+        "columns": ["column_1", "column_2"],
+        "data": [["A", "10", 987654321, "unexpected"]],
+    }
+    data, _ = view_cmd.view_preview(_inv("view.preview", project=180, extra_args=["7", "9"]))
+    assert data == {
+        "columns": ["name", "amount"],
+        "data": [["A", "10", 987654321, "unexpected"]],
+    }
+
+
 def test_preview_defaults_cols_to_column_count(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
@@ -328,6 +388,78 @@ def test_data_query_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_data_query(_inv("view.data.query", project=180, extra_args=["7", "9"]))
     assert fake_service.call_log == [
         (_DATA_QUERY, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
+    ]
+
+
+def test_exportable_config_get_passes_view_and_explicit_dataset(
+    fake_service: FakeMammothService,
+) -> None:
+    view_cmd.view_exportable_config_get(
+        _inv("view.exportable-config.get", project=180, extra_args=["7", "9"])
+    )
+    assert fake_service.call_log == [
+        (_EXPORTABLE_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
+    ]
+
+
+def test_exportable_config_rejects_nonpositive_ids_before_service(
+    fake_service: FakeMammothService,
+) -> None:
+    for args in (["0"], ["7", "0"], ["7", "-1"]):
+        with pytest.raises(CliError):
+            view_cmd.view_exportable_config_get(
+                _inv("view.exportable-config.get", project=180, extra_args=args)
+            )
+    assert fake_service.call_log == []
+
+
+def test_exportable_config_apply_requires_exact_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"config": {"tasks": []}})
+    for confirm in (None, "8"):
+        with pytest.raises(CliError):
+            view_cmd.view_exportable_config_apply(
+                _inv(
+                    "view.exportable-config.apply",
+                    project=180,
+                    extra_args=["7", "9"],
+                    input_file=doc,
+                    no_input=True,
+                    yes=True,
+                    confirm=confirm,
+                )
+            )
+    assert fake_service.call_log == []
+
+
+def test_exportable_config_apply_passes_exact_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"config": {"tasks": []}, "is_paste_mode": True})
+    view_cmd.view_exportable_config_apply(
+        _inv(
+            "view.exportable-config.apply",
+            project=180,
+            extra_args=["7", "9"],
+            input_file=doc,
+            no_input=True,
+            yes=True,
+            confirm="7",
+        )
+    )
+    assert fake_service.call_log == [
+        (
+            _EXPORTABLE_APPLY,
+            {
+                "dataset_id": 9,
+                "dataview_id": 7,
+                "items": None,
+                "config": {"tasks": []},
+                "project_id": 180,
+                "is_paste_mode": True,
+            },
+        )
     ]
 
 
@@ -1033,18 +1165,18 @@ def test_draft_command_requires_command(fake_service: FakeMammothService) -> Non
 
 
 def test_draft_command_passes_command(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _doc(tmp_path, {"command": "undo"})
+    doc = _doc(tmp_path, {"command": "enter"})
     view_cmd.view_draft_command(_inv("view.draft.command", extra_args=["7"], input_file=doc))
-    assert fake_service.call_log == [(_DRAFT_COMMAND, {"dataview_id": 7, "command": "undo"})]
+    assert fake_service.call_log == [(_DRAFT_COMMAND, {"dataview_id": 7, "command": "enter"})]
 
 
 def test_draft_command_forwards_dataset_id(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _doc(tmp_path, {"command": "undo", "dataset_id": 9})
+    doc = _doc(tmp_path, {"command": "enter", "dataset_id": 9})
     view_cmd.view_draft_command(_inv("view.draft.command", extra_args=["7"], input_file=doc))
     assert fake_service.call_log == [
-        (_DRAFT_COMMAND, {"dataview_id": 7, "command": "undo", "dataset_id": 9})
+        (_DRAFT_COMMAND, {"dataview_id": 7, "command": "enter", "dataset_id": 9})
     ]
 
 
@@ -1113,6 +1245,39 @@ def test_pipeline_items_forwards_filters(fake_service: FakeMammothService, tmp_p
             },
         )
     ]
+
+
+def test_pipeline_items_all_requires_parent_and_forwards_bounds(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"dataset_id": 9, "limit": 2, "max_pages": 3, "status": "success"})
+    view_cmd.view_pipeline_items_all(
+        _inv("view.pipeline.items-all", extra_args=["7"], input_file=doc)
+    )
+    assert fake_service.call_log == [
+        (
+            _PIPE_ITEMS_ALL,
+            {"dataview_id": 7, "dataset_id": 9, "limit": 2, "max_pages": 3, "status": "success"},
+        )
+    ]
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("dataset_id", 0), ("dataset_id", -1), ("dataset_id", True),
+     ("limit", 0), ("max_pages", 0), ("max_pages", 1001)],
+)
+def test_pipeline_items_all_rejects_invalid_bounds_before_request(
+    fake_service: FakeMammothService, tmp_path: Path, field: str, value: object
+) -> None:
+    payload: dict[str, object] = {"dataset_id": 9, field: value}
+    doc = _doc(tmp_path, payload)
+    expected = "dataset_id" if field == "dataset_id" else field
+    with pytest.raises(CliError, match=expected):
+        view_cmd.view_pipeline_items_all(
+            _inv("view.pipeline.items-all", extra_args=["7"], input_file=doc)
+        )
+    assert fake_service.call_log == []
 
 
 def test_pipeline_rerun_passes_dataview_id(fake_service: FakeMammothService) -> None:
@@ -1293,6 +1458,15 @@ def test_export_get_passes_ids(fake_service: FakeMammothService) -> None:
 def test_export_list_passes_dataview_id_no_project(fake_service: FakeMammothService) -> None:
     view_cmd.view_export_list(_inv("view.export.list", extra_args=["7"]))
     assert fake_service.call_log == [(_EXPORT_LIST, {"dataview_id": 7})]
+
+
+def test_export_list_passes_explicit_dataset_without_discovery(
+    fake_service: FakeMammothService,
+) -> None:
+    view_cmd.view_export_list(_inv("view.export.list", extra_args=["7", "9"]))
+    assert fake_service.call_log == [
+        (_EXPORT_LIST, {"dataview_id": 7, "dataset_id": 9})
+    ]
 
 
 def test_export_list_forwards_filters(fake_service: FakeMammothService, tmp_path: Path) -> None:

@@ -29,6 +29,7 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.services.command_contract import bind_command_inputs
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -109,6 +110,11 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     return document[field]
 
 
+def _bound_document(invocation: Invocation) -> dict[str, Any]:
+    """Return the admitted data-app document through the shared binder."""
+    return bind_command_inputs(invocation.command_id, invocation.load_input() or {})
+
+
 def _forward_optional(
     document: dict[str, Any], kwargs: dict[str, Any], fields: tuple[str, ...]
 ) -> None:
@@ -144,7 +150,7 @@ def data_app_get(invocation: Invocation) -> HandlerResult:
 
 def data_app_create(invocation: Invocation) -> HandlerResult:
     """Create a data app. The creation payload is the required ``body`` field."""
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     body = _require_field(document, "body")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), body=body)
@@ -154,7 +160,7 @@ def data_app_create(invocation: Invocation) -> HandlerResult:
 def data_app_update(invocation: Invocation) -> HandlerResult:
     """Update a data app's settings. Data app id is positional; body is required input."""
     data_app_id = _require_int_positional(invocation, "data app id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     body = _require_field(document, "body")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), data_app_id=data_app_id, body=body)
@@ -200,7 +206,7 @@ def data_app_pipeline_changes(invocation: Invocation) -> HandlerResult:
 def data_app_share(invocation: Invocation) -> HandlerResult:
     """Share a data app with a user. Data app id is positional; body is required input."""
     data_app_id = _require_int_positional(invocation, "data app id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     body = _require_field(document, "body")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), data_app_id=data_app_id, body=body)
@@ -214,7 +220,7 @@ def data_app_upload(invocation: Invocation) -> HandlerResult:
     optional second positional, falling back to the ``file`` --input field.
     """
     data_app_id = _require_int_positional(invocation, "data app id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     file = _string_positional_at(invocation, 1, "file") or document.get("file")
     if file is None:
         raise CliError(

@@ -14,6 +14,11 @@ if TYPE_CHECKING:
 ERR_GENAI_PROMPT_EMPTY = "`prompt` must be a non-empty string."
 ERR_GENAI_ROWS_RANGE = "`no_of_rows` must be between 1 and 100 (inclusive), got {0}."
 ERR_EXPRESSION_MODE_INVALID = "`mode` must be 'math' or 'metric', got {0!r}."
+ERR_RETENTION_MODE_INVALID = "`mode` must be 'generate' or 'test', got {0!r}."
+ERR_RETENTION_INTENT_REQUIRED = "`intent` must be a non-empty string when `mode` is 'generate'."
+ERR_RETENTION_CONDITION_REQUIRED = (
+    "`condition_sql` must be a non-empty string when `mode` is 'test'."
+)
 
 
 class AIAPI:
@@ -305,5 +310,49 @@ class AIAPI:
             f"/workspaces/{ws}/projects/{proj}/sql_generation/expression",
             params=params,
             json={"params": body_params},
+        )
+        return self._client._wait_if_job(response)
+
+    def retention_condition(
+        self,
+        dataset_id: int,
+        mode: str,
+        intent: str | None = None,
+        condition_sql: str | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Generate or test a retention-policy WHERE clause.
+
+        ``mode='generate'`` requires a natural-language ``intent`` and may
+        return an asynchronous job. ``mode='test'`` requires ``condition_sql``
+        and returns per-batch row counts (the API's union response may still
+        be a job envelope). The request is always explicitly scoped to the
+        client's workspace and selected project.
+        """
+        if isinstance(dataset_id, bool) or not isinstance(dataset_id, int) or dataset_id < 0:
+            raise MammothValidationError("`dataset_id` must be an integer >= 0.")
+        if mode not in ("generate", "test"):
+            raise MammothValidationError(ERR_RETENTION_MODE_INVALID.format(mode))
+        if mode == "generate":
+            if not isinstance(intent, str) or not intent.strip():
+                raise MammothValidationError(ERR_RETENTION_INTENT_REQUIRED)
+            if condition_sql is not None:
+                raise MammothValidationError("`condition_sql` is only valid when `mode` is 'test'.")
+        elif not isinstance(condition_sql, str) or not condition_sql.strip():
+            raise MammothValidationError(ERR_RETENTION_CONDITION_REQUIRED)
+        elif intent is not None:
+            raise MammothValidationError("`intent` is only valid when `mode` is 'generate'.")
+
+        ws = self._ws()
+        if project_id is not None and (
+            isinstance(project_id, bool) or not isinstance(project_id, int) or project_id < 1
+        ):
+            raise MammothValidationError("`project_id` must be an integer >= 1.")
+        proj = project_id if project_id is not None else self._proj()
+        response = self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/sql_generation/retention_policy",
+            params={"dataset_id": dataset_id},
+            json={"mode": mode, "intent": intent, "condition_sql": condition_sql},
         )
         return self._client._wait_if_job(response)

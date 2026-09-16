@@ -30,6 +30,11 @@ COMMANDS_DIR = MANIFESTS / "commands"
 REPO_ROOT = SCRIPTS.parent.parent
 
 sys.path.insert(0, str(SCRIPTS))
+# Prefer the checkout's CLI package over any stale installed mammoth_cli when
+# regenerating manifests.  The generator's positional parity must be based on
+# the same source tree as the manifests, even when invoked from the repository
+# root without an explicit PYTHONPATH.
+sys.path.insert(0, str(SCRIPTS.parent))
 sys.path.insert(0, str(REPO_ROOT))
 
 import _command_map as cmap  # noqa: E402
@@ -433,6 +438,25 @@ def build() -> dict[str, int]:
         is_status_read = any(oid in job_status_ops for oid in oids)
         if returns_handle and not is_status_read:
             record["wait_policy"] = "always_wait"
+
+    # Release-only supplemental operation: intentionally kept outside the
+    # pinned OpenAPI inventory while preserving its reviewed release schema.
+    if "dashboard.context.extract" in commands:
+        commands["dashboard.context.extract"].update(
+            operation_ids=["ExtractContext"],
+            request_model="ContextExtractSpec",
+            result_model="ContextExtractResponse",
+            acceptance_evidence="contract_only_no_disposable_fixture",
+            live_exemption_reason="Release-only supplemental binding; no disposable fixture.",
+            known_restrictions="Release snapshot provenance only; unverified against release.",
+            unit_tests=[
+                "tests/unit/test_context_extract.py::test_context_extract_posts_literal_release_route_and_body",
+                "mammoth-cli/tests/unit/commands/test_dashboard.py::test_context_extract_requires_body_wrapper_and_dispatches_exact_symbol",
+            ],
+            contract_tests=[
+                "mammoth-cli/tests/contract/test_rel337_context_extract.py::test_rel337_schema_preserves_release_overlay"
+            ],
+        )
 
     # write grouped by top-level group
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)

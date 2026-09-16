@@ -175,16 +175,25 @@ class TestToRedshift:
 
 
 class TestToS3:
-    def test_handler_and_defaults(self, export_view):
-        export_view.export.to_s3()
+    @pytest.mark.parametrize(
+        ("file_type", "extension"),
+        [
+            (ExportFileType.CSV, ".csv"),
+            (ExportFileType.JSON, ".json"),
+            (ExportFileType.PARQUET, ".parquet"),
+        ],
+    )
+    def test_generated_filename_uses_format_value(self, export_view, file_type, extension):
+        export_view.export.to_s3(file_type=file_type)
         handler, target, _ = export_view.export._captured[-1]
         assert handler is HandlerType.S3
-        assert target["file_type"] == "csv"
+        assert target["file_type"] == file_type.value
         assert target["include_hidden"] is False
         assert target["is_format_set"] is True
         assert target["use_format"] is True
         # Auto-generated filename embeds the dataview id and a timestamp.
         assert target["file"].startswith("view_1001_export_")
+        assert target["file"].endswith(extension)
         # Exactly these keys — no stray control flags leaked in.
         assert set(target) == {
             "file",

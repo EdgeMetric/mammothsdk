@@ -4,6 +4,9 @@ Exports API client for managing dataview pipeline exports in Mammoth.
 
 from __future__ import annotations
 
+import os
+import tempfile
+from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -12,7 +15,7 @@ import requests
 if TYPE_CHECKING:
     from ..client import MammothClient
 
-from ..exceptions import MammothValidationError
+from ..exceptions import MammothAPIError, MammothValidationError
 from ..models.exports import (
     AddExportSpec,
     ExportStatus,
@@ -27,6 +30,7 @@ from .jobs import JobsAPI
 
 ERR_DATAVIEW_ID_POSITIVE = "`dataview_id` must be a positive integer, got {0}."
 ERR_EXPORT_ID_POSITIVE = "`export_id` must be a positive integer, got {0}."
+ERR_DATASET_ID_POSITIVE = "`dataset_id` must be a positive integer, got {0}."
 
 _list = list  # Alias to avoid shadowing by method name
 
@@ -65,6 +69,7 @@ class ExportsAPI:
         handler_type: HandlerType | None = None,
         end_of_pipeline: bool | None = None,
         runnable: bool | None = None,
+        dataset_id: int | None = None,
     ) -> PipelineExportsPaginated:
         """Get dataview pipeline exports with optional filtering and pagination.
 
@@ -80,6 +85,7 @@ class ExportsAPI:
             handler_type: Filter by handler type.
             end_of_pipeline: Filter by end of pipeline status.
             runnable: Filter by runnable status.
+            dataset_id: ID of the dataset (auto-detected if not provided).
 
         Returns:
             PipelineExportsPaginated with paginated list of exports.
@@ -89,7 +95,10 @@ class ExportsAPI:
         if project_id is None:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
 
-        dataset_id = self._find_dataset_for_dataview(dataview_id)
+        if dataset_id is not None and dataset_id <= 0:
+            raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
+        if dataset_id is None:
+            dataset_id = self._find_dataset_for_dataview(dataview_id)
         params: dict[str, Any] = {}
 
         if fields:
@@ -622,22 +631,107 @@ class ExportsAPI:
         Returns:
             Path to the downloaded file.
         """
+        # Use a same-directory temporary so os.replace is atomic even when the
+        # destination is on a different filesystem from the process temp dir.
+        # The destination is never opened for writing until the complete stream
+        # has been flushed and fsynced.
+        temp_path: Path | None = None
+        response: requests.Response | None = None
+        published = False
+        fd = -1
+
+        def response_header(*names: str) -> str | None:
+            if response is None:
+                return None
+            headers = getattr(response, "headers", {})
+            for name in names:
+                try:
+                    value = headers.get(name)
+                except (AttributeError, TypeError):
+                    value = None
+                if value is not None:
+                    return str(value)
+            try:
+                lowered = {str(key).lower(): value for key, value in headers.items()}
+            except (AttributeError, TypeError):
+                lowered = {}
+            for name in names:
+                value = lowered.get(name.lower())
+                if value is not None:
+                    return str(value)
+            return None
+
+        def discard_partial() -> str | None:
+            if temp_path is None or not temp_path.exists():
+                return None
+            try:
+                temp_path.unlink()
+            except OSError:
+                # A dot-prefixed .part file is an explicit quarantine rather
+                # than an apparently complete artifact at output_path.
+                return str(temp_path)
+            return None
+
         try:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            fd, raw_temp_path = tempfile.mkstemp(
+                prefix=f".{output_path.name}.", suffix=".part", dir=output_path.parent
+            )
+            temp_path = Path(raw_temp_path)
             response = self._client.session.get(url, stream=True, timeout=self._client.timeout)
             response.raise_for_status()
 
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(output_path, "wb") as f:
+            with os.fdopen(fd, "wb") as stream:
+                fd = -1
                 for chunk in response.iter_content(chunk_size=8192):
                     if chunk:
-                        f.write(chunk)
+                        stream.write(chunk)
+                stream.flush()
+                os.fsync(stream.fileno())
+
+            os.replace(temp_path, output_path)
+            published = True
             return output_path
 
         except requests.exceptions.RequestException as e:
-            from ..exceptions import MammothAPIError
-
-            raise MammothAPIError(f"Failed to download file: {e}") from e
+            quarantined_path = discard_partial()
+            status_code = getattr(response, "status_code", None)
+            if not isinstance(status_code, int):
+                status_code = None
+            details: dict[str, Any] = {"exception_type": type(e).__name__}
+            if quarantined_path is not None:
+                details["quarantined_path"] = quarantined_path
+            raise MammothAPIError(
+                "Failed to download file",
+                status_code=status_code,
+                details=details,
+                method="GET",
+                request_id=response_header("X-Request-ID", "X-Correlation-ID", "Request-ID"),
+                retry_after=response_header("Retry-After"),
+                operation_state="not_started",
+                phase="download",
+            ) from e
         except OSError as e:
-            from ..exceptions import MammothAPIError
-
-            raise MammothAPIError(f"Failed to save file: {e}") from e
+            quarantined_path = discard_partial()
+            details = {
+                "exception_type": type(e).__name__,
+                "errno": e.errno,
+            }
+            if quarantined_path is not None:
+                details["quarantined_path"] = quarantined_path
+            raise MammothAPIError(
+                "Failed to save downloaded file",
+                details=details,
+                method="GET",
+                operation_state="not_started",
+                phase="download",
+            ) from e
+        finally:
+            if fd != -1:
+                with suppress(OSError):
+                    os.close(fd)
+            if response is not None:
+                with suppress(Exception):
+                    response.close()
+            if not published:
+                discard_partial()

@@ -39,10 +39,9 @@ def _rc_path(shell: str) -> Path:
 
 
 def _resolve_shell(invocation: Invocation) -> str:
-    document = invocation.load_input() or {}
+    document = invocation.bound_input()
     candidate = (
-        (invocation.extra_args[0] if invocation.extra_args else None)
-        or document.get("shell")
+        document.get("shell")
         or os.path.basename(os.environ.get("SHELL", ""))
     )
     shell = str(candidate).strip().lower()

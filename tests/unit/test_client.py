@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from mammoth.client import MammothClient
-from mammoth.exceptions import MammothAPIError
 
 
 class TestClientInit:
@@ -158,6 +157,26 @@ class TestViewsResource:
         client.dataviews.get.assert_called_once_with(dataset_id=500, dataview_id=42)
         assert view.id == 42
 
+    def test_get_with_parent_dataset_never_probes_other_datasets(self, client):
+        """A known parent is part of the resource identity, not a hint to scan."""
+        client.pipeline.find_dataset_for_dataview = MagicMock(side_effect=AssertionError)
+        client.dataviews.get = MagicMock(
+            return_value={
+                "id": 42,
+                "name": "Test View",
+                "properties": {
+                    "columns": [
+                        {"display_name": "col_a", "internal_name": "column_aaa", "type": "TEXT"}
+                    ]
+                },
+            }
+        )
+
+        view = client.views.get(42, dataset_id=700)
+
+        assert view.dataset_id == 700
+        client.dataviews.get.assert_called_once_with(dataset_id=700, dataview_id=42)
+
     def test_delete_auto_detects_dataset(self, client):
         """views.delete(view_id) auto-detects dataset_id."""
         client.pipeline._find_dataset_for_dataview = MagicMock(return_value=500)
@@ -165,6 +184,16 @@ class TestViewsResource:
         result = client.views.delete(42)
         client.pipeline._find_dataset_for_dataview.assert_called_once_with(42)
         client.dataviews.delete.assert_called_once_with(dataset_id=500, dataview_id=42)
+        assert result["status"] == "deleted"
+
+    def test_delete_with_parent_skips_discovery(self, client):
+        """A known parent is used exactly and never falls back to discovery."""
+        client.pipeline.find_dataset_for_dataview = MagicMock(side_effect=AssertionError)
+        client.dataviews.delete = MagicMock(return_value={"status": "deleted"})
+
+        result = client.views.delete(42, dataset_id=700)
+
+        client.dataviews.delete.assert_called_once_with(dataset_id=700, dataview_id=42)
         assert result["status"] == "deleted"
 
     def test_bulk_delete_auto_detects_dataset(self, client):

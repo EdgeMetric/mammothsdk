@@ -4,9 +4,16 @@ Datasets API client for managing datasets in Mammoth.
 
 from __future__ import annotations
 
+import time
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-from mammoth.exceptions import MammothValidationError
+from mammoth.api._pagination import collect_offset_pages
+from mammoth.exceptions import (
+    MammothAPIError,
+    MammothDeletionVerificationError,
+    MammothValidationError,
+)
 
 if TYPE_CHECKING:
     from ..client import MammothClient
@@ -45,6 +52,7 @@ class DatasetsAPI:
         workspace_id: int | None = None,
         project_id: int | None = None,
         limit: int = 100,
+        offset: int = 0,
         sort: str = "(created_at:desc)",
     ) -> dict[str, Any]:
         """Get list of datasets in a project.
@@ -53,6 +61,7 @@ class DatasetsAPI:
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
             limit: Maximum number of results (default 100).
+            offset: Number of results to skip (default 0).
             sort: Sort order (default "(created_at:desc)").
 
         Returns:
@@ -60,9 +69,37 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        params = {"fields": "id,name", "limit": limit, "sort": sort}
+        params = {"fields": "id,name", "limit": limit, "offset": offset, "sort": sort}
         return self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets", params=params
+        )
+
+    def list_all(
+        self,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+        limit: int = 100,
+        sort: str = "(created_at:desc)",
+        max_pages: int = 1000,
+    ) -> dict[str, Any]:
+        """List all datasets with bounded, progress-checked pagination.
+
+        The server's supported ``offset``/``next`` contract is used directly.
+        Repeated pages, empty pages carrying ``next``, non-advancing hints and
+        unbounded continuation raise :class:`MammothPaginationError` instead
+        of silently claiming complete inventory coverage.
+        """
+        return collect_offset_pages(
+            lambda offset: self.list(
+                workspace_id=workspace_id,
+                project_id=project_id,
+                limit=limit,
+                offset=offset,
+                sort=sort,
+            ),
+            item_key="datasets",
+            limit=limit,
+            max_pages=max_pages,
         )
 
     def get(
@@ -220,7 +257,7 @@ class DatasetsAPI:
         dataset_id: int,
         workspace_id: int | None = None,
         project_id: int | None = None,
-    ) -> None:
+    ) -> dict[str, Any]:
         """Delete a dataset.
 
         Args:
@@ -230,9 +267,72 @@ class DatasetsAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        self._client._request_json(
+        return self._client._request_json(
             "DELETE", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}"
         )
+
+    def delete_and_verify(
+        self,
+        dataset_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+        *,
+        timeout: int | None = None,
+        poll_interval: float = 2.0,
+        dependencies: Sequence[str] | None = None,
+    ) -> dict[str, Any]:
+        """Delete one dataset and verify its supported GET readback is absent.
+
+        ``dependencies`` is an optional caller-supplied dependency record. It
+        is deliberately not inferred from arbitrary inventory differences. If
+        known dependents are supplied, the operation is blocked before DELETE;
+        callers must explicitly remove owned dependents first.
+        """
+        if dependencies:
+            raise MammothDeletionVerificationError(
+                "Dataset deletion is blocked by known dependent resources.",
+                {"dataset_id": dataset_id, "dependencies": list(dependencies)},
+            )
+        ack = self.delete(dataset_id, workspace_id=workspace_id, project_id=project_id)
+        settled = self._client._wait_if_job(ack)
+        deadline = time.monotonic() + (
+            timeout if timeout is not None else int(getattr(self._client, "job_timeout", 60))
+        )
+        while True:
+            try:
+                current = self.get(
+                    dataset_id, workspace_id=workspace_id, project_id=project_id
+                )
+            except MammothAPIError as exc:
+                if exc.status_code == 404:
+                    return {
+                        "dataset_id": dataset_id,
+                        "status": "deleted",
+                        "verified": True,
+                        "ack": settled,
+                    }
+                raise
+            state = str(current.get("status", "")).lower() if isinstance(current, dict) else ""
+            if state in {"deleted", "absent", "not_found"}:
+                return {
+                    "dataset_id": dataset_id,
+                    "status": "deleted",
+                    "verified": True,
+                    "ack": settled,
+                    "readback": current,
+                }
+            if time.monotonic() >= deadline:
+                raise MammothDeletionVerificationError(
+                    "Dataset delete was acknowledged but absence was not verified.",
+                    {
+                        "dataset_id": dataset_id,
+                        "status": "pending",
+                        "verified": False,
+                        "ack": settled,
+                        "readback": current,
+                    },
+                )
+            time.sleep(poll_interval)
 
     def bulk_update(
         self,
@@ -317,6 +417,35 @@ class DatasetsAPI:
         return self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches/{batch_id}"
         )
+
+    def get_batch_data(
+        self,
+        dataset_id: int,
+        batch_id: int,
+        columns: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+        timeout: int | None = None,
+        poll_interval: int = 2,
+    ) -> dict[str, Any]:
+        """Get data for a batch; the API returns an asynchronous job."""
+        if limit < 0 or limit > 100:
+            raise MammothValidationError("limit must be between 0 and 100.")
+        if offset < 0:
+            raise MammothValidationError("offset must be non-negative.")
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        params: dict[str, Any] = {"limit": limit, "offset": offset}
+        if columns is not None:
+            params["columns"] = columns
+        response = self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches/{batch_id}/data",
+            params=params,
+        )
+        return self._client._wait_if_job(response, timeout=timeout, poll_interval=poll_interval)
 
     def get_file_settings(
         self,

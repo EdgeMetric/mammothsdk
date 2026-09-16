@@ -23,6 +23,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
+import pytest
+
 from mammoth.api.pipeline import PipelineAPI
 
 WORKSPACE_ID = 2
@@ -145,3 +147,50 @@ class TestGetDraftStatusCompatibilityFallbacks:
 
         assert result["is_draft"] is False
         assert result["draft"] is None
+
+
+class TestNestedDraftRecovery:
+    """Nested pipeline envelopes must classify recovery before any write."""
+
+    def test_nested_terminal_state_is_normalized(self) -> None:
+        api, mock_client = _make_api()
+        mock_client._request_json.return_value = {
+            "pipeline": {"state": "ready", "draft": "clean"}
+        }
+
+        result = api.reconcile_draft_submission(DATAVIEW_ID, dataset_id=DATASET_ID)
+
+        assert result["pipeline_state"] == "ready"
+        assert result["mode"] == "clean"
+        assert result["outcome"] == "succeeded"
+
+    def test_nested_running_state_is_normalized(self) -> None:
+        api, mock_client = _make_api()
+        mock_client._request_json.return_value = {
+            "pipeline": {"state": "running", "draft": "dirty"}
+        }
+
+        result = api.reconcile_draft_submission(DATAVIEW_ID, dataset_id=DATASET_ID)
+
+        assert result["pipeline_state"] == "running"
+        assert result["outcome"] == "running"
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"pipeline": {"draft": "dirty"}},
+            {"pipeline": {"state": {"value": "ready"}, "draft": "dirty"}},
+            {"pipeline": {"state": "ready", "draft": {"active": True}}},
+        ],
+    )
+    def test_missing_or_malformed_state_is_unknown_and_blocked(
+        self, payload: dict[str, object]
+    ) -> None:
+        api, mock_client = _make_api()
+        mock_client._request_json.return_value = payload
+
+        result = api.reconcile_draft_submission(DATAVIEW_ID, dataset_id=DATASET_ID)
+
+        assert result["outcome"] == "unknown"
+        assert result["operation_state"] == "outcome_unknown"
+        assert result["mutation_blocked"] is True

@@ -1,0 +1,57 @@
+# Portable task handoff
+
+Use a nonsecret JSON checkpoint when another agent or session must continue.
+This is a record, not a resume subcommand. The receiving agent chooses
+its own plan only after fresh reads.
+
+For evaluated/isolated agents, authentication remains controller-owned: use
+the provided broker/sidecar and never mount or read a saved profile. If that
+broker is absent, stop before authenticated actions. Ordinary operator
+handoffs may reference the authorized profile name, but must not copy its path
+or contents into the checkpoint.
+
+## Required record
+
+Include `format: "mammoth-agent-handoff"`, `format_version`, producer
+`cli_version`, `sdk_version`, `contract_schema_version`, and `skill_version`;
+the intent and acceptance criteria; authorized `profile` name and exact
+workspace/project scope; observed resources with dataset/view parents and
+dependencies; last verified state and hashes of bounded secret-free evidence;
+pending known jobs and `unknown_outcomes`; completed actions; remaining
+objectives; and a cleanup owner plus dependency order.
+
+Never include API keys, API secrets, tokens, headers, credentials files, raw
+secret-bearing input, or unredacted response bodies. IDs and display names are
+safe only when needed to identify the authorized task.
+
+Write the file atomically: write a same-directory temporary file, flush and
+close it, then rename it over the destination. Keep a sidecar SHA-256 when the
+transport permits it. Do not publish a partially written checkpoint.
+
+## Receiving a checkpoint
+
+1. Compare the recorded CLI/SDK/contract/skill versions with the installed
+   versions and read the exact installed skill.
+2. Validate the format, sidecar hash, authorized scope, and profile. Do not
+   import credentials from the checkpoint.
+3. Re-read every resource with its recorded workspace/project/dataset/view
+   parent. Verify current schema, display names, jobs, and artifact evidence.
+4. Inspect every known job and reconcile every `outcome_unknown` before any
+   mutation. A timeout or exit 130 does not authorize replay.
+5. Continue, clean up, or stop with a precise unsupported/authorization/
+   conflict result. Update the checkpoint after each verified action.
+
+Useful read commands include:
+
+```bash
+mammoth doctor --profile PROFILE --output json --no-input
+mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input
+mammoth job get JOB_ID --output json --no-input
+```
+
+The commands above are ordinary operator examples; an evaluated/isolated agent
+must use the controller broker/sidecar instead of `--profile` and must stop if
+that broker is absent.
+
+The required fields and receiving procedure above are self-contained for a
+cold-start agent; no repository checkout or unshipped document is required.

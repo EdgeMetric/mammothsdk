@@ -2,7 +2,93 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
+
+_SECRET_FIELDS = frozenset(
+    {
+        "authorization",
+        "proxy_authorization",
+        "cookie",
+        "set_cookie",
+        "api_key",
+        "api_secret",
+        "x_api_key",
+        "x_api_secret",
+        "access_token",
+        "refresh_token",
+        "id_token",
+        "bearer_token",
+        "password",
+        "passphrase",
+        "private_key",
+        "client_secret",
+    }
+)
+
+# These response sections are conventionally maps of credentials/HTTP
+# headers.  Redact the section as a whole, while leaving ordinary business
+# fields such as ``token_count`` and ``secret_sauce`` untouched.
+_SECRET_CONTAINERS = frozenset(
+    {"credentials", "credential", "auth", "authentication", "headers", "request_headers", "secrets"}
+)
+
+
+def _is_secret_field(name: object) -> bool:
+    normalized = str(name).lower().replace("-", "_").replace(" ", "_")
+    return normalized in _SECRET_FIELDS or normalized in _SECRET_CONTAINERS
+
+
+def safe_response_body(value: object) -> dict[str, Any]:
+    """Return a bounded, credential-safe representation of an API body.
+
+    Error objects are often logged or serialized by callers.  Keep useful
+    structured diagnostics while ensuring credential-bearing fields from an
+    upstream response can never become part of the public exception.
+    """
+
+    def scrub(item: object, depth: int = 0) -> object:
+        if depth > 8:
+            return "<nested value omitted>"
+        if isinstance(item, Mapping):
+            return {
+                str(key): "<redacted>" if _is_secret_field(key) else scrub(val, depth + 1)
+                for key, val in item.items()
+            }
+        if isinstance(item, (list, tuple)):
+            return [scrub(val, depth + 1) for val in item[:100]]
+        if isinstance(item, (str, int, float, bool)) or item is None:
+            return item
+        return str(item)
+
+    result = scrub(value)
+    return result if isinstance(result, dict) else {}
+
+
+def _metadata_details(
+    *,
+    details: dict[str, Any] | None,
+    method: str | None,
+    request_id: str | None,
+    retry_after: str | None,
+    operation_state: str | None,
+    phase: str | None,
+    job_handle: object | None,
+    resource_handle: object | None,
+) -> dict[str, Any]:
+    metadata = dict(details or {})
+    for key, value in (
+        ("method", method),
+        ("request_id", request_id),
+        ("retry_after", retry_after),
+        ("operation_state", operation_state),
+        ("phase", phase),
+        ("job_handle", job_handle),
+        ("resource_handle", resource_handle),
+    ):
+        if value is not None:
+            metadata.setdefault(key, value)
+    return metadata
 
 
 class MammothError(Exception):
@@ -42,10 +128,37 @@ class MammothAPIError(MammothError):
         status_code: int | None = None,
         response_body: dict[str, Any] | None = None,
         details: dict[str, Any] | None = None,
+        *,
+        method: str | None = None,
+        request_id: str | None = None,
+        retry_after: str | None = None,
+        operation_state: str | None = None,
+        phase: str | None = None,
+        job_handle: object | None = None,
+        resource_handle: object | None = None,
+        endpoint: str | None = None,
     ) -> None:
         self.status_code = status_code
-        self.response_body = response_body or {}
-        super().__init__(message, details)
+        self.response_body = safe_response_body(response_body or {})
+        self.method = method
+        self.request_id = request_id
+        self.retry_after = retry_after
+        self.operation_state = operation_state
+        self.phase = phase
+        self.job_handle = job_handle
+        self.resource_handle = resource_handle
+        self.endpoint = endpoint
+        merged_details = _metadata_details(
+            details=details,
+            method=method,
+            request_id=request_id,
+            retry_after=retry_after,
+            operation_state=operation_state,
+            phase=phase,
+            job_handle=job_handle,
+            resource_handle=resource_handle,
+        )
+        super().__init__(message, merged_details)
 
 
 class MammothAuthError(MammothAPIError):
@@ -56,8 +169,13 @@ class MammothAuthError(MammothAPIError):
         status_code: Always ``401``.
     """
 
-    def __init__(self, message: str = "Authentication failed") -> None:
-        super().__init__(message, status_code=401)
+    def __init__(
+        self,
+        message: str = "Authentication failed",
+        response_body: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(message, status_code=401, response_body=response_body, **kwargs)
 
 
 class MammothJobTimeoutError(MammothError):
@@ -68,9 +186,35 @@ class MammothJobTimeoutError(MammothError):
         details: ``{"job_id": int, "timeout": int}``.
     """
 
-    def __init__(self, job_id: int, timeout_seconds: int) -> None:
+    def __init__(
+        self,
+        job_id: int,
+        timeout_seconds: int,
+        *,
+        observed_job: dict[str, Any] | None = None,
+        phase: str | None = "polling",
+    ) -> None:
         message = f"Job {job_id} timed out after {timeout_seconds} seconds"
-        super().__init__(message, {"job_id": job_id, "timeout": timeout_seconds})
+        details: dict[str, Any] = {
+            "job_id": job_id,
+            "timeout": timeout_seconds,
+            "operation_state": "running",
+            "phase": phase,
+            "job_handle": job_id,
+            "recovery_action": {
+                "operation": "jobs.get_job",
+                "job_id": job_id,
+                "scope": "same workspace",
+            },
+        }
+        if observed_job is not None:
+            details["observed_job"] = safe_response_body(observed_job)
+        super().__init__(message, details)
+        self.job_id = job_id
+        self.timeout_seconds = timeout_seconds
+        self.job_handle = job_id
+        self.operation_state = "running"
+        self.phase = phase
 
 
 class MammothJobFailedError(MammothError):
@@ -81,11 +225,31 @@ class MammothJobFailedError(MammothError):
         details: ``{"job_id": int, "failure_reason": str | None}``.
     """
 
-    def __init__(self, job_id: int, failure_reason: str | None = None) -> None:
+    def __init__(
+        self,
+        job_id: int,
+        failure_reason: str | None = None,
+        *,
+        observed_job: dict[str, Any] | None = None,
+        phase: str | None = "polling",
+    ) -> None:
         message = f"Job {job_id} failed"
         if failure_reason:
             message += f": {failure_reason}"
-        super().__init__(message, {"job_id": job_id, "failure_reason": failure_reason})
+        details: dict[str, Any] = {
+            "job_id": job_id,
+            "failure_reason": failure_reason,
+            "operation_state": "failed",
+            "phase": phase,
+            "job_handle": job_id,
+        }
+        if observed_job is not None:
+            details["observed_job"] = safe_response_body(observed_job)
+        super().__init__(message, details)
+        self.job_id = job_id
+        self.job_handle = job_id
+        self.operation_state = "failed"
+        self.phase = phase
 
 
 class MammothTransformError(MammothError):
@@ -180,3 +344,17 @@ class MammothColumnError(MammothError):
             message,
             {"column_name": column_name, "available_columns": available_columns},
         )
+
+
+class MammothPaginationError(MammothError):
+    """A paginated read could not prove forward progress.
+
+    A ``next`` hint is advisory until the next page advances the cursor and
+    contains new records.  This typed error lets callers stop safely when a
+    backend repeats a page, returns an empty page with a continuation hint, or
+    exceeds the caller's explicit page bound.
+    """
+
+
+class MammothDeletionVerificationError(MammothError):
+    """A delete acknowledgement could not be reconciled to terminal absence."""

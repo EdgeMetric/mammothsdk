@@ -96,7 +96,7 @@ Feed multi-field requests as one document instead of many flags:
 
 ```bash
 mammoth view transform math 1039 --project 180 \
-  --input '{"expression": "price * qty", "new_column": "total"}'
+  --input '{"expression": "Unit Price * Quantity", "new_column": "Revenue"}'
 ```
 
 The one-line installer already set up the bundled agent skill for Claude Code,
@@ -108,6 +108,23 @@ mammoth skill install
 
 See [docs/agents.md](docs/agents.md) and the
 [agent skill](mammoth_cli/bundled_skill/mammoth-cli/SKILL.md).
+
+For a fresh external shell agent, start with the shipped
+[portable task-start playbook](mammoth_cli/bundled_skill/mammoth-cli/references/task-start.md).
+
+For an unattended task, use the open-ended loop documented in
+[Agent and CI usage](docs/agents.md): discover a capability and its schema,
+resolve every resource in its explicit scope, compose operations from the IDs
+returned by reads, verify the requested outcome, then recover or clean up from
+the observed state. Examples in this repository are nonexhaustive. The CLI
+never requires an agent to use backend column identifiers: inputs name columns
+by their display names. Do not infer a usable default view from a dataset; run
+`view list DATASET_ID` and choose a view explicitly.
+
+If another agent must continue the work, write the nonsecret checkpoint format
+described in [Portable agent handoff](docs/agent-handoff.md). It records scope,
+intent, verified evidence, jobs/unknown outcomes, and cleanup ownership without
+putting credentials into the handoff.
 
 ## Give your coding agent the CLI playbook
 
@@ -165,6 +182,23 @@ COMMAND.ID` to verify a request shape against the installed CLI.
 
 Agent-readable indexes: [`docs/llms.txt`](docs/llms.txt) and
 [`docs/llms-full.txt`](docs/llms-full.txt).
+
+## Capability-matrix status
+
+The reviewed OpenAPI capability matrix is maintained in the readiness
+workbook; the repository-facing summary is
+[`docs/agent-capability-coverage.md`](docs/agent-capability-coverage.md).
+The current release snapshot contains **528 operations across 355 paths** (the
+historical pinned M0 snapshot was **445 operations across 287 paths**).
+The matrix separates **Core** ETL/workflow capabilities from **Miscellaneous**
+surfaces and currently records **7 Partial** and **521 Unassessed** rows. It
+does not declare any unsupported **Full** readiness claim: these counts are
+planning/review status, not release qualification or live semantic proof.
+The workbook remains authoritative for row-level ownership, evidence, and
+qualification gates; no secrets or live evidence are copied into this README.
+The sanitized [row-level release matrix](docs/release-capability-matrix.md)
+and [machine-readable matrix](docs/release-capability-matrix.json) preserve all
+528 method/path line items without pilot payloads or credentials.
 
 ## Compatibility
 

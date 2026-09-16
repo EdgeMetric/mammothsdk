@@ -144,6 +144,45 @@ def project_resource_dependencies(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def project_resource_dependencies_update(invocation: Invocation) -> HandlerResult:
+    """Apply confirmed data-sync patches to a project's resource graph."""
+    project_id = _project_id(invocation)
+    document = invocation.load_input()
+    patches = _require_input_field(document, "patches")
+    if not isinstance(patches, list) or not patches:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="'patches' must be a non-empty list.",
+            exit_status=EXIT_USAGE,
+        )
+    targets: list[tuple[Any, Any]] = []
+    for item in patches:
+        if not isinstance(item, dict) or not isinstance(item.get("value"), dict):
+            continue
+        value = item["value"]
+        targets.append((value.get("context_type"), value.get("context_id")))
+    if len(targets) != len(set(targets)):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="'patches' must not repeat a resource target.",
+            exit_status=EXIT_USAGE,
+        )
+    with open_service(invocation) as (service, auth):
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_CONFIRM_TARGET,
+            action=f"update resource data-sync settings in project {project_id}",
+            target=str(project_id),
+        )
+        data = service.call(
+            _symbol(invocation), project_id=project_id, patches=patches
+        )
+        settled = service.wait_if_job(data)
+    if isinstance(data, dict) and isinstance(settled, dict):
+        data = {**data, **settled}
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
 def project_publish_credentials(invocation: Invocation) -> HandlerResult:
     """Report publish credentials for a project's ODBC endpoint."""
     project_id = _project_id(invocation)

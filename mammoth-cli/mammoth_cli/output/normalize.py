@@ -11,6 +11,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import enum
+import math
 from pathlib import Path
 from typing import Any
 
@@ -31,13 +32,21 @@ REDACTED = "***REDACTED***"
 
 def _is_secret_key(key: str) -> bool:
     lowered = key.lower()
+    # ``token_count`` is ordinary result metadata (for example an LLM usage
+    # counter), not a credential.  Do not let the broad token guard erase it.
+    if lowered == "token_count":
+        return False
     return any(hint in lowered for hint in _SECRET_KEY_HINTS)
 
 
 def normalize(value: Any, *, redact_secrets: bool = True) -> Any:
     """Return a deterministic, JSON-safe representation of ``value``."""
-    if value is None or isinstance(value, (bool, int, float, str)):
+    if value is None or isinstance(value, (bool, int, str)):
         return value
+    if isinstance(value, float):
+        # ``json.dumps`` otherwise emits JavaScript-incompatible NaN/Infinity,
+        # making an otherwise successful machine result unparseable.
+        return value if math.isfinite(value) else str(value)
     if isinstance(value, enum.Enum):
         return value.value
     if isinstance(value, (datetime.datetime, datetime.date, datetime.time)):

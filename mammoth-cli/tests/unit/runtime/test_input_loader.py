@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.runtime import input_loader
 from mammoth_cli.runtime.input_loader import load_input_document
 
 
@@ -97,3 +98,91 @@ def test_yaml_alias_yml_extension(tmp_path: Path) -> None:
     path = tmp_path / "req.yml"
     path.write_text("a: 1\n", encoding="utf-8")
     assert load_input_document(str(path), None) == {"a": 1}
+
+
+def test_invalid_utf8_is_a_structured_usage_error(tmp_path: Path) -> None:
+    path = tmp_path / "invalid.json"
+    path.write_bytes(b'{"name":"ok"}\xff')
+    with pytest.raises(CliError) as excinfo:
+        load_input_document(str(path), None)
+    assert excinfo.value.code == input_loader.CODE_INVALID_INPUT_ENCODING
+    assert excinfo.value.exit_status == EXIT_USAGE
+
+
+def test_duplicate_json_keys_are_rejected(tmp_path: Path) -> None:
+    path = tmp_path / "duplicate.json"
+    path.write_text('{"name":"first","name":"second"}', encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        load_input_document(str(path), None)
+    assert excinfo.value.code == input_loader.CODE_DUPLICATE_INPUT_KEY
+
+
+def test_nonfinite_json_numbers_are_rejected(tmp_path: Path) -> None:
+    path = tmp_path / "nonfinite.json"
+    path.write_text('{"value":NaN}', encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        load_input_document(str(path), None)
+    assert excinfo.value.code == input_loader.CODE_NONFINITE_INPUT_NUMBER
+
+
+def test_overflowing_json_exponent_is_rejected(tmp_path: Path) -> None:
+    path = tmp_path / "overflow.json"
+    path.write_text('{"value":1e999}', encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        load_input_document(str(path), None)
+    assert excinfo.value.code == input_loader.CODE_NONFINITE_INPUT_NUMBER
+
+
+def test_duplicate_yaml_keys_are_rejected(tmp_path: Path) -> None:
+    path = tmp_path / "duplicate.yaml"
+    path.write_text("name: first\nname: second\n", encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        load_input_document(str(path), None)
+    assert excinfo.value.code == input_loader.CODE_DUPLICATE_INPUT_KEY
+
+
+def test_size_limit_is_checked_before_parse(tmp_path: Path) -> None:
+    path = tmp_path / "large.json"
+    path.write_bytes(b"{" + b'"x":"' + b"a" * input_loader.MAX_INPUT_BYTES + b'"}')
+    with pytest.raises(CliError) as excinfo:
+        load_input_document(str(path), None)
+    assert excinfo.value.code == input_loader.CODE_INPUT_TOO_LARGE
+
+
+def test_depth_limit_is_checked_before_parse(tmp_path: Path) -> None:
+    path = tmp_path / "deep.json"
+    path.write_text(
+        "{" * (input_loader.MAX_INPUT_DEPTH + 1)
+        + "0"
+        + "}" * (input_loader.MAX_INPUT_DEPTH + 1),
+        encoding="utf-8",
+    )
+    with pytest.raises(CliError) as excinfo:
+        load_input_document(str(path), None)
+    assert excinfo.value.code == input_loader.CODE_INPUT_TOO_DEEP
+
+
+def test_omitted_empty_and_null_documents_have_distinct_outcomes(tmp_path: Path) -> None:
+    assert load_input_document(None, None) is None
+    empty = tmp_path / "empty.json"
+    empty.write_text("{}", encoding="utf-8")
+    assert load_input_document(str(empty), None) == {}
+    null = tmp_path / "null.json"
+    null.write_text("null", encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        load_input_document(str(null), None)
+    assert excinfo.value.code == "invalid_input_document"
+
+
+def test_stdin_source_is_read_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    class CountingInput(io.StringIO):
+        reads = 0
+
+        def read(self, size: int = -1) -> str:
+            self.reads += 1
+            return super().read(size)
+
+    stream = CountingInput('{"k":"v"}')
+    monkeypatch.setattr("sys.stdin", stream)
+    assert load_input_document("-", "json") == {"k": "v"}
+    assert stream.reads == 1

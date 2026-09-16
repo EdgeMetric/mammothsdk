@@ -11,20 +11,23 @@
 ```
 
 ## Output modes
-`--output` accepts `table` (default, human), `json`, `yaml`, `ndjson`, `plain`.
-Agents should use `json` (or `ndjson` for streams). Machine modes never emit
-color or progress.
+`--output` accepts `auto`, `table`, `json`, `yaml`, `ndjson`, `plain`. Agents
+should use `json` (or `ndjson` for documented streams). `json` emits one
+complete object; `ndjson` emits one complete envelope per line. Machine modes
+never emit color or progress.
 
 ## Exit codes
 | code | meaning |
 |---|---|
 | 0 | success |
-| 1 | API error |
+| 1 | API, job, or local artifact error |
 | 2 | usage / input / confirmation failure |
 | 4 | authentication failure |
 | 5 | not found |
 | 6 | conflict |
-| 7 | retryable (network/timeout) |
+| 7 | retryable read/transport or timed-out known job; inspect the envelope |
 | 130 | interrupted |
 
-Branch on the exit code and the stable `error.code`; never parse the message.
+Branch on the exit code, stable `error.code`, and `details.operation_state`; never
+parse the message. `outcome_unknown` means a mutation may have committed and
+must be reconciled before replay.

@@ -7,7 +7,7 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING, Any
 
-from ..exceptions import MammothJobFailedError, MammothJobTimeoutError
+from ..exceptions import MammothJobFailedError, MammothJobTimeoutError, safe_response_body
 
 if TYPE_CHECKING:
     from ..client import MammothClient
@@ -69,7 +69,7 @@ class JobsAPI:
         return response
 
     def wait_for_job(
-        self, job_id: int, timeout: int | None = None, poll_interval: int = 2
+        self, job_id: int, timeout: float | None = None, poll_interval: float = 2
     ) -> dict[str, Any]:
         """
         Wait for a job to complete and return the result.
@@ -93,6 +93,7 @@ class JobsAPI:
             raise TypeError("timeout must not be None — set client.job_timeout or pass explicitly")
 
         start_time = time.time()
+        last_observed: dict[str, Any] | None = None
         while time.time() - start_time < timeout:
             job_response = self.get_job(job_id)
 
@@ -102,7 +103,15 @@ class JobsAPI:
             else:
                 job = job_response
 
+            # Keep only the latest server observation for timeout/failure
+            # diagnostics.  The exception sanitizer strips credential fields
+            # before this is exposed to callers.
+            last_observed = safe_response_body(job)
+
             status = job.get("status")
+            observed_phase = job.get("phase") or job.get("execution_phase") or "polling"
+            if not isinstance(observed_phase, str):
+                observed_phase = "polling"
 
             if status == "success":
                 return job
@@ -114,7 +123,12 @@ class JobsAPI:
                     inner = resp["response"]
                     error_msg = inner.get("detail") or inner.get("error")
                 error_msg = error_msg or "Job failed"
-                raise MammothJobFailedError(job_id, error_msg)
+                raise MammothJobFailedError(
+                    job_id,
+                    error_msg,
+                    observed_job=last_observed,
+                    phase=observed_phase,
+                )
             elif status == "processing":
                 # Job still running, continue polling
                 time.sleep(poll_interval)
@@ -123,7 +137,14 @@ class JobsAPI:
                 time.sleep(poll_interval)
 
         # Timeout reached
-        raise MammothJobTimeoutError(job_id, timeout)
+        timeout_phase = "polling"
+        if last_observed is not None:
+            candidate_phase = last_observed.get("phase") or last_observed.get("execution_phase")
+            if isinstance(candidate_phase, str):
+                timeout_phase = candidate_phase
+        raise MammothJobTimeoutError(
+            job_id, timeout, observed_job=last_observed, phase=timeout_phase
+        )
 
     def wait_for_jobs(
         self, job_ids: list[int] | str, timeout: int | None = None, poll_interval: int = 2
@@ -157,6 +178,7 @@ class JobsAPI:
 
         start_time = time.time()
         completed_jobs = {}
+        last_observed: dict[int, dict[str, Any]] = {}
 
         while time.time() - start_time < timeout:
             jobs_response = self.get_jobs(job_ids_list)
@@ -167,12 +189,22 @@ class JobsAPI:
             for job in jobs:
                 job_id = job.get("id")
                 status = job.get("status")
+                observed_phase = job.get("phase") or job.get("execution_phase") or "polling"
+                if not isinstance(observed_phase, str):
+                    observed_phase = "polling"
+                if isinstance(job_id, int):
+                    last_observed[job_id] = safe_response_body(job)
 
                 if status == "success":
                     completed_jobs[job_id] = job
                 elif status in ["failure", "error"]:
                     error_msg = job.get("response", {}).get("error", "Job failed")
-                    raise MammothJobFailedError(job_id, error_msg)
+                    raise MammothJobFailedError(
+                        job_id,
+                        error_msg,
+                        observed_job=last_observed.get(job_id),
+                        phase=observed_phase,
+                    )
                 elif status == "processing":
                     all_completed = False
                 else:
@@ -185,4 +217,18 @@ class JobsAPI:
 
         # Timeout reached — use first pending job ID for error
         pending_ids = [jid for jid in job_ids_list if jid not in completed_jobs]
-        raise MammothJobTimeoutError(pending_ids[0] if pending_ids else job_ids_list[0], timeout)
+        pending_id = pending_ids[0] if pending_ids else job_ids_list[0]
+        timeout_phase = "polling"
+        observed_pending = last_observed.get(pending_id)
+        if observed_pending is not None:
+            candidate_phase = observed_pending.get("phase") or observed_pending.get(
+                "execution_phase"
+            )
+            if isinstance(candidate_phase, str):
+                timeout_phase = candidate_phase
+        raise MammothJobTimeoutError(
+            pending_id,
+            timeout,
+            observed_job=observed_pending,
+            phase=timeout_phase,
+        )

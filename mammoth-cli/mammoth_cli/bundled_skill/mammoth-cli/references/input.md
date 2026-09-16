@@ -7,7 +7,7 @@ mammoth folder create --project 180 --output json --no-input \
   --input '{"name": "Reports", "parent_resource_id": "r_root"}'
 
 mammoth view transform filter 1039 --project 180 --output json --no-input \
-  --input '{"condition": {"and": [{"column": "status", "operator": "=", "value": "open"}, {"column": "age", "operator": ">", "value": 30}]}}'
+  --input '{"condition": {"and": [{"column": "Order Status", "operator": "=", "value": "Open"}, {"column": "Customer Age", "operator": ">", "value": 30}]}}'
 ```
 
 - `--input FILE` reads a JSON or YAML file; the format is inferred from the
@@ -15,6 +15,9 @@ mammoth view transform filter 1039 --project 180 --output json --no-input \
 - `--input -` reads stdin; then `--input-format json|yaml` is required.
 - The top level must be a mapping. A bad path, format, or shape fails with exit
   code 2 and a stable error code.
+- Column references use display names returned by the exact view schema. Do not
+  manufacture or copy backend/internal column identifiers. Pass explicit
+  workspace/project/dataset/view parent IDs when the schema provides them.
 
 ## Condition specs
 A `condition` field is a mapping:

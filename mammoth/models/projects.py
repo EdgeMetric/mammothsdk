@@ -5,9 +5,9 @@ Project-related data models for the Mammoth Analytics SDK.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProjectProperties(BaseModel):
@@ -81,3 +81,32 @@ class ProjectsPatch(BaseModel):
 
     project_ids: list[int] = Field(..., description="List of project IDs to update")
     operations: list[PatchOperation] = Field(..., description="Operations to perform on projects")
+
+
+class DataSyncPatchValue(BaseModel):
+    """Target and desired data-sync settings for one resource."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    context_type: Literal["dataview", "task", "action"]
+    context_id: int
+    data_pass_through: bool | None = None
+    run_pending_update: bool | None = None
+
+
+class DataSyncPatchItem(BaseModel):
+    """One release-defined data-sync JSON-PATCH operation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    op: Literal["replace"]
+    path: Literal["data_sync"]
+    value: DataSyncPatchValue
+
+
+class DataSyncPatchRequest(BaseModel):
+    """Typed request for bulk resource data-sync updates."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    patches: list[DataSyncPatchItem] = Field(min_length=1)

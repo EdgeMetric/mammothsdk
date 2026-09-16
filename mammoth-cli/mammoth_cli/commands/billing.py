@@ -28,6 +28,7 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_CONFIRM_TARGET, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
+from mammoth_cli.services.command_contract import bind_command_inputs
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -42,6 +43,11 @@ def _symbol(invocation: Invocation) -> str:
             exit_status=EXIT_USAGE,
         )
     return str(record["sdk_symbol"])
+
+
+def _bound_document(invocation: Invocation) -> dict[str, Any]:
+    """Return admitted input after the shared S7 contract binding boundary."""
+    return bind_command_inputs(invocation.command_id, invocation.load_input() or {})
 
 
 def _string_positional(invocation: Invocation) -> str | None:
@@ -105,10 +111,11 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
 def _forward_optional(
     document: dict[str, Any], kwargs: dict[str, Any], fields: tuple[str, ...]
 ) -> None:
-    """Copy any of ``fields`` present in ``document`` into ``kwargs``."""
-    for field in fields:
-        if field in document:
-            kwargs[field] = document[field]
+    """Copy every admitted input field into ``kwargs`` unchanged."""
+    for field, value in document.items():
+        if field in kwargs and field not in fields:
+            continue
+        kwargs[field] = value
 
 
 def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> dict[str, Any]:
@@ -135,7 +142,7 @@ def billing_chargebee_plan(invocation: Invocation) -> HandlerResult:
 
 def billing_hosted_page(invocation: Invocation) -> HandlerResult:
     """Get a Chargebee hosted-page URL. Object type is positional or an input field."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     object_type = _string_positional(invocation) or document.get("object_type")
     if not object_type:
         raise CliError(
@@ -186,7 +193,7 @@ def billing_invoice_get(invocation: Invocation) -> HandlerResult:
 
 def billing_invoice_list(invocation: Invocation) -> HandlerResult:
     """List invoices for the workspace. ``--yes --confirm WS`` required."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("limit", "sort"))
     with open_service(invocation) as (service, auth):
@@ -202,7 +209,7 @@ def billing_invoice_list(invocation: Invocation) -> HandlerResult:
 
 def billing_stripe_cancel(invocation: Invocation) -> HandlerResult:
     """Cancel the workspace's Stripe subscription. ``--yes --confirm WS`` required."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("body",))
     with open_service(invocation) as (service, auth):
@@ -218,7 +225,7 @@ def billing_stripe_cancel(invocation: Invocation) -> HandlerResult:
 
 def billing_stripe_checkout_url(invocation: Invocation) -> HandlerResult:
     """Get a Stripe Checkout URL. ``success_url``/``cancel_url`` come from ``--input``."""
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     success_url = _require_field(document, "success_url")
     cancel_url = _require_field(document, "cancel_url")
     kwargs: dict[str, Any] = {"success_url": success_url, "cancel_url": cancel_url}
@@ -238,7 +245,7 @@ def billing_stripe_checkout_url(invocation: Invocation) -> HandlerResult:
 def billing_stripe_create(invocation: Invocation) -> HandlerResult:
     """Create a Stripe subscription. Plan id is positional; interval is optional."""
     plan_id = _require_int_positional(invocation, "plan id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"plan_id": plan_id}
     _forward_optional(document, kwargs, ("billing_interval",))
     with open_service(invocation) as (service, auth):
@@ -334,7 +341,7 @@ def billing_stripe_payment_method_set_default(invocation: Invocation) -> Handler
 
 def billing_stripe_portal_url(invocation: Invocation) -> HandlerResult:
     """Get a Stripe billing portal URL. ``--yes --confirm WS`` required."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("return_url",))
     with open_service(invocation) as (service, auth):
@@ -350,7 +357,7 @@ def billing_stripe_portal_url(invocation: Invocation) -> HandlerResult:
 
 def billing_stripe_preview_invoice(invocation: Invocation) -> HandlerResult:
     """Preview the workspace's next Stripe invoice. ``--yes --confirm WS`` required."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(
         document, kwargs, ("connector_ids", "additional_storage_gb", "additional_user_seats")
@@ -433,7 +440,7 @@ def billing_stripe_usage(invocation: Invocation) -> HandlerResult:
 
 def billing_subscription_get(invocation: Invocation) -> HandlerResult:
     """Get the workspace's subscription details. ``--yes --confirm WS`` required."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("fields",))
     with open_service(invocation) as (service, auth):
@@ -449,7 +456,7 @@ def billing_subscription_get(invocation: Invocation) -> HandlerResult:
 
 def billing_subscription_update(invocation: Invocation) -> HandlerResult:
     """Apply a patch to the workspace's subscription. ``patch`` comes from ``--input``."""
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     patch = _require_field(document, "patch")
     with open_service(invocation) as (service, auth):
         enforce_confirmation(

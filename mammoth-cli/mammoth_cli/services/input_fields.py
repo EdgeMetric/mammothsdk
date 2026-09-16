@@ -21,7 +21,15 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     # the ``dataview_id`` the handler forwards from the view positional; the
     # handler never reads it, so it must not be advertised as an --input field.
     "view.draft.status": frozenset({"dataset_id"}),
+    # These handlers supply the SDK dataview_id from the VIEW_ID positional.
+    "view.exportable-config.get": frozenset({"dataview_id"}),
+    "view.exportable-config.apply": frozenset({"dataview_id"}),
 }
+
+# CLI-only commands whose complete request is carried by positionals/context.
+# This is the single source used by both resolved contracts and runtime
+# admission; an unresolved Python signature must not make these commands open.
+_CLOSED_ZERO_INPUT_COMMANDS = frozenset({"config.get"})
 
 
 #: Extra ``--input`` fields to weave into a command's generated ``agent_example``.
@@ -31,6 +39,69 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
 #: value here is a genuine, accepted --input field so the documented example both
 #: validates against the input schema and works when run.
 _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
+    "view.export.azure-blob": {
+        "storage_account_name": "storage-account",
+        "tenant_id": "tenant-id",
+        "client_id": "client-id",
+        "client_secret": "replace-with-secret",
+        "container_name": "exports",
+    },
+    "view.export.bigquery": {
+        "selected_profile": {},
+        "selected_identity": {},
+        "table": "exports",
+    },
+    "view.export.dataset": {"dataset_name": "snapshot"},
+    "view.export.elasticsearch": {
+        "host": "elastic.example",
+        "username": "agent",
+        "password": "replace-with-secret",
+        "index": "exports",
+    },
+    "view.export.email": {"emails": ["recipient@example.com"]},
+    "view.export.ftp": {
+        "domain": "ftp.example",
+        "directory": "/exports",
+        "file": "report.csv",
+        "username": "agent",
+        "password": "replace-with-secret",
+    },
+    "view.export.managed-s3": {"file_name": "report.csv"},
+    "view.export.mssql": {
+        "host": "db.example", "port": 1433, "database": "analytics", "table": "exports",
+        "username": "agent", "password": "replace-with-secret",
+    },
+    "view.export.mysql": {
+        "host": "db.example", "port": 3306, "database": "analytics", "table": "exports",
+        "username": "agent", "password": "replace-with-secret",
+    },
+    "view.export.onedrive": {
+        "tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret",
+        "user_id": "user-id",
+    },
+    "view.export.postgres": {
+        "host": "db.example", "port": 5432, "database": "analytics", "table": "exports",
+        "username": "agent", "password": "replace-with-secret",
+    },
+    "view.export.powerbi": {
+        "username": "agent", "password": "replace-with-secret", "client_id": "client-id",
+        "dataset": "dataset", "table": "exports",
+    },
+    "view.export.redshift": {
+        "host": "db.example", "port": 5439, "database": "analytics", "table": "exports",
+        "username": "agent", "password": "replace-with-secret",
+    },
+    "view.export.rest": {"base_url": "https://api.example", "endpoint_path": "/records"},
+    "view.export.sftp": {"host": "sftp.example", "username": "agent"},
+    "view.export.sharepoint": {
+        "tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret",
+        "site_url": "https://sharepoint.example/site",
+    },
+    "view.export.tableau": {
+        "server_url": "https://tableau.example",
+        "token_name": "token",
+        "token_secret": "replace-with-secret",
+    },
     # AddonsAPI.add_connector/remove_connector require exactly one of
     # ``connector_id``/``connector_ids``; both are optional in the signature.
     "addon.connector.add": {"connector_id": 42},
@@ -47,6 +118,9 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # project user update targets a specific member: the handler requires ``role``
     # (auto-filled) plus one of ``user_id``/``invite_id`` to say *which* member.
     "project.user.update": {"user_id": 123},
+    # Blank dashboard creation requires a typed params envelope. Keep the
+    # generated destructive example runnable with the explicit approval flag.
+    "dashboard.create-blank": {"params": {"dataview_id": 1}},
 }
 
 
@@ -75,3 +149,8 @@ def excluded_input_fields(command_id: str) -> frozenset[str]:
 def handler_owned_fields(command_id: str) -> frozenset[str]:
     """Return only fields consumed, replaced, or intentionally omitted by a handler."""
     return _HANDLER_OWNED_FIELDS.get(command_id, frozenset())
+
+
+def is_closed_zero_input(command_id: str) -> bool:
+    """Whether a command has a reviewed closed, empty input document."""
+    return command_id in _CLOSED_ZERO_INPUT_COMMANDS

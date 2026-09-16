@@ -33,6 +33,7 @@ CATALOG_COMMAND_REMAP = {
 # Underlying OpenAPI operation(s) and HTTP method for SDK-convenience commands
 # that do not map 1:1 to a single operation (they share an operation).
 EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
+    "dashboard.context.extract": {"operation_ids": ["ExtractContext"], "method": "POST"},
     # All typed transforms add one pipeline task.
     **{
         f"view.transform.{name}": {"operation_ids": ["AddTask"], "method": "POST"}
@@ -61,6 +62,11 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "user.change-password": {"operation_ids": ["UpdateUser"], "method": "PATCH"},
     "workspace.user.get": {"operation_ids": [], "method": "GET"},
     "addon.list": {"operation_ids": [], "method": "GET"},
+    "dashboard.tags.list": {"operation_ids": ["ListDashboardTags"], "method": "GET"},
+    "dashboard.tags.rename": {"operation_ids": ["RenameDashboardTag"], "method": "PATCH"},
+    "dashboard.tags.set": {"operation_ids": ["SetDashboardTags"], "method": "PUT"},
+    "dashboard.tags.delete": {"operation_ids": ["DeleteDashboardTag"], "method": "DELETE"},
+    "dashboard.tags.merge": {"operation_ids": ["MergeDashboardTags"], "method": "POST"},
 }
 
 # CLI-only commands: no OpenAPI operation and no Mammoth transport. They are
@@ -139,6 +145,12 @@ CLI_ONLY_COMMANDS: dict[str, dict[str, Any]] = {
         "sdk_symbol": "mammoth_cli.commands.capability.get",
         "mutation_class": "read",
         "live_exemption_reason": "Local manifest read.",
+    },
+    "capability.find": {
+        "sdk_symbol": "mammoth_cli.commands.capability.find_capabilities",
+        "mutation_class": "read",
+        "live_exemption_reason": "Local manifest search.",
+        "pagination_policy": "offset",
     },
     "schema.list": {
         "sdk_symbol": "mammoth_cli.commands.schema.list_",

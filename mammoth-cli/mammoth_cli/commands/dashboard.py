@@ -12,6 +12,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth.models.dashboards import AddPagesSpec
+from pydantic import ValidationError
+
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -31,6 +34,8 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
 from mammoth_cli.services.argspec import arg_spec
+from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.positionals import resolve_positionals
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -147,6 +152,45 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     return document[field]
 
 
+def _bound_document(invocation: Invocation) -> dict[str, Any]:
+    """Return the admitted family input after shared contract binding.
+
+    Dashboard commands have several explicit adapter transformations (for
+    example ``action``/``share`` bodies and dashboard-create's intent
+    positional).  The structured document itself must nevertheless cross one
+    shared boundary first, so a supplied field cannot be silently dropped by
+    a handwritten adapter.
+    """
+    return bind_command_inputs(invocation.command_id, invocation.load_input() or {})
+
+
+def _generated_positionals(invocation: Invocation) -> dict[str, Any]:
+    """Resolve generated-route positionals for CLI and direct-handler calls.
+
+    The application supplies typed values in ``Invocation.positionals``.  Unit
+    and contract callers may construct an invocation with legacy ``extra_args``;
+    normalize those through the reviewed positional catalog so both paths have
+    identical SDK destinations.
+    """
+    values = dict(invocation.positionals)
+    for index, spec in enumerate(resolve_positionals(invocation.command_id)):
+        if spec.name in values or index >= len(invocation.extra_args):
+            continue
+        raw = invocation.extra_args[index]
+        if spec.type is int:
+            try:
+                values[spec.name] = int(raw)
+            except ValueError as exc:
+                raise CliError(
+                    code=CODE_INVALID_ARGUMENT,
+                    message=f"The {spec.name} argument '{raw}' is not an integer.",
+                    exit_status=EXIT_USAGE,
+                ) from exc
+        else:
+            values[spec.name] = raw
+    return values
+
+
 def _forward_optional(
     document: dict[str, Any], kwargs: dict[str, Any], fields: tuple[str, ...]
 ) -> None:
@@ -170,6 +214,129 @@ def dashboard_list(invocation: Invocation) -> HandlerResult:
     kwargs = {"project_id": invocation.project} if invocation.project is not None else {}
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def dashboard_tags_list(invocation: Invocation) -> HandlerResult:
+    """List the workspace dashboard-tag vocabulary."""
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation))
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def dashboard_tags_rename(invocation: Invocation) -> HandlerResult:
+    """Rename a dashboard tag after exact-target confirmation."""
+    tag_id = _require_int_positional(invocation, "tag id")
+    if tag_id <= 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="tag id must be positive.",
+            exit_status=EXIT_USAGE,
+        )
+    document = _bound_document(invocation)
+    name = _require_field(document, "name")
+    if not isinstance(name, str) or not name.strip():
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="name must be a non-blank string.",
+            exit_status=EXIT_USAGE,
+        )
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_CONFIRM_TARGET,
+        action=f"rename dashboard tag {tag_id}",
+        target=str(tag_id),
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), tag_id=tag_id, name=name)
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def dashboard_tags_set(invocation: Invocation) -> HandlerResult:
+    """Replace all dashboard tags after exact-target confirmation."""
+    dashboard_id = _require_int_positional(invocation, "dashboard id")
+    if dashboard_id <= 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="dashboard id must be positive.",
+            exit_status=EXIT_USAGE,
+        )
+    document = _bound_document(invocation)
+    tags = _require_field(document, "tags")
+    if not isinstance(tags, list) or any(not isinstance(tag, str) for tag in tags):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="tags must be a list of strings.",
+            exit_status=EXIT_USAGE,
+        )
+    if len(tags) != len(set(tags)):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="tags must not contain duplicates.",
+            exit_status=EXIT_USAGE,
+        )
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_CONFIRM_TARGET,
+        action=f"replace dashboard tags for {dashboard_id}",
+        target=str(dashboard_id),
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), dashboard_id=dashboard_id, tags=tags)
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def dashboard_tags_delete(invocation: Invocation) -> HandlerResult:
+    """Delete a workspace dashboard tag after exact-target confirmation."""
+    tag_id = _require_int_positional(invocation, "tag id")
+    if tag_id <= 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="tag id must be positive.",
+            exit_status=EXIT_USAGE,
+        )
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_CONFIRM_TARGET,
+        action=f"delete dashboard tag {tag_id}",
+        target=str(tag_id),
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), tag_id=tag_id)
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def dashboard_tags_merge(invocation: Invocation) -> HandlerResult:
+    """Merge a source workspace dashboard tag into a target tag."""
+    tag_id = _require_int_positional(invocation, "tag id")
+    if tag_id <= 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="tag id must be positive.",
+            exit_status=EXIT_USAGE,
+        )
+    document = _bound_document(invocation)
+    target_id = _require_field(document, "target_id")
+    if isinstance(target_id, bool) or not isinstance(target_id, int) or target_id <= 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="target_id must be a positive integer.",
+            exit_status=EXIT_USAGE,
+        )
+    if target_id == tag_id:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="tag id and target_id must differ.",
+            exit_status=EXIT_USAGE,
+        )
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_CONFIRM_TARGET,
+        action=f"merge dashboard tag {tag_id} into {target_id}",
+        target=str(tag_id),
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), tag_id=tag_id, target_id=target_id)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -200,7 +367,7 @@ def dashboard_analytics(invocation: Invocation) -> HandlerResult:
 def dashboard_data_draft(invocation: Invocation) -> HandlerResult:
     """Run a SQL query against a dashboard's draft data. ``sql`` comes from ``--input``."""
     dashboard_id = _require_int_positional(invocation, "dashboard id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     sql = _require_field(document, "sql")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dashboard_id=dashboard_id, sql=sql)
@@ -211,7 +378,7 @@ def dashboard_data_draft(invocation: Invocation) -> HandlerResult:
 def dashboard_data_published(invocation: Invocation) -> HandlerResult:
     """Run a SQL query against a dashboard's published data. ``sql`` from ``--input``."""
     dashboard_id = _require_int_positional(invocation, "dashboard id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     sql = _require_field(document, "sql")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dashboard_id=dashboard_id, sql=sql)
@@ -231,7 +398,7 @@ def dashboard_job_by_url(invocation: Invocation) -> HandlerResult:
 def dashboard_published_data_by_url(invocation: Invocation) -> HandlerResult:
     """Run a published-data request for a dashboard by url. ``body`` from ``--input``."""
     url = _require_str_positional(invocation, "url")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     body = _require_field(document, "body")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), url=url, body=body)
@@ -242,7 +409,7 @@ def dashboard_published_data_by_url(invocation: Invocation) -> HandlerResult:
 def dashboard_widget_data(invocation: Invocation) -> HandlerResult:
     """Run a widget-data request for a dashboard by id. ``body`` from ``--input``."""
     dashboard_id = _require_int_positional(invocation, "dashboard id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     body = _require_field(document, "body")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dashboard_id=dashboard_id, body=body)
@@ -253,7 +420,7 @@ def dashboard_widget_data(invocation: Invocation) -> HandlerResult:
 def dashboard_widget_data_by_url(invocation: Invocation) -> HandlerResult:
     """Run a widget-data request for a dashboard by url. ``body`` from ``--input``."""
     url = _require_str_positional(invocation, "url")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     body = _require_field(document, "body")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), url=url, body=body)
@@ -263,8 +430,9 @@ def dashboard_widget_data_by_url(invocation: Invocation) -> HandlerResult:
 
 def dashboard_source_list(invocation: Invocation) -> HandlerResult:
     """List dashboard sources available in the active workspace."""
+    kwargs = bind_command_inputs(invocation.command_id, invocation.load_input() or {})
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation))
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -279,9 +447,8 @@ def dashboard_create(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
             hint="Pass the intent as a positional argument or an 'intent' input field.",
         )
-    source = _require_field(document, "source")
-    kwargs: dict[str, Any] = {"intent": intent, "source": source}
-    _forward_optional(document, kwargs, ("enable_filters", "enable_pages"))
+    _require_field(document, "source")
+    kwargs = bind_command_inputs(invocation.command_id, document, intent=intent)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
@@ -290,7 +457,7 @@ def dashboard_create(invocation: Invocation) -> HandlerResult:
 def dashboard_update(invocation: Invocation) -> HandlerResult:
     """Apply a JSON Patch to one dashboard. Dashboard id is positional."""
     dashboard_id = _require_int_positional(invocation, "dashboard id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     patch = _require_field(document, "patch")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), dashboard_id=dashboard_id, patch=patch)
@@ -300,7 +467,7 @@ def dashboard_update(invocation: Invocation) -> HandlerResult:
 def dashboard_action(invocation: Invocation) -> HandlerResult:
     """Apply a lifecycle action to a dashboard. Always requires ``--yes``."""
     dashboard_id = _require_int_positional(invocation, "dashboard id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     action = _require_field(document, "action")
     enforce_confirmation(
         invocation,
@@ -318,7 +485,7 @@ def dashboard_action(invocation: Invocation) -> HandlerResult:
 def dashboard_share(invocation: Invocation) -> HandlerResult:
     """Share a dashboard. Always requires ``--yes``."""
     dashboard_id = _require_int_positional(invocation, "dashboard id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     type_of_auth = _require_field(document, "type_of_auth")
     enforce_confirmation(
         invocation,
@@ -370,6 +537,32 @@ def dashboard_delete(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
+def dashboard_archive(invocation: Invocation) -> HandlerResult:
+    """Set the archived state of one dashboard with exact target confirmation."""
+    dashboard_id = _require_int_positional(invocation, "dashboard id")
+    # Inspect the admitted JSON document before the shared SDK binder applies
+    # its convenience coercions; the OpenAPI boolean is intentionally strict.
+    raw = invocation.prepare_input() or {}
+    if "archived" not in raw or type(raw["archived"]) is not bool:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The 'archived' input field must be a boolean.",
+            exit_status=EXIT_USAGE,
+        )
+    document = _bound_document(invocation)
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_CONFIRM_TARGET,
+        action=f"set archived state for dashboard {dashboard_id}",
+        target=str(dashboard_id),
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation), dashboard_id=dashboard_id, archived=document["archived"]
+        )
+    return data, _meta(invocation, auth.workspace_id)
+
+
 def generated_dashboard(invocation: Invocation) -> HandlerResult:
     """Dispatch a generated dashboard command through its reviewed manifest.
 
@@ -386,9 +579,24 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
         )
 
-    document = invocation.load_input() or {}
-    kwargs = dict(document)
-    kwargs.update(invocation.positionals)
+    document = _bound_document(invocation)
+    positionals = _generated_positionals(invocation)
+    kwargs = bind_command_inputs(invocation.command_id, document, **positionals)
+
+    # The generated contract treats named request bodies as opaque mappings;
+    # AddPages has a release-level minItems constraint that must be enforced
+    # before confirmation or transport.
+    if invocation.command_id == "dashboard.pages.add" and "body" in kwargs:
+        try:
+            kwargs["body"] = AddPagesSpec.model_validate(kwargs["body"]).model_dump(
+                mode="json", exclude_none=True
+            )
+        except ValidationError as exc:
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=f"Invalid add-pages request: {exc}",
+                exit_status=EXIT_USAGE,
+            ) from exc
 
     spec = arg_spec(_symbol(invocation))
     if spec is not None:
@@ -405,7 +613,7 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             )
 
     policy = str(record.get("confirmation") or POLICY_NONE)
-    target = next((str(value) for value in invocation.positionals.values()), None)
+    target = next((str(value) for value in positionals.values()), None)
     enforce_confirmation(
         invocation,
         policy=policy,

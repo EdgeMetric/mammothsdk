@@ -20,6 +20,7 @@ from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
 from mammoth_cli.output.render import render
+from mammoth_cli.services.mapping import map_sdk_exception
 
 Producer = Callable[[], tuple[Any, dict[str, Any]]]
 
@@ -101,26 +102,56 @@ def emit_error(error: CliError, *, machine: bool) -> None:
         typer.echo(f"  try: {command}", err=True)
 
 
-def run(command_id: str, output: str, producer: Producer) -> None:
+def run(
+    command_id: str,
+    output: str,
+    producer: Producer,
+    *,
+    agent_mode: bool = False,
+) -> None:
     """Run one command's producer and emit its envelope.
 
     Args:
         command_id: The manifest command id driving this invocation.
-        output: The resolved ``--output`` mode.
+        output: The requested or resolved ``--output`` mode.
         producer: A zero-argument callable returning ``(data, meta_extra)``.
             ``meta_extra`` is forwarded as keyword arguments to
             :func:`emit_success` (``profile``, ``workspace_id``,
             ``project_id``, ``pagination``).
+        agent_mode: Whether the invocation explicitly disabled interaction
+            (``--no-input``). This is used only when an invalid output mode
+            needs an error renderer before a concrete machine mode exists.
 
     Raises:
         typer.Exit: Always, when ``producer`` raises a :class:`CliError`, with
             the error's mapped exit status. On success the function returns
             normally after rendering the success envelope.
     """
+    # An invalid mode cannot itself identify a renderer. In redirected/non-TTY
+    # execution, or when the caller explicitly selected agent mode, keep the
+    # error contract machine-readable. A human TTY still receives the concise
+    # diagnostic intended for interactive troubleshooting.
+    machine_error = output in MACHINE_OUTPUTS or (
+        output not in VALID_OUTPUTS and (agent_mode or not sys.stdout.isatty())
+    )
     try:
         _validate_output(output)
         data, meta_extra = producer()
         emit_success(command_id, data, output, **meta_extra)
     except CliError as error:
-        emit_error(error, machine=output in MACHINE_OUTPUTS)
+        emit_error(error, machine=machine_error)
         raise typer.Exit(error.exit_status) from None
+    except KeyboardInterrupt as exc:
+        # Polling can be interrupted after a job handle was observed.  Keep
+        # that handle when an SDK exception exposes one; never turn Ctrl-C
+        # into a successful/empty result or a Python traceback.
+        mapped_error = map_sdk_exception(exc)
+        emit_error(mapped_error, machine=machine_error)
+        raise typer.Exit(mapped_error.exit_status) from None
+    except Exception as exc:
+        # Bespoke handlers should normally cross the SDK service seam, but a
+        # malformed response or filesystem fault must still obey the same
+        # machine envelope rather than leaking an implementation traceback.
+        mapped_error = map_sdk_exception(exc)
+        emit_error(mapped_error, machine=machine_error)
+        raise typer.Exit(mapped_error.exit_status) from None

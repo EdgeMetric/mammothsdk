@@ -377,6 +377,16 @@ sdk_methods:
   openapi_operation_ids: []
   notes: Returns a query and metadata; differs from view transform generate-sql, which adds and executes
     a pipeline task. Do not infer addon availability from an authorization error.
+- sdk_symbol: mammoth.api.ai.AIAPI.retention_condition
+  canonical_command: ai.retention.condition
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: start_or_wait
+  pagination_policy: none
+  openapi_operation_ids:
+  - RetentionCondition
+  notes: Requires explicit project context. Mode generate may return a job-backed result; mode test follows
+    the release response union and must not be assumed to synchronously return row counts.
 - sdk_symbol: mammoth.api.ai.AIAPI.get_data_gen_info
   canonical_command: view.ai.generation-info
   alias_of: null
@@ -543,6 +553,43 @@ sdk_methods:
   pagination_policy: none
   openapi_operation_ids: []
   notes: delete_source_ds=true changes the mutation class to destructive and requires confirmation.
+- sdk_symbol: mammoth.api.batches.BatchesAPI.create_spec
+  canonical_command: batch.create-spec
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: returns_job
+  pagination_policy: none
+  openapi_operation_ids:
+  - CreateBatch
+  agent_example: 'mammoth batch create-spec 123 --input ''{"file_id": 94}'' --output json --no-input'
+  notes: Release BatchesPostRequest; file_id-only or source_id plus homogeneous mapping array. Dynamic confirmation applies only to delete_source_ds.
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_batch_data
+  canonical_command: dataset.batch-data
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: offset
+  openapi_operation_ids:
+  - GetBatchData
+  notes: Dataset and batch parent are explicit; limit is 0..100 and offset is non-negative.
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.get_exportable_config
+  canonical_command: view.exportable-config.get
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - GetExportableConfig
+  notes: View-centric read; dataset_id may be supplied as the explicit parent.
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.apply_exportable_config
+  canonical_command: view.exportable-config.apply
+  alias_of: null
+  mutation_class: reversible_pipeline
+  wait_policy: returns_job
+  pagination_policy: none
+  openapi_operation_ids:
+  - ApplyExportableConfig
+  notes: Exactly one of items or config is required; explicit dataset parent is preferred.
 - sdk_symbol: mammoth.api.batches.BatchesAPI.delete
   canonical_command: batch.delete
   alias_of: null
@@ -1017,6 +1064,15 @@ sdk_methods:
   openapi_operation_ids: []
   notes: Only query has current server support; other enum paths remain blocked pending successful server
     evidence. Fixture required.
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.archive
+  canonical_command: dashboard.archive
+  alias_of: null
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ArchiveDashboard
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.action
   canonical_command: dashboard.action
   alias_of: null
@@ -1104,6 +1160,14 @@ sdk_methods:
   openapi_operation_ids: []
   notes: 'B13 DASHBOARD_ASYNC_UNTYPED: no stable typed job or waiter exposed; keep returns_job, do not
     claim completion.'
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create_blank
+  canonical_command: dashboard.create-blank
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - CreateBlankDashboard
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.delete
   canonical_command: dashboard.delete
   alias_of: null
@@ -1191,6 +1255,54 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: single_page
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.list_tags
+  canonical_command: dashboard.tags.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ListDashboardTags
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rename_tag
+  canonical_command: dashboard.tags.rename
+  alias_of: null
+  mutation_class: benign_mutation
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  agent_example: 'mammoth dashboard tags rename 123 --input ''{"name": "Revenue"}'' --output json --no-input --yes --confirm 123'
+  openapi_operation_ids:
+  - RenameDashboardTag
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.set_tags
+  canonical_command: dashboard.tags.set
+  alias_of: null
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  agent_example: 'mammoth dashboard tags set 123 --input ''{"tags": ["Revenue"]}'' --output json --no-input --yes --confirm 123'
+  openapi_operation_ids:
+  - SetDashboardTags
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.delete_tag
+  canonical_command: dashboard.tags.delete
+  alias_of: null
+  mutation_class: destructive
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  agent_example: mammoth dashboard tags delete 123 --output json --no-input --yes --confirm 123
+  openapi_operation_ids:
+  - DeleteDashboardTag
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.merge_tag
+  canonical_command: dashboard.tags.merge
+  alias_of: null
+  mutation_class: destructive
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  agent_example: 'mammoth dashboard tags merge 123 --input ''{"target_id": 456}'' --output json --no-input --yes --confirm 123'
+  openapi_operation_ids:
+  - MergeDashboardTags
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.og_card
   canonical_command: dashboard.og-card
   alias_of: null
@@ -1205,6 +1317,24 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.add_pages
+  canonical_command: dashboard.pages.add
+  alias_of: null
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: returns_job
+  pagination_policy: none
+  openapi_operation_ids:
+  - AddPages
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.extract_context
+  canonical_command: dashboard.context.extract
+  alias_of: null
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ExtractContext
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.pdf_artifact
   canonical_command: dashboard.pdf-artifact
   alias_of: null
@@ -2558,6 +2688,7 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: null
   openapi_operation_ids: []
+  notes: Requires the exact parent dataset_id through --input; do not rely on implicit parent discovery when reconciling saved task definitions.
 - sdk_symbol: mammoth.api.pipeline.PipelineAPI.items
   canonical_command: view.pipeline.items
   alias_of: null
@@ -2565,6 +2696,16 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+  notes: Requires the exact parent dataset_id through --input; follow and validate every next-page URL before counting saved task definitions. The CLI does not paginate automatically.
+- sdk_symbol: mammoth.api.pipeline.PipelineAPI.items_all
+  canonical_command: view.pipeline.items-all
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: offset
+  openapi_operation_ids: []
+  notes: Reuses the exact-parent items route with bounded offset pagination; rejects repeated/non-advancing pages and excessive page counts. The CLI view.pipeline.items command remains single-page.
 - sdk_symbol: mammoth.api.pipeline.PipelineAPI.list_tasks
   canonical_command: view.task.list
   alias_of: null
@@ -2572,7 +2713,7 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: single_page
   openapi_operation_ids: []
-  notes: single_page until B5; no --all until continuation is proven.
+  notes: single_page until B5; no --all until continuation is proven. Requires the exact parent dataset_id through --input; do not rely on implicit parent discovery for saved-task reads.
 - sdk_symbol: mammoth.api.pipeline.PipelineAPI.preview_task
   canonical_command: view.task.preview
   alias_of: null
@@ -2746,6 +2887,14 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.resource_dependencies_update
+  canonical_command: project.resource-dependencies.update
+  alias_of: null
+  mutation_class: high_impact
+  wait_policy: always_wait
+  pagination_policy: none
+  openapi_operation_ids:
+  - BulkModify
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.resource_status
   canonical_command: project.resource-status
   alias_of: null
@@ -3704,7 +3853,7 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
-  notes: Immutable view-ID confirmation. BLOCKED[B10 VIEW_DATASET_RESOLUTION].
+  notes: Immutable view-ID confirmation. Supplying dataset_id uses the exact nested endpoint and skips parent discovery; omitting it retains legacy parent discovery.
 - sdk_symbol: mammoth.client.ViewsResource.get
   canonical_command: view.get
   alias_of: null
@@ -3862,15 +4011,17 @@ sdk_methods:
   notes: Current helper uses a dedicated endpoint, not HandlerType.PUBLISHDB; add typed result and public
     wait path.
 - sdk_symbol: mammoth.view.ViewExport.to_azure_blob
-  canonical_command: null
-  alias_of: view.export.azure-blob
+  canonical_command: view.export.azure-blob
+  alias_of: null
+  secret_fields: [client_secret]
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.view.ViewExport.to_bigquery
-  canonical_command: null
-  alias_of: view.export.bigquery
+  canonical_command: view.export.bigquery
+  alias_of: null
+  secret_fields: []
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null
@@ -3886,68 +4037,76 @@ sdk_methods:
   notes: Local download facade; uses a temporary managed-S3 export and is not a HandlerType.CSV_FILE alias.
     Requires --overwrite for an existing path.
 - sdk_symbol: mammoth.view.ViewExport.to_dataset
-  canonical_command: null
-  alias_of: view.export.dataset
-  mutation_class: null
+  canonical_command: view.export.dataset
+  alias_of: null
+  mutation_class: benign_mutation
   wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
   notes: 'Mutation class dynamic: benign_mutation for a new target, destructive when replacing an existing
     target.'
 - sdk_symbol: mammoth.view.ViewExport.to_elasticsearch
-  canonical_command: null
-  alias_of: view.export.elasticsearch
+  canonical_command: view.export.elasticsearch
+  alias_of: null
+  secret_fields: [password]
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null
   openapi_operation_ids: []
   notes: Validate protocol and positive chunk size.
 - sdk_symbol: mammoth.view.ViewExport.to_email
-  canonical_command: null
-  alias_of: view.export.email
+  canonical_command: view.export.email
+  alias_of: null
+  secret_fields: []
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null
   openapi_operation_ids: []
   notes: Outbound email stays contract-only until a dedicated sink and recipient allowlist exist.
 - sdk_symbol: mammoth.view.ViewExport.to_ftp
-  canonical_command: null
-  alias_of: view.export.ftp
+  canonical_command: view.export.ftp
+  alias_of: null
+  secret_fields: [password]
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.view.ViewExport.to_mssql
-  canonical_command: null
-  alias_of: view.export.mssql
+  canonical_command: view.export.mssql
+  alias_of: null
+  secret_fields: [password]
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.view.ViewExport.to_mysql
-  canonical_command: null
-  alias_of: view.export.mysql
+  canonical_command: view.export.mysql
+  alias_of: null
+  secret_fields: [password]
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.view.ViewExport.to_onedrive
-  canonical_command: null
-  alias_of: view.export.onedrive
+  canonical_command: view.export.onedrive
+  alias_of: null
+  secret_fields: [client_secret]
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.view.ViewExport.to_postgres
-  canonical_command: null
-  alias_of: view.export.postgres
+  canonical_command: view.export.postgres
+  alias_of: null
+  secret_fields: [password]
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.view.ViewExport.to_powerbi
-  canonical_command: null
-  alias_of: view.export.powerbi
+  canonical_command: view.export.powerbi
+  alias_of: null
+  secret_fields: [password]
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null
@@ -3955,15 +4114,17 @@ sdk_methods:
   notes: The handler enum and helper exist, but the pure contract omits it; confirm camel-case clientId
     against the pinned server before enabling. See IO-EXPORT-HANDLERS blocker.
 - sdk_symbol: mammoth.view.ViewExport.to_redshift
-  canonical_command: null
-  alias_of: view.export.redshift
+  canonical_command: view.export.redshift
+  alias_of: null
+  secret_fields: [password]
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.view.ViewExport.to_rest_api
-  canonical_command: null
-  alias_of: view.export.rest
+  canonical_command: view.export.rest
+  alias_of: null
+  secret_fields: [auth]
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null
@@ -3971,33 +4132,36 @@ sdk_methods:
   notes: Alias `view export rest-api`. Type all auth variants, reject secrets in static headers/query/body,
     allow insecure TLS only with --yes.
 - sdk_symbol: mammoth.view.ViewExport.to_s3
-  canonical_command: null
-  alias_of: view.export.managed-s3
-  mutation_class: null
-  wait_policy: null
+  canonical_command: view.export.managed-s3
+  alias_of: null
+  mutation_class: external_effect
+  wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
   notes: 'Alias `view export s3`. Destination policy is dynamic: start_or_wait/benign_mutation/live_disposable_project
     for download-only, otherwise external_effect/live_dedicated_external_fixture.'
 - sdk_symbol: mammoth.view.ViewExport.to_sftp
-  canonical_command: null
-  alias_of: view.export.sftp
+  canonical_command: view.export.sftp
+  alias_of: null
+  secret_fields: [password, private_key, passphrase]
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null
   openapi_operation_ids: []
   notes: Enforce authentication-mode union (password vs key) and forbid irrelevant secrets.
 - sdk_symbol: mammoth.view.ViewExport.to_sharepoint
-  canonical_command: null
-  alias_of: view.export.sharepoint
+  canonical_command: view.export.sharepoint
+  alias_of: null
+  secret_fields: [client_secret]
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null
   openapi_operation_ids: []
   notes: Validate site URL.
 - sdk_symbol: mammoth.view.ViewExport.to_tableau
-  canonical_command: null
-  alias_of: view.export.tableau
+  canonical_command: view.export.tableau
+  alias_of: null
+  secret_fields: [token_secret]
   mutation_class: external_effect
   wait_policy: returns_job
   pagination_policy: null

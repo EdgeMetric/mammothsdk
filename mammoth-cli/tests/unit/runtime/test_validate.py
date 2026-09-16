@@ -66,6 +66,13 @@ def test_zero_timeout_is_rejected(field: str) -> None:
         validate_invocation(_invocation(**{field: 0.0}))
 
 
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("field", ["timeout", "job_timeout", "pipeline_timeout"])
+def test_non_finite_timeout_is_rejected(field: str, value: float) -> None:
+    with pytest.raises(CliError):
+        validate_invocation(_invocation(**{field: value}))
+
+
 @pytest.mark.parametrize("field", ["timeout", "job_timeout", "pipeline_timeout"])
 def test_positive_timeout_passes(field: str) -> None:
     validate_invocation(_invocation(**{field: 30.0}))

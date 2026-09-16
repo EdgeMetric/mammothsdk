@@ -26,6 +26,7 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_CONFIRM_TARGET, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
+from mammoth_cli.services.command_contract import bind_command_inputs
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -40,6 +41,11 @@ def _symbol(invocation: Invocation) -> str:
             exit_status=EXIT_USAGE,
         )
     return str(record["sdk_symbol"])
+
+
+def _bound_document(invocation: Invocation) -> dict[str, Any]:
+    """Return admitted input after the shared S7 contract binding boundary."""
+    return bind_command_inputs(invocation.command_id, invocation.load_input() or {})
 
 
 def _string_positional(invocation: Invocation) -> str | None:
@@ -105,10 +111,11 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
 def _forward_optional(
     document: dict[str, Any], kwargs: dict[str, Any], fields: tuple[str, ...]
 ) -> None:
-    """Copy any present optional fields from the input document into kwargs."""
-    for field in fields:
-        if field in document:
-            kwargs[field] = document[field]
+    """Copy every admitted input field into ``kwargs`` unchanged."""
+    for field, value in document.items():
+        if field in kwargs and field not in fields:
+            continue
+        kwargs[field] = value
 
 
 def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
@@ -138,7 +145,7 @@ def support_connector_list(invocation: Invocation) -> HandlerResult:
 
 def support_connector_create(invocation: Invocation) -> HandlerResult:
     """Create a connector. Name comes from a positional or the ``name`` field."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     name = _require_positional_or_field(invocation, document, "name", "connector name")
     kwargs: dict[str, Any] = {"name": name}
     _forward_optional(document, kwargs, ("description", "price_per_month", "enabled"))
@@ -151,7 +158,7 @@ def support_connector_create(invocation: Invocation) -> HandlerResult:
 def support_connector_update(invocation: Invocation) -> HandlerResult:
     """Update a connector. Connector id is positional; fields come from ``--input``."""
     connector_id = _require_int_positional(invocation, "connector id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"connector_id": connector_id}
     _forward_optional(document, kwargs, ("name", "description", "price_per_month", "enabled"))
     _confirm(invocation, action=f"update connector {connector_id}", target=str(connector_id))
@@ -182,7 +189,7 @@ def support_connector_profile_list(invocation: Invocation) -> HandlerResult:
 
 def support_connector_profile_create(invocation: Invocation) -> HandlerResult:
     """Create a connector profile. Name comes from a positional or ``name`` field."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     name = _require_positional_or_field(invocation, document, "name", "connector profile name")
     kwargs: dict[str, Any] = {"name": name}
     _forward_optional(document, kwargs, ("description", "connectors"))
@@ -195,7 +202,7 @@ def support_connector_profile_create(invocation: Invocation) -> HandlerResult:
 def support_connector_profile_update(invocation: Invocation) -> HandlerResult:
     """Update a connector profile. Profile id is positional; fields from ``--input``."""
     profile_id = _require_int_positional(invocation, "profile id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"profile_id": profile_id}
     _forward_optional(document, kwargs, ("name", "description", "connectors"))
     _confirm(invocation, action=f"update connector profile {profile_id}", target=str(profile_id))
@@ -216,7 +223,7 @@ def support_connector_profile_delete(invocation: Invocation) -> HandlerResult:
 def support_connector_profile_add_connector(invocation: Invocation) -> HandlerResult:
     """Add a connector to a connector profile. Profile id is positional."""
     profile_id = _require_int_positional(invocation, "profile id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     connector_id = invocation.positional("connector_id")
     if connector_id is None:
         raise CliError(
@@ -250,7 +257,7 @@ def support_feature_list(invocation: Invocation) -> HandlerResult:
 
 def support_feature_create(invocation: Invocation) -> HandlerResult:
     """Create a feature. Name comes from a positional or the ``name`` field."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     name = _require_positional_or_field(invocation, document, "name", "feature name")
     kwargs: dict[str, Any] = {"name": name}
     _forward_optional(document, kwargs, ("description", "price_per_month", "enabled", "values"))
@@ -263,7 +270,7 @@ def support_feature_create(invocation: Invocation) -> HandlerResult:
 def support_feature_update(invocation: Invocation) -> HandlerResult:
     """Update a feature. Feature id is positional; fields come from ``--input``."""
     feature_id = _require_int_positional(invocation, "feature id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"feature_id": feature_id}
     _forward_optional(
         document, kwargs, ("name", "description", "price_per_month", "enabled", "values")
@@ -296,7 +303,7 @@ def support_feature_profile_list(invocation: Invocation) -> HandlerResult:
 
 def support_feature_profile_create(invocation: Invocation) -> HandlerResult:
     """Create a feature profile. Name comes from a positional or ``name`` field."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     name = _require_positional_or_field(invocation, document, "name", "feature profile name")
     kwargs: dict[str, Any] = {"name": name}
     _forward_optional(document, kwargs, ("description", "features"))
@@ -309,7 +316,7 @@ def support_feature_profile_create(invocation: Invocation) -> HandlerResult:
 def support_feature_profile_update(invocation: Invocation) -> HandlerResult:
     """Update a feature profile. Profile id is positional; fields from ``--input``."""
     profile_id = _require_int_positional(invocation, "profile id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"profile_id": profile_id}
     _forward_optional(document, kwargs, ("name", "description", "features"))
     _confirm(invocation, action=f"update feature profile {profile_id}", target=str(profile_id))
@@ -330,7 +337,7 @@ def support_feature_profile_delete(invocation: Invocation) -> HandlerResult:
 def support_feature_profile_add_feature(invocation: Invocation) -> HandlerResult:
     """Add a feature to a feature profile. Profile id is positional."""
     profile_id = _require_int_positional(invocation, "profile id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     feature_id = invocation.positional("feature_id")
     if feature_id is None:
         raise CliError(
@@ -355,7 +362,7 @@ def support_feature_profile_add_feature(invocation: Invocation) -> HandlerResult
 def support_ownership_transfer(invocation: Invocation) -> HandlerResult:
     """Transfer ownership of a workspace. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     user_id = invocation.positional("user_id")
     if user_id is None:
         raise CliError(
@@ -415,7 +422,7 @@ def support_plan_self_serve_list(invocation: Invocation) -> HandlerResult:
 
 def support_plan_chargebee_list(invocation: Invocation) -> HandlerResult:
     """List available Chargebee plans/resources. Confirm target: the auth workspace id."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("resource",))
     with open_service(invocation) as (service, auth):
@@ -435,7 +442,7 @@ def support_plan_get(invocation: Invocation) -> HandlerResult:
 
 def support_plan_create(invocation: Invocation) -> HandlerResult:
     """Create a subscription plan. Name is positional; required fields from ``--input``."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     name = _require_positional_or_field(invocation, document, "name", "plan name")
     monthly_price = _require_field(document, "monthly_price")
     is_self_serve = _require_field(document, "is_self_serve")
@@ -454,7 +461,7 @@ def support_plan_create(invocation: Invocation) -> HandlerResult:
 def support_plan_update(invocation: Invocation) -> HandlerResult:
     """Update a subscription plan. Plan id is positional; fields from ``--input``."""
     plan_id = _require_int_positional(invocation, "plan id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"plan_id": plan_id}
     _forward_optional(document, kwargs, _PLAN_UPDATE_OPTIONAL)
     _confirm(invocation, action=f"update plan {plan_id}", target=str(plan_id))
@@ -475,7 +482,7 @@ def support_plan_delete(invocation: Invocation) -> HandlerResult:
 def support_plan_update_storage_tiers(invocation: Invocation) -> HandlerResult:
     """Replace a plan's storage pricing tiers. Plan id is positional."""
     plan_id = _require_int_positional(invocation, "plan id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     storage_tiers = _require_field(document, "storage_tiers")
     _confirm(invocation, action=f"update storage tiers for plan {plan_id}", target=str(plan_id))
     with open_service(invocation) as (service, auth):
@@ -498,7 +505,7 @@ def support_plan_archive(invocation: Invocation) -> HandlerResult:
 def support_subscription_get(invocation: Invocation) -> HandlerResult:
     """Get a workspace's Chargebee subscription details. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"workspace_id": workspace_id}
     _forward_optional(document, kwargs, ("fields",))
     _confirm(
@@ -514,7 +521,7 @@ def support_subscription_get(invocation: Invocation) -> HandlerResult:
 def support_subscription_create(invocation: Invocation) -> HandlerResult:
     """Register a workspace's Chargebee subscription. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     plan_id = invocation.positional("plan_id")
     if plan_id is None:
         raise CliError(
@@ -538,7 +545,7 @@ def support_subscription_create(invocation: Invocation) -> HandlerResult:
 def support_subscription_update(invocation: Invocation) -> HandlerResult:
     """Update a workspace's Chargebee subscription id. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    invocation.load_input()
+    _bound_document(invocation)
     subscription_id = invocation.positional("subscription_id")
     if subscription_id is None:
         raise CliError(
@@ -564,7 +571,7 @@ def support_subscription_update(invocation: Invocation) -> HandlerResult:
 
 def support_user_list_all(invocation: Invocation) -> HandlerResult:
     """List users across workspaces. Confirm target: the auth workspace id."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("fields", "sort", "offset", "limit"))
     with open_service(invocation) as (service, auth):
@@ -575,7 +582,7 @@ def support_user_list_all(invocation: Invocation) -> HandlerResult:
 
 def support_user_register(invocation: Invocation) -> HandlerResult:
     """Register a new user. Email is positional; required fields from ``--input``."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     email = _require_positional_or_field(invocation, document, "email", "user email")
     first_name = _require_field(document, "first_name")
     last_name = _require_field(document, "last_name")
@@ -595,7 +602,7 @@ def support_user_register(invocation: Invocation) -> HandlerResult:
 
 def support_user_update(invocation: Invocation) -> HandlerResult:
     """Update a user's verification status. Email is positional."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     email = _require_positional_or_field(invocation, document, "email", "user email")
     verified = _require_field(document, "verified")
     kwargs: dict[str, Any] = {"email": email, "verified": verified}
@@ -620,7 +627,7 @@ def support_workspace_list(invocation: Invocation) -> HandlerResult:
 def support_workspace_get(invocation: Invocation) -> HandlerResult:
     """Get details of a workspace. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"workspace_id": workspace_id}
     _forward_optional(document, kwargs, ("fields",))
     _confirm(invocation, action=f"get workspace {workspace_id}", target=str(workspace_id))
@@ -631,7 +638,7 @@ def support_workspace_get(invocation: Invocation) -> HandlerResult:
 
 def support_workspace_create(invocation: Invocation) -> HandlerResult:
     """Create a workspace. Name is positional; required fields from ``--input``."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     name = _require_positional_or_field(invocation, document, "name", "workspace name")
     user_email = _require_field(document, "user_email")
     payment_frequency = _require_field(document, "payment_frequency")
@@ -662,7 +669,7 @@ def support_workspace_create(invocation: Invocation) -> HandlerResult:
 def support_workspace_update(invocation: Invocation) -> HandlerResult:
     """Update a workspace's details/subscription. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     name = _require_field(document, "name")
     payment_frequency = _require_field(document, "payment_frequency")
     plan_id = _require_field(document, "plan_id")
@@ -692,7 +699,7 @@ def support_workspace_delete(invocation: Invocation) -> HandlerResult:
 def support_workspace_suspend_access(invocation: Invocation) -> HandlerResult:
     """Suspend user access to a workspace. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"workspace_id": workspace_id}
     _forward_optional(document, kwargs, ("reason",))
     _confirm(
@@ -724,7 +731,7 @@ def support_workspace_restore_access(invocation: Invocation) -> HandlerResult:
 def support_workspace_user_list(invocation: Invocation) -> HandlerResult:
     """List users in a workspace. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"workspace_id": workspace_id}
     _forward_optional(document, kwargs, ("limit", "offset", "fields", "sort"))
     _confirm(
@@ -740,7 +747,7 @@ def support_workspace_user_list(invocation: Invocation) -> HandlerResult:
 def support_workspace_user_add(invocation: Invocation) -> HandlerResult:
     """Add a user to a workspace. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     email = _require_field(document, "email")
     role = _require_field(document, "role")
     kwargs: dict[str, Any] = {"workspace_id": workspace_id, "email": email, "role": role}
@@ -759,7 +766,7 @@ def support_workspace_user_add(invocation: Invocation) -> HandlerResult:
 def support_workspace_user_remove(invocation: Invocation) -> HandlerResult:
     """Remove a user from a workspace. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    invocation.load_input()
+    _bound_document(invocation)
     user_id = invocation.positional("user_id")
     if user_id is None:
         raise CliError(
@@ -779,7 +786,7 @@ def support_workspace_user_remove(invocation: Invocation) -> HandlerResult:
 def support_workspace_user_transfer(invocation: Invocation) -> HandlerResult:
     """Transfer/change a user's role within a workspace. Workspace id is positional."""
     workspace_id = _require_int_positional(invocation, "workspace id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     user_id = invocation.positional("user_id")
     if user_id is None:
         raise CliError(

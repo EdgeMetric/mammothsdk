@@ -23,4 +23,8 @@ mammoth project user remove --project 180 --output json --no-input \
 ```
 
 Discover a command's policy with `mammoth schema get <command.id> --output json`.
-Never retry a mutation blindly; only retry on exit code 7 (retryable).
+Use exact observed resource scope and display names before mutation. A known job
+handle should be inspected or waited, not submitted again. `outcome_unknown`
+means a mutation may have committed without a terminal response: reconcile the
+target before any replay. A retryable read can honor `Retry-After`; exit 7 is
+not blanket permission to retry a mutation.

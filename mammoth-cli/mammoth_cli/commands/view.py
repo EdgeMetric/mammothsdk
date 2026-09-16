@@ -20,7 +20,10 @@ the public SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+import inspect
 from typing import Any
+
+from mammoth.view import ViewExport
 
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
@@ -32,6 +35,7 @@ from mammoth_cli.errors.envelope import (
 )
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import (
+    POLICY_CONFIRM_TARGET,
     POLICY_PROMPT_OR_YES,
     POLICY_YES_ALWAYS,
     enforce_confirmation,
@@ -57,6 +61,7 @@ _DATAVIEW_GET_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.get"
 _FIND_DATASET_SYMBOL = "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"
 _WAIT_FOR_PIPELINE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.wait_for_pipeline"
 _DATASET_ID_FIELD = "dataset_id"
+_DRAFT_OPERATIONS = frozenset({"enter", "exit", "submit", "discard"})
 
 # Preview input keys and their sensible defaults, so `mammoth view preview DS V`
 # works with no --input: 50 rows, and enough columns to show every one (the
@@ -312,7 +317,11 @@ def _relabel_columns(
     if not isinstance(payload, dict):
         return payload
     columns = payload.get(_COLUMNS_KEY)
-    rows = payload.get(_ROWS_KEY)
+    # Preview uses a positional ``rows`` array, while data pages use a
+    # ``data`` array of row objects. Keep both wire shapes distinct so preview
+    # identity values can be trimmed without changing data-page handling.
+    rows_key = "rows" if isinstance(payload.get("rows"), list) else _ROWS_KEY
+    rows = payload.get(rows_key)
     has_header = isinstance(columns, list) and all(isinstance(c, str) for c in columns)
     has_rows = isinstance(rows, list) and any(isinstance(r, dict) for r in rows)
     if not (has_header or has_rows):
@@ -321,9 +330,24 @@ def _relabel_columns(
         mapping = _display_name_map(service, dataset_id, dataview_id, project_id)
     payload = dict(payload)
     if has_header and isinstance(columns, list):
-        payload[_COLUMNS_KEY] = [mapping.get(c, c) for c in columns if c not in _SYSTEM_COLUMNS]
+        visible_columns = [c for c in columns if c not in _SYSTEM_COLUMNS]
+        payload[_COLUMNS_KEY] = [mapping.get(c, c) for c in visible_columns]
+        # Preview responses are positional rows.  The backend may append the
+        # internal row identity value (``hash``) without appending a matching
+        # header, notably after pipeline edits.  Only remove exactly one
+        # trailing value; multiple extras indicate an unknown backend shape
+        # and must remain visible for diagnosis rather than being discarded.
+        if isinstance(rows, list):
+            payload[rows_key] = [
+                (
+                    row[: len(visible_columns)]
+                    if isinstance(row, list) and len(row) == len(visible_columns) + 1
+                    else row
+                )
+                for row in rows
+            ]
     if has_rows and isinstance(rows, list):
-        payload[_ROWS_KEY] = [
+        payload[rows_key] = [
             (
                 {mapping.get(k, k): v for k, v in row.items() if k not in _SYSTEM_COLUMNS}
                 if isinstance(row, dict)
@@ -462,6 +486,81 @@ def view_data_query(invocation: Invocation) -> HandlerResult:
         )
         data = service.call(_symbol(invocation), **kwargs)
         data = _relabel_columns(service, dataset_id, view_id, project_id, data)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def view_exportable_config_get(invocation: Invocation) -> HandlerResult:
+    """Get a dataview's exportable pipeline configuration."""
+    project_id = require_project(invocation)
+    view_id = _require_int_positional_at(invocation, 0, "view id")
+    if view_id <= 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT, message="view id must be positive.", exit_status=EXIT_USAGE
+        )
+    document = invocation.load_input() or {}
+    explicit_dataset = _int_positional_at(invocation, 1, "dataset id")
+    if explicit_dataset is None and document.get("dataset_id") is not None:
+        explicit_dataset = int(document["dataset_id"])
+    if explicit_dataset is not None and explicit_dataset <= 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="dataset id must be positive.",
+            exit_status=EXIT_USAGE,
+        )
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            dataview_id=view_id,
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def view_exportable_config_apply(invocation: Invocation) -> HandlerResult:
+    """Apply exactly one exportable config or clipboard item list."""
+    project_id = require_project(invocation)
+    view_id = _require_int_positional_at(invocation, 0, "view id")
+    if view_id <= 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT, message="view id must be positive.", exit_status=EXIT_USAGE
+        )
+    document = invocation.load_input() or {}
+    explicit_dataset = _int_positional_at(invocation, 1, "dataset id")
+    if explicit_dataset is None and document.get("dataset_id") is not None:
+        explicit_dataset = int(document["dataset_id"])
+    if explicit_dataset is not None and explicit_dataset <= 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="dataset id must be positive.",
+            exit_status=EXIT_USAGE,
+        )
+    items = document.get("items")
+    config = document.get("config")
+    if (items is None) == (config is None):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="Exactly one of 'items' or 'config' is required.",
+            exit_status=EXIT_USAGE,
+        )
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_CONFIRM_TARGET,
+        action=f"apply exportable config to view {view_id}",
+        target=str(view_id),
+    )
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
+        kwargs: dict[str, Any] = {
+            "dataset_id": dataset_id,
+            "dataview_id": view_id,
+            "items": items,
+            "config": config,
+            "project_id": project_id,
+        }
+        _forward_optional(document, kwargs, ("insert_after_sequence", "is_paste_mode"))
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -992,10 +1091,31 @@ def view_ai_profile(invocation: Invocation) -> HandlerResult:
 
 
 def view_draft_command(invocation: Invocation) -> HandlerResult:
-    """Run a raw draft pipeline command against a dataview. ``command`` required."""
+    """Run a release-valid draft operation against a dataview.
+
+    Submit and discard are persisted/destructive draft transitions and require
+    exact target confirmation before the SDK is reached.
+    """
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
     document = invocation.load_input()
     command = _require_field(document, "command")
+    if command not in _DRAFT_OPERATIONS:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"The draft command must be one of: {', '.join(sorted(_DRAFT_OPERATIONS))}.",
+            exit_status=EXIT_USAGE,
+            hint=(
+                "Use 'view draft status' to read state; submit/discard require "
+                "--yes --confirm DATAVIEW_ID."
+            ),
+        )
+    if command in {"submit", "discard"}:
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_CONFIRM_TARGET,
+            target=str(dataview_id),
+            action=f"{command} the draft for view {dataview_id}",
+        )
     kwargs: dict[str, Any] = {"dataview_id": dataview_id, "command": command}
     assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))
@@ -1045,6 +1165,55 @@ def view_pipeline_items(invocation: Invocation) -> HandlerResult:
     _forward_optional(
         document, kwargs, ("dataset_id", "fields", "limit", "offset", "sort", "sequence", "status")
     )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, None)
+
+
+def view_pipeline_items_all(invocation: Invocation) -> HandlerResult:
+    """Read all pipeline items through bounded, exact-parent pagination."""
+    dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
+    document = invocation.load_input() or {}
+    if "dataset_id" not in document:
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message="This command requires the 'dataset_id' input field.",
+            exit_status=EXIT_USAGE,
+            hint="Pass the exact parent dataset_id via --input.",
+        )
+    dataset_id = document["dataset_id"]
+    if isinstance(dataset_id, bool) or not isinstance(dataset_id, int) or dataset_id <= 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The 'dataset_id' input field must be a positive integer.",
+            exit_status=EXIT_USAGE,
+        )
+    kwargs: dict[str, Any] = {"dataview_id": dataview_id}
+    _forward_optional(
+        document,
+        kwargs,
+        ("dataset_id", "fields", "limit", "sort", "sequence", "status", "max_pages"),
+    )
+    for field in ("limit", "max_pages"):
+        value = kwargs.get(field, 100 if field == "limit" else 1000)
+        if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=f"The '{field}' input field must be a positive integer.",
+                exit_status=EXIT_USAGE,
+            )
+    if kwargs.get("limit", 100) > 100:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The 'limit' input field must be <= 100.",
+            exit_status=EXIT_USAGE,
+        )
+    if kwargs.get("max_pages", 1000) > 1000:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The 'max_pages' input field must be <= 1000.",
+            exit_status=EXIT_USAGE,
+        )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, None)
@@ -1242,6 +1411,7 @@ def view_export_get(invocation: Invocation) -> HandlerResult:
 def view_export_list(invocation: Invocation) -> HandlerResult:
     """List exports for a dataview, with optional filters from ``--input``."""
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
+    dataset_id = _int_positional_at(invocation, 1, "dataset id")
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
     _forward_optional(
@@ -1258,8 +1428,11 @@ def view_export_list(invocation: Invocation) -> HandlerResult:
             "handler_type",
             "end_of_pipeline",
             "runnable",
+            "dataset_id",
         ),
     )
+    if dataset_id is not None:
+        kwargs["dataset_id"] = dataset_id
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, None)
@@ -1331,4 +1504,164 @@ def view_export_update(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("skip_validation", "dataset_id"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+# ---------------------------------------------------------------------------
+# Typed ViewExport convenience routes
+# ---------------------------------------------------------------------------
+
+# The SDK exposes these destinations as typed helpers on ``View.export``.  A
+# generic ``view export create`` cannot stand in for them: the helpers have
+# destination-specific required fields, secret handling, and safety policy.
+# Keep the allow-list here deliberately closed so a misspelled input field can
+# never silently become an arbitrary ``**kwargs`` export option.
+_SPECIAL_EXPORTS: dict[str, tuple[str, tuple[str, ...], tuple[str, ...]]] = {
+    "view.export.dataset": (
+        "to_dataset",
+        ("dataset_name",),
+        (),
+    ),
+    "view.export.managed-s3": ("to_s3", (), ()),
+    "view.export.azure-blob": (
+        "to_azure_blob",
+        ("storage_account_name", "tenant_id", "client_id", "client_secret", "container_name"),
+        ("client_secret",),
+    ),
+    "view.export.bigquery": (
+        "to_bigquery",
+        ("selected_profile", "selected_identity", "table"),
+        (),
+    ),
+    "view.export.elasticsearch": (
+        "to_elasticsearch",
+        ("host", "username", "password", "index"),
+        ("password",),
+    ),
+    "view.export.email": ("to_email", ("emails",), ()),
+    "view.export.ftp": (
+        "to_ftp",
+        ("domain", "directory", "file", "username", "password"),
+        ("password",),
+    ),
+    "view.export.mssql": (
+        "to_mssql",
+        ("host", "port", "database", "table", "username", "password"),
+        ("password",),
+    ),
+    "view.export.mysql": (
+        "to_mysql",
+        ("host", "port", "database", "table", "username", "password"),
+        ("password",),
+    ),
+    "view.export.onedrive": (
+        "to_onedrive",
+        ("tenant_id", "client_id", "client_secret", "user_id"),
+        ("client_secret",),
+    ),
+    "view.export.postgres": (
+        "to_postgres",
+        ("host", "port", "database", "table", "username", "password"),
+        ("password",),
+    ),
+    "view.export.powerbi": (
+        "to_powerbi",
+        ("username", "password", "client_id", "dataset", "table"),
+        ("password",),
+    ),
+    "view.export.redshift": (
+        "to_redshift",
+        ("host", "port", "database", "table", "username", "password"),
+        ("password",),
+    ),
+    "view.export.rest": ("to_rest_api", ("base_url", "endpoint_path"), ("auth",)),
+    "view.export.sftp": (
+        "to_sftp",
+        ("host", "username"),
+        ("password", "private_key", "passphrase"),
+    ),
+    "view.export.sharepoint": (
+        "to_sharepoint",
+        ("tenant_id", "client_id", "client_secret", "site_url"),
+        ("client_secret",),
+    ),
+    "view.export.tableau": (
+        "to_tableau",
+        ("server_url", "token_name", "token_secret"),
+        ("token_secret",),
+    ),
+}
+
+# The SDK helpers all expose ``**kwargs`` for the common export trigger
+# controls.  These are the reviewed common controls accepted by every typed
+# route. Destination-specific fields are added from ``_SPECIAL_EXPORTS``.
+_SPECIAL_EXPORT_COMMON_FIELDS = frozenset(
+    {
+        "trigger_type",
+        "run_immediately",
+        "validate_only",
+        "end_of_pipeline",
+        "additional_properties",
+        "condition",
+    }
+)
+
+
+def view_export_specialized(invocation: Invocation) -> HandlerResult:
+    """Run one of the SDK's typed ``View.export`` destination helpers."""
+    route = _SPECIAL_EXPORTS.get(invocation.command_id)
+    if route is None:  # pragma: no cover - registry/manifest drift guard
+        raise CliError(
+            code=CODE_SDK_SYMBOL_UNRESOLVED,
+            message=f"No typed export route is registered for '{invocation.command_id}'.",
+            exit_status=EXIT_USAGE,
+        )
+    method, required, _secrets = route
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    # The exact parent is optional for backwards compatibility; when supplied,
+    # it is consumed as the trailing positional and scoped through call_view.
+    dataset_id = _int_positional_at(invocation, 1, "dataset id")
+    if dataset_id is None and document.get(_DATASET_ID_FIELD) is not None:
+        dataset_id = int(document[_DATASET_ID_FIELD])
+    # Explicit parameters come from the route's SDK signature. Only the six
+    # reviewed trigger controls may flow through its **kwargs extension point;
+    # using a union of every destination's fields would silently accept, for
+    # example, email-only fields on a database export.
+    signature = inspect.signature(getattr(ViewExport, method))
+    explicit_fields = {
+        name
+        for name, parameter in signature.parameters.items()
+        if name != "self" and parameter.kind is not inspect.Parameter.VAR_KEYWORD
+    }
+    allowed = explicit_fields | set(_SPECIAL_EXPORT_COMMON_FIELDS) | {_DATASET_ID_FIELD}
+    unknown = sorted(set(document) - allowed)
+    if unknown:
+        raise CliError(
+            code="unknown_input_field",
+            message=(
+                f"Unknown input field(s) for '{invocation.command_id.replace('.', ' ')}': "
+                f"{', '.join(unknown)}."
+            ),
+            exit_status=EXIT_USAGE,
+            hint=f"Accepted fields: {', '.join(sorted(allowed - {_DATASET_ID_FIELD}))}.",
+            details={"unknown": unknown, "accepted": sorted(allowed - {_DATASET_ID_FIELD})},
+        )
+    for field in required:
+        _require_field(document, field)
+    # Every typed destination is an external effect except internal dataset
+    # creation, which is still a mutation. Requiring --yes keeps all helpers
+    # promptless and makes the side effect explicit for agents.
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_YES_ALWAYS,
+        action=f"export view {dataview_id} via {invocation.command_id.rsplit('.', 1)[-1]}",
+    )
+    kwargs = dict(document)
+    kwargs.pop(_DATASET_ID_FIELD, None)
+    with open_service(invocation) as (service, auth):
+        if dataset_id is None:
+            dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)

@@ -177,5 +177,11 @@ mammoth context project clear
 A command that needs a project but finds none fails. It exits `2` with error code
 `project_required`. Set a project first, then rerun the command.
 
+For unattended work, prefer passing `--profile PROFILE` and `--project
+PROJECT_ID` on each operation and record the workspace/project IDs in the
+nonsecret [portable handoff](agent-handoff.md). A profile or active project is
+not permission to guess a dataset or view: resolve those resources in the exact
+parent scope before composing a write.
+
 Stuck on any error code above? The [troubleshooting guide](troubleshooting.md)
 maps each one to a fix.

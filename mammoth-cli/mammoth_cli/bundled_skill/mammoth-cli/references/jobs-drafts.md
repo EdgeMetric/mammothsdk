@@ -13,9 +13,14 @@ happens with the job, so you do not have to guess:
   mammoth job get 55123 --output json --no-input
   ```
 
-A timeout returns exit code 7 with `recovery_commands` in the envelope that
-re-wait or fetch the job — run those commands. The `--job-timeout` /
+When a known job times out, exit code 7 includes `recovery_commands` to fetch
+or wait that job — inspect it rather than submitting the original mutation.
+The `--job-timeout` /
 `--pipeline-timeout` options bound the wait.
+
+A transport failure during a mutation without a confirmed job/resource handle
+is `outcome_unknown`. Re-read the exact target and scope before replaying it;
+the operation may already have committed.
 
 ## Draft mode
 Batch several pipeline edits, then submit them together:

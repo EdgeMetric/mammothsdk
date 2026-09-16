@@ -127,6 +127,79 @@ def _optional_project_id() -> tuple[PositionalSpec, ...]:
 # Commands whose positionals the signature cannot express correctly. Each entry
 # replaces the derivation wholesale; the drift test proves the union is right.
 POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
+    "dashboard.tags.merge": (
+        PositionalSpec(name="tag_id", type=int, required=True, help="ID of the source tag."),
+    ),
+    # Explicit parent avoids rich-view discovery for the release-scoped GET.
+    "view.get": (
+        PositionalSpec(name="view_id", type=int, required=True, help="ID of the view."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Optional exact parent dataset ID; omit to retain legacy discovery.",
+        ),
+    ),
+    # View deletion targets a dataview nested under a dataset.  The SDK keeps
+    # ``dataset_id`` optional for backwards compatibility (when omitted it
+    # resolves the parent), but the CLI must expose the exact-parent form as a
+    # dual-sourced locator so callers can avoid probing an unrelated dataset.
+    "view.delete": (
+        PositionalSpec(
+            name="view_id",
+            type=int,
+            required=True,
+            help="ID of the view.",
+        ),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="ID of the parent dataset; or pass it via the 'dataset_id' input field.",
+        ),
+    ),
+    "view.exportable-config.get": (
+        PositionalSpec(name="view_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Optional parent dataset ID; resolved from the view when omitted.",
+        ),
+    ),
+    "view.exportable-config.apply": (
+        PositionalSpec(name="view_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Optional parent dataset ID; resolved from the view when omitted.",
+        ),
+    ),
+    "view.export.list": (
+        PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Optional parent dataset ID; avoids parent discovery when supplied.",
+        ),
+    ),
+    "view.pipeline.items-all": (
+        PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Exact parent dataset ID; pass it via the 'dataset_id' input field.",
+        ),
+    ),
     # project family: the project id is an optional positional (falls back to the
     # active project). The SDK signature marks it required or omits it, so the
     # dual-sourced optional locator is authored here.
@@ -134,6 +207,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     "project.pending-changes": _optional_project_id(),
     "project.resource-status": _optional_project_id(),
     "project.resource-dependencies": _optional_project_id(),
+    "project.resource-dependencies.update": _optional_project_id(),
     "project.publish-credentials": _optional_project_id(),
     "project.update": _optional_project_id(),
     "project.delete": _optional_project_id(),
@@ -296,6 +370,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             required=True,
             help="Match command names, examples, or purpose (e.g. view transform).",
             example_value="view transform",
+        ),
+    ),
+    "capability.find": (
+        PositionalSpec(
+            name="query",
+            type=str,
+            required=True,
+            help="Match operation names, commands, examples, or purpose.",
+            example_value="show projects",
         ),
     ),
     "capability.get": (
@@ -547,6 +630,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
                 required=False,
                 help="Shell to target (bash/zsh/fish); or pass it via the 'shell' input field.",
                 falls_back_to_field="shell",
+                example_value="bash",
             ),
         )
         for command in ("completion.show", "completion.install")
@@ -595,6 +679,45 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="Positive project id to make active.",
         ),
     ),
+    # Typed View.export destinations are receiver methods, so their source
+    # view id is not present in the SDK signature.  Expose the exact parent as
+    # an optional trailing locator for scoped resolution.
+    **{
+        command: (
+            PositionalSpec(
+                name="view_id",
+                type=int,
+                required=True,
+                help="ID of the view to export.",
+            ),
+            PositionalSpec(
+                name="dataset_id",
+                type=int,
+                required=False,
+                help="ID of the parent dataset; resolved from the view when omitted.",
+                falls_back_to_field="dataset_id",
+            ),
+        )
+        for command in (
+            "view.export.dataset",
+            "view.export.managed-s3",
+            "view.export.azure-blob",
+            "view.export.bigquery",
+            "view.export.elasticsearch",
+            "view.export.email",
+            "view.export.ftp",
+            "view.export.mssql",
+            "view.export.mysql",
+            "view.export.onedrive",
+            "view.export.postgres",
+            "view.export.powerbi",
+            "view.export.redshift",
+            "view.export.rest",
+            "view.export.sftp",
+            "view.export.sharepoint",
+            "view.export.tableau",
+        )
+    },
 }
 
 

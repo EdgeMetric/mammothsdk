@@ -55,8 +55,14 @@ from mammoth._mixins import (
     TextOpsMixin,
 )
 from mammoth._pure.builders import build_branch_out_params
+from mammoth._pure.resolve import _validate_condition_columns
 from mammoth.condition import CompoundCondition, Condition, NotCondition
-from mammoth.exceptions import MammothColumnError, MammothExportError, MammothValidationError
+from mammoth.exceptions import (
+    MammothColumnError,
+    MammothExportError,
+    MammothJobTimeoutError,
+    MammothValidationError,
+)
 from mammoth.models.exports import (
     AddExportSpec,
     BigQueryExportType,
@@ -171,6 +177,7 @@ class View(
         self.display_names: list[str] = []
         self.column_types: dict[str, str] = {}
         self._internal_names: list[str] = []
+        self._ambiguous_columns: set[str] = set()
 
         self._build_column_maps(dataview_data)
 
@@ -192,6 +199,7 @@ class View(
         self.display_names = []
         self.column_types = {}
         self._internal_names = []
+        self._ambiguous_columns = set()
 
         # taskwise_info keys are task sequence numbers (str in JSON).
         # The entry with the highest sequence holds the final column list.
@@ -219,10 +227,25 @@ class View(
             col_type = col.get("type", "TEXT")
 
             if display:
-                self.columns[display] = internal
-                self.display_names.append(display)
-                self.column_types[display] = col_type
-                self._internal_names.append(internal)
+                if display in self._ambiguous_columns:
+                    # Once a display name has been observed with two
+                    # different internal identities it must stay excluded
+                    # from every resolver, including when a third duplicate
+                    # appears later in the (ordered) metadata.
+                    pass
+                elif display in self.columns and self.columns[display] != internal:
+                    # A display name is not a stable identity when it occurs
+                    # more than once. Keep it out of the resolver so an
+                    # operation fails before any task is submitted.
+                    self._ambiguous_columns.add(display)
+                    self.columns.pop(display, None)
+                    self.column_types.pop(display, None)
+                else:
+                    self.columns[display] = internal
+                    self.display_names.append(display)
+                    self.column_types[display] = col_type
+                if internal not in self._internal_names:
+                    self._internal_names.append(internal)
 
     def _resolve_column(self, display_name: str) -> str:
         """Resolve a display name to internal column name.
@@ -236,6 +259,8 @@ class View(
         Raises:
             MammothColumnError: If column not found.
         """
+        if display_name in self._ambiguous_columns:
+            raise MammothColumnError(display_name, self.display_names)
         if display_name in self.columns:
             return self.columns[display_name]
         if display_name in self._internal_names:
@@ -272,6 +297,7 @@ class View(
             return None
         if isinstance(condition, dict):
             return condition
+        _validate_condition_columns(condition, self.columns, self._internal_names)
         return condition.build(self.columns, self.column_types)
 
     def _add_task(self, task_spec: dict[str, Any]) -> dict[str, Any]:
@@ -287,7 +313,10 @@ class View(
             API response dict.
         """
         result = self._client.pipeline.add_task(self.id, task_spec, self.dataset_id)
-        if not self._draft_mode:
+        # The server owns draft state.  The local flag is retained only as a
+        # compatibility fallback for older injected clients that do not return
+        # a status mapping; it is never authoritative for a real transport.
+        if not self.is_draft_mode:
             self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
             self.refresh()
         return result
@@ -534,7 +563,18 @@ class View(
 
     @property
     def is_draft_mode(self) -> bool:
-        """Whether this view is currently in draft mode."""
+        """Whether the server says this view is currently in draft mode.
+
+        Every read goes through the pipeline status endpoint, which makes a
+        freshly created ``View`` in another process observe existing draft
+        state.  ``_draft_mode`` is only a compatibility fallback for test or
+        legacy client doubles that do not implement the status seam.
+        """
+        getter = getattr(self._client.pipeline, "get_draft_status", None)
+        if callable(getter):
+            status = getter(self.id, self.dataset_id)
+            if isinstance(status, dict) and "is_draft" in status:
+                return bool(status["is_draft"])
         return self._draft_mode
 
     def enter_draft_mode(self) -> dict[str, Any]:
@@ -546,7 +586,7 @@ class View(
             Draft mode state dict from the API, or a status dict if already in
             draft mode.
         """
-        if self._draft_mode:
+        if self.is_draft_mode:
             return {"status": "already_in_draft_mode"}
 
         result = self._client.pipeline.draft_mode(self.id, DraftCommand.ENTER, self.dataset_id)
@@ -562,8 +602,81 @@ class View(
         Returns:
             Pipeline state dict after execution.
         """
+        # Re-read state before mutating.  This is what prevents a new process
+        # from replaying SUBMIT after an earlier process committed it but lost
+        # its response.
+        status = self._draft_status_for_lifecycle()
+        if status is not None:
+            # Only a fully verified pending draft (ready + dirty) authorizes
+            # SUBMIT.  In particular, an unknown/malformed readback must not
+            # fall through to a second write after a lost response.
+            if status.get("outcome") == "unknown":
+                return {
+                    **status,
+                    "operation_state": "outcome_unknown",
+                    "mutation_blocked": True,
+                    "recovery_action": "re-read draft status before replaying SUBMIT",
+                }
+            if not status.get("is_draft"):
+                self._draft_mode = False
+                return status.get("pipeline") or status
+            state = str(status.get("pipeline_state") or "").lower()
+            if status.get("outcome") == "running":
+                pipeline = self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+                return self._complete_draft_after_pipeline(pipeline)
+            if status.get("outcome") == "succeeded":
+                # The submit already committed; only the explicit supported
+                # EXIT transition remains.
+                pipeline = status.get("pipeline") or {"state": state}
+                return self._complete_draft_after_pipeline(pipeline)
+            # ``pending`` is the only remaining state that can authorize a
+            # new SUBMIT.  Failed or otherwise unclassified states are
+            # blocked conservatively.
+            if status.get("outcome") != "pending":
+                return {
+                    **status,
+                    "outcome": "unknown",
+                    "operation_state": "outcome_unknown",
+                    "mutation_blocked": True,
+                    "recovery_action": "re-read draft status before replaying SUBMIT",
+                }
+
         self._client.pipeline.draft_mode(self.id, DraftCommand.SUBMIT, self.dataset_id)
-        pipeline = self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+        try:
+            pipeline = self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+        except (KeyboardInterrupt, MammothJobTimeoutError) as exc:
+            # A lost wait response does not prove that SUBMIT failed. Read the
+            # server state once and complete only if it is already terminal;
+            # otherwise preserve the original interruption/timeout for the
+            # caller to resume with a fresh process.
+            reconciled = self._reconcile_draft_submission()
+            if reconciled is not None and reconciled.get("outcome") == "succeeded":
+                completed = self._complete_draft_after_pipeline(reconciled.get("pipeline") or {})
+                # SIGINT remains an interruption contract even when the
+                # reconciliation read proves the remote work had completed;
+                # timeout, however, is no longer a failure once readback is
+                # terminal and verified.
+                if not isinstance(exc, KeyboardInterrupt):
+                    return completed
+            raise exc
+        return self._complete_draft_after_pipeline(pipeline)
+
+    def _draft_status_for_lifecycle(self) -> dict[str, Any] | None:
+        getter = getattr(self._client.pipeline, "reconcile_draft_submission", None)
+        if not callable(getter):
+            return None
+        status = getter(self.id, self.dataset_id)
+        return status if isinstance(status, dict) else None
+
+    def _reconcile_draft_submission(self) -> dict[str, Any] | None:
+        reconciler = getattr(self._client.pipeline, "reconcile_draft_submission", None)
+        if not callable(reconciler):
+            return None
+        status = reconciler(self.id, self.dataset_id)
+        return status if isinstance(status, dict) else None
+
+    def _complete_draft_after_pipeline(self, pipeline: dict[str, Any]) -> dict[str, Any]:
+        """Refresh and perform the supported explicit draft EXIT transition."""
         self.refresh()
         self._client.pipeline.draft_mode(self.id, DraftCommand.EXIT, self.dataset_id)
         self._draft_mode = False
@@ -832,7 +945,7 @@ class ViewExport:
         """
         if file_name is None:
             ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            file_name = f"view_{self._view.id}_export_{ts}.{file_type}"
+            file_name = f"view_{self._view.id}_export_{ts}.{file_type.value}"
 
         return self._create_export(
             HandlerType.S3,

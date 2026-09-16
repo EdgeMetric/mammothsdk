@@ -30,6 +30,7 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.services.command_contract import bind_command_inputs
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -54,6 +55,11 @@ def _symbol(invocation: Invocation) -> str:
             exit_status=EXIT_USAGE,
         )
     return str(record["sdk_symbol"])
+
+
+def _bound_document(invocation: Invocation) -> dict[str, Any]:
+    """Return admitted input after the shared S7 contract binding boundary."""
+    return bind_command_inputs(invocation.command_id, invocation.load_input() or {})
 
 
 def _string_positional(invocation: Invocation) -> str | None:
@@ -127,16 +133,17 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
 def _forward_optional(
     document: dict[str, Any], kwargs: dict[str, Any], fields: tuple[str, ...]
 ) -> None:
-    """Copy each present field from ``document`` into ``kwargs``, unchanged.
+    """Copy every admitted input field into ``kwargs`` unchanged.
 
     Args:
         document: The parsed ``--input`` document.
         kwargs: The keyword-argument mapping being built for the SDK call.
         fields: The optional field names to forward when present.
     """
-    for field in fields:
-        if field in document:
-            kwargs[field] = document[field]
+    for field, value in document.items():
+        if field in kwargs and field not in fields:
+            continue
+        kwargs[field] = value
 
 
 def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> dict[str, Any]:
@@ -208,7 +215,7 @@ def automation_create(invocation: Invocation) -> HandlerResult:
     an empty string, and ``conditions``/``condition_mode`` are forwarded when
     present. Requires ``--yes``.
     """
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     name = _string_positional(invocation) or document.get("name")
     if not name:
         raise CliError(
@@ -234,7 +241,7 @@ def automation_update(invocation: Invocation) -> HandlerResult:
     ``--input`` document.
     """
     automation_id = _require_int_positional(invocation, "automation id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     patch = _require_field(document, "patch")
     enforce_confirmation(
         invocation,

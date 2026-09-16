@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mammoth-cli"
-version = "1.0.8"
+version = "1.1.0"
 description = "Command-line interface for the Mammoth Analytics platform"
 authors = ["Mammoth Analytics <support@mammoth.io>"]
 readme = "README.md"
@@ -33,7 +33,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.12,<3.15"
 # The CLI must compose with a published SDK, never a repo-local file URL.
-mammoth-io = ">=0.6.1,<0.7"
+mammoth-io = ">=0.7.0,<0.8"
 typer = ">=0.27,<0.28"
 rich = ">=15,<16"
 platformdirs = ">=4.10,<5"
@@ -41,6 +41,7 @@ tomlkit = ">=0.15.1,<0.16"
 keyring = ">=25.7,<26"
 PyYAML = ">=6,<7"
 pydantic = ">=2.13,<3"
+jsonschema = ">=4.20"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8,<10"
@@ -48,7 +49,6 @@ mypy = ">=1.11"
 ruff = ">=0.6"
 black = ">=24"
 datamodel-code-generator = ">=0.69,<0.70"
-jsonschema = ">=4.20"
 types-PyYAML = "*"
 
 [tool.poetry.scripts]

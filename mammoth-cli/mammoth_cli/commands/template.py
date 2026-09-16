@@ -24,6 +24,7 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
+from mammoth_cli.services.command_contract import bind_command_inputs
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -80,6 +81,11 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     return document[field]
 
 
+def _bound_document(invocation: Invocation) -> dict[str, Any]:
+    """Return the admitted template document through the shared binder."""
+    return bind_command_inputs(invocation.command_id, invocation.load_input() or {})
+
+
 def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
     """Build the common envelope metadata for a template command (no project scope)."""
     return {
@@ -91,7 +97,7 @@ def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
 
 def template_create(invocation: Invocation) -> HandlerResult:
     """Create a template. Payload comes from the ``body`` input field."""
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     body = _require_field(document, "body")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), body=body)
@@ -127,7 +133,7 @@ def template_list(invocation: Invocation) -> HandlerResult:
 def template_update(invocation: Invocation) -> HandlerResult:
     """Update a template. Template id is positional; payload is the ``body`` field."""
     template_id = _require_int_positional(invocation, "template id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     body = _require_field(document, "body")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), template_id=template_id, body=body)

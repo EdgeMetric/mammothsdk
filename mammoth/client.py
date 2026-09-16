@@ -26,6 +26,7 @@ Example::
 
 from __future__ import annotations
 
+import math
 from typing import Any
 from urllib.parse import urljoin
 
@@ -72,7 +73,7 @@ from mammoth.api.webhooks import WebhooksAPI
 from mammoth.api.workflows import WorkflowsAPI
 from mammoth.api.workspace import WorkspaceAPI
 from mammoth.api.workspaces import WorkspacesAPI
-from mammoth.exceptions import MammothAPIError, MammothAuthError
+from mammoth.exceptions import MammothAPIError, MammothAuthError, safe_response_body
 
 
 # Lazy __version__ import to avoid circular dependency with __init__
@@ -106,18 +107,21 @@ class ViewsResource:
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def get(self, view_id: int) -> View:
+    def get(self, view_id: int, dataset_id: int | None = None) -> View:
         """Get a rich View object for a dataview.
 
         Args:
             view_id: ID of the dataview.
+            dataset_id: Known parent dataset ID. When supplied, the SDK uses
+                that exact parent and does not probe other datasets.
 
         Returns:
             View object with transformation methods and metadata.
         """
         from mammoth.view import View
 
-        dataset_id = self._client.pipeline.find_dataset_for_dataview(view_id)
+        if dataset_id is None:
+            dataset_id = self._client.pipeline.find_dataset_for_dataview(view_id)
 
         data = self._client.dataviews.get(
             dataset_id=dataset_id,
@@ -174,19 +178,25 @@ class ViewsResource:
             return View(self._client, full_data, dataset_id)
         return View(self._client, data, dataset_id)
 
-    def delete(self, view_id: int) -> dict[str, Any]:
+    def delete(self, view_id: int, dataset_id: int | None = None) -> dict[str, Any]:
         """Delete a dataview.
 
         Args:
             view_id: ID of the dataview.
+            dataset_id: Known parent dataset ID. When supplied, deletion is
+                sent directly to that nested endpoint and parent discovery is
+                skipped; API errors (including 403) are preserved.
 
         Returns:
             Dict with deletion result.
         """
-        dataset_id = self._client.pipeline.find_dataset_for_dataview(view_id)
+        if dataset_id is None:
+            dataset_id = self._client.pipeline.find_dataset_for_dataview(view_id)
         return self._client.dataviews.delete(dataset_id=dataset_id, dataview_id=view_id)
 
-    def bulk_delete(self, view_ids: _list[int]) -> dict[str, Any]:
+    def bulk_delete(
+        self, view_ids: _list[int], dataset_id: int | None = None
+    ) -> dict[str, Any]:
         """Delete multiple dataviews.
 
         Args:
@@ -195,7 +205,10 @@ class ViewsResource:
         Returns:
             Dict with bulk deletion result.
         """
-        dataset_id = self._client.pipeline.find_dataset_for_dataview(view_ids[0])
+        if not view_ids:
+            raise ValueError("view_ids must contain at least one dataview ID")
+        if dataset_id is None:
+            dataset_id = self._client.pipeline.find_dataset_for_dataview(view_ids[0])
         return self._client.dataviews.bulk_delete(dataset_id=dataset_id, dataview_ids=view_ids)
 
 
@@ -229,9 +242,9 @@ class MammothClient:
         api_secret: str,
         workspace_id: int,
         base_url: str = "https://app.mammoth.io/api/v2",
-        timeout: int = DEFAULT_TIMEOUT,
-        job_timeout: int = DEFAULT_JOB_TIMEOUT,
-        pipeline_timeout: int = DEFAULT_PIPELINE_TIMEOUT,
+        timeout: float = DEFAULT_TIMEOUT,
+        job_timeout: float = DEFAULT_JOB_TIMEOUT,
+        pipeline_timeout: float = DEFAULT_PIPELINE_TIMEOUT,
     ) -> None:
         """Initialize the Mammoth client.
 
@@ -248,6 +261,15 @@ class MammothClient:
         self.api_secret = api_secret
         self.workspace_id = workspace_id
         self.base_url = base_url.rstrip("/")
+        if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
+            raise ValueError("timeout must be a positive finite number")
+        if not math.isfinite(timeout) or timeout <= 0:
+            raise ValueError("timeout must be a positive finite number")
+        for name, value in (("job_timeout", job_timeout), ("pipeline_timeout", pipeline_timeout)):
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise ValueError(f"{name} must be a positive finite number")
+            if not math.isfinite(value) or value <= 0:
+                raise ValueError(f"{name} must be a positive finite number")
         self.timeout = timeout
         self.job_timeout = job_timeout
         self.pipeline_timeout = pipeline_timeout
@@ -314,7 +336,9 @@ class MammothClient:
         # workspace-collection, membership, invite, usage, and AI operations.
         self.workspace = WorkspacesAPI(self)
 
-    def find_dataset_for_dataview(self, dataview_id: int) -> int:
+    def find_dataset_for_dataview(
+        self, dataview_id: int, dataset_id: int | None = None
+    ) -> int:
         """Find the parent dataset ID for a given dataview.
 
         Searches all datasets in the current project to locate which
@@ -322,6 +346,8 @@ class MammothClient:
 
         Args:
             dataview_id: ID of the dataview.
+            dataset_id: Known parent dataset ID. When supplied, no unrelated
+                dataset is probed.
 
         Returns:
             Dataset ID that contains the dataview.
@@ -333,7 +359,9 @@ class MammothClient:
 
             dataset_id = client.find_dataset_for_dataview(1039)
         """
-        return self.pipeline.find_dataset_for_dataview(dataview_id)
+        if dataset_id is None:
+            return self.pipeline.find_dataset_for_dataview(dataview_id)
+        return self.pipeline.find_dataset_for_dataview(dataview_id, dataset_id)
 
     def _request(
         self,
@@ -385,24 +413,119 @@ class MammothClient:
         else:
             request_kwargs["headers"] = headers
 
+        request_method = method.upper()
+        operation_state = (
+            "outcome_unknown"
+            if request_method not in {"GET", "HEAD", "OPTIONS"}
+            else "not_started"
+        )
+
         try:
             response = self.session.request(method, url, **request_kwargs)
         except requests.exceptions.Timeout as e:
-            raise MammothAPIError(f"Request timeout: {e}") from e
+            raise MammothAPIError(
+                "Request timed out",
+                details={"exception_type": type(e).__name__},
+                method=request_method,
+                operation_state=operation_state,
+                phase="request",
+                endpoint=endpoint,
+            ) from e
         except requests.exceptions.ConnectionError as e:
-            raise MammothAPIError(f"Connection error: {e}") from e
+            raise MammothAPIError(
+                "Connection error",
+                details={"exception_type": type(e).__name__},
+                method=request_method,
+                operation_state=operation_state,
+                phase="request",
+                endpoint=endpoint,
+            ) from e
         except requests.exceptions.RequestException as e:
-            raise MammothAPIError(f"Request error: {e}") from e
+            raise MammothAPIError(
+                "Request failed",
+                details={"exception_type": type(e).__name__},
+                method=request_method,
+                operation_state=operation_state,
+                phase="request",
+                endpoint=endpoint,
+            ) from e
+
+        response_headers = getattr(response, "headers", {})
+
+        def response_header(*names: str) -> str | None:
+            for name in names:
+                try:
+                    value = response_headers.get(name)
+                except (AttributeError, TypeError):
+                    value = None
+                if value is not None:
+                    return str(value)
+            try:
+                lowered = {str(key).lower(): value for key, value in response_headers.items()}
+            except (AttributeError, TypeError):
+                lowered = {}
+            for name in names:
+                value = lowered.get(name.lower())
+                if value is not None:
+                    return str(value)
+            return None
+
+        request_id = response_header("X-Request-ID", "X-Correlation-ID", "Request-ID")
+        retry_after = response_header("Retry-After")
+
+        body: dict[str, Any] = {}
+        if not 200 <= response.status_code < 300:
+            try:
+                parsed_body = response.json()
+                if isinstance(parsed_body, dict):
+                    body = safe_response_body(parsed_body)
+            except (ValueError, TypeError):
+                body = {}
+
+        def observed_handles(data: dict[str, Any]) -> tuple[object | None, object | None]:
+            job_handle: object | None = data.get("job_id")
+            job = data.get("job")
+            if job_handle is None and isinstance(job, dict):
+                job_handle = job.get("id") or job.get("job_id")
+            if job_handle is None and data.get("status") in {
+                "processing",
+                "success",
+                "failure",
+                "error",
+            }:
+                job_handle = data.get("id")
+            resource_handle = data.get("resource_id") or data.get("dataset_id")
+            resource = data.get("resource")
+            if resource_handle is None and isinstance(resource, dict):
+                resource_handle = resource.get("id") or resource.get("resource_id")
+            return job_handle, resource_handle
+
+        job_handle, resource_handle = observed_handles(body)
+        observed_phase = body.get("phase") or body.get("execution_phase")
+        phase = observed_phase if isinstance(observed_phase, str) else "response"
+        error_details = {
+            "response_body": body,
+            "exception_type": None,
+        }
 
         if response.status_code == 401:
             detail = "Invalid API credentials"
-            try:
-                body = response.json()
-                if isinstance(body, dict):
-                    detail = str(body.get("message", body.get("detail", detail)))
-            except ValueError:
-                pass
-            raise MammothAuthError(detail)
+            candidate = body.get("message", body.get("detail"))
+            if isinstance(candidate, str) and candidate:
+                detail = candidate
+            raise MammothAuthError(
+                detail,
+                response_body=body,
+                details=error_details,
+                method=request_method,
+                request_id=request_id,
+                retry_after=retry_after,
+                operation_state="failed",
+                phase=phase,
+                job_handle=job_handle,
+                resource_handle=resource_handle,
+                endpoint=endpoint,
+            )
 
         if 200 <= response.status_code < 300:
             if response.status_code == 204 or not response.content:
@@ -411,26 +534,42 @@ class MammothClient:
                 return response.json()
             except ValueError as e:
                 raise MammothAPIError(
-                    f"Invalid JSON response: {e}",
+                    "Invalid JSON response",
                     status_code=response.status_code,
-                    response_body={"raw": response.text},
+                    response_body={},
+                    details={"exception_type": type(e).__name__},
+                    method=request_method,
+                    request_id=request_id,
+                    retry_after=retry_after,
+                    operation_state="failed",
+                    phase=phase,
+                    endpoint=endpoint,
                 ) from e
 
         error_detail = "Unknown error"
-        response_data: dict[str, Any] = {}
-        try:
-            response_data = response.json()
-            if isinstance(response_data, dict):
-                error_detail = response_data.get("detail", f"HTTP {response.status_code}")
-            else:
-                error_detail = f"HTTP {response.status_code}"
-        except ValueError:
-            error_detail = f"HTTP {response.status_code}: {response.text[:200]}"
+        candidate_detail = body.get("detail", body.get("message"))
+        if isinstance(candidate_detail, str) and candidate_detail:
+            error_detail = candidate_detail
+        else:
+            error_detail = f"HTTP {response.status_code}"
+
+        response_operation_state = operation_state
+        if response.status_code not in {429, 503} or request_method in {"GET", "HEAD", "OPTIONS"}:
+            response_operation_state = "failed"
 
         raise MammothAPIError(
             f"API request failed: {error_detail}",
             status_code=response.status_code,
-            response_body=response_data,
+            response_body=body,
+            details=error_details,
+            method=request_method,
+            request_id=request_id,
+            retry_after=retry_after,
+            operation_state=response_operation_state,
+            phase=phase,
+            job_handle=job_handle,
+            resource_handle=resource_handle,
+            endpoint=endpoint,
         )
 
     def _request_json(

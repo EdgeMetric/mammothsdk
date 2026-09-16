@@ -10,7 +10,6 @@ JSON/YAML login document read through the shared ``--input`` option.
 
 from __future__ import annotations
 
-import json
 import os
 import stat
 import sys
@@ -18,7 +17,6 @@ from pathlib import Path
 from typing import Any, cast
 
 import typer
-import yaml
 from pydantic import ValidationError
 
 from mammoth_cli.context import credentials, profiles
@@ -31,9 +29,6 @@ from mammoth_cli.contracts.auth import LoginRequest
 from mammoth_cli.errors.envelope import (
     CODE_CONFIRMATION_DECLINED,
     CODE_CONFIRMATION_REQUIRED,
-    CODE_INPUT_FORMAT_REQUIRED,
-    CODE_INVALID_INPUT_DOCUMENT,
-    CODE_INVALID_INPUT_FORMAT,
     CODE_INVALID_WORKSPACE_ID,
     EXIT_USAGE,
     CliError,
@@ -41,35 +36,11 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.output.policy import MACHINE_OUTPUTS
 from mammoth_cli.runtime import executor
 from mammoth_cli.runtime import options as go
+from mammoth_cli.runtime.input_loader import load_input_document
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services import factory as service_factory
 
 _STORAGE_MODES = ("auto", "keyring", "file")
-
-
-def _format_from_suffix(path: Path) -> str:
-    """Detect the JSON/YAML document format from a file suffix.
-
-    Args:
-        path: The document path.
-
-    Returns:
-        ``"json"`` or ``"yaml"``.
-
-    Raises:
-        CliError: ``invalid_input_format`` when the suffix is not recognized.
-    """
-    suffix = path.suffix.lower()
-    if suffix == ".json":
-        return "json"
-    if suffix in (".yaml", ".yml"):
-        return "yaml"
-    raise CliError(
-        code=CODE_INVALID_INPUT_FORMAT,
-        message=f"Cannot detect the document format from '{path.name}'.",
-        exit_status=EXIT_USAGE,
-        hint="Pass --input-format json or --input-format yaml.",
-    )
 
 
 def _check_file_permissions(path: Path) -> None:
@@ -94,6 +65,24 @@ def _check_file_permissions(path: Path) -> None:
         )
 
 
+def _preflight_login_input(path_or_dash: str | None) -> None:
+    """Check a credential file before any specialized parser reads it."""
+    if (
+        path_or_dash is None
+        or path_or_dash == "-"
+        or path_or_dash.lstrip().startswith("{")
+    ):
+        return
+    path = Path(path_or_dash)
+    if not path.exists():
+        raise CliError(
+            code="input_file_not_found",
+            message=f"'{path}' does not exist.",
+            exit_status=EXIT_USAGE,
+        )
+    _check_file_permissions(path)
+
+
 def _load_login_document(path_or_dash: str, input_format: str | None) -> dict[str, Any]:
     """Read and parse the `auth login --input` document.
 
@@ -110,50 +99,11 @@ def _load_login_document(path_or_dash: str, input_format: str | None) -> dict[st
             ``--input-format`` for stdin, an unsupported format, or a
             document that does not parse to an object.
     """
-    if path_or_dash == "-":
-        if input_format is None:
-            raise CliError(
-                code=CODE_INPUT_FORMAT_REQUIRED,
-                message="Reading the login document from stdin requires --input-format.",
-                exit_status=EXIT_USAGE,
-                hint="Pass --input-format json or --input-format yaml.",
-            )
-        text = sys.stdin.read()
-        fmt = input_format
-    else:
-        path = Path(path_or_dash)
-        if not path.exists():
-            raise CliError(
-                code="input_file_not_found",
-                message=f"'{path}' does not exist.",
-                exit_status=EXIT_USAGE,
-            )
-        _check_file_permissions(path)
-        text = path.read_text(encoding="utf-8")
-        fmt = input_format or _format_from_suffix(path)
-
-    if fmt not in ("json", "yaml"):
-        raise CliError(
-            code=CODE_INVALID_INPUT_FORMAT,
-            message=f"'{fmt}' is not a supported input format.",
-            exit_status=EXIT_USAGE,
-            hint="Use json or yaml.",
-        )
-    try:
-        loaded = json.loads(text) if fmt == "json" else yaml.safe_load(text)
-    except (json.JSONDecodeError, yaml.YAMLError) as exc:
-        raise CliError(
-            code=CODE_INVALID_INPUT_DOCUMENT,
-            message=f"The login document is not valid {fmt}.",
-            exit_status=EXIT_USAGE,
-            hint="Provide a well-formed JSON or YAML object.",
-        ) from exc
-    if not isinstance(loaded, dict):
-        raise CliError(
-            code=CODE_INVALID_INPUT_DOCUMENT,
-            message="The login document must be a JSON/YAML object.",
-            exit_status=EXIT_USAGE,
-        )
+    _preflight_login_input(path_or_dash)
+    loaded = load_input_document(path_or_dash, input_format)
+    # ``load_input_document`` already enforces a mapping top-level shape.  Keep
+    # this assertion as a typed seam for the bespoke LoginRequest validator.
+    assert loaded is not None
     return loaded
 
 
@@ -225,7 +175,13 @@ def _run_login(
 
     effective_workspace: int | None
     if invocation.input_file is not None:
-        document = _load_login_document(invocation.input_file, invocation.input_format)
+        # The permission check is deliberately separate from parsing so a
+        # secret-bearing file is rejected before any bytes are read.  The
+        # shared loader then performs the one bounded source read and strict
+        # JSON/YAML admission used by every other command.
+        _preflight_login_input(invocation.input_file)
+        document = load_input_document(invocation.input_file, invocation.input_format)
+        assert document is not None
         request = _validate_login_document(document)
         api_key, api_secret = request.api_key, request.api_secret
         effective_workspace = request.workspace_id
@@ -347,16 +303,25 @@ def auth_login(
         debug=debug,
         input_file=input_file,
         input_format=input_format,
+        input_preflight=_preflight_login_input,
     )
 
     def producer() -> tuple[Any, dict[str, Any]]:
+        # Run the secret-safe preflight inside the shared executor boundary;
+        # the specialized login loader then performs its one actual read.
+        invocation.prepare_input()
         return _run_login(
             invocation,
             server_prefix=server_prefix,
             storage=storage,
         )
 
-    executor.run(invocation.command_id, invocation.output, producer)
+    executor.run(
+        invocation.command_id,
+        invocation.output,
+        producer,
+        agent_mode=invocation.no_input,
+    )
 
 
 def _run_status(invocation: Invocation, *, check: bool) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -432,7 +397,12 @@ def auth_status(
     def producer() -> tuple[Any, dict[str, Any]]:
         return _run_status(invocation, check=check)
 
-    executor.run(invocation.command_id, invocation.output, producer)
+    executor.run(
+        invocation.command_id,
+        invocation.output,
+        producer,
+        agent_mode=invocation.no_input,
+    )
 
 
 def _run_logout(
@@ -524,4 +494,9 @@ def auth_logout(
     def producer() -> tuple[Any, dict[str, Any]]:
         return _run_logout(invocation, all_profiles=all_profiles, yes=yes)
 
-    executor.run(invocation.command_id, invocation.output, producer)
+    executor.run(
+        invocation.command_id,
+        invocation.output,
+        producer,
+        agent_mode=invocation.no_input,
+    )

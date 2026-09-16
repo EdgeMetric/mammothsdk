@@ -44,6 +44,12 @@ CODE_PROFILE_NOT_FOUND = "profile_not_found"
 CODE_CONFIRMATION_REQUIRED = "confirmation_required"
 CODE_CONFIRMATION_DECLINED = "confirmation_declined"
 CODE_AUTHENTICATION_FAILED = "authentication_failed"
+CODE_AUTHORIZATION_REQUIRED = "authorization_required"
+CODE_CONFLICT = "conflict"
+CODE_RETRYABLE = "retryable_error"
+CODE_OUTCOME_UNKNOWN = "outcome_unknown"
+CODE_JOB_FAILED = "job_failed"
+CODE_INTERRUPTED = "interrupted"
 
 
 @dataclass
@@ -119,6 +125,64 @@ def timeout_error(*, job_id: str | None = None, command: str = "job") -> CliErro
         hint="Wait for the job to finish, then inspect its result.",
         details=details,
         retryable=True,
+        recovery_commands=recovery,
+    )
+
+
+def interrupted_error(
+    *,
+    job_id: object | None = None,
+    operation_state: str | None = None,
+    phase: str | None = None,
+    details: dict[str, Any] | None = None,
+) -> CliError:
+    """Return the resumable, secret-safe error for a user interrupt.
+
+    A SIGINT is not a successful cancellation: an asynchronous operation may
+    still be running remotely.  Keep the last observed handle and a concrete
+    inspection action when one is available, while using the conventional
+    shell status 130.
+    """
+    merged = dict(details or {})
+    if job_id is not None:
+        merged.setdefault("job_id", job_id)
+        merged.setdefault("job_handle", job_id)
+    merged.setdefault("operation_state", operation_state or "outcome_unknown")
+    if phase is not None:
+        merged.setdefault("phase", phase)
+    recovery: list[str] = []
+    if job_id is not None:
+        if isinstance(job_id, (list, tuple)):
+            ids = ",".join(str(item) for item in job_id)
+            recovery.extend(
+                [
+                    (
+                        f"mammoth job get-many --input '{{\"job_ids\": [{ids}]}}' "
+                        "--output json --no-input"
+                    ),
+                    (
+                        f"mammoth job wait-many --input '{{\"job_ids\": [{ids}]}}' "
+                        "--output json --no-input"
+                    ),
+                ]
+            )
+        else:
+            recovery.extend(
+                [
+                    f"mammoth job get {job_id} --output json --no-input",
+                    f"mammoth job wait {job_id} --output json --no-input",
+                ]
+            )
+    return CliError(
+        code=CODE_INTERRUPTED,
+        message="The operation was interrupted before a terminal result was observed.",
+        exit_status=EXIT_INTERRUPT,
+        hint=(
+            "Inspect the observed job or resource before continuing; do not replay "
+            "an unknown mutation."
+        ),
+        details=merged,
+        retryable=False,
         recovery_commands=recovery,
     )
 

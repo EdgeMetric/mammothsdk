@@ -43,10 +43,26 @@ class MathOpsMixin(ViewHost):
             view.math("Price * Quantity", new_column="Total")
             view.math("(Price + Tax) * 1.1", new_column="Grand Total")
         """
+        # The parser consumes a scoped display-name map. Add exact internal
+        # identities as aliases so callers can use either form without any
+        # substring replacement (and keep unknown tokens fatal).
+        # Preserve display-name precedence when a display name happens to be
+        # identical to another column's backend identity.  For example,
+        # ``A -> B`` and ``B -> column_2`` must resolve ``B`` to
+        # ``column_2``; an unconditional alias merge would silently replace
+        # that valid display reference with the internal ``B`` alias.
+        expression_columns = dict(self.columns)
+        expression_columns.update(
+            {
+                name: name
+                for name in self._internal_names
+                if name not in expression_columns
+            }
+        )
         return self._add_task(
             build_math_params(
                 expression,
-                self.columns,
+                expression_columns,
                 new_column=new_column,
                 column_type=column_type,
                 existing_column=existing_column,

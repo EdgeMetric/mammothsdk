@@ -1,0 +1,3637 @@
+{
+  "schema_version": 1,
+  "task": "C2/S5 exports-connectors",
+  "route_count": 60,
+  "families": {
+    "view_export": 27,
+    "connector": 22,
+    "external-key": 4,
+    "webhook": 7
+  },
+  "routes": [
+    {
+      "command_id": "connector.active",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.active_connectors",
+      "field_destinations": {},
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/active_connectors",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.ai.chat",
+      "sdk_symbol": "mammoth.api.connector_ai.ConnectorAIAPI.chat",
+      "field_destinations": {
+        "body": {
+          "source": "input",
+          "destination": "body",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/ai/connector-chat",
+        "body": "json:body",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.ai.history",
+      "sdk_symbol": "mammoth.api.connector_ai.ConnectorAIAPI.history",
+      "field_destinations": {
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/ai/connector-chat/history",
+        "body": "query:connection_key",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.ai.session.list",
+      "sdk_symbol": "mammoth.api.connector_ai.ConnectorAIAPI.session_list",
+      "field_destinations": {},
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/ai/connector-chat/sessions",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.ai.session.messages",
+      "sdk_symbol": "mammoth.api.connector_ai.ConnectorAIAPI.session_messages",
+      "field_destinations": {
+        "session_id": {
+          "source": "positional",
+          "destination": "session_id",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/ai/connector-chat/sessions/{session_id}/messages",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.ai.submit-column-selection",
+      "sdk_symbol": "mammoth.api.connector_ai.ConnectorAIAPI.submit_column_selection",
+      "field_destinations": {
+        "body": {
+          "source": "input",
+          "destination": "body",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/ai/connector-chat/column-selection",
+        "body": "json:body",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.ai.submit-credentials",
+      "sdk_symbol": "mammoth.api.connector_ai.ConnectorAIAPI.submit_credentials",
+      "field_destinations": {
+        "body": {
+          "source": "input",
+          "destination": "body",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/ai/connector-chat/credentials",
+        "body": "json:body",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.connection.create",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.create_connection",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        },
+        "config": {
+          "source": "input",
+          "destination": "config",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections",
+        "body": "json:config",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.connection.delete",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.delete_connection",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        },
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "DELETE",
+        "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections/{connection_key}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.connection.get",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.get_connection",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        },
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections/{connection_key}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.connection.list",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.list_connections",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.connection.update",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.update_connection",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        },
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "path_or_context"
+        },
+        "credentials": {
+          "source": "input",
+          "destination": "credentials",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "PATCH",
+        "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections/{connection_key}",
+        "body": "json:patch(credentials)",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.ds-config.create",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.create_ds_config",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        },
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "path_or_context"
+        },
+        "query": {
+          "source": "input",
+          "destination": "query",
+          "wire": "sdk_argument"
+        },
+        "file_source": {
+          "source": "input",
+          "destination": "file_source",
+          "wire": "sdk_argument"
+        },
+        "table": {
+          "source": "input",
+          "destination": "table",
+          "wire": "sdk_argument"
+        },
+        "profile": {
+          "source": "input",
+          "destination": "profile",
+          "wire": "sdk_argument"
+        },
+        "validate": {
+          "source": "input",
+          "destination": "validate",
+          "wire": "sdk_argument"
+        },
+        "data_sample": {
+          "source": "input",
+          "destination": "data_sample",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections/{connection_key}/ds_configs",
+        "body": "json:source+flags",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "verified",
+        "executed_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.ds-config.delete",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.delete_ds_config",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        },
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "path_or_context"
+        },
+        "ds_config_key": {
+          "source": "positional",
+          "destination": "ds_config_key",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "DELETE",
+        "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.ds-config.delete-all",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.ds_config_delete_all",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        },
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "path_or_context"
+        },
+        "config_ids": {
+          "source": "input",
+          "destination": "config_ids",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "DELETE",
+        "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections/{connection_key}/ds_configs",
+        "body": "query:config_ids",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.ds-config.get",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.get_ds_config",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        },
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "path_or_context"
+        },
+        "ds_config_key": {
+          "source": "positional",
+          "destination": "ds_config_key",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.ds-config.list",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.list_ds_configs",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        },
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections/{connection_key}/ds_configs",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.ds-config.update",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.update_ds_config",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        },
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "path_or_context"
+        },
+        "ds_config_key": {
+          "source": "positional",
+          "destination": "ds_config_key",
+          "wire": "path_or_context"
+        },
+        "patch": {
+          "source": "input",
+          "destination": "patch",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "PATCH",
+        "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections/{connection_key}/ds_configs/{ds_config_key}",
+        "body": "json:patch",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.get",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.get",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/connectors/{connector_key}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.list",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.list",
+      "field_destinations": {},
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/connectors",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.query.generate",
+      "sdk_symbol": "mammoth.api.ai.AIAPI.query_gen",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        },
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "path_or_context"
+        },
+        "prompt": {
+          "source": "input",
+          "destination": "prompt",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections/{connection_key}/chat",
+        "body": "json:prompt",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.query.status",
+      "sdk_symbol": "mammoth.api.ai.AIAPI.status",
+      "field_destinations": {
+        "connector_key": {
+          "source": "positional",
+          "destination": "connector_key",
+          "wire": "path_or_context"
+        },
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections/{connection_key}/chat",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "external-key.create",
+      "sdk_symbol": "mammoth.api.external_keys.ExternalKeysAPI.create",
+      "field_destinations": {
+        "key_type": {
+          "source": "input",
+          "destination": "key_type",
+          "wire": "sdk_argument"
+        },
+        "key_name": {
+          "source": "input",
+          "destination": "key_name",
+          "wire": "sdk_argument"
+        },
+        "secure_key": {
+          "source": "input",
+          "destination": "secure_key",
+          "wire": "sdk_argument"
+        },
+        "description": {
+          "source": "input",
+          "destination": "description",
+          "wire": "sdk_argument"
+        },
+        "model_id": {
+          "source": "input",
+          "destination": "model_id",
+          "wire": "sdk_argument"
+        },
+        "model_settings": {
+          "source": "input",
+          "destination": "model_settings",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/external_keys",
+        "body": "json:fields (secure_key redacted)",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "verified",
+        "executed_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "external-key.delete",
+      "sdk_symbol": "mammoth.api.external_keys.ExternalKeysAPI.delete",
+      "field_destinations": {
+        "key_id": {
+          "source": "positional",
+          "destination": "key_id",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "DELETE",
+        "path": "/workspaces/{workspace}/external_keys/{key_id}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "external-key.get",
+      "sdk_symbol": "mammoth.api.external_keys.ExternalKeysAPI.get",
+      "field_destinations": {
+        "key_id": {
+          "source": "positional",
+          "destination": "key_id",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/external_keys/{key_id}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "external-key.list",
+      "sdk_symbol": "mammoth.api.external_keys.ExternalKeysAPI.list",
+      "field_destinations": {},
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/external_keys",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "webhook.create",
+      "sdk_symbol": "mammoth.api.webhooks.WebhooksAPI.create",
+      "field_destinations": {
+        "name": {
+          "source": "input",
+          "destination": "name",
+          "wire": "sdk_argument"
+        },
+        "mode": {
+          "source": "input",
+          "destination": "mode",
+          "wire": "sdk_argument"
+        },
+        "folder_resource_id": {
+          "source": "input",
+          "destination": "folder_resource_id",
+          "wire": "sdk_argument"
+        },
+        "origins": {
+          "source": "input",
+          "destination": "origins",
+          "wire": "sdk_argument"
+        },
+        "is_secure": {
+          "source": "input",
+          "destination": "is_secure",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/webhooks",
+        "body": "json:fields",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "webhook.delete",
+      "sdk_symbol": "mammoth.api.webhooks.WebhooksAPI.delete",
+      "field_destinations": {
+        "webhook_id": {
+          "source": "positional",
+          "destination": "webhook_id",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "DELETE",
+        "path": "/workspaces/{workspace}/projects/{project}/webhooks/{webhook_id}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "webhook.get",
+      "sdk_symbol": "mammoth.api.webhooks.WebhooksAPI.get",
+      "field_destinations": {
+        "webhook_id": {
+          "source": "positional",
+          "destination": "webhook_id",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/webhooks/{webhook_id}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "webhook.list",
+      "sdk_symbol": "mammoth.api.webhooks.WebhooksAPI.list",
+      "field_destinations": {
+        "limit": {
+          "source": "input",
+          "destination": "limit",
+          "wire": "sdk_argument"
+        },
+        "offset": {
+          "source": "input",
+          "destination": "offset",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/webhooks",
+        "body": "query:limit,offset",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "webhook.send",
+      "sdk_symbol": "mammoth.api.webhooks.WebhooksAPI.send_data",
+      "field_destinations": {
+        "webhook_uri": {
+          "source": "input",
+          "destination": "webhook_uri",
+          "wire": "sdk_argument"
+        },
+        "data": {
+          "source": "input",
+          "destination": "data",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/webhooks/data/{webhook_uri}",
+        "body": "json:data",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "webhook.send-get",
+      "sdk_symbol": "mammoth.api.webhooks.WebhooksAPI.send_data_get",
+      "field_destinations": {
+        "webhook_uri": {
+          "source": "input",
+          "destination": "webhook_uri",
+          "wire": "sdk_argument"
+        },
+        "params": {
+          "source": "input",
+          "destination": "params",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/webhooks/data/{webhook_uri}",
+        "body": "query:params",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "webhook.update",
+      "sdk_symbol": "mammoth.api.webhooks.WebhooksAPI.update",
+      "field_destinations": {
+        "webhook_id": {
+          "source": "positional",
+          "destination": "webhook_id",
+          "wire": "path_or_context"
+        },
+        "mode": {
+          "source": "input",
+          "destination": "mode",
+          "wire": "sdk_argument"
+        },
+        "origins": {
+          "source": "input",
+          "destination": "origins",
+          "wire": "sdk_argument"
+        },
+        "is_secure": {
+          "source": "input",
+          "destination": "is_secure",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "PATCH",
+        "path": "/workspaces/{workspace}/projects/{project}/webhooks/{webhook_id}",
+        "body": "json:patch",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "verified",
+        "executed_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.azure-blob",
+      "sdk_symbol": "mammoth.view.ViewExport.to_azure_blob",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "storage_account_name": {
+          "source": "input",
+          "destination": "storage_account_name",
+          "wire": "sdk_argument"
+        },
+        "tenant_id": {
+          "source": "input",
+          "destination": "tenant_id",
+          "wire": "sdk_argument"
+        },
+        "client_id": {
+          "source": "input",
+          "destination": "client_id",
+          "wire": "sdk_argument"
+        },
+        "client_secret": {
+          "source": "input",
+          "destination": "client_secret",
+          "wire": "sdk_argument"
+        },
+        "container_name": {
+          "source": "input",
+          "destination": "container_name",
+          "wire": "sdk_argument"
+        },
+        "folder_path": {
+          "source": "input",
+          "destination": "folder_path",
+          "wire": "sdk_argument"
+        },
+        "file_name": {
+          "source": "input",
+          "destination": "file_name",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:azure target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.bigquery",
+      "sdk_symbol": "mammoth.view.ViewExport.to_bigquery",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "selected_profile": {
+          "source": "input",
+          "destination": "selected_profile",
+          "wire": "sdk_argument"
+        },
+        "selected_identity": {
+          "source": "input",
+          "destination": "selected_identity",
+          "wire": "sdk_argument"
+        },
+        "table": {
+          "source": "input",
+          "destination": "table",
+          "wire": "sdk_argument"
+        },
+        "export_type": {
+          "source": "input",
+          "destination": "export_type",
+          "wire": "sdk_argument"
+        },
+        "upsert_keys": {
+          "source": "input",
+          "destination": "upsert_keys",
+          "wire": "sdk_argument"
+        },
+        "partition": {
+          "source": "input",
+          "destination": "partition",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:bigquery target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.dataset",
+      "sdk_symbol": "mammoth.view.ViewExport.to_dataset",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "dataset_name": {
+          "source": "input",
+          "destination": "dataset_name",
+          "wire": "sdk_argument"
+        },
+        "target_ds_id": {
+          "source": "input",
+          "destination": "target_ds_id",
+          "wire": "sdk_argument"
+        },
+        "save_as_mode": {
+          "source": "input",
+          "destination": "save_as_mode",
+          "wire": "sdk_argument"
+        },
+        "column_mapping": {
+          "source": "input",
+          "destination": "column_mapping",
+          "wire": "sdk_argument"
+        },
+        "label_ids": {
+          "source": "input",
+          "destination": "label_ids",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        },
+        "timeout": {
+          "source": "input",
+          "destination": "timeout",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:internal-dataset target",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.elasticsearch",
+      "sdk_symbol": "mammoth.view.ViewExport.to_elasticsearch",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "host": {
+          "source": "input",
+          "destination": "host",
+          "wire": "sdk_argument"
+        },
+        "username": {
+          "source": "input",
+          "destination": "username",
+          "wire": "sdk_argument"
+        },
+        "password": {
+          "source": "input",
+          "destination": "password",
+          "wire": "sdk_argument"
+        },
+        "index": {
+          "source": "input",
+          "destination": "index",
+          "wire": "sdk_argument"
+        },
+        "port": {
+          "source": "input",
+          "destination": "port",
+          "wire": "sdk_argument"
+        },
+        "connection": {
+          "source": "input",
+          "destination": "connection",
+          "wire": "sdk_argument"
+        },
+        "chunksize": {
+          "source": "input",
+          "destination": "chunksize",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:elasticsearch target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.email",
+      "sdk_symbol": "mammoth.view.ViewExport.to_email",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "emails": {
+          "source": "input",
+          "destination": "emails",
+          "wire": "sdk_argument"
+        },
+        "subject": {
+          "source": "input",
+          "destination": "subject",
+          "wire": "sdk_argument"
+        },
+        "message": {
+          "source": "input",
+          "destination": "message",
+          "wire": "sdk_argument"
+        },
+        "resource": {
+          "source": "input",
+          "destination": "resource",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:email target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.ftp",
+      "sdk_symbol": "mammoth.view.ViewExport.to_ftp",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "domain": {
+          "source": "input",
+          "destination": "domain",
+          "wire": "sdk_argument"
+        },
+        "directory": {
+          "source": "input",
+          "destination": "directory",
+          "wire": "sdk_argument"
+        },
+        "file": {
+          "source": "input",
+          "destination": "file",
+          "wire": "sdk_argument"
+        },
+        "username": {
+          "source": "input",
+          "destination": "username",
+          "wire": "sdk_argument"
+        },
+        "password": {
+          "source": "input",
+          "destination": "password",
+          "wire": "sdk_argument"
+        },
+        "port": {
+          "source": "input",
+          "destination": "port",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:ftp target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.managed-s3",
+      "sdk_symbol": "mammoth.view.ViewExport.to_s3",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "file_name": {
+          "source": "input",
+          "destination": "file_name",
+          "wire": "sdk_argument"
+        },
+        "file_type": {
+          "source": "input",
+          "destination": "file_type",
+          "wire": "sdk_argument"
+        },
+        "include_hidden": {
+          "source": "input",
+          "destination": "include_hidden",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:s3 target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.mssql",
+      "sdk_symbol": "mammoth.view.ViewExport.to_mssql",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "host": {
+          "source": "input",
+          "destination": "host",
+          "wire": "sdk_argument"
+        },
+        "port": {
+          "source": "input",
+          "destination": "port",
+          "wire": "sdk_argument"
+        },
+        "database": {
+          "source": "input",
+          "destination": "database",
+          "wire": "sdk_argument"
+        },
+        "table": {
+          "source": "input",
+          "destination": "table",
+          "wire": "sdk_argument"
+        },
+        "username": {
+          "source": "input",
+          "destination": "username",
+          "wire": "sdk_argument"
+        },
+        "password": {
+          "source": "input",
+          "destination": "password",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:mssql target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.mysql",
+      "sdk_symbol": "mammoth.view.ViewExport.to_mysql",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "host": {
+          "source": "input",
+          "destination": "host",
+          "wire": "sdk_argument"
+        },
+        "port": {
+          "source": "input",
+          "destination": "port",
+          "wire": "sdk_argument"
+        },
+        "database": {
+          "source": "input",
+          "destination": "database",
+          "wire": "sdk_argument"
+        },
+        "table": {
+          "source": "input",
+          "destination": "table",
+          "wire": "sdk_argument"
+        },
+        "username": {
+          "source": "input",
+          "destination": "username",
+          "wire": "sdk_argument"
+        },
+        "password": {
+          "source": "input",
+          "destination": "password",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:mysql target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.onedrive",
+      "sdk_symbol": "mammoth.view.ViewExport.to_onedrive",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "tenant_id": {
+          "source": "input",
+          "destination": "tenant_id",
+          "wire": "sdk_argument"
+        },
+        "client_id": {
+          "source": "input",
+          "destination": "client_id",
+          "wire": "sdk_argument"
+        },
+        "client_secret": {
+          "source": "input",
+          "destination": "client_secret",
+          "wire": "sdk_argument"
+        },
+        "user_id": {
+          "source": "input",
+          "destination": "user_id",
+          "wire": "sdk_argument"
+        },
+        "folder_path": {
+          "source": "input",
+          "destination": "folder_path",
+          "wire": "sdk_argument"
+        },
+        "file_name": {
+          "source": "input",
+          "destination": "file_name",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:onedrive target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.postgres",
+      "sdk_symbol": "mammoth.view.ViewExport.to_postgres",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "host": {
+          "source": "input",
+          "destination": "host",
+          "wire": "sdk_argument"
+        },
+        "port": {
+          "source": "input",
+          "destination": "port",
+          "wire": "sdk_argument"
+        },
+        "database": {
+          "source": "input",
+          "destination": "database",
+          "wire": "sdk_argument"
+        },
+        "table": {
+          "source": "input",
+          "destination": "table",
+          "wire": "sdk_argument"
+        },
+        "username": {
+          "source": "input",
+          "destination": "username",
+          "wire": "sdk_argument"
+        },
+        "password": {
+          "source": "input",
+          "destination": "password",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:postgres target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "verified",
+        "executed_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.powerbi",
+      "sdk_symbol": "mammoth.view.ViewExport.to_powerbi",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "username": {
+          "source": "input",
+          "destination": "username",
+          "wire": "sdk_argument"
+        },
+        "password": {
+          "source": "input",
+          "destination": "password",
+          "wire": "sdk_argument"
+        },
+        "client_id": {
+          "source": "input",
+          "destination": "client_id",
+          "wire": "sdk_argument"
+        },
+        "dataset": {
+          "source": "input",
+          "destination": "dataset",
+          "wire": "sdk_argument"
+        },
+        "table": {
+          "source": "input",
+          "destination": "table",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:powerbi target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.redshift",
+      "sdk_symbol": "mammoth.view.ViewExport.to_redshift",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "host": {
+          "source": "input",
+          "destination": "host",
+          "wire": "sdk_argument"
+        },
+        "port": {
+          "source": "input",
+          "destination": "port",
+          "wire": "sdk_argument"
+        },
+        "database": {
+          "source": "input",
+          "destination": "database",
+          "wire": "sdk_argument"
+        },
+        "table": {
+          "source": "input",
+          "destination": "table",
+          "wire": "sdk_argument"
+        },
+        "username": {
+          "source": "input",
+          "destination": "username",
+          "wire": "sdk_argument"
+        },
+        "password": {
+          "source": "input",
+          "destination": "password",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:redshift target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.rest",
+      "sdk_symbol": "mammoth.view.ViewExport.to_rest_api",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "base_url": {
+          "source": "input",
+          "destination": "base_url",
+          "wire": "sdk_argument"
+        },
+        "endpoint_path": {
+          "source": "input",
+          "destination": "endpoint_path",
+          "wire": "sdk_argument"
+        },
+        "auth_type": {
+          "source": "input",
+          "destination": "auth_type",
+          "wire": "sdk_argument"
+        },
+        "http_method": {
+          "source": "input",
+          "destination": "http_method",
+          "wire": "sdk_argument"
+        },
+        "wrap_path": {
+          "source": "input",
+          "destination": "wrap_path",
+          "wire": "sdk_argument"
+        },
+        "batch_size": {
+          "source": "input",
+          "destination": "batch_size",
+          "wire": "sdk_argument"
+        },
+        "timeout_seconds": {
+          "source": "input",
+          "destination": "timeout_seconds",
+          "wire": "sdk_argument"
+        },
+        "ssl_verify": {
+          "source": "input",
+          "destination": "ssl_verify",
+          "wire": "sdk_argument"
+        },
+        "auth": {
+          "source": "input",
+          "destination": "auth",
+          "wire": "sdk_argument"
+        },
+        "headers": {
+          "source": "input",
+          "destination": "headers",
+          "wire": "sdk_argument"
+        },
+        "query_params": {
+          "source": "input",
+          "destination": "query_params",
+          "wire": "sdk_argument"
+        },
+        "extra_body_fields": {
+          "source": "input",
+          "destination": "extra_body_fields",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:rest target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "verified",
+        "executed_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.sftp",
+      "sdk_symbol": "mammoth.view.ViewExport.to_sftp",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "host": {
+          "source": "input",
+          "destination": "host",
+          "wire": "sdk_argument"
+        },
+        "username": {
+          "source": "input",
+          "destination": "username",
+          "wire": "sdk_argument"
+        },
+        "password": {
+          "source": "input",
+          "destination": "password",
+          "wire": "sdk_argument"
+        },
+        "directory": {
+          "source": "input",
+          "destination": "directory",
+          "wire": "sdk_argument"
+        },
+        "file_name": {
+          "source": "input",
+          "destination": "file_name",
+          "wire": "sdk_argument"
+        },
+        "port": {
+          "source": "input",
+          "destination": "port",
+          "wire": "sdk_argument"
+        },
+        "randomize_file_name": {
+          "source": "input",
+          "destination": "randomize_file_name",
+          "wire": "sdk_argument"
+        },
+        "ssh_key_authentication": {
+          "source": "input",
+          "destination": "ssh_key_authentication",
+          "wire": "sdk_argument"
+        },
+        "private_key": {
+          "source": "input",
+          "destination": "private_key",
+          "wire": "sdk_argument"
+        },
+        "passphrase": {
+          "source": "input",
+          "destination": "passphrase",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:sftp target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.sharepoint",
+      "sdk_symbol": "mammoth.view.ViewExport.to_sharepoint",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "tenant_id": {
+          "source": "input",
+          "destination": "tenant_id",
+          "wire": "sdk_argument"
+        },
+        "client_id": {
+          "source": "input",
+          "destination": "client_id",
+          "wire": "sdk_argument"
+        },
+        "client_secret": {
+          "source": "input",
+          "destination": "client_secret",
+          "wire": "sdk_argument"
+        },
+        "site_url": {
+          "source": "input",
+          "destination": "site_url",
+          "wire": "sdk_argument"
+        },
+        "document_library": {
+          "source": "input",
+          "destination": "document_library",
+          "wire": "sdk_argument"
+        },
+        "folder_path": {
+          "source": "input",
+          "destination": "folder_path",
+          "wire": "sdk_argument"
+        },
+        "file_name": {
+          "source": "input",
+          "destination": "file_name",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:sharepoint target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.tableau",
+      "sdk_symbol": "mammoth.view.ViewExport.to_tableau",
+      "field_destinations": {
+        "view_id": {
+          "source": "positional",
+          "destination": "view_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "server_url": {
+          "source": "input",
+          "destination": "server_url",
+          "wire": "sdk_argument"
+        },
+        "token_name": {
+          "source": "input",
+          "destination": "token_name",
+          "wire": "sdk_argument"
+        },
+        "token_secret": {
+          "source": "input",
+          "destination": "token_secret",
+          "wire": "sdk_argument"
+        },
+        "site_name": {
+          "source": "input",
+          "destination": "site_name",
+          "wire": "sdk_argument"
+        },
+        "project_name": {
+          "source": "input",
+          "destination": "project_name",
+          "wire": "sdk_argument"
+        },
+        "datasource_name": {
+          "source": "input",
+          "destination": "datasource_name",
+          "wire": "sdk_argument"
+        },
+        "ca_bundle_path": {
+          "source": "input",
+          "destination": "ca_bundle_path",
+          "wire": "sdk_argument"
+        },
+        "trigger_type": {
+          "source": "input",
+          "destination": "trigger_type",
+          "wire": "sdk_argument"
+        },
+        "run_immediately": {
+          "source": "input",
+          "destination": "run_immediately",
+          "wire": "sdk_argument"
+        },
+        "validate_only": {
+          "source": "input",
+          "destination": "validate_only",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "additional_properties": {
+          "source": "input",
+          "destination": "additional_properties",
+          "wire": "sdk_argument"
+        },
+        "condition": {
+          "source": "input",
+          "destination": "condition",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{view_id}/pipeline/exports",
+        "body": "json:tableau target+controls",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.create",
+      "sdk_symbol": "mammoth.api.exports.ExportsAPI.create",
+      "field_destinations": {
+        "dataview_id": {
+          "source": "positional",
+          "destination": "dataview_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "export_spec": {
+          "source": "input",
+          "destination": "export_spec",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports",
+        "body": "json:export_spec",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.csv",
+      "sdk_symbol": "mammoth.api.exports.ExportsAPI.to_csv",
+      "field_destinations": {
+        "dataview_id": {
+          "source": "positional",
+          "destination": "dataview_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "output_path": {
+          "source": "input",
+          "destination": "output_path",
+          "wire": "sdk_argument"
+        },
+        "timeout": {
+          "source": "input",
+          "destination": "timeout",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports",
+        "body": "json:s3 export + download",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.delete",
+      "sdk_symbol": "mammoth.api.exports.ExportsAPI.delete",
+      "field_destinations": {
+        "dataview_id": {
+          "source": "positional",
+          "destination": "dataview_id",
+          "wire": "path_or_context"
+        },
+        "export_id": {
+          "source": "positional",
+          "destination": "export_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "skip_validation": {
+          "source": "input",
+          "destination": "skip_validation",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "DELETE",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports/{export_id}",
+        "body": "query:skip_validation",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.get",
+      "sdk_symbol": "mammoth.api.exports.ExportsAPI.get",
+      "field_destinations": {
+        "dataview_id": {
+          "source": "positional",
+          "destination": "dataview_id",
+          "wire": "path_or_context"
+        },
+        "export_id": {
+          "source": "positional",
+          "destination": "export_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "fields": {
+          "source": "input",
+          "destination": "fields",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports/{export_id}",
+        "body": "query:fields",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.list",
+      "sdk_symbol": "mammoth.api.exports.ExportsAPI.list",
+      "field_destinations": {
+        "dataview_id": {
+          "source": "positional",
+          "destination": "dataview_id",
+          "wire": "path_or_context"
+        },
+        "fields": {
+          "source": "input",
+          "destination": "fields",
+          "wire": "sdk_argument"
+        },
+        "limit": {
+          "source": "input",
+          "destination": "limit",
+          "wire": "sdk_argument"
+        },
+        "offset": {
+          "source": "input",
+          "destination": "offset",
+          "wire": "sdk_argument"
+        },
+        "sort": {
+          "source": "input",
+          "destination": "sort",
+          "wire": "sdk_argument"
+        },
+        "sequence": {
+          "source": "input",
+          "destination": "sequence",
+          "wire": "sdk_argument"
+        },
+        "status": {
+          "source": "input",
+          "destination": "status",
+          "wire": "sdk_argument"
+        },
+        "reordered": {
+          "source": "input",
+          "destination": "reordered",
+          "wire": "sdk_argument"
+        },
+        "handler_type": {
+          "source": "input",
+          "destination": "handler_type",
+          "wire": "sdk_argument"
+        },
+        "end_of_pipeline": {
+          "source": "input",
+          "destination": "end_of_pipeline",
+          "wire": "sdk_argument"
+        },
+        "runnable": {
+          "source": "input",
+          "destination": "runnable",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports",
+        "body": "query:filters",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.publish-db",
+      "sdk_symbol": "mammoth.api.exports.ExportsAPI.publish_db",
+      "field_destinations": {
+        "dataview_id": {
+          "source": "positional",
+          "destination": "dataview_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "odbc_type": {
+          "source": "input",
+          "destination": "odbc_type",
+          "wire": "sdk_argument"
+        },
+        "target_properties": {
+          "source": "input",
+          "destination": "target_properties",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{dataview_id}/publish-to-db",
+        "body": "json:odbc_type+target_properties",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.publish-db-update",
+      "sdk_symbol": "mammoth.api.exports.ExportsAPI.publish_db_update",
+      "field_destinations": {
+        "dataview_id": {
+          "source": "positional",
+          "destination": "dataview_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "patch": {
+          "source": "input",
+          "destination": "patch",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "PATCH",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{dataview_id}/publish-to-db",
+        "body": "json:patch",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.update",
+      "sdk_symbol": "mammoth.api.exports.ExportsAPI.update",
+      "field_destinations": {
+        "dataview_id": {
+          "source": "positional",
+          "destination": "dataview_id",
+          "wire": "path_or_context"
+        },
+        "export_id": {
+          "source": "positional",
+          "destination": "export_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "patches": {
+          "source": "input",
+          "destination": "patches",
+          "wire": "sdk_argument"
+        },
+        "skip_validation": {
+          "source": "input",
+          "destination": "skip_validation",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "PATCH",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports/{export_id}",
+        "body": "json:patches+query:skip_validation",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.exportable-config.get",
+      "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.get_exportable_config",
+      "field_destinations": {},
+      "context_destinations": {
+        "project_id": "resolved project",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset}/dataviews/{dataview}/exportable-config",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.exportable-config.apply",
+      "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.apply_exportable_config",
+      "field_destinations": {
+        "items": "items",
+        "config": "config",
+        "insert_after_sequence": "insert_after_sequence",
+        "is_paste_mode": "is_paste_mode"
+      },
+      "context_destinations": {
+        "project_id": "resolved project",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset}/dataviews/{dataview}/exportable-config",
+        "body": "items xor config plus optional insert_after_sequence/is_paste_mode",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    }
+  ]
+}

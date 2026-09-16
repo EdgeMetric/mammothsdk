@@ -82,6 +82,47 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: ai.retention.condition
+  command_path: ai retention condition
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  options: []
+  sdk_symbol: mammoth.api.ai.AIAPI.retention_condition
+  sdk_conversion: Call mammoth.api.ai.AIAPI.retention_condition with validated request fields.
+  request_model: AiRetentionConditionRequest
+  result_model: AiRetentionConditionResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: start_or_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-AI-RETENTION-CONDITION
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth ai retention condition DATASET_ID --help
+  agent_example: 'mammoth ai retention condition 123 --input ''{"mode": "generate", "intent": "completed
+    payments older than 90 days"}'' --output json --no-input --project 456'
+  unit_tests:
+  - UT-AI-RETENTION-CONDITION
+  contract_tests:
+  - CT-AI-RETENTION-CONDITION-HUMAN
+  - CT-AI-RETENTION-CONDITION-JSON
+  - CT-AI-RETENTION-CONDITION-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Requires explicit project context. Mode generate may return a job-backed result;
+    mode test follows the release response union and must not be assumed to synchronously return row counts.
+  reviewed_by: primary
 - command_id: ai.sql.generate
   command_path: ai sql generate
   disposition: command

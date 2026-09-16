@@ -19,6 +19,8 @@ silently-ignored typo.
 
 from __future__ import annotations
 
+import math
+
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.output.policy import COLOR_MODES
 from mammoth_cli.runtime.invocation import Invocation
@@ -74,7 +76,12 @@ def validate_invocation(invocation: Invocation) -> None:
 
     for field_name, option in _TIMEOUT_OPTIONS:
         value = getattr(invocation, field_name)
-        if value is not None and value <= 0:
+        if value is not None and (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+            or value <= 0
+        ):
             raise _invalid_option_error(
                 option,
                 f"{option} must be a positive number, got {value}.",

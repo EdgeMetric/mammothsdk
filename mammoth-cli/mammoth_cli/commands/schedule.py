@@ -31,6 +31,7 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.services.command_contract import bind_command_inputs
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -55,6 +56,11 @@ def _symbol(invocation: Invocation) -> str:
             exit_status=EXIT_USAGE,
         )
     return str(record["sdk_symbol"])
+
+
+def _bound_document(invocation: Invocation) -> dict[str, Any]:
+    """Return admitted input after the shared S7 contract binding boundary."""
+    return bind_command_inputs(invocation.command_id, invocation.load_input() or {})
 
 
 def _require_int_positional(invocation: Invocation, name: str) -> int:
@@ -116,16 +122,17 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
 def _forward_optional(
     document: dict[str, Any], kwargs: dict[str, Any], fields: tuple[str, ...]
 ) -> None:
-    """Copy each of ``fields`` present in ``document`` into ``kwargs``, unchanged.
+    """Copy every admitted input field into ``kwargs`` unchanged.
 
     Args:
         document: The parsed ``--input`` document.
         kwargs: The keyword-argument mapping being built for the SDK call.
         fields: The optional field names to forward when present.
     """
-    for field in fields:
-        if field in document:
-            kwargs[field] = document[field]
+    for field, value in document.items():
+        if field in kwargs and field not in fields:
+            continue
+        kwargs[field] = value
 
 
 def _meta(invocation: Invocation, workspace_id: int, project_id: int) -> dict[str, Any]:
@@ -149,7 +156,7 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int) -> dict[st
 def schedule_list(invocation: Invocation) -> HandlerResult:
     """List schedules in the active project. ``limit``/``offset`` are optional."""
     project_id = require_project(invocation)
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"project_id": project_id}
     _forward_optional(document, kwargs, ("limit", "offset"))
     with open_service(invocation) as (service, auth):
@@ -172,7 +179,7 @@ def schedule_create(invocation: Invocation) -> HandlerResult:
     Always requires ``--yes``.
     """
     project_id = require_project(invocation)
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     spec = _require_field(document, "spec")
     enforce_confirmation(invocation, policy=POLICY_YES_ALWAYS, action="create a schedule")
     with open_service(invocation) as (service, auth):
@@ -188,7 +195,7 @@ def schedule_update(invocation: Invocation) -> HandlerResult:
     """
     project_id = require_project(invocation)
     schedule_id = _require_int_positional(invocation, "schedule id")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     patch = _require_field(document, "patch")
     enforce_confirmation(
         invocation,

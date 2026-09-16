@@ -12,6 +12,7 @@ inside it never reaches stdout or an error envelope.
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,52 @@ _EXTENSION_FORMATS = {
     ".yaml": _YAML_FORMAT,
     ".yml": _YAML_FORMAT,
 }
+
+# Admission limits are deliberately finite and explicit.  They bound the
+# amount of input read before parsing and the nesting accepted by the parser;
+# they are not a claim that every backend or output path has the same limits.
+MAX_INPUT_BYTES = 1_048_576
+MAX_INPUT_DEPTH = 100
+
+CODE_INPUT_TOO_LARGE = "input_too_large"
+CODE_INPUT_TOO_DEEP = "input_too_deep"
+CODE_INVALID_INPUT_ENCODING = "invalid_input_encoding"
+CODE_DUPLICATE_INPUT_KEY = "duplicate_input_key"
+CODE_NONFINITE_INPUT_NUMBER = "nonfinite_input_number"
+
+
+class _DuplicateKeyError(ValueError):
+    """Internal marker raised by the strict JSON object-pairs hook."""
+
+
+class _NonFiniteNumberError(ValueError):
+    """Internal marker raised by the strict JSON constant hook."""
+
+
+class _StrictYamlLoader(yaml.SafeLoader):
+    """Safe YAML loader that does not silently apply last-key-wins parsing."""
+
+
+def _construct_yaml_mapping(
+    loader: _StrictYamlLoader, node: yaml.nodes.MappingNode, deep: bool = False
+) -> dict[Any, Any]:
+    loader.flatten_mapping(node)
+    mapping: dict[Any, Any] = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if key in mapping:
+            raise _DuplicateKeyError
+        mapping[key] = loader.construct_object(value_node, deep=deep)
+    return mapping
+
+
+_StrictYamlLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_yaml_mapping
+)
+
+
+def _limit_error(code: str, message: str, hint: str) -> CliError:
+    return CliError(code=code, message=message, exit_status=EXIT_USAGE, hint=hint)
 
 
 def _invalid_format_error(value: str) -> CliError:
@@ -72,14 +119,29 @@ def _resolve_format(input_file: str, input_format: str | None) -> str:
     return resolved
 
 
-def _read_text(input_file: str) -> str:
+def _read_bytes(input_file: str) -> bytes:
+    """Read one bounded source payload without decoding it implicitly."""
+    limit = MAX_INPUT_BYTES + 1
     if input_file == STDIN_SENTINEL:
-        return sys.stdin.read()
+        stream = getattr(sys.stdin, "buffer", sys.stdin)
+        raw = stream.read(limit)
+        if isinstance(raw, str):
+            try:
+                raw = raw.encode("utf-8")
+            except UnicodeEncodeError as exc:
+                raise CliError(
+                    code=CODE_INVALID_INPUT_ENCODING,
+                    message="The input document is not valid UTF-8.",
+                    exit_status=EXIT_USAGE,
+                    hint="Provide a UTF-8 encoded JSON or YAML document.",
+                ) from exc
+        return raw
     if input_file.lstrip().startswith("{"):
-        return input_file
+        return input_file.encode("utf-8")
     path = Path(input_file)
     try:
-        return path.read_text(encoding="utf-8")
+        with path.open("rb") as handle:
+            return handle.read(limit)
     except FileNotFoundError as exc:
         raise CliError(
             code="input_not_found",
@@ -95,12 +157,170 @@ def _read_text(input_file: str) -> str:
         ) from exc
 
 
+def _read_text(input_file: str) -> str:
+    """Read and strictly decode one input payload.
+
+    This function remains a small named seam for callers/tests that instrument
+    source reads.  It performs exactly one underlying read for each invocation.
+    """
+    raw = _read_bytes(input_file)
+    if len(raw) > MAX_INPUT_BYTES:
+        raise _limit_error(
+            CODE_INPUT_TOO_LARGE,
+            "The input document exceeds the maximum size of 1 MiB.",
+            "Pass a smaller document or use a supported file/import operation.",
+        )
+    if input_file == STDIN_SENTINEL:
+        source = "standard input"
+    else:
+        source = "the input document"
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise CliError(
+            code=CODE_INVALID_INPUT_ENCODING,
+            message=f"The input from {source} is not valid UTF-8.",
+            exit_status=EXIT_USAGE,
+            hint="Provide a UTF-8 encoded JSON or YAML document.",
+        ) from exc
+
+
+def _check_json_depth(text: str) -> None:
+    """Reject over-deep JSON before handing it to the recursive decoder."""
+    depth = 0
+    in_string = False
+    escaped = False
+    for character in text:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                in_string = False
+            continue
+        if character == '"':
+            in_string = True
+        elif character in "[{":
+            depth += 1
+            if depth > MAX_INPUT_DEPTH:
+                raise _limit_error(
+                    CODE_INPUT_TOO_DEEP,
+                    "The input document exceeds the maximum nesting depth.",
+                    f"Reduce nesting to at most {MAX_INPUT_DEPTH} levels.",
+                )
+        elif character in "]}":
+            depth = max(depth - 1, 0)
+
+
+def _check_yaml_depth(text: str) -> None:
+    """Reject indentation that could create an unbounded YAML tree."""
+    for line in text.splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        indentation = len(line) - len(line.lstrip(" "))
+        if indentation > MAX_INPUT_DEPTH:
+            raise _limit_error(
+                CODE_INPUT_TOO_DEEP,
+                "The input document exceeds the maximum nesting depth.",
+                f"Reduce nesting to at most {MAX_INPUT_DEPTH} levels.",
+            )
+
+
+def _check_loaded_depth(value: Any) -> None:
+    """Bound parsed YAML mappings/sequences without recursive traversal."""
+    pending: list[tuple[Any, int]] = [(value, 1)]
+    visited: set[int] = set()
+    while pending:
+        current, depth = pending.pop()
+        if not isinstance(current, (dict, list)):
+            continue
+        marker = id(current)
+        if marker in visited:
+            continue
+        visited.add(marker)
+        if depth > MAX_INPUT_DEPTH:
+            raise _limit_error(
+                CODE_INPUT_TOO_DEEP,
+                "The input document exceeds the maximum nesting depth.",
+                f"Reduce nesting to at most {MAX_INPUT_DEPTH} levels.",
+            )
+        children = current.values() if isinstance(current, dict) else current
+        pending.extend((child, depth + 1) for child in children)
+
+
+def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise _DuplicateKeyError
+        result[key] = value
+    return result
+
+
+def _reject_nonfinite(value: str) -> None:
+    raise _NonFiniteNumberError
+
+
+def _parse_finite_float(value: str) -> float:
+    """Parse JSON numbers while rejecting exponent overflow to infinity."""
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise _NonFiniteNumberError
+    return parsed
+
+
+def _contains_nonfinite(value: Any) -> bool:
+    """Find YAML float NaN/Infinity without recursive Python calls."""
+    pending = [value]
+    visited: set[int] = set()
+    while pending:
+        current = pending.pop()
+        if isinstance(current, (dict, list)):
+            marker = id(current)
+            if marker in visited:
+                continue
+            visited.add(marker)
+        if isinstance(current, float) and not math.isfinite(current):
+            return True
+        if isinstance(current, dict):
+            pending.extend(current.values())
+        elif isinstance(current, list):
+            pending.extend(current)
+    return False
+
+
 def _parse(text: str, fmt: str) -> Any:
     try:
         if fmt == _JSON_FORMAT:
-            return json.loads(text)
-        return yaml.safe_load(text)
-    except (json.JSONDecodeError, yaml.YAMLError) as exc:
+            _check_json_depth(text)
+            return json.loads(
+                text,
+                object_pairs_hook=_reject_duplicate_keys,
+                parse_constant=_reject_nonfinite,
+                parse_float=_parse_finite_float,
+            )
+        _check_yaml_depth(text)
+        document = yaml.load(text, Loader=_StrictYamlLoader)  # noqa: S506
+        _check_loaded_depth(document)
+        if _contains_nonfinite(document):
+            raise _NonFiniteNumberError
+        return document
+    except _DuplicateKeyError as exc:
+        raise CliError(
+            code=CODE_DUPLICATE_INPUT_KEY,
+            message="The input document contains a duplicate object key.",
+            exit_status=EXIT_USAGE,
+            hint="Use each object key exactly once.",
+        ) from exc
+    except _NonFiniteNumberError as exc:
+        raise CliError(
+            code=CODE_NONFINITE_INPUT_NUMBER,
+            message="The input document contains a non-finite number.",
+            exit_status=EXIT_USAGE,
+            hint="Use a finite JSON number instead of NaN or Infinity.",
+        ) from exc
+    except (json.JSONDecodeError, yaml.YAMLError, RecursionError) as exc:
         raise CliError(
             code=CODE_INVALID_INPUT_DOCUMENT,
             message="The input document is not valid.",

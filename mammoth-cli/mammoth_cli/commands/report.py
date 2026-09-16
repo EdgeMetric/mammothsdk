@@ -15,6 +15,7 @@ from mammoth_cli.errors.envelope import CODE_SDK_SYMBOL_UNRESOLVED, EXIT_USAGE, 
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
+from mammoth_cli.services.command_contract import bind_command_inputs
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -53,7 +54,7 @@ def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
 
 def report_list(invocation: Invocation) -> HandlerResult:
     """List reports in the active workspace, with optional ``limit``/``offset``."""
-    document = invocation.load_input() or {}
+    document = bind_command_inputs(invocation.command_id, invocation.load_input() or {})
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, _LIST_OPTIONAL)
     with open_service(invocation) as (service, auth):

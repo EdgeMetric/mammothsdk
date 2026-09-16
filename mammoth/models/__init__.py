@@ -8,6 +8,13 @@ from .automations import (
     AutomationInfo,
     ScheduleInfo,
 )
+from .batches import (
+    BatchesPostRequest,
+    ColumnIdMapping,
+    ColumnNameMapping,
+    NewDsDetails,
+    ProjectedSourceColumn,
+)
 from .clientapps import (
     ClientAppCreate,
     ClientAppPostResponse,
@@ -21,6 +28,9 @@ from .connectors import (
     DsConfigInfo,
 )
 from .dashboards import (
+    CreateBlankParams,
+    CreateBlankResponse,
+    CreateBlankSpec,
     DashboardAnalytics,
     DashboardInfo,
     DashboardSource,
@@ -111,6 +121,9 @@ from .pipeline import (
 )
 from .projects import (
     AddUsersToProject,
+    DataSyncPatchItem,
+    DataSyncPatchRequest,
+    DataSyncPatchValue,
     PatchOperation,
     ProjectCreate,
     ProjectList,
@@ -131,6 +144,11 @@ from .workspaces import (
 )
 
 __all__ = [
+    "BatchesPostRequest",
+    "ColumnIdMapping",
+    "ColumnNameMapping",
+    "NewDsDetails",
+    "ProjectedSourceColumn",
     # Files models
     "FileSchema",
     "FileDetails",
@@ -190,6 +208,9 @@ __all__ = [
     "ProjectPatch",
     "AddUsersToProject",
     "ProjectUserPatch",
+    "DataSyncPatchItem",
+    "DataSyncPatchRequest",
+    "DataSyncPatchValue",
     "ProjectsPatch",
     # Client Apps models
     "ValueWrapper",
@@ -234,6 +255,9 @@ __all__ = [
     # Dashboards models
     "DashboardInfo",
     "DashboardSource",
+    "CreateBlankParams",
+    "CreateBlankResponse",
+    "CreateBlankSpec",
     "DashboardAnalytics",
     # Webhooks models
     "WebhookInfo",

@@ -30,6 +30,7 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
+from mammoth_cli.services.command_contract import bind_command_inputs
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -44,6 +45,11 @@ def _symbol(invocation: Invocation) -> str:
             exit_status=EXIT_USAGE,
         )
     return str(record["sdk_symbol"])
+
+
+def _bound_document(invocation: Invocation) -> dict[str, Any]:
+    """Return admitted input after the shared S7 contract binding boundary."""
+    return bind_command_inputs(invocation.command_id, invocation.load_input() or {})
 
 
 def _require_field(document: dict[str, Any] | None, field: str) -> Any:
@@ -61,10 +67,11 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
 def _forward_optional(
     document: dict[str, Any], kwargs: dict[str, Any], fields: tuple[str, ...]
 ) -> None:
-    """Copy each present field from ``document`` into ``kwargs`` under the same name."""
-    for field in fields:
-        if field in document:
-            kwargs[field] = document[field]
+    """Copy every admitted input field into ``kwargs`` unchanged."""
+    for field, value in document.items():
+        if field in kwargs and field not in fields:
+            continue
+        kwargs[field] = value
 
 
 def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
@@ -90,7 +97,7 @@ def user_avatar_delete(invocation: Invocation) -> HandlerResult:
 
 def user_avatar_upload(invocation: Invocation) -> HandlerResult:
     """Upload the current user's avatar. File comes from a positional or ``file``."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     file = (invocation.extra_args[0] if invocation.extra_args else None) or document.get("file")
     if not file:
         raise CliError(
@@ -109,7 +116,7 @@ def user_avatar_upload(invocation: Invocation) -> HandlerResult:
 
 def user_change_password(invocation: Invocation) -> HandlerResult:
     """Change the current user's password. High-impact: ``--yes --confirm WORKSPACE_ID``."""
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     current_password = _require_field(document, "current_password")
     new_password = _require_field(document, "new_password")
     with open_service(invocation) as (service, auth):
@@ -129,7 +136,7 @@ def user_change_password(invocation: Invocation) -> HandlerResult:
 
 def user_delete_account(invocation: Invocation) -> HandlerResult:
     """Delete the current user's account. High-impact: ``--yes --confirm WORKSPACE_ID``."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("validate_only",))
     with open_service(invocation) as (service, auth):
@@ -159,7 +166,7 @@ def user_preference_get(invocation: Invocation) -> HandlerResult:
 
 def user_preference_update(invocation: Invocation) -> HandlerResult:
     """Update the current user's preferences from the ``--input`` document."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     if not document:
         raise CliError(
             code=CODE_MISSING_FIELD,
@@ -174,7 +181,7 @@ def user_preference_update(invocation: Invocation) -> HandlerResult:
 
 def user_update(invocation: Invocation) -> HandlerResult:
     """Update the current user's profile. High-impact: ``--yes --confirm WORKSPACE_ID``."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     if not document:
         raise CliError(
             code=CODE_MISSING_FIELD,

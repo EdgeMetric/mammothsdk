@@ -51,6 +51,8 @@ GUIDES = [
     ("quickstart.md", "Authenticate and run your first commands in five minutes."),
     ("authentication.md", "Getting an API key, login, profiles, and project context."),
     ("agents.md", "Deterministic output, promptless mode, and CI patterns for agents."),
+    ("task-spec-pilot-gap.md", "Typed transform pilot coverage and generic task-spec limits."),
+    ("agent-handoff.md", "Portable nonsecret checkpoints for continuing work in another session."),
     ("safety.md", "Mutation classes, confirmation policies, and safe mutation."),
     ("reference/output-and-errors.md", "Output modes, envelopes, exit codes, and error codes."),
     ("reference/global-flags.md", "The global flags every command shares."),
@@ -96,6 +98,17 @@ def _command_block(record: dict[str, object]) -> list[str]:
             "",
         ]
     )
+    if record["command_id"] in {"view.task.add", "view.task.preview", "view.task.update"}:
+        lines.extend(
+            [
+                "  **Agent note:** this is an illustrative low-level expert envelope, not",
+                "  a guaranteed executable task. `task_spec` is opaque here and its",
+                "  task-specific union is not fully discoverable from this contract.",
+                "  Prefer typed view transform commands, and inspect",
+                "  their individual schemas before composing a transformation.",
+                "",
+            ]
+        )
     return lines
 
 
@@ -129,10 +142,11 @@ def render_llms_txt(families: dict[str, list[dict[str, object]]]) -> str:
         "",
     ]
     for name, summary in GUIDES:
-        lines.append(f"- [{name}](docs/{name}): {summary}")
-    lines.append("- [command reference](docs/reference/commands.md): every command.")
+        lines.append(f"- [{name}]({name}): {summary}")
+    lines.append("- [command reference](reference/commands.md): every command.")
     lines.append(
-        "- [agent skill](mammoth_cli/bundled_skill/mammoth-cli/SKILL.md): the " "installable skill."
+        "- [agent skill](../mammoth_cli/bundled_skill/mammoth-cli/SKILL.md): the "
+        "installable skill."
     )
     lines.append("")
     lines.append("## Command families")
@@ -163,6 +177,12 @@ def render_llms_full_txt(families: dict[str, list[dict[str, object]]]) -> str:
                 f"-> {public_sdk_symbol(str(record['sdk_symbol']))}"
             )
             lines.append(f"  example: {record['agent_example']}")
+            if record["command_id"] in {"view.task.add", "view.task.preview", "view.task.update"}:
+                lines.append(
+                    "  agent note: illustrative low-level envelope, not a guaranteed executable "
+                    "task; prefer typed view transform commands because task_spec fields are "
+                    "not fully discoverable."
+                )
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 

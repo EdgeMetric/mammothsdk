@@ -15,13 +15,15 @@ and an ``--input`` document combine.
 from __future__ import annotations
 
 import json
+import re
 import shlex
 from collections import defaultdict
 from functools import cache
-from typing import Any
+from typing import Any, cast
 
 from mammoth_cli.manifest.loader import command_by_id, load_commands, load_operations
-from mammoth_cli.services.argspec import FieldSpec, arg_spec
+from mammoth_cli.services.argspec import FieldSpec
+from mammoth_cli.services.command_contract import LOCAL_COMMANDS, resolve_command_contract
 from mammoth_cli.services.input_fields import (
     example_input_hints,
     excluded_input_fields,
@@ -47,9 +49,44 @@ _GROUP_DISCOVERY_PURPOSES = {
 _COMMAND_DISCOVERY_PURPOSES = {
     "file.upload": "upload import CSV spreadsheet XLSX source data",
     "file.upload-folder": "upload source-data directory folder",
+    "view.export.csv": "export download local CSV file artifact",
 }
 
 _MAX_FIND_RESULTS = 20
+_MAX_FIND_LIMIT = 100
+
+# Search is intentionally a small, deterministic intent matcher rather than a
+# fuzzy/remote search service.  The aliases describe language users commonly
+# use for a command; they do not add capabilities to the catalog.  Keeping the
+# map here also makes a cold process produce the same ordering as a warm one.
+_DISCOVERY_SYNONYMS: dict[str, tuple[str, ...]] = {
+    "show": ("list", "get", "browse", "display", "view"),
+    "display": ("show", "list", "get", "view"),
+    "visualize": ("dashboard", "chart", "analytics"),
+    "spreadsheet": ("csv", "xlsx", "excel", "file", "upload"),
+    "excel": ("spreadsheet", "xlsx", "file"),
+    "csv": ("spreadsheet", "file", "upload"),
+    "local": ("file", "download", "csv", "artifact"),
+    "download": ("export", "file", "csv", "artifact", "local"),
+    "column": ("columns", "field", "fields", "schema"),
+    "columns": ("column", "field", "fields", "schema"),
+    "display-name": ("name", "column", "columns", "field", "fields", "schema"),
+    "language": ("name", "column", "columns", "field", "fields", "schema", "text"),
+    "field": ("column", "columns", "fields"),
+    "fields": ("column", "columns", "field"),
+    "clean": ("transform", "replace", "remove", "edit"),
+    "edit": ("transform", "update", "replace", "change"),
+    "remove": ("delete", "trash", "bulk-delete"),
+    "import": ("upload", "create", "file"),
+    "ingest": ("upload", "import", "file"),
+    "asynchronous": ("async", "job", "wait"),
+    "async": ("job", "wait", "poll"),
+    "poll": ("job", "wait", "status"),
+}
+_DISCOVERY_STOPWORDS = frozenset(
+    {"a", "an", "the", "me", "please", "for", "to", "of", "by", "with", "can", "i"}
+)
+_TOKEN_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 
 
 @cache
@@ -78,11 +115,10 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
         resolvable backing signature (bespoke commands) or accepts arbitrary
         keyword arguments.
     """
-    symbol = record.get("sdk_symbol")
-    if not symbol:
+    contract = resolve_command_contract(str(record["command_id"]))
+    if contract is None or contract.sdk_symbol is None:
         return None
-    spec = arg_spec(str(symbol))
-    if spec is None or spec.accepts_extra:
+    if contract.accepts_extra:
         return None
     excluded = _externally_supplied_fields(record["command_id"])
     body_schema = openapi_body_schema_for(
@@ -103,13 +139,21 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
                 else json_schema(field.annotation, field.name)
             ),
         }
-        for field in spec.fields
+        for field in contract.accepted_fields
         if field.name not in excluded
     ]
 
 
 def _externally_supplied_fields(command_id: str) -> frozenset[str]:
     """Fields supplied by positionals or authenticated CLI context."""
+    if command_id in LOCAL_COMMANDS:
+        return frozenset(
+            {
+                item.name
+                for item in resolve_positionals(command_id)
+                if item.falls_back_to_field is None
+            }
+        )
     return excluded_input_fields(command_id)
 
 
@@ -178,6 +222,120 @@ def _humanize_sample(value: Any, field_name: str) -> Any:
     return value
 
 
+def _tokens(value: str) -> frozenset[str]:
+    """Tokenize search text consistently across platforms and Python runs."""
+    return frozenset(_TOKEN_RE.findall(value.casefold()))
+
+
+def _query_tokens(query: str) -> tuple[str, ...]:
+    return tuple(token for token in _tokens(query) if token not in _DISCOVERY_STOPWORDS)
+
+
+def _token_aliases(token: str) -> frozenset[str]:
+    """Return the finite synonym neighborhood for one intent token."""
+    return frozenset((token, *_DISCOVERY_SYNONYMS.get(token, ())))
+
+
+def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
+    """Return the bounded, honest contract used by discovery clients.
+
+    The manifest is authoritative for these values.  ``None`` is retained for
+    fields the manifest does not prove; discovery must not turn a missing proof
+    into a promise about backend behavior.
+    """
+    command_id = str(record["command_id"])
+    resolved = resolve_command_contract(command_id)
+    family = str(record.get("command_path", "")).split()[0]
+    operation_hints = _operation_hints_by_command().get(command_id, "")
+    search_text = f"{command_id} {family} {operation_hints}".casefold()
+    if family == "dashboard" and command_id.startswith("dashboard.tags."):
+        scope = "workspace"
+    elif command_id == "ai.retention.condition" or "{project_id}" in search_text or family in {
+        "project",
+        "dataset",
+        "file",
+        "folder",
+        "view",
+        "batch",
+        "annotation",
+        "dashboard",
+        "automation",
+        "schedule",
+        "snippet",
+        "template",
+        "workflow",
+    }:
+        scope = "project"
+    elif "{workspace_id}" in search_text or family in {
+        "workspace",
+        "user",
+        "support",
+        "billing",
+        "connector",
+        "client-app",
+        "external-key",
+    }:
+        scope = "workspace"
+    elif family in {
+        "auth",
+        "config",
+        "context",
+        "completion",
+        "doctor",
+        "schema",
+        "capability",
+        "skill",
+        "version",
+    }:
+        scope = "local"
+    else:
+        scope = "profile"
+
+    # Policy values exposed by discovery come from the same resolved contract
+    # consumed by admission/binding.  The manifest fallback only applies to
+    # genuinely local/bespoke commands without a resolvable SDK contract.
+    mutation_class = resolved.effects if resolved is not None else record.get("mutation_class")
+    result_model = resolved.result_contract if resolved is not None else record.get("result_model")
+    wait_policy = resolved.wait_behavior if resolved is not None else record.get("wait_policy")
+    if mutation_class in {None, "read"}:
+        recovery = "Rerun only after checking the exit code and stable error code."
+    else:
+        recovery = (
+            "Reconcile target/job state before retry; retain returned IDs and verify "
+            "the intended postcondition."
+        )
+    restrictions = record.get("known_restrictions")
+    if restrictions is None:
+        required_positionals = [
+            str(item.get("metavar") or item.get("name"))
+            for item in record.get("positionals", [])
+            if item.get("required")
+        ]
+        if required_positionals:
+            restrictions = "Required inputs: " + ", ".join(required_positionals) + "."
+    return {
+        "scope": scope,
+        "effects": mutation_class,
+        "preconditions": restrictions,
+        "result": result_model,
+        "async": wait_policy,
+        "verification": record.get("acceptance_evidence"),
+        "recovery": recovery,
+        "limits": {
+            "pagination": record.get("pagination_policy"),
+            "continuation": "not_proven"
+            if record.get("pagination_policy") not in {None, "none"}
+            else None,
+        },
+    }
+
+
+# Public name for callers that want contract semantics without rebuilding a
+# full request schema.  The underscore implementation keeps the helper's
+# origin obvious next to the manifest-derived schema code.
+compact_contract = _compact_contract
+
+
 def runnable_example(
     record: dict[str, Any],
     symbol: str | None,
@@ -196,15 +354,119 @@ def runnable_example(
     """
     if not symbol:
         return None
-    spec = arg_spec(symbol)
-    if spec is None:
+    # Credential documents must never be synthesized into a JSON command
+    # example.  The local auth adapter validates a protected file reference;
+    # the manifest carries the safe ``creds.json`` invocation instead.
+    if record["command_id"] == "auth.login":
         return None
+    if record["command_id"] == "ai.retention.condition":
+        return shlex.join(
+            [
+                "mammoth", *record["command_path"].split(), "123",
+                "--input",
+                json.dumps({"mode": "generate", "intent": "completed payments older than 90 days"}),
+                *_OUTPUT_JSON_NO_INPUT,
+                "--project", "456",
+            ]
+        )
+    # The backend's generic task_spec envelope is intentionally opaque in the
+    # SDK signature. Keep the generated example structurally valid, while
+    # agent-facing docs direct users to typed view.transform.* commands.
+    task_examples = {
+        "view.task.add": ["mammoth", "view", "task", "add", "123"],
+        "view.task.preview": ["mammoth", "view", "task", "preview", "123"],
+        "view.task.update": ["mammoth", "view", "task", "update", "123", "123"],
+    }
+    if record["command_id"] in task_examples:
+        task_input: dict[str, Any] = {
+            "task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": {}}
+        }
+        if record["command_id"] == "view.task.update":
+            task_input["dataset_id"] = 456
+        return shlex.join(
+            [
+                *task_examples[record["command_id"]],
+                "--input",
+                json.dumps(task_input),
+                *_OUTPUT_JSON_NO_INPUT,
+            ]
+        )
+    if record["command_id"] == "batch.create-spec":
+        return shlex.join(
+            [
+                "mammoth", *record["command_path"].split(), "123",
+                "--input", json.dumps({"file_id": 94}), *_OUTPUT_JSON_NO_INPUT,
+            ]
+        )
+    if record["command_id"] == "view.exportable-config.get":
+        return shlex.join(
+            ["mammoth", *record["command_path"].split(), "123", *_OUTPUT_JSON_NO_INPUT]
+        )
+    if record["command_id"] == "view.exportable-config.apply":
+        return shlex.join(
+            [
+                "mammoth",
+                *record["command_path"].split(),
+                "123",
+                "--input-format",
+                "json",
+                "--input",
+                json.dumps({"config": {"tasks": []}}),
+                *_OUTPUT_JSON_NO_INPUT,
+                "--yes",
+                "--confirm",
+                "123",
+            ]
+        )
+    if record["command_id"] == "dashboard.tags.rename":
+        return shlex.join(
+            [
+                "mammoth", *record["command_path"].split(), "123",
+                "--input", json.dumps({"name": "Revenue"}),
+                *_OUTPUT_JSON_NO_INPUT, "--yes", "--confirm", "123",
+            ]
+        )
+    if record["command_id"] == "dashboard.tags.set":
+        return shlex.join(
+            [
+                "mammoth", *record["command_path"].split(), "123",
+                "--input", json.dumps({"tags": ["Revenue"]}),
+                *_OUTPUT_JSON_NO_INPUT, "--yes", "--confirm", "123",
+            ]
+        )
+    if record["command_id"] == "dashboard.tags.delete":
+        return shlex.join(
+            [
+                "mammoth", *record["command_path"].split(), "123",
+                *_OUTPUT_JSON_NO_INPUT, "--yes", "--confirm", "123",
+            ]
+        )
+    if record["command_id"] == "dashboard.tags.merge":
+        return shlex.join(
+            [
+                "mammoth", *record["command_path"].split(), "123",
+                "--input", json.dumps({"target_id": 456}),
+                *_OUTPUT_JSON_NO_INPUT, "--yes", "--confirm", "123",
+            ]
+        )
+    if record["command_id"] == "dashboard.archive":
+        return shlex.join(
+            [
+                "mammoth", *record["command_path"].split(), "123",
+                "--input", json.dumps({"archived": True}),
+                *_OUTPUT_JSON_NO_INPUT, "--yes", "--confirm", "123",
+            ]
+        )
+    contract = resolve_command_contract(str(record["command_id"]))
+    if contract is None or contract.sdk_symbol is None or contract.accepts_extra:
+        return None
+    fields = contract.accepted_fields
     if positionals is None:
         positionals = resolve_positionals(record["command_id"])
     tokens: list[str] = ["mammoth", *record["command_path"].split()]
     tokens.extend(str(_sample_positional_value(p)) for p in positionals)
     excluded = frozenset(
-        {"project_id", "workspace_id"}
+        (set() if record["command_id"] in LOCAL_COMMANDS else {"project_id", "workspace_id"})
         | {item.name for item in positionals}
         # A positional may fill a differently-named SDK parameter (e.g. the
         # ``folder_id`` positional fills ``folder_ids``). That parameter is
@@ -213,7 +475,7 @@ def runnable_example(
         # example never advertises a field the validator rejects.
         | {item.fills_sdk_param for item in positionals if item.fills_sdk_param}
     ) | handler_owned_fields(record["command_id"])
-    required = [field for field in spec.fields if field.required and field.name not in excluded]
+    required = [field for field in fields if field.required and field.name not in excluded]
     hints = example_input_hints(record["command_id"])
     if required or hints:
         body_schema = openapi_body_schema_for(
@@ -235,6 +497,13 @@ def runnable_example(
         document.update(hints)
         tokens.extend(["--input", json.dumps(document)])
     tokens.extend(_OUTPUT_JSON_NO_INPUT)
+    if record["command_id"] == "project.resource-dependencies.update":
+        # This command has a confirm_target policy.  Keep its generated
+        # example executable in non-interactive mode instead of advertising a
+        # request that the safety guard will reject.
+        tokens.extend(["--yes", "--confirm", str(_sample_positional_value(positionals[0]))])
+    elif record["command_id"] == "dashboard.create-blank":
+        tokens.append("--yes")
     return shlex.join(tokens)
 
 
@@ -242,6 +511,16 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
     """Shared enrichment fields for both the listing and single-command views."""
     symbol = record.get("sdk_symbol")
     accepted = _accepted_fields(record)
+    if accepted is not None and record["command_id"] in {
+        "view.exportable-config.get",
+        "view.exportable-config.apply",
+    }:
+        # The SDK requires a parent dataset, but the CLI resolves it from the
+        # view or accepts it as an optional trailing positional/input field.
+        accepted = [
+            {**field, "required": False} if field["name"] == "dataset_id" else field
+            for field in accepted
+        ]
     input_schema = None
     if accepted is not None:
         definitions: dict[str, Any] = {}
@@ -297,13 +576,101 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
             ],
             "additionalProperties": False,
         }
+        if record["command_id"] == "batch.create-spec":
+            input_schema["oneOf"] = [
+                {
+                    "required": ["source_id", "mapping"],
+                    "not": {"required": ["file_id"]},
+                },
+                {
+                    "required": ["file_id"],
+                    "not": {"anyOf": [{"required": ["source_id"]}, {"required": ["mapping"]}]},
+                },
+            ]
+        if record["command_id"] == "view.exportable-config.apply":
+            # Release schema: exactly one of clipboard items or full config.
+            # Nested task/action/etc objects intentionally remain open because
+            # their release schemas are polymorphic and operation-specific.
+            input_schema = {
+                "type": "object",
+                "properties": {
+                    "dataset_id": {"type": "integer", "minimum": 1},
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "type": {"type": "string"},
+                                "params": {"type": "object", "additionalProperties": True},
+                                "transform_params": {
+                                    "type": "object",
+                                    "additionalProperties": True,
+                                },
+                            },
+                            "additionalProperties": True,
+                        },
+                    },
+                    "config": {
+                        "type": "object",
+                        "properties": {
+                            "tasks": {"type": ["array", "null"], "items": {"type": "object"}},
+                            "actions": {"type": ["array", "null"], "items": {"type": "object"}},
+                            "checkpoints": {
+                                "type": ["array", "null"],
+                                "items": {"type": "object"},
+                            },
+                            "data_checks": {
+                                "type": ["array", "null"],
+                                "items": {"type": "object"},
+                            },
+                            "derivatives": {
+                                "type": ["array", "null"],
+                                "items": {"type": "object"},
+                            },
+                            "display_properties": {"type": ["object", "null"]},
+                            "metadata": {
+                                "type": ["array", "null"],
+                                "items": {"type": "object"},
+                            },
+                            "dependencies": {"type": ["object", "null"]},
+                            "user_preferences": {"type": ["object", "null"]},
+                            "name": {"type": ["string", "null"]},
+                            "taskwise_info": {"type": ["object", "null"]},
+                        },
+                        "additionalProperties": True,
+                    },
+                    "insert_after_sequence": {"type": ["integer", "null"]},
+                    "is_paste_mode": {"type": "boolean", "default": False},
+                },
+                "oneOf": [
+                    {"required": ["items"], "not": {"required": ["config"]}},
+                    {"required": ["config"], "not": {"required": ["items"]}},
+                ],
+                "additionalProperties": False,
+            }
+        if record["command_id"] == "dataset.batch-data":
+            batch_properties = cast(dict[str, Any], input_schema["properties"])
+            batch_properties["limit"].update({"minimum": 0, "maximum": 100})
+            batch_properties["offset"].update({"minimum": 0})
+            for field in accepted:
+                if field["name"] == "limit":
+                    field["schema"].update({"minimum": 0, "maximum": 100})
+                elif field["name"] == "offset":
+                    field["schema"].update({"minimum": 0})
         if definitions:
             input_schema["$defs"] = definitions
+    contract = _compact_contract(record)
     return {
         "positionals": _positionals(record["command_id"]),
         "accepted_fields": accepted,
         "input_schema": input_schema,
         "runnable_example": runnable_example(record, str(symbol) if symbol else None),
+        # Keep the contract alongside the detailed schema so callers can stop
+        # after one bounded request when they only need execution semantics.
+        "contract": contract,
+        # Top-level aliases keep the compact contract easy to consume while
+        # ``contract`` gives clients one stable namespace for future fields.
+        **contract,
     }
 
 
@@ -331,7 +698,12 @@ def schema_entries() -> list[dict[str, Any]]:
     return sorted(entries, key=lambda entry: entry["command_id"])
 
 
-def find_schemas(query: str) -> dict[str, Any]:
+def find_schemas(
+    query: str,
+    *,
+    limit: int = _MAX_FIND_RESULTS,
+    cursor: int = 0,
+) -> dict[str, Any]:
     """Return compact command matches for interactive and agent discovery.
 
     ``schema list`` deliberately remains the complete, machine-readable
@@ -342,7 +714,12 @@ def find_schemas(query: str) -> dict[str, Any]:
     or its stable operation-purpose text, making the result deterministic and
     easy to compose in scripts.
     """
-    terms = tuple(term for term in query.casefold().split() if term)
+    terms = _query_tokens(query)
+    # Clamp caller-provided bounds instead of allowing an accidental unbounded
+    # discovery response.  A negative cursor is a usage mistake, not a request
+    # to wrap around the catalog.
+    bounded_limit = max(1, min(int(limit), _MAX_FIND_LIMIT))
+    offset = max(0, int(cursor))
     ranked_matches: list[tuple[int, dict[str, Any]]] = []
     for record in load_commands():
         if record.get("disposition") == "alias":
@@ -360,18 +737,36 @@ def find_schemas(query: str) -> dict[str, Any]:
             (60, _COMMAND_DISCOVERY_PURPOSES.get(command_id, "")),
             (3, _GROUP_DISCOVERY_PURPOSES.get(command_path.split()[0], "")),
         )
+        searchable = " ".join(source for _, source in sources).casefold()
+        searchable_tokens = _tokens(f"{primary_text} {searchable}")
         score = 0
+        matched = True
         for term in terms:
-            if term in primary_text:
-                score += 100
-                continue
-            source_score = max(
-                (weight for weight, source in sources if term in source.casefold()), default=0
-            )
-            if source_score == 0:
+            aliases = _token_aliases(term)
+            if not (aliases & searchable_tokens):
+                matched = False
                 break
-            score += source_score
-        else:
+            if term in _tokens(primary_text):
+                score += 100
+            elif term in _tokens(searchable):
+                score += 40
+            else:
+                score += 20
+            # Exact phrase/path matches outrank a synonym match, then stable
+            # command-id ordering breaks all remaining ties.
+            if term in searchable_tokens:
+                score += 10
+        if matched:
+            # Purpose and command-specific hints are stronger than generic
+            # family words such as ``data`` or ``show``.
+            score += 5 * sum(
+                1 for term in terms if any(term in source.casefold() for _, source in sources[:2])
+            )
+            command_purpose = _COMMAND_DISCOVERY_PURPOSES.get(command_id, "").casefold()
+            score += 100 * sum(1 for term in terms if term in _tokens(command_purpose))
+            action = command_path.split()[1] if len(command_path.split()) > 1 else ""
+            if "show" in terms and action in {"list", "get", "browse"}:
+                score += 80
             ranked_matches.append(
                 (
                     score,
@@ -388,11 +783,24 @@ def find_schemas(query: str) -> dict[str, Any]:
             )
     ranked_matches.sort(key=lambda item: (-item[0], item[1]["command_id"]))
     total_matches = len(ranked_matches)
+    page = [match for _, match in ranked_matches[offset : offset + bounded_limit]]
+    has_more = offset + len(page) < total_matches
+    continuation = (
+        {
+            "next_cursor": str(offset + len(page)),
+            "has_more": True,
+            "limit": bounded_limit,
+            "query": query,
+        }
+        if has_more
+        else None
+    )
     return {
         "query": query,
-        "matches": [match for _, match in ranked_matches[:_MAX_FIND_RESULTS]],
+        "matches": page,
         "total_matches": total_matches,
-        "truncated": total_matches > _MAX_FIND_RESULTS,
+        "truncated": has_more,
+        "continuation": continuation,
     }
 
 

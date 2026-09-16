@@ -12,6 +12,8 @@ from typing import Any, TextIO
 
 import yaml
 
+from .normalize import normalize
+
 
 def render(
     envelope: dict[str, Any],
@@ -20,8 +22,12 @@ def render(
     stream: TextIO | None = None,
 ) -> None:
     stream = stream if stream is not None else sys.stdout
+    # Render is also a public seam used by command tests and integrations;
+    # normalize here as a final guard so direct callers cannot emit NaN,
+    # dataclass reprs, or secret-bearing SDK objects into machine output.
+    envelope = normalize(envelope)
     if output == "json":
-        json.dump(envelope, stream, indent=2, sort_keys=True, ensure_ascii=False)
+        json.dump(envelope, stream, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False)
         stream.write("\n")
     elif output == "ndjson":
         _render_ndjson(envelope, stream)
@@ -39,9 +45,11 @@ def _render_ndjson(envelope: dict[str, Any], stream: TextIO) -> None:
     data = envelope.get("data")
     if isinstance(data, list):
         for item in data:
-            stream.write(json.dumps(item, sort_keys=True, ensure_ascii=False) + "\n")
+            stream.write(
+                json.dumps(item, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n"
+            )
     else:
-        stream.write(json.dumps(data, sort_keys=True, ensure_ascii=False) + "\n")
+        stream.write(json.dumps(data, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n")
 
 
 def _render_plain(data: Any, stream: TextIO) -> None:

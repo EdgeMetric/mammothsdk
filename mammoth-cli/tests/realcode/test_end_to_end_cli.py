@@ -202,6 +202,94 @@ def test_generated_dashboard_delete_requires_confirmation_and_routes(
     assert api.last().path.endswith("/dashboards/v3/contexts/abc")
 
 
+def test_view_delete_with_parent_uses_exact_delete_path_and_never_probes(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    """An explicit parent must reach the nested dataview DELETE endpoint.
+
+    The wrong-parent route deliberately returns a successful-looking response;
+    asserting it was never requested keeps this regression independent of the
+    resolver's implementation and catches accidental parent discovery.
+    """
+    api = _bind_real_service(monkeypatch, real_service, project_id=180)
+    api.on(
+        "DELETE",
+        r"/workspaces/4/projects/180/datasets/122/dataviews/116$",
+        200,
+        {"deleted": True},
+    )
+    api.on(
+        "DELETE",
+        r"/workspaces/4/projects/180/datasets/121/dataviews/116$",
+        200,
+        {"wrong_parent": True},
+    )
+
+    result = make_runner().invoke(
+        [
+            "view",
+            "delete",
+            "116",
+            "122",
+            "--project",
+            "180",
+            "--yes",
+            "--output",
+            "json",
+            "--no-input",
+        ]
+    )
+
+    assert result.exit_code == 0, result.output
+    deletes = [request for request in api.requests if request.method == "DELETE"]
+    assert [request.path for request in deletes] == [
+        "/api/v2/workspaces/4/projects/180/datasets/122/dataviews/116"
+    ]
+    assert not any("/datasets/121/" in request.path for request in deletes)
+
+
+def test_view_delete_parent_403_is_preserved_without_fallback_probe(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory
+) -> None:
+    """A forbidden exact-parent DELETE remains authorization_required."""
+    api = _bind_real_service(monkeypatch, real_service, project_id=180)
+    api.on(
+        "DELETE",
+        r"/workspaces/4/projects/180/datasets/122/dataviews/116$",
+        403,
+        {"detail": "forbidden"},
+    )
+    api.on(
+        "DELETE",
+        r"/workspaces/4/projects/180/datasets/121/dataviews/116$",
+        200,
+        {"wrong_parent": True},
+    )
+
+    result = make_runner().invoke(
+        [
+            "view",
+            "delete",
+            "116",
+            "122",
+            "--project",
+            "180",
+            "--yes",
+            "--output",
+            "json",
+            "--no-input",
+        ]
+    )
+
+    assert result.exit_code != 0
+    assert '"code": "authorization_required"' in result.output
+    deletes = [request for request in api.requests if request.method == "DELETE"]
+    assert [request.path for request in deletes] == [
+        "/api/v2/workspaces/4/projects/180/datasets/122/dataviews/116"
+    ]
+    assert not any("/datasets/121/" in request.path for request in deletes)
+
+
 def test_view_transform_full_stack(
     monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory, tmp_path: Any
 ) -> None:

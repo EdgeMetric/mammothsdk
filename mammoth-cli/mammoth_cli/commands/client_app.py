@@ -33,6 +33,7 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.services.command_contract import bind_command_inputs
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -57,6 +58,11 @@ def _symbol(invocation: Invocation) -> str:
             exit_status=EXIT_USAGE,
         )
     return str(record["sdk_symbol"])
+
+
+def _bound_document(invocation: Invocation) -> dict[str, Any]:
+    """Return admitted input after the shared S7 contract binding boundary."""
+    return bind_command_inputs(invocation.command_id, invocation.load_input() or {})
 
 
 def _string_positional(invocation: Invocation) -> str | None:
@@ -121,16 +127,17 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
 def _forward_optional(
     document: dict[str, Any], kwargs: dict[str, Any], fields: tuple[str, ...]
 ) -> None:
-    """Copy each of ``fields`` present in ``document`` into ``kwargs``, unchanged.
+    """Copy every admitted input field into ``kwargs`` unchanged.
 
     Args:
         document: The parsed ``--input`` request document.
         kwargs: The keyword arguments accumulator to update in place.
         fields: The optional field names to forward when present.
     """
-    for field in fields:
-        if field in document:
-            kwargs[field] = document[field]
+    for field, value in document.items():
+        if field in kwargs and field not in fields:
+            continue
+        kwargs[field] = value
 
 
 def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> dict[str, Any]:
@@ -153,7 +160,7 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> 
 
 def client_app_list(invocation: Invocation) -> HandlerResult:
     """List client apps in the active workspace (requires an admin role)."""
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("limit", "offset", "fields", "sort"))
     with open_service(invocation) as (service, auth):
@@ -164,7 +171,7 @@ def client_app_list(invocation: Invocation) -> HandlerResult:
 def client_app_get(invocation: Invocation) -> HandlerResult:
     """Get one client app by its client key."""
     client_key = _require_string_positional(invocation, "client key")
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"client_key": client_key}
     _forward_optional(document, kwargs, ("fields",))
     with open_service(invocation) as (service, auth):
@@ -179,7 +186,7 @@ def client_app_create(invocation: Invocation) -> HandlerResult:
     it requires ``--yes --confirm APP_NAME``. No secret material is ever
     accepted as input here; any tokens are returned by the API, not supplied.
     """
-    document = invocation.load_input() or {}
+    document = _bound_document(invocation)
     app_name = _string_positional(invocation) or document.get("app_name")
     if not app_name:
         raise CliError(
@@ -209,7 +216,7 @@ def client_app_update(invocation: Invocation) -> HandlerResult:
     is ever taken from a positional argument.
     """
     client_key = _require_string_positional(invocation, "client key")
-    document = invocation.load_input()
+    document = _bound_document(invocation)
     patch_request = _require_field(document, "patch_request")
     enforce_confirmation(
         invocation,

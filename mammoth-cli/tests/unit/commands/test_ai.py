@@ -17,6 +17,7 @@ _CONDITION_GENERATE = "mammoth.api.ai.AIAPI.condition_generate"
 _EXPRESSION_GENERATE = "mammoth.api.ai.AIAPI.expression_generate"
 _SQL_GENERATE = "mammoth.api.ai.AIAPI.generate_sql"
 _SUGGESTION_LIST = "mammoth.api.ai.AIAPI.get_suggestions"
+_RETENTION_CONDITION = "mammoth.api.ai.AIAPI.retention_condition"
 
 
 @pytest.fixture(autouse=True)
@@ -251,6 +252,36 @@ def test_sql_generate_returns_response_and_meta(fake_service: FakeMammothService
     )
     assert data == {"sql": "SELECT 1"}
     assert meta == {"profile": None, "workspace_id": 4, "project_id": 180}
+
+
+def test_retention_condition_generate(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    input_file = _write_input(tmp_path, {"mode": "generate", "intent": "old completed payments"})
+    ai_cmd.ai_retention_condition(
+        _inv("ai.retention.condition", project=180, extra_args=["0"], input_file=input_file)
+    )
+    assert fake_service.call_log == [
+        (
+            _RETENTION_CONDITION,
+            {
+                "dataset_id": 0,
+                "mode": "generate",
+                "project_id": 180,
+                "intent": "old completed payments",
+            },
+        )
+    ]
+
+
+def test_retention_condition_test_requires_matching_field(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    input_file = _write_input(tmp_path, {"mode": "test", "intent": "not allowed"})
+    with pytest.raises(CliError) as excinfo:
+        ai_cmd.ai_retention_condition(
+            _inv("ai.retention.condition", project=180, extra_args=["12"], input_file=input_file)
+        )
+    assert excinfo.value.code == "missing_field"
+    assert fake_service.call_log == []
 
 
 # ── ai.suggestion.list ───────────────────────────────────────────────────────

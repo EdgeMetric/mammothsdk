@@ -29,6 +29,7 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.services.command_contract import bind_command_inputs
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -204,21 +205,12 @@ def file_bulk_delete(invocation: Invocation) -> HandlerResult:
 def file_upload(invocation: Invocation) -> HandlerResult:
     """Upload one or more local files. Paths come from positionals or ``files``."""
     document = invocation.load_input() or {}
-    kwargs: dict[str, Any] = {}
-    if invocation.extra_args:
-        kwargs["files"] = list(invocation.extra_args)
-    elif "files" in document:
-        kwargs["files"] = document["files"]
-    _forward_optional(
+    # ``files`` is intentionally dual-sourced: explicit paths are expanded to
+    # the SDK's list form and take precedence over the same input field.
+    kwargs = bind_command_inputs(
+        invocation.command_id,
         document,
-        kwargs,
-        (
-            "folder_resource_id",
-            "append_to_ds_id",
-            "override_target_schema",
-            "wait_for_completion",
-            "timeout",
-        ),
+        **({"files": list(invocation.extra_args)} if invocation.extra_args else {}),
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)

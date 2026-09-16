@@ -16,6 +16,7 @@ from mammoth_cli.testing import login_default_profile
 _LIST = "mammoth.api.datasets.DatasetsAPI.list"
 _GET = "mammoth.api.datasets.DatasetsAPI.get"
 _DATA = "mammoth.api.datasets.DatasetsAPI.get_data"
+_BATCH_DATA = "mammoth.api.datasets.DatasetsAPI.get_batch_data"
 _FILE_SETTINGS = "mammoth.api.datasets.DatasetsAPI.get_file_settings"
 _FILE_SETTINGS_UPDATE = "mammoth.api.datasets.DatasetsAPI.file_settings_update"
 _FILE_SETTINGS_UNDO = "mammoth.api.datasets.DatasetsAPI.file_settings_undo"
@@ -77,6 +78,48 @@ def test_get_without_dataset_id_is_usage_error(fake_service: FakeMammothService)
     with pytest.raises(CliError) as excinfo:
         dataset_cmd.dataset_get(_inv("dataset.get", project=180))
     assert excinfo.value.code == "missing_argument"
+
+
+def test_batch_data_rejects_invalid_paging_before_service(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    for payload in ({"limit": 101}, {"offset": -1}):
+        with pytest.raises(CliError):
+            dataset_cmd.dataset_batch_data(
+                _inv(
+                    "dataset.batch-data",
+                    project=180,
+                    extra_args=["7", "8"],
+                    input_file=_write(tmp_path, payload),
+                )
+            )
+    assert fake_service.call_log == []
+
+
+def test_batch_data_forwards_ids_and_paging(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    dataset_cmd.dataset_batch_data(
+        _inv(
+            "dataset.batch-data",
+            project=180,
+            extra_args=["7", "8"],
+            input_file=_write(tmp_path, {"limit": 10, "offset": 2, "columns": "a,b"}),
+        )
+    )
+    assert fake_service.call_log == [
+        (
+            _BATCH_DATA,
+            {
+                "dataset_id": 7,
+                "batch_id": 8,
+                "project_id": 180,
+                "limit": 10,
+                "offset": 2,
+                "columns": "a,b",
+            },
+        )
+    ]
 
 
 def test_get_invalid_dataset_id_is_usage_error(fake_service: FakeMammothService) -> None:

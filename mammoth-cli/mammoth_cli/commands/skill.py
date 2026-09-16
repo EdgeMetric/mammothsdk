@@ -20,7 +20,7 @@ HandlerResult = tuple[Any, dict[str, Any]]
 
 
 def _options(invocation: Invocation) -> tuple[list[str] | None, str, bool]:
-    document = invocation.load_input() or {}
+    document = invocation.bound_input()
     agents = document.get("agents")
     agents_list = [str(a) for a in agents] if isinstance(agents, list) else None
     scope = str(document.get("scope", "user"))

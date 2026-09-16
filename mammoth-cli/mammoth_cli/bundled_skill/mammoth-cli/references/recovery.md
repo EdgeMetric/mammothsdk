@@ -1,8 +1,9 @@
 # Error recovery and cleanup
 
 ## Recover from an error
-Every error envelope carries `error.recovery_commands`: an ordered list of exact
-commands to run next. Prefer them over improvising.
+Every error envelope may carry `error.recovery_commands`: exact inspection or
+correction commands. Read `error.code` and `details.operation_state` first;
+these commands are not blanket permission to replay a mutation.
 
 | exit | error.code (examples) | next step |
 |---|---|---|
@@ -10,7 +11,11 @@ commands to run next. Prefer them over improvising.
 | 5 | resource_not_found | re-list to find the correct id |
 | 2 | project_required | `mammoth context project use ID` or `--project` |
 | 2 | confirmation_required | re-run with `--yes` (and `--confirm TARGET`) |
-| 7 | retryable_error, timeout | wait, then re-run the recovery command |
+| 6 | conflict | inspect current remote state and resolve it |
+| 7 | `timeout` with a known job | inspect or wait that job; do not replay the mutation |
+| 7 | `outcome_unknown` | reconcile exact target/scope before any replay |
+| 7 | `retryable_error` on a read | honor `Retry-After`, then retry the read |
+| 130 | interrupted | preserve the handle, inspect it, and checkpoint the state |
 
 ## Cleanup discipline
 In a shared project, delete only the resources you created, and never touch

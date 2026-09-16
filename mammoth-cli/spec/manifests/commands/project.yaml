@@ -425,6 +425,48 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: project.resource-dependencies.update
+  command_path: project resource-dependencies update
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: project_id
+    type: int
+    required: false
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project to act on; defaults to the active project.
+  options: []
+  sdk_symbol: mammoth.api.projects.ProjectsAPI.resource_dependencies_update
+  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.resource_dependencies_update with validated request
+    fields.
+  request_model: ProjectResourceDependenciesUpdateRequest
+  result_model: ProjectResourceDependenciesUpdateResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth project resource-dependencies update --help
+  agent_example: 'mammoth project resource-dependencies update 123 --input ''{"patches": [{"op": "replace",
+    "path": "data_sync", "value": {"context_type": "dataview", "context_id": 1}}]}'' --output json --no-input
+    --yes --confirm 123'
+  unit_tests:
+  - UT-PROJECT-RESOURCE-DEPENDENCIES-UPDATE
+  contract_tests:
+  - CT-PROJECT-RESOURCE-DEPENDENCIES-UPDATE-HUMAN
+  - CT-PROJECT-RESOURCE-DEPENDENCIES-UPDATE-JSON
+  - CT-PROJECT-RESOURCE-DEPENDENCIES-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
 - command_id: project.resource-status
   command_path: project resource-status
   disposition: command

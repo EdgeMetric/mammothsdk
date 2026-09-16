@@ -54,7 +54,25 @@ def test_no_document_is_a_noop() -> None:
     validate_input_fields(_BULK_REPLACE, {})
 
 
-def test_unbacked_command_does_not_enforce() -> None:
-    """A command without a resolvable backing symbol keeps prior behavior."""
-    # 'config' commands are bespoke and have no SDK symbol; must not raise.
-    validate_input_fields("config.get", {"anything": 1})
+def test_closed_bespoke_zero_input_command_rejects_document() -> None:
+    """The reviewed config.get contract rejects fields beyond its KEY positional."""
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields("config.get", {"anything": 1})
+    assert excinfo.value.code == "unknown_input_field"
+    assert excinfo.value.exit_status == EXIT_USAGE
+
+
+def test_auth_login_contract_rejects_dropped_fields() -> None:
+    """Auth's specialized parser and shared admission reject unknown keys."""
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields("auth.login", {"api_key": "key", "custom": 1})
+    assert excinfo.value.code == "unknown_input_field"
+    validate_input_fields(
+        "auth.login",
+        {
+            "api_key": "key",
+            "api_secret": "secret",
+            "workspace_id": 4,
+            "server_prefix": "app",
+        },
+    )

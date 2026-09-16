@@ -2,15 +2,26 @@
 
 from __future__ import annotations
 
+import builtins
 from typing import TYPE_CHECKING, Any
+
+from pydantic import ValidationError
 
 from mammoth.exceptions import MammothValidationError
 from mammoth.models.dashboards import (
+    AddPagesResponse,
+    AddPagesSpec,
+    ContextExtractResponse,
+    ContextExtractSpec,
+    CreateBlankParams,
     DashboardActionType,
     DashboardAuthType,
     DashboardPatchItem,
     DashboardPatchPath,
     DashboardShareUser,
+    DashboardTagsParams,
+    TagMergeParams,
+    TagRenameParams,
 )
 
 if TYPE_CHECKING:
@@ -69,6 +80,73 @@ class DashboardsAPI:
         response = self._client._request_json("GET", "/dashboards", params=params)
         return response.get("dashboards", response if isinstance(response, _list) else [])
 
+    def list_tags(self) -> dict[str, Any]:
+        """List the workspace dashboard-tag vocabulary."""
+        return self._client._request_json("GET", "/dashboards/tags")
+
+    def rename_tag(self, tag_id: int, name: str) -> dict[str, Any]:
+        """Rename one workspace dashboard tag using the release request shape."""
+        if isinstance(tag_id, bool) or not isinstance(tag_id, int) or tag_id <= 0:
+            raise MammothValidationError(
+                f"`tag_id` must be a positive integer, got {tag_id}."
+            )
+        try:
+            typed = TagRenameParams(name=name)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid tag rename parameters: {exc}") from exc
+        if not typed.name.strip():
+            raise MammothValidationError("`name` must be non-blank.")
+        return self._client._request_json(
+            "PATCH", f"/dashboards/tags/{tag_id}", json=typed.model_dump(mode="json")
+        )
+
+    def set_tags(self, dashboard_id: int, tags: builtins.list[str]) -> dict[str, Any]:
+        """Replace a dashboard's complete tag set using the release request shape."""
+        if (
+            isinstance(dashboard_id, bool)
+            or not isinstance(dashboard_id, int)
+            or dashboard_id <= 0
+        ):
+            raise MammothValidationError(
+                f"`dashboard_id` must be a positive integer, got {dashboard_id}."
+            )
+        if not isinstance(tags, list) or any(not isinstance(tag, str) for tag in tags):
+            raise MammothValidationError("`tags` must be a list of strings.")
+        if len(tags) != len(set(tags)):
+            raise MammothValidationError("`tags` must not contain duplicates.")
+        try:
+            typed = DashboardTagsParams(tags=tags)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid dashboard tags parameters: {exc}") from exc
+        return self._client._request_json(
+            "PUT", f"/dashboards/{dashboard_id}/tags", json=typed.model_dump(mode="json")
+        )
+
+    def delete_tag(self, tag_id: int) -> dict[str, Any] | None:
+        """Delete a tag from the workspace vocabulary."""
+        if isinstance(tag_id, bool) or not isinstance(tag_id, int) or tag_id <= 0:
+            raise MammothValidationError(
+                f"`tag_id` must be a positive integer, got {tag_id}."
+            )
+        return self._client._request_json("DELETE", f"/dashboards/tags/{tag_id}")
+
+    def merge_tag(self, tag_id: int, target_id: int) -> dict[str, Any]:
+        """Merge one workspace tag into another using the release request shape."""
+        for name, value in (("tag_id", tag_id), ("target_id", target_id)):
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise MammothValidationError(
+                    f"`{name}` must be a positive integer, got {value}."
+                )
+        if tag_id == target_id:
+            raise MammothValidationError("`tag_id` and `target_id` must differ.")
+        try:
+            typed = TagMergeParams(target_id=target_id)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid tag merge parameters: {exc}") from exc
+        return self._client._request_json(
+            "POST", f"/dashboards/tags/{tag_id}/merge", json=typed.model_dump(mode="json")
+        )
+
     def create(
         self,
         intent: str,
@@ -113,6 +191,31 @@ class DashboardsAPI:
         }
         return self._client._request_json("POST", "/dashboards", json=body)
 
+    def create_blank(self, params: CreateBlankParams) -> dict[str, Any]:
+        """Create an empty v3 dashboard bound to a dataview.
+
+        The release endpoint returns the created dashboard ``id`` and seeded
+        canvas ``sequence``. Style is an unrestricted release string with a
+        default of ``dashboard``; the server owns any further style policy.
+        """
+        try:
+            typed = (
+                params
+                if isinstance(params, CreateBlankParams)
+                else CreateBlankParams.model_validate(params)
+            )
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid blank dashboard parameters: {exc}") from exc
+        if typed.dataview_id <= 0:
+            raise MammothValidationError(
+                f"`dataview_id` must be a positive integer, got {typed.dataview_id}."
+            )
+        return self._client._request_json(
+            "POST",
+            "/dashboards/v3/blank",
+            json={"params": typed.model_dump(mode="json", exclude_unset=True)},
+        )
+
     def get(self, dashboard_id: int) -> dict[str, Any]:
         """Get dashboard details.
 
@@ -123,6 +226,43 @@ class DashboardsAPI:
             Dict with dashboard details.
         """
         return self._client._request_json("GET", f"/dashboards/{dashboard_id}")
+
+    def add_pages(self, dashboard_id: int, body: AddPagesSpec) -> AddPagesResponse:
+        """Append structural pages and start the asynchronous dashboard bake."""
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        try:
+            typed = body if isinstance(body, AddPagesSpec) else AddPagesSpec.model_validate(body)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid add-pages parameters: {exc}") from exc
+        response = self._client._request_json(
+            "POST",
+            f"/dashboards/{dashboard_id}/pages",
+            json=typed.model_dump(mode="json", exclude_none=True),
+        )
+        try:
+            return AddPagesResponse.model_validate(response)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid add-pages response: {exc}") from exc
+
+    def extract_context(self, body: ContextExtractSpec) -> dict[str, Any]:
+        """Extract a context file into slot suggestions (release route)."""
+        try:
+            typed = (
+                body
+                if isinstance(body, ContextExtractSpec)
+                else ContextExtractSpec.model_validate(body)
+            )
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid context-extract parameters: {exc}") from exc
+        response = self._client._request_json(
+            "POST", "/dashboards/v3/contexts/extract",
+            json=typed.model_dump(mode="json", exclude_none=True),
+        )
+        try:
+            return ContextExtractResponse.model_validate(response).model_dump(mode="json")
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid context-extract response: {exc}") from exc
 
     def update(
         self,
@@ -175,6 +315,21 @@ class DashboardsAPI:
             Dict with deletion result.
         """
         return self._client._request_json("DELETE", f"/dashboards/{dashboard_id}")
+
+    def archive(self, dashboard_id: int, archived: bool) -> Any:
+        """Set whether a dashboard is archived.
+
+        ``archived=True`` archives the dashboard and ``archived=False``
+        restores it. The API declares no response body schema, so the raw
+        response is returned unchanged.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        if not isinstance(archived, bool):
+            raise MammothValidationError("`archived` must be a boolean.")
+        return self._client._request_json(
+            "POST", f"/dashboards/{dashboard_id}/archive", json={"archived": archived}
+        )
 
     def get_sources(self) -> _list[dict[str, Any]]:
         """Get available dashboard data sources.

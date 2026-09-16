@@ -46,7 +46,13 @@ def _normalize(text: str) -> str:
 # Commands whose handler answers entirely from the in-process catalog -- no
 # network, no credentials, no filesystem mutation -- so their advertised example
 # must run to exit zero anywhere, including a clean machine.
-_DISCOVERY_COMMANDS = ["schema.list", "schema.get", "capability.list", "capability.get"]
+_DISCOVERY_COMMANDS = [
+    "schema.list",
+    "schema.get",
+    "capability.list",
+    "capability.get",
+    "capability.find",
+]
 # Ambient Mammoth credentials are stripped so each subprocess starts logged out.
 # There is no environment credential path; these names are cleared for hygiene.
 _MAMMOTH_ENV = (

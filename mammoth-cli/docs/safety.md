@@ -3,12 +3,11 @@
 [Documentation index](llms.txt)
 
 Every command exposes a mutation class and confirmation policy. Check both with
-`mammoth schema get <command.id>` before an automated write. This gives a run
-the same preflight information as the generated command reference.
+`mammoth schema get COMMAND_ID` before an automated write. The schema also tells
+you the required scope, result identity, wait behavior, verification read,
+recovery limits, and known backend restrictions.
 
 ## Mutation classes
-
-The class states what a command does to your data or account.
 
 | Class | Meaning |
 |---|---|
@@ -21,8 +20,6 @@ The class states what a command does to your data or account.
 
 ## Confirmation policies
 
-The policy states what you must pass before a command runs.
-
 | Policy | How to satisfy it |
 |---|---|
 | `none` | Nothing required. |
@@ -30,37 +27,60 @@ The policy states what you must pass before a command runs.
 | `yes_always` | Pass `--yes` (always, even at a terminal). |
 | `confirm_target` | Pass `--yes` and `--confirm TARGET` (exact match). |
 
-## Behavior without a terminal
-
 Prompts occur only when standard input is a real terminal. Under `--no-input`,
-in `json`/`ndjson` output, or in CI, there is no prompt. A missing `--yes` or
-`--confirm` fails with exit code `2` and error code `confirmation_required` or
-`confirmation_target_mismatch`.
+machine output, or a non-terminal, a missing confirmation fails with exit code 2
+and a structured `confirmation_required` or
+`confirmation_target_mismatch` error. There is no interactive fallback.
 
 ```bash
-# normal delete
-mammoth dataset delete 2340 --project 180 --yes
-
-# high-impact: --confirm must match the workspace id exactly
-mammoth workspace delete --yes --confirm 9
+mammoth dataset delete DATASET_ID --project PROJECT_ID --yes \
+  --output json --no-input
+mammoth workspace delete --yes --confirm WORKSPACE_ID \
+  --output json --no-input
 ```
 
-## Other safety rules
+## Scope and display-name safety
 
-- The CLI never retries a mutation without a real server idempotency contract;
-  only exit code `7` (retryable) is safe to retry.
-- Downloads write to a partial file and rename atomically; an existing target
-  needs `--overwrite`.
-- An interruption returns exit code `130` and closes sessions and files.
-- Secrets never appear on the command line, in logs, or in any envelope.
+Use an explicit profile, workspace, project, and parent dataset/view wherever the
+schema accepts them. Retain the returned IDs and verify the relationship before
+mutating. A dataset does not imply a usable default view; list views and choose
+one explicitly. Column inputs are display names from the exact view schema, not
+backend/internal identifiers. Unknown or ambiguous names must fail before a
+POST.
 
-## A safe cleanup pattern
+## Recovery is part of safety
 
-Use IDs returned by the run, list or preview the target if the run may have
-been interrupted, and then delete explicitly. Do not use broad name matching in
-cleanup scripts.
+- A **known job** has an observed job handle. Inspect it with `mammoth job get`
+  or wait with `mammoth job wait`; do not submit the mutation again.
+- **`outcome_unknown`** means a mutation may have committed but no terminal
+  result was confirmed. Re-read the target in the same scope and reconcile
+  before replaying a create or delete.
+- A retryable read may be retried after honoring `Retry-After`. Exit 7 is not a
+  blanket permission to retry a write, and the CLI does not silently replay one.
+- A conflict, authorization failure, or job failure requires its documented
+  correction. Do not turn it into repeated mutation attempts.
+
+Downloads use a same-directory temporary file and publish atomically only after
+the complete content is flushed. On a network fault, disk-full error, or broken
+pipe, the old destination remains intact; inspect any reported quarantine path
+before deciding what to do next.
+
+An interruption exits 130. It preserves the last observed job/resource handle
+when available, but does not prove that a remote operation was cancelled.
+
+## Dependency-aware cleanup
+
+Record every resource created by the task and its parent/dependency IDs. Before
+deleting, read the resource and check the dependency graph; never delete an
+arbitrary inventory difference. After deletion, verify absence or inspect the
+deletion job because an acknowledgement can precede disappearance.
 
 ```bash
-mammoth dataset list --project 180 --output json --no-input
-mammoth dataset delete DATASET_ID --project 180 --yes --output json --no-input
+mammoth dataset get DATASET_ID --project PROJECT_ID --output json --no-input
+mammoth dataset delete DATASET_ID --project PROJECT_ID --yes \
+  --output json --no-input
+mammoth dataset list --project PROJECT_ID --output json --no-input
 ```
+
+See [troubleshooting](troubleshooting.md) and the [portable handoff](agent-handoff.md)
+for recovery and transfer procedures.

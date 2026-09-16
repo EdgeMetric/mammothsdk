@@ -195,6 +195,13 @@ def webhook_update(invocation: Invocation) -> HandlerResult:
     """Update a webhook. The webhook id is positional; other fields optional."""
     webhook_id = _require_int_positional(invocation, "webhook id")
     document = invocation.load_input() or {}
+    if not any(field in document for field in ("mode", "origins", "is_secure")):
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message="This command requires at least one webhook update field.",
+            exit_status=EXIT_USAGE,
+            hint="Pass one or more of: mode, origins, is_secure via --input.",
+        )
     kwargs: dict[str, Any] = {"webhook_id": webhook_id}
     _forward_optional(document, kwargs, ("mode", "origins", "is_secure"))
     with open_service(invocation) as (service, auth):
@@ -228,6 +235,13 @@ def webhook_send_get(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input()
     webhook_uri = _require_field(document, "webhook_uri")
     assert document is not None
+    if "params" in document and document["params"] == {}:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The 'params' input field must not be empty when supplied.",
+            exit_status=EXIT_USAGE,
+            hint="Omit 'params' or pass at least one query value.",
+        )
     kwargs: dict[str, Any] = {"webhook_uri": webhook_uri}
     _forward_optional(document, kwargs, ("params",))
     with open_service(invocation) as (service, auth):

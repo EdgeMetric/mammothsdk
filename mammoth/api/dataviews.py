@@ -322,6 +322,51 @@ class DataviewsAPI:
         )
         return self._client._wait_if_job(response)
 
+    def get_exportable_config(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Get the pipeline/export configuration for a dataview."""
+        ws = workspace_id or self._ws()
+        proj = project_id or self._proj()
+        response = self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/exportable-config",
+        )
+        return self._client._wait_if_job(response)
+
+    def apply_exportable_config(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        *,
+        items: _list[dict[str, Any]] | None = None,
+        config: dict[str, Any] | None = None,
+        insert_after_sequence: int | None = None,
+        is_paste_mode: bool = False,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Apply exactly one of items or full config."""
+        if (items is None) == (config is None):
+            raise MammothValidationError("Exactly one of items or config is required.")
+        payload: dict[str, Any] = {"items": items} if items is not None else {"config": config}
+        if insert_after_sequence is not None:
+            payload["insert_after_sequence"] = insert_after_sequence
+        if is_paste_mode:
+            payload["is_paste_mode"] = True
+        ws = workspace_id or self._ws()
+        proj = project_id or self._proj()
+        response = self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/exportable-config",
+            json=payload,
+        )
+        return self._client._wait_if_job(response)
+
     def active_users(
         self,
         dataset_id: int,

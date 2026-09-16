@@ -6,7 +6,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal
 
+from pydantic import ValidationError
+
 from ..exceptions import MammothValidationError
+from ..models.projects import DataSyncPatchItem
 
 if TYPE_CHECKING:
     from ..client import MammothClient
@@ -191,7 +194,7 @@ class ProjectsAPI:
         """
         ws = workspace_id or self._ws()
         return self._client._request_json(
-            "DELETE", f"/workspaces/{ws}/projects", params={"ids": str(project_id)}
+            "DELETE", f"/workspaces/{ws}/projects/{project_id}"
         )
 
     def bulk_update(
@@ -506,6 +509,44 @@ class ProjectsAPI:
             "GET",
             f"/workspaces/{ws}/projects/{project_id}/resource-dependencies",
             params=params,
+        )
+
+    def resource_dependencies_update(
+        self,
+        project_id: int,
+        patches: _list[DataSyncPatchItem],
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Apply typed data-sync patches to resources in a project.
+
+        The release API accepts one or more ``data_sync`` replacements and
+        returns a job handle (HTTP 202). The CLI owns waiting and confirmation;
+        this SDK method only validates/serializes the public request and emits
+        the exact PATCH wire contract.
+        """
+        if project_id <= 0:
+            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
+        if workspace_id is not None and workspace_id <= 0:
+            raise MammothValidationError("`workspace_id` must be a positive integer.")
+        if not patches:
+            raise MammothValidationError("`patches` must contain at least one operation.")
+        try:
+            typed = [
+                item
+                if isinstance(item, DataSyncPatchItem)
+                else DataSyncPatchItem.model_validate(item)
+                for item in patches
+            ]
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid data-sync patch: {exc}") from exc
+        targets = [(item.value.context_type, item.value.context_id) for item in typed]
+        if len(set(targets)) != len(targets):
+            raise MammothValidationError("`patches` must not repeat a resource target.")
+        ws = workspace_id if workspace_id is not None else self._ws()
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{project_id}/resource-dependencies",
+            json={"patches": [item.model_dump(mode="json", exclude_unset=True) for item in typed]},
         )
 
     def resource_status(

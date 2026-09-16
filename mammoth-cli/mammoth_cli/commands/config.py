@@ -183,12 +183,22 @@ def config_get(
     )
 
     def producer() -> tuple[Any, dict[str, Any]]:
-        _validate_key(key)
+        bound = invocation.bound_input()
+        key_value = str(bound.get("key", key))
+        _validate_key(key_value)
         profile_name = _profile_name(invocation)
-        value = _get_value(profile_name, key)
-        return {"key": key, "value": value, "profile": profile_name}, {"profile": profile_name}
+        value = _get_value(profile_name, key_value)
+        return (
+            {"key": key_value, "value": value, "profile": profile_name},
+            {"profile": profile_name},
+        )
 
-    executor.run(invocation.command_id, invocation.output, producer)
+    executor.run(
+        invocation.command_id,
+        invocation.output,
+        producer,
+        agent_mode=invocation.no_input,
+    )
 
 
 def config_set(
@@ -225,12 +235,23 @@ def config_set(
     )
 
     def producer() -> tuple[Any, dict[str, Any]]:
-        _validate_key(key)
+        bound = invocation.bound_input()
+        key_value = str(bound.get("key", key))
+        value_value = str(bound.get("value", value))
+        _validate_key(key_value)
         profile_name = _profile_name(invocation)
-        stored = _set_value(profile_name, key, value)
-        return {"key": key, "value": stored, "profile": profile_name}, {"profile": profile_name}
+        stored = _set_value(profile_name, key_value, value_value)
+        return (
+            {"key": key_value, "value": stored, "profile": profile_name},
+            {"profile": profile_name},
+        )
 
-    executor.run(invocation.command_id, invocation.output, producer)
+    executor.run(
+        invocation.command_id,
+        invocation.output,
+        producer,
+        agent_mode=invocation.no_input,
+    )
 
 
 def config_list(
@@ -269,7 +290,12 @@ def config_list(
         values = {key: _get_value(profile_name, key) for key in ALL_CONFIG_KEYS}
         return {"profile": profile_name, "values": values}, {"profile": profile_name}
 
-    executor.run(invocation.command_id, invocation.output, producer)
+    executor.run(
+        invocation.command_id,
+        invocation.output,
+        producer,
+        agent_mode=invocation.no_input,
+    )
 
 
 def config_path(
@@ -306,4 +332,9 @@ def config_path(
     def producer() -> tuple[Any, dict[str, Any]]:
         return {"profiles_path": str(profiles.profiles_path())}, {}
 
-    executor.run(invocation.command_id, invocation.output, producer)
+    executor.run(
+        invocation.command_id,
+        invocation.output,
+        producer,
+        agent_mode=invocation.no_input,
+    )

@@ -1073,6 +1073,33 @@ class TestBranchOut:
 
 
 class TestAdvanced:
+    def test_join_foreign_unknown_display_name_fails_before_payload(self) -> None:
+        with pytest.raises(MammothColumnError):
+            b.build_join_params(
+                2050,
+                JoinType.LEFT,
+                on=[JoinKeySpec(left="Region", right="Missing")],
+                select=["Category"],
+                col_map=COLS,
+                internal_names=INTERNALS,
+                foreign_columns={"Customer ID": "fc1", "Category": "fc2"},
+            )
+
+    def test_lookup_resolves_foreign_display_names(self) -> None:
+        spec = b.build_lookup_params(
+            "Region",
+            2055,
+            key="Customer ID",
+            value="Category",
+            col_map=COLS,
+            internal_names=INTERNALS,
+            foreign_columns={"Customer ID": "fc1", "Category": "fc2"},
+            new_column="Looked Up",
+            name_gen=gen(),
+        )
+        assert spec["LOOKUP"]["KEY"] == "fc1"
+        assert spec["LOOKUP"]["VALUE"] == "fc2"
+
     def test_join_foreign_columns_and_prefix(self) -> None:
         foreign = {"Customer ID": "fc1", "Category": "fc2"}
         spec = b.build_join_params(

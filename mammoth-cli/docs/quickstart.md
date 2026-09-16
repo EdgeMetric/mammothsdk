@@ -1,145 +1,135 @@
-# Quick start: CSV to a transformed export
+# Quick start: an explicit, verifiable CSV workflow
 
 [Documentation index](llms.txt)
 
-This guide completes a small, isolated loop. Choose a project, create a folder,
-load a CSV, transform its default view, preview it, export it, and clean up.
-The IDs in the snippets are placeholders. Keep IDs returned by your commands;
-do not copy the example values into a shared project.
+This walkthrough is one small example, not the complete CLI surface. It keeps
+the project, dataset, and view IDs returned by each read. It uses display names
+for columns, verifies each mutation, and cleans up only resources it created. A
+dataset may have no usable default view, so the view is always selected
+explicitly.
 
-Output defaults to `auto`. A terminal gets a readable table. A pipe or redirect
-gets JSON. So the examples below need no output flag.
+Output defaults to `auto`: a terminal gets a readable table, while a pipe or
+redirect gets JSON. The commands below use explicit machine flags where a
+script needs to parse the result.
 
-## 1. Log in
+## 1. Log in and choose scope
 
 ```bash
 mammoth auth login
+mammoth doctor --output json --no-input
+mammoth project list --output json --no-input
 ```
 
-The CLI prompts for your API key, API secret, and workspace id, then saves the
-login for later commands. There is no `-w` login flag. Agents and CI pass a
-protected file instead: `mammoth auth login --input creds.json --output json
---no-input`. See [authentication](authentication.md).
-
-## 2. Pick a working project
+Select an authorized project and pass it explicitly on subsequent commands:
 
 ```bash
-mammoth project list
-mammoth context project use 180
+mammoth context project use PROJECT_ID --output json --no-input
 ```
 
-The active project applies to every later command. Add `--project ID` to one
-command to target a different project without switching.
+For CI or an agent, use a protected credentials file as described in
+[authentication](authentication.md); do not put secrets in arguments.
 
-## 3. Make a folder to hold the work
+## 2. Create and record a disposable resource
+
+Discover the request shape before writing:
 
 ```bash
-mammoth folder create "Quickstart Demo"
+mammoth schema get folder.create --output json --no-input
 ```
 
-The response includes the folder's `resource_id`. Copy it; the next step drops
-the dataset straight into this folder.
-
-## 4. Load a CSV into the folder
-
-Load the sample retail dataset from its URL, and pass the `resource_id` from
-step 3 as `folder_resource_id` so it lands in your folder:
+Then create a folder and save its returned resource ID in your task record:
 
 ```bash
-mammoth dataset create --input '{
+mammoth folder create "Quickstart Demo" --project PROJECT_ID \
+  --output json --no-input
+```
+
+Use the returned `resource_id` as `FOLDER_RESOURCE_ID`; never copy the
+placeholder into a shared project.
+
+## 3. Load data and verify the dataset
+
+```bash
+mammoth dataset create --project PROJECT_ID --input '{
   "ds_creation_type": "weburl",
   "dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"},
   "folder_resource_id": "FOLDER_RESOURCE_ID"
-}'
+}' --output json --no-input
 ```
 
-The command waits for the load to finish and reports the result:
+Record the returned `dataset_id` and any `job_id`. If the command reports a
+known job, inspect or wait for that job; if a mutation times out without a
+confirmed handle, treat the outcome as unknown and read the project/dataset
+state before creating another dataset.
 
-```json
-{"status": "ready", "dataset_id": 303686, "job_id": 14794754}
-```
-
-Take the `dataset_id` into the next step. Have the file on disk instead? Upload
-it directly — same folder field, same finished result:
+## 4. Discover and select a view explicitly
 
 ```bash
-mammoth file upload ./Multi-Store_Retail_Sales.csv --input '{"folder_resource_id": "FOLDER_RESOURCE_ID"}'
+mammoth view list DATASET_ID --project PROJECT_ID --output json --no-input
+mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input
 ```
 
-Both commands block until the dataset is ready, so there is no job id to poll by
-hand.
+Choose the view whose returned identity and schema satisfy the task. Do not
+assume the first, default, or only-looking view is correct. Save its
+`dataset_id`, `view_id`, and displayed column names in the task record.
 
-## 5. Find the view
+## 5. Transform with display names
 
-Transformations act on a view. Every dataset opens with a default one:
-
-```bash
-mammoth view list DATASET_ID
-```
-
-Take the `id` of the first view for the next steps.
-
-## 6. Add a calculated column
-
-Columns go by their display names, the same names shown in the app. Multiply
-two of them into a new `revenue` column:
-
-```bash
-mammoth view transform math VIEW_ID --input '{"expression": "quantity_sold * unit_price", "new_column": "revenue"}'
-```
-
-Filter rows the same way, by column name:
-
-```bash
-mammoth view transform filter VIEW_ID --input '{"condition": {"column": "category", "operator": "EQ", "value": "Apparel"}}'
-```
-
-Both transforms run on the server, wait for the job, and refresh the view.
-
-## 7. Preview the result
-
-```bash
-mammoth view preview VIEW_ID
-```
-
-Columns show their display names, including the new `revenue`. With no input it
-returns 50 rows and every column. Adjust with
-`--input '{"rows": 100, "cols": 10}'`. The dataset is resolved from the view; to
-skip that lookup, pass it as `mammoth view preview VIEW_ID DATASET_ID`.
-
-## 8. Download as a CSV
-
-```bash
-mammoth view export csv VIEW_ID
-```
-
-The CLI runs the export, waits for it, and writes the file to the current
-directory. Choose the path with `--input '{"output_path": "./revenue.csv"}'`.
-
-## 9. Clean up the demo
-
-If this was a disposable exercise, remove the dataset you created. Deletion is
-intentional: inspect the ID first, then pass `--yes`.
-
-```bash
-mammoth dataset delete DATASET_ID --yes
-```
-
-The folder may then be empty. Delete it only if it contains no work you need:
-
-```bash
-mammoth folder delete FOLDER_ID --yes --input '{"remove_contents": false}'
-```
-
-If a command needs an input you have not seen here, ask the installed CLI:
+Ask the installed CLI for the exact contract, then compose a request with the
+names shown by `view get` or preview metadata:
 
 ```bash
 mammoth schema get view.transform.math --output json --no-input
+mammoth view transform math VIEW_ID --project PROJECT_ID \
+  --input '{"expression": "Quantity Sold * Unit Price", "new_column": "Revenue"}' \
+  --output json --no-input
 ```
+
+Never substitute backend/internal column identifiers. If a display name is
+missing or ambiguous, refresh the exact view schema and stop before mutation.
+
+## 6. Verify, then export
+
+```bash
+mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input
+mammoth view preview VIEW_ID DATASET_ID --project PROJECT_ID \
+  --input '{"rows": 50, "cols": 10}' --output json --no-input
+mammoth view export csv VIEW_ID --project PROJECT_ID \
+  --input '{"output_path": "./revenue.csv"}' --output json --no-input
+```
+
+Verify the returned schema contains `Revenue` and that the preview/export
+matches the acceptance criteria. A completed process is not enough: compare
+returned IDs, state, and artifact evidence. If an export job is known, inspect
+it; if the write outcome is unknown, reconcile the remote export before
+starting another export.
+
+## 7. Clean up from the recorded dependency graph
+
+Inspect the dataset you created, then delete it explicitly:
+
+```bash
+mammoth dataset get DATASET_ID --project PROJECT_ID --output json --no-input
+mammoth dataset delete DATASET_ID --project PROJECT_ID --yes \
+  --output json --no-input
+```
+
+Verify disappearance or the deletion job before removing its folder. Delete a
+folder only when its dependency list proves it contains no work you need:
+
+```bash
+mammoth folder delete FOLDER_ID --project PROJECT_ID --yes \
+  --input '{"remove_contents": false}' --output json --no-input
+```
+
+For handoff or interruption, write the nonsecret checkpoint in
+[agent-handoff.md](agent-handoff.md). The receiving agent verifies scope and
+remote state before deciding whether to continue, reconcile, or clean up.
 
 ## Where to go next
 
 - [Authentication and project context](authentication.md)
+- [Agent and CI usage](agents.md)
 - [Safe mutation and confirmation](safety.md)
+- [Output and errors](reference/output-and-errors.md)
 - [Full command reference](reference/commands.md)
-- Discover any command's inputs: `mammoth schema get view.transform.math`

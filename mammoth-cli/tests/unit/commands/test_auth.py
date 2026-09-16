@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 import os
 import stat
@@ -107,6 +108,32 @@ def test_login_input_document_permission_checked(
     assert envelope["error"]["code"] == "insecure_input_file"
 
 
+def test_insecure_login_document_is_rejected_before_read(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    doc = tmp_path / "login.json"
+    doc.write_text(
+        json.dumps({"api_key": "key", "api_secret": "SECRET_SENTINEL", "workspace_id": 4}),
+        encoding="utf-8",
+    )
+    os.chmod(doc, 0o644)
+
+    def fail_read(*_: object, **__: object) -> str:
+        raise AssertionError("insecure login document was read")
+
+    monkeypatch.setattr(Path, "read_text", fail_read)
+    result = make_runner().invoke(
+        ["auth", "login", "--input", str(doc), "--output", "json", "--no-input"], env={}
+    )
+    assert result.exit_code == 2
+    envelope = json.loads(result.stderr)
+    assert envelope["error"]["code"] == "insecure_input_file"
+    assert "SECRET_SENTINEL" not in result.output
+
+
 def test_login_input_document_succeeds(
     isolated_cli_config: Path, fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
@@ -142,6 +169,65 @@ def test_login_document_rejects_unknown_field(
     assert result.exit_code == 2
     envelope = json.loads(result.stderr)
     assert envelope["error"]["code"] == "invalid_login_document"
+
+
+@pytest.mark.parametrize(
+    ("name", "payload", "expected"),
+    [
+        (
+            "duplicate.json",
+            b'{"api_key":"first","api_key":"second","api_secret":"s","workspace_id":4}',
+            "duplicate_input_key",
+        ),
+        (
+            "overflow.json",
+            b'{"api_key":"k","api_secret":"s","workspace_id":1e999}',
+            "nonfinite_input_number",
+        ),
+    ],
+)
+def test_login_file_uses_strict_shared_admission(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    tmp_path: Path,
+    name: str,
+    payload: bytes,
+    expected: str,
+) -> None:
+    doc = tmp_path / name
+    doc.write_bytes(payload)
+    os.chmod(doc, stat.S_IRUSR | stat.S_IWUSR)
+    result = make_runner().invoke(
+        ["auth", "login", "--input", str(doc), "--output", "json", "--no-input"],
+        env={},
+    )
+    assert result.exit_code == 2
+    envelope = json.loads(result.stderr)
+    assert envelope["error"]["code"] == expected
+    assert "check_connection" not in fake_service.calls
+
+
+def test_login_stdin_uses_strict_shared_admission(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        auth_cmd.sys,
+        "stdin",
+        io.BytesIO(b'{"api_key":"k","api_key":"again","api_secret":"s","workspace_id":4}'),
+    )
+    invocation = Invocation(
+        command_id="auth.login",
+        output="json",
+        no_input=True,
+        input_file="-",
+        input_format="json",
+    )
+    with pytest.raises(CliError) as excinfo:
+        auth_cmd._run_login(invocation, server_prefix=None, storage="file")
+    assert excinfo.value.code == "duplicate_input_key"
+    assert "check_connection" not in fake_service.calls
 
 
 def test_login_prompt_path_when_interactive(

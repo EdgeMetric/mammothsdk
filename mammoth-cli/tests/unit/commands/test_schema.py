@@ -17,6 +17,7 @@ from mammoth_cli.services.positionals import positionals_for
 
 _BULK_REPLACE = "view.transform.bulk-replace"
 _TEXT_TRANSFORM = "view.transform.text"
+_MATH_TRANSFORM = "view.transform.math"
 _PROJECT_DELETE = "project.delete"
 
 
@@ -38,6 +39,15 @@ def test_accepted_fields_report_type_and_default() -> None:
     assert fields["match_case"]["default"] is True
     assert fields["columns"]["required"] is True
     assert fields["columns"]["enum"] is None
+
+
+def test_transform_schema_advertises_exact_parent_dataset_context() -> None:
+    schema = get_schema(_MATH_TRANSFORM)
+    assert schema is not None
+    fields = {field["name"]: field for field in schema["accepted_fields"]}
+    assert fields["dataset_id"]["type"] == "int"
+    assert fields["dataset_id"]["required"] is False
+    assert fields["dataset_id"]["schema"]["anyOf"][0]["minimum"] == 1
 
 
 def test_bulk_replace_exposes_the_required_view_id_positional() -> None:
@@ -94,6 +104,48 @@ def test_fallback_positional_is_accepted_but_not_duplicated_in_example() -> None
     tokens = shlex.split(schema["runnable_example"])
     assert tokens[:4] == ["mammoth", "project", "create", "Revenue report"]
     assert "--input" not in tokens
+
+
+def test_exportable_config_schema_is_exact_one_of_and_view_centric() -> None:
+    get = get_schema("view.exportable-config.get")
+    apply = get_schema("view.exportable-config.apply")
+    assert get is not None and apply is not None
+    assert [p["name"] for p in get["positionals"]] == ["view_id", "dataset_id"]
+    assert {
+        field["name"]: field["required"] for field in get["accepted_fields"]
+    } == {"dataset_id": False}
+    assert get["input_schema"]["required"] == []
+    assert "dataview_id" not in get["input_schema"]["properties"]
+    schema = apply["input_schema"]
+    assert {
+        field["name"]: field["required"] for field in apply["accepted_fields"]
+    }["dataset_id"] is False
+    assert "dataset_id" in schema["properties"]
+    assert schema["oneOf"] == [
+        {"required": ["items"], "not": {"required": ["config"]}},
+        {"required": ["config"], "not": {"required": ["items"]}},
+    ]
+    config_properties = schema["properties"]["config"]["properties"]
+    assert config_properties["tasks"]["type"] == [
+        "array",
+        "null",
+    ]
+    assert config_properties["tasks"]["items"] == {"type": "object"}
+    assert config_properties["name"]["type"] == [
+        "string",
+        "null",
+    ]
+    example = shlex.split(apply["runnable_example"])
+    assert example[:5] == ["mammoth", "view", "exportable-config", "apply", "123"]
+    assert "--yes" in example and example[example.index("--confirm") + 1] == "123"
+
+
+def test_batch_data_schema_exposes_release_paging_bounds() -> None:
+    schema = get_schema("dataset.batch-data")
+    assert schema is not None
+    assert schema["input_schema"]["properties"]["limit"]["minimum"] == 0
+    assert schema["input_schema"]["properties"]["limit"]["maximum"] == 100
+    assert schema["input_schema"]["properties"]["offset"]["minimum"] == 0
 
 
 def test_unknown_command_returns_none() -> None:

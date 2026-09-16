@@ -87,6 +87,46 @@ commands:
   undo_test: null
   known_restrictions: delete_source_ds=true changes the mutation class to destructive and requires confirmation.
   reviewed_by: primary
+- command_id: batch.create-spec
+  command_path: batch create-spec
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  options: []
+  sdk_symbol: mammoth.api.batches.BatchesAPI.create_spec
+  sdk_conversion: Call mammoth.api.batches.BatchesAPI.create_spec with validated request fields.
+  request_model: BatchCreateSpecRequest
+  result_model: BatchCreateSpecResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-BATCH-CREATE-SPEC
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth batch create-spec DATASET_ID --help
+  agent_example: 'mammoth batch create-spec 123 --input ''{"file_id": 94}'' --output json --no-input'
+  unit_tests:
+  - UT-BATCH-CREATE-SPEC
+  contract_tests:
+  - CT-BATCH-CREATE-SPEC-HUMAN
+  - CT-BATCH-CREATE-SPEC-JSON
+  - CT-BATCH-CREATE-SPEC-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Release BatchesPostRequest; file_id-only or source_id plus homogeneous mapping array.
+    Dynamic confirmation applies only to delete_source_ds.
+  reviewed_by: primary
 - command_id: batch.delete
   command_path: batch delete
   disposition: command

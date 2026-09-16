@@ -81,6 +81,46 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dashboard.archive
+  command_path: dashboard archive
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.archive
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.archive with validated request fields.
+  request_model: DashboardArchiveRequest
+  result_model: DashboardArchiveResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard archive DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard archive 123 --input ''{"archived": true}'' --output json --no-input
+    --yes --confirm 123'
+  unit_tests:
+  - UT-DASHBOARD-ARCHIVE
+  contract_tests:
+  - CT-DASHBOARD-ARCHIVE-HUMAN
+  - CT-DASHBOARD-ARCHIVE-JSON
+  - CT-DASHBOARD-ARCHIVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
 - command_id: dashboard.cancel-generation
   command_path: dashboard cancel-generation
   disposition: command
@@ -405,6 +445,40 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dashboard.context.extract
+  command_path: dashboard context extract
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExtractContext
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.extract_context
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.extract_context with validated request fields.
+  request_model: ContextExtractSpec
+  result_model: ContextExtractResponse
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Release-only supplemental binding; no disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard context extract --help
+  agent_example: 'mammoth dashboard context extract --input ''{"body": {"params": {"name": "Revenue report"}}}''
+    --output json --no-input'
+  unit_tests:
+  - tests/unit/test_context_extract.py::test_context_extract_posts_literal_release_route_and_body
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_context_extract_requires_body_wrapper_and_dispatches_exact_symbol
+  contract_tests:
+  - mammoth-cli/tests/contract/test_rel337_context_extract.py::test_rel337_schema_preserves_release_overlay
+  draft_test: null
+  undo_test: null
+  known_restrictions: Release snapshot provenance only; unverified against release.
+  reviewed_by: primary
 - command_id: dashboard.context.list
   command_path: dashboard context list
   disposition: command
@@ -523,6 +597,41 @@ commands:
   undo_test: null
   known_restrictions: 'B13 DASHBOARD_ASYNC_UNTYPED: no stable typed job or waiter exposed; keep returns_job,
     do not claim completion.'
+  reviewed_by: primary
+- command_id: dashboard.create-blank
+  command_path: dashboard create-blank
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create_blank
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.create_blank with validated request fields.
+  request_model: DashboardCreateBlankRequest
+  result_model: DashboardCreateBlankResult
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard create-blank --help
+  agent_example: 'mammoth dashboard create-blank --input ''{"params": {"dataview_id": 1}}'' --output json
+    --no-input --yes'
+  unit_tests:
+  - UT-DASHBOARD-CREATE-BLANK
+  contract_tests:
+  - CT-DASHBOARD-CREATE-BLANK-HUMAN
+  - CT-DASHBOARD-CREATE-BLANK-JSON
+  - CT-DASHBOARD-CREATE-BLANK-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
   reviewed_by: primary
 - command_id: dashboard.data.draft
   command_path: dashboard data draft
@@ -1010,6 +1119,46 @@ commands:
   - CT-DASHBOARD-PAGE-PLAN-HUMAN
   - CT-DASHBOARD-PAGE-PLAN-JSON
   - CT-DASHBOARD-PAGE-PLAN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.pages.add
+  command_path: dashboard pages add
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.add_pages
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.add_pages with validated request fields.
+  request_model: DashboardPagesAddRequest
+  result_model: DashboardPagesAddResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: returns_job
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard pages add DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard pages add 123 --input ''{"body": {"params": {"pages": [{}]}}}'' --output
+    json --no-input'
+  unit_tests:
+  - UT-DASHBOARD-PAGES-ADD
+  contract_tests:
+  - CT-DASHBOARD-PAGES-ADD-HUMAN
+  - CT-DASHBOARD-PAGES-ADD-JSON
+  - CT-DASHBOARD-PAGES-ADD-ERROR
   draft_test: null
   undo_test: null
   known_restrictions: null
@@ -2972,6 +3121,206 @@ commands:
   - CT-DASHBOARD-SUGGESTION-LIST-HUMAN
   - CT-DASHBOARD-SUGGESTION-LIST-JSON
   - CT-DASHBOARD-SUGGESTION-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.tags.delete
+  command_path: dashboard tags delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteDashboardTag
+  positionals:
+  - name: tag_id
+    type: int
+    required: true
+    metavar: TAG_ID
+    falls_back_to_field: null
+    help: ID of the tag.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.delete_tag
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.delete_tag with validated request fields.
+  request_model: DashboardTagsDeleteRequest
+  result_model: DashboardTagsDeleteResult
+  mutation_class: destructive
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard tags delete TAG_ID --help
+  agent_example: mammoth dashboard tags delete 123 --output json --no-input --yes --confirm 123
+  unit_tests:
+  - UT-DASHBOARD-TAGS-DELETE
+  contract_tests:
+  - CT-DASHBOARD-TAGS-DELETE-HUMAN
+  - CT-DASHBOARD-TAGS-DELETE-JSON
+  - CT-DASHBOARD-TAGS-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.tags.list
+  command_path: dashboard tags list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListDashboardTags
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.list_tags
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.list_tags with validated request fields.
+  request_model: DashboardTagsListRequest
+  result_model: DashboardTagsListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-TAGS-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard tags list --help
+  agent_example: mammoth dashboard tags list --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-TAGS-LIST
+  contract_tests:
+  - CT-DASHBOARD-TAGS-LIST-HUMAN
+  - CT-DASHBOARD-TAGS-LIST-JSON
+  - CT-DASHBOARD-TAGS-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.tags.merge
+  command_path: dashboard tags merge
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - MergeDashboardTags
+  positionals:
+  - name: tag_id
+    type: int
+    required: true
+    metavar: TAG_ID
+    falls_back_to_field: null
+    help: ID of the source tag.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.merge_tag
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.merge_tag with validated request fields.
+  request_model: DashboardTagsMergeRequest
+  result_model: DashboardTagsMergeResult
+  mutation_class: destructive
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard tags merge TAG_ID --help
+  agent_example: 'mammoth dashboard tags merge 123 --input ''{"target_id": 456}'' --output json --no-input
+    --yes --confirm 123'
+  unit_tests:
+  - UT-DASHBOARD-TAGS-MERGE
+  contract_tests:
+  - CT-DASHBOARD-TAGS-MERGE-HUMAN
+  - CT-DASHBOARD-TAGS-MERGE-JSON
+  - CT-DASHBOARD-TAGS-MERGE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.tags.rename
+  command_path: dashboard tags rename
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RenameDashboardTag
+  positionals:
+  - name: tag_id
+    type: int
+    required: true
+    metavar: TAG_ID
+    falls_back_to_field: null
+    help: ID of the tag.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rename_tag
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.rename_tag with validated request fields.
+  request_model: DashboardTagsRenameRequest
+  result_model: DashboardTagsRenameResult
+  mutation_class: benign_mutation
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard tags rename TAG_ID --help
+  agent_example: 'mammoth dashboard tags rename 123 --input ''{"name": "Revenue"}'' --output json --no-input
+    --yes --confirm 123'
+  unit_tests:
+  - UT-DASHBOARD-TAGS-RENAME
+  contract_tests:
+  - CT-DASHBOARD-TAGS-RENAME-HUMAN
+  - CT-DASHBOARD-TAGS-RENAME-JSON
+  - CT-DASHBOARD-TAGS-RENAME-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.tags.set
+  command_path: dashboard tags set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SetDashboardTags
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.set_tags
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.set_tags with validated request fields.
+  request_model: DashboardTagsSetRequest
+  result_model: DashboardTagsSetResult
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard tags set DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard tags set 123 --input ''{"tags": ["Revenue"]}'' --output json --no-input
+    --yes --confirm 123'
+  unit_tests:
+  - UT-DASHBOARD-TAGS-SET
+  contract_tests:
+  - CT-DASHBOARD-TAGS-SET-HUMAN
+  - CT-DASHBOARD-TAGS-SET-JSON
+  - CT-DASHBOARD-TAGS-SET-ERROR
   draft_test: null
   undo_test: null
   known_restrictions: null

@@ -10,7 +10,7 @@ import pytest
 
 from mammoth_cli.commands import view_ops as view_ops_cmd
 from mammoth_cli.errors.envelope import CliError
-from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.invocation import Invocation, ResourceRef
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
@@ -71,6 +71,33 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
     view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7"], yes=True))
     assert fake_service.call_log == [(_DELETE, {"view_id": 7})]
+
+
+def test_delete_forwards_exact_parent_positional(fake_service: FakeMammothService) -> None:
+    view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7", "122"], yes=True))
+    assert fake_service.call_log == [(_DELETE, {"view_id": 7, "dataset_id": 122})]
+
+
+def test_delete_forwards_exact_parent_input(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"dataset_id": 122})
+    view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7"], input_file=doc, yes=True))
+    assert fake_service.call_log == [(_DELETE, {"view_id": 7, "dataset_id": 122})]
+
+
+def test_delete_uses_typed_resource_parent_without_probe(
+    fake_service: FakeMammothService,
+) -> None:
+    view_ops_cmd.view_delete(
+        _inv(
+            "view.delete",
+            extra_args=["7"],
+            resource_ref=ResourceRef(workspace_id=4, project_id=180, dataset_id=122, view_id=7),
+            yes=True,
+        )
+    )
+    assert fake_service.call_log == [(_DELETE, {"view_id": 7, "dataset_id": 122})]
 
 
 # --- view draft * (``service.call_view`` seam) -----------------------------
