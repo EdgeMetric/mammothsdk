@@ -371,18 +371,18 @@ def runnable_example(
         )
     if record["command_id"] == "dashboard.import-workbook":
         # This high-impact multipart command needs explicit scope and target
-        # confirmation in its unattended example; the project placeholder is
-        # intentionally illustrative and is not a live fixture.
+        # confirmation in its unattended example. The numeric project is
+        # syntactically runnable; the sample workbook remains nonexistent.
         return shlex.join(
             [
                 "mammoth",
                 *record["command_path"].split(),
                 "sample.twbx",
                 "--project",
-                "PROJECT_ID",
+                "456",
                 "--yes",
                 "--confirm",
-                "PROJECT_ID",
+                "456",
                 *_OUTPUT_JSON_NO_INPUT,
             ]
         )

@@ -1316,7 +1316,7 @@ Total commands: 547.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.import_workbook`
-- Agent example: `mammoth dashboard import-workbook sample.twbx --project PROJECT_ID --yes --confirm PROJECT_ID --output json --no-input`
+- Agent example: `mammoth dashboard import-workbook sample.twbx --project 456 --yes --confirm 456 --output json --no-input`
 
 ### `mammoth dashboard job-by-url`
 
