@@ -1,6 +1,6 @@
 {
   "artifact": "mammoth-cli-release-capability-matrix",
-  "source_sha256": "ba1a226343eed00681d5fe0c6b82df3ae197d4dadb33ee5b4db012039005e981",
+  "source_sha256": "f57cc03e787868d77bafed3ea6ce3e15fb83b13072b99b1353f6d0c662043273",
   "source_provenance": {
     "primary_source_url": "https://release.mammoth.io/api/v2/docs/openapi.json",
     "primary_retrieved_at_utc": "2026-09-16T10:12:43Z",
@@ -2521,7 +2521,7 @@
       "capability_id": "REL-192",
       "capability": "Get dataset details",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Tier B observed dataset.get response for pre-existing dataset 120.",
+      "remarks": "Partial bounded evidence only; Tier B observed owned fixture dataset 366; independent HTTP wire capture and negative/lifecycle boundaries remain untested.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataset",
       "method": "GET",
@@ -2529,9 +2529,9 @@
       "canonical_command": "dataset.get",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.get",
       "evidence": {
-        "artifact": "evidence/readiness-closure/tier-b-live-20260916T172000Z/pilot-summary.json",
-        "command": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0011.stdout",
-        "result": "dataset_id 120 response recorded"
+        "artifact": "evidence/readiness-closure/core-readonly-next-20260916/evidence.json",
+        "command": "evidence/readiness-closure/core-readonly-next-20260916/P0-READ-002.stdout",
+        "result": "owned dataset_id 366 response; exit 0; wire not captured"
       }
     },
     {
@@ -2590,7 +2590,7 @@
       "capability_id": "REL-197",
       "capability": "Get list of dataviews present in a dataset",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Tier B observed view.list for owned dataset 364; view 283 returned.",
+      "remarks": "Partial bounded evidence only; Tier B observed view.list for owned fixture dataset 366; views 287 and 286 returned. Independent HTTP wire capture and pagination/lifecycle boundaries remain untested.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListDataviews",
       "method": "GET",
@@ -2598,23 +2598,27 @@
       "canonical_command": "view.list",
       "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.list",
       "evidence": {
-        "artifact": "evidence/readiness-closure/tier-b-live-20260916T172000Z/pilot-summary.json",
-        "command": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0013.stdout",
-        "result": "owned dataset 364 returned view 283"
+        "artifact": "evidence/readiness-closure/core-readonly-next-20260916/evidence.json",
+        "command": "evidence/readiness-closure/core-readonly-next-20260916/P0-READ-003.stdout",
+        "result": "owned dataset 366 returned views 287 and 286; exit 0; wire not captured"
       }
     },
     {
       "capability_id": "REL-198",
       "capability": "Get dataview information",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Owned fixture dataset 366/view 287 returned 3 rows and 5 columns; independent HTTP wire capture, permission/negative, pagination, and lifecycle boundaries remain untested.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewInformationIndividual",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}",
       "canonical_command": "view.get",
       "sdk_symbol": "mammoth.client.ViewsResource.get",
-      "evidence": null
+      "evidence": {
+        "artifact": "evidence/readiness-closure/core-readonly-next-20260916/evidence.json",
+        "command": "evidence/readiness-closure/core-readonly-next-20260916/P0-READ-004.stdout",
+        "result": "exit 0; sequence 0; 3 rows/5 columns; wire not captured"
+      }
     },
     {
       "capability_id": "REL-199",
@@ -2646,14 +2650,18 @@
       "capability_id": "REL-201",
       "capability": "Get dataview data",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Owned fixture dataset 366/view 287 returned 3 rows and 5 columns; independent HTTP wire capture, permission/negative, pagination, and lifecycle boundaries remain untested.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewData",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/data",
       "canonical_command": "view.data.get",
       "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.get_data",
-      "evidence": null
+      "evidence": {
+        "artifact": "evidence/readiness-closure/core-readonly-next-20260916/evidence.json",
+        "command": "evidence/readiness-closure/core-readonly-next-20260916/P0-READ-004.stdout",
+        "result": "exit 0; sequence 0; 3 rows/5 columns; wire not captured"
+      }
     },
     {
       "capability_id": "REL-202",
@@ -2867,7 +2875,7 @@
       "capability_id": "REL-218",
       "capability": "Get dataview data preview",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Tier B observed view.preview exact six-row fixture for view 283/dataset 364.",
+      "remarks": "Partial bounded evidence only; Tier B observed preview for owned fixture view 287/dataset 366: 5 columns and 3 rows. Independent HTTP wire capture, transformed/math semantics, permission/negative, and lifecycle boundaries remain untested.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewPreview",
       "method": "GET",
@@ -2875,9 +2883,9 @@
       "canonical_command": "view.preview",
       "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.preview",
       "evidence": {
-        "artifact": "evidence/readiness-closure/tier-b-live-20260916T172000Z/pilot-summary.json",
-        "command": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0014.stdout",
-        "result": "exact six fixture rows and null amount observed"
+        "artifact": "evidence/readiness-closure/core-readonly-next-20260916/evidence.json",
+        "command": "evidence/readiness-closure/core-readonly-next-20260916/P0-READ-005.stdout",
+        "result": "exit 0; 5 columns/3 rows observed; wire not captured"
       }
     },
     {
