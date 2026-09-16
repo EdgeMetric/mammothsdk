@@ -99,6 +99,29 @@ mammoth view transform math 1039 --project 180 \
   --input '{"expression": "Unit Price * Quantity", "new_column": "Revenue"}'
 ```
 
+For pipeline transformations, prefer the typed commands and inspect their
+schemas before composing input. For example:
+
+```bash
+mammoth schema get view.transform.filter --output json --no-input
+mammoth schema get view.transform.math --output json --no-input
+mammoth schema get view.transform.substring --output json --no-input
+```
+
+The generic `view task add`, `view task preview`, and `view task update`
+commands are low-level expert routes. Their `task_spec` object is intentionally
+opaque in the installed schema; use a typed `view transform` command instead
+of inventing task fields. High-impact imports must also identify and confirm
+their target explicitly, for example:
+
+```bash
+mammoth dashboard import-workbook ./sample.twbx --project 456 \
+  --yes --confirm 456 --output json --no-input
+```
+
+The sample path and project ID are placeholders for a local workbook and a
+project you have resolved and are authorized to modify.
+
 The one-line installer already set up the bundled agent skill for Claude Code,
 Codex, and Cursor. If you installed with `uv`, `pipx`, or `pip` instead:
 
