@@ -70,4 +70,7 @@ def test_generated_task_docs_do_not_present_opaque_examples_as_usable_tasks() ->
         assert '"sample_key"' not in block
         assert "illustrative low-level expert envelope" in block
         assert "Prefer typed view transform commands" in block
+        assert "`view.transform.filter`" in block
+        assert "`view.transform.math`" in block
+        assert "mammoth schema get view.transform.filter" in block
         assert "`mammoth view transform ...`" not in block

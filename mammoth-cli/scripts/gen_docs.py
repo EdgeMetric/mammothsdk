@@ -104,8 +104,11 @@ def _command_block(record: dict[str, object]) -> list[str]:
                 "  **Agent note:** this is an illustrative low-level expert envelope, not",
                 "  a guaranteed executable task. `task_spec` is opaque here and its",
                 "  task-specific union is not fully discoverable from this contract.",
-                "  Prefer typed view transform commands, and inspect",
-                "  their individual schemas before composing a transformation.",
+                "  Prefer typed view transform commands (for example",
+                "  `view.transform.filter`, `view.transform.math`, or",
+                "  `view.transform.substring`), and inspect one with",
+                "  `mammoth schema get view.transform.filter` before composing a",
+                "  transformation.",
                 "",
             ]
         )
