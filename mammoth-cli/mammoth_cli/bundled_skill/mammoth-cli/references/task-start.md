@@ -45,7 +45,11 @@ non-evaluated operator use.
    structured `--input`, `--output json`, and `--no-input`. Do not use private
    HTTP/SDK escape hatches or local data processing as a substitute.
    For pipeline transformations, prefer the typed `mammoth view transform
-   <operation>` commands. The generic `view task add`, `view task preview`, and
+   <operation>` commands. Useful typed alternatives include
+   `view.transform.filter`, `view.transform.math`, and
+   `view.transform.substring`; inspect one with
+   `mammoth schema get view.transform.filter --output json --no-input` before
+   composing its input. The generic `view task add`, `view task preview`, and
    `view task update` routes are low-level expert envelopes: `task_spec` is not
    a fully discoverable task union in the installed schema, so do not invent
    fields from its opaque object shape.

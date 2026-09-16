@@ -190,6 +190,10 @@ def test_installed_wheel_runs(wheelhouse: Path, tmp_path: Path) -> None:
     assert "python -m venv .mammoth-cli-env" in task_start_text
     assert "authorized/mammoth_cli-PINNED_VERSION" in task_start_text
     assert "install an unpinned latest version" in task_start_text
+    assert "view.transform.filter" in task_start_text
+    assert "view.transform.math" in task_start_text
+    assert "view.transform.substring" in task_start_text
+    assert "mammoth schema get view.transform.filter" in task_start_text
     assert "outcome_unknown" in (installed_skill / "SKILL.md").read_text(encoding="utf-8")
 
     skill_path = subprocess.run(
