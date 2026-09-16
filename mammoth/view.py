@@ -325,10 +325,11 @@ class View(
                 # The POST has already returned successfully.  A timeout or
                 # failed readback must not be reported as a clean retryable
                 # read: replaying the transform could duplicate the task.
-                handle = next(
+                task_id = result.get("task_id") if isinstance(result, dict) else None
+                job_handle = next(
                     (
                         result.get(key)
-                        for key in ("task_id", "id", "job_id", "future_id")
+                        for key in ("job_id", "future_id")
                         if isinstance(result, dict) and result.get(key) is not None
                     ),
                     None,
@@ -338,7 +339,8 @@ class View(
                     "Task was submitted, but pipeline readback did not complete.",
                     details={
                         "post_submitted": True,
-                        "task_handle": handle,
+                        "task_handle": task_id,
+                        "job_handle": job_handle,
                         "dataview_id": self.id,
                         "dataset_id": self.dataset_id,
                         "project_id": getattr(self._client, "project_id", None),
@@ -346,7 +348,7 @@ class View(
                     },
                     method="POST",
                     operation_state="outcome_unknown",
-                    job_handle=handle,
+                    job_handle=job_handle,
                     phase="post_submit_readback",
                 ) from exc
         return result
