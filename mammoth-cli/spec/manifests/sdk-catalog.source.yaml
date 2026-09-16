@@ -1335,6 +1335,42 @@ sdk_methods:
   pagination_policy: none
   openapi_operation_ids:
   - ExtractContext
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.extract_exemplar
+  canonical_command: dashboard.exemplar.extract
+  alias_of: null
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ExtractExemplar
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.swap_data
+  canonical_command: dashboard.swap-data
+  alias_of: null
+  mutation_class: benign_mutation
+  confirmation: confirm_target
+  wait_policy: always_wait
+  pagination_policy: none
+  openapi_operation_ids:
+  - SwapDashboardData
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.take_pending_template
+  canonical_command: dashboard.templates.pending
+  alias_of: null
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - DashboardV3TakePendingTemplate
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.use_template
+  canonical_command: dashboard.templates.use
+  alias_of: null
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: always_wait
+  pagination_policy: none
+  openapi_operation_ids:
+  - UseTemplate
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.pdf_artifact
   canonical_command: dashboard.pdf-artifact
   alias_of: null

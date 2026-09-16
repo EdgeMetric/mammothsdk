@@ -36,6 +36,8 @@ _WIDGET_DATA = "mammoth.api.dashboards.DashboardsAPI.widget_data"
 _WIDGET_DATA_BY_URL = "mammoth.api.dashboards.DashboardsAPI.widget_data_by_url"
 _ADD_PAGES = "mammoth.api.dashboards.DashboardsAPI.add_pages"
 _EXTRACT_CONTEXT = "mammoth.api.dashboards.DashboardsAPI.extract_context"
+_EXTRACT_EXEMPLAR = "mammoth.api.dashboards.DashboardsAPI.extract_exemplar"
+_SWAP_DATA = "mammoth.api.dashboards.DashboardsAPI.swap_data"
 
 
 @pytest.fixture(autouse=True)
@@ -134,6 +136,33 @@ def test_context_extract_requires_body_wrapper_and_dispatches_exact_symbol(
     dashboard_cmd.generated_dashboard(_inv("dashboard.context.extract", input_file=wrapped))
     assert fake_service.call_log == [
         (_EXTRACT_CONTEXT, {"body": {"params": {"name": "context.txt", "size": 0}}})
+    ]
+
+
+def test_exemplar_extract_requires_body_wrapper_and_dispatches_exact_symbol(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    bare = _write_doc(tmp_path, {"params": {"name": "example.pdf"}})
+    with pytest.raises(CliError):
+        dashboard_cmd.generated_dashboard(_inv("dashboard.exemplar.extract", input_file=bare))
+    assert fake_service.call_log == []
+
+    wrapped = _write_doc(tmp_path, {"body": {"params": {"name": "example.pdf", "size": 0}}})
+    dashboard_cmd.generated_dashboard(_inv("dashboard.exemplar.extract", input_file=wrapped))
+    assert fake_service.call_log == [
+        (_EXTRACT_EXEMPLAR, {"body": {"params": {"name": "example.pdf", "size": 0}}})
+    ]
+
+
+def test_swap_data_dispatches_exact_symbol(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_doc(tmp_path, {"body": {"params": {"dataview_id": 9}}})
+    dashboard_cmd.generated_dashboard(
+        _inv("dashboard.swap-data", extra_args=["7"], input_file=doc, yes=True, confirm="7")
+    )
+    assert fake_service.call_log == [
+        (_SWAP_DATA, {"dashboard_id": 7, "body": {"params": {"dataview_id": 9}}})
     ]
 
 

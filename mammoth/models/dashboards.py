@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
@@ -49,6 +49,76 @@ class ContextExtractResponse(BaseModel):
     suggestions: dict[str, str] = Field(default_factory=dict)
     condensed: dict[str, bool] = Field(default_factory=dict)
     skipped: dict[str, Any] | None = None
+
+
+class ExemplarExtractParams(BaseModel):
+    """Release parameters for extracting an example report."""
+
+    model_config = ConfigDict(extra="forbid")
+    name: str
+    size: StrictInt = 0
+    type: str | None = None
+    content: str | None = None
+    text: str | None = None
+    dataview_id: StrictInt | None = None
+    table_item_id: StrictInt | None = None
+
+
+class ExemplarExtractSpec(BaseModel):
+    """Request envelope for extracting an example report."""
+
+    model_config = ConfigDict(extra="forbid")
+    params: ExemplarExtractParams
+
+
+class ExemplarExtractResponse(BaseModel):
+    """Editable dashboard spec and extraction metadata."""
+
+    model_config = ConfigDict(extra="allow")
+    spec: dict[str, Any] | None = None
+    rejected: dict[str, Any] | None = None
+    source: dict[str, Any] = Field(default_factory=dict)
+    palette: list[str] = Field(default_factory=list)
+    measures: list[str] = Field(default_factory=list)
+    countable: list[str] = Field(default_factory=list)
+    brand: dict[str, Any] = Field(default_factory=dict)
+    scopes: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class SwapDataParams(BaseModel):
+    """Parameters for re-pointing a dashboard at a dataset."""
+
+    model_config = ConfigDict(extra="forbid")
+    dataview_id: StrictInt = Field(ge=1)
+    mapping: dict[str, Any] | None = None
+    overrides: dict[str, str | None] | None = None
+
+
+class SwapDataSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    params: SwapDataParams
+
+
+class PendingTemplateResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    slug: str | None = None
+
+
+class UseTemplateParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    project_id: StrictInt = Field(ge=1)
+    request_token: str | None = Field(default=None, max_length=64)
+    style_id: str = Field(default="", max_length=128)
+    mode: Literal["light", "dark"] | None = None
+    show_summary: bool | None = None
+    show_filters: bool | None = None
+    kpi_style: Literal["cards", "accent", "tinted", "strip"] | None = None
+    insight_style: Literal["list", "tinted", "cards", "numbered", "banner"] | None = None
+
+
+class UseTemplateSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    params: UseTemplateParams
 
 
 class DashboardSource(BaseModel):

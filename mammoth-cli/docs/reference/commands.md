@@ -3,7 +3,7 @@
 Generated from the reviewed command manifests for mammoth-cli 1.1.0.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 
-Total commands: 540.
+Total commands: 544.
 
 ## activity
 
@@ -1245,6 +1245,13 @@ Total commands: 540.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.duplicate`
 - Agent example: `mammoth dashboard duplicate 123 --output json --no-input`
 
+### `mammoth dashboard exemplar extract`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.extract_exemplar`
+- Agent example: `mammoth dashboard exemplar extract --input '{"body": {"params": {"name": "Revenue report"}}}' --output json --no-input`
+
 ### `mammoth dashboard figure-intent`
 
 **Arguments**
@@ -1820,6 +1827,17 @@ Total commands: 540.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.suggestion_list`
 - Agent example: `mammoth dashboard suggestion list 123 --output json --no-input`
 
+### `mammoth dashboard swap-data`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.swap_data`
+- Agent example: `mammoth dashboard swap-data 123 --input '{"body": {"params": {"dataview_id": 1}}}' --output json --no-input`
+
 ### `mammoth dashboard tags delete`
 
 **Arguments**
@@ -1949,6 +1967,24 @@ Total commands: 540.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.template_resolve_mapping`
 - Agent example: `mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}' --output json --no-input`
+
+### `mammoth dashboard templates pending`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.take_pending_template`
+- Agent example: `mammoth dashboard templates pending --output json --no-input`
+
+### `mammoth dashboard templates use`
+
+**Arguments**
+
+- `SLUG` (str, required) — Template slug.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.use_template`
+- Agent example: `mammoth dashboard templates use sample --input '{"body": {"params": {"project_id": 1}}}' --output json --no-input`
 
 ### `mammoth dashboard trash`
 

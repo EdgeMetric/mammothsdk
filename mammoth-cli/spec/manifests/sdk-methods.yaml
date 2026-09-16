@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 565
+method_count: 569
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -2078,6 +2078,19 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.extract_exemplar
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.extract_exemplar
+  signature: 'extract_exemplar(self, body: ''ExemplarExtractSpec'') -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - ExtractExemplar
+  canonical_command: dashboard.exemplar.extract
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.figure_intent
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.figure_intent
   signature: 'figure_intent(self: ''Any'', dashboard_id: ''int'', body: ''FigureIntentSpec'') -> ''FigureIntentResponse'''
@@ -2841,6 +2854,32 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.swap_data
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.swap_data
+  signature: 'swap_data(self, dashboard_id: ''int'', body: ''SwapDataSpec'') -> ''ObjectJobSchema'''
+  openapi_operation_ids:
+  - SwapDashboardData
+  canonical_command: dashboard.swap-data
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.take_pending_template
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.take_pending_template
+  signature: take_pending_template(self) -> 'dict[str, Any]'
+  openapi_operation_ids:
+  - DashboardV3TakePendingTemplate
+  canonical_command: dashboard.templates.pending
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_apply
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.template_apply
   signature: 'template_apply(self: ''Any'', body: ''ApplyTemplateSpec'') -> ''ObjectJobSchema | JobResponse'''
@@ -2972,6 +3011,19 @@ methods:
   no_command_reason: null
   mutation_class: benign_mutation
   wait_policy: returns_job
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.use_template
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.use_template
+  signature: 'use_template(self, slug: ''str'', body: ''UseTemplateSpec'') -> ''ObjectJobSchema | JobResponse'''
+  openapi_operation_ids:
+  - UseTemplate
+  canonical_command: dashboard.templates.use
+  alias_of: null
+  no_command_reason: null
+  mutation_class: high_impact
+  wait_policy: always_wait
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary

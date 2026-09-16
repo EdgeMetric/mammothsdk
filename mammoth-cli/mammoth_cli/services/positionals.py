@@ -127,6 +127,9 @@ def _optional_project_id() -> tuple[PositionalSpec, ...]:
 # Commands whose positionals the signature cannot express correctly. Each entry
 # replaces the derivation wholesale; the drift test proves the union is right.
 POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
+    "dashboard.templates.use": (
+        PositionalSpec(name="slug", type=str, required=True, help="Template slug."),
+    ),
     "dashboard.tags.merge": (
         PositionalSpec(name="tag_id", type=int, required=True, help="ID of the source tag."),
     ),

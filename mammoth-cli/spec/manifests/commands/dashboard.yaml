@@ -839,6 +839,40 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dashboard.exemplar.extract
+  command_path: dashboard exemplar extract
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExtractExemplar
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.extract_exemplar
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.extract_exemplar with validated request fields.
+  request_model: ExemplarExtractSpec
+  result_model: ExemplarExtractResponse
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Release-only supplemental binding; no disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard exemplar extract --help
+  agent_example: 'mammoth dashboard exemplar extract --input ''{"body": {"params": {"name": "Revenue report"}}}''
+    --output json --no-input'
+  unit_tests:
+  - tests/unit/test_exemplar_extract.py::test_exemplar_extract_posts_literal_release_route_and_body
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_exemplar_extract_requires_body_wrapper_and_dispatches_exact_symbol
+  contract_tests:
+  - mammoth-cli/tests/contract/test_rel338_exemplar_extract.py::test_rel338_schema_preserves_release_overlay
+  draft_test: null
+  undo_test: null
+  known_restrictions: Release snapshot provenance only; unverified against release.
+  reviewed_by: primary
 - command_id: dashboard.figure-intent
   command_path: dashboard figure-intent
   disposition: command
@@ -3125,6 +3159,46 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dashboard.swap-data
+  command_path: dashboard swap-data
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SwapDashboardData
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.swap_data
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.swap_data with validated request fields.
+  request_model: SwapDataSpec
+  result_model: ObjectJobSchema
+  mutation_class: benign_mutation
+  confirmation: confirm_target
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Release-only supplemental binding; no disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard swap-data DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard swap-data 123 --input ''{"body": {"params": {"dataview_id": 1}}}''
+    --output json --no-input'
+  unit_tests:
+  - tests/unit/test_swap_data.py::test_swap_data_posts_literal_release_route_and_body
+  - mammoth-cli/tests/unit/commands/test_dashboard.py::test_swap_data_dispatches_exact_symbol
+  contract_tests:
+  - mammoth-cli/tests/contract/test_rel359_swap_data.py::test_rel359_schema_preserves_release_overlay
+  draft_test: null
+  undo_test: null
+  known_restrictions: Release snapshot provenance only; unverified against release.
+  reviewed_by: primary
 - command_id: dashboard.tags.delete
   command_path: dashboard tags delete
   disposition: command
@@ -3666,6 +3740,78 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
+  reviewed_by: primary
+- command_id: dashboard.templates.pending
+  command_path: dashboard templates pending
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DashboardV3TakePendingTemplate
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.take_pending_template
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.take_pending_template with validated request
+    fields.
+  request_model: DashboardTemplatePendingRequest
+  result_model: PendingTemplateResponse
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Release-only supplemental binding; no disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard templates pending --help
+  agent_example: mammoth dashboard templates pending --output json --no-input
+  unit_tests:
+  - tests/unit/test_template_bindings.py::test_take_pending_template_posts_exact_route
+  contract_tests:
+  - mammoth-cli/tests/contract/test_rel353_templates.py::test_rel353_schema_preserves_release_overlay
+  draft_test: null
+  undo_test: null
+  known_restrictions: Release snapshot provenance only; unverified against release.
+  reviewed_by: primary
+- command_id: dashboard.templates.use
+  command_path: dashboard templates use
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UseTemplate
+  positionals:
+  - name: slug
+    type: str
+    required: true
+    metavar: SLUG
+    falls_back_to_field: null
+    help: Template slug.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.use_template
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.use_template with validated request fields.
+  request_model: UseTemplateSpec
+  result_model: ObjectJobSchema | JobResponse
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Release-only supplemental binding; no disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard templates use SLUG --help
+  agent_example: 'mammoth dashboard templates use sample --input ''{"body": {"params": {"project_id":
+    1}}}'' --output json --no-input'
+  unit_tests:
+  - tests/unit/test_template_bindings.py::test_use_template_posts_exact_route
+  contract_tests:
+  - mammoth-cli/tests/contract/test_rel356_templates.py::test_rel356_schema_preserves_release_overlay
+  draft_test: null
+  undo_test: null
+  known_restrictions: Release snapshot provenance only; unverified against release.
   reviewed_by: primary
 - command_id: dashboard.trash
   command_path: dashboard trash

@@ -308,6 +308,8 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
   example: mammoth dashboard descriptor-data 123 --input '{"body": {"params": {"descriptor_ids": ["resource-123"]}}}' --output json --no-input
 - `mammoth dashboard duplicate` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.duplicate
   example: mammoth dashboard duplicate 123 --output json --no-input
+- `mammoth dashboard exemplar extract` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.extract_exemplar
+  example: mammoth dashboard exemplar extract --input '{"body": {"params": {"name": "Revenue report"}}}' --output json --no-input
 - `mammoth dashboard figure-intent` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.figure_intent
   example: mammoth dashboard figure-intent 123 --input '{"body": {"params": {"intent": "Summarize revenue by region"}}}' --output json --no-input
 - `mammoth dashboard get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get
@@ -418,6 +420,8 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
   example: mammoth dashboard style token list resource-123 --output json --no-input
 - `mammoth dashboard suggestion list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.suggestion_list
   example: mammoth dashboard suggestion list 123 --output json --no-input
+- `mammoth dashboard swap-data` [benign_mutation/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.swap_data
+  example: mammoth dashboard swap-data 123 --input '{"body": {"params": {"dataview_id": 1}}}' --output json --no-input
 - `mammoth dashboard tags delete` [destructive/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.delete_tag
   example: mammoth dashboard tags delete 123 --output json --no-input --yes --confirm 123
 - `mammoth dashboard tags list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.list_tags
@@ -446,6 +450,10 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
   example: mammoth dashboard template rename resource-123 --input '{"body": {"params": {"title": "Revenue report"}}}' --output json --no-input
 - `mammoth dashboard template resolve-mapping` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.template_resolve_mapping
   example: mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}' --output json --no-input
+- `mammoth dashboard templates pending` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.take_pending_template
+  example: mammoth dashboard templates pending --output json --no-input
+- `mammoth dashboard templates use` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.use_template
+  example: mammoth dashboard templates use sample --input '{"body": {"params": {"project_id": 1}}}' --output json --no-input
 - `mammoth dashboard trash` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.trash
   example: mammoth dashboard trash 123 --output json --no-input
 - `mammoth dashboard update` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.update

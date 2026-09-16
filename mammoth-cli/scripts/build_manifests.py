@@ -458,6 +458,63 @@ def build() -> dict[str, int]:
             ],
         )
 
+    if "dashboard.exemplar.extract" in commands:
+        commands["dashboard.exemplar.extract"].update(
+            operation_ids=["ExtractExemplar"],
+            request_model="ExemplarExtractSpec",
+            result_model="ExemplarExtractResponse",
+            acceptance_evidence="contract_only_no_disposable_fixture",
+            live_exemption_reason="Release-only supplemental binding; no disposable fixture.",
+            known_restrictions="Release snapshot provenance only; unverified against release.",
+            unit_tests=[
+                "tests/unit/test_exemplar_extract.py::test_exemplar_extract_posts_literal_release_route_and_body",
+                "mammoth-cli/tests/unit/commands/test_dashboard.py::test_exemplar_extract_requires_body_wrapper_and_dispatches_exact_symbol",
+            ],
+            contract_tests=[
+                "mammoth-cli/tests/contract/test_rel338_exemplar_extract.py::test_rel338_schema_preserves_release_overlay"
+            ],
+        )
+
+    if "dashboard.swap-data" in commands:
+        commands["dashboard.swap-data"].update(
+            operation_ids=["SwapDashboardData"], request_model="SwapDataSpec",
+            result_model="ObjectJobSchema",
+            acceptance_evidence="contract_only_no_disposable_fixture",
+            wait_policy="always_wait",
+            live_exemption_reason="Release-only supplemental binding; no disposable fixture.",
+            known_restrictions="Release snapshot provenance only; unverified against release.",
+            unit_tests=["tests/unit/test_swap_data.py::test_swap_data_posts_literal_release_route_and_body",
+                        "mammoth-cli/tests/unit/commands/test_dashboard.py::test_swap_data_dispatches_exact_symbol"],
+            contract_tests=["mammoth-cli/tests/contract/test_rel359_swap_data.py::test_rel359_schema_preserves_release_overlay"],
+        )
+
+    if "dashboard.templates.pending" in commands:
+        commands["dashboard.templates.pending"].update(
+            operation_ids=["DashboardV3TakePendingTemplate"],
+            request_model="DashboardTemplatePendingRequest",
+            result_model="PendingTemplateResponse",
+            acceptance_evidence="contract_only_no_disposable_fixture",
+            live_exemption_reason="Release-only supplemental binding; no disposable fixture.",
+            known_restrictions="Release snapshot provenance only; unverified against release.",
+            unit_tests=["tests/unit/test_template_bindings.py::test_take_pending_template_posts_exact_route"],
+            contract_tests=["mammoth-cli/tests/contract/test_rel353_templates.py::test_rel353_schema_preserves_release_overlay"],
+        )
+    if "dashboard.templates.use" in commands:
+        commands["dashboard.templates.use"].update(
+            operation_ids=["UseTemplate"], request_model="UseTemplateSpec",
+            result_model="ObjectJobSchema | JobResponse",
+            acceptance_evidence="contract_only_no_disposable_fixture",
+            live_exemption_reason="Release-only supplemental binding; no disposable fixture.",
+            known_restrictions="Release snapshot provenance only; unverified against release.",
+            agent_example=(
+                "mammoth dashboard templates use sample --input "
+                "'{\"body\": {\"params\": {\"project_id\": 1}}}' "
+                "--output json --no-input"
+            ),
+            unit_tests=["tests/unit/test_template_bindings.py::test_use_template_posts_exact_route"],
+            contract_tests=["mammoth-cli/tests/contract/test_rel356_templates.py::test_rel356_schema_preserves_release_overlay"],
+        )
+
     # write grouped by top-level group
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for command_id, record in commands.items():

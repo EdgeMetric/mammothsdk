@@ -320,6 +320,10 @@ HANDLERS: dict[str, Handler] = {
     "dashboard.widget-data-by-url": dashboard_cmd.dashboard_widget_data_by_url,
     "dashboard.pages.add": dashboard_cmd.generated_dashboard,
     "dashboard.context.extract": dashboard_cmd.generated_dashboard,
+    "dashboard.exemplar.extract": dashboard_cmd.generated_dashboard,
+    "dashboard.swap-data": dashboard_cmd.generated_dashboard,
+    "dashboard.templates.pending": dashboard_cmd.generated_dashboard,
+    "dashboard.templates.use": dashboard_cmd.generated_dashboard,
     # workflow family
     "workflow.block.add": workflow_cmd.workflow_block_add,
     "workflow.block.auth": workflow_cmd.workflow_block_auth,

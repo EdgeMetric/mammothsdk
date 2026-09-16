@@ -34,6 +34,12 @@ CATALOG_COMMAND_REMAP = {
 # that do not map 1:1 to a single operation (they share an operation).
 EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "dashboard.context.extract": {"operation_ids": ["ExtractContext"], "method": "POST"},
+    "dashboard.exemplar.extract": {"operation_ids": ["ExtractExemplar"], "method": "POST"},
+    "dashboard.swap-data": {"operation_ids": ["SwapDashboardData"], "method": "POST"},
+    "dashboard.templates.pending": {
+        "operation_ids": ["DashboardV3TakePendingTemplate"], "method": "POST"
+    },
+    "dashboard.templates.use": {"operation_ids": ["UseTemplate"], "method": "POST"},
     # All typed transforms add one pipeline task.
     **{
         f"view.transform.{name}": {"operation_ids": ["AddTask"], "method": "POST"}

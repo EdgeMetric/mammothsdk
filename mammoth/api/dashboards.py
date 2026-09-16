@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import builtins
 from typing import TYPE_CHECKING, Any
+from urllib.parse import quote
 
 from pydantic import ValidationError
 
@@ -20,9 +21,15 @@ from mammoth.models.dashboards import (
     DashboardPatchPath,
     DashboardShareUser,
     DashboardTagsParams,
+    ExemplarExtractResponse,
+    ExemplarExtractSpec,
+    PendingTemplateResponse,
+    SwapDataSpec,
     TagMergeParams,
     TagRenameParams,
+    UseTemplateSpec,
 )
+from mammoth.models.jobs import JobResponse, ObjectJobSchema
 
 if TYPE_CHECKING:
     from ..client import MammothClient
@@ -263,6 +270,71 @@ class DashboardsAPI:
             return ContextExtractResponse.model_validate(response).model_dump(mode="json")
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid context-extract response: {exc}") from exc
+
+    def extract_exemplar(self, body: ExemplarExtractSpec) -> dict[str, Any]:
+        """Extract an example report into an editable dashboard spec."""
+        try:
+            typed = (
+                body
+                if isinstance(body, ExemplarExtractSpec)
+                else ExemplarExtractSpec.model_validate(body)
+            )
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid exemplar-extract parameters: {exc}") from exc
+        response = self._client._request_json(
+            "POST", "/dashboards/v3/exemplar/extract",
+            json=typed.model_dump(mode="json", exclude_none=True),
+        )
+        try:
+            return ExemplarExtractResponse.model_validate(response).model_dump(mode="json")
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid exemplar-extract response: {exc}") from exc
+
+    def swap_data(self, dashboard_id: int, body: SwapDataSpec) -> ObjectJobSchema:
+        """Re-point a v3 dashboard at a different dataset."""
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        try:
+            typed = body if isinstance(body, SwapDataSpec) else SwapDataSpec.model_validate(body)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid swap-data parameters: {exc}") from exc
+        response = self._client._request_json(
+            "POST", f"/dashboards/v3/{dashboard_id}/swap-data",
+            json=typed.model_dump(mode="json", exclude_none=True),
+        )
+        try:
+            return ObjectJobSchema.model_validate(response)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid swap-data response: {exc}") from exc
+
+    def take_pending_template(self) -> dict[str, Any]:
+        """Claim the pending dashboard template for the workspace."""
+        response = self._client._request_json("POST", "/dashboards/v3/templates/pending")
+        try:
+            return PendingTemplateResponse.model_validate(response).model_dump(mode="json")
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid pending-template response: {exc}") from exc
+
+    def use_template(self, slug: str, body: UseTemplateSpec) -> ObjectJobSchema | JobResponse:
+        """Instantiate a dashboard template on its sample data."""
+        if not isinstance(slug, str) or not slug:
+            raise MammothValidationError("`slug` must be a non-empty string.")
+        try:
+            typed = (
+                body if isinstance(body, UseTemplateSpec) else UseTemplateSpec.model_validate(body)
+            )
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid use-template parameters: {exc}") from exc
+        response = self._client._request_json(
+            "POST", f"/dashboards/v3/templates/{quote(slug, safe='')}/use",
+            json=typed.model_dump(mode="json", exclude_none=True),
+        )
+        try:
+            if isinstance(response, dict) and "job" in response:
+                return JobResponse.model_validate(response)
+            return ObjectJobSchema.model_validate(response)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid use-template response: {exc}") from exc
 
     def update(
         self,
