@@ -369,6 +369,23 @@ def runnable_example(
                 "--project", "456",
             ]
         )
+    if record["command_id"] == "dashboard.import-workbook":
+        # This high-impact multipart command needs explicit scope and target
+        # confirmation in its unattended example; the project placeholder is
+        # intentionally illustrative and is not a live fixture.
+        return shlex.join(
+            [
+                "mammoth",
+                *record["command_path"].split(),
+                "sample.twbx",
+                "--project",
+                "PROJECT_ID",
+                "--yes",
+                "--confirm",
+                "PROJECT_ID",
+                *_OUTPUT_JSON_NO_INPUT,
+            ]
+        )
     # The backend's generic task_spec envelope is intentionally opaque in the
     # SDK signature. Keep the generated example structurally valid, while
     # agent-facing docs direct users to typed view.transform.* commands.
