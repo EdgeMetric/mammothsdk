@@ -56,7 +56,8 @@ def main() -> None:
             safe_rows[-1]["canonical_command"] = command
             safe_rows[-1]["sdk_symbol"] = symbol
             safe_rows[-1]["remarks"] += (
-                " Current checkout binding is dirty-only; release behavior remains unverified."
+                " Current checkout binding is committed structural mapping; release behavior "
+                "remains unverified."
             )
     expected_counts = {"Full": 0, "Partial": 7, "Not supported": 0, "Unassessed": 521}
     if len(safe_rows) != 528 or counts != expected_counts:
@@ -97,7 +98,24 @@ def main() -> None:
     for row in safe_rows:
 
         def cell(value: object) -> str:
-            return str(value if value is not None else "—").replace("|", "\\|").replace("\n", " ")
+            if value is None:
+                rendered = "—"
+            elif isinstance(value, dict):
+                # Keep artifact links readable in Markdown instead of leaking
+                # Python's raw dictionary representation into the matrix.
+                def item_text(item: object) -> str:
+                    if isinstance(item, list):
+                        return ", ".join(str(entry) for entry in item)
+                    return str(item)
+
+                rendered = "; ".join(
+                    f"{key}={item_text(item)}"
+                    for key, item in value.items()
+                    if item is not None
+                )
+            else:
+                rendered = str(value)
+            return rendered.replace("|", "\\|").replace("\n", " ")
 
         lines.append(
             "| "

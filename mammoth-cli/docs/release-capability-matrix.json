@@ -1,6 +1,6 @@
 {
   "artifact": "mammoth-cli-release-capability-matrix",
-  "source_sha256": "f57cc03e787868d77bafed3ea6ce3e15fb83b13072b99b1353f6d0c662043273",
+  "source_sha256": "d5863cd64bf441930dea28bff29c3fb199b26b770be4c735128c775905c741b1",
   "source_provenance": {
     "primary_source_url": "https://release.mammoth.io/api/v2/docs/openapi.json",
     "primary_retrieved_at_utc": "2026-09-16T10:12:43Z",
@@ -35,7 +35,7 @@
       "capability_id": "REL-002",
       "capability": "Delete a tag from the workspace vocabulary",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is dirty-only; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDashboardTag",
       "method": "DELETE",
@@ -966,14 +966,16 @@
       "capability_id": "REL-073",
       "capability": "List all dashboards",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded release read succeeded; no independent wire evidence; support remains Unassessed.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListDashboard",
       "method": "GET",
       "path": "/dashboards",
       "canonical_command": "dashboard.list",
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.list",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/rel-073-workspace-scoped-diagnostic-20260917.json"
+      }
     },
     {
       "capability_id": "REL-074",
@@ -1070,7 +1072,7 @@
       "capability_id": "REL-081",
       "capability": "List the workspace tag vocabulary",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is dirty-only; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListDashboardTags",
       "method": "GET",
@@ -1174,40 +1176,46 @@
       "capability_id": "REL-089",
       "capability": "The workspace's contexts",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded release read succeeded; no independent wire evidence; support remains Unassessed.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListContexts",
       "method": "GET",
       "path": "/dashboards/v3/contexts",
       "canonical_command": "dashboard.context.list",
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.context_list",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917b-remaining-run.json"
+      }
     },
     {
       "capability_id": "REL-090",
       "capability": "The workspace's signatures",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded release read succeeded; no independent wire evidence; support remains Unassessed.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListSignatures",
       "method": "GET",
       "path": "/dashboards/v3/signatures",
       "canonical_command": "dashboard.signature.list",
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.signature_list",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917b-remaining-run.json"
+      }
     },
     {
       "capability_id": "REL-091",
       "capability": "The workspace's custom styles",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded release read succeeded; no independent wire evidence; support remains Unassessed.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListCustomStyles",
       "method": "GET",
       "path": "/dashboards/v3/styles/custom",
       "canonical_command": "dashboard.style.custom.list",
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.style_custom_list",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917b-remaining-run.json"
+      }
     },
     {
       "capability_id": "REL-092",
@@ -1265,14 +1273,16 @@
       "capability_id": "REL-096",
       "capability": "Curated template catalog",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded release read succeeded; no independent wire evidence; support remains Unassessed.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3ListTemplates",
       "method": "GET",
       "path": "/dashboards/v3/templates",
       "canonical_command": "dashboard.template.list",
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.template_list",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917b-remaining-run.json"
+      }
     },
     {
       "capability_id": "REL-097",
@@ -1798,14 +1808,16 @@
       "capability_id": "REL-137",
       "capability": "Fetch user preferences",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded release read succeeded; no independent wire evidence; support remains Unassessed.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetUserPreferences",
       "method": "GET",
       "path": "/preferences",
       "canonical_command": "user.preference.get",
       "sdk_symbol": "mammoth.api.user_profile.UserProfileAPI.get_preferences",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917b-continuation.json"
+      }
     },
     {
       "capability_id": "REL-138",
@@ -2400,14 +2412,18 @@
       "capability_id": "REL-183",
       "capability": "Get all checkpoints across a project",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetProjectCheckpoints",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/checkpoints",
       "canonical_command": "project.checkpoint.list",
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.checkpoint_list",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+      }
     },
     {
       "capability_id": "REL-184",
@@ -2491,20 +2507,24 @@
       "capability_id": "REL-190",
       "capability": "Get all data checks across a project",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetProjectDataChecks",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/data-checks",
       "canonical_command": "project.data-check.list",
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.data_check_list",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+      }
     },
     {
       "capability_id": "REL-191",
       "capability": "Get list of datasets",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Tier B observed dataset.list response in workspace 4/project 3; dataset 120 returned.",
+      "remarks": "Partial bounded evidence only; Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDatasets",
       "method": "GET",
@@ -2512,16 +2532,16 @@
       "canonical_command": "dataset.list",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.list",
       "evidence": {
-        "artifact": "evidence/readiness-closure/tier-b-live-20260916T172000Z/pilot-summary.json",
-        "command": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0010.stdout",
-        "result": "dataset 120 returned"
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
       }
     },
     {
       "capability_id": "REL-192",
       "capability": "Get dataset details",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Tier B observed owned fixture dataset 366; independent HTTP wire capture and negative/lifecycle boundaries remain untested.",
+      "remarks": "Partial bounded evidence only; Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataset",
       "method": "GET",
@@ -2529,36 +2549,44 @@
       "canonical_command": "dataset.get",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.get",
       "evidence": {
-        "artifact": "evidence/readiness-closure/core-readonly-next-20260916/evidence.json",
-        "command": "evidence/readiness-closure/core-readonly-next-20260916/P0-READ-002.stdout",
-        "result": "owned dataset_id 366 response; exit 0; wire not captured"
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
       }
     },
     {
       "capability_id": "REL-193",
       "capability": "List batches",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetBatches",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/batches",
       "canonical_command": "batch.list",
       "sdk_symbol": "mammoth.api.batches.BatchesAPI.list",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+      }
     },
     {
       "capability_id": "REL-194",
       "capability": "List batches",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetBatch",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/batches/{batch_id}",
       "canonical_command": "batch.get",
       "sdk_symbol": "mammoth.api.batches.BatchesAPI.get",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+      }
     },
     {
       "capability_id": "REL-195",
@@ -2577,20 +2605,24 @@
       "capability_id": "REL-196",
       "capability": "Get dataset data",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDatasetData",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/data",
       "canonical_command": "dataset.data",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.get_data",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+      }
     },
     {
       "capability_id": "REL-197",
       "capability": "Get list of dataviews present in a dataset",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Tier B observed view.list for owned fixture dataset 366; views 287 and 286 returned. Independent HTTP wire capture and pagination/lifecycle boundaries remain untested.",
+      "remarks": "Partial bounded evidence only; Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListDataviews",
       "method": "GET",
@@ -2598,16 +2630,16 @@
       "canonical_command": "view.list",
       "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.list",
       "evidence": {
-        "artifact": "evidence/readiness-closure/core-readonly-next-20260916/evidence.json",
-        "command": "evidence/readiness-closure/core-readonly-next-20260916/P0-READ-003.stdout",
-        "result": "owned dataset 366 returned views 287 and 286; exit 0; wire not captured"
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
       }
     },
     {
       "capability_id": "REL-198",
       "capability": "Get dataview information",
       "status": "Unassessed",
-      "remarks": "Owned fixture dataset 366/view 287 returned 3 rows and 5 columns; independent HTTP wire capture, permission/negative, pagination, and lifecycle boundaries remain untested.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewInformationIndividual",
       "method": "GET",
@@ -2615,9 +2647,9 @@
       "canonical_command": "view.get",
       "sdk_symbol": "mammoth.client.ViewsResource.get",
       "evidence": {
-        "artifact": "evidence/readiness-closure/core-readonly-next-20260916/evidence.json",
-        "command": "evidence/readiness-closure/core-readonly-next-20260916/P0-READ-004.stdout",
-        "result": "exit 0; sequence 0; 3 rows/5 columns; wire not captured"
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
       }
     },
     {
@@ -2650,7 +2682,7 @@
       "capability_id": "REL-201",
       "capability": "Get dataview data",
       "status": "Unassessed",
-      "remarks": "Owned fixture dataset 366/view 287 returned 3 rows and 5 columns; independent HTTP wire capture, permission/negative, pagination, and lifecycle boundaries remain untested.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewData",
       "method": "GET",
@@ -2658,9 +2690,9 @@
       "canonical_command": "view.data.get",
       "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.get_data",
       "evidence": {
-        "artifact": "evidence/readiness-closure/core-readonly-next-20260916/evidence.json",
-        "command": "evidence/readiness-closure/core-readonly-next-20260916/P0-READ-004.stdout",
-        "result": "exit 0; sequence 0; 3 rows/5 columns; wire not captured"
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
       }
     },
     {
@@ -2719,27 +2751,35 @@
       "capability_id": "REL-206",
       "capability": "Get dataview pipeline information",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipeline",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline",
       "canonical_command": "view.pipeline.get",
       "sdk_symbol": "mammoth.api.pipeline.PipelineAPI.get_pipeline",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+      }
     },
     {
       "capability_id": "REL-207",
       "capability": "Get dataview pipeline checkpoints",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineCheckpoints",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/checkpoints",
       "canonical_command": "view.checkpoint.list",
       "sdk_symbol": "mammoth.api.checkpoints.CheckpointsAPI.list",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+      }
     },
     {
       "capability_id": "REL-208",
@@ -2758,14 +2798,18 @@
       "capability_id": "REL-209",
       "capability": "Get dataview pipeline data checks",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineDataChecks",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/data-checks",
       "canonical_command": "view.data-check.list",
       "sdk_symbol": "mammoth.api.data_checks.DataChecksAPI.list",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+      }
     },
     {
       "capability_id": "REL-210",
@@ -2810,27 +2854,35 @@
       "capability_id": "REL-213",
       "capability": "Get dataview pipeline items",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineItems",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/items",
       "canonical_command": "view.pipeline.items",
       "sdk_symbol": "mammoth.api.pipeline.PipelineAPI.items",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+      }
     },
     {
       "capability_id": "REL-214",
       "capability": "Get dataview pipeline tasks information",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineTasks",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/tasks",
       "canonical_command": "view.task.list",
       "sdk_symbol": "mammoth.api.pipeline.PipelineAPI.list_tasks",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+      }
     },
     {
       "capability_id": "REL-215",
@@ -2849,14 +2901,18 @@
       "capability_id": "REL-216",
       "capability": "Get pipeline versions",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineVersions",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/versions",
       "canonical_command": "view.version.list",
       "sdk_symbol": "mammoth.api.pipeline_versions.PipelineVersionsAPI.list",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+      }
     },
     {
       "capability_id": "REL-217",
@@ -2875,7 +2931,7 @@
       "capability_id": "REL-218",
       "capability": "Get dataview data preview",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Tier B observed preview for owned fixture view 287/dataset 366: 5 columns and 3 rows. Independent HTTP wire capture, transformed/math semantics, permission/negative, and lifecycle boundaries remain untested.",
+      "remarks": "Partial bounded evidence only; Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewPreview",
       "method": "GET",
@@ -2883,23 +2939,27 @@
       "canonical_command": "view.preview",
       "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.preview",
       "evidence": {
-        "artifact": "evidence/readiness-closure/core-readonly-next-20260916/evidence.json",
-        "command": "evidence/readiness-closure/core-readonly-next-20260916/P0-READ-005.stdout",
-        "result": "exit 0; 5 columns/3 rows observed; wire not captured"
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
       }
     },
     {
       "capability_id": "REL-219",
       "capability": "Get File Settings",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetFileSettings",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/file_settings",
       "canonical_command": "dataset.file-settings.get",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.get_file_settings",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+      }
     },
     {
       "capability_id": "REL-220",
@@ -2918,14 +2978,18 @@
       "capability_id": "REL-221",
       "capability": "List files",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListFiles",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/files",
       "canonical_command": "file.list",
       "sdk_symbol": "mammoth.api.files.FilesAPI.list",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+      }
     },
     {
       "capability_id": "REL-222",
@@ -2944,14 +3008,18 @@
       "capability_id": "REL-223",
       "capability": "List folders",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListFolders",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/folders",
       "canonical_command": "folder.list",
       "sdk_symbol": "mammoth.api.folders.FoldersAPI.list",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
+        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+      }
     },
     {
       "capability_id": "REL-224",
@@ -2983,14 +3051,16 @@
       "capability_id": "REL-226",
       "capability": "Get pending changes for a project",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded release read succeeded; no independent wire evidence; support remains Unassessed.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPendingChanges",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/pending-changes",
       "canonical_command": "project.pending-changes",
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.pending_changes",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917b-continuation.json"
+      }
     },
     {
       "capability_id": "REL-227",
@@ -3009,14 +3079,16 @@
       "capability_id": "REL-228",
       "capability": "Get resource status",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Bounded release read succeeded; no independent wire evidence; support remains Unassessed.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetResourceStatus",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/resource-status",
       "canonical_command": "project.resource-status",
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.resource_status",
-      "evidence": null
+      "evidence": {
+        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917b-final-diagnostic.json"
+      }
     },
     {
       "capability_id": "REL-229",
@@ -3529,7 +3601,7 @@
       "capability_id": "REL-268",
       "capability": "Rename a tag",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is dirty-only; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "RenameDashboardTag",
       "method": "PATCH",
@@ -4296,7 +4368,7 @@
       "capability_id": "REL-327",
       "capability": "Merge one tag into another",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is dirty-only; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "MergeDashboardTags",
       "method": "POST",
@@ -6803,7 +6875,7 @@
       "capability_id": "REL-519",
       "capability": "Set a dashboard's tags",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is dirty-only; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SetDashboardTags",
       "method": "PUT",
