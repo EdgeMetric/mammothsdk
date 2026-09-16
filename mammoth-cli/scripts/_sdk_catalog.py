@@ -40,6 +40,9 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
         "operation_ids": ["DashboardV3TakePendingTemplate"], "method": "POST"
     },
     "dashboard.templates.use": {"operation_ids": ["UseTemplate"], "method": "POST"},
+    "dashboard.assess-twb": {"operation_ids": ["AssessTwb"], "method": "POST"},
+    "dashboard.assess-pbix": {"operation_ids": ["AssessPbix"], "method": "POST"},
+    "dashboard.import-workbook": {"operation_ids": ["ImportWorkbookDataset"], "method": "POST"},
     # All typed transforms add one pipeline task.
     **{
         f"view.transform.{name}": {"operation_ids": ["AddTask"], "method": "POST"}

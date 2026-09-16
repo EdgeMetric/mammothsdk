@@ -127,6 +127,33 @@ def _optional_project_id() -> tuple[PositionalSpec, ...]:
 # Commands whose positionals the signature cannot express correctly. Each entry
 # replaces the derivation wholesale; the drift test proves the union is right.
 POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
+    "dashboard.assess-twb": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local workbook.",
+            example_value="sample.twb",
+        ),
+    ),
+    "dashboard.assess-pbix": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local workbook.",
+            example_value="sample.pbix",
+        ),
+    ),
+    "dashboard.import-workbook": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local workbook.",
+            example_value="sample.twbx",
+        ),
+    ),
     "dashboard.templates.use": (
         PositionalSpec(name="slug", type=str, required=True, help="Template slug."),
     ),

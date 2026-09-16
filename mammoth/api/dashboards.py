@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import builtins
+import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
@@ -23,10 +25,13 @@ from mammoth.models.dashboards import (
     DashboardTagsParams,
     ExemplarExtractResponse,
     ExemplarExtractSpec,
+    ImportDatasetResponse,
+    PbixAssessResponse,
     PendingTemplateResponse,
     SwapDataSpec,
     TagMergeParams,
     TagRenameParams,
+    TwbAssessResponse,
     UseTemplateSpec,
 )
 from mammoth.models.jobs import JobResponse, ObjectJobSchema
@@ -94,9 +99,7 @@ class DashboardsAPI:
     def rename_tag(self, tag_id: int, name: str) -> dict[str, Any]:
         """Rename one workspace dashboard tag using the release request shape."""
         if isinstance(tag_id, bool) or not isinstance(tag_id, int) or tag_id <= 0:
-            raise MammothValidationError(
-                f"`tag_id` must be a positive integer, got {tag_id}."
-            )
+            raise MammothValidationError(f"`tag_id` must be a positive integer, got {tag_id}.")
         try:
             typed = TagRenameParams(name=name)
         except ValidationError as exc:
@@ -109,11 +112,7 @@ class DashboardsAPI:
 
     def set_tags(self, dashboard_id: int, tags: builtins.list[str]) -> dict[str, Any]:
         """Replace a dashboard's complete tag set using the release request shape."""
-        if (
-            isinstance(dashboard_id, bool)
-            or not isinstance(dashboard_id, int)
-            or dashboard_id <= 0
-        ):
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(
                 f"`dashboard_id` must be a positive integer, got {dashboard_id}."
             )
@@ -132,18 +131,14 @@ class DashboardsAPI:
     def delete_tag(self, tag_id: int) -> dict[str, Any] | None:
         """Delete a tag from the workspace vocabulary."""
         if isinstance(tag_id, bool) or not isinstance(tag_id, int) or tag_id <= 0:
-            raise MammothValidationError(
-                f"`tag_id` must be a positive integer, got {tag_id}."
-            )
+            raise MammothValidationError(f"`tag_id` must be a positive integer, got {tag_id}.")
         return self._client._request_json("DELETE", f"/dashboards/tags/{tag_id}")
 
     def merge_tag(self, tag_id: int, target_id: int) -> dict[str, Any]:
         """Merge one workspace tag into another using the release request shape."""
         for name, value in (("tag_id", tag_id), ("target_id", target_id)):
             if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
-                raise MammothValidationError(
-                    f"`{name}` must be a positive integer, got {value}."
-                )
+                raise MammothValidationError(f"`{name}` must be a positive integer, got {value}.")
         if tag_id == target_id:
             raise MammothValidationError("`tag_id` and `target_id` must differ.")
         try:
@@ -263,7 +258,8 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid context-extract parameters: {exc}") from exc
         response = self._client._request_json(
-            "POST", "/dashboards/v3/contexts/extract",
+            "POST",
+            "/dashboards/v3/contexts/extract",
             json=typed.model_dump(mode="json", exclude_none=True),
         )
         try:
@@ -282,7 +278,8 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid exemplar-extract parameters: {exc}") from exc
         response = self._client._request_json(
-            "POST", "/dashboards/v3/exemplar/extract",
+            "POST",
+            "/dashboards/v3/exemplar/extract",
             json=typed.model_dump(mode="json", exclude_none=True),
         )
         try:
@@ -299,7 +296,8 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid swap-data parameters: {exc}") from exc
         response = self._client._request_json(
-            "POST", f"/dashboards/v3/{dashboard_id}/swap-data",
+            "POST",
+            f"/dashboards/v3/{dashboard_id}/swap-data",
             json=typed.model_dump(mode="json", exclude_none=True),
         )
         try:
@@ -326,7 +324,8 @@ class DashboardsAPI:
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid use-template parameters: {exc}") from exc
         response = self._client._request_json(
-            "POST", f"/dashboards/v3/templates/{quote(slug, safe='')}/use",
+            "POST",
+            f"/dashboards/v3/templates/{quote(slug, safe='')}/use",
             json=typed.model_dump(mode="json", exclude_none=True),
         )
         try:
@@ -335,6 +334,70 @@ class DashboardsAPI:
             return ObjectJobSchema.model_validate(response)
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid use-template response: {exc}") from exc
+
+    def assess_twb(self, file: str | Path) -> TwbAssessResponse:
+        """Assess a Tableau workbook without importing it."""
+        return self._assess_upload(file, "/dashboards/v3/twb/assess", TwbAssessResponse)
+
+    def assess_pbix(self, file: str | Path) -> PbixAssessResponse:
+        """Assess a Power BI workbook without importing it."""
+        return self._assess_upload(file, "/dashboards/v3/pbix/assess", PbixAssessResponse)
+
+    def import_workbook(
+        self, file: str | Path, project_id: int | None = None
+    ) -> ImportDatasetResponse:
+        """Import a workbook into a project-scoped dataset."""
+        if isinstance(project_id, bool) or (
+            project_id is not None and not isinstance(project_id, int)
+        ):
+            raise MammothValidationError("`project_id` must be an integer or None.")
+        try:
+            path = Path(file)
+        except (TypeError, ValueError) as exc:
+            raise MammothValidationError("`file` must be a valid local path.") from exc
+        if not path.is_file():
+            raise MammothValidationError(f"File not found: {path}")
+        try:
+            opened = path.open("rb")
+        except OSError as exc:
+            raise MammothValidationError(f"File cannot be opened: {path}") from exc
+        try:
+            response = self._client._request_json(
+                "POST",
+                "/dashboards/v3/import/dataset",
+                data={"project_id": str(project_id)} if project_id is not None else None,
+                files=[("file", (os.path.basename(path), opened, "application/octet-stream"))],
+            )
+        finally:
+            opened.close()
+        try:
+            return ImportDatasetResponse.model_validate(response)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid workbook import response: {exc}") from exc
+
+    def _assess_upload(self, file: str | Path, endpoint: str, model: Any) -> Any:
+        try:
+            path = Path(file)
+        except (TypeError, ValueError) as exc:
+            raise MammothValidationError("`file` must be a valid local path.") from exc
+        if not path.is_file():
+            raise MammothValidationError(f"File not found: {path}")
+        try:
+            opened = path.open("rb")
+        except OSError as exc:
+            raise MammothValidationError(f"File cannot be opened: {path}") from exc
+        try:
+            response = self._client._request_json(
+                "POST",
+                endpoint,
+                files=[("file", (os.path.basename(path), opened, "application/octet-stream"))],
+            )
+        finally:
+            opened.close()
+        try:
+            return model.model_validate(response)
+        except ValidationError as exc:
+            raise MammothValidationError(f"Invalid workbook assessment response: {exc}") from exc
 
     def update(
         self,

@@ -324,6 +324,9 @@ HANDLERS: dict[str, Handler] = {
     "dashboard.swap-data": dashboard_cmd.generated_dashboard,
     "dashboard.templates.pending": dashboard_cmd.generated_dashboard,
     "dashboard.templates.use": dashboard_cmd.generated_dashboard,
+    "dashboard.assess-twb": dashboard_cmd.dashboard_assess_twb,
+    "dashboard.assess-pbix": dashboard_cmd.dashboard_assess_pbix,
+    "dashboard.import-workbook": dashboard_cmd.dashboard_import_workbook,
     # workflow family
     "workflow.block.add": workflow_cmd.workflow_block_add,
     "workflow.block.auth": workflow_cmd.workflow_block_auth,

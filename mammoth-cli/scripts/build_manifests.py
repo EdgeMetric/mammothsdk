@@ -477,15 +477,20 @@ def build() -> dict[str, int]:
 
     if "dashboard.swap-data" in commands:
         commands["dashboard.swap-data"].update(
-            operation_ids=["SwapDashboardData"], request_model="SwapDataSpec",
+            operation_ids=["SwapDashboardData"],
+            request_model="SwapDataSpec",
             result_model="ObjectJobSchema",
             acceptance_evidence="contract_only_no_disposable_fixture",
             wait_policy="always_wait",
             live_exemption_reason="Release-only supplemental binding; no disposable fixture.",
             known_restrictions="Release snapshot provenance only; unverified against release.",
-            unit_tests=["tests/unit/test_swap_data.py::test_swap_data_posts_literal_release_route_and_body",
-                        "mammoth-cli/tests/unit/commands/test_dashboard.py::test_swap_data_dispatches_exact_symbol"],
-            contract_tests=["mammoth-cli/tests/contract/test_rel359_swap_data.py::test_rel359_schema_preserves_release_overlay"],
+            unit_tests=[
+                "tests/unit/test_swap_data.py::test_swap_data_posts_literal_release_route_and_body",
+                "mammoth-cli/tests/unit/commands/test_dashboard.py::test_swap_data_dispatches_exact_symbol",
+            ],
+            contract_tests=[
+                "mammoth-cli/tests/contract/test_rel359_swap_data.py::test_rel359_schema_preserves_release_overlay"
+            ],
         )
 
     if "dashboard.templates.pending" in commands:
@@ -496,24 +501,64 @@ def build() -> dict[str, int]:
             acceptance_evidence="contract_only_no_disposable_fixture",
             live_exemption_reason="Release-only supplemental binding; no disposable fixture.",
             known_restrictions="Release snapshot provenance only; unverified against release.",
-            unit_tests=["tests/unit/test_template_bindings.py::test_take_pending_template_posts_exact_route"],
-            contract_tests=["mammoth-cli/tests/contract/test_rel353_templates.py::test_rel353_schema_preserves_release_overlay"],
+            unit_tests=[
+                "tests/unit/test_template_bindings.py::test_take_pending_template_posts_exact_route"
+            ],
+            contract_tests=[
+                "mammoth-cli/tests/contract/test_rel353_templates.py::test_rel353_schema_preserves_release_overlay"
+            ],
         )
     if "dashboard.templates.use" in commands:
         commands["dashboard.templates.use"].update(
-            operation_ids=["UseTemplate"], request_model="UseTemplateSpec",
+            operation_ids=["UseTemplate"],
+            request_model="UseTemplateSpec",
             result_model="ObjectJobSchema | JobResponse",
             acceptance_evidence="contract_only_no_disposable_fixture",
             live_exemption_reason="Release-only supplemental binding; no disposable fixture.",
             known_restrictions="Release snapshot provenance only; unverified against release.",
             agent_example=(
                 "mammoth dashboard templates use sample --input "
-                "'{\"body\": {\"params\": {\"project_id\": 1}}}' "
+                '\'{"body": {"params": {"project_id": 1}}}\' '
                 "--output json --no-input"
             ),
-            unit_tests=["tests/unit/test_template_bindings.py::test_use_template_posts_exact_route"],
-            contract_tests=["mammoth-cli/tests/contract/test_rel356_templates.py::test_rel356_schema_preserves_release_overlay"],
+            unit_tests=[
+                "tests/unit/test_template_bindings.py::test_use_template_posts_exact_route"
+            ],
+            contract_tests=[
+                "mammoth-cli/tests/contract/test_rel356_templates.py::test_rel356_schema_preserves_release_overlay"
+            ],
         )
+    for command, oid, model, test in (
+        (
+            "dashboard.assess-twb",
+            "AssessTwb",
+            "TwbAssessResponse",
+            "test_rel357_schema_preserves_release_overlay",
+        ),
+        (
+            "dashboard.assess-pbix",
+            "AssessPbix",
+            "PbixAssessResponse",
+            "test_rel341_schema_preserves_release_overlay",
+        ),
+        (
+            "dashboard.import-workbook",
+            "ImportWorkbookDataset",
+            "ImportDatasetResponse",
+            "test_rel340_schema_preserves_release_overlay",
+        ),
+    ):
+        if command in commands:
+            commands[command].update(
+                operation_ids=[oid],
+                result_model=model,
+                acceptance_evidence="contract_only_no_disposable_fixture",
+                live_exemption_reason=(
+                    "Release-only multipart binding; no approved workbook fixture."
+                ),
+                known_restrictions="Release snapshot provenance only; unverified against release.",
+                contract_tests=[f"mammoth-cli/tests/contract/{test}.py::{test}"],
+            )
 
     # write grouped by top-level group
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)

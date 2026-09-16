@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 569
+method_count: 572
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -1841,6 +1841,32 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.assess_pbix
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.assess_pbix
+  signature: 'assess_pbix(self, file: ''str | Path'') -> ''PbixAssessResponse'''
+  openapi_operation_ids:
+  - AssessPbix
+  canonical_command: dashboard.assess-pbix
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.assess_twb
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.assess_twb
+  signature: 'assess_twb(self, file: ''str | Path'') -> ''TwbAssessResponse'''
+  openapi_operation_ids:
+  - AssessTwb
+  canonical_command: dashboard.assess-twb
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.cancel_generation
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.cancel_generation
   signature: 'cancel_generation(self, dashboard_id: ''int'') -> ''dict[str, Any]'''
@@ -2173,6 +2199,19 @@ methods:
   mutation_class: read
   wait_policy: not_async
   pagination_policy: single_page
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.import_workbook
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.import_workbook
+  signature: 'import_workbook(self, file: ''str | Path'', project_id: ''int | None'' = None) -> ''ImportDatasetResponse'''
+  openapi_operation_ids:
+  - ImportWorkbookDataset
+  canonical_command: dashboard.import-workbook
+  alias_of: null
+  no_command_reason: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.job_by_url

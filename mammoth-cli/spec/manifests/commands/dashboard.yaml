@@ -121,6 +121,82 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dashboard.assess-pbix
+  command_path: dashboard assess-pbix
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AssessPbix
+  positionals:
+  - name: file
+    type: str
+    required: true
+    metavar: FILE
+    falls_back_to_field: null
+    help: Path to a local workbook.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.assess_pbix
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.assess_pbix with validated request fields.
+  request_model: DashboardAssessPbixRequest
+  result_model: PbixAssessResponse
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: LT-DASHBOARD-ASSESS-PBIX
+  live_exemption_reason: Release-only multipart binding; no approved workbook fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard assess-pbix FILE --help
+  agent_example: mammoth dashboard assess-pbix sample.pbix --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-ASSESS-PBIX
+  contract_tests:
+  - mammoth-cli/tests/contract/test_rel341_schema_preserves_release_overlay.py::test_rel341_schema_preserves_release_overlay
+  draft_test: null
+  undo_test: null
+  known_restrictions: Release snapshot provenance only; unverified against release.
+  reviewed_by: primary
+- command_id: dashboard.assess-twb
+  command_path: dashboard assess-twb
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AssessTwb
+  positionals:
+  - name: file
+    type: str
+    required: true
+    metavar: FILE
+    falls_back_to_field: null
+    help: Path to a local workbook.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.assess_twb
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.assess_twb with validated request fields.
+  request_model: DashboardAssessTwbRequest
+  result_model: TwbAssessResponse
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: LT-DASHBOARD-ASSESS-TWB
+  live_exemption_reason: Release-only multipart binding; no approved workbook fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard assess-twb FILE --help
+  agent_example: mammoth dashboard assess-twb sample.twb --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-ASSESS-TWB
+  contract_tests:
+  - mammoth-cli/tests/contract/test_rel357_schema_preserves_release_overlay.py::test_rel357_schema_preserves_release_overlay
+  draft_test: null
+  undo_test: null
+  known_restrictions: Release snapshot provenance only; unverified against release.
+  reviewed_by: primary
 - command_id: dashboard.cancel-generation
   command_path: dashboard cancel-generation
   disposition: command
@@ -994,6 +1070,44 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: URL is a slug, not an arbitrary request URL.
+  reviewed_by: primary
+- command_id: dashboard.import-workbook
+  command_path: dashboard import-workbook
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ImportWorkbookDataset
+  positionals:
+  - name: file
+    type: str
+    required: true
+    metavar: FILE
+    falls_back_to_field: null
+    help: Path to a local workbook.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.import_workbook
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.import_workbook with validated request fields.
+  request_model: DashboardImportWorkbookRequest
+  result_model: ImportDatasetResponse
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Release-only multipart binding; no approved workbook fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard import-workbook FILE --help
+  agent_example: mammoth dashboard import-workbook sample.twbx --output json --no-input
+  unit_tests:
+  - UT-DASHBOARD-IMPORT-WORKBOOK
+  contract_tests:
+  - mammoth-cli/tests/contract/test_rel340_schema_preserves_release_overlay.py::test_rel340_schema_preserves_release_overlay
+  draft_test: null
+  undo_test: null
+  known_restrictions: Release snapshot provenance only; unverified against release.
   reviewed_by: primary
 - command_id: dashboard.job-by-url
   command_path: dashboard job-by-url

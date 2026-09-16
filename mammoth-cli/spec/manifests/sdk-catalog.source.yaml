@@ -1362,6 +1362,30 @@ sdk_methods:
   pagination_policy: none
   openapi_operation_ids:
   - DashboardV3TakePendingTemplate
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.assess_twb
+  canonical_command: dashboard.assess-twb
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - AssessTwb
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.assess_pbix
+  canonical_command: dashboard.assess-pbix
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - AssessPbix
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.import_workbook
+  canonical_command: dashboard.import-workbook
+  mutation_class: high_impact
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ImportWorkbookDataset
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.use_template
   canonical_command: dashboard.templates.use
   alias_of: null

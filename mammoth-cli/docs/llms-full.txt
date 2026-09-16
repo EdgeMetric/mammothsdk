@@ -272,6 +272,10 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
   example: mammoth dashboard analytics 123 --output json --no-input
 - `mammoth dashboard archive` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.archive
   example: mammoth dashboard archive 123 --input '{"archived": true}' --output json --no-input --yes --confirm 123
+- `mammoth dashboard assess-pbix` [read/none] -> mammoth.api.dashboards.DashboardsAPI.assess_pbix
+  example: mammoth dashboard assess-pbix sample.pbix --output json --no-input
+- `mammoth dashboard assess-twb` [read/none] -> mammoth.api.dashboards.DashboardsAPI.assess_twb
+  example: mammoth dashboard assess-twb sample.twb --output json --no-input
 - `mammoth dashboard cancel-generation` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.cancel_generation
   example: mammoth dashboard cancel-generation 123 --output json --no-input
 - `mammoth dashboard canvas get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.canvas_get
@@ -316,6 +320,8 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
   example: mammoth dashboard get 123 --output json --no-input
 - `mammoth dashboard get-by-url` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_by_url
   example: mammoth dashboard get-by-url https://example.com/data.csv --output json --no-input
+- `mammoth dashboard import-workbook` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.import_workbook
+  example: mammoth dashboard import-workbook sample.twbx --output json --no-input
 - `mammoth dashboard job-by-url` [read/none] -> mammoth.api.dashboards.DashboardsAPI.job_by_url
   example: mammoth dashboard job-by-url https://example.com/data.csv 123 --output json --no-input
 - `mammoth dashboard list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.list

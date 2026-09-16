@@ -10,6 +10,7 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from mammoth.models.dashboards import AddPagesSpec
@@ -32,7 +33,7 @@ from mammoth_cli.runtime.confirm import (
     enforce_confirmation,
 )
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.runtime.session import open_service
+from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services.argspec import arg_spec
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.positionals import resolve_positionals
@@ -624,4 +625,69 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
         data = _resolve_job(service, invocation, data)
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def dashboard_assess_twb(invocation: Invocation) -> HandlerResult:
+    """Assess a local Tableau workbook through the SDK multipart seam."""
+    file_path = _require_str_positional(invocation, "file")
+    if not Path(file_path).is_file():
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"File not found: {file_path}.",
+            exit_status=EXIT_USAGE,
+        )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), file=file_path)
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def dashboard_assess_pbix(invocation: Invocation) -> HandlerResult:
+    """Assess a local Power BI workbook through the SDK multipart seam."""
+    file_path = _require_str_positional(invocation, "file")
+    if not Path(file_path).is_file():
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"File not found: {file_path}.",
+            exit_status=EXIT_USAGE,
+        )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), file=file_path)
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def dashboard_import_workbook(invocation: Invocation) -> HandlerResult:
+    """Import a local workbook into a confirmed project scope."""
+    file_path = _require_str_positional(invocation, "file")
+    if not Path(file_path).is_file():
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"File not found: {file_path}.",
+            exit_status=EXIT_USAGE,
+        )
+    document = invocation.load_input() or {}
+    resolved_project = require_project(invocation)
+    project_id = document.get("project_id", resolved_project)
+    if "project_id" in document and (
+        isinstance(project_id, bool) or not isinstance(project_id, int) or project_id <= 0
+    ):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="Input project_id must be a positive integer.",
+            exit_status=EXIT_USAGE,
+        )
+    if project_id != resolved_project:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="Input project_id does not match resolved project.",
+            exit_status=EXIT_USAGE,
+        )
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_CONFIRM_TARGET,
+        action="dashboard import workbook",
+        target=str(project_id),
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), file=file_path, project_id=project_id)
     return data, _meta(invocation, auth.workspace_id)

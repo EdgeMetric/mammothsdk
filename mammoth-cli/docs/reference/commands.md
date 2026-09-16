@@ -3,7 +3,7 @@
 Generated from the reviewed command manifests for mammoth-cli 1.1.0.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 
-Total commands: 544.
+Total commands: 547.
 
 ## activity
 
@@ -1063,6 +1063,28 @@ Total commands: 544.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.archive`
 - Agent example: `mammoth dashboard archive 123 --input '{"archived": true}' --output json --no-input --yes --confirm 123`
 
+### `mammoth dashboard assess-pbix`
+
+**Arguments**
+
+- `FILE` (str, required) — Path to a local workbook.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.assess_pbix`
+- Agent example: `mammoth dashboard assess-pbix sample.pbix --output json --no-input`
+
+### `mammoth dashboard assess-twb`
+
+**Arguments**
+
+- `FILE` (str, required) — Path to a local workbook.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.assess_twb`
+- Agent example: `mammoth dashboard assess-twb sample.twb --output json --no-input`
+
 ### `mammoth dashboard cancel-generation`
 
 **Arguments**
@@ -1284,6 +1306,17 @@ Total commands: 544.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.get_by_url`
 - Agent example: `mammoth dashboard get-by-url https://example.com/data.csv --output json --no-input`
+
+### `mammoth dashboard import-workbook`
+
+**Arguments**
+
+- `FILE` (str, required) — Path to a local workbook.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.import_workbook`
+- Agent example: `mammoth dashboard import-workbook sample.twbx --output json --no-input`
 
 ### `mammoth dashboard job-by-url`
 

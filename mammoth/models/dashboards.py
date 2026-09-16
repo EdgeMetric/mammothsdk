@@ -121,6 +121,36 @@ class UseTemplateSpec(BaseModel):
     params: UseTemplateParams
 
 
+class TwbAssessResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    assessment: dict[str, Any] | None = None
+    brief: dict[str, Any] | None = None
+    rejected: dict[str, Any] | None = None
+    source: dict[str, Any] = Field(default_factory=dict)
+
+
+class PbixAssessResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    assessment: dict[str, Any] | None = None
+    brief: dict[str, Any] | None = None
+    rejected: dict[str, Any] | None = None
+    source: dict[str, Any] = Field(default_factory=dict)
+    model_available: bool = False
+
+
+class ImportDatasetResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    dataview_id: int | None = None
+    dataset_name: str | None = None
+    intent: str | None = None
+    assessment: dict[str, Any] | None = None
+    brief: dict[str, Any] | None = None
+    rejected: dict[str, Any] | None = None
+    source: dict[str, Any] = Field(default_factory=dict)
+    data_source: str | None = None
+    fields: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class DashboardSource(BaseModel):
     """Dashboard data source information."""
 
