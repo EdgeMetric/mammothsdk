@@ -4,6 +4,8 @@ Source workbook SHA-256: `f57cc03e787868d77bafed3ea6ce3e15fb83b13072b99b1353f6d0
 Current release OpenAPI: 528 operations / 355 paths; 230 Core / 298 Miscellaneous.
 Statuses: 7 Partial (bounded evidence only), 521 Unassessed, 0 Full, 0 Not supported.
 This is a sanitized inventory; the readiness workbook remains authoritative.
+Release-only dashboard exemplar and swap-data bindings remain unverified live;
+swap-data is asynchronous on release and requires job semantics evidence.
 
 | ID | Capability | Status | Remarks | Group | Operation | Method | Path | CLI | SDK | Evidence |
 |---|---|---|---|---|---|---|---|---|---|---|
