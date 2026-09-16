@@ -161,14 +161,27 @@ def map_sdk_exception(exc: BaseException) -> CliError:
             dataview_id = details.get("dataview_id")
             dataset_id = details.get("dataset_id")
             project_id = details.get("project_id")
+            valid_scope = all(
+                isinstance(value, int) and not isinstance(value, bool)
+                for value in (dataview_id, dataset_id, project_id)
+            )
             if (
                 isinstance(task_id, int)
+                and not isinstance(task_id, bool)
                 and isinstance(dataview_id, int)
+                and not isinstance(dataview_id, bool)
                 and isinstance(dataset_id, int)
+                and not isinstance(dataset_id, bool)
                 and isinstance(project_id, int)
+                and not isinstance(project_id, bool)
             ):
                 recovery = [
                     f"mammoth view task get {dataview_id} {task_id} --project {project_id} "
+                    f"--input '{{\"dataset_id\": {dataset_id}}}' --output json --no-input"
+                ]
+            elif not recovery and valid_scope:
+                recovery = [
+                    f"mammoth view pipeline items-all {dataview_id} --project {project_id} "
                     f"--input '{{\"dataset_id\": {dataset_id}}}' --output json --no-input"
                 ]
 

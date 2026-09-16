@@ -111,6 +111,31 @@ def test_future_handle_gets_job_recovery_not_fake_task_lookup() -> None:
     assert any("job get 77" in command for command in mapped.recovery_commands)
 
 
+def test_unidentified_post_submit_gets_scoped_pipeline_readback() -> None:
+    error = MammothAPIError(
+        "pipeline readback failed",
+        method="POST",
+        operation_state="outcome_unknown",
+        details={
+            "post_submitted": True,
+            "dataview_id": 303,
+            "dataset_id": 375,
+            "project_id": 3,
+        },
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "outcome_unknown"
+    assert mapped.retryable is False
+    assert mapped.recovery_commands == [
+        "mammoth view pipeline items-all 303 --project 3 "
+        "--input '{\"dataset_id\": 375}' --output json --no-input"
+    ]
+    assert all("task get" not in command for command in mapped.recovery_commands)
+    assert all("job get" not in command for command in mapped.recovery_commands)
+
+
 def test_job_timeout_retains_handle_and_recovery_action() -> None:
     mapped = map_sdk_exception(MammothJobTimeoutError(44, 1))
 
