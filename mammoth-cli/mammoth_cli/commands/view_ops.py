@@ -214,9 +214,23 @@ def _bind_transform_inputs(
     optional ``dataset_id`` is resource identity context for resolving the
     target view and must never be passed to a View transform method.
     """
-    return bind_command_inputs(
+    bound = bind_command_inputs(
         invocation.command_id, _without_resource_context(document)
     )
+    direction = str(getattr(bound.get("direction"), "value", bound.get("direction"))).upper()
+    if direction in {"LEFT", "RIGHT"} and bound.get("num_char") is not None:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="LEFT/RIGHT requires char_position, not num_char.",
+            exit_status=EXIT_USAGE,
+        )
+    if direction in {"START", "END"} and bound.get("char_position") is not None:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="START/END requires num_char, not char_position.",
+            exit_status=EXIT_USAGE,
+        )
+    return bound
 
 
 # --- ViewsResource CRUD (generic ``service.call`` seam) --------------------

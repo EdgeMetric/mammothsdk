@@ -510,6 +510,12 @@ class TestTextOps:
         assert "AS" not in spec["SUBSTRING"] and "DESTINATION" not in spec["SUBSTRING"]
         assert spec["CONDITION"] == built_cond()
 
+    def test_substring_rejects_left_with_numchar(self) -> None:
+        with pytest.raises(ValueError, match="LEFT/RIGHT"):
+            b.build_substring_params(
+                "Notes", COLS, INTERNALS, direction=SubstringDirection.LEFT, num_char=3
+            )
+
 
 # ===============================================================
 # Date operations

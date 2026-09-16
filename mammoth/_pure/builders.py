@@ -421,6 +421,15 @@ def build_substring_params(
     name_gen: Callable[[], str] | None = None,
 ) -> dict[str, Any]:
     """Build a SUBSTRING (text extraction) task payload."""
+    if (
+        direction in {SubstringDirection.START, SubstringDirection.END}
+        and char_position is not None
+    ):
+        raise ValueError("START/END substring direction requires num_char, not char_position")
+    if direction in {SubstringDirection.LEFT, SubstringDirection.RIGHT} and num_char is not None:
+        raise ValueError("LEFT/RIGHT substring direction requires char_position, not num_char")
+    if direction is not None and num_char is not None and char_position is not None:
+        raise ValueError("substring direction accepts only its matching position argument")
     sub_spec: dict[str, Any] = {"SOURCE": resolve_column(column, col_map, internal_names)}
     if regex_pattern is not None:
         sub_spec["REGEX"] = {"EXPRESSION": regex_pattern, "INVERT": regex_invert}

@@ -312,7 +312,6 @@ TRANSFORM_CASES: tuple[tuple[str, str, str, dict[str, Any]], ...] = (
             "column": "S3_TEXT",
             "direction": "START",
             "num_char": 4,
-            "char_position": 2,
             "regex_pattern": "S3_REGEX",
             "regex_invert": True,
             "new_column": "S3_SUB",
@@ -366,7 +365,6 @@ def isolated_cli_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path
         "mammoth_cli.context.profiles.platformdirs.user_config_dir",
         lambda *_args, **_kwargs: str(tmp_path),
     )
-    return tmp_path
 
 
 @pytest.fixture
@@ -384,6 +382,28 @@ def _write(tmp_path: Path, payload: dict[str, Any]) -> str:
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
     return Invocation(command_id=command_id, **overrides)  # type: ignore[arg-type]
+
+
+def test_substring_left_char_position_is_forwarded(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """LEFT/RIGHT directions use character position, not ``num_char``."""
+    payload = {"column": "S3_TEXT", "direction": "LEFT", "char_position": 2}
+    view_ops.view_transform_substring(
+        _inv("view.transform.substring", extra_args=["501"], input_file=_write(tmp_path, payload))
+    )
+    assert fake_service.view_call_log == [(501, "substring", payload)]
+
+
+def test_substring_regex_without_direction_is_forwarded(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Regex extraction remains independent of directional arguments."""
+    payload = {"column": "S3_TEXT", "regex_pattern": "S3_REGEX", "regex_invert": True}
+    view_ops.view_transform_substring(
+        _inv("view.transform.substring", extra_args=["501"], input_file=_write(tmp_path, payload))
+    )
+    assert fake_service.view_call_log == [(501, "substring", payload)]
 
 
 def test_transform_inventory_is_explicit_and_complete() -> None:

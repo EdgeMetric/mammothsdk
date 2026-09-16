@@ -755,13 +755,30 @@ def test_transform_substring_requires_column(fake_service: FakeMammothService) -
 def test_transform_substring_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"column": "a", "num_char": 3, "direction": "LEFT"})
+    doc = _write(tmp_path, {"column": "a", "num_char": 3, "direction": "START"})
     view_ops_cmd.view_transform_substring(
         _inv("view.transform.substring", extra_args=["3"], input_file=doc)
     )
     assert fake_service.view_call_log == [
-        (3, "substring", {"column": "a", "num_char": 3, "direction": "LEFT"})
+        (3, "substring", {"column": "a", "num_char": 3, "direction": "START"})
     ]
+
+
+def test_transform_substring_rejects_left_with_numchar(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"column": "a", "num_char": 3, "direction": "LEFT"})
+    invocation = _inv("view.transform.substring", extra_args=["3"], input_file=doc)
+    assert invocation.load_input() == {
+        "column": "a",
+        "num_char": 3,
+        "direction": "LEFT",
+        "view_id": "3",
+    }
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_transform_substring(invocation)
+    assert excinfo.value.code == "invalid_argument"
+    assert fake_service.view_call_log == []
 
 
 def test_transform_text_requires_columns(fake_service: FakeMammothService) -> None:
