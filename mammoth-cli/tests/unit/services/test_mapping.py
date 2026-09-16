@@ -71,6 +71,30 @@ def test_unknown_mutation_is_not_advertised_as_safe_retry() -> None:
     assert any("job get 44" in command for command in mapped.recovery_commands)
 
 
+def test_post_submit_readback_failure_preserves_safe_task_recovery() -> None:
+    error = MammothAPIError(
+        "pipeline readback failed",
+        method="POST",
+        operation_state="outcome_unknown",
+        details={
+            "post_submitted": True,
+            "task_handle": 130,
+            "dataview_id": 303,
+            "dataset_id": 375,
+            "project_id": 3,
+        },
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "outcome_unknown"
+    assert mapped.retryable is False
+    assert mapped.recovery_commands == [
+        "mammoth view task get 303 130 --project 3 "
+        "--input '{\"dataset_id\": 375}' --output json --no-input"
+    ]
+
+
 def test_job_timeout_retains_handle_and_recovery_action() -> None:
     mapped = map_sdk_exception(MammothJobTimeoutError(44, 1))
 

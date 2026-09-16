@@ -58,6 +58,12 @@ def _metadata(exc: MammothAPIError) -> dict[str, Any]:
         "response_body",
         "errno",
         "quarantined_path",
+        "post_submitted",
+        "task_handle",
+        "dataview_id",
+        "dataset_id",
+        "project_id",
+        "readback_error",
     ):
         if name in exc.details and name not in details:
             details[name] = (
@@ -150,6 +156,21 @@ def map_sdk_exception(exc: BaseException) -> CliError:
             details.setdefault("job_handle", job_id)
         request_id = getattr(exc, "request_id", None)
         recovery = _job_recovery(job_id) if job_id is not None else []
+        if details.get("post_submitted"):
+            task_id = details.get("task_handle")
+            dataview_id = details.get("dataview_id")
+            dataset_id = details.get("dataset_id")
+            project_id = details.get("project_id")
+            if (
+                isinstance(task_id, int)
+                and isinstance(dataview_id, int)
+                and isinstance(dataset_id, int)
+                and isinstance(project_id, int)
+            ):
+                recovery = [
+                    f"mammoth view task get {dataview_id} {task_id} --project {project_id} "
+                    f"--input '{{\"dataset_id\": {dataset_id}}}' --output json --no-input"
+                ]
 
         # A complete destination was intentionally not published by the SDK
         # when a local write failed (for example ENOSPC).  This is a terminal

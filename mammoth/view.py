@@ -58,6 +58,7 @@ from mammoth._pure.builders import build_branch_out_params
 from mammoth._pure.resolve import _validate_condition_columns
 from mammoth.condition import CompoundCondition, Condition, NotCondition
 from mammoth.exceptions import (
+    MammothAPIError,
     MammothColumnError,
     MammothExportError,
     MammothJobTimeoutError,
@@ -317,8 +318,37 @@ class View(
         # compatibility fallback for older injected clients that do not return
         # a status mapping; it is never authoritative for a real transport.
         if not self.is_draft_mode:
-            self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
-            self.refresh()
+            try:
+                self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+                self.refresh()
+            except Exception as exc:
+                # The POST has already returned successfully.  A timeout or
+                # failed readback must not be reported as a clean retryable
+                # read: replaying the transform could duplicate the task.
+                handle = next(
+                    (
+                        result.get(key)
+                        for key in ("task_id", "id", "job_id", "future_id")
+                        if isinstance(result, dict) and result.get(key) is not None
+                    ),
+                    None,
+                )
+                readback = getattr(exc, "details", {})
+                raise MammothAPIError(
+                    "Task was submitted, but pipeline readback did not complete.",
+                    details={
+                        "post_submitted": True,
+                        "task_handle": handle,
+                        "dataview_id": self.id,
+                        "dataset_id": self.dataset_id,
+                        "project_id": getattr(self._client, "project_id", None),
+                        "readback_error": dict(readback or {}),
+                    },
+                    method="POST",
+                    operation_state="outcome_unknown",
+                    job_handle=handle,
+                    phase="post_submit_readback",
+                ) from exc
         return result
 
     def _run_internal_dataset_export(

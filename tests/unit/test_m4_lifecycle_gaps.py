@@ -83,6 +83,28 @@ def test_timeout_reconciles_terminal_pipeline_without_replaying_submit() -> None
     ]
 
 
+def test_post_submit_readback_timeout_is_outcome_unknown() -> None:
+    """A successful task POST must not invite replay after readback timeout."""
+    pipeline = MagicMock()
+    pipeline.add_task.return_value = {"id": 130}
+    pipeline.wait_for_pipeline.side_effect = MammothAPIError(
+        "pipeline read timed out", method="GET", operation_state="not_started"
+    )
+    view = _view_with_pipeline(pipeline)
+
+    with pytest.raises(MammothAPIError) as excinfo:
+        view._add_task({"LIMIT": {"N": 3}})
+
+    error = excinfo.value
+    assert error.operation_state == "outcome_unknown"
+    assert error.details["post_submitted"] is True
+    assert error.details["task_handle"] == 130
+    assert error.details["dataview_id"] == 9
+    assert error.details["dataset_id"] == 3
+    assert error.details["project_id"] == 2
+    pipeline.add_task.assert_called_once()
+
+
 def test_nested_terminal_readback_continues_lost_submit_without_duplicate() -> None:
     """A lost SUBMIT response may only be completed by EXIT after readback."""
     api = PipelineAPI(None)  # type: ignore[arg-type]
