@@ -1384,6 +1384,7 @@ sdk_methods:
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
+  agent_example: mammoth dashboard import-workbook sample.twbx --project PROJECT_ID --yes --confirm PROJECT_ID --output json --no-input
   openapi_operation_ids:
   - ImportWorkbookDataset
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.use_template

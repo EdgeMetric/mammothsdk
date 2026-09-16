@@ -1100,7 +1100,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard import-workbook FILE --help
-  agent_example: mammoth dashboard import-workbook sample.twbx --output json --no-input
+  agent_example: mammoth dashboard import-workbook sample.twbx --project PROJECT_ID --yes --confirm PROJECT_ID
+    --output json --no-input
   unit_tests:
   - UT-DASHBOARD-IMPORT-WORKBOOK
   contract_tests:

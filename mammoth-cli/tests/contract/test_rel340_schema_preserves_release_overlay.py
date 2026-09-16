@@ -7,3 +7,7 @@ def test_rel340_schema_preserves_release_overlay():
     record = command_by_id("dashboard.import-workbook")
     assert schema and record and record["operation_ids"] == ["ImportWorkbookDataset"]
     assert schema["positionals"][0]["name"] == "file"
+    assert schema["agent_example"] == (
+        "mammoth dashboard import-workbook sample.twbx --project PROJECT_ID "
+        "--yes --confirm PROJECT_ID --output json --no-input"
+    )

@@ -321,7 +321,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth dashboard get-by-url` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_by_url
   example: mammoth dashboard get-by-url https://example.com/data.csv --output json --no-input
 - `mammoth dashboard import-workbook` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.import_workbook
-  example: mammoth dashboard import-workbook sample.twbx --output json --no-input
+  example: mammoth dashboard import-workbook sample.twbx --project PROJECT_ID --yes --confirm PROJECT_ID --output json --no-input
 - `mammoth dashboard job-by-url` [read/none] -> mammoth.api.dashboards.DashboardsAPI.job_by_url
   example: mammoth dashboard job-by-url https://example.com/data.csv 123 --output json --no-input
 - `mammoth dashboard list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.list
