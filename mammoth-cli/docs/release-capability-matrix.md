@@ -1,6 +1,6 @@
 # Release capability matrix (sanitized)
 
-Source workbook SHA-256: `f57cc03e787868d77bafed3ea6ce3e15fb83b13072b99b1353f6d0c662043273`.
+Source workbook SHA-256: `9fbe778ac0c07b5305984af2b1de705ccb919fa41e5b69355570a44882b85946`.
 Current release OpenAPI: 528 operations / 355 paths; 230 Core / 298 Miscellaneous.
 Statuses: 7 Partial (bounded evidence only), 521 Unassessed, 0 Full, 0 Not supported.
 This is a sanitized inventory; the readiness workbook remains authoritative.
