@@ -10,7 +10,6 @@ review queue:
 ```bash
 cd mammoth-cli
 python scripts/report_release_capability_drift.py \
-  --baseline-openapi /path/to/matrix-source-openapi.json \
   --openapi /path/to/candidate-openapi.json \
   --report-out /tmp/release-capability-drift.json \
   --scaffold-out /tmp/release-capability-additions.json
@@ -23,10 +22,13 @@ route, infer a CLI mapping, or promote support. It queues additions for an
 agent to discover, implement, test, and submit for review. It also flags
 removals, operation-ID changes, and normalized per-operation semantic changes
 (parameters, request bodies, and responses) for human review before changing a
-canonical row. The baseline must be the OpenAPI revision represented by the
-matrix. Without that matching baseline, method/path additions and removals can
-be compared, but semantic change detection is incomplete; use
-`sync_openapi.py --check-live` as the broader snapshot-level complement.
+canonical row. By default it uses the committed
+`spec/openapi/release-20260916.json`, the 528-operation release baseline that
+matches this matrix. Supply `--baseline-openapi` only when the matrix has been
+reviewed against a different release revision. Without a matching baseline,
+method/path additions and removals can be compared, but semantic change
+detection is incomplete; use `sync_openapi.py --check-live` as the broader
+snapshot-level complement.
 
 Each canonical row records `method`, `path`, `operation_id`, the CLI command
 and `schema_id` when reviewed (otherwise `null`), the SDK symbol when reviewed

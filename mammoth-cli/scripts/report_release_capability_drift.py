@@ -29,6 +29,9 @@ from typing import Any
 
 HTTP_METHODS = frozenset({"get", "put", "post", "delete", "options", "head", "patch", "trace"})
 DEFAULT_MATRIX = Path(__file__).resolve().parent.parent / "docs" / "release-capability-matrix.json"
+DEFAULT_RELEASE_BASELINE = (
+    Path(__file__).resolve().parent.parent / "spec" / "openapi" / "release-20260916.json"
+)
 SEMANTIC_REVIEW_ACTION = (
     "Review parameters, request body, and responses before updating the canonical row."
 )
@@ -271,7 +274,7 @@ def main() -> None:
     parser.add_argument(
         "--baseline-openapi",
         type=Path,
-        required=True,
+        default=DEFAULT_RELEASE_BASELINE,
         help="OpenAPI revision represented by the canonical matrix for semantic comparison",
     )
     parser.add_argument(

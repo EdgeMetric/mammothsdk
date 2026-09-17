@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 CLI_ROOT = Path(__file__).resolve().parent.parent.parent
 SCRIPT = CLI_ROOT / "scripts" / "report_release_capability_drift.py"
+MATRIX = CLI_ROOT / "docs" / "release-capability-matrix.json"
+RELEASE_BASELINE = CLI_ROOT / "spec" / "openapi" / "release-20260916.json"
+RELEASE_METADATA = CLI_ROOT / "spec" / "openapi" / "release-20260916.metadata.json"
 
 
 def _script_module():
@@ -118,3 +122,17 @@ def test_unmapped_scaffold_has_explicit_gap_and_no_support_claim() -> None:
     assert row["mapping_gap_reason"]
     assert row["status"] == "Unassessed"
     assert row["evidence"] is None and row["evidence_version"] is None
+
+
+def test_release_baseline_matches_canonical_matrix_method_path_inventory() -> None:
+    drift = _script_module()
+    matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
+    baseline = json.loads(RELEASE_BASELINE.read_text(encoding="utf-8"))
+    metadata = json.loads(RELEASE_METADATA.read_text(encoding="utf-8"))
+    baseline_operations = drift.openapi_operations(baseline)
+    canonical_rows = drift.matrix_rows(matrix)
+
+    assert metadata["operation_count"] == 528
+    assert len(baseline_operations) == metadata["operation_count"]
+    assert len(canonical_rows) == metadata["operation_count"]
+    assert set(baseline_operations) == set(canonical_rows)

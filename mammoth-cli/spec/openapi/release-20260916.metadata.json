@@ -1,0 +1,11 @@
+{
+  "artifact": "mammoth-cli-release-openapi-baseline",
+  "source_file": "OPENAPI-release-20260916.json",
+  "source_provenance": "historical release workbook export",
+  "sha256": "b7c5aa651e6820dfee79afa9c10d17332e03c82e20f65ac30105879b8795236c",
+  "openapi_version": "3.1.0",
+  "api_version": "0.1.0",
+  "path_count": 355,
+  "operation_count": 528,
+  "note": "Distinct from openapi.json, the historical 445-operation pinned M0 snapshot."
+}
