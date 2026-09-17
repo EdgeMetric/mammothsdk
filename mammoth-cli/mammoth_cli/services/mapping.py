@@ -230,7 +230,11 @@ def map_sdk_exception(
         # older SDK did not attach ``operation_state=outcome_unknown``.
         uncertain_effect = operation_state == "outcome_unknown" or (
             not _is_known_read(method)
-            and (status is None or status in {408, 425, 429} or (status is not None and status >= 500))
+            and (
+                status is None
+                or status in {408, 425, 429}
+                or (status is not None and status >= 500)
+            )
         )
         if uncertain_effect:
             details.setdefault("operation_state", CODE_OUTCOME_UNKNOWN)

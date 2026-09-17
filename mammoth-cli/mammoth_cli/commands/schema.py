@@ -370,7 +370,9 @@ def _scope_requirements(command_id: str, scope: str) -> dict[str, Any]:
             "kind": scope,
             "required_context": [],
             "target_fields": [],
-            "target_rule": "Inspect positionals and accepted_fields for operation-specific bindings.",
+            "target_rule": (
+                "Inspect positionals and accepted_fields for operation-specific bindings."
+            ),
         },
     )
 

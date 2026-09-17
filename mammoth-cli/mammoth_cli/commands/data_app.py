@@ -26,7 +26,11 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
-from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, POLICY_YES_ALWAYS, enforce_confirmation
+from mammoth_cli.runtime.confirm import (
+    POLICY_PROMPT_OR_YES,
+    POLICY_YES_ALWAYS,
+    enforce_confirmation,
+)
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
