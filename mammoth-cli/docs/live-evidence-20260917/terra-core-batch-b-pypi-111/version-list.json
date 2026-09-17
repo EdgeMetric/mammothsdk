@@ -1,0 +1,61 @@
+{
+  "captured_at": "2026-09-17T13:37:42.406090+00:00",
+  "cli_version": "1.1.11",
+  "argv": [
+    "mammoth",
+    "view",
+    "version",
+    "list",
+    "46",
+    "29",
+    "--profile",
+    "expanded-live",
+    "--project",
+    "3",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 0,
+  "stdout_sha256": "0e0b6a0d50c7f01eb8fc1d7ac1d2aa4c969c899375c768041cc6ce130e81bc80",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "response_summary": {
+    "parseable_json": true,
+    "data": {
+      "type": "object",
+      "keys": [
+        "limit",
+        "next",
+        "offset",
+        "versions"
+      ],
+      "fields": {
+        "limit": {
+          "type": "int"
+        },
+        "next": {
+          "type": "str"
+        },
+        "offset": {
+          "type": "int"
+        },
+        "versions": {
+          "type": "array",
+          "count": 11,
+          "item": "dict",
+          "first_item_integer_ids": {
+            "dataview_id": 46,
+            "id": 3
+          }
+        }
+      }
+    },
+    "meta": {
+      "command": "view version list",
+      "workspace_id": 4,
+      "project_id": 3,
+      "pagination": null
+    }
+  },
+  "scope": "expanded-live workspace 4/project 3; retained IDs only; read-only"
+}

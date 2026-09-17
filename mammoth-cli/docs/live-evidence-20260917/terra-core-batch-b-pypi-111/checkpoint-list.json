@@ -1,0 +1,45 @@
+{
+  "captured_at": "2026-09-17T13:37:25.573149+00:00",
+  "cli_version": "1.1.11",
+  "argv": [
+    "mammoth",
+    "view",
+    "checkpoint",
+    "list",
+    "46",
+    "29",
+    "--profile",
+    "expanded-live",
+    "--project",
+    "3",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 0,
+  "stdout_sha256": "a64dd451c2c36b458cf6bae070f554f3aad29c7b568166dd9fbc271af79e2fbf",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "response_summary": {
+    "parseable_json": true,
+    "data": {
+      "type": "object",
+      "keys": [
+        "checkpoints"
+      ],
+      "fields": {
+        "checkpoints": {
+          "type": "array",
+          "count": 0,
+          "item": null
+        }
+      }
+    },
+    "meta": {
+      "command": "view checkpoint list",
+      "workspace_id": 4,
+      "project_id": 3,
+      "pagination": null
+    }
+  },
+  "scope": "expanded-live workspace 4/project 3; retained IDs only; read-only"
+}

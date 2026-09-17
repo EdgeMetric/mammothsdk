@@ -1,0 +1,181 @@
+{
+  "captured_at": "2026-09-17T13:36:57.908347+00:00",
+  "cli_version": "1.1.11",
+  "argv": [
+    "mammoth",
+    "view",
+    "exportable-config",
+    "get",
+    "46",
+    "29",
+    "--profile",
+    "expanded-live",
+    "--project",
+    "3",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 0,
+  "stdout_sha256": "690c1a5c3d0a8aa906c6d211b2c9c9a9a762085fdfe09ccc7f45a887e624adca",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "response_summary": {
+    "parseable_json": true,
+    "data": {
+      "type": "object",
+      "keys": [
+        "actions",
+        "checkpoints",
+        "data_checks",
+        "dependencies",
+        "dependency_info_dict",
+        "dependency_metadata",
+        "derivatives",
+        "display_properties",
+        "metadata",
+        "name",
+        "tasks",
+        "taskwise_info",
+        "user_preferences",
+        "version"
+      ],
+      "fields": {
+        "actions": {
+          "type": "array",
+          "count": 0,
+          "item": null
+        },
+        "checkpoints": {
+          "type": "array",
+          "count": 0,
+          "item": null
+        },
+        "data_checks": {
+          "type": "array",
+          "count": 0,
+          "item": null
+        },
+        "dependencies": {
+          "type": "object",
+          "keys": [
+            "W1",
+            "W2",
+            "W3",
+            "W4"
+          ],
+          "fields": {
+            "W1": "int",
+            "W2": "int",
+            "W3": "int",
+            "W4": "int"
+          }
+        },
+        "dependency_info_dict": {
+          "type": "object",
+          "keys": [
+            "45",
+            "47",
+            "48",
+            "49"
+          ],
+          "fields": {
+            "45": "dict",
+            "47": "dict",
+            "48": "dict",
+            "49": "dict"
+          }
+        },
+        "dependency_metadata": {
+          "type": "object",
+          "keys": [
+            "W1",
+            "W2",
+            "W3",
+            "W4"
+          ],
+          "fields": {
+            "W1": "list",
+            "W2": "list",
+            "W3": "list",
+            "W4": "list"
+          }
+        },
+        "derivatives": {
+          "type": "array",
+          "count": 0,
+          "item": null
+        },
+        "display_properties": {
+          "type": "object",
+          "keys": [
+            "COLUMN_ORDER",
+            "COLUMN_ORDER_REFERENCE",
+            "EXPLORE_SUGGESTIONS",
+            "FORMAT_INFO",
+            "GLOBAL_DISPLAY_CONDITION",
+            "HIDDEN_COLUMNS",
+            "SORT"
+          ],
+          "fields": {
+            "COLUMN_ORDER": "dict",
+            "COLUMN_ORDER_REFERENCE": "dict",
+            "EXPLORE_SUGGESTIONS": "list",
+            "FORMAT_INFO": "dict",
+            "GLOBAL_DISPLAY_CONDITION": "NoneType",
+            "HIDDEN_COLUMNS": "list",
+            "SORT": "list"
+          }
+        },
+        "metadata": {
+          "type": "array",
+          "count": 4,
+          "item": "dict",
+          "first_item_integer_ids": {}
+        },
+        "name": {
+          "type": "str"
+        },
+        "tasks": {
+          "type": "array",
+          "count": 5,
+          "item": "dict",
+          "first_item_integer_ids": {}
+        },
+        "taskwise_info": {
+          "type": "object",
+          "keys": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5"
+          ],
+          "fields": {
+            "0": "dict",
+            "1": "dict",
+            "2": "dict",
+            "3": "dict",
+            "4": "dict",
+            "5": "dict"
+          }
+        },
+        "user_preferences": {
+          "type": "object",
+          "keys": [],
+          "fields": {}
+        },
+        "version": {
+          "type": "str"
+        }
+      }
+    },
+    "meta": {
+      "command": "view exportable-config get",
+      "workspace_id": 4,
+      "project_id": 3,
+      "pagination": null
+    }
+  },
+  "scope": "expanded-live workspace 4/project 3; retained IDs only; read-only"
+}
