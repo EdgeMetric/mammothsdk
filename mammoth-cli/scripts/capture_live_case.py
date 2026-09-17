@@ -86,7 +86,8 @@ def main() -> int:
         ["mammoth", "--version"], capture_output=True, check=False
     )
     record = {
-        "captured_at": datetime.now(timezone.utc).isoformat(),
+        # Keep this standalone evidence script compatible with Python 3.10.
+        "captured_at": datetime.now(timezone.utc).isoformat(),  # noqa: UP017
         "cli_version": version_result.stdout.decode("utf-8", errors="replace").strip(),
         "argv": command,
         "exit_code": exit_code,

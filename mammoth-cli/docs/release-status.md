@@ -1,12 +1,20 @@
 # CLI release provenance
 
-## 1.1.8
+## 1.1.9
 
 Pending CI build verification. This corrective patch contains no feature
 changes relative to 1.1.7. It will be uploaded to PyPI only from the exact
-distribution files downloaded from its successful `cli-v1.1.8` CI run. The
+distribution files downloaded from its successful `cli-v1.1.9` CI run. The
 final CI/PyPI SHA-256 values and fresh-install smoke evidence are recorded
 here after publication.
+
+## 1.1.8
+
+Not published. Its CI full gate failed before artifact construction because a
+Python 3.10-compatible evidence-script change was introduced after the local
+lint check and triggered Ruff's Python-3.11-only `UP017` suggestion. The
+1.1.9 follow-up keeps the compatibility behavior and suppresses that specific
+non-applicable suggestion.
 
 ## 1.1.7
 
