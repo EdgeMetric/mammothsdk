@@ -29,9 +29,11 @@ Confirm the result:
 mammoth --version
 ```
 
-These one-line commands execute downloaded code. For a verified install,
-download the installer and `SHA256SUMS` first, verify its SHA-256 entry and the
-Sigstore bundle attached to the release, inspect the script, then execute it.
+These one-line commands execute downloaded code. For a checksum-verified
+install, download the installer and `SHA256SUMS`, verify the installer's
+SHA-256 entry, inspect the script, then execute it. If the release also
+attaches `SHA256SUMS.sigstore.json`, verify that bundle before trusting the
+checksums; do not claim a signature when the bundle is absent.
 
 ## With uv
 
@@ -69,9 +71,10 @@ on your PATH. Run `pipx upgrade mammoth-cli` to update it.
 ## Convenience installers
 
 The versioned release ships `mammoth-install.sh` (Linux and macOS, POSIX `sh`)
-and `mammoth-install.ps1` (Windows PowerShell 5.1+). The verified flow downloads
-the installer, `SHA256SUMS`, and the Sigstore bundle, verifies both, then runs
-the installer. For the direct convenience flow:
+and `mammoth-install.ps1` (Windows PowerShell 5.1+). Every release attaches
+`SHA256SUMS`; download the installer and that file, verify the checksum, then
+inspect and run the installer. Some releases additionally attach a Sigstore
+bundle. For the direct convenience flow:
 
 ```sh
 curl -fsSL https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.sh | sh
@@ -81,9 +84,9 @@ curl -fsSL https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mam
 irm https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.ps1 | iex
 ```
 
-Piping a download directly to a shell does not verify it first. For the
-verified flow, download the installer, `SHA256SUMS`, and
-`SHA256SUMS.sigstore.json` from the release, then verify the bundle:
+Piping a download directly to a shell does not verify it first. Verify the
+installer against its `SHA256SUMS` entry before execution. When the release
+contains `SHA256SUMS.sigstore.json`, verify that optional bundle first:
 
 ```bash
 cosign verify-blob \
@@ -94,10 +97,13 @@ cosign verify-blob \
 ```
 
 The `--certificate-identity-regexp` and `--certificate-oidc-issuer`
-constraints ensure the signature came from the EdgeMetric/mammothsdk release
-workflow. Without them, `cosign` accepts any valid Sigstore certificate.
-Then run `sha256sum --check --ignore-missing SHA256SUMS` and inspect the
-installer before you execute it.
+constraints ensure a present signature came from the EdgeMetric/mammothsdk
+release workflow. Without them, `cosign` accepts any valid Sigstore
+certificate. Then run `sha256sum --check --ignore-missing SHA256SUMS` and
+inspect the installer before you execute it. If no bundle is attached, the
+checksum check is not signature verification and does not authenticate the
+assets unless you obtained the expected checksum through a separate trusted
+channel.
 
 ## Install the agent skill
 

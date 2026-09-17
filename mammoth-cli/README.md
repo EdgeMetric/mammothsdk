@@ -59,8 +59,10 @@ python -m pip install mammoth-cli
 </details>
 
 The CLI supports Python 3.12, 3.13, and 3.14. These one-line commands execute
-downloaded code; for the verified (checksummed and signed) flow, see
-[docs/installation.md](docs/installation.md).
+downloaded code; for checksum verification, see
+[docs/installation.md](docs/installation.md). A Sigstore signature is an
+additional verification step only when that release actually includes its
+`SHA256SUMS.sigstore.json` bundle.
 
 ## Quick start
 
