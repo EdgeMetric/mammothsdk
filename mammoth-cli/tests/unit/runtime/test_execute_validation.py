@@ -11,8 +11,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+import typer
+
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
-from mammoth_cli.runtime.executor import _profile_scope_recovery
+from mammoth_cli.runtime.executor import _profile_scope_recovery, run
 from mammoth_cli.testing import make_runner
 
 _JSON_NO_INPUT = ["--output", "json", "--no-input"]
@@ -26,6 +29,35 @@ def test_profile_scoped_recovery_handles_commands_without_output_option() -> Non
     scoped = _profile_scope_recovery(error, "staging")
 
     assert scoped.recovery_commands == ["mammoth auth login --profile staging"]
+
+
+def test_ndjson_error_is_one_terminal_frame_on_stderr(capsys: pytest.CaptureFixture[str]) -> None:
+    def _failure() -> tuple[object, dict[str, object]]:
+        raise CliError(code="interrupted", message="stopped", exit_status=130)
+
+    with pytest.raises(typer.Exit) as raised:
+        run("test", "ndjson", _failure)
+
+    captured = capsys.readouterr()
+    assert raised.value.exit_code == 130
+    assert captured.out == ""
+    assert json.loads(captured.err) == {
+        "complete": False,
+        "error": {
+            "authorization_required": False,
+            "code": "interrupted",
+            "details": {},
+            "hint": None,
+            "message": "stopped",
+            "recovery_commands": [],
+            "request_id": None,
+            "retryable": False,
+        },
+        "event": "error",
+        "meta": None,
+        "schema_version": 1,
+        "stream_version": 2,
+    }
 
 
 # --- R5: a surplus positional is refused, not silently dropped ------------

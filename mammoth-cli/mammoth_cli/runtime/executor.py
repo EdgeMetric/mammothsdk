@@ -95,7 +95,7 @@ def emit_success(
     render(envelope, output=output)
 
 
-def emit_error(error: CliError, *, machine: bool) -> None:
+def emit_error(error: CliError, *, machine: bool, output: str = "json") -> None:
     """Render one error envelope to stderr.
 
     Args:
@@ -104,9 +104,15 @@ def emit_error(error: CliError, *, machine: bool) -> None:
             or ``ndjson``). Machine mode renders the versioned JSON error
             envelope; human mode renders a short readable message with any
             recovery commands.
+        output: The selected machine mode. Only ``ndjson`` selects lifecycle
+            framing; all other machine errors retain the JSON envelope.
     """
     if machine:
-        render(error.to_envelope(), output="json", stream=sys.stderr)
+        render(
+            error.to_envelope(),
+            output="ndjson" if output == "ndjson" else "json",
+            stream=sys.stderr,
+        )
         return
     message = error.message
     if error.hint:
@@ -154,19 +160,19 @@ def run(
         data, meta_extra = producer()
         emit_success(command_id, data, output, **meta_extra)
     except CliError as error:
-        emit_error(error, machine=machine_error)
+        emit_error(error, machine=machine_error, output=output)
         raise typer.Exit(error.exit_status) from None
     except KeyboardInterrupt as exc:
         # Polling can be interrupted after a job handle was observed.  Keep
         # that handle when an SDK exception exposes one; never turn Ctrl-C
         # into a successful/empty result or a Python traceback.
         mapped_error = _profile_scope_recovery(map_sdk_exception(exc), profile)
-        emit_error(mapped_error, machine=machine_error)
+        emit_error(mapped_error, machine=machine_error, output=output)
         raise typer.Exit(mapped_error.exit_status) from None
     except Exception as exc:
         # Bespoke handlers should normally cross the SDK service seam, but a
         # malformed response or filesystem fault must still obey the same
         # machine envelope rather than leaking an implementation traceback.
         mapped_error = _profile_scope_recovery(map_sdk_exception(exc), profile)
-        emit_error(mapped_error, machine=machine_error)
+        emit_error(mapped_error, machine=machine_error, output=output)
         raise typer.Exit(mapped_error.exit_status) from None

@@ -175,20 +175,73 @@ def test_json_is_one_complete_parseable_document_and_preserves_token_count() -> 
     assert stream.getvalue().count("{") == stream.getvalue().count("}")
 
 
-def test_ndjson_emits_complete_values_for_list_and_empty_results() -> None:
+def test_ndjson_emits_versioned_lifecycle_for_items_empty_and_error() -> None:
     stream = io.StringIO()
     render(
-        {"schema_version": 1, "data": [{"id": 1}, {"id": 2}], "meta": {}},
+        {
+            "schema_version": 1,
+            "data": [{"id": 1}, {"id": 2}],
+            "meta": {"pagination": {"next_cursor": "opaque", "has_more": True}},
+        },
         output="ndjson",
         stream=stream,
     )
     lines = stream.getvalue().splitlines()
-    assert [json.loads(line) for line in lines] == [{"id": 1}, {"id": 2}]
-    assert all(line.strip().startswith("{") and line.strip().endswith("}") for line in lines)
+    frames = [json.loads(line) for line in lines]
+    assert [frame["event"] for frame in frames] == ["start", "item", "item", "end"]
+    assert [frame["data"] for frame in frames[1:3]] == [{"id": 1}, {"id": 2}]
+    assert frames[0]["meta"]["pagination"] == {"next_cursor": "opaque", "has_more": True}
+    assert frames[-1]["meta"] == frames[0]["meta"]
+    assert frames[-1]["complete"] is True
 
     empty = io.StringIO()
     render({"schema_version": 1, "data": [], "meta": {}}, output="ndjson", stream=empty)
-    assert empty.getvalue() == ""
+    assert [json.loads(line)["event"] for line in empty.getvalue().splitlines()] == ["start", "end"]
+
+    failed = io.StringIO()
+    render(
+        {"schema_version": 1, "error": {"code": "interrupted"}, "meta": {}},
+        output="ndjson",
+        stream=failed,
+    )
+    assert json.loads(failed.getvalue()) == {
+        "complete": False,
+        "error": {"code": "interrupted"},
+        "event": "error",
+        "meta": {},
+        "schema_version": 1,
+        "stream_version": 2,
+    }
+
+
+def test_ndjson_legacy_mode_retains_item_only_compatibility() -> None:
+    stream = io.StringIO()
+    render(
+        {"schema_version": 1, "data": [{"id": 1}], "meta": {}},
+        output="ndjson",
+        stream=stream,
+        ndjson_legacy=True,
+    )
+    assert [json.loads(line) for line in stream.getvalue().splitlines()] == [{"id": 1}]
+
+
+def test_table_keeps_fields_from_heterogeneous_rows() -> None:
+    stream = io.StringIO()
+    render(
+        {
+            "schema_version": 1,
+            "data": [{"id": 1, "name": "first"}, {"id": 2, "status": "ok"}],
+            "meta": {},
+        },
+        output="table",
+        stream=stream,
+    )
+
+    output = stream.getvalue()
+    assert "name" in output
+    assert "status" in output
+    assert "first" in output
+    assert "ok" in output
 
 
 def test_nonfinite_result_is_made_json_safe_instead_of_emitting_invalid_json() -> None:

@@ -2,6 +2,11 @@
 
 Machine modes (json, ndjson) write pure data to stdout. Human modes (table,
 plain) never leak into machine stdout. Diagnostics always go to stderr.
+
+NDJSON is a versioned lifecycle stream (version 2): a ``start`` frame, zero or
+more ``item`` frames, then one terminal ``end`` or ``error`` frame.  The
+``ndjson_legacy`` render argument retains the former item-only format for
+embedded callers that explicitly opt into it.
 """
 
 from __future__ import annotations
@@ -14,12 +19,15 @@ import yaml
 
 from .normalize import normalize
 
+NDJSON_STREAM_VERSION = 2
+
 
 def render(
     envelope: dict[str, Any],
     *,
     output: str = "json",
     stream: TextIO | None = None,
+    ndjson_legacy: bool = False,
 ) -> None:
     stream = stream if stream is not None else sys.stdout
     # Render is also a public seam used by command tests and integrations;
@@ -30,7 +38,7 @@ def render(
         json.dump(envelope, stream, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False)
         stream.write("\n")
     elif output == "ndjson":
-        _render_ndjson(envelope, stream)
+        _render_ndjson(envelope, stream, legacy=ndjson_legacy)
     elif output == "yaml":
         yaml.safe_dump(envelope, stream, sort_keys=True, allow_unicode=True)
     elif output == "plain":
@@ -41,15 +49,74 @@ def render(
         raise ValueError(f"unknown output mode: {output}")
 
 
-def _render_ndjson(envelope: dict[str, Any], stream: TextIO) -> None:
+def _write_ndjson(frame: dict[str, Any], stream: TextIO) -> None:
+    """Write exactly one parseable lifecycle frame."""
+    stream.write(json.dumps(frame, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n")
+
+
+def _render_ndjson(envelope: dict[str, Any], stream: TextIO, *, legacy: bool = False) -> None:
+    """Render a versioned lifecycle stream, or the explicit legacy item stream."""
     data = envelope.get("data")
-    if isinstance(data, list):
-        for item in data:
+    if legacy:
+        if isinstance(data, list):
+            for item in data:
+                stream.write(
+                    json.dumps(item, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n"
+                )
+        else:
             stream.write(
-                json.dumps(item, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n"
+                json.dumps(data, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n"
             )
-    else:
-        stream.write(json.dumps(data, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n")
+        return
+
+    schema_version = envelope.get("schema_version")
+    meta = envelope.get("meta")
+    if "error" in envelope:
+        _write_ndjson(
+            {
+                "schema_version": schema_version,
+                "stream_version": NDJSON_STREAM_VERSION,
+                "event": "error",
+                "complete": False,
+                "error": envelope["error"],
+                "meta": meta,
+            },
+            stream,
+        )
+        return
+
+    _write_ndjson(
+        {
+            "schema_version": schema_version,
+            "stream_version": NDJSON_STREAM_VERSION,
+            "event": "start",
+            "meta": meta,
+        },
+        stream,
+    )
+    items = data if isinstance(data, list) else [data]
+    for index, item in enumerate(items):
+        _write_ndjson(
+            {
+                "schema_version": schema_version,
+                "stream_version": NDJSON_STREAM_VERSION,
+                "event": "item",
+                "index": index,
+                "data": item,
+            },
+            stream,
+        )
+    _write_ndjson(
+        {
+            "schema_version": schema_version,
+            "stream_version": NDJSON_STREAM_VERSION,
+            "event": "end",
+            "complete": True,
+            "count": len(items),
+            "meta": meta,
+        },
+        stream,
+    )
 
 
 def _render_plain(data: Any, stream: TextIO) -> None:
@@ -68,11 +135,22 @@ def _render_table(data: Any, stream: TextIO) -> None:
     from rich.table import Table
 
     console = Console(file=stream)
-    if isinstance(data, list) and data and isinstance(data[0], dict):
-        columns = list(data[0].keys())
+    if isinstance(data, list) and any(isinstance(row, dict) for row in data):
+        columns: list[str] = []
+        for row in data:
+            if isinstance(row, dict):
+                for key in row:
+                    key_text = str(key)
+                    if key_text not in columns:
+                        columns.append(key_text)
+        if any(not isinstance(row, dict) for row in data):
+            columns.append("value")
         table = Table(*[str(c) for c in columns])
         for row in data:
-            table.add_row(*[_scalar(row.get(c)) for c in columns])
+            if isinstance(row, dict):
+                table.add_row(*[_scalar(row.get(c)) for c in columns])
+            else:
+                table.add_row(*[_scalar(row) if column == "value" else "" for column in columns])
         console.print(table)
     elif isinstance(data, dict):
         table = Table("field", "value")
