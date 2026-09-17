@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-
 MANIFEST = Path(__file__).parent / "fixtures" / "C2-CORE-READONLY-001-010.json"
 EXPECTED = {
     "P0-READ-001": "/workspaces/4/projects/3/datasets",

@@ -27,8 +27,8 @@ git tag -a sdk-v0.7.0 -m "mammoth-io 0.7.0" <merge-commit>
 git push origin sdk-v0.7.0            # -> .github/workflows/sdk-release.yml
 
 # 2) CLI, after mammoth-io is live on PyPI
-git tag -a cli-v1.1.1 -m "mammoth-cli 1.1.1" <merge-commit>
-git push origin cli-v1.1.1            # -> .github/workflows/cli-release.yml
+git tag -a cli-v1.1.2 -m "mammoth-cli 1.1.2" <merge-commit>
+git push origin cli-v1.1.2            # -> .github/workflows/cli-release.yml
 ```
 
 Both `publish` jobs use the `pypi` GitHub environment (add required reviewers
