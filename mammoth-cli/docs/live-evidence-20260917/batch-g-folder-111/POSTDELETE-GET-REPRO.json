@@ -1,0 +1,29 @@
+{
+  "captured_at": "2026-09-17T14:01:08.379567Z",
+  "scope": {
+    "profile": "expanded-live",
+    "workspace_id": 4,
+    "project_id": 3,
+    "cli_version": "1.1.11",
+    "sdk_version": "0.7.1",
+    "cli_wheel_sha256": "25a811dad8d843731d719f20948ffe7df85dfb16a89f4cea1d8999925b54c962",
+    "sdk_wheel_sha256": "41e606f1ce4705917449f6f926936abfb1f6e776b9339a42848370456fa7bf6e"
+  },
+  "argv": ["folder", "get", "2", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"],
+  "shell_exit_code": 1,
+  "stdout": {"bytes": 0, "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+  "stderr": {
+    "bytes": 741,
+    "sha256": "dc31fa1444377e106530eef55cb417148df2fa9dd5b2a24a46142cc0a6be116c",
+    "structured_summary": {
+      "top_level_code": "api_error",
+      "message": "Mammoth returned an API error.",
+      "endpoint": "/workspaces/4/projects/3/folders/2",
+      "http_status": 400,
+      "response_error_code": "4FOLD001",
+      "response_error_name": "INVALID_FOLDER_ID",
+      "retryable": false
+    }
+  },
+  "conclusion": "Post-delete folder.get correctly exits 1; the structured JSON is on stderr. The earlier RESULTS.json record showing exit 0 was caused by redirecting stdout only while observing stderr in the terminal and is superseded by this reproduction."
+}

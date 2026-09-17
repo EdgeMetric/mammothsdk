@@ -10,6 +10,10 @@ Project 3 had no folders at baseline. One disposable folder was created (folder 
 
 The folder move was not executed. Its schema requires `resource_ids` and optionally a target folder resource ID, returns an un-waitable job, and the project had no observed non-root destination; the root response has `id=0` and `resource_id=null`. No target was guessed. Bulk delete was not executed: it is destructive and accepts a list, while the single-owned-folder delete path was sufficient and had explicit confirmation controls.
 
+## Post-delete error reproduction
+
+The original live capture redirected stdout only, so the terminal displayed the structured error while the recorded exit code was misleading. A separate read-only reproduction captured both streams: stdout was empty, the structured `INVALID_FOLDER_ID` HTTP 400 envelope was on stderr, and the shell exit code was `1`. See `POSTDELETE-GET-REPRO.json`; it supersedes the earlier single-stream note.
+
 ## Bounded proposals (matrix intentionally not edited)
 
 * `REL-307 folder.update`: propose **Partial** — typed rename succeeded and exact owned ID readback confirmed the new name; no broader field coverage.
