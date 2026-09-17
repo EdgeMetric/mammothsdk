@@ -4,6 +4,15 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3]
+
+### Security
+
+- Reject non-HTTPS API base URLs by default. Explicit HTTP is limited to
+  loopback development endpoints and requires `allow_insecure_loopback_http=True`.
+- Remove live-test credential defaults; the live suite now requires environment
+  configuration and skips when it is absent.
+
 ## [0.7.2]
 
 ### Changed

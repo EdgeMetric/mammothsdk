@@ -27,6 +27,7 @@ Example::
 from __future__ import annotations
 
 import math
+from ipaddress import ip_address
 from typing import Any, cast
 from urllib.parse import urljoin, urlsplit
 
@@ -84,6 +85,18 @@ def _get_version() -> str:
         return __version__
     except ImportError:
         return "0.2.0"
+
+
+def _is_loopback_host(hostname: str | None) -> bool:
+    """Return whether a parsed host is an explicit local development target."""
+    if hostname == "localhost":
+        return True
+    if hostname is None:
+        return False
+    try:
+        return ip_address(hostname).is_loopback
+    except ValueError:
+        return False
 
 
 # ── Configurable defaults ─────────────────────────────────────
@@ -245,6 +258,7 @@ class MammothClient:
         timeout: float = DEFAULT_TIMEOUT,
         job_timeout: float = DEFAULT_JOB_TIMEOUT,
         pipeline_timeout: float = DEFAULT_PIPELINE_TIMEOUT,
+        allow_insecure_loopback_http: bool = False,
     ) -> None:
         """Initialize the Mammoth client.
 
@@ -256,11 +270,43 @@ class MammothClient:
             timeout: Request timeout in seconds.
             job_timeout: Job polling timeout in seconds.
             pipeline_timeout: Pipeline readiness polling timeout in seconds.
+            allow_insecure_loopback_http: Permit HTTP only for an explicit
+                loopback development endpoint. Production API credentials must
+                use HTTPS.
         """
+        if not isinstance(base_url, str):
+            raise ValueError("base_url must be an HTTPS URL")
+        self.base_url = base_url.rstrip("/")
+        supplied_base_url = urlsplit(self.base_url)
+        has_unsafe_url_components = any(
+            (
+                supplied_base_url.username,
+                supplied_base_url.password,
+                supplied_base_url.query,
+                supplied_base_url.fragment,
+            )
+        )
+        if not self.base_url.endswith("/api/v2"):
+            self.base_url = urljoin(self.base_url, "/api/v2")
+        parsed_base_url = urlsplit(self.base_url)
+        valid_base_url = not has_unsafe_url_components and (
+            parsed_base_url.scheme == "https"
+            and parsed_base_url.hostname is not None
+            or (
+                parsed_base_url.scheme == "http"
+                and allow_insecure_loopback_http is True
+                and _is_loopback_host(parsed_base_url.hostname)
+            )
+        )
+        if not valid_base_url:
+            raise ValueError(
+                "base_url must use HTTPS; HTTP is permitted only for an explicit "
+                "loopback development endpoint"
+            )
+
         self.api_key = api_key
         self.api_secret = api_secret
         self.workspace_id = workspace_id
-        self.base_url = base_url.rstrip("/")
         if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
             raise ValueError("timeout must be a positive finite number")
         if not math.isfinite(timeout) or timeout <= 0:
@@ -275,9 +321,6 @@ class MammothClient:
         self.pipeline_timeout = pipeline_timeout
 
         self.project_id: int | None = None
-
-        if not self.base_url.endswith("/api/v2"):
-            self.base_url = urljoin(self.base_url, "/api/v2")
 
         self.session = requests.Session()
         self.session.headers.update(

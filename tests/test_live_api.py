@@ -10,6 +10,7 @@ Run:
 """
 
 import contextlib
+import os
 import sys
 from pathlib import Path
 
@@ -19,16 +20,35 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 pytestmark = pytest.mark.integration
 
-from mammoth import Condition, MammothClient, Operator
+from mammoth import Condition, MammothClient, Operator  # noqa: E402
 
 # ── Config ────────────────────────────────────────────────────
 
-BASE_URL = "https://release.mammoth.io/api/v2"
-API_KEY = "RHXpAc2Z9HHOkZhYjICEcAcWyDAk"
-API_SECRET = "1RZT8E7KoNnfkP2XU1kPojzkwHSscWB97w"
-WORKSPACE_ID = 2
-PROJECT_ID = 697
 CSV_PATH = Path(__file__).resolve().parent.parent / "employee.csv"
+_REQUIRED_LIVE_ENV = (
+    "MAMMOTH_BASE_URL",
+    "MAMMOTH_API_KEY",
+    "MAMMOTH_API_SECRET",
+    "MAMMOTH_WORKSPACE_ID",
+    "MAMMOTH_PROJECT_ID",
+)
+
+
+def _live_config() -> tuple[str, str, str, int, int]:
+    """Read opt-in live-test credentials without providing any defaults."""
+    missing = [name for name in _REQUIRED_LIVE_ENV if not os.environ.get(name)]
+    if missing:
+        pytest.skip("live API test configuration is not set")
+    try:
+        return (
+            os.environ["MAMMOTH_BASE_URL"],
+            os.environ["MAMMOTH_API_KEY"],
+            os.environ["MAMMOTH_API_SECRET"],
+            int(os.environ["MAMMOTH_WORKSPACE_ID"]),
+            int(os.environ["MAMMOTH_PROJECT_ID"]),
+        )
+    except ValueError:
+        pytest.skip("live API workspace/project configuration is invalid")
 
 
 # ── Session-scoped fixtures ───────────────────────────────────
@@ -37,13 +57,14 @@ CSV_PATH = Path(__file__).resolve().parent.parent / "employee.csv"
 @pytest.fixture(scope="session")
 def client():
     """Authenticated MammothClient for the entire test session."""
+    base_url, api_key, api_secret, workspace_id, project_id = _live_config()
     c = MammothClient(
-        api_key=API_KEY,
-        api_secret=API_SECRET,
-        workspace_id=WORKSPACE_ID,
-        base_url=BASE_URL,
+        api_key=api_key,
+        api_secret=api_secret,
+        workspace_id=workspace_id,
+        base_url=base_url,
     )
-    c.set_project_id(PROJECT_ID)
+    c.set_project_id(project_id)
     return c
 
 

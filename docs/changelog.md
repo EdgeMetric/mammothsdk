@@ -1,19 +1,28 @@
 # Changelog
 
+## v0.7.3
+
+### Security
+
+- API client base URLs must use HTTPS by default. Development HTTP is available
+  only for an explicit loopback opt-in.
+- Live integration tests read required credentials from the environment and
+  skip when that configuration is absent.
+
 ## v0.7.2
 
-The current SDK release. It requires Python 3.12, 3.13, or 3.14 and improves
+The 0.7.2 release requires Python 3.12, 3.13, or 3.14 and improves
 response outcome classification, effectful webhook GET metadata, and bounded
 job waiting behavior.
 
 ## v0.7.1
 
-The current SDK release. It includes the current transformation and pipeline
+The 0.7.1 release includes transformation and pipeline
 reliability fixes and requires Python 3.12, 3.13, or 3.14.
 
 ## v0.7.0
 
-The current SDK release. It requires Python 3.12, 3.13, or 3.14. Transformation
+The 0.7.0 release requires Python 3.12, 3.13, or 3.14. Transformation
 arguments use the typed specifications and enums documented in the API
 reference; the bundled `mammoth-cli` release is 1.1.3 and depends on SDK 0.7.x.
 

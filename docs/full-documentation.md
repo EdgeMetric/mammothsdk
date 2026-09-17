@@ -530,6 +530,7 @@
   - [Import errors](#import-errors)
   - [See also](#see-also)
 - [Changelog](#changelog)
+  - [v0.7.3](#v073)
   - [v0.7.2](#v072)
   - [v0.7.1](#v071)
   - [v0.7.0](#v070)
@@ -558,7 +559,7 @@
 
 # Mammoth Analytics Python SDK
 
-**Version 0.7.2** | Python 3.12–3.14 | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mammothsdk)
+**Version 0.7.3** | Python 3.12–3.14 | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mammothsdk)
 
 The official Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data pipelines, apply transformations, and export results -- all from Python.
 
@@ -636,7 +637,7 @@ view.export.to_csv("output.csv")
 
 ## Version information
 
-- **SDK version**: 0.7.2
+- **SDK version**: 0.7.3
 - **Python**: 3.12–3.14
 - **API version**: v2
 
@@ -660,13 +661,13 @@ view.export.to_csv("output.csv")
 ## Install from PyPI
 
 ```bash
-pip install mammoth-io==0.7.2
+pip install mammoth-io==0.7.3
 ```
 
 Or with Poetry:
 
 ```bash
-poetry add mammoth-io==0.7.2
+poetry add mammoth-io==0.7.3
 ```
 
 ## Dependencies
@@ -746,7 +747,7 @@ Get up and running with the Mammoth Python SDK in five minutes.
 ## 1. Install the SDK
 
 ```bash
-pip install mammoth-io==0.7.2
+pip install mammoth-io==0.7.3
 ```
 
 ## 2. Get your API credentials
@@ -997,7 +998,7 @@ The client adds these headers to every request automatically:
 | `X-API-KEY` | Your API key |
 | `X-API-SECRET` | Your API secret |
 | `X-WORKSPACE-ID` | Your workspace ID |
-| `User-Agent` | `mammoth-io/0.7.2` |
+| `User-Agent` | `mammoth-io/0.7.3` |
 
 ## Error handling
 
@@ -1149,7 +1150,7 @@ Example::
     view.filter_rows(Condition("Sales", Operator.GTE, 1000))
     view.export.to_csv("output.csv")
 
-#### `__init__(self, api_key: 'str', api_secret: 'str', workspace_id: 'int', base_url: 'str' = 'https://app.mammoth.io/api/v2', timeout: 'float' = 30, job_timeout: 'float' = 60, pipeline_timeout: 'float' = 3600) -> 'None'`
+#### `__init__(self, api_key: 'str', api_secret: 'str', workspace_id: 'int', base_url: 'str' = 'https://app.mammoth.io/api/v2', timeout: 'float' = 30, job_timeout: 'float' = 60, pipeline_timeout: 'float' = 3600, allow_insecure_loopback_http: 'bool' = False) -> 'None'`
 
 Initialize the Mammoth client.
 
@@ -1161,6 +1162,8 @@ Args:
     timeout: Request timeout in seconds.
     job_timeout: Job polling timeout in seconds.
     pipeline_timeout: Pipeline readiness polling timeout in seconds.
+    allow_insecure_loopback_http: Permit HTTP only for an explicit loopback
+        development endpoint. Production API credentials must use HTTPS.
 
 #### `set_project_id(self, project_id: 'int') -> 'None'`
 
@@ -17949,20 +17952,29 @@ client = MammothClient(..., timeout=120)  # 2 minutes per request
 
 # Changelog
 
+## v0.7.3
+
+### Security
+
+- API client base URLs must use HTTPS by default. Development HTTP is available
+  only for an explicit loopback opt-in.
+- Live integration tests read required credentials from the environment and
+  skip when that configuration is absent.
+
 ## v0.7.2
 
-The current SDK release. It requires Python 3.12, 3.13, or 3.14 and improves
+The 0.7.2 release requires Python 3.12, 3.13, or 3.14 and improves
 response outcome classification, effectful webhook GET metadata, and bounded
 job waiting behavior.
 
 ## v0.7.1
 
-The current SDK release. It includes the current transformation and pipeline
+The 0.7.1 release includes transformation and pipeline
 reliability fixes and requires Python 3.12, 3.13, or 3.14.
 
 ## v0.7.0
 
-The current SDK release. It requires Python 3.12, 3.13, or 3.14. Transformation
+The 0.7.0 release requires Python 3.12, 3.13, or 3.14. Transformation
 arguments use the typed specifications and enums documented in the API
 reference; the bundled `mammoth-cli` release is 1.1.3 and depends on SDK 0.7.x.
 

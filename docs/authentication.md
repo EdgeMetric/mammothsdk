@@ -76,7 +76,7 @@ The client adds these headers to every request automatically:
 | `X-API-KEY` | Your API key |
 | `X-API-SECRET` | Your API secret |
 | `X-WORKSPACE-ID` | Your workspace ID |
-| `User-Agent` | `mammoth-io/0.7.2` |
+| `User-Agent` | `mammoth-io/0.7.3` |
 
 ## Error handling
 
@@ -113,6 +113,10 @@ client = MammothClient(api_key=os.getenv("MAMMOTH_API_KEY"), ...)
 **Rotate credentials regularly** -- regenerate API keys periodically and invalidate old ones.
 
 **Do not commit credentials** -- add `.env` and config files with secrets to `.gitignore`.
+
+**Use HTTPS API endpoints** -- the client rejects non-HTTPS API base URLs by
+default. Local HTTP development requires the explicit
+`allow_insecure_loopback_http=True` opt-in and is restricted to loopback hosts.
 
 ## Next steps
 

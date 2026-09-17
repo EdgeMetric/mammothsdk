@@ -99,6 +99,66 @@ def test_authenticated_request_rejects_cross_origin_endpoint() -> None:
     client.close()
 
 
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "http://api.example.test/api/v2",
+        "http://127.0.0.1:8080/api/v2",
+        "http://localhost.evil.test/api/v2",
+        "ftp://api.example.test/api/v2",
+        "https:///api/v2",
+        "https://user:password@api.example.test/api/v2",
+        "https://api.example.test/api/v2?tenant=wrong",
+        "https://api.example.test/api/v2#fragment",
+    ],
+)
+def test_client_rejects_insecure_or_invalid_base_url_by_default(base_url: str) -> None:
+    with pytest.raises(ValueError, match="base_url must use HTTPS"):
+        MammothClient("dummy-key", "dummy-secret", workspace_id=4, base_url=base_url)
+
+
+@pytest.mark.parametrize(
+    "base_url", ["http://localhost:8080", "http://127.0.0.1:8080", "http://[::1]:8080"]
+)
+def test_client_allows_explicit_loopback_http_for_development(base_url: str) -> None:
+    client = MammothClient(
+        "dummy-key",
+        "dummy-secret",
+        workspace_id=4,
+        base_url=base_url,
+        allow_insecure_loopback_http=True,
+    )
+
+    assert client.base_url == f"{base_url}/api/v2"
+    client.close()
+
+
+def test_client_rejects_nonloopback_http_even_with_development_opt_in() -> None:
+    with pytest.raises(ValueError, match="loopback"):
+        MammothClient(
+            "dummy-key",
+            "dummy-secret",
+            workspace_id=4,
+            base_url="http://api.example.test/api/v2",
+            allow_insecure_loopback_http=True,
+        )
+
+
+def test_invalid_base_url_is_rejected_before_session_setup(monkeypatch: pytest.MonkeyPatch) -> None:
+    def unexpected_session() -> None:
+        raise AssertionError("credential-bearing session must not be created")
+
+    monkeypatch.setattr("mammoth.client.requests.Session", unexpected_session)
+
+    with pytest.raises(ValueError, match="base_url must use HTTPS"):
+        MammothClient(
+            "dummy-key",
+            "dummy-secret",
+            workspace_id=4,
+            base_url="http://api.example.test/api/v2",
+        )
+
+
 @pytest.mark.parametrize("status_code", [500, 502, 504])
 def test_mutation_server_error_is_outcome_unknown_with_recovery_metadata(status_code: int) -> None:
     client = MammothClient("dummy-key", "dummy-secret", workspace_id=4)
