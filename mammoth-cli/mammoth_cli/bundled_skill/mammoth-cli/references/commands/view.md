@@ -884,7 +884,7 @@ Expected success: `ViewTrashResult` in the standard JSON envelope; mutation `ben
 
 Run: `mammoth view update`. Exact input fields: `mammoth schema get view.update --output json --no-input`.
 
-Example: `mammoth view update 123 123 --input '{"patch_data": [{"sample_key": "Status"}]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth schema get view.update --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewUpdateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

@@ -612,8 +612,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset update --help
-  agent_example: 'mammoth dataset update --input ''{"patch_data": [{"sample_key": "Status"}]}'' --output
-    json --no-input'
+  agent_example: mammoth schema get dataset.update --output json --no-input
   unit_tests:
   - UT-DATASET-UPDATE
   contract_tests:

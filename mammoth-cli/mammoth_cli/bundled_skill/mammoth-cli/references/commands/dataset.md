@@ -124,6 +124,6 @@ Expected success: `DatasetTrashResult` in the standard JSON envelope; mutation `
 
 Run: `mammoth dataset update`. Exact input fields: `mammoth schema get dataset.update --output json --no-input`.
 
-Example: `mammoth dataset update --input '{"patch_data": [{"sample_key": "Status"}]}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth schema get dataset.update --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Expected success: `DatasetUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.

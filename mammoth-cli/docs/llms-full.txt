@@ -535,7 +535,8 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth dataset trash` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.trash
   example: mammoth dataset trash 123 --output json --no-input
 - `mammoth dataset update` [high_impact/confirm_target] -> mammoth.api.datasets.DatasetsAPI.update
-  example: mammoth dataset update --input '{"patch_data": [{"sample_key": "Status"}]}' --output json --no-input
+  example: mammoth schema get dataset.update --output json --no-input
+  agent note: raw patch input is intentionally blocked; use a separately typed command or return unsupported_contract.
 
 ## doctor
 
@@ -1118,7 +1119,8 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth view trash` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.trash
   example: mammoth view trash 123 123 --output json --no-input
 - `mammoth view update` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.update
-  example: mammoth view update 123 123 --input '{"patch_data": [{"sample_key": "Status"}]}' --output json --no-input
+  example: mammoth schema get view.update --output json --no-input
+  agent note: raw patch input is intentionally blocked; use a separately typed command or return unsupported_contract.
 - `mammoth view version apply` [benign_mutation/none] -> mammoth.api.pipeline_versions.PipelineVersionsAPI.apply
   example: mammoth view version apply 123 123 123 --output json --no-input
 - `mammoth view version delete` [destructive/prompt_or_yes] -> mammoth.api.pipeline_versions.PipelineVersionsAPI.delete

@@ -4930,8 +4930,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view update VIEW_ID --help
-  agent_example: 'mammoth view update 123 123 --input ''{"patch_data": [{"sample_key": "Status"}]}'' --output
-    json --no-input'
+  agent_example: mammoth schema get view.update --output json --no-input
   unit_tests:
   - UT-VIEW-UPDATE
   contract_tests:

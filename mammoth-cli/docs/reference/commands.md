@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 1.1.11.
+Generated from the reviewed command manifests for mammoth-cli 1.1.12.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 
 Total commands: 547.
@@ -2378,7 +2378,12 @@ Total commands: 547.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.update`
-- Agent example: `mammoth dataset update --input '{"patch_data": [{"sample_key": "Status"}]}' --output json --no-input`
+- Agent example: `mammoth schema get dataset.update --output json --no-input`
+
+  **Agent note:** raw patch input is intentionally blocked because its
+  backend grammar is not a typed CLI contract. Do not infer an `op`,
+  `path`, or `value` from examples; use a separately typed command or
+  stop with the structured unsupported-contract result.
 
 ## doctor
 
@@ -5162,7 +5167,12 @@ Total commands: 547.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.update`
-- Agent example: `mammoth view update 123 123 --input '{"patch_data": [{"sample_key": "Status"}]}' --output json --no-input`
+- Agent example: `mammoth schema get view.update --output json --no-input`
+
+  **Agent note:** raw patch input is intentionally blocked because its
+  backend grammar is not a typed CLI contract. Do not infer an `op`,
+  `path`, or `value` from examples; use a separately typed command or
+  stop with the structured unsupported-contract result.
 
 ### `mammoth view version apply`
 

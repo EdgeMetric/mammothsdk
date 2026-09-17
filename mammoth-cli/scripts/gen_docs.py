@@ -52,6 +52,7 @@ GUIDES = [
     ("authentication.md", "Getting an API key, login, profiles, and project context."),
     ("agents.md", "Deterministic output, promptless mode, and CI patterns for agents."),
     ("task-spec-pilot-gap.md", "Typed transform pilot coverage and generic task-spec limits."),
+    ("dataset-view-update-contract-gap.md", "Why raw dataset and view patch commands are blocked."),
     ("agent-handoff.md", "Portable nonsecret checkpoints for continuing work in another session."),
     ("safety.md", "Mutation classes, confirmation policies, and safe mutation."),
     ("reference/output-and-errors.md", "Output modes, envelopes, exit codes, and error codes."),
@@ -109,6 +110,16 @@ def _command_block(record: dict[str, object]) -> list[str]:
                 "  `view.transform.substring`), and inspect one with",
                 "  `mammoth schema get view.transform.filter` before composing a",
                 "  transformation.",
+                "",
+            ]
+        )
+    if record["command_id"] in {"dataset.update", "view.update"}:
+        lines.extend(
+            [
+                "  **Agent note:** raw patch input is intentionally blocked because its",
+                "  backend grammar is not a typed CLI contract. Do not infer an `op`,",
+                "  `path`, or `value` from examples; use a separately typed command or",
+                "  stop with the structured unsupported-contract result.",
                 "",
             ]
         )
@@ -185,6 +196,11 @@ def render_llms_full_txt(families: dict[str, list[dict[str, object]]]) -> str:
                     "  agent note: illustrative low-level envelope, not a guaranteed executable "
                     "task; prefer typed view transform commands because task_spec fields are "
                     "not fully discoverable."
+                )
+            if record["command_id"] in {"dataset.update", "view.update"}:
+                lines.append(
+                    "  agent note: raw patch input is intentionally blocked; use a separately "
+                    "typed command or return unsupported_contract."
                 )
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"

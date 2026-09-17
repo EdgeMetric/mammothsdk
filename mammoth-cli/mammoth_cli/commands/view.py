@@ -30,6 +30,7 @@ from mammoth_cli.errors.envelope import (
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
+    CODE_UNSUPPORTED_CONTRACT,
     EXIT_USAGE,
     CliError,
 )
@@ -425,22 +426,25 @@ def view_trash(invocation: Invocation) -> HandlerResult:
 
 
 def view_update(invocation: Invocation) -> HandlerResult:
-    """Apply JSON Patch operations to a dataview. ``patch_data`` is required."""
-    project_id = require_project(invocation)
-    dataview_id = _require_int_positional_at(invocation, 0, "view id")
-    document = invocation.load_input()
-    patch_data = _require_field(document, "patch_data")
-    assert document is not None
-    with open_service(invocation) as (service, auth):
-        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
-        data = service.call(
-            _symbol(invocation),
-            dataset_id=dataset_id,
-            dataview_id=dataview_id,
-            patch_data=patch_data,
-            project_id=project_id,
-        )
-    return data, _meta(invocation, auth.workspace_id, project_id)
+    """Reject free-form dataview patches until the API supplies typed variants."""
+    raise CliError(
+        code=CODE_UNSUPPORTED_CONTRACT,
+        message="Raw dataview patch operations are not available through the CLI.",
+        exit_status=EXIT_USAGE,
+        hint=(
+            "The OpenAPI operation leaves op, path, and value unconstrained. "
+            "Use a separately typed view command when its schema covers the intended change."
+        ),
+        details={
+            "command_id": invocation.command_id,
+            "blocker": "B09 DATAVIEW_INPUT_UNTYPED",
+            "typed_alternatives": [],
+        },
+        recovery_commands=[
+            "mammoth schema find view --output json --no-input",
+            "mammoth schema get view.update --output json --no-input",
+        ],
+    )
 
 
 def view_data_get(invocation: Invocation) -> HandlerResult:

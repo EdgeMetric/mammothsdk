@@ -316,26 +316,27 @@ def test_trash_passes_ids(fake_service: FakeMammothService) -> None:
     ]
 
 
-def test_update_requires_patch_data(fake_service: FakeMammothService) -> None:
+def test_update_rejects_missing_patch_data_without_dispatch(
+    fake_service: FakeMammothService,
+) -> None:
     with pytest.raises(CliError) as excinfo:
         view_cmd.view_update(_inv("view.update", project=180, extra_args=["7", "9"]))
-    assert excinfo.value.code == "missing_field"
+    assert excinfo.value.code == "unsupported_contract"
+    assert excinfo.value.details["blocker"] == "B09 DATAVIEW_INPUT_UNTYPED"
+    assert fake_service.call_log == []
 
 
-def test_update_forwards_patch_data(fake_service: FakeMammothService, tmp_path: Path) -> None:
+def test_update_rejects_raw_patch_without_dispatch(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
     doc = _doc(tmp_path, {"patch_data": [{"op": "replace", "path": "/name", "value": "x"}]})
-    view_cmd.view_update(_inv("view.update", project=180, extra_args=["7", "9"], input_file=doc))
-    assert fake_service.call_log == [
-        (
-            _UPDATE,
-            {
-                "dataset_id": 9,
-                "dataview_id": 7,
-                "patch_data": [{"op": "replace", "path": "/name", "value": "x"}],
-                "project_id": 180,
-            },
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_update(
+            _inv("view.update", project=180, extra_args=["7", "9"], input_file=doc)
         )
-    ]
+    assert excinfo.value.code == "unsupported_contract"
+    assert excinfo.value.details["typed_alternatives"] == []
+    assert fake_service.call_log == []
 
 
 def test_data_get_passes_ids(fake_service: FakeMammothService) -> None:
@@ -1264,8 +1265,14 @@ def test_pipeline_items_all_requires_parent_and_forwards_bounds(
 
 @pytest.mark.parametrize(
     ("field", "value"),
-    [("dataset_id", 0), ("dataset_id", -1), ("dataset_id", True),
-     ("limit", 0), ("max_pages", 0), ("max_pages", 1001)],
+    [
+        ("dataset_id", 0),
+        ("dataset_id", -1),
+        ("dataset_id", True),
+        ("limit", 0),
+        ("max_pages", 0),
+        ("max_pages", 1001),
+    ],
 )
 def test_pipeline_items_all_rejects_invalid_bounds_before_request(
     fake_service: FakeMammothService, tmp_path: Path, field: str, value: object
@@ -1464,9 +1471,7 @@ def test_export_list_passes_explicit_dataset_without_discovery(
     fake_service: FakeMammothService,
 ) -> None:
     view_cmd.view_export_list(_inv("view.export.list", extra_args=["7", "9"]))
-    assert fake_service.call_log == [
-        (_EXPORT_LIST, {"dataview_id": 7, "dataset_id": 9})
-    ]
+    assert fake_service.call_log == [(_EXPORT_LIST, {"dataview_id": 7, "dataset_id": 9})]
 
 
 def test_export_list_forwards_filters(fake_service: FakeMammothService, tmp_path: Path) -> None:
