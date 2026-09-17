@@ -59,12 +59,12 @@ jobs:
           spec="$(python -c "
           import tomllib
           d = tomllib.load(open('pyproject.toml', 'rb'))
-          print(d['tool']['poetry']['dependencies']['mammoth-io'])
+          print(next(spec for spec in d['project']['dependencies'] if spec.startswith('mammoth-io ')))
           ")"
-          echo "required mammoth-io spec: $spec"
+          echo "required SDK dependency: $spec"
           gate_dir="$(mktemp -d)"
-          if ! python -m pip download "mammoth-io$spec" --no-deps -d "$gate_dir"; then
-            echo "::error::mammoth-io$spec does not resolve on PyPI yet. Publish/tag the sdk-v release first (see sdk-release.yml); this cli-v release is halted until it does."
+          if ! python -m pip download "$spec" --no-deps -d "$gate_dir"; then
+            echo "::error::$spec does not resolve on PyPI yet. Publish/tag the sdk-v release first (see sdk-release.yml); this cli-v release is halted until it does."
             exit 1
           fi
           rm -rf "$gate_dir"

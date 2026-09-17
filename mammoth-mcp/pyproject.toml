@@ -1,36 +1,33 @@
-[tool.poetry]
+[project]
 name = "mammoth-mcp"
 version = "0.1.0"
 description = "MCP server for Mammoth Analytics — lets LLMs explore, transform, and export data"
-authors = ["Mammoth Analytics <support@mammoth.io>"]
-license = "Proprietary"
+authors = [{name = "Mammoth Analytics", email = "support@mammoth.io"}]
+license = "LicenseRef-Proprietary"
 readme = "README.md"
-homepage = "https://mammoth.io"
-repository = "https://github.com/EdgeMetric/mammothsdk"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+    "mcp (>=1.26.0,<2.0.0)",
+    "mammoth-io (>=0.7.0,<0.8)",
+    "redis[hiredis] (>=5.0,<6.0)",
+    "httpx (>=0.28,<0.29)",
+    "pydantic-settings (>=2.0,<3.0)",
+    "uvicorn[standard] (>=0.34,<0.35)",
+    "cryptography (>=48.0.1,<50.0.0)",
+]
+urls = {homepage = "https://mammoth.io", repository = "https://github.com/EdgeMetric/mammothsdk"}
 keywords = ["mammoth", "analytics", "mcp", "llm", "ai"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: Other/Proprietary License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Information Analysis",
 ]
-packages = [{include = "mammoth_mcp"}]
 
-[tool.poetry.dependencies]
-python = ">=3.12,<3.15"
-mcp = "^1.26.0"
-mammoth-io = {path = "..", develop = true}
-redis = {version = "^5.0", extras = ["hiredis"]}
-httpx = "^0.28"
-pydantic-settings = "^2.0"
-uvicorn = {version = "^0.34", extras = ["standard"]}
-cryptography = ">=48.0.1,<50.0.0"
-
-[tool.poetry.scripts]
+[project.scripts]
 mammoth-mcp = "mammoth_mcp.server:main"
 
 [tool.ruff]
@@ -44,5 +41,8 @@ ignore = ["UP007", "SIM108"]
 "mammoth_mcp/tools/help.py" = ["E501"]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mammoth_mcp"]

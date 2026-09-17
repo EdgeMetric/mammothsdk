@@ -659,13 +659,15 @@ referencing = ">=0.31.0"
 
 [[package]]
 name = "mammoth-io"
-version = "0.6.0"
+version = "0.7.0"
 description = "Python SDK for Mammoth Analytics platform"
 optional = false
-python-versions = ">=3.12,<3.15"
+python-versions = "<3.15,>=3.12"
 groups = ["main"]
-files = []
-develop = true
+files = [
+    {file = "mammoth_io-0.7.0-py3-none-any.whl", hash = "sha256:666bc2130282fa1cbb1912d78d3973c13d2facd4962a5a79cad88346e247351a"},
+    {file = "mammoth_io-0.7.0.tar.gz", hash = "sha256:6c9e9c54b1480739324d94039aaf19c02a39c11ce43394ed79758b50a524ee10"},
+]
 
 [package.dependencies]
 pydantic = ">=2.10,<3"
@@ -673,10 +675,6 @@ requests = ">=2.32,<3"
 
 [package.extras]
 bridge = ["flask (==3.1.3)", "python-dotenv (==1.2.2)"]
-
-[package.source]
-type = "directory"
-url = ".."
 
 [[package]]
 name = "mcp"
@@ -1629,4 +1627,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "ce5c60d6623a9f0851cc9c262059470e3bf5d9135800c1d848c0fe4f7a14b1e2"
+content-hash = "f1aa1170b3eca31c624f0b22ce33373014e7f2886ab6a05c90fe00398ae5b8cf"

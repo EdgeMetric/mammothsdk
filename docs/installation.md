@@ -36,8 +36,9 @@ cd mammothsdk
 poetry install
 ```
 
-The development dependencies are a Poetry group in this repository, not a
-published `dev` extra. A PyPI install supplies only runtime dependencies.
+The development dependencies are a standard `[dependency-groups].dev` group
+in this repository, not a published `dev` extra. A PyPI install supplies only
+runtime dependencies.
 
 ### Dev tools
 

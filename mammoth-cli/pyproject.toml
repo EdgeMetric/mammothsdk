@@ -1,62 +1,59 @@
-[tool.poetry]
+[project]
 name = "mammoth-cli"
 version = "1.1.3"
 description = "Command-line interface for the Mammoth Analytics platform"
-authors = ["Mammoth Analytics <support@mammoth.io>"]
+authors = [{name = "Mammoth Analytics", email = "support@mammoth.io"}]
 readme = "README.md"
-license = "Proprietary"
-homepage = "https://mammoth.io"
-repository = "https://github.com/EdgeMetric/mammothsdk"
-packages = [{ include = "mammoth_cli" }]
-include = [
-    "mammoth_cli/py.typed",
-    "mammoth_cli/bundled_skill/**/*",
-    # The reviewed spec data lives beside the package in the repo. Poetry only
-    # ships sibling-of-package files in the wheel when the wheel format is
-    # requested explicitly; without this the installed CLI can build no command
-    # tree (only --version works) because the manifests are absent.
-    { path = "spec/openapi/openapi.json", format = ["sdist", "wheel"] },
-    { path = "spec/openapi/metadata.json", format = ["sdist", "wheel"] },
-    { path = "spec/manifests/**/*", format = ["sdist", "wheel"] },
+license = "LicenseRef-Proprietary"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+    "mammoth-io (>=0.7.0,<0.8)",
+    "typer (>=0.27,<0.28)",
+    "rich (>=15,<16)",
+    "platformdirs (>=4.10,<5)",
+    "tomlkit (>=0.15.1,<0.16)",
+    "keyring (>=25.7,<26)",
+    "PyYAML (>=6,<7)",
+    "pydantic (>=2.13,<3)",
+    "jsonschema (>=4.20)",
 ]
+urls = {homepage = "https://mammoth.io", repository = "https://github.com/EdgeMetric/mammothsdk"}
+scripts.mammoth = "mammoth_cli.__main__:main"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: Other/Proprietary License",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.12,<3.15"
-# The CLI must compose with a published SDK, never a repo-local file URL.
-mammoth-io = ">=0.7.0,<0.8"
-typer = ">=0.27,<0.28"
-rich = ">=15,<16"
-platformdirs = ">=4.10,<5"
-tomlkit = ">=0.15.1,<0.16"
-keyring = ">=25.7,<26"
-PyYAML = ">=6,<7"
-pydantic = ">=2.13,<3"
-jsonschema = ">=4.20"
+[tool.hatch.build.targets.wheel]
+packages = ["mammoth_cli"]
+force-include = {"spec/openapi/openapi.json" = "spec/openapi/openapi.json", "spec/openapi/metadata.json" = "spec/openapi/metadata.json", "spec/manifests" = "spec/manifests"}
+# Twine 6.x and current PyPI tooling accept Core Metadata 2.4 (including the
+# PEP 639 License-Expression field); 2.5 is not yet accepted by Twine's
+# distribution validator.
+core-metadata-version = "2.4"
 
-[tool.poetry.group.dev.dependencies]
-pytest = ">=8,<10"
-mypy = ">=1.11"
-ruff = ">=0.6"
-black = ">=24"
-datamodel-code-generator = ">=0.69,<0.70"
-types-PyYAML = "*"
-
-[tool.poetry.scripts]
-mammoth = "mammoth_cli.__main__:main"
+[dependency-groups]
+dev = [
+    "pytest (>=8,<10)",
+    "mypy (>=1.11)",
+    "ruff (>=0.6)",
+    "black (>=24)",
+    "datamodel-code-generator (>=0.69,<0.70)",
+    "types-PyYAML",
+]
 
 [build-system]
-requires = ["poetry-core>=2.4,<3"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+include = ["mammoth_cli", "spec/openapi/openapi.json", "spec/openapi/metadata.json", "spec/manifests"]
+core-metadata-version = "2.4"
 
 [tool.black]
 line-length = 100

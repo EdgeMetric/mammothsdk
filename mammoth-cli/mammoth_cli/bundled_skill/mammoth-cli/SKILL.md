@@ -102,6 +102,10 @@ mammoth view transform math VIEW_ID --project PROJECT_ID --output json --no-inpu
 See [references/machine-output.md](references/machine-output.md) and
 [references/input.md](references/input.md).
 
+For typed transforms, pipeline/task operations, workflows, and exports, read
+[references/operations.md](references/operations.md). It explains how to use
+the live command/schema contract without loading an exhaustive command catalog.
+
 A transform that takes a nested request is driven the same way. Bulk-replace
 maps many search values to one replacement, across one or more columns:
 

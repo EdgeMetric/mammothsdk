@@ -19,6 +19,6 @@ _SEMVER = re.compile(
 def test_sdk_runtime_version_matches_distribution_metadata() -> None:
     """The wheel metadata and imported package must advertise one version."""
     project = tomllib.loads((_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    declared = project["tool"]["poetry"]["version"]
+    declared = project["project"]["version"]
     assert declared == mammoth.__version__
     assert _SEMVER.fullmatch(declared)

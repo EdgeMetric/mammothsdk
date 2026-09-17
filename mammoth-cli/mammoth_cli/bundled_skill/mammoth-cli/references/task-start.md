@@ -50,9 +50,14 @@ non-evaluated operator use.
    `view.transform.substring`; inspect one with
    `mammoth schema get view.transform.filter --output json --no-input` before
    composing its input. The generic `view task add`, `view task preview`, and
-   `view task update` routes are low-level expert envelopes: `task_spec` is not
-   a fully discoverable task union in the installed schema, so do not invent
-   fields from its opaque object shape.
+   `view task update` routes expose an opaque `task_spec` object in the current
+   schema. Prefer typed `view transform <operation>` routes. Use a low-level
+   task route only when an independently documented task specification is
+   supplied for the target backend; never infer fields or a union from
+   `schema get` or an illustrative example. Otherwise report it as
+   unsupported/ambiguous and stop. See
+   [operations](operations.md) for task/pipeline, workflow, and export
+   read-back guidance.
 6. Verify each mutation from remote reads, schemas, jobs, pipeline/task
    definitions, and exported content. On timeout or unknown outcome, reconcile
    the observed job/resource before retrying; never blindly replay a mutation.

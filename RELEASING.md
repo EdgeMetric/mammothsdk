@@ -14,6 +14,11 @@ required `mammoth-io` range already resolves on PyPI.
 Each package's version lives in **two files that must stay in sync**:
 `pyproject.toml` and the package's `__init__.py`.
 
+The CLI's release metadata is now PEP 621 in `mammoth-cli/pyproject.toml` and
+its build backend is Hatchling. The CI workflow and checked-in lockfile are
+still Poetry-based during this migration; keep the commands below aligned with
+CI until that migration is completed.
+
 ## Preferred path — tag-triggered CI (hands-off, signed)
 
 Pushing a version tag runs the matching release workflow, which builds
@@ -112,4 +117,5 @@ after changing dependencies (requires the pinned `mammoth-io` to be published):
 cd mammoth-cli && poetry lock && poetry check --lock
 ```
 
-CI runs `poetry check --lock` so the lock never drifts from `pyproject.toml`.
+CI runs `poetry check --lock` so the lock stays synchronized with the package
+metadata while the PEP 621/Hatch migration is completed.
