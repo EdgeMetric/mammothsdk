@@ -16,6 +16,26 @@ mammoth schema get view.transform.math --output json --no-input
 
 ## Transforms and pipeline tasks
 
+For common data-preparation intents, search the live catalog rather than
+assuming a route is available. Typical discovery queries are:
+
+```bash
+mammoth schema find "convert type" --output json --no-input
+mammoth schema find "duplicate" --output json --no-input
+mammoth schema find "join lookup blend" --output json --no-input
+mammoth schema find "fill missing replace text" --output json --no-input
+```
+
+Use the exact returned command ID, then read its schema and the current view
+schema before composing input. For row-oriented sources such as OWID files,
+preserve the observed display names (often `Entity`, `Code`, `Year`, and one
+measure column); join only on keys confirmed in both exact view schemas. A
+derived measure such as GDP per capita should be created through the typed math
+route after numeric conversion and verified from a remote preview/readback.
+Deduplication is a semantic operation: inspect the route schema and define the
+key/retention rule explicitly; never treat a successful task submission as
+proof that duplicates were removed.
+
 Prefer a typed `view transform <operation>` command. Its schema is the
 discoverable request contract and its result should be verified with a view
 read, preview, pipeline read/items, or the returned job according to
