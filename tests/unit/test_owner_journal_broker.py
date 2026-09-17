@@ -355,13 +355,14 @@ def _socket_exchange(server, request: bytes) -> dict[str, object]:
     return json.loads(received)
 
 
-def _socket_server(module, tmp_path: Path, sender):
+def _socket_server(module, tmp_path: Path, sender, *, receive_timeout_seconds: float = 5.0):
     broker = _broker(module, tmp_path / "journal")
     return module.OwnerBrokerSocketServer(
         tmp_path / "owner-socket" / "broker.sock",
         trial_handle="trial_opaque_1",
         broker=broker,
         sender=sender,
+        receive_timeout_seconds=receive_timeout_seconds,
     )
 
 
@@ -394,12 +395,15 @@ def test_owner_socket_binds_private_path_and_returns_redacted_receipt(
         response = _socket_exchange(server, json.dumps(request).encode() + b"\n")
         assert response == {
             "ok": True,
+            "request_accepted": True,
             "receipt": {"intent_id": "intent-1", "outcome": "outcome_unknown", "handle": "job-44"},
             "observation": {
                 "ok": False,
                 "exit_status": 7,
                 "stdout": "Bearer <REDACTED>",
+                "stdout_truncated": False,
                 "stderr": "api_key=<REDACTED>",
+                "stderr_truncated": False,
             },
         }
         repeated = _socket_exchange(server, json.dumps(request).encode() + b"\n")
@@ -408,6 +412,47 @@ def test_owner_socket_binds_private_path_and_returns_redacted_receipt(
         assert calls == ["intent-1"]
     finally:
         server.close()
+
+
+def test_owner_socket_times_out_an_idle_client(broker_module, tmp_path: Path) -> None:
+    server = _socket_server(
+        broker_module,
+        tmp_path,
+        lambda _: {"outcome": "succeeded"},
+        receive_timeout_seconds=0.01,
+    )
+    server_side, client_side = socket.socketpair()
+    worker = threading.Thread(target=server._serve_connection, args=(server_side,))
+    worker.start()
+    try:
+        assert json.loads(client_side.recv(65536)) == {"error": "request_denied", "ok": False}
+    finally:
+        client_side.close()
+    worker.join(timeout=1)
+    assert not worker.is_alive()
+
+
+def test_owner_socket_marks_truncated_observation(broker_module, tmp_path: Path) -> None:
+    server = _socket_server(
+        broker_module,
+        tmp_path,
+        lambda _: {
+            "outcome": "succeeded",
+            "ok": True,
+            "exit_status": 0,
+            "stdout": "x" * (broker_module._MAX_OBSERVATION_CHARS + 1),
+        },
+    )
+    request = {
+        "trial_handle": "trial_opaque_1",
+        "intent_id": "intent-1",
+        "operation": "dataset.create",
+        "payload_sha256": "a" * 64,
+    }
+    response = _socket_exchange(server, json.dumps(request).encode() + b"\n")
+    observation = response["observation"]
+    assert observation["stdout_truncated"] is True
+    assert len(observation["stdout"]) == broker_module._MAX_OBSERVATION_CHARS
 
 
 @pytest.mark.parametrize(

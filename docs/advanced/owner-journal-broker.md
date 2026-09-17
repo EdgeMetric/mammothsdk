@@ -65,10 +65,15 @@ and 0600. A request has exactly four strings: opaque trial handle, opaque
 intent ID, allowlisted operation name, and payload digest. It cannot carry
 argv, a profile/config path, credentials, environment, project/workspace, or
 external destination. Invalid, oversized, malformed, and policy-denied frames
-receive a generic denial response.
+receive a generic denial response; an idle partial frame receives the same
+response after a bounded receive timeout.
 
 The successful response contains the durable receipt and, only for the initial
 dispatch, a redacted process observation. Repeated receipts do not rerun the
-sender or reconstruct output. This is not provider attestation, a credential
+sender or reconstruct output. Top-level `ok: true` means the broker accepted
+and journaled the request, not that the remote operation succeeded; inspect
+the receipt outcome and observation `ok` separately. Observation stdout/stderr
+are capped with explicit `*_truncated` flags, so they never claim completeness.
+This is not provider attestation, a credential
 vault, or live qualification; deployment still needs peer authentication and
 an appropriate protected-process boundary for its operating system.

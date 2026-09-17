@@ -57,6 +57,8 @@ _PRE_DISPATCH_ERROR_CODES = frozenset(
     }
 )
 _SOCKET_MESSAGE_LIMIT = 64 * 1024
+_SOCKET_RECEIVE_TIMEOUT_SECONDS = 5.0
+_MAX_OBSERVATION_CHARS = 16 * 1024
 _OPAQUE_HANDLE = re.compile(r"^[A-Za-z0-9_.-]{1,128}$")
 
 
@@ -573,15 +575,19 @@ class OwnerBrokerSocketServer:
         trial_handle: str,
         broker: OwnerJournalBroker,
         sender: Sender,
+        receive_timeout_seconds: float = _SOCKET_RECEIVE_TIMEOUT_SECONDS,
     ) -> None:
         if os.name != "posix" or not hasattr(socket, "AF_UNIX"):
             raise BrokerPolicyError("owner socket transport requires Unix-domain sockets")
         if not _OPAQUE_HANDLE.fullmatch(trial_handle):
             raise BrokerPolicyError("trial handle must be an opaque bounded token")
+        if not 0 < receive_timeout_seconds <= _SOCKET_RECEIVE_TIMEOUT_SECONDS:
+            raise BrokerPolicyError("owner socket receive timeout is outside the safe bound")
         self.path = Path(socket_path)
         self.trial_handle = trial_handle
         self.broker = broker
         self.sender = sender
+        self.receive_timeout_seconds = receive_timeout_seconds
         self._listener: socket.socket | None = None
         self._validate_socket_directory()
 
@@ -625,10 +631,17 @@ class OwnerBrokerSocketServer:
             self._serve_connection(connection)
 
     def _serve_connection(self, connection: socket.socket) -> None:
+        connection.settimeout(self.receive_timeout_seconds)
         try:
             request = self._receive(connection)
             response = self._dispatch(request)
-        except (BrokerPolicyError, ReconciliationRequiredError, ValueError, json.JSONDecodeError):
+        except (
+            BrokerPolicyError,
+            ReconciliationRequiredError,
+            ValueError,
+            json.JSONDecodeError,
+            TimeoutError,
+        ):
             response = {"ok": False, "error": "request_denied"}
         except Exception:
             response = {"ok": False, "error": "owner_transport_error"}
@@ -682,20 +695,13 @@ class OwnerBrokerSocketServer:
         def capture_sender(candidate: Invocation) -> Mapping[str, object]:
             nonlocal observation
             result = self.sender(candidate)
-            observation = {
-                key: (
-                    _redact_text(_as_text(result[key]))
-                    if key in {"stdout", "stderr"}
-                    else result[key]
-                )
-                for key in ("ok", "exit_status", "stdout", "stderr")
-                if key in result
-            }
+            observation = _redacted_observation(result)
             return result
 
         receipt = self.broker.submit(invocation, capture_sender)
         response: dict[str, object] = {
             "ok": True,
+            "request_accepted": True,
             "receipt": {
                 "intent_id": receipt.intent_id,
                 "outcome": receipt.outcome,
@@ -705,3 +711,16 @@ class OwnerBrokerSocketServer:
         if observation is not None:
             response["observation"] = observation
         return response
+
+
+def _redacted_observation(result: Mapping[str, object]) -> dict[str, object]:
+    """Return bounded, redacted process evidence without claiming completeness."""
+    observation = {key: result[key] for key in ("ok", "exit_status") if key in result}
+    for key in ("stdout", "stderr"):
+        if key not in result:
+            continue
+        redacted = _redact_text(_as_text(result[key]))
+        truncated = len(redacted) > _MAX_OBSERVATION_CHARS
+        observation[key] = redacted[:_MAX_OBSERVATION_CHARS]
+        observation[f"{key}_truncated"] = truncated
+    return observation
