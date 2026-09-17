@@ -58,6 +58,24 @@ core-metadata-version = "2.4"
 
 [tool.hatch.build.targets.sdist]
 core-metadata-version = "2.4"
+include = [
+    "mammoth/**",
+    "docs/**",
+    ".claude/skills/mammoth-sdk/**",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "pyproject.toml",
+    "mkdocs.yml",
+]
+exclude = [
+    ".claude/projects/**",
+    ".github/**",
+    "bridge/**",
+    "mammoth-cli/**",
+    "mammoth-mcp/**",
+    "tests/**",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
