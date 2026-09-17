@@ -20,7 +20,7 @@ envelope. Human modes render for a terminal reader.
 | `table` | human | Aligned columns for terminal reading. |
 | `json` | machine | The full envelope as one JSON object. |
 | `yaml` | human | The envelope rendered as YAML. |
-| `ndjson` | machine | One JSON object per line for streaming. |
+| `ndjson` | machine | Versioned lifecycle frames, one JSON object per line. |
 | `plain` | human | Minimal text with no color or borders. |
 
 The `auto` rule keeps interactive use readable and scripted use parseable. On a
@@ -29,10 +29,41 @@ terminal, `auto` renders a table. Off a terminal, `auto` emits JSON.
 The `json` and `ndjson` modes are the machine contract. They always emit the
 envelope. They never add color or progress output.
 
-`json` emits exactly one complete object. `ndjson` emits one complete envelope
-per result item, each terminated by a newline; diagnostics remain on stderr.
-Do not concatenate partial objects or infer continuation from a truncated
-stream. Use the command's `meta.pagination` or documented continuation fields.
+`json` emits exactly one complete object. `ndjson` emits a versioned lifecycle
+stream; diagnostics remain on stderr. Do not concatenate partial objects or
+infer continuation from a missing terminal frame. Use the stream's `meta.pagination`
+or documented continuation fields.
+
+## NDJSON v2 migration
+
+`--output ndjson` now emits `stream_version: 2` lifecycle frames. This is a
+wire-format change from the former item-only stream. Consumers must switch on
+`event`, not assume every line is a result item. The public renderer retains an
+explicit embedded-caller compatibility path (`ndjson_legacy=True`); the CLI has
+no legacy-output flag.
+
+Successful streams write these frames to **stdout**:
+
+1. `start` with the complete `meta` object, including bounded pagination metadata.
+2. Zero or more `item` frames with `index` and `data`.
+3. Exactly one `end` frame with `complete: true`, `count`, and the complete `meta` object.
+
+An empty list is therefore `start` then `end` with `count: 0`, not an empty
+byte stream. A successful scalar `data: null` is one `item` frame whose `data`
+is `null`, followed by `end` with `count: 1`; it is distinct from an empty list.
+
+On failure, stdout remains empty and **stderr** receives exactly one terminal
+`error` frame with `complete: false` and the normal error envelope payload.
+An absent `end` frame means the stream is incomplete (for example, the caller
+lost the process or transport) and must not be treated as success.
+
+Example successful list stream:
+
+```json
+{"event":"start","meta":{"pagination":{"next_cursor":"opaque","has_more":true}},"schema_version":1,"stream_version":2}
+{"data":{"id":1},"event":"item","index":0,"schema_version":1,"stream_version":2}
+{"complete":true,"count":1,"event":"end","meta":{"pagination":{"next_cursor":"opaque","has_more":true}},"schema_version":1,"stream_version":2}
+```
 
 ## Success envelope
 
