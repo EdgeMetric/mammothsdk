@@ -16,3 +16,8 @@ Bounded Partial proposals:
 - REL-126 video state: successful `{status: none, stale: false}`.
 
 All are single retained-resource reads and do not establish Full support.
+
+The exact rerun transcript, including UTC capture timestamps, sanitized argv,
+exit codes, output hashes, and structural summaries, is in
+[`RESULTS-TRANSCRIPT.json`](RESULTS-TRANSCRIPT.json). The earlier
+`RESULTS.json` remains historical evidence.
