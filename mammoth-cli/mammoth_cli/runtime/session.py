@@ -55,6 +55,7 @@ def open_service(invocation: Invocation) -> Iterator[tuple[MammothService, Resol
         job_timeout=invocation.job_timeout,
         pipeline_timeout=invocation.pipeline_timeout,
         project_id=resolved_project(invocation),
+        profile=invocation.profile or profiles.get_selected(),
         progress=not policy.progress_disabled,
     )
     try:

@@ -7,7 +7,12 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING, Any
 
-from ..exceptions import MammothJobFailedError, MammothJobTimeoutError, safe_response_body
+from ..exceptions import (
+    MammothAPIError,
+    MammothJobFailedError,
+    MammothJobTimeoutError,
+    safe_response_body,
+)
 
 if TYPE_CHECKING:
     from ..client import MammothClient
@@ -174,7 +179,12 @@ class JobsAPI:
         if isinstance(job_ids, str):
             job_ids_list = [int(x.strip()) for x in job_ids.split(",")]
         else:
-            job_ids_list = job_ids
+            job_ids_list = list(job_ids)
+        if not job_ids_list:
+            raise ValueError("job_ids must contain at least one job id")
+        if len(set(job_ids_list)) != len(job_ids_list):
+            raise ValueError("job_ids must not contain duplicate job ids")
+        requested_ids = set(job_ids_list)
 
         start_time = time.time()
         completed_jobs = {}
@@ -183,17 +193,41 @@ class JobsAPI:
         while time.time() - start_time < timeout:
             jobs_response = self.get_jobs(job_ids_list)
             jobs = jobs_response.get("jobs", [])
-
-            all_completed = True
+            if not isinstance(jobs, list):
+                raise MammothAPIError(
+                    "Jobs response has an invalid 'jobs' collection.",
+                    details={"protocol_error": "invalid_jobs_collection"},
+                )
+            observed_ids: set[int] = set()
 
             for job in jobs:
+                if not isinstance(job, dict):
+                    raise MammothAPIError(
+                        "Jobs response contains an invalid job record.",
+                        details={"protocol_error": "invalid_job_record"},
+                    )
                 job_id = job.get("id")
                 status = job.get("status")
+                if not isinstance(job_id, int) or isinstance(job_id, bool):
+                    raise MammothAPIError(
+                        "Jobs response contains a job without an integer id.",
+                        details={"protocol_error": "invalid_job_id"},
+                    )
+                if job_id not in requested_ids:
+                    raise MammothAPIError(
+                        "Jobs response includes a job that was not requested.",
+                        details={"protocol_error": "unexpected_job_id", "job_id": job_id},
+                    )
+                if job_id in observed_ids:
+                    raise MammothAPIError(
+                        "Jobs response includes the same job more than once.",
+                        details={"protocol_error": "duplicate_job_id", "job_id": job_id},
+                    )
+                observed_ids.add(job_id)
                 observed_phase = job.get("phase") or job.get("execution_phase") or "polling"
                 if not isinstance(observed_phase, str):
                     observed_phase = "polling"
-                if isinstance(job_id, int):
-                    last_observed[job_id] = safe_response_body(job)
+                last_observed[job_id] = safe_response_body(job)
 
                 if status == "success":
                     completed_jobs[job_id] = job
@@ -205,13 +239,11 @@ class JobsAPI:
                         observed_job=last_observed.get(job_id),
                         phase=observed_phase,
                     )
-                elif status == "processing":
-                    all_completed = False
-                else:
-                    all_completed = False
-
-            if all_completed:
-                return {"jobs": list(completed_jobs.values())}
+            # A partial (including empty) server response is an observation
+            # that some requested jobs remain unconfirmed, never proof that
+            # the whole requested set completed.
+            if requested_ids <= set(completed_jobs):
+                return {"jobs": [completed_jobs[job_id] for job_id in job_ids_list]}
 
             time.sleep(poll_interval)
 

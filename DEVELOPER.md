@@ -6,11 +6,10 @@ Development workflows for the mammoth-io SDK.
 
 ```bash
 git clone git@github.com:EdgeMetric/mammothsdk.git
-cd mm-pysdk
+cd mammothsdk
 python -m venv venv
 source venv/bin/activate
-pip install -e ".[dev]"
-# or with poetry:
+# The repository defines development tools as Poetry's standard `dev` group.
 poetry install
 ```
 

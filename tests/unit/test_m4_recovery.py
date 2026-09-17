@@ -139,6 +139,73 @@ def test_job_timeout_retains_last_observed_handle_and_phase(
     assert error.details["observed_job"]["status"] == "processing"
 
 
+@pytest.mark.parametrize(
+    ("response", "expected_pending_id"),
+    [
+        ({"jobs": []}, 101),
+        ({"jobs": [{"id": 101, "status": "success"}]}, 102),
+    ],
+)
+def test_wait_for_jobs_does_not_treat_empty_or_partial_results_as_completion(
+    monkeypatch: pytest.MonkeyPatch, response: dict[str, object], expected_pending_id: int
+) -> None:
+    client = SimpleNamespace(job_timeout=1)
+    jobs = JobsAPI(client)  # type: ignore[arg-type]
+    jobs.get_jobs = MagicMock(return_value=response)
+    clock = iter([0.0, 0.0, 2.0])
+    monkeypatch.setattr("mammoth.api.jobs.time.time", lambda: next(clock))
+    monkeypatch.setattr("mammoth.api.jobs.time.sleep", lambda _seconds: None)
+
+    with pytest.raises(MammothJobTimeoutError) as raised:
+        jobs.wait_for_jobs([101, 102], timeout=1)
+
+    assert raised.value.job_handle == expected_pending_id
+    assert jobs.get_jobs.call_count == 1
+
+
+def test_wait_for_jobs_returns_every_requested_success_in_request_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = SimpleNamespace(job_timeout=1)
+    jobs = JobsAPI(client)  # type: ignore[arg-type]
+    jobs.get_jobs = MagicMock(
+        return_value={
+            "jobs": [
+                {"id": 102, "status": "success"},
+                {"id": 101, "status": "success"},
+            ]
+        }
+    )
+    monkeypatch.setattr("mammoth.api.jobs.time.time", lambda: 0.0)
+
+    result = jobs.wait_for_jobs([101, 102], timeout=1)
+
+    assert [job["id"] for job in result["jobs"]] == [101, 102]
+
+
+@pytest.mark.parametrize(
+    "response, protocol_error",
+    [
+        (
+            {"jobs": [{"id": 101, "status": "success"}, {"id": 101, "status": "success"}]},
+            "duplicate_job_id",
+        ),
+        ({"jobs": [{"id": 999, "status": "success"}]}, "unexpected_job_id"),
+    ],
+)
+def test_wait_for_jobs_rejects_duplicate_or_unrequested_server_records(
+    response: dict[str, object], protocol_error: str
+) -> None:
+    client = SimpleNamespace(job_timeout=1)
+    jobs = JobsAPI(client)  # type: ignore[arg-type]
+    jobs.get_jobs = MagicMock(return_value=response)
+
+    with pytest.raises(MammothAPIError) as raised:
+        jobs.wait_for_jobs([101, 102], timeout=1)
+
+    assert raised.value.details["protocol_error"] == protocol_error
+
+
 def _export_api(session: MagicMock) -> ExportsAPI:
     client = SimpleNamespace(session=session, timeout=5)
     return ExportsAPI(client)  # type: ignore[arg-type]

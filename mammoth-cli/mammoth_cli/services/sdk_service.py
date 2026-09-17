@@ -40,6 +40,7 @@ class SdkMammothService:
         job_timeout: float | None = None,
         pipeline_timeout: float | None = None,
         project_id: int | None = None,
+        profile: str | None = None,
         progress: bool = False,
     ) -> None:
         """Build the service from resolved authentication.
@@ -54,11 +55,16 @@ class SdkMammothService:
             project_id: Active project id to bind on the client, so SDK methods
                 that read the client's project context (rather than taking an
                 explicit ``project_id`` argument) resolve to it.
+            profile: Resolved, non-secret credential profile used to render
+                recovery commands without falling back to mutable defaults.
             progress: Whether to show a stderr spinner while a call is in
                 flight. Set from the resolved output policy; false for machine
                 output, ``--no-progress``, non-terminals, and CI.
         """
         self._progress = progress
+        self._profile = profile
+        self._project_id = project_id
+        self._workspace_id = auth.workspace_id
         kwargs: dict[str, Any] = {}
         if timeout is not None:
             # Preserve fractional per-request timeouts; truncating 0.5 to 0
@@ -98,11 +104,15 @@ class SdkMammothService:
         # raise a raw SDK ValueError when ``--project`` was omitted.  Validate
         # the CLI precondition here so release commands fail as stable usage
         # errors before any transport call (or generic ``api_error`` envelope).
-        if sdk_symbol in {
-            "mammoth.api.pipeline.PipelineAPI.items_all",
-            "mammoth.client.ViewsResource.delete",
-            "mammoth.client.ViewsResource.get",
-        } and self._client.project_id is None:
+        if (
+            sdk_symbol
+            in {
+                "mammoth.api.pipeline.PipelineAPI.items_all",
+                "mammoth.client.ViewsResource.delete",
+                "mammoth.client.ViewsResource.get",
+            }
+            and self._client.project_id is None
+        ):
             raise missing_project_error()
         kwargs = self._coerce_call_arguments(method, kwargs)
         try:
@@ -117,7 +127,12 @@ class SdkMammothService:
                 details={"reason": str(exc)},
             ) from exc
         except Exception as exc:
-            raise map_sdk_exception(exc) from exc
+            raise map_sdk_exception(
+                exc,
+                profile=self._profile,
+                project_id=self._project_id,
+                workspace_id=self._workspace_id,
+            ) from exc
 
     @staticmethod
     def _coerce_call_arguments(method: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
@@ -405,6 +420,7 @@ class SdkMammothService:
                     pos += 1
 
         condition = kwargs.get(CONDITION_KWARG)
+
         def check_condition(spec: Any) -> None:
             if not isinstance(spec, dict):
                 return
@@ -429,6 +445,7 @@ class SdkMammothService:
                         check_condition(branch)
             if "not" in spec:
                 check_condition(spec["not"])
+
         check_condition(condition)
 
         if method == "join":

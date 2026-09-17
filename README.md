@@ -424,7 +424,7 @@ After upload, get a view for the new dataset:
 
 ```python
 dataset_id = client.files.upload("sales_data.csv")
-views = client.views.list()
+views = client.views.list(dataset_id=dataset_id)
 view = next(v for v in views if v.dataset_id == dataset_id)
 print(view.display_names)
 ```

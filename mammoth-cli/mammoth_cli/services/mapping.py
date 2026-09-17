@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shlex
 from typing import Any
 
 from mammoth.exceptions import (
@@ -30,8 +31,6 @@ from mammoth_cli.errors.envelope import (
     CliError,
     interrupted_error,
 )
-
-_READ_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 
 
 def _metadata(exc: MammothAPIError) -> dict[str, Any]:
@@ -74,14 +73,21 @@ def _metadata(exc: MammothAPIError) -> dict[str, Any]:
     return details
 
 
-def _job_recovery(job_id: object) -> list[str]:
+def _job_recovery(job_id: object, *, profile: str | None = None) -> list[str]:
+    profile_option = f" --profile {shlex.quote(profile)}" if profile else ""
     return [
-        f"mammoth job get {job_id} --output json --no-input",
-        f"mammoth job wait {job_id} --output json --no-input",
+        f"mammoth job get {job_id}{profile_option} --output json --no-input",
+        f"mammoth job wait {job_id}{profile_option} --output json --no-input",
     ]
 
 
-def map_sdk_exception(exc: BaseException) -> CliError:
+def map_sdk_exception(
+    exc: BaseException,
+    *,
+    profile: str | None = None,
+    project_id: int | None = None,
+    workspace_id: int | None = None,
+) -> CliError:
     """Map one SDK or transport failure to a typed, stable CLI outcome.
 
     Mutation timeouts and retry responses are *not* blanket-retryable: the SDK
@@ -124,7 +130,7 @@ def map_sdk_exception(exc: BaseException) -> CliError:
             hint="Inspect the job and wait for it to reach a terminal state.",
             details=details,
             retryable=True,
-            recovery_commands=_job_recovery(job_id) if job_id is not None else [],
+            recovery_commands=_job_recovery(job_id, profile=profile) if job_id is not None else [],
         )
 
     if isinstance(exc, MammothJobFailedError):
@@ -136,14 +142,13 @@ def map_sdk_exception(exc: BaseException) -> CliError:
             exit_status=EXIT_API,
             hint="Inspect the job response for the failure reason.",
             details=details,
-            recovery_commands=_job_recovery(job_id) if job_id is not None else [],
+            recovery_commands=_job_recovery(job_id, profile=profile) if job_id is not None else [],
         )
 
     if isinstance(exc, MammothAPIError):
         status = exc.status_code
         details = _metadata(exc)
         operation_state = getattr(exc, "operation_state", None) or details.get("operation_state")
-        method = str(getattr(exc, "method", None) or details.get("method") or "").upper()
         job_id = getattr(exc, "job_handle", None) or details.get("job_handle")
         if job_id is None and isinstance(exc.response_body, dict):
             candidate = exc.response_body.get("job_id")
@@ -155,15 +160,15 @@ def map_sdk_exception(exc: BaseException) -> CliError:
         if job_id is not None:
             details.setdefault("job_handle", job_id)
         request_id = getattr(exc, "request_id", None)
-        recovery = _job_recovery(job_id) if job_id is not None else []
+        recovery = _job_recovery(job_id, profile=profile) if job_id is not None else []
         if details.get("post_submitted"):
             task_id = details.get("task_handle")
             dataview_id = details.get("dataview_id")
             dataset_id = details.get("dataset_id")
-            project_id = details.get("project_id")
+            recovery_project_id = details.get("project_id")
             valid_scope = all(
                 isinstance(value, int) and not isinstance(value, bool)
-                for value in (dataview_id, dataset_id, project_id)
+                for value in (dataview_id, dataset_id, recovery_project_id)
             )
             if (
                 isinstance(task_id, int)
@@ -172,16 +177,18 @@ def map_sdk_exception(exc: BaseException) -> CliError:
                 and not isinstance(dataview_id, bool)
                 and isinstance(dataset_id, int)
                 and not isinstance(dataset_id, bool)
-                and isinstance(project_id, int)
-                and not isinstance(project_id, bool)
+                and isinstance(recovery_project_id, int)
+                and not isinstance(recovery_project_id, bool)
             ):
                 recovery = [
-                    f"mammoth view task get {dataview_id} {task_id} --project {project_id} "
+                    f"mammoth view task get {dataview_id} {task_id} --project {recovery_project_id}"
+                    f"{' --profile ' + shlex.quote(profile) if profile else ''} "
                     f"--input '{{\"dataset_id\": {dataset_id}}}' --output json --no-input"
                 ]
             elif not recovery and valid_scope:
                 recovery = [
-                    f"mammoth view pipeline items-all {dataview_id} --project {project_id} "
+                    f"mammoth view pipeline items-all {dataview_id} --project {recovery_project_id}"
+                    f"{' --profile ' + shlex.quote(profile) if profile else ''} "
                     f"--input '{{\"dataset_id\": {dataset_id}}}' --output json --no-input"
                 ]
 
@@ -231,25 +238,26 @@ def map_sdk_exception(exc: BaseException) -> CliError:
                 request_id=request_id,
                 recovery_commands=recovery,
             )
-        if status in {429, 503} or status is None:
-            unknown = operation_state == "outcome_unknown" or (
-                method not in _READ_METHODS and method != ""
+        if operation_state == "outcome_unknown":
+            details.setdefault("operation_state", CODE_OUTCOME_UNKNOWN)
+            if workspace_id is not None:
+                details.setdefault("workspace_id", workspace_id)
+            if project_id is not None:
+                details.setdefault("project_id", project_id)
+            return CliError(
+                code=CODE_OUTCOME_UNKNOWN,
+                message="The request may have committed, but its outcome was not confirmed.",
+                exit_status=EXIT_RETRYABLE,
+                hint=(
+                    "The mutation outcome is unknown. Inspect the observed "
+                    "job/resource before taking any further mutation."
+                ),
+                details=details,
+                request_id=request_id,
+                retryable=False,
+                recovery_commands=recovery,
             )
-            if unknown:
-                details.setdefault("operation_state", CODE_OUTCOME_UNKNOWN)
-                return CliError(
-                    code=CODE_OUTCOME_UNKNOWN,
-                    message="The request may have committed, but its outcome was not confirmed.",
-                    exit_status=EXIT_RETRYABLE,
-                    hint=(
-                        "The mutation outcome is unknown. Inspect the observed "
-                        "job/resource before taking any further mutation."
-                    ),
-                    details=details,
-                    request_id=request_id,
-                    retryable=False,
-                    recovery_commands=recovery,
-                )
+        if status in {429, 503} or status is None:
             return CliError(
                 code=CODE_RETRYABLE,
                 message="Mammoth is temporarily unavailable or the request timed out.",

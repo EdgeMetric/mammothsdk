@@ -6,16 +6,21 @@ come from the mapper itself or from a shared fake transport.
 
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
 import pytest
 from mammoth.exceptions import MammothAPIError, MammothJobTimeoutError
 
+from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import (
     EXIT_AUTH,
     EXIT_CONFLICT,
     EXIT_INTERRUPT,
     EXIT_RETRYABLE,
+    CliError,
 )
 from mammoth_cli.services.mapping import map_sdk_exception
+from mammoth_cli.services.sdk_service import SdkMammothService
 
 
 @pytest.mark.parametrize(
@@ -69,6 +74,50 @@ def test_unknown_mutation_is_not_advertised_as_safe_retry() -> None:
     assert mapped.retryable is False
     assert mapped.details["job_handle"] == 44
     assert any("job get 44" in command for command in mapped.recovery_commands)
+
+
+@pytest.mark.parametrize("status", [500, 502, 504, 200])
+def test_sdk_classified_ambiguous_mutation_is_unknown_regardless_of_status(status: int) -> None:
+    error = MammothAPIError(
+        "gateway or decode failure",
+        status_code=status,
+        method="POST",
+        operation_state="outcome_unknown",
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "outcome_unknown"
+    assert mapped.retryable is False
+
+
+def test_service_uses_resolved_nondefault_profile_in_job_recovery() -> None:
+    service = SdkMammothService(
+        ResolvedAuth("key", "secret", 4, "https://fake.mammoth.test/api/v2"),
+        profile="production",
+        project_id=9,
+    )
+    service._client.jobs.get_job = MagicMock(  # type: ignore[method-assign]
+        side_effect=MammothAPIError(
+            "response lost",
+            status_code=502,
+            method="POST",
+            operation_state="outcome_unknown",
+            job_handle=44,
+        )
+    )
+
+    with pytest.raises(CliError) as raised:
+        service.call("mammoth.api.jobs.JobsAPI.get_job", job_id=44)
+
+    mapped = raised.value
+    assert mapped.code == "outcome_unknown"
+    assert mapped.details["workspace_id"] == 4
+    assert mapped.details["project_id"] == 9
+    assert mapped.recovery_commands == [
+        "mammoth job get 44 --profile production --output json --no-input",
+        "mammoth job wait 44 --profile production --output json --no-input",
+    ]
 
 
 def test_post_submit_readback_failure_preserves_safe_task_recovery() -> None:
