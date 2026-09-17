@@ -2,11 +2,23 @@
 
 ## 1.1.9
 
-Pending CI build verification. This corrective patch contains no feature
-changes relative to 1.1.7. It will be uploaded to PyPI only from the exact
-distribution files downloaded from its successful `cli-v1.1.9` CI run. The
-final CI/PyPI SHA-256 values and fresh-install smoke evidence are recorded
-here after publication.
+Published from the exact distribution files downloaded from successful CI
+build job [`105151237784`](https://github.com/EdgeMetric/mammothsdk/actions/runs/35205826645/job/105151237784).
+Trusted Publishing again failed with `invalid-publisher`; the authorized local
+Twine fallback uploaded only those downloaded bytes. The PyPI downloads match
+the CI hashes exactly:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `b15822ee3bbd00b201c2c49292fec8a10b7cae36df60082f29f2919b6f89e86e` |
+| Source distribution | `6b63b21b6d57a5697e8a186f4ad3eb2240182c61d1c95a3d78a0d8a7f315aa67` |
+
+A fresh Python 3.12 PyPI install passed `mammoth --version`, `schema list`
+(547 commands), `pip check`, project-scope Codex skill installation (60 files),
+and typed `fill missing`/`duplicate` discovery. The matching GitHub release
+ships SHA256SUMS, wheel/sdist, and installers, but is explicitly unsigned: no
+Sigstore bundle or signing claim is made. These release checks do not qualify
+autonomous ETL, dashboard runtime behavior, or all API operations.
 
 ## 1.1.8
 

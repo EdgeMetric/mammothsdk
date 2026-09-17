@@ -221,9 +221,10 @@ workbook; the repository-facing summary is
 The current release snapshot contains **528 operations across 355 paths** (the
 historical pinned M0 snapshot was **445 operations across 287 paths**).
 The matrix separates **Core** ETL/workflow capabilities from **Miscellaneous**
-surfaces and currently records **7 Partial** and **521 Unassessed** rows. It
-does not declare any unsupported **Full** readiness claim: these counts are
-planning/review status, not release qualification or live semantic proof.
+surfaces. Its live status counts are intentionally not duplicated here; read
+the linked row-level matrix for the current values. It does not declare Full
+readiness: matrix rows are planning/review status, not release qualification
+or live semantic proof.
 The workbook remains authoritative for row-level ownership, evidence, and
 qualification gates; no secrets or live evidence are copied into this README.
 The sanitized [row-level release matrix](docs/release-capability-matrix.md)
