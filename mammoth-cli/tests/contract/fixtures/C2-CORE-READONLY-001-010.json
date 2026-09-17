@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "artifact": "C2 bounded Core read-only cases",
+  "status": "offline_contract_only",
+  "scope": {
+    "profile": "expanded-live",
+    "workspace_id": 4,
+    "project_id": 3,
+    "effect": "read-only",
+    "fixture_policy": "discover IDs from list responses; never guess or mutate shared resources"
+  },
+  "cases": [
+    {"case_id":"P0-READ-001","capability_id":"REL-191","command":["dataset","list"],"method":"GET","path":"/workspaces/4/projects/3/datasets","request":{"query":{},"body":null},"response":{"shape":"list","identity":"record dataset IDs only"},"negative":"non-zero/authorization error is blocked; no dependent ID is invented"},
+    {"case_id":"P0-READ-002","capability_id":"REL-192","command":["dataset","get","<dataset_id>"],"method":"GET","path":"/workspaces/4/projects/3/datasets/<dataset_id>","request":{"path_params":{"dataset_id":"observed from P0-READ-001"},"query":{},"body":null},"response":{"shape":"object","identity":"returned id equals observed dataset_id"},"negative":"skip when P0-READ-001 has no readable ID; protected dataset 120 is never selected"},
+    {"case_id":"P0-READ-003","capability_id":"REL-197","command":["view","list","<dataset_id>"],"method":"GET","path":"/workspaces/4/projects/3/datasets/<dataset_id>/dataviews","request":{"path_params":{"dataset_id":"observed from P0-READ-001"},"query":{},"body":null},"response":{"shape":"list","identity":"record dataview IDs only"},"negative":"skip when no readable dataset ID exists"},
+    {"case_id":"P0-READ-004","capability_id":"REL-201","command":["view","data","get","<view_id>"],"method":"GET","path":"/workspaces/4/projects/3/datasets/<dataset_id>/dataviews/<view_id>/data","request":{"path_params":{"dataset_id":"observed parent","view_id":"observed from P0-READ-003"},"query":{},"body":null},"response":{"shape":"object-or-list","identity":"no poststate claim; preserve returned data shape"},"negative":"skip when either parent ID is absent; malformed pagination must fail closed"},
+    {"case_id":"P0-READ-005","capability_id":"REL-218","command":["view","preview","<view_id>"],"method":"GET","path":"/workspaces/4/projects/3/datasets/<dataset_id>/dataviews/<view_id>/preview","request":{"path_params":{"dataset_id":"observed parent","view_id":"observed from P0-READ-003"},"query":{},"body":null},"response":{"shape":"object-or-list","identity":"preview response recorded without mutation claim"},"negative":"skip when either parent ID is absent"},
+    {"case_id":"P0-READ-006","capability_id":"REL-221","command":["file","list"],"method":"GET","path":"/workspaces/4/projects/3/files","request":{"query":{},"body":null},"response":{"shape":"list","identity":"record file IDs only"},"negative":"non-zero/authorization error is blocked"},
+    {"case_id":"P0-READ-007","capability_id":"REL-222","command":["file","get","<file_id>"],"method":"GET","path":"/workspaces/4/projects/3/files/<file_id>","request":{"path_params":{"file_id":"observed from P0-READ-006"},"query":{},"body":null},"response":{"shape":"object","identity":"returned id equals observed file_id"},"negative":"skip when P0-READ-006 has no readable ID"},
+    {"case_id":"P0-READ-008","capability_id":"REL-223","command":["folder","list"],"method":"GET","path":"/workspaces/4/projects/3/folders","request":{"query":{},"body":null},"response":{"shape":"list","identity":"record folder IDs only"},"negative":"non-zero/authorization error is blocked"},
+    {"case_id":"P0-READ-009","capability_id":"REL-224","command":["folder","get","<folder_id>"],"method":"GET","path":"/workspaces/4/projects/3/folders/<folder_id>","request":{"path_params":{"folder_id":"observed from P0-READ-008"},"query":{},"body":null},"response":{"shape":"object","identity":"returned id equals observed folder_id"},"negative":"skip when P0-READ-008 has no readable ID"},
+    {"case_id":"P0-READ-010","capability_id":"REL-234","command":["trash","list"],"method":"GET","path":"/workspaces/4/projects/3/trash","request":{"query":{},"body":null},"response":{"shape":"list","identity":"record inventory only; no shared-trash action"},"negative":"restore/delete/purge are excluded from this case"}
+  ]
+}

@@ -7,7 +7,7 @@ This repository publishes two independent PyPI distributions from one codebase:
 | `mammoth-io` (SDK) | repo root | https://pypi.org/project/mammoth-io/ | `sdk-v` |
 | `mammoth-cli` (CLI) | `mammoth-cli/` | https://pypi.org/project/mammoth-cli/ | `cli-v` |
 
-The CLI depends on `mammoth-io>=0.6.0,<0.7`, so **the SDK must be published before
+The CLI depends on `mammoth-io>=0.7,<0.8`, so **the SDK must be published before
 the CLI**. `cli-release.yml` enforces this with a gate that fails unless the
 required `mammoth-io` range already resolves on PyPI.
 
@@ -23,12 +23,12 @@ Sigstore-signed installer assets.
 
 ```bash
 # 1) SDK first
-git tag -a sdk-v0.6.0 -m "mammoth-io 0.6.0" <merge-commit>
-git push origin sdk-v0.6.0            # -> .github/workflows/sdk-release.yml
+git tag -a sdk-v0.7.0 -m "mammoth-io 0.7.0" <merge-commit>
+git push origin sdk-v0.7.0            # -> .github/workflows/sdk-release.yml
 
 # 2) CLI, after mammoth-io is live on PyPI
-git tag -a cli-v1.0.0 -m "mammoth-cli 1.0.0" <merge-commit>
-git push origin cli-v1.0.0            # -> .github/workflows/cli-release.yml
+git tag -a cli-v1.1.0 -m "mammoth-cli 1.1.0" <merge-commit>
+git push origin cli-v1.1.0            # -> .github/workflows/cli-release.yml
 ```
 
 Both `publish` jobs use the `pypi` GitHub environment (add required reviewers

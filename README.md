@@ -15,13 +15,17 @@ Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data 
 >
 > See [Command-line interface](#command-line-interface-mammoth-cli) below.
 
+> The CLI is agent-oriented, but this description is not a claim of broad
+> autonomous production qualification; readiness evidence remains bounded to
+> the explicitly documented release evidence.
+
 ## Installation
 
 ```bash
 pip install mammoth-io
 ```
 
-Requires Python 3.10+.
+Requires Python 3.12 through 3.14.
 
 ## Quick Start
 

@@ -59,7 +59,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           # Install the in-repo SDK editable FIRST so the CLI's
-          # `mammoth-io>=0.6.0,<0.7` constraint resolves against the code in this
+          # `mammoth-io>=0.7,<0.8` constraint resolves against the code in this
           # checkout (the exact SDK being shipped alongside), not whatever PyPI
           # currently serves. The shipped wheel still declares the published
           # PyPI dependency.
@@ -287,7 +287,7 @@ jobs:
       # Release-style install: assemble the installer exactly as
       # cli-release.yml does (substituting the embedded __CLI_VERSION__), then
       # run that shipped script. It installs --local because the mammoth-io
-      # 0.6.0 / mammoth-cli release is not on PyPI yet (see the R12 gate in
+      # 0.7.0 / mammoth-cli release is not on PyPI yet (see the R12 gate in
       # cli-release.yml); the PyPI path activates once those are published.
       - name: Release-style install (smoke)
         env:

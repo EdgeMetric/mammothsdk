@@ -76,8 +76,8 @@ mammoth-cli/build/
 # a PEP 621 `[project]` table, but this pyproject uses the legacy `[tool.poetry]`
 # layout that the release/CI workflows read (`poetry version`, `[tool.poetry]`
 # dependency reads), and even with a `[project]` table the required
-# `mammoth-io>=0.6.0,<0.7` does not resolve on PyPI until SDK 0.6.0 is published
-# (only <=0.5.1 exists). Until both hold, keep any (necessarily bogus) uv.lock
+# `mammoth-io>=0.7,<0.8` must resolve on PyPI before the CLI can be released.
+# Until both hold, keep any (necessarily bogus) uv.lock
 # out of the tree so a stray one pinning the wrong requires-python (e.g. >=3.14)
 # cannot be committed. See the release notes for the follow-up.
 mammoth-cli/uv.lock

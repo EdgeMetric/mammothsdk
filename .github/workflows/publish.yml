@@ -124,7 +124,7 @@ jobs:
       # reference makes the clean-venv install non-portable across machines.
       # Before mammoth-mcp can actually be published, replace that path
       # dependency with a PyPI version spec (as mammoth-cli does with
-      # `mammoth-io = ">=0.6.0,<0.7"`), installing the in-repo SDK editable first
+      # `mammoth-io = ">=0.7,<0.8"`), installing the in-repo SDK editable first
       # for local dev.
       - name: Clean-venv install of the built wheel + smoke
         env:

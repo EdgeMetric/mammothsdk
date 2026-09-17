@@ -36,7 +36,7 @@ jobs:
         with:
           python-version: "3.14"
 
-      # R12 release-ordering gate: the CLI declares `mammoth-io>=0.6.0,<0.7`
+      # R12 release-ordering gate: the CLI declares `mammoth-io>=0.7,<0.8`
       # (see pyproject.toml), but the SDK and CLI publish from independent,
       # tag-triggered workflows (sdk-release.yml / cli-release.yml). Nothing
       # else stops a maintainer from tagging cli-vX before sdk-vX has actually
