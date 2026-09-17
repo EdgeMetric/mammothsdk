@@ -30,12 +30,16 @@ def test_sdk_docs_inventory_is_deterministic_and_reports_gaps() -> None:
 
     assert first == second
     assert first["denominator"] == len(first["entries"])
-    assert first["documented"] + first["gaps"] == first["denominator"]
-    assert first["gaps"] > 0  # This tool reports, rather than hides, coverage gaps.
-    assert any(entry["gap"] == "no_docs_anchor" for entry in first["entries"])
+    assert first["owner_page_mapped"] + first["owner_page_gaps"] == first["denominator"]
+    assert first["owner_page_gaps"] > 0  # This tool reports, rather than hides, gaps.
+    assert first["rendered_method_anchor_verified"] == 0
+    assert first["rendered_method_anchor_unassessed"] == first["denominator"]
+    assert any(entry["gap"] == "no_owner_page" for entry in first["entries"])
     assert any(
         entry["symbol"] == "mammoth.api.datasets.DatasetsAPI.list"
-        and entry["docs_anchor"] == "api/datasets.md#full-api-reference"
+        and entry["owner_page"] == "api/datasets.md"
+        and entry["owner_page_mapped"] is True
+        and entry["rendered_method_anchor_verified"] is False
         for entry in first["entries"]
     )
 

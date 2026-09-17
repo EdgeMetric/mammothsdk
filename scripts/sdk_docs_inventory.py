@@ -3,8 +3,9 @@
 
 This is deliberately an inventory, not a completeness assertion.  It scans
 the public client classes declared in ``mammoth/client.py`` and ``mammoth/api``
-and records either the MkDocs source anchor for the owning class or a concrete
-``no_docs_anchor`` gap.  The stable JSON output is suitable for CI diffs.
+and records an owning MkDocs source page or a concrete ``no_owner_page`` gap.
+It does not claim that any per-method rendered anchor exists or is visible.
+The stable JSON output is suitable for CI diffs.
 """
 
 from __future__ import annotations
@@ -43,40 +44,47 @@ def _public_classes(path: Path) -> list[tuple[str, str, list[str]]]:
     return classes
 
 
-def _docs_anchors() -> dict[str, str]:
-    anchors: dict[str, str] = {}
+def _owner_pages() -> dict[str, str]:
+    pages: dict[str, str] = {}
     for page in sorted((DOCS / "api").glob("*.md")):
         for line in page.read_text(encoding="utf-8").splitlines():
             if line.startswith("::: mammoth."):
                 symbol = line.removeprefix("::: ").strip()
-                anchors[symbol] = f"{page.relative_to(DOCS).as_posix()}#full-api-reference"
-    return anchors
+                pages[symbol] = page.relative_to(DOCS).as_posix()
+    return pages
 
 
 def inventory() -> dict[str, Any]:
     """Build one deterministic, gap-preserving documentation inventory."""
     sources = [ROOT / "mammoth" / "client.py", *sorted((ROOT / "mammoth" / "api").glob("*.py"))]
-    anchors = _docs_anchors()
-    entries: list[dict[str, str | None]] = []
+    owner_pages = _owner_pages()
+    entries: list[dict[str, str | bool | None]] = []
     for source in sources:
         for module, class_name, methods in _public_classes(source):
             class_symbol = f"{module}.{class_name}"
-            anchor = anchors.get(class_symbol)
+            owner_page = owner_pages.get(class_symbol)
             for method in methods:
                 entries.append(
                     {
                         "symbol": f"{class_symbol}.{method}",
-                        "docs_anchor": anchor,
-                        "gap": None if anchor else "no_docs_anchor",
+                        "owner_page": owner_page,
+                        "owner_page_mapped": owner_page is not None,
+                        # Mkdocstrings can filter members and change rendered
+                        # ids. This source scan deliberately does not pretend
+                        # it has checked individual rendered method anchors.
+                        "rendered_method_anchor_verified": False,
+                        "gap": "no_owner_page" if owner_page is None else None,
                     }
                 )
     entries.sort(key=lambda entry: str(entry["symbol"]))
-    documented = sum(entry["docs_anchor"] is not None for entry in entries)
+    owner_page_mapped = sum(entry["owner_page_mapped"] is True for entry in entries)
     return {
         "inventory_version": 1,
         "denominator": len(entries),
-        "documented": documented,
-        "gaps": len(entries) - documented,
+        "owner_page_mapped": owner_page_mapped,
+        "owner_page_gaps": len(entries) - owner_page_mapped,
+        "rendered_method_anchor_verified": 0,
+        "rendered_method_anchor_unassessed": len(entries),
         "entries": entries,
     }
 
