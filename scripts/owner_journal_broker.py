@@ -55,12 +55,14 @@ class OwnerPolicy:
     workspace_id: int
     project_id: int
     allowlist: frozenset[str]
+    repeatable_operations: frozenset[str] = frozenset()
 
     def as_dict(self) -> dict[str, Any]:
         return {
             "workspace_id": self.workspace_id,
             "project_id": self.project_id,
             "allowlist": sorted(self.allowlist),
+            "repeatable_operations": sorted(self.repeatable_operations),
         }
 
 
@@ -103,6 +105,7 @@ class FrozenOperation:
     resource: str
     budget: int
     input_path: Path | None = None
+    input_sha256: str | None = None
     confirmation: bool = False
 
 
@@ -182,10 +185,27 @@ class OwnerSubprocessSender:
                 for token in operation.argv
             ):
                 raise BrokerPolicyError("frozen operation contains an agent-bypass argument")
-            if operation.input_path is not None and _path_is_within(
-                operation.input_path.resolve(), workspace
-            ):
-                raise BrokerPolicyError("fixed input must be outside the agent workspace")
+            self._validate_input(operation, workspace)
+
+    @staticmethod
+    def _validate_input(operation: FrozenOperation, workspace: Path) -> None:
+        if operation.input_path is None:
+            if operation.input_sha256 is not None:
+                raise BrokerPolicyError("input digest requires a fixed input path")
+            return
+        input_path = operation.input_path.resolve()
+        if (
+            operation.input_sha256 is None
+            or not _HEX_SHA256.fullmatch(operation.input_sha256)
+            or not input_path.is_file()
+            or _path_is_within(input_path, workspace)
+        ):
+            raise BrokerPolicyError("fixed input must be a hashed file outside the agent workspace")
+        details = input_path.stat()
+        if details.st_uid != os.geteuid() or stat.S_IMODE(details.st_mode) & 0o077:
+            raise BrokerPolicyError("fixed input must be private and owner-controlled")
+        if _sha256_bytes(input_path.read_bytes()) != operation.input_sha256:
+            raise BrokerPolicyError("fixed input does not match its approved digest")
 
     def send(self, invocation: Invocation) -> Mapping[str, object]:
         """Execute one frozen command and return redacted process observation."""
@@ -200,6 +220,7 @@ class OwnerSubprocessSender:
         executable = self.policy.executable.resolve()
         if _sha256_bytes(executable.read_bytes()) != self.policy.executable_sha256:
             raise BrokerPolicyError("owner executable changed after policy approval")
+        self._validate_input(operation, self.policy.agent_workspace.resolve())
         command = [
             str(executable),
             *operation.argv,
@@ -241,12 +262,13 @@ class OwnerSubprocessSender:
             }
         stdout = _redact_text(_as_text(completed.stdout))
         stderr = _redact_text(_as_text(completed.stderr))
+        outcome = _subprocess_outcome(completed.returncode, stdout, stderr)
         return {
             "ok": completed.returncode == 0,
             "exit_status": completed.returncode,
             "stdout": stdout,
             "stderr": stderr,
-            "outcome": "succeeded" if completed.returncode == 0 else "failed",
+            "outcome": outcome,
             "handle": None,
         }
 
@@ -259,6 +281,35 @@ def _as_text(value: bytes | str | None) -> str:
 
 def _sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
+
+
+def _subprocess_outcome(exit_status: int, stdout: str, stderr: str) -> str:
+    """Preserve CLI ambiguity instead of guessing a failed mutation was harmless."""
+    if exit_status == 0:
+        return "succeeded"
+    if exit_status == 7:
+        return "outcome_unknown"
+    for body in (stdout, stderr):
+        try:
+            envelope = json.loads(body)
+        except json.JSONDecodeError:
+            continue
+        if _has_unknown_outcome(envelope):
+            return "outcome_unknown"
+    return "failed"
+
+
+def _has_unknown_outcome(value: object) -> bool:
+    if isinstance(value, dict):
+        if (
+            value.get("operation_state") == "outcome_unknown"
+            or value.get("code") == "outcome_unknown"
+        ):
+            return True
+        return any(_has_unknown_outcome(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_has_unknown_outcome(item) for item in value)
+    return False
 
 
 def _canonical(value: object) -> bytes:
@@ -277,6 +328,8 @@ class OwnerJournalBroker:
             raise BrokerPolicyError(
                 "policy requires positive fixed scope and a non-empty allowlist"
             )
+        if not policy.repeatable_operations <= policy.allowlist:
+            raise BrokerPolicyError("repeatable operations must be within the owner allowlist")
         requested_root = Path(root)
         if requested_root.exists():
             self.root = requested_root.resolve()
@@ -406,6 +459,15 @@ class OwnerJournalBroker:
         ):
             raise BrokerPolicyError(
                 "intent_id is already bound to a different immutable invocation"
+            )
+        if invocation.operation not in self.policy.repeatable_operations and any(
+            event.get("event") == "intent"
+            and event.get("operation") == invocation.operation
+            and event.get("intent_id") != invocation.intent_id
+            for event in self._events()
+        ):
+            raise BrokerPolicyError(
+                "one-shot operation was already dispatched under a different intent_id"
             )
         for event in prior:
             if event.get("event") == "receipt":

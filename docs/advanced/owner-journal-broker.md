@@ -39,3 +39,16 @@ The sender verifies the executable digest immediately before execution and
 uses a minimal owner environment. It returns only redacted `ok`, `exit_status`,
 `stdout`, and `stderr` observations (plus broker outcome fields); neither the
 profile configuration nor its secrets enter the journal receipt.
+
+Operations are one-shot by default: once a frozen operation has an intent,
+another intent ID cannot dispatch it. The owner must explicitly mark a known
+read operation repeatable. Fixed inputs are optional, but when used must be
+private owner-controlled files outside the agent workspace with an approved
+SHA-256 that is rechecked immediately before dispatch. Exit status 7 and a
+structured `outcome_unknown` envelope remain `outcome_unknown`; the broker
+does not reinterpret them as safe failures or replay them.
+
+Output redaction is best-effort presentation hygiene, not credential isolation.
+The journal never stores subprocess stdout or stderr, and protected profile
+contents are kept outside the agent workspace; a production deployment still
+needs an OS/process boundary appropriate to its credential store.
