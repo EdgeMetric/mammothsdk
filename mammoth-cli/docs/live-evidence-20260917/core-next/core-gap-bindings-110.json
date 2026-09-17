@@ -1,0 +1,264 @@
+{
+  "captured_at": "2026-09-17",
+  "cli_version": "1.1.10",
+  "source_tag": "cli-v1.1.10",
+  "note": "Static binding audit; no live mutation or support promotion. All 18 candidate rows have typed CLI bindings; none qualify as Not supported.",
+  "rows": [
+    {
+      "capability_id": "REL-195",
+      "operation_id": "GetBatchData",
+      "method": "GET",
+      "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/batches/{batch_id}/data",
+      "canonical_command": "dataset.batch-data",
+      "command_path": "dataset batch-data",
+      "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.get_batch_data",
+      "operation_ids": [],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/dataset.yaml"
+    },
+    {
+      "capability_id": "REL-204",
+      "operation_id": "GetExportableConfig",
+      "method": "GET",
+      "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/exportable-config",
+      "canonical_command": "view.exportable-config.get",
+      "command_path": "view exportable-config get",
+      "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.get_exportable_config",
+      "operation_ids": [],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/view.yaml"
+    },
+    {
+      "capability_id": "REL-308",
+      "operation_id": "BulkModify",
+      "method": "PATCH",
+      "path": "/workspaces/{workspace_id}/projects/{project_id}/resource-dependencies",
+      "canonical_command": "project.resource-dependencies.update",
+      "command_path": "project resource-dependencies update",
+      "sdk_symbol": "mammoth.api.projects.ProjectsAPI.resource_dependencies_update",
+      "operation_ids": [],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/project.yaml"
+    },
+    {
+      "capability_id": "REL-335",
+      "operation_id": "CreateBlankDashboard",
+      "method": "POST",
+      "path": "/dashboards/v3/blank",
+      "canonical_command": "dashboard.create-blank",
+      "command_path": "dashboard create-blank",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.create_blank",
+      "operation_ids": [],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/dashboard.yaml"
+    },
+    {
+      "capability_id": "REL-337",
+      "operation_id": "ExtractContext",
+      "method": "POST",
+      "path": "/dashboards/v3/contexts/extract",
+      "canonical_command": "dashboard.context.extract",
+      "command_path": "dashboard context extract",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.extract_context",
+      "operation_ids": [
+        "ExtractContext"
+      ],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/dashboard.yaml"
+    },
+    {
+      "capability_id": "REL-338",
+      "operation_id": "ExtractExemplar",
+      "method": "POST",
+      "path": "/dashboards/v3/exemplar/extract",
+      "canonical_command": "dashboard.exemplar.extract",
+      "command_path": "dashboard exemplar extract",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.extract_exemplar",
+      "operation_ids": [
+        "ExtractExemplar"
+      ],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/dashboard.yaml"
+    },
+    {
+      "capability_id": "REL-340",
+      "operation_id": "ImportWorkbookDataset",
+      "method": "POST",
+      "path": "/dashboards/v3/import/dataset",
+      "canonical_command": "dashboard.import-workbook",
+      "command_path": "dashboard import-workbook",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.import_workbook",
+      "operation_ids": [
+        "ImportWorkbookDataset"
+      ],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/dashboard.yaml"
+    },
+    {
+      "capability_id": "REL-341",
+      "operation_id": "AssessPbix",
+      "method": "POST",
+      "path": "/dashboards/v3/pbix/assess",
+      "canonical_command": "dashboard.assess-pbix",
+      "command_path": "dashboard assess-pbix",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.assess_pbix",
+      "operation_ids": [
+        "AssessPbix"
+      ],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/dashboard.yaml"
+    },
+    {
+      "capability_id": "REL-353",
+      "operation_id": "DashboardV3TakePendingTemplate",
+      "method": "POST",
+      "path": "/dashboards/v3/templates/pending",
+      "canonical_command": "dashboard.templates.pending",
+      "command_path": "dashboard templates pending",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.take_pending_template",
+      "operation_ids": [
+        "DashboardV3TakePendingTemplate"
+      ],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/dashboard.yaml"
+    },
+    {
+      "capability_id": "REL-356",
+      "operation_id": "UseTemplate",
+      "method": "POST",
+      "path": "/dashboards/v3/templates/{slug}/use",
+      "canonical_command": "dashboard.templates.use",
+      "command_path": "dashboard templates use",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.use_template",
+      "operation_ids": [
+        "UseTemplate"
+      ],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/dashboard.yaml"
+    },
+    {
+      "capability_id": "REL-357",
+      "operation_id": "AssessTwb",
+      "method": "POST",
+      "path": "/dashboards/v3/twb/assess",
+      "canonical_command": "dashboard.assess-twb",
+      "command_path": "dashboard assess-twb",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.assess_twb",
+      "operation_ids": [
+        "AssessTwb"
+      ],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/dashboard.yaml"
+    },
+    {
+      "capability_id": "REL-359",
+      "operation_id": "SwapDashboardData",
+      "method": "POST",
+      "path": "/dashboards/v3/{dashboard_id}/swap-data",
+      "canonical_command": "dashboard.swap-data",
+      "command_path": "dashboard swap-data",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.swap_data",
+      "operation_ids": [
+        "SwapDashboardData"
+      ],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/dashboard.yaml"
+    },
+    {
+      "capability_id": "REL-361",
+      "operation_id": "ArchiveDashboard",
+      "method": "POST",
+      "path": "/dashboards/{dashboard_id}/archive",
+      "canonical_command": "dashboard.archive",
+      "command_path": "dashboard archive",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.archive",
+      "operation_ids": [],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/dashboard.yaml"
+    },
+    {
+      "capability_id": "REL-371",
+      "operation_id": "AddPages",
+      "method": "POST",
+      "path": "/dashboards/{dashboard_id}/pages",
+      "canonical_command": "dashboard.pages.add",
+      "command_path": "dashboard pages add",
+      "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.add_pages",
+      "operation_ids": [],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/dashboard.yaml"
+    },
+    {
+      "capability_id": "REL-449",
+      "operation_id": "GetDataviewDataPost",
+      "method": "POST",
+      "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/data",
+      "canonical_command": "view.data.get",
+      "command_path": "view data get",
+      "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.get_data",
+      "operation_ids": [
+        "GetDataviewData"
+      ],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/view.yaml"
+    },
+    {
+      "capability_id": "REL-455",
+      "operation_id": "ApplyExportableConfig",
+      "method": "POST",
+      "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/exportable-config",
+      "canonical_command": "view.exportable-config.apply",
+      "command_path": "view exportable-config apply",
+      "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.apply_exportable_config",
+      "operation_ids": [],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/view.yaml"
+    },
+    {
+      "capability_id": "REL-480",
+      "operation_id": "RetentionCondition",
+      "method": "POST",
+      "path": "/workspaces/{workspace_id}/projects/{project_id}/sql_generation/retention_policy",
+      "canonical_command": "ai.retention.condition",
+      "command_path": "ai retention condition",
+      "sdk_symbol": "mammoth.api.ai.AIAPI.retention_condition",
+      "operation_ids": [],
+      "alias_of": null,
+      "binding_status": "typed_command_verified",
+      "source_tag": "cli-v1.1.10",
+      "source_manifest": "spec/manifests/commands/ai.yaml"
+    }
+  ]
+}
