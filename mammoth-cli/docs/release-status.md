@@ -24,6 +24,14 @@ A fresh isolated, no-cache Python 3.14 install from PyPI passed `pip check`,
 `SKILL.md` resource check. These checks do not qualify autonomous ETL,
 dashboard runtime behavior, or all API operations.
 
+An additional isolated Python 3.14 probe exercised installed public
+`mammoth-cli` 1.1.11 and `mammoth-io` 0.7.1 with mocked transports only. A
+cross-origin `302` made one original-origin request and was not followed;
+empty and partial multi-job responses timed out rather than reporting success;
+and a mutation `502` or malformed `200` produced `outcome_unknown`. The probe
+used no live service or credentials and is focused regression evidence, not a
+full-suite result.
+
 ## 1.1.10
 
 Published from the exact `dist` artifact downloaded from successful CI
