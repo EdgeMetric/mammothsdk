@@ -17,8 +17,10 @@ do not invent dashboard JSON or opaque task specs.
 
 Expected create-blank input is currently typed as
 `{"params":{"dataview_id":VIEW_ID,"title":"TITLE"}}`; confirm with
-`schema get dashboard.create-blank` first. Preserve only the dashboard ID
-actually named in the returned `data` object, then run:
+`schema get dashboard.create-blank` first. If the dashboard is requested as a
+deliverable, preserve the dashboard ID actually named in the returned `data`
+object and do not clean it up. Otherwise, classify it explicitly as
+temporary/intermediate before authorizing deletion. Then run:
 
 ```bash
 mammoth dashboard get DASHBOARD_ID --output json --no-input

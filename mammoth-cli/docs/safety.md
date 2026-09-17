@@ -70,6 +70,22 @@ when available, but does not prove that a remote operation was cancelled.
 
 ## Dependency-aware cleanup
 
+### Deliverable retention classes
+
+Classify resources before creating or deleting them:
+
+- **Temporary:** disposable scratch resources; delete only after readback and explicit cleanup authorization.
+- **Intermediate:** child views, batches, tasks, or jobs needed to verify a result; retain until dependents are verified, then clean children before parents when authorized.
+- **Retained deliverable:** the dataset, view, dashboard, or export artifact requested by the user; preserve it for handoff.
+- **Protected:** pre-existing, shared, production, or baseline resources; never delete without authorization naming the exact target.
+
+“Owned” does not mean “delete all.” Cleanup authorization must name the exact
+IDs, resource types, parent scope, and dependency order. If a requested
+dataset, dashboard, or export is the deliverable, do not remove it as an
+incidental cleanup step. The portable handoff can carry these nonsecret roles
+and cleanup ownership, but it is not a durable cleanup journal or authority
+transfer.
+
 Record every resource created by the task and its parent/dependency IDs. Before
 deleting, read the resource and check the dependency graph; never delete an
 arbitrary inventory difference. After deletion, verify absence or inspect the

@@ -24,6 +24,11 @@ scope, machine output, structured input, confirmations, jobs and recovery use
 In an evaluated worker, use a controller-provided auth broker; do not mount or
 read a credential profile.
 
+Before creating or cleaning resources, classify them with [retention and
+cleanup](references/retention.md). Preserve requested datasets, views,
+dashboards, and export artifacts; cleanup requires explicit exact-ID
+authorization and never means delete-all-owned-resources.
+
 For data work—including transforms, blend/task/pipeline drafts, dashboards and
 exports—read [operations](references/operations.md). For every published CLI
 command, load only the relevant domain from the generated

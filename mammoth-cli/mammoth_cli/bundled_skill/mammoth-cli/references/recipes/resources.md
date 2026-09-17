@@ -31,7 +31,10 @@ variants.
 
 If the release returns a different settings route, use the exact match from
 `schema find`; do not guess a command name. Snapshot all pre-existing resource
-IDs by type; cleanup only IDs returned by this task.
+IDs by type. Mark requested datasets/views as retained deliverables before
+creating intermediates; cleanup only IDs returned by this task that are
+explicitly authorized as temporary or intermediate. Do not blanket-delete
+every ID returned by a list.
 
 The upload response is a standard JSON envelope. Treat its `data` object as
 opaque until `schema get file.upload` (or the returned command result) names
