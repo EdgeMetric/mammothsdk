@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 36,
+    "Partial": 38,
     "Not supported": 0,
-    "Unassessed": 492
+    "Unassessed": 490
   },
   "rows": [
     {
@@ -2379,28 +2379,43 @@
     {
       "capability_id": "REL-179",
       "capability": "List annotations",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Bounded release read with published CLI 1.1.10 returned an empty annotation collection; target_type=project produced structured API error and target_id=0 produced deterministic invalid_input_field_type. No Full claim: no non-empty annotation fixture.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListAnnotations",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/annotations",
       "canonical_command": "annotation.list",
       "sdk_symbol": "mammoth.api.annotations.AnnotationsAPI.list",
-      "evidence": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/core-next/annotation-automation-110/annotation-default.json",
+        "related": [
+          "docs/live-evidence-20260917/core-next/annotation-automation-110/annotation-target-type.json",
+          "docs/live-evidence-20260917/core-next/annotation-automation-110/annotation-invalid-id.json"
+        ],
+        "scope": "expanded-live workspace 4/project 3; read-only option/error matrix",
+        "cli": "1.1.10"
+      }
     },
     {
       "capability_id": "REL-180",
       "capability": "Get list of automations",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Bounded release read with published CLI 1.1.10 returned an empty automation collection; unknown input field produced deterministic unknown_input_field. No Full claim: no automation fixture or lifecycle coverage.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetList",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/automations",
       "canonical_command": "automation.list",
       "sdk_symbol": "mammoth.api.automations.AutomationsAPI.list",
-      "evidence": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/core-next/annotation-automation-110/automation-default.json",
+        "related": [
+          "docs/live-evidence-20260917/core-next/annotation-automation-110/automation-invalid-option.json"
+        ],
+        "scope": "expanded-live workspace 4/project 3; read-only option/error matrix",
+        "cli": "1.1.10"
+      }
     },
     {
       "capability_id": "REL-181",
