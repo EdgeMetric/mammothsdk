@@ -1,5 +1,6 @@
 """Keep public install guidance on the supported zero-dependency path."""
 
+import re
 from pathlib import Path
 
 
@@ -27,3 +28,11 @@ def test_cli_readme_exposes_honest_core_snapshot_without_raw_evidence_link() -> 
     assert "Core top-15 snapshot" in text
     assert "live-evidence-20260917" not in text
     assert "REL-174" in text and "REL-326" in text and "REL-224" in text
+
+
+def test_cli_readme_links_are_absolute_for_pypi_rendering() -> None:
+    """PyPI renders the README outside the repository, so relative links 404."""
+    text = (_ROOT / "mammoth-cli" / "README.md").read_text(encoding="utf-8")
+    destinations = re.findall(r"(?<!!)]\(([^)]+)\)", text)
+    assert destinations
+    assert all(destination.startswith(("https://", "http://", "#", "mailto:")) for destination in destinations)

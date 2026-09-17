@@ -1,12 +1,22 @@
 # CLI release provenance
 
+## 2.0.3 / SDK 0.7.3
+
+This CLI-only documentation correction makes every `mammoth-cli` README link
+absolute, so the package README rendered on PyPI reaches the repository guides,
+reference, and bundled skill. It retains
+`mammoth-io>=0.7.3,<0.8`, adds no API bindings, and makes no capability-status
+or autonomous-workflow qualification claim.
+
 ## 2.0.2 / SDK 0.7.3
 
 This CLI-only maintenance release updates the packaged agent skill, installation
 guidance, and release-capability documentation. It keeps the published SDK
 requirement at `mammoth-io>=0.7.3,<0.8` and does not add API bindings, promote
 capability statuses, or qualify autonomous workflows. The 2.0.1 API evidence
-below remains historical evidence for that published release.
+below remains historical evidence for that published release. Its relative
+README documentation links do not resolve in PyPI's package rendering; 2.0.3
+corrects that presentation defect.
 
 ## 2.0.1 / SDK 0.7.3
 

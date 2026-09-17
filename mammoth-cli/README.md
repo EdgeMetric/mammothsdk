@@ -42,7 +42,7 @@ mammoth doctor          # checks config, credentials, endpoint, connectivity
 The installer bootstraps its own `uv` tool environment when needed and installs
 the bundled agent skill. For an exact, reproducible release use `--version
 X.Y.Z`; the installer has no normal prompts. See
-[Installation](docs/installation.md) for that option and the SDK-only pip
+[Installation](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/installation.md) for that option and the SDK-only pip
 installation path.
 
 ## Quick start
@@ -54,7 +54,7 @@ mammoth project list             # a table in a terminal, JSON when piped
 mammoth dataset list --project 180
 ```
 
-Full walkthrough: [docs/quickstart.md](docs/quickstart.md).
+Full walkthrough: [docs/quickstart.md](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/quickstart.md).
 
 The login command has no workspace shortcut flag. For CI or an agent, use a
 protected request document instead:
@@ -117,13 +117,13 @@ Codex, and Cursor. To repair or refresh the installed copy:
 mammoth skill install
 ```
 
-Start with [Agent handover and operation](docs/agents.md), then load the
-[bundled agent skill](mammoth_cli/bundled_skill/mammoth-cli/SKILL.md) from the
+Start with [Agent handover and operation](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agents.md), then load the
+[bundled agent skill](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/mammoth_cli/bundled_skill/mammoth-cli/SKILL.md) from the
 installed CLI. The skill routes a task to only the relevant recipe or command
 catalog section; it does not require an agent to absorb the whole reference.
 
 For a fresh external shell agent, start with the shipped
-[portable task-start playbook](mammoth_cli/bundled_skill/mammoth-cli/references/task-start.md).
+[portable task-start playbook](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/mammoth_cli/bundled_skill/mammoth-cli/references/task-start.md).
 
 For an unattended task, use the handover loop: discover its schema, resolve
 every resource in explicit scope, operate from IDs returned by reads, verify
@@ -133,7 +133,7 @@ inputs name columns by their display names. Do not infer a usable default view
 from a dataset; run `view list DATASET_ID` and choose a view explicitly.
 
 If another agent must continue the work, write the nonsecret checkpoint format
-described in [Portable agent handoff](docs/agent-handoff.md). It records scope,
+described in [Portable agent handoff](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-handoff.md). It records scope,
 intent, verified evidence, jobs/unknown outcomes, and cleanup ownership without
 putting credentials into the handoff.
 
@@ -169,39 +169,39 @@ installer and reports modified copies instead of silently replacing them.
 | Administer | `workspace`, `user`, `billing`, `client-app`, `external-key` |
 | Operate the CLI | `auth`, `context`, `config`, `doctor`, `capability`, `schema`, `skill`, `upgrade` |
 
-The full generated list is in [docs/reference/commands.md](docs/reference/commands.md).
+The full generated list is in [docs/reference/commands.md](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/reference/commands.md).
 
 ## Documentation
 
 | Guide | What it covers |
 |---|---|
-| [Installation](docs/installation.md) | Install the CLI and the agent skill. |
-| [Quick start](docs/quickstart.md) | Log in and run your first commands. |
-| [Authentication](docs/authentication.md) | Getting an API key, login, profiles, projects. |
-| [Agent handover and operation](docs/agents.md) | Cold start, discovery, checkpoints, recovery. |
-| [Portable handoff format](docs/agent-handoff.md) | Nonsecret checkpoint schema and receiving procedure. |
-| [Bundled agent skill](mammoth_cli/bundled_skill/mammoth-cli/SKILL.md) | Focused routing for shell-capable agents. |
-| [Safe mutation](docs/safety.md) | Mutation classes and confirmation policies. |
-| [Output and errors](docs/reference/output-and-errors.md) | Envelopes, exit codes, error codes. |
-| [Global flags](docs/reference/global-flags.md) | The flags every command shares. |
-| [Troubleshooting](docs/troubleshooting.md) | Exit codes, error envelopes, recovery. |
-| [Upgrade](docs/upgrade.md) / [Uninstall](docs/uninstall.md) | Keep the CLI current, or remove it. |
-| [Command reference](docs/reference/commands.md) | Every command, grouped by family. |
+| [Installation](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/installation.md) | Install the CLI and the agent skill. |
+| [Quick start](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/quickstart.md) | Log in and run your first commands. |
+| [Authentication](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/authentication.md) | Getting an API key, login, profiles, projects. |
+| [Agent handover and operation](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agents.md) | Cold start, discovery, checkpoints, recovery. |
+| [Portable handoff format](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-handoff.md) | Nonsecret checkpoint schema and receiving procedure. |
+| [Bundled agent skill](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/mammoth_cli/bundled_skill/mammoth-cli/SKILL.md) | Focused routing for shell-capable agents. |
+| [Safe mutation](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/safety.md) | Mutation classes and confirmation policies. |
+| [Output and errors](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/reference/output-and-errors.md) | Envelopes, exit codes, error codes. |
+| [Global flags](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/reference/global-flags.md) | The flags every command shares. |
+| [Troubleshooting](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/troubleshooting.md) | Exit codes, error envelopes, recovery. |
+| [Upgrade](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/upgrade.md) / [Uninstall](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/uninstall.md) | Keep the CLI current, or remove it. |
+| [Command reference](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/reference/commands.md) | Every command, grouped by family. |
 
 Start with **Quick start** for a copy-paste workflow, **Authentication** for
 profiles and non-interactive login, or **Agent handover and operation** for a
 fresh-agent task. The command reference is generated; use `mammoth schema get
 COMMAND.ID` to verify a request shape against the installed CLI.
 
-Agent-readable indexes: [`docs/llms.txt`](docs/llms.txt) and
-[`docs/llms-full.txt`](docs/llms-full.txt).
+Agent-readable indexes: [`docs/llms.txt`](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/llms.txt) and
+[`docs/llms-full.txt`](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/llms-full.txt).
 
 ## Capability-matrix status
 
 The committed machine-readable release matrix is the canonical repository
 inventory; historical readiness records are kept separately from this summary. The
 repository-facing summary is
-[`docs/agent-capability-coverage.md`](docs/agent-capability-coverage.md).
+[`docs/agent-capability-coverage.md`](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-capability-coverage.md).
 The current release snapshot contains **528 operations across 355 paths** (the
 historical pinned M0 snapshot was **445 operations across 287 paths**).
 The matrix separates **Core** ETL/workflow capabilities from **Miscellaneous**
@@ -213,11 +213,11 @@ No status changes are inferred from an OpenAPI refresh: additions begin
 Unassessed and removals or operation-ID changes require review. Use
 `scripts/report_release_capability_drift.py --help` to produce a deterministic
 local review queue from a candidate OpenAPI JSON; it never implements routes or
-promotes support. See the [capability drift workflow](docs/capability-drift-workflow.md)
+promotes support. See the [capability drift workflow](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/capability-drift-workflow.md)
 for the required row fields and review steps. No secrets or live evidence are
 copied into this README.
-The sanitized [row-level release matrix](docs/release-capability-matrix.md)
-and [machine-readable matrix](docs/release-capability-matrix.json) preserve all
+The sanitized [row-level release matrix](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/release-capability-matrix.md)
+and [machine-readable matrix](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/release-capability-matrix.json) preserve all
 528 method/path line items without pilot payloads or credentials.
 
 ### Core top-15 snapshot
@@ -243,7 +243,7 @@ claim. The linked matrix row is canonical; `Unassessed` means no support claim.
 | Dashboard | Get dashboard | REL-107 | Partial | One retained dashboard read. |
 | Folder | Get folder | REL-224 | Full | Public CLI 1.1.12 receipt covers fields, filtered list, errors, lifecycle, and final absence; folder family remains incomplete. |
 
-Use the [canonical matrix](docs/release-capability-matrix.md) for the full
+Use the [canonical matrix](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/release-capability-matrix.md) for the full
 528-row inventory and exact evidence links.
 
 ## Compatibility
@@ -269,8 +269,8 @@ make cli-docs-check              # documentation gates
 
 Build scripts under `scripts/` regenerate the manifests and the documentation
 corpus offline. Release and packaging details live in
-[../RELEASING.md](../RELEASING.md).
+[RELEASING.md](https://github.com/EdgeMetric/mammothsdk/blob/main/RELEASING.md).
 
 ## License
 
-See [LICENSE](LICENSE). Source: https://github.com/EdgeMetric/mammothsdk
+See [LICENSE](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/LICENSE). Source: https://github.com/EdgeMetric/mammothsdk
