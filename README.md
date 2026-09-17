@@ -10,7 +10,7 @@ Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data 
 > from PyPI with an isolated tool manager:
 >
 > ```bash
-> uv tool install mammoth-cli==1.1.11
+> uv tool install mammoth-cli==1.1.12
 > ```
 >
 > See [Command-line interface](#command-line-interface-mammoth-cli) below.
@@ -760,15 +760,15 @@ assumed to have a usable default view: list views and choose one explicitly.
 Install the published CLI with an isolated Python tool manager:
 
 ```bash
-uv tool install mammoth-cli==1.1.11
+uv tool install mammoth-cli==1.1.12
 
 mammoth auth login               # prompts for API key, API secret, and workspace id
 mammoth doctor                   # verify the saved profile and endpoint
 mammoth project list             # a table in a terminal, JSON when piped
 ```
 
-`pipx install mammoth-cli==1.1.11` or `python -m pip install
-mammoth-cli==1.1.11` also work. The 1.1.11 release has no GitHub release
+`pipx install mammoth-cli==1.1.12` or `python -m pip install
+mammoth-cli==1.1.12` also work. The 1.1.12 release has no GitHub release
 installer assets, so do not use a `releases/latest` installer URL as a proxy
 for this published PyPI version.
 

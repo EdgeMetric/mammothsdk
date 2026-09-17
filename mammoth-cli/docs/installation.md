@@ -8,10 +8,10 @@ install the same CLI with more than one tool manager.
 
 ## PyPI with uv (recommended)
 
-Install the published 1.1.11 CLI into an isolated environment:
+Install the published 1.1.12 CLI into an isolated environment:
 
 ```bash
-uv tool install mammoth-cli==1.1.11
+uv tool install mammoth-cli==1.1.12
 ```
 
 Confirm the result:
@@ -29,7 +29,7 @@ bin directory reported by `uv tool dir --bin` to your PATH.
 ## From PyPI with pip
 
 ```bash
-python -m pip install mammoth-cli==1.1.11  # Python 3.12, 3.13, or 3.14
+python -m pip install mammoth-cli==1.1.12  # Python 3.12, 3.13, or 3.14
 mammoth --version
 ```
 
@@ -39,7 +39,7 @@ The CLI supports Python 3.12 through the latest tested stable minor (currently
 ## From PyPI with pipx
 
 ```bash
-pipx install mammoth-cli==1.1.11
+pipx install mammoth-cli==1.1.12
 mammoth --version
 ```
 
@@ -48,7 +48,7 @@ on your PATH. Run `pipx upgrade mammoth-cli` to update it.
 
 ## GitHub release installers (conditional)
 
-The local-built 1.1.11 release has no GitHub release installer assets,
+The local-built 1.1.12 release has no GitHub release installer assets,
 `SHA256SUMS`, or Sigstore bundle. Do not use a `releases/latest` installer URL
 for it. If a future release explicitly attaches installers and `SHA256SUMS`,
 download a versioned asset, verify its checksum, inspect it, then execute it.
