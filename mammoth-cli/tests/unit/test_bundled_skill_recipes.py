@@ -1,7 +1,13 @@
 from pathlib import Path
 
-
-ROOT = Path(__file__).parents[2] / "mammoth_cli" / "bundled_skill" / "mammoth-cli" / "references" / "recipes"
+ROOT = (
+    Path(__file__).parents[2]
+    / "mammoth_cli"
+    / "bundled_skill"
+    / "mammoth-cli"
+    / "references"
+    / "recipes"
+)
 
 
 def test_recipe_index_and_required_topics_exist() -> None:

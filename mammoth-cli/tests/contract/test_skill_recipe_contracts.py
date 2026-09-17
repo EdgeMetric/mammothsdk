@@ -8,7 +8,6 @@ from mammoth_cli.commands.capability import find_capabilities
 from mammoth_cli.commands.schema import find_schemas
 from mammoth_cli.manifest.loader import load_commands
 
-
 ROOT = Path(__file__).parents[2]
 SKILL_REFERENCES = ROOT / "mammoth_cli" / "bundled_skill" / "mammoth-cli" / "references"
 RECIPES = SKILL_REFERENCES / "recipes"
@@ -24,7 +23,9 @@ def test_recipe_schema_references_exist_in_published_manifest() -> None:
     for path in SKILL_REFERENCES.rglob("*.md"):
         text = path.read_text(encoding="utf-8")
         for command_id in re.findall(r"mammoth schema get ([a-z0-9.-]+)", text):
-            assert command_id in SCHEMA_IDS, f"{path.name} references unavailable schema {command_id}"
+            assert command_id in SCHEMA_IDS, (
+                f"{path.name} references unavailable schema {command_id}"
+            )
 
 
 def test_skill_discovery_queries_have_published_matches() -> None:
@@ -36,7 +37,9 @@ def test_skill_discovery_queries_have_published_matches() -> None:
     for path in SKILL_REFERENCES.rglob("*.md"):
         text = path.read_text(encoding="utf-8")
         for query in re.findall(r'mammoth schema find "([^"]+)"', text):
-            assert find_schemas(query)["matches"], f"{path.name} discovery query has no match: {query!r}"
+            assert find_schemas(query)["matches"], (
+                f"{path.name} discovery query has no match: {query!r}"
+            )
         for query in re.findall(r'mammoth capability find "([^"]+)"', text):
             assert find_capabilities(query)["matches"], (
                 f"{path.name} capability query has no match: {query!r}"

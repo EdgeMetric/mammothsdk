@@ -11,14 +11,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import subprocess
-import sys
 import re
 import selectors
+import subprocess
+import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-
 
 FORBIDDEN = ("api_key", "api-secret", "api_secret", "password", "token")
 ALLOWED_ROOTS = {"project", "dataset", "batch", "view", "file", "folder", "dashboard"}
@@ -87,7 +86,7 @@ def main() -> int:
         ["mammoth", "--version"], capture_output=True, check=False
     )
     record = {
-        "captured_at": datetime.now(timezone.utc).isoformat(),
+        "captured_at": datetime.now(UTC).isoformat(),
         "cli_version": version_result.stdout.decode("utf-8", errors="replace").strip(),
         "argv": command,
         "exit_code": exit_code,
