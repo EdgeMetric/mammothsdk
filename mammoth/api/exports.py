@@ -678,7 +678,11 @@ class ExportsAPI:
                 prefix=f".{output_path.name}.", suffix=".part", dir=output_path.parent
             )
             temp_path = Path(raw_temp_path)
-            response = self._client.session.get(url, stream=True, timeout=self._client.timeout)
+            # Signed download URLs deliberately use the unauthenticated
+            # session created by MammothClient.  Retain the fallback for
+            # lightweight third-party client stubs that predate this seam.
+            download_session = getattr(self._client, "download_session", self._client.session)
+            response = download_session.get(url, stream=True, timeout=self._client.timeout)
             response.raise_for_status()
 
             with os.fdopen(fd, "wb") as stream:

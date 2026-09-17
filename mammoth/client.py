@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import math
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 
 import requests
 
@@ -288,6 +288,10 @@ class MammothClient:
                 "User-Agent": f"mammoth-io/{_get_version()}",
             }
         )
+        # Signed export URLs are commonly served from a storage origin rather
+        # than the API origin.  Keep that traffic on a separate session so API
+        # credentials are never attached to a signed URL (or its redirects).
+        self.download_session = requests.Session()
 
         # ── Sub-clients ──
         self.files = FilesAPI(self)
@@ -390,9 +394,26 @@ class MammothClient:
             MammothAPIError: If the API returns an error or network fails.
         """
         url = urljoin(self.base_url + "/", endpoint.lstrip("/"))
+        api_origin = urlsplit(self.base_url)
+        request_origin = urlsplit(url)
+        if (
+            request_origin.scheme.lower(),
+            request_origin.netloc.lower(),
+        ) != (
+            api_origin.scheme.lower(),
+            api_origin.netloc.lower(),
+        ):
+            raise ValueError("Authenticated API requests must target the configured API origin")
+
+        if kwargs.pop("allow_redirects", False):
+            raise ValueError("Authenticated API requests do not support redirects")
 
         request_kwargs: dict[str, Any] = {
             "timeout": self.timeout,
+            # ``requests`` otherwise follows redirects and preserves these
+            # custom session headers across origins.  API credentials must
+            # never leave the authenticated API request's original URL.
+            "allow_redirects": False,
             **kwargs,
         }
 
@@ -532,7 +553,7 @@ class MammothClient:
                 return {}
             try:
                 return response.json()
-            except ValueError as e:
+            except (ValueError, TypeError) as e:
                 raise MammothAPIError(
                     "Invalid JSON response",
                     status_code=response.status_code,
@@ -541,7 +562,10 @@ class MammothClient:
                     method=request_method,
                     request_id=request_id,
                     retry_after=retry_after,
-                    operation_state="failed",
+                    # A mutation may have committed before an intermediary
+                    # truncated or corrupted its successful response.  Do not
+                    # tell callers it failed and invite a duplicate write.
+                    operation_state=operation_state,
                     phase=phase,
                     endpoint=endpoint,
                 ) from e
@@ -553,8 +577,14 @@ class MammothClient:
         else:
             error_detail = f"HTTP {response.status_code}"
 
+        # A mutation is definitively not applied only when the server returns
+        # an ordinary client-side rejection.  Redirects, timeouts/rate limits,
+        # and server/gateway errors can all happen after a write is committed.
+        # Preserve that uncertainty so callers reconcile instead of replaying.
         response_operation_state = operation_state
-        if response.status_code not in {429, 503} or request_method in {"GET", "HEAD", "OPTIONS"}:
+        if request_method in {"GET", "HEAD", "OPTIONS"} or (
+            400 <= response.status_code < 500 and response.status_code not in {408, 425, 429}
+        ):
             response_operation_state = "failed"
 
         raise MammothAPIError(
@@ -767,9 +797,12 @@ class MammothClient:
         closes the client deterministically instead of relying on interpreter
         shutdown.
         """
-        session = getattr(self, "session", None)
-        if session is not None:
-            session.close()
+        closed_sessions: set[int] = set()
+        for name in ("session", "download_session"):
+            session = getattr(self, name, None)
+            if session is not None and id(session) not in closed_sessions:
+                session.close()
+                closed_sessions.add(id(session))
 
     def __enter__(self) -> MammothClient:
         """Context manager entry."""
