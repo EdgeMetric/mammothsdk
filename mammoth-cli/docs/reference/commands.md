@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 1.1.12.
+Generated from the reviewed command manifests for mammoth-cli 2.0.0.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 
 Total commands: 547.
@@ -2170,10 +2170,10 @@ Total commands: 547.
 
 - `DATA_APP_ID` (int, required) — ID of the data app.
 
-- Mutation class: `benign_mutation`
-- Confirmation: `none`
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.data_apps.DataAppsAPI.share`
-- Agent example: `mammoth data-app share 123 --input '{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}' --output json --no-input`
+- Agent example: `mammoth data-app share 123 --input '{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}' --output json --no-input --yes`
 
 ### `mammoth data-app update`
 
@@ -3016,10 +3016,10 @@ Total commands: 547.
 
 - `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
 
-- Mutation class: `benign_mutation`
-- Confirmation: `none`
+- Mutation class: `high_impact`
+- Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.user_update`
-- Agent example: `mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --output json --no-input`
+- Agent example: `mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --output json --no-input --yes`
 
 ## report
 
@@ -4577,7 +4577,7 @@ Total commands: 547.
 - `DATASET_ID` (int, optional) — Optional parent dataset ID; resolved from the view when omitted.
 
 - Mutation class: `reversible_pipeline`
-- Confirmation: `none`
+- Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.apply_exportable_config`
 - Agent example: `mammoth view exportable-config apply 123 --input-format json --input '{"config": {"tasks": []}}' --output json --no-input --yes --confirm 123`
 

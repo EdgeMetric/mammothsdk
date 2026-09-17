@@ -491,8 +491,8 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
   example: mammoth data-app list --output json --no-input
 - `mammoth data-app pipeline-changes` [read/none] -> mammoth.api.data_apps.DataAppsAPI.pipeline_changes
   example: mammoth data-app pipeline-changes 123 --output json --no-input
-- `mammoth data-app share` [benign_mutation/none] -> mammoth.api.data_apps.DataAppsAPI.share
-  example: mammoth data-app share 123 --input '{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}' --output json --no-input
+- `mammoth data-app share` [external_effect/yes_always] -> mammoth.api.data_apps.DataAppsAPI.share
+  example: mammoth data-app share 123 --input '{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}' --output json --no-input --yes
 - `mammoth data-app update` [benign_mutation/none] -> mammoth.api.data_apps.DataAppsAPI.update
   example: mammoth data-app update 123 --input '{"body": {"params": {"name": "Revenue report"}}}' --output json --no-input
 - `mammoth data-app upload` [benign_mutation/none] -> mammoth.api.data_apps.DataAppsAPI.upload
@@ -687,8 +687,8 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
   example: mammoth project user add 123 --input '{"user_ids": ["resource-123"]}' --output json --no-input
 - `mammoth project user remove` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.remove_users
   example: mammoth project user remove 123 --input '{"user_ids": ["resource-123"]}' --output json --no-input
-- `mammoth project user update` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.user_update
-  example: mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --output json --no-input
+- `mammoth project user update` [high_impact/yes_always] -> mammoth.api.projects.ProjectsAPI.user_update
+  example: mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --output json --no-input --yes
 
 ## report
 
@@ -1015,7 +1015,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
   example: mammoth view export tableau 123 123 --input '{"server_url": "https://tableau.example", "token_name": "token", "token_secret": "replace-with-secret"}' --output json --no-input
 - `mammoth view export update` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.update
   example: mammoth view export update 123 123 --input '{"patches": [{"sample_key": "Status"}]}' --output json --no-input
-- `mammoth view exportable-config apply` [reversible_pipeline/none] -> mammoth.api.dataviews.DataviewsAPI.apply_exportable_config
+- `mammoth view exportable-config apply` [reversible_pipeline/confirm_target] -> mammoth.api.dataviews.DataviewsAPI.apply_exportable_config
   example: mammoth view exportable-config apply 123 --input-format json --input '{"config": {"tasks": []}}' --output json --no-input --yes --confirm 123
 - `mammoth view exportable-config get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.get_exportable_config
   example: mammoth view exportable-config get 123 --output json --no-input

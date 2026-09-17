@@ -1,17 +1,26 @@
 # CLI release provenance
 
-## 2.0.0 / SDK 0.7.2 — CLI release candidate
+## 2.0.0 / SDK 0.7.2
 
-This is a release-preparation candidate for the breaking NDJSON contract
-change. The CLI candidate version is `2.0.0` and its SDK lower bound is
-`mammoth-io>=0.7.2,<0.8`. SDK `0.7.2` is published on PyPI; CLI `2.0.0` has
-not been published, uploaded, tagged, or promoted to the public installer.
-Keep user-facing CLI installation examples pinned to the latest published
-release until review and publication complete.
+Published from deterministic local artifacts built from annotated tag
+`cli-v2.0.0` (source commit `da626f8`). This is a breaking release for the
+versioned NDJSON lifecycle framing. The CLI requires
+`mammoth-io>=0.7.2,<0.8`; SDK `0.7.2` was published first.
 
-The lockfile records SDK `0.7.2` and its published wheel hash; `poetry check
---lock` passed after resolution from the public index. CLI artifact review and
-publication authorization remain required before treating this as a release.
+PyPI JSON metadata reports the uploaded local artifact hashes:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `98b8bd291e3b5564f849a5e8889c6a0ea4682b171dde2d56fe5d21518a120cac` |
+| Source distribution | `1aa833e1e1257bea1613754c0c0aaa9bc719035ad10dcbca4a69ef57324bed1d` |
+
+The lockfile resolves the published SDK `0.7.2` wheel hash and passed
+`poetry check --lock`. Focused output, schema/discovery, identity, workflow,
+and installer-document contracts passed before upload. Exact-artifact and
+independent public-PyPI Python 3.14 installs passed `pip check`, reported CLI
+`2.0.0` and SDK `0.7.2`, and exercised NDJSON lifecycle framing plus bundled
+skill install/list checks. These checks do not qualify all API operations,
+autonomous workflows, or untested backend behavior.
 
 ## 1.1.12
 
