@@ -21,7 +21,7 @@ from pathlib import Path
 
 
 FORBIDDEN = ("api_key", "api-secret", "api_secret", "password", "token")
-ALLOWED_ROOTS = {"project", "dataset", "batch", "view", "file", "folder"}
+ALLOWED_ROOTS = {"project", "dataset", "batch", "view", "file", "folder", "dashboard"}
 MAX_OUTPUT = 1_000_000
 REDACT = re.compile(r"(?i)(api[_-]?(?:key|secret)|authorization|bearer)\s*[:=]\s*[^,\s}]+")
 

@@ -1,0 +1,23 @@
+{
+  "captured_at": "2026-09-17T08:48:14.936176+00:00",
+  "cli_version": "1.1.5",
+  "argv": [
+    "mammoth",
+    "dataset",
+    "delete",
+    "12",
+    "--profile",
+    "expanded-live",
+    "--project",
+    "3",
+    "--output",
+    "json",
+    "--no-input",
+    "--yes"
+  ],
+  "exit_code": 4,
+  "stdout": "",
+  "stderr": "{\n  \"error\": {\n    \"authorization_required\": true,\n    \"code\": \"authorization_required\",\n    \"details\": {\n      \"endpoint\": \"/workspaces/4/projects/3/datasets/12\",\n      \"exception_type\": null,\n      \"method\": \"DELETE\",\n      \"operation_state\": \"failed\",\n      \"phase\": \"response\",\n      \"response_body\": {\n        \"error_code\": \"4RESO001\",\n        \"message\": \"You are not authorized to perform this action\",\n        \"name\": \"AUTHORIZATION_ERROR\"\n      },\n      \"status_code\": 403\n    },\n    \"hint\": \"Check the target scope or ask an administrator for permission.\",\n    \"message\": \"Mammoth denied access to the requested resource or operation.\",\n    \"recovery_commands\": [],\n    \"request_id\": null,\n    \"retryable\": false\n  },\n  \"schema_version\": 1\n}\n",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "d991b53e852230762a1917484217ca623647d928a95eea735dddd609a4bfa09c"
+}
