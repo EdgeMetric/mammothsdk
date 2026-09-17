@@ -3,15 +3,16 @@
 [Documentation index](llms.txt)
 
 Install `mammoth-cli` as an isolated command-line tool, then confirm that the
-`mammoth` executable is on your PATH. Choose one installation method; do not
-install the same CLI with more than one tool manager.
+`mammoth` executable is on your PATH. The supported user-facing CLI path is the
+pinned installer for hosts without a preinstalled Python tool manager; it
+bootstraps `uv` when `uv` is absent and requires curl/bash/network access.
 
-## PyPI with uv (recommended)
+## Pinned CLI installer
 
-Install the published 1.1.12 CLI into an isolated environment:
+Run:
 
 ```bash
-uv tool install mammoth-cli==1.1.12
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 1.1.12 --noninteractive
 ```
 
 Confirm the result:
@@ -20,55 +21,18 @@ Confirm the result:
 mammoth --version
 ```
 
-`uv tool` puts the `mammoth` executable on your PATH in an isolated environment.
-Use `uv tool dir --bin` to find that directory.
+If `mammoth` is not found after installation, open a new shell so the
+installer's tool bin directory is on your PATH.
 
-If `mammoth` is not found after installation, open a new shell or add the tool
-bin directory reported by `uv tool dir --bin` to your PATH.
+## SDK installation
 
-## From PyPI with pip
-
-```bash
-python -m pip install mammoth-cli==1.1.12  # Python 3.12, 3.13, or 3.14
-mammoth --version
-```
-
-The CLI supports Python 3.12 through the latest tested stable minor (currently
-3.12, 3.13, and 3.14). It does not support 3.10 or 3.11.
-
-## From PyPI with pipx
+The Python SDK remains independently installable with pip:
 
 ```bash
-pipx install mammoth-cli==1.1.12
-mammoth --version
+python -m pip install mammoth-io==0.7.1
 ```
 
-`pipx` installs the `mammoth` executable in an isolated environment and puts it
-on your PATH. Run `pipx upgrade mammoth-cli` to update it.
-
-## GitHub release installers (conditional)
-
-The local-built 1.1.12 release has no GitHub release installer assets,
-`SHA256SUMS`, or Sigstore bundle. Do not use a `releases/latest` installer URL
-for it. If a future release explicitly attaches installers and `SHA256SUMS`,
-download a versioned asset, verify its checksum, inspect it, then execute it.
-If that release also attaches `SHA256SUMS.sigstore.json`, verify the optional
-bundle first:
-
-```bash
-cosign verify-blob \
-  --bundle SHA256SUMS.sigstore.json \
-  --certificate-identity-regexp '^https://github\.com/EdgeMetric/mammothsdk/\.github/workflows/cli-release\.yml@refs/tags/' \
-  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
-  SHA256SUMS
-```
-
-The `--certificate-identity-regexp` and `--certificate-oidc-issuer`
-constraints ensure a present signature came from the EdgeMetric/mammothsdk
-release workflow. Without them, `cosign` accepts any valid Sigstore
-certificate. Then run `sha256sum --check --ignore-missing SHA256SUMS` and
-inspect the installer before execution. Without a bundle, a checksum check is
-not signature verification and needs a separate trusted checksum source.
+This SDK command does not install the CLI.
 
 ## Install the agent skill
 

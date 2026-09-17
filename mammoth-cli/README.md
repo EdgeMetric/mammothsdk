@@ -20,40 +20,28 @@ shell and predictable in scripts and agent runs.
 The CLI is built on the public [`mammoth-io`](https://pypi.org/project/mammoth-io/)
 SDK. It adds no second HTTP client and calls no private SDK members.
 
-Agent-oriented interfaces are not a claim that autonomous long pipelines or
-every release API operation are qualified. See the
-[capability matrix](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/release-capability-matrix.md)
-for current coverage.
+See the [capability matrix](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/release-capability-matrix.md)
+for current row-level coverage and evidence status.
 
 ## Install
 
-Install the published 1.1.12 CLI from PyPI with an isolated tool manager:
+Install the published 1.1.12 CLI without a preinstalled Python tool manager:
 
 ```bash
-uv tool install mammoth-cli==1.1.12
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 1.1.12 --noninteractive
 ```
 
-Then confirm it works:
+Open a new shell if needed so the installer-added tool directory is on PATH,
+then confirm it works:
 
 ```bash
 mammoth --version
 mammoth doctor          # checks config, credentials, endpoint, connectivity
 ```
 
-<details>
-<summary>Already have a Python tool manager?</summary>
-
-```bash
-pipx install mammoth-cli==1.1.12
-python -m pip install mammoth-cli==1.1.12
-```
-
-</details>
-
-The CLI supports Python 3.12, 3.13, and 3.14. The locally built 1.1.12 release
-has no GitHub release assets, CI-build provenance, or signing claim; install it
-from PyPI. A future release may provide a separate checksum or signature flow
-only when its release record explicitly says so. See [docs/installation.md](docs/installation.md).
+The installer bootstraps its pinned `uv` tool environment when needed. See
+[docs/installation.md](docs/installation.md) for the installer contract and
+the SDK-only pip installation path.
 
 ## Quick start
 
@@ -207,7 +195,7 @@ Agent-readable indexes: [`docs/llms.txt`](docs/llms.txt) and
 ## Capability-matrix status
 
 The committed machine-readable release matrix is the canonical repository
-inventory; the readiness workbook is historical/live-evidence context. The
+inventory; historical readiness records are kept separately from this summary. The
 repository-facing summary is
 [`docs/agent-capability-coverage.md`](docs/agent-capability-coverage.md).
 The current release snapshot contains **528 operations across 355 paths** (the
@@ -227,6 +215,32 @@ copied into this README.
 The sanitized [row-level release matrix](docs/release-capability-matrix.md)
 and [machine-readable matrix](docs/release-capability-matrix.json) preserve all
 528 method/path line items without pilot payloads or credentials.
+
+### Core top-15 snapshot
+
+This compact table is a navigation summary, not a family-wide qualification
+claim. The linked matrix row is canonical; `Unassessed` means no support claim.
+
+| Area | Capability | ID | Status | Evidence/limitation |
+|---|---|---:|---|---|
+| Project | List projects | REL-174 | Partial | One bounded project-list read. |
+| Project | Create project | REL-431 | Unassessed | No owned project lifecycle evidence. |
+| Project | Update project | REL-286 | Unassessed | No approved lifecycle evidence. |
+| Project | Delete project | REL-037 | Unassessed | Protected project scope; no disposable project. |
+| Dataset | Create dataset | REL-443 | Partial | Owned disposable create/readback/cleanup evidence. |
+| Dataset | List datasets | REL-191 | Partial | Bounded list/readback evidence. |
+| Dataset | Get dataset | REL-192 | Partial | One retained-resource read. |
+| Dataset | Delete dataset | REL-044 | Partial | Owned delete and absence readback; variants remain untested. |
+| View | Create/duplicate view | REL-446 | Partial | One disposable view lifecycle. |
+| View | List views | REL-197 | Partial | One retained view/parent scope. |
+| View | Get view | REL-198 | Partial | Positive and invalid-parent controls. |
+| View | Pipeline task readback | REL-214 | Partial | Typed transforms require schema discovery; bounded task-list evidence. |
+| Dashboard | Create dashboard | REL-326 | Unassessed | No current approved create fixture. |
+| Dashboard | Get dashboard | REL-107 | Partial | One retained dashboard read. |
+| Folder | Get folder | REL-224 | Full | Public CLI 1.1.12 receipt covers fields, filtered list, errors, lifecycle, and final absence; folder family remains incomplete. |
+
+Use the [canonical matrix](docs/release-capability-matrix.md) for the full
+528-row inventory and exact evidence links.
 
 ## Compatibility
 

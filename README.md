@@ -6,18 +6,14 @@ Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data 
 [![Python](https://img.shields.io/pypi/pyversions/mammoth-io)](https://pypi.org/project/mammoth-io/)
 
 > **Prefer the terminal?** This repository also ships **`mammoth-cli`**, a
-> command-line interface built for both people and autonomous agents. Install it
-> from PyPI with an isolated tool manager:
+> command-line interface for people, scripts, and schema-driven agent runs.
+> Install the pinned CLI without a preinstalled Python tool manager:
 >
 > ```bash
-> uv tool install mammoth-cli==1.1.12
+> curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 1.1.12 --noninteractive
 > ```
 >
 > See [Command-line interface](#command-line-interface-mammoth-cli) below.
-
-> The CLI is agent-oriented, but this description is not a claim of broad
-> autonomous production qualification; readiness evidence remains bounded to
-> the explicitly documented release evidence.
 
 ## Installation
 
@@ -757,27 +753,28 @@ View and transformation inputs use the display names shown by Mammoth; agents do
 not need to find or manufacture backend column identifiers. A dataset is not
 assumed to have a usable default view: list views and choose one explicitly.
 
-Install the published CLI with an isolated Python tool manager:
+Install the published CLI without a preinstalled Python tool manager:
 
 ```bash
-uv tool install mammoth-cli==1.1.12
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 1.1.12 --noninteractive
+```
 
+Open a new shell if needed so the installer-added tool directory is on PATH,
+then run:
+
+```bash
 mammoth auth login               # prompts for API key, API secret, and workspace id
 mammoth doctor                   # verify the saved profile and endpoint
 mammoth project list             # a table in a terminal, JSON when piped
 ```
-
-`pipx install mammoth-cli==1.1.12` or `python -m pip install
-mammoth-cli==1.1.12` also work. The 1.1.12 release has no GitHub release
-installer assets, so do not use a `releases/latest` installer URL as a proxy
-for this published PyPI version.
 
 For promptless work, log in from a protected JSON file with `mammoth auth login
 --input creds.json --output json --no-input`; do not put secrets on a command
 line. The CLI also ships a bundled agent skill (`mammoth skill install`). Start
 with the [CLI README](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli),
 the [agent guide](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agents.md),
-or the [portable handoff format](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-handoff.md).
+the [portable handoff format](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-handoff.md),
+and the [Core top-15 capability snapshot](mammoth-cli/README.md#core-top-15-snapshot).
 
 The CLI's examples are deliberately nonexhaustive. Use `mammoth capability list`
 and `mammoth schema get COMMAND_ID` for the installed version, and treat a
