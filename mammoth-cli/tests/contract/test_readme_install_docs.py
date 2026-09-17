@@ -9,7 +9,7 @@ _ROOT = Path(__file__).resolve().parents[3]
 def test_cli_docs_use_pinned_installer() -> None:
     expected = (
         "curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/"
-        "mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 2.0.0 --noninteractive"
+        "mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 2.0.1 --noninteractive"
     )
     for path in (_ROOT / "README.md", _ROOT / "mammoth-cli" / "README.md", _ROOT / "mammoth-cli" / "docs" / "installation.md"):
         text = path.read_text(encoding="utf-8")

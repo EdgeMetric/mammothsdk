@@ -25,10 +25,10 @@ for current row-level coverage and evidence status.
 
 ## Install
 
-Install the 2.0.0 CLI without a preinstalled Python tool manager:
+Install the 2.0.1 CLI without a preinstalled Python tool manager:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 2.0.0 --noninteractive
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 2.0.1 --noninteractive
 ```
 
 Open a new shell if needed so the installer-added tool directory is on PATH,

@@ -12,7 +12,7 @@ bootstraps `uv` when `uv` is absent and requires curl/bash/network access.
 Run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 2.0.0 --noninteractive
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 2.0.1 --noninteractive
 ```
 
 Confirm the result:
@@ -29,7 +29,7 @@ installer's tool bin directory is on your PATH.
 The Python SDK remains independently installable with pip:
 
 ```bash
-python -m pip install mammoth-io==0.7.2
+python -m pip install mammoth-io==0.7.3
 ```
 
 This SDK command does not install the CLI.

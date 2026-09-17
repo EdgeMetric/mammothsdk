@@ -1,5 +1,13 @@
 # CLI release provenance
 
+## 2.0.1 / SDK 0.7.3 — release candidate
+
+This local release-preparation candidate incorporates post-2.0.0 static gate
+fixes and requires `mammoth-io>=0.7.3,<0.8` for the SDK security release.
+Neither artifact has been published, uploaded, tagged, or promoted to the
+public installer. Keep release provenance and artifact hashes pending until
+the SDK is publicly available and the CLI candidate is independently reviewed.
+
 ## 2.0.0 / SDK 0.7.2
 
 Published from deterministic local artifacts built from annotated tag
