@@ -27,7 +27,7 @@ Example::
 from __future__ import annotations
 
 import math
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urljoin, urlsplit
 
 import requests
@@ -668,7 +668,9 @@ class MammothClient:
             expected_response_shape="dict",
             **kwargs,
         )
-        return result
+        # ``expected_response_shape`` above rejects every non-dict successful
+        # response before it reaches this typed wrapper.
+        return cast(dict[str, Any], result)
 
     def _request_list(
         self,
