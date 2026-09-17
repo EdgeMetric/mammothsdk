@@ -50,7 +50,7 @@ The affected commands group as follows:
 
 Of the 56, 17 are reads, 16 are benign mutations, 16 are external effects, 6
 are destructive, and 1 is a reversible pipeline mutation. Thus this is not
-just a read-path inconvenience: an omitted parent can precede delete, trash,
+only a read-path inconvenience: an omitted parent can precede delete, trash,
 checkpoint/data-check mutation, version mutation, or export actions.
 
 The historical failure is proven by the existing release evidence: a wrong
