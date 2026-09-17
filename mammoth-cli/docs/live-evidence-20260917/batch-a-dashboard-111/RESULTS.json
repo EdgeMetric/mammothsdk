@@ -1,0 +1,26 @@
+{
+  "captured_at": null,
+  "captured_at_note": "Exact UTC capture instant was not retained; no timestamp is fabricated.",
+  "scope": {"profile": "expanded-live", "workspace_id": 4, "project_id": 3, "dashboard_id": 48},
+  "versions": {"mammoth_cli": "1.1.11", "mammoth_io": "0.7.1", "python": "3.14.4"},
+  "artifacts": {
+    "cli_wheel_sha256": "25a811dad8d843731d719f20948ffe7df85dfb16a89f4cea1d8999925b54c962",
+    "sdk_wheel_sha256": "41e606f1ce4705917449f6f926936abfb1f6e776b9339a42848370456fa7bf6e"
+  },
+  "schema_discovery": {
+    "dashboard.style.default.get": {"effects": "read", "verification": "live_read_only", "result": "schema-discovered"},
+    "dashboard.style.token.list": {"effects": "read", "required": "opaque style ID", "action": "skipped_unknown_id"},
+    "dashboard.suggestion.list": {"effects": "read", "required": "dataview ID", "action": "skipped_unknown_id"},
+    "dashboard.canvas.get": {"effects": "read", "verification": "live_read_only", "result": "schema-discovered"},
+    "dashboard.qa.session.list": {"effects": "read", "verification": "live_read_only", "result": "schema-discovered"},
+    "dashboard.qa.settings.get": {"effects": "read", "verification": "live_read_only", "result": "schema-discovered"}
+  },
+  "calls": {
+    "REL-092_dashboard_style_default_get": {"argv": ["dashboard", "style", "default", "get", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"], "exit": 1, "error": "api_error", "detail": "ValidationError", "proposal": "Unassessed"},
+    "REL-109_dashboard_canvas_get": {"argv": ["dashboard", "canvas", "get", "48", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"], "exit": 0, "output_sha256": "c5f31b2f3eff184dd0fa5c31cd0c30cdb03eeb8d15cbe5ebb7f1be1f09f10a43", "keys": ["canvas", "dashboard_id", "meta", "plan", "specs"], "canvas_pages": 1, "title": "Terra OWID five-source reference", "proposal": "Partial"},
+    "REL-118_dashboard_qa_session_list": {"argv": ["dashboard", "qa", "session", "list", "48", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"], "exit": 0, "output_sha256": "6b5340270e374168839ac75558534d63339b1504112812686b4be0d37c9d31e3", "semantic": {"mine": 0, "shared": 0}, "proposal": "Partial"},
+    "REL-120_dashboard_qa_settings_get": {"argv": ["dashboard", "qa", "settings", "get", "48", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"], "exit": 0, "output_sha256": "51d715207f3af5c55650e3354ebecd09f517bbef96cc2235e1509c731ccc4591", "semantic": {"allow_viewer_qa": true, "can_manage": true, "public_link": false}, "proposal": "Partial"}
+  },
+  "skipped": {"REL-094": "unknown opaque style ID required", "REL-095": "unknown dataview ID required"},
+  "limitations": ["single retained dashboard", "read-only only", "no Full proposals", "REL-092 structured backend ValidationError"]
+}
