@@ -85,8 +85,9 @@ def test_graph_passes_project(fake_service: FakeMammothService) -> None:
     }
     data, _ = workflow_cmd.workflow_graph(_inv("workflow.graph", project=180))
     assert fake_service.call_log == [(_GRAPH, {"project_id": 180})]
-    assert data["complete"] is True
-    assert data["nodes"] == [
+    assert data["nodes"] == [{"id": "a"}, {"id": "b"}]
+    assert data["cli_navigation"]["complete"] is True
+    assert data["cli_navigation"]["nodes"] == [
         {"id": "a", "upstream": ["b"], "downstream": ["b"]},
         {"id": "b", "upstream": ["a"], "downstream": ["a"]},
     ]
@@ -101,9 +102,24 @@ def test_graph_marks_hidden_or_unauthorized_neighbors_incomplete(
     }
     data, _ = workflow_cmd.workflow_graph(_inv("workflow.graph", project=180))
 
-    assert data["complete"] is False
-    assert data["hidden_regions"] == ["unauthorized_or_hidden_neighbor"]
-    assert data["edges"] == []
+    assert data["cli_navigation"]["complete"] is False
+    assert data["cli_navigation"]["hidden_regions"] == ["unresolved_edge_endpoint"]
+    assert data["cli_navigation"]["edges"] == []
+
+
+def test_graph_unknown_shape_is_preserved_with_incomplete_navigation(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_GRAPH] = {"graph_payload": {"opaque": True}}
+    data, _ = workflow_cmd.workflow_graph(_inv("workflow.graph", project=180))
+
+    assert data["graph_payload"] == {"opaque": True}
+    assert data["cli_navigation"] == {
+        "nodes": [],
+        "edges": [],
+        "complete": False,
+        "hidden_regions": ["unknown_shape"],
+    }
 
 
 def test_cleanup_passes_project(fake_service: FakeMammothService) -> None:

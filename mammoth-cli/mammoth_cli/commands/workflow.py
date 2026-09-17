@@ -60,7 +60,7 @@ def _graph_projection(raw: Any) -> dict[str, Any]:
             continue
         source, target = str(edge["source"]), str(edge["target"])
         if source not in nodes or target not in nodes:
-            hidden.append("unauthorized_or_hidden_neighbor")
+            hidden.append("unresolved_edge_endpoint")
             continue
         nodes[source]["downstream"].append(target)
         nodes[target]["upstream"].append(source)
@@ -176,7 +176,15 @@ def workflow_graph(invocation: Invocation) -> HandlerResult:
     """Get the active project's workflow graph."""
     project_id = require_project(invocation)
     with open_service(invocation) as (service, auth):
-        data = _graph_projection(service.call(_symbol(invocation), project_id=project_id))
+        raw = service.call(_symbol(invocation), project_id=project_id)
+    # Keep every backend field intact. The typed projection is additive because
+    # the backend graph shape is not yet a versioned public SDK model.
+    if isinstance(raw, dict):
+        data = dict(raw)
+        navigation_key = "cli_navigation" if "cli_navigation" not in data else "cli_navigation_v1"
+        data[navigation_key] = _graph_projection(raw)
+    else:
+        data = {"backend_graph": raw, "cli_navigation": _graph_projection(raw)}
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
