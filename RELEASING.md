@@ -7,7 +7,7 @@ This repository publishes two independent PyPI distributions from one codebase:
 | `mammoth-io` (SDK) | repo root | https://pypi.org/project/mammoth-io/ | `sdk-v` |
 | `mammoth-cli` (CLI) | `mammoth-cli/` | https://pypi.org/project/mammoth-cli/ | `cli-v` |
 
-The CLI depends on `mammoth-io>=0.7,<0.8`, so **the SDK must be published before
+The CLI depends on `mammoth-io>=0.7.1,<0.8`, so **the SDK must be published before
 the CLI**. `cli-release.yml` enforces this with a gate that fails unless the
 required `mammoth-io` range already resolves on PyPI.
 

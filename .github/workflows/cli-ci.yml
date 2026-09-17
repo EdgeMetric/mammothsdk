@@ -59,7 +59,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           # Install the in-repo SDK editable FIRST so the CLI's
-          # `mammoth-io>=0.7,<0.8` constraint resolves against the code in this
+          # `mammoth-io>=0.7.1,<0.8` constraint resolves against the code in this
           # checkout (the exact SDK being shipped alongside), not whatever PyPI
           # currently serves. The shipped wheel still declares the published
           # PyPI dependency.
