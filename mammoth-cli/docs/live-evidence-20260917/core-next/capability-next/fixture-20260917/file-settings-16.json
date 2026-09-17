@@ -1,5 +1,5 @@
 {
-  "captured_at": ".Z",
+  "captured_at": null,
   "cli_version": "1.1.9",
   "argv": [
     "mammoth",
@@ -21,5 +21,6 @@
   "stdout_sha256": "13817f076b6c0b79927d5522f7f9f985c9d3e5d8784af972bfd329b62d1679f0",
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "scope": "workspace 4/project 3; owned disposable dataset 16/view 16",
-  "verification": "live_disposable_project"
+  "verification": "live_disposable_project",
+  "captured_at_status": "unknown: original shell timestamp malformed; exact command capture time is not reconstructible from retained output"
 }
