@@ -15,6 +15,8 @@ import hashlib
 import json
 import os
 import re
+import secrets
+import socket
 import stat
 import subprocess
 import sys
@@ -54,6 +56,8 @@ _PRE_DISPATCH_ERROR_CODES = frozenset(
         "project_required",
     }
 )
+_SOCKET_MESSAGE_LIMIT = 64 * 1024
+_OPAQUE_HANDLE = re.compile(r"^[A-Za-z0-9_.-]{1,128}$")
 
 
 class BrokerPolicyError(ValueError):
@@ -552,3 +556,152 @@ class OwnerJournalBroker:
             }
         )
         return receipt
+
+
+class OwnerBrokerSocketServer:
+    """Owner-only Unix socket boundary for fixed journal invocations.
+
+    The client protocol deliberately accepts only opaque handles, an allowlisted
+    operation name, and a payload digest. It cannot select credentials, config,
+    argv, destination, environment, or scope.
+    """
+
+    def __init__(
+        self,
+        socket_path: Path,
+        *,
+        trial_handle: str,
+        broker: OwnerJournalBroker,
+        sender: Sender,
+    ) -> None:
+        if os.name != "posix" or not hasattr(socket, "AF_UNIX"):
+            raise BrokerPolicyError("owner socket transport requires Unix-domain sockets")
+        if not _OPAQUE_HANDLE.fullmatch(trial_handle):
+            raise BrokerPolicyError("trial handle must be an opaque bounded token")
+        self.path = Path(socket_path)
+        self.trial_handle = trial_handle
+        self.broker = broker
+        self.sender = sender
+        self._listener: socket.socket | None = None
+        self._validate_socket_directory()
+
+    def _validate_socket_directory(self) -> None:
+        directory = self.path.parent.resolve()
+        if not directory.is_dir():
+            directory.mkdir(mode=0o700, parents=True)
+            directory.chmod(0o700)
+            OwnerJournalBroker._fsync_directory(directory.parent)
+        details = directory.stat()
+        if details.st_uid != os.geteuid() or stat.S_IMODE(details.st_mode) & 0o077:
+            raise BrokerPolicyError("owner socket directory must be private and owner-controlled")
+        if self.path.exists() or self.path.is_symlink():
+            raise BrokerPolicyError("refusing to replace an existing owner socket path")
+
+    def bind(self) -> None:
+        if self._listener is not None:
+            raise RuntimeError("owner socket is already bound")
+        listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            listener.bind(str(self.path))
+            self.path.chmod(0o600)
+            listener.listen(1)
+        except Exception:
+            listener.close()
+            raise
+        self._listener = listener
+
+    def close(self) -> None:
+        if self._listener is not None:
+            self._listener.close()
+            self._listener = None
+        if self.path.exists() and stat.S_ISSOCK(self.path.stat().st_mode):
+            self.path.unlink()
+
+    def serve_once(self) -> None:
+        if self._listener is None:
+            raise RuntimeError("owner socket must be bound before serving")
+        connection, _address = self._listener.accept()
+        with connection:
+            self._serve_connection(connection)
+
+    def _serve_connection(self, connection: socket.socket) -> None:
+        try:
+            request = self._receive(connection)
+            response = self._dispatch(request)
+        except (BrokerPolicyError, ReconciliationRequiredError, ValueError, json.JSONDecodeError):
+            response = {"ok": False, "error": "request_denied"}
+        except Exception:
+            response = {"ok": False, "error": "owner_transport_error"}
+        connection.sendall(_canonical(response) + b"\n")
+
+    @staticmethod
+    def _receive(connection: socket.socket) -> object:
+        chunks: list[bytes] = []
+        size = 0
+        while size <= _SOCKET_MESSAGE_LIMIT:
+            chunk = connection.recv(min(8192, _SOCKET_MESSAGE_LIMIT + 1 - size))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            size += len(chunk)
+            if b"\n" in chunk:
+                body = b"".join(chunks)
+                line, _separator, _trailing = body.partition(b"\n")
+                if len(line) > _SOCKET_MESSAGE_LIMIT:
+                    break
+                return json.loads(line)
+        raise ValueError("socket request is malformed or exceeds the size limit")
+
+    def _dispatch(self, request: object) -> dict[str, object]:
+        if not isinstance(request, dict) or set(request) != {
+            "trial_handle",
+            "intent_id",
+            "operation",
+            "payload_sha256",
+        }:
+            raise BrokerPolicyError("owner socket request has an unsupported shape")
+        trial_handle = request["trial_handle"]
+        intent_id = request["intent_id"]
+        operation = request["operation"]
+        payload_sha256 = request["payload_sha256"]
+        if not all(isinstance(item, str) for item in request.values()):
+            raise BrokerPolicyError("owner socket request must contain strings only")
+        if not secrets.compare_digest(trial_handle, self.trial_handle):
+            raise BrokerPolicyError("owner socket trial handle was denied")
+        if not _OPAQUE_HANDLE.fullmatch(intent_id) or not _OPAQUE_HANDLE.fullmatch(operation):
+            raise BrokerPolicyError("intent and operation must be opaque bounded tokens")
+        invocation = Invocation(
+            intent_id=intent_id,
+            operation=operation,
+            workspace_id=self.broker.policy.workspace_id,
+            project_id=self.broker.policy.project_id,
+            payload_sha256=payload_sha256,
+        )
+        observation: dict[str, object] | None = None
+
+        def capture_sender(candidate: Invocation) -> Mapping[str, object]:
+            nonlocal observation
+            result = self.sender(candidate)
+            observation = {
+                key: (
+                    _redact_text(_as_text(result[key]))
+                    if key in {"stdout", "stderr"}
+                    else result[key]
+                )
+                for key in ("ok", "exit_status", "stdout", "stderr")
+                if key in result
+            }
+            return result
+
+        receipt = self.broker.submit(invocation, capture_sender)
+        response: dict[str, object] = {
+            "ok": True,
+            "receipt": {
+                "intent_id": receipt.intent_id,
+                "outcome": receipt.outcome,
+                "handle": receipt.handle,
+            },
+        }
+        if observation is not None:
+            response["observation"] = observation
+        return response

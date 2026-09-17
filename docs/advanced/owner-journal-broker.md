@@ -56,3 +56,19 @@ Output redaction is best-effort presentation hygiene, not credential isolation.
 The journal never stores subprocess stdout or stderr, and protected profile
 contents are kept outside the agent workspace; a production deployment still
 needs an OS/process boundary appropriate to its credential store.
+
+## Unix socket front-end
+
+`OwnerBrokerSocketServer` is a Linux/Unix-only local front-end for a broker and
+frozen sender. Its private owner-controlled directory and socket are mode 0700
+and 0600. A request has exactly four strings: opaque trial handle, opaque
+intent ID, allowlisted operation name, and payload digest. It cannot carry
+argv, a profile/config path, credentials, environment, project/workspace, or
+external destination. Invalid, oversized, malformed, and policy-denied frames
+receive a generic denial response.
+
+The successful response contains the durable receipt and, only for the initial
+dispatch, a redacted process observation. Repeated receipts do not rerun the
+sender or reconstruct output. This is not provider attestation, a credential
+vault, or live qualification; deployment still needs peer authentication and
+an appropriate protected-process boundary for its operating system.

@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import socket
 import sys
+import threading
 from pathlib import Path
 
 import pytest
@@ -337,6 +339,127 @@ def test_owner_sender_rechecks_frozen_artifact_before_execution(
 
     with pytest.raises(broker_module.BrokerPolicyError, match="changed after policy approval"):
         sender.send(_inv(broker_module))
+
+
+def _socket_exchange(server, request: bytes) -> dict[str, object]:
+    server_side, client_side = socket.socketpair()
+    worker = threading.Thread(target=server._serve_connection, args=(server_side,))
+    worker.start()
+    try:
+        client_side.sendall(request)
+        received = client_side.recv(65536)
+    finally:
+        client_side.close()
+    worker.join(timeout=1)
+    assert not worker.is_alive()
+    return json.loads(received)
+
+
+def _socket_server(module, tmp_path: Path, sender):
+    broker = _broker(module, tmp_path / "journal")
+    return module.OwnerBrokerSocketServer(
+        tmp_path / "owner-socket" / "broker.sock",
+        trial_handle="trial_opaque_1",
+        broker=broker,
+        sender=sender,
+    )
+
+
+def test_owner_socket_binds_private_path_and_returns_redacted_receipt(
+    broker_module, tmp_path: Path
+) -> None:
+    calls: list[str] = []
+
+    def sender(invocation):
+        calls.append(invocation.intent_id)
+        return {
+            "outcome": "outcome_unknown",
+            "handle": "job-44",
+            "ok": False,
+            "exit_status": 7,
+            "stdout": "Bearer raw-token",
+            "stderr": "api_key=raw-key",
+        }
+
+    server = _socket_server(broker_module, tmp_path, sender)
+    server.bind()
+    try:
+        assert server.path.stat().st_mode & 0o777 == 0o600
+        request = {
+            "trial_handle": "trial_opaque_1",
+            "intent_id": "intent-1",
+            "operation": "dataset.create",
+            "payload_sha256": "a" * 64,
+        }
+        response = _socket_exchange(server, json.dumps(request).encode() + b"\n")
+        assert response == {
+            "ok": True,
+            "receipt": {"intent_id": "intent-1", "outcome": "outcome_unknown", "handle": "job-44"},
+            "observation": {
+                "ok": False,
+                "exit_status": 7,
+                "stdout": "Bearer <REDACTED>",
+                "stderr": "api_key=<REDACTED>",
+            },
+        }
+        repeated = _socket_exchange(server, json.dumps(request).encode() + b"\n")
+        assert repeated["receipt"] == response["receipt"]
+        assert "observation" not in repeated
+        assert calls == ["intent-1"]
+    finally:
+        server.close()
+
+
+@pytest.mark.parametrize(
+    "frame",
+    [
+        b"not-json\n",
+        b'{"trial_handle":"trial_opaque_1","argv":["--profile","bad"]}\n',
+        b"x" * (64 * 1024 + 2),
+    ],
+)
+def test_owner_socket_rejects_malformed_oversize_and_argv_requests(
+    broker_module, tmp_path: Path, frame: bytes
+) -> None:
+    server = _socket_server(
+        broker_module,
+        tmp_path,
+        lambda _: {"outcome": "succeeded", "ok": True, "exit_status": 0},
+    )
+    assert _socket_exchange(server, frame) == {"error": "request_denied", "ok": False}
+
+
+def test_owner_socket_rejects_policy_denial(broker_module, tmp_path: Path) -> None:
+    server = _socket_server(
+        broker_module,
+        tmp_path,
+        lambda _: {"outcome": "succeeded", "ok": True, "exit_status": 0},
+    )
+    request = {
+        "trial_handle": "trial_opaque_1",
+        "intent_id": "intent-1",
+        "operation": "project.delete",
+        "payload_sha256": "a" * 64,
+    }
+    assert _socket_exchange(server, json.dumps(request).encode() + b"\n") == {
+        "error": "request_denied",
+        "ok": False,
+    }
+
+
+def test_owner_socket_rejects_insecure_existing_socket_directory(
+    broker_module, tmp_path: Path
+) -> None:
+    socket_dir = tmp_path / "insecure-socket"
+    socket_dir.mkdir(mode=0o700)
+    socket_dir.chmod(0o755)
+    with pytest.raises(broker_module.BrokerPolicyError, match="socket directory"):
+        broker_module.OwnerBrokerSocketServer(
+            socket_dir / "broker.sock",
+            trial_handle="trial_opaque_1",
+            broker=_broker(broker_module, tmp_path / "journal"),
+            sender=lambda _: {"outcome": "succeeded"},
+        )
 
 
 @pytest.mark.parametrize(
