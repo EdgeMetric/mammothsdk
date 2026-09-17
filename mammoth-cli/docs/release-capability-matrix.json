@@ -1,6 +1,6 @@
 {
   "artifact": "mammoth-cli-release-capability-matrix",
-  "source_sha256": "97d0018008273ee35247d9d1a1ab5e0da78ff45a59038822ca1e1770c982c675",
+  "source_sha256": "a068f922519de95c70d1783b00c704293362ece820c7f35e754c2b63b3abecb4",
   "source_provenance": {
     "primary_source_url": "https://release.mammoth.io/api/v2/docs/openapi.json",
     "primary_retrieved_at_utc": "2026-09-16T10:12:43Z",
@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 59,
+    "Partial": 61,
     "Not supported": 0,
-    "Unassessed": 469
+    "Unassessed": 467
   },
   "rows": [
     {
@@ -39,7 +39,7 @@
       "capability_id": "REL-002",
       "capability": "Delete a tag from the workspace vocabulary",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDashboardTag",
       "method": "DELETE",
@@ -1394,7 +1394,7 @@
       "capability_id": "REL-081",
       "capability": "List the workspace tag vocabulary",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty tag list observed. No Full claim: no non-empty fixture. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty tag list observed. No Full claim: no non-empty fixture. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListDashboardTags",
       "method": "GET",
@@ -1655,7 +1655,7 @@
       "capability_id": "REL-095",
       "capability": "Data-grounded starting points for the create screen",
       "status": "Partial",
-      "remarks": "Published PyPI CLI 1.1.11 job-backed suggestion read for retained dataview46 reconciled job158 to terminal success with 9 structured suggestions; bounded to one job and not Full. A permitted reread spawned pending job159 with null payload.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 job-backed suggestion read for retained dataview46 reconciled job158 to terminal success with 9 structured suggestions; bounded to one job and not Full. A permitted reread spawned pending job159 with null payload.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardSuggestions",
       "method": "GET",
@@ -2337,7 +2337,7 @@
       "capability_id": "REL-134",
       "capability": "Track multiple job ids",
       "status": "Partial",
-      "remarks": "Published PyPI CLI 1.1.11 job.get-many read of observed job158 returned terminal success and 9 structured suggestions; bounded to one observed job and not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 job.get-many read of observed job158 returned terminal success and 9 structured suggestions; bounded to one observed job and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetJobs",
       "method": "GET",
@@ -2357,7 +2357,7 @@
       "capability_id": "REL-135",
       "capability": "Get job by id",
       "status": "Partial",
-      "remarks": "Published PyPI CLI 1.1.11 job.get read of observed job158 returned terminal success and 9 structured suggestions; bounded to one observed job and not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 job.get read of observed job158 returned terminal success and 9 structured suggestions; bounded to one observed job and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetJob",
       "method": "GET",
@@ -4785,7 +4785,7 @@
       "capability_id": "REL-268",
       "capability": "Rename a tag",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "RenameDashboardTag",
       "method": "PATCH",
@@ -5788,7 +5788,7 @@
       "capability_id": "REL-327",
       "capability": "Merge one tag into another",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "MergeDashboardTags",
       "method": "POST",
@@ -7819,8 +7819,8 @@
     {
       "capability_id": "REL-446",
       "capability": "Create or duplicate dataview",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 created returned owned view 51 under returned dataset 35, verified its exact parent, then cleaned up the owned dataset. One disposable fixture and lifecycle only; not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AddDataview",
       "method": "POST",
@@ -7830,8 +7830,11 @@
       "sdk_symbol": "mammoth.client.ViewsResource.create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/terra-core-batch-d-pypi-111/README.md",
+        "scope": "one disposable owned dataset 35; verified cleanup"
+      },
+      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
     },
     {
       "capability_id": "REL-447",
@@ -8176,8 +8179,8 @@
     {
       "capability_id": "REL-467",
       "capability": "Updates dataset file settings",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 sent only the owned dataset 35 pre-read file-settings baseline and verified identical remote readback. Safe no-op update path only; not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdateFileSettings",
       "method": "POST",
@@ -8187,8 +8190,11 @@
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.file_settings_update",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/terra-core-batch-d-pypi-111/README.md",
+        "scope": "one disposable owned dataset 35; verified cleanup"
+      },
+      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
     },
     {
       "capability_id": "REL-468",
@@ -9076,7 +9082,7 @@
       "capability_id": "REL-519",
       "capability": "Set a dashboard's tags",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SetDashboardTags",
       "method": "PUT",
