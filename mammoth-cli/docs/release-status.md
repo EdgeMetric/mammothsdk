@@ -20,6 +20,18 @@ ships SHA256SUMS, wheel/sdist, and installers, but is explicitly unsigned: no
 Sigstore bundle or signing claim is made. These release checks do not qualify
 autonomous ETL, dashboard runtime behavior, or all API operations.
 
+Dashboard release evidence remains a backend boundary, not a CLI/SDK defect
+claim. Against an owned disposable dataview, the current-engine blank-create
+route returned HTTP 403 with the server's `AUTHORIZATION_ERROR` (`4RESO001`),
+which establishes only that this credential/request was denied; it does not
+identify the missing entitlement. The legacy create route returned HTTP 409
+`DASHBOARD_LEGACY_CREATION_RETIRED` (`4DASH012`), so retrying that route or
+changing its payload cannot create a dashboard. The documented source-list
+route returned HTTP 500 with an empty response body, a known server-variance
+boundary. The CLI preserved each status and server detail in its structured
+error envelope; no permission bypass, retry, or readiness promotion follows.
+See the retained [dashboard fixture evidence](live-evidence-20260917/dashboard-next/).
+
 The immutable PyPI 1.1.9 description retains its pre-publication README
 snapshot of **7 Partial / 521 Unassessed**. The current matrix is **0 Full /
 17 Partial / 511 Unassessed**; use the current
