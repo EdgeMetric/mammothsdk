@@ -1,0 +1,24 @@
+{
+  "captured_at": null,
+  "captured_at_note": "The shell retained local file times but not an exact UTC capture instant; no timestamp is fabricated.",
+  "scope": {"profile": "expanded-live", "workspace_id": 4, "project_id": 3},
+  "versions": {"mammoth_cli": "1.1.11", "mammoth_io": "0.7.1", "python": "3.14.4"},
+  "artifacts": {
+    "cli_wheel_sha256": "25a811dad8d843731d719f20948ffe7df85dfb16a89f4cea1d8999925b54c962",
+    "cli_sdist_sha256": "c5339664d5be43a27cd43c15414c5ef896fb0ae229fd135845aa1f96aa765a7e",
+    "sdk_wheel_sha256": "41e606f1ce4705917449f6f926936abfb1f6e776b9339a42848370456fa7bf6e"
+  },
+  "schema": {
+    "view_get": {"dataset_id_optional": true, "fallback": "legacy discovery", "sha256": "eb34629c6f611ccec0ae8a99dfd247b792c95a7cec6ea884ba31f1879137f952"},
+    "view_preview": {"dataset_id_optional": true, "fallback": "resolved from view when omitted", "sha256": "b466f3db7e9b292f690f2e24b3f64f8b5bbfac89944ce9fc45931937cf0eb133"},
+    "view_export_list": {"dataset_id_optional": true, "fallback": "avoids discovery when supplied", "sha256": "774c4710262d4dd998061dcdd4ab8983461d5976de8d81c906fd2ed38a09c7c8"},
+    "view_export_csv": {"dataset_id_optional": true, "not_executed": true, "sha256": "c0ef201534f105a26e45f1309317da6db87536f07284242693b4edf730bf3c4b"}
+  },
+  "calls": {
+    "view_get_46_no_parent": {"exit": 0, "id": 46, "dataset_id": 29, "row_count": 6801, "column_count": 9, "output_sha256": "548077bce13ffb995410e60f1078aade37edec6f4e246d36cab0aaf82164bcda"},
+    "view_preview_46_no_parent": {"exit": 0, "column_count": 9, "row_count": 50, "output_sha256": "9992ff36c6728a589a9f207a5ca820edc2ff78a83837ec972f61b20f5396437e"},
+    "view_export_list_46_no_parent": {"exit": 0, "exports": 0, "limit": 50, "offset": 50, "next": "", "output_sha256": "8dbcc3495b3af56248a3674c630a1c985f5568a95880b70d5a9783aa1fb0e425"},
+    "view_get_46_parent_28": {"exit": 4, "code": "authorization_required", "status_code": 403, "endpoint": "/workspaces/4/projects/3/datasets/28/dataviews/46/pipeline/items", "invalid_parent_control": true}
+  },
+  "limitations": ["read-only calls only", "no export executed", "no Full promotion", "export-list offset=50 requires interpretation"]
+}
