@@ -50,6 +50,7 @@ CODE_RETRYABLE = "retryable_error"
 CODE_OUTCOME_UNKNOWN = "outcome_unknown"
 CODE_JOB_FAILED = "job_failed"
 CODE_INTERRUPTED = "interrupted"
+CODE_UNSUPPORTED_CONTRACT = "unsupported_contract"
 
 
 @dataclass

@@ -440,13 +440,16 @@ def test_bulk_update_proceeds_with_matching_confirm(
 # -- update -------------------------------------------------------------
 
 
-def test_update_requires_patch_data(fake_service: FakeMammothService) -> None:
+def test_update_rejects_missing_patch_data_without_dispatch(
+    fake_service: FakeMammothService,
+) -> None:
     with pytest.raises(CliError) as excinfo:
         dataset_cmd.dataset_update(_inv("dataset.update", project=180, yes=True, confirm="180"))
-    assert excinfo.value.code == "missing_field"
+    assert excinfo.value.code == "unsupported_contract"
+    assert fake_service.call_log == []
 
 
-def test_update_blocked_without_confirmation(
+def test_update_rejects_raw_patch_even_with_confirmation(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     input_file = _write(
@@ -454,33 +457,19 @@ def test_update_blocked_without_confirmation(
     )
     with pytest.raises(CliError) as excinfo:
         dataset_cmd.dataset_update(
-            _inv("dataset.update", project=180, input_file=input_file, output="json")
+            _inv(
+                "dataset.update",
+                project=180,
+                input_file=input_file,
+                output="json",
+                yes=True,
+                confirm="180",
+            )
         )
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_update_proceeds_with_matching_confirm(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    input_file = _write(
-        tmp_path, {"patch_data": [{"op": "rename_dataset", "path": "/1", "value": {}}]}
-    )
-    dataset_cmd.dataset_update(
-        _inv(
-            "dataset.update",
-            project=180,
-            input_file=input_file,
-            yes=True,
-            confirm="180",
-        )
-    )
-    assert fake_service.call_log == [
-        (
-            _UPDATE,
-            {
-                "patch_data": [{"op": "rename_dataset", "path": "/1", "value": {}}],
-                "project_id": 180,
-            },
-        )
+    assert excinfo.value.code == "unsupported_contract"
+    assert excinfo.value.details["blocker"] == "B07 DATASET_PATCH_UNTYPED"
+    assert excinfo.value.details["typed_alternatives"] == [
+        "dataset.rename",
+        "dataset.file-settings.update",
     ]
+    assert fake_service.call_log == []

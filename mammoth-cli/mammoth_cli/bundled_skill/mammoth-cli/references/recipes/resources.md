@@ -21,6 +21,14 @@ mammoth schema get dataset.file-settings.get --output json --no-input
 mammoth dataset file-settings get DATASET_ID --output json --no-input
 ```
 
+For a dataset rename, use the typed `dataset rename DATASET_ID` route and
+read back the dataset. For file parsing settings, use the typed
+`dataset file-settings update DATASET_ID` contract. Do not send raw
+`dataset update` patches: rename, refresh, column, reattach, and deletion
+patches are freeform at the pinned SDK boundary and are intentionally blocked.
+The singular API update route has no public typed SDK binding for its remaining
+variants.
+
 If the release returns a different settings route, use the exact match from
 `schema find`; do not guess a command name. Snapshot all pre-existing resource
 IDs by type; cleanup only IDs returned by this task.

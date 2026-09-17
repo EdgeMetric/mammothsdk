@@ -623,5 +623,7 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: 'BLOCKED[B07 DATASET_PATCH_UNTYPED]: raw patch operations include rename/refresh/column
-    changes/reattach/deletion; reserved, not registered.'
+    changes/reattach/deletion; do not dispatch them. Use dataset.rename or dataset.file-settings.update
+    for their typed variants. The pinned SDK has no public binding for the singular UpdateDataset route,
+    so its other OpenAPI patch variants remain unavailable until a typed SDK contract exists.'
   reviewed_by: primary

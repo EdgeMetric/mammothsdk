@@ -66,3 +66,10 @@ def test_resource_recipe_matches_published_ingestion_evidence_boundary() -> None
     assert "final\ncleanup absence was not verified" in text
     assert "ds_creation_type=weburl" in str(dataset_create["known_restrictions"])
     assert "tenant- and scope-specific" in str(file_upload["known_restrictions"])
+
+
+def test_resource_recipe_does_not_offer_raw_dataset_patch_operations() -> None:
+    text = (RECIPES / "resources.md").read_text(encoding="utf-8")
+    assert "Do not send raw\n`dataset update` patches" in text
+    assert "dataset rename" in text
+    assert "dataset file-settings update" in text

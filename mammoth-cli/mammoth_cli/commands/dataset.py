@@ -17,6 +17,7 @@ from mammoth_cli.errors.envelope import (
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
+    CODE_UNSUPPORTED_CONTRACT,
     EXIT_USAGE,
     CliError,
 )
@@ -401,16 +402,22 @@ def dataset_bulk_update(invocation: Invocation) -> HandlerResult:
 
 
 def dataset_update(invocation: Invocation) -> HandlerResult:
-    """Apply JSON Patch operations to datasets in the active project. High-impact."""
-    project_id = require_project(invocation)
-    document = invocation.load_input()
-    patch_data = _require_field(document, "patch_data")
-    enforce_confirmation(
-        invocation,
-        policy=POLICY_CONFIRM_TARGET,
-        action=f"update datasets in project {project_id}",
-        target=str(project_id),
+    """Reject untyped dataset patches; use a typed dataset command instead."""
+    raise CliError(
+        code=CODE_UNSUPPORTED_CONTRACT,
+        message="Raw dataset patch operations are not available through the CLI.",
+        exit_status=EXIT_USAGE,
+        hint=(
+            "Use 'dataset rename DATASET_ID' for a name change or 'dataset file-settings "
+            "update DATASET_ID' for file settings; other update variants need a typed contract."
+        ),
+        details={
+            "command_id": invocation.command_id,
+            "blocker": "B07 DATASET_PATCH_UNTYPED",
+            "typed_alternatives": ["dataset.rename", "dataset.file-settings.update"],
+        },
+        recovery_commands=[
+            "mammoth schema get dataset.rename --output json --no-input",
+            "mammoth schema get dataset.file-settings.update --output json --no-input",
+        ],
     )
-    with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), patch_data=patch_data, project_id=project_id)
-    return data, _meta(invocation, auth.workspace_id, project_id)
