@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 31,
+    "Partial": 32,
     "Not supported": 0,
-    "Unassessed": 497
+    "Unassessed": 496
   },
   "rows": [
     {
@@ -581,7 +581,7 @@
       "capability_id": "REL-044",
       "capability": "Delete dataset",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Tier B observed DeleteDataset job success for owned dataset 364; final absence and dataset120 preservation were not verified.",
+      "remarks": "Bounded owned-fixture delete succeeded with pinned CLI 1.1.9: delete job 42 succeeded for dataset 16 and final dataset list was empty. No Full claim: no protected-resource preservation check or broader delete variants.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDataset",
       "method": "DELETE",
@@ -589,13 +589,9 @@
       "canonical_command": "dataset.delete",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.delete",
       "evidence": {
-        "artifact": "evidence/readiness-closure/tier-b-live-20260916T172000Z/pilot-summary.json",
-        "commands": [
-          "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0015.stdout",
-          "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0016.stdout",
-          "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0017.stderr"
-        ],
-        "result": "delete job 325 succeeded; dataset.get(364) returned 403; dataset120 postcheck not observed"
+        "artifact": "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-delete-42-reconcile.json",
+        "report": "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-list-final.json",
+        "scope": "owned disposable dataset 16; returned-ID cleanup; final absence verified; CLI 1.1.9"
       }
     },
     {
@@ -2540,7 +2536,7 @@
       "capability_id": "REL-191",
       "capability": "Get list of datasets",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
+      "remarks": "Bounded owned-fixture read with pinned CLI 1.1.9 returned dataset 16 in project 3; no Full claim: single disposable fixture and no pagination/variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDatasets",
       "method": "GET",
@@ -2548,16 +2544,19 @@
       "canonical_command": "dataset.list",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.list",
       "evidence": {
-        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
-        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
-        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+        "artifact": "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/view-list-16.json",
+        "related": [
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-list-final.json"
+        ],
+        "scope": "workspace 4/project 3; owned dataset 16; final absence verified",
+        "cli": "1.1.9"
       }
     },
     {
       "capability_id": "REL-192",
       "capability": "Get dataset details",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
+      "remarks": "Bounded owned-fixture read with pinned CLI 1.1.9 returned dataset 16 ready with 51 rows and schema metadata; no Full claim: single disposable fixture and no option/error variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataset",
       "method": "GET",
@@ -2565,9 +2564,12 @@
       "canonical_command": "dataset.get",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.get",
       "evidence": {
-        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
-        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
-        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+        "artifact": "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-get-16.json",
+        "related": [
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-list-final.json"
+        ],
+        "scope": "workspace 4/project 3; owned dataset 16; final absence verified",
+        "cli": "1.1.9"
       }
     },
     {
@@ -5912,15 +5914,24 @@
     {
       "capability_id": "REL-443",
       "capability": "Create dataset",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Bounded owned-fixture create succeeded with pinned CLI 1.1.9 using the documented weburl variant (ds_creation_type=weburl + dataset_spec.url): dataset 16 returned ready with job 39. No Full claim: other creation variants and broader lifecycle/error coverage are unqualified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateDatasets",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/datasets",
       "canonical_command": "dataset.create",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.create",
-      "evidence": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-create.json",
+        "related": [
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-get-16.json",
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-delete-42-reconcile.json",
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-list-final.json"
+        ],
+        "scope": "workspace 4/project 3; owned disposable dataset 16; weburl variant; cleanup verified",
+        "cli": "1.1.9"
+      }
     },
     {
       "capability_id": "REL-444",
