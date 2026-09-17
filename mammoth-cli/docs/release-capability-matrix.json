@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 61,
+    "Partial": 67,
     "Not supported": 0,
-    "Unassessed": 467
+    "Unassessed": 461
   },
   "rows": [
     {
@@ -1414,8 +1414,8 @@
     {
       "capability_id": "REL-082",
       "capability": "Get Dashboard based on url",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Published PyPI CLI 1.1.11 exact observed URL slug resolved retained dashboard48; bounded single-dashboard read and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDashboardByUrl",
       "method": "GET",
@@ -1425,7 +1425,7 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.get_by_url",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
+      "evidence": {"artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json", "scope": "observed slug n0ReokM66zUyyEYI3g2mRA; dashboard48"},
       "evidence_version": null
     },
     {
@@ -1922,8 +1922,8 @@
     {
       "capability_id": "REL-110",
       "capability": "Editor chat transcript",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Published PyPI CLI 1.1.11 chat-history read for retained dashboard48 returned empty history with sequence1; bounded and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3ChatHistory",
       "method": "GET",
@@ -1933,7 +1933,7 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.chat_history",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
+      "evidence": {"artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json", "scope": "dashboard48; messages empty, sequence1"},
       "evidence_version": null
     },
     {
@@ -2115,8 +2115,8 @@
     {
       "capability_id": "REL-121",
       "capability": "List RLS viewer assignments",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Published PyPI CLI 1.1.11 RLS assignment read for retained dashboard48 returned disabled empty state; bounded and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListRlsAssignments",
       "method": "GET",
@@ -2126,14 +2126,14 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.rls_assignment_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
+      "evidence": {"artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json", "scope": "dashboard48; assignments empty, enabled false"},
       "evidence_version": null
     },
     {
       "capability_id": "REL-122",
       "capability": "Candidate columns for the RLS filter",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Published PyPI CLI 1.1.11 RLS column read for retained dashboard48 returned 9 display columns; bounded and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetRlsColumns",
       "method": "GET",
@@ -2143,14 +2143,14 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.rls_column_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
+      "evidence": {"artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json", "scope": "dashboard48; 9 display columns"},
       "evidence_version": null
     },
     {
       "capability_id": "REL-123",
       "capability": "Distinct values for an RLS filter column",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Published PyPI CLI 1.1.11 RLS value read using observed display column Entity returned 205 values; bounded and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetRlsDistinctValues",
       "method": "GET",
@@ -2160,7 +2160,7 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.rls_value_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
+      "evidence": {"artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json", "scope": "dashboard48; Entity column, 205 values"},
       "evidence_version": null
     },
     {
@@ -2200,8 +2200,8 @@
     {
       "capability_id": "REL-126",
       "capability": "Motion-story video export state (never kicks a render)",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Published PyPI CLI 1.1.11 video-state read for retained dashboard48 returned status none and stale false; bounded and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetVideoState",
       "method": "GET",
@@ -2211,7 +2211,7 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.video_state",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
+      "evidence": {"artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json", "scope": "dashboard48; status none, stale false"},
       "evidence_version": null
     },
     {
