@@ -22,6 +22,7 @@ import pytest
 from mammoth_cli.commands.capability import find_capabilities
 from mammoth_cli.commands.schema import find_schemas, get_schema
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.output.normalize import normalize
 from mammoth_cli.output.policy import resolve_output, resolve_policy
 from mammoth_cli.output.render import render
@@ -40,7 +41,11 @@ class _SchemaDeclaration:
             "type": "object",
             "properties": {
                 "page": {"type": "integer"},
-                "api_key": {"type": "string", "default": "must-not-appear"},
+                "api_key": {
+                    "type": "string",
+                    "default": "must-not-appear",
+                    "allOf": [{"example": "must-not-appear"}],
+                },
             },
         }
 
@@ -211,11 +216,33 @@ def test_normalize_redacts_typed_secrets_and_preserves_typed_cursors_and_schemas
         "innocuous_name": "***REDACTED***",
         "schema": {
             "properties": {
-                "api_key": {"default": "***REDACTED***", "type": "string"},
+                "api_key": {
+                    "allOf": [{"example": "***REDACTED***"}],
+                    "default": "***REDACTED***",
+                    "type": "string",
+                },
                 "page": {"type": "integer"},
             },
             "type": "object",
         },
+    }
+
+
+def test_result_then_render_preserves_schema_names_but_redacts_result_secrets() -> None:
+    stream = io.StringIO()
+    envelope = Result(
+        data={"schema": _SchemaDeclaration, "api_key": "must-not-appear"},
+        meta=Meta(command="test"),
+    ).to_envelope()
+
+    render(envelope, output="json", stream=stream)
+    parsed = json.loads(stream.getvalue())
+
+    assert parsed["data"]["api_key"] == "***REDACTED***"
+    assert parsed["data"]["schema"]["properties"]["api_key"] == {
+        "allOf": [{"example": "***REDACTED***"}],
+        "default": "***REDACTED***",
+        "type": "string",
     }
 
 

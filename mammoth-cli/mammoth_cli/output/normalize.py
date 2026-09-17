@@ -40,6 +40,16 @@ _SCHEMA_PROPERTY_CONTAINERS = frozenset({"properties", "patternProperties", "$de
 _SCHEMA_VALUE_KEYWORDS = frozenset({"default", "example", "examples", "const"})
 
 
+class _NormalizedJsonSchema(dict[str, Any]):
+    """A JSON-safe schema mapping that retains declaration provenance.
+
+    The renderer defensively calls :func:`normalize` after ``Result`` already
+    normalized its data.  This narrow marker lets that second pass preserve
+    property names from a trusted model schema without treating arbitrary
+    result fields named ``schema`` as declarations.
+    """
+
+
 def _is_secret_key(key: str) -> bool:
     lowered = key.lower()
     # ``token_count`` is ordinary result metadata (for example an LLM usage
@@ -82,7 +92,7 @@ def _normalize_json_schema(value: Any, *, sensitive_property: bool = False) -> A
     still redacted.
     """
     if isinstance(value, Mapping):
-        result: dict[str, Any] = {}
+        result: _NormalizedJsonSchema = _NormalizedJsonSchema()
         for key in sorted(value, key=str):
             str_key = str(key)
             child = value[key]
@@ -96,7 +106,9 @@ def _normalize_json_schema(value: Any, *, sensitive_property: bool = False) -> A
             elif sensitive_property and str_key in _SCHEMA_VALUE_KEYWORDS:
                 result[str_key] = REDACTED
             else:
-                result[str_key] = _normalize_json_schema(child)
+                result[str_key] = _normalize_json_schema(
+                    child, sensitive_property=sensitive_property
+                )
         return result
     if isinstance(value, (list, tuple)):
         return [
@@ -138,6 +150,9 @@ def normalize(value: Any, *, redact_secrets: bool = True) -> Any:
         return normalize(dump(mode="python"), redact_secrets=redact_secrets)
     if dataclasses.is_dataclass(value) and not isinstance(value, type):
         return normalize(dataclasses.asdict(value), redact_secrets=redact_secrets)
+
+    if isinstance(value, _NormalizedJsonSchema):
+        return _normalize_json_schema(value)
 
     if isinstance(value, Mapping):
         result: dict[str, Any] = {}
