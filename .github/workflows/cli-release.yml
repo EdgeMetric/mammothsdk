@@ -34,13 +34,13 @@ jobs:
         with:
           python-version: "3.14"
 
-      # R12 release-ordering gate: the CLI declares `mammoth-io>=0.7.1,<0.8`
-      # (see pyproject.toml), but the SDK and CLI publish from independent,
-      # tag-triggered workflows (sdk-release.yml / cli-release.yml). Nothing
-      # else stops a maintainer from tagging cli-vX before sdk-vX has actually
-      # published, which would ship a CLI wheel whose SDK dependency cannot
-      # resolve. Fail fast, before any build or publish step runs, if the
-      # exact range the CLI requires does not currently resolve on PyPI.
+      # R12 release-ordering gate: the CLI declares `mammoth-io>=0.7.2,<0.8`
+      # (see pyproject.toml), but the SDK and CLI publish through independent,
+      # manually dispatched workflows (sdk-release.yml / cli-release.yml).
+      # Nothing else stops a maintainer from dispatching cli-vX before sdk-vX
+      # has actually published. That would ship a CLI wheel whose SDK
+      # dependency cannot resolve. Fail fast, before any build or publish
+      # step runs, if the exact range the CLI requires does not resolve on PyPI.
       #
       # This step only reads PyPI (`pip download` into a throwaway, discarded
       # directory) — it never installs into this job's environment, never
