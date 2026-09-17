@@ -1,0 +1,21 @@
+{
+  "captured_at": null,
+  "captured_at_note": "Exact UTC audit instant was not retained; no timestamp is fabricated.",
+  "published_version": "1.1.11",
+  "manifest": {"unique_command_ids": 547},
+  "catalog": {"matching_command_headings": 547, "missing_command_headings": 0, "sections_missing_required_fields": 0, "required_fields": ["Run", "Exact input fields", "Example", "Expected success", "recovery_commands"]},
+  "focused_checks": {"build_skill_catalog_check": "passed", "pytest": {"tests": ["test_skill_catalog.py", "test_docs_generated.py", "test_skill_recipe_contracts.py"], "passed": 8, "failed": 0}},
+  "sample_schema_checks": [
+    {"command_id": "file.upload", "command_path": "file upload", "result": "FileUploadResult", "effects": "benign_mutation", "async": "start_or_wait", "recovery": true, "example": true},
+    {"command_id": "dataset.create", "command_path": "dataset create", "result": "DatasetCreateResult", "effects": "benign_mutation", "async": "always_wait", "recovery": true, "example": true},
+    {"command_id": "view.transform.filter", "command_path": "view transform filter", "result": "ViewTransformFilterResult", "effects": "reversible_pipeline", "async": "always_wait", "recovery": true, "example": true},
+    {"command_id": "view.transform.math", "command_path": "view transform math", "result": "ViewTransformMathResult", "effects": "reversible_pipeline", "async": "always_wait", "recovery": true, "example": true},
+    {"command_id": "view.export.csv", "command_path": "view export csv", "result": "ViewExportCsvResult", "effects": "benign_mutation", "async": "always_wait", "recovery": true, "example": true},
+    {"command_id": "view.export.list", "command_path": "view export list", "result": "ViewExportListResult", "effects": "read", "async": "not_async", "recovery": true, "example": true},
+    {"command_id": "dashboard.get-by-url", "command_path": "dashboard get-by-url", "result": "DashboardGetByUrlResult", "effects": "read", "async": "not_async", "recovery": true, "example": true},
+    {"command_id": "dashboard.delete", "command_path": "dashboard delete", "result": "DashboardDeleteResult", "effects": "destructive", "async": "not_async", "recovery": true, "example": true},
+    {"command_id": "trash.list", "command_path": "trash list", "result": "TrashListResult", "effects": "read", "async": "not_async", "recovery": true, "example": true},
+    {"command_id": "dataset.delete", "command_path": "dataset delete", "result": "DatasetDeleteResult", "effects": "destructive", "async": "not_async", "recovery": true, "example": true}
+  ],
+  "unresolved_gaps": []
+}
