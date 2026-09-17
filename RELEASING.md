@@ -44,12 +44,24 @@ there for a manual approval gate).
 GitHub Actions are currently disabled repository-wide at the release owner's
 request. This pauses all CI and release workflows; do not infer CI validation,
 CI-built artifacts, GitHub release assets, or signing from releases made while
-it is disabled. Re-enable only with explicit approval:
+it is disabled. Re-enable only with explicit approval. Repository-wide
+reenablement does not restore workflows that were separately disabled. After
+the repository setting is restored, the owner must separately restore these
+five CLI workflows: CLI CI (`318853564`), CLI Release (`318853565`), Lint
+(`318853566`), OpenAPI drift (`318853567`), and Tests (`318853571`).
 
 ```bash
+# First restore repository-wide Actions.
 gh api -X PUT repos/EdgeMetric/mammothsdk/actions/permissions \
   -H 'Accept: application/vnd.github+json' \
   --input <(printf '{"enabled":true}')
+
+# Then restore each individually disabled CLI workflow.
+gh workflow enable 318853564
+gh workflow enable 318853565
+gh workflow enable 318853566
+gh workflow enable 318853567
+gh workflow enable 318853571
 ```
 
 ### One-time PyPI setup (required for the CI path)
