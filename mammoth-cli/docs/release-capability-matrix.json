@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 7,
+    "Partial": 24,
     "Not supported": 0,
-    "Unassessed": 521
+    "Unassessed": 504
   },
   "rows": [
     {
@@ -965,8 +965,8 @@
     {
       "capability_id": "REL-073",
       "capability": "List all dashboards",
-      "status": "Unassessed",
-      "remarks": "Bounded release read succeeded; no independent wire evidence; support remains Unassessed.",
+      "status": "Partial",
+      "remarks": "Bounded release read succeeded in project 3; empty dashboard list observed. No Full claim: no non-empty dashboard fixture or independent wire oracle.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListDashboard",
       "method": "GET",
@@ -974,7 +974,7 @@
       "canonical_command": "dashboard.list",
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.list",
       "evidence": {
-        "artifact": "readiness-closure/evidence/rel-073-workspace-scoped-diagnostic-20260917.json"
+        "artifact": "docs/live-evidence-20260917/core-next/dashboard-list-next.json"
       }
     },
     {
@@ -1058,15 +1058,17 @@
     {
       "capability_id": "REL-080",
       "capability": "Get Dashboard Sources",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Bounded release call reached the endpoint but returned structured HTTP 500 API error; exact envelope retained. No success or Full claim.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDashboardSources",
       "method": "GET",
       "path": "/dashboards/sources",
       "canonical_command": "dashboard.source.list",
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.get_sources",
-      "evidence": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/core-next/dashboard-source-list-next.json"
+      }
     },
     {
       "capability_id": "REL-081",
@@ -2411,8 +2413,8 @@
     {
       "capability_id": "REL-183",
       "capability": "Get all checkpoints across a project",
-      "status": "Unassessed",
-      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
+      "status": "Partial",
+      "remarks": "Bounded release read in project 3 succeeded; empty checkpoint list observed. No Full claim: no non-empty fixture.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetProjectCheckpoints",
       "method": "GET",
@@ -2420,9 +2422,7 @@
       "canonical_command": "project.checkpoint.list",
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.checkpoint_list",
       "evidence": {
-        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
-        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
-        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+        "artifact": "docs/live-evidence-20260917/core-next/project-checkpoints-next.json"
       }
     },
     {
@@ -2506,8 +2506,8 @@
     {
       "capability_id": "REL-190",
       "capability": "Get all data checks across a project",
-      "status": "Unassessed",
-      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
+      "status": "Partial",
+      "remarks": "Bounded release read in project 3 succeeded; empty data-check list observed. No Full claim: no non-empty fixture.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetProjectDataChecks",
       "method": "GET",
@@ -2515,9 +2515,7 @@
       "canonical_command": "project.data-check.list",
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.data_check_list",
       "evidence": {
-        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
-        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
-        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+        "artifact": "docs/live-evidence-20260917/core-next/project-data-checks-next.json"
       }
     },
     {
@@ -2977,8 +2975,8 @@
     {
       "capability_id": "REL-221",
       "capability": "List files",
-      "status": "Unassessed",
-      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
+      "status": "Partial",
+      "remarks": "Bounded release read in project 3 succeeded; empty file list observed. No Full claim: no non-empty fixture.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListFiles",
       "method": "GET",
@@ -2986,8 +2984,7 @@
       "canonical_command": "file.list",
       "sdk_symbol": "mammoth.api.files.FilesAPI.list",
       "evidence": {
-        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
-        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
+        "artifact": "docs/live-evidence-20260917/core-next/file-list-next.json",
         "scope": "bounded read-only candidate transcript; protected dataset120/view114"
       }
     },
@@ -3050,8 +3047,8 @@
     {
       "capability_id": "REL-226",
       "capability": "Get pending changes for a project",
-      "status": "Unassessed",
-      "remarks": "Bounded release read succeeded; no independent wire evidence; support remains Unassessed.",
+      "status": "Partial",
+      "remarks": "Bounded release read in project 3 succeeded; pending-items envelope was empty. No Full claim: no non-empty pending fixture.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPendingChanges",
       "method": "GET",
@@ -3059,7 +3056,7 @@
       "canonical_command": "project.pending-changes",
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.pending_changes",
       "evidence": {
-        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917b-continuation.json"
+        "artifact": "docs/live-evidence-20260917/core-next/project-pending-next.json"
       }
     },
     {
@@ -3078,8 +3075,8 @@
     {
       "capability_id": "REL-228",
       "capability": "Get resource status",
-      "status": "Unassessed",
-      "remarks": "Bounded release read succeeded; no independent wire evidence; support remains Unassessed.",
+      "status": "Partial",
+      "remarks": "Bounded release read in project 3 succeeded; empty resource status observed. No Full claim: no non-empty resource fixture.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetResourceStatus",
       "method": "GET",
@@ -3087,7 +3084,7 @@
       "canonical_command": "project.resource-status",
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.resource_status",
       "evidence": {
-        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917b-final-diagnostic.json"
+        "artifact": "docs/live-evidence-20260917/core-next/project-resource-status-next.json"
       }
     },
     {

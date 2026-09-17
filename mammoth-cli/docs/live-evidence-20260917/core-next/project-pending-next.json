@@ -1,0 +1,20 @@
+{
+  "captured_at": "2026-09-17T09:50:32.905789+00:00",
+  "cli_version": "1.1.5",
+  "argv": [
+    "mammoth",
+    "project",
+    "pending-changes",
+    "3",
+    "--profile",
+    "expanded-live",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n  \"data\": {\n    \"pending_items\": {\n      \"active_automations\": [],\n      \"non_sync_items\": [],\n      \"pending_changes\": {},\n      \"pending_data_update_items\": []\n    }\n  },\n  \"meta\": {\n    \"command\": \"project pending-changes\",\n    \"pagination\": null,\n    \"profile\": \"expanded-live\",\n    \"project_id\": 3,\n    \"workspace_id\": 4\n  },\n  \"schema_version\": 1\n}\n",
+  "stderr": "",
+  "stdout_sha256": "861441cc3373988a3efe0addce874d4cbeb43eef68dd22af626d12accea5fa07",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

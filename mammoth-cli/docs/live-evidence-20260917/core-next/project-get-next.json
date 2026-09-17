@@ -1,0 +1,20 @@
+{
+  "captured_at": "2026-09-17T09:50:05.544026+00:00",
+  "cli_version": "1.1.5",
+  "argv": [
+    "mammoth",
+    "project",
+    "get",
+    "3",
+    "--profile",
+    "expanded-live",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n  \"data\": {\n    \"id\": 3,\n    \"name\": \"API Tests_project\"\n  },\n  \"meta\": {\n    \"command\": \"project get\",\n    \"pagination\": null,\n    \"profile\": \"expanded-live\",\n    \"project_id\": 3,\n    \"workspace_id\": 4\n  },\n  \"schema_version\": 1\n}\n",
+  "stderr": "",
+  "stdout_sha256": "d74e0d746353699a21aefd7387fae90486314db11ed7ca5d4ebfc74b6c63467b",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}
