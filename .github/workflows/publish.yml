@@ -18,9 +18,7 @@ name: MCP Release
 # separate release authorization. The invariant is enforced by
 # mammoth-cli/tests/contract/test_single_publication_path.py.
 on:
-  push:
-    tags:
-      - "mcp-v*"
+  workflow_dispatch:
 
 permissions:
   contents: read

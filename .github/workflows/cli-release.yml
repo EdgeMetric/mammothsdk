@@ -9,9 +9,7 @@ name: CLI Release
 # Permission model: the default is read-only. Only the jobs that must publish
 # receive elevated scopes, and only the scope each one needs.
 on:
-  push:
-    tags:
-      - "cli-v*"
+  workflow_dispatch:
 
 permissions:
   contents: read

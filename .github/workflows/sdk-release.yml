@@ -5,9 +5,7 @@ name: SDK Release
 # mammoth-mcp. It runs ONLY when an authorized maintainer pushes an `sdk-vX.Y.Z`
 # tag. Do not push an `sdk-v*` tag without separate release authorization.
 on:
-  push:
-    tags:
-      - "sdk-v*"
+  workflow_dispatch:
 
 permissions:
   contents: read
