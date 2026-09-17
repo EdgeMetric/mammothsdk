@@ -32,6 +32,11 @@ create and version-list error were emitted on separate streams) are:
 No Full readiness claim is made. The version-list failure is recorded as an
 undetermined release/API response issue; no CLI binding conclusion is drawn.
 
+The later retained 1.1.5 dataset fixture (`live-evidence-20260917/dataset-next`)
+also matched the oracle: dataset data returned 51 rows and 20 API columns,
+and file-settings returned a structured `info` response. Dataset 4 cleanup
+returned the project to zero datasets.
+
 The independent public-fixture oracle is retained at
 `live-evidence-20260917/fixture-oracle.json`: 51 data rows, 19 source headers,
 and the first row matches the public CSV. The captured dataset-data response
