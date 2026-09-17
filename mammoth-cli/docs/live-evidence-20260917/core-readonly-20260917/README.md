@@ -42,7 +42,8 @@ folder control evidence for REL-224 is in
 the ready folder state; wrong-project and missing-ID reads returned structured
 authorization errors; the disposable folder was created, read, deleted with
 `remove_contents=false`, and its name-filtered post-delete list was empty.
-This receipt was produced with local unreleased CLI 1.1.13, so it is not
-eligible for a Full claim and REL-224 remains Partial. The receipt is retained
-as a development control only; a release-grade rerun must capture the public
-approved CLI's actual stdout and stderr streams separately.
+The release-grade receipts are in [`public-112/README.md`](public-112/README.md):
+public CLI 1.1.12, SDK 0.7.1, wheel hash recorded, and stdout/stderr captured
+as separate byte-faithful files. REL-224 is eligible for a row-level Full
+claim; the folder family remains incomplete because its other child rows are
+Partial/Unassessed.

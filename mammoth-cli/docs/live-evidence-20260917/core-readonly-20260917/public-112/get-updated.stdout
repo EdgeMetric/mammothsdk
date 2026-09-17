@@ -1,0 +1,22 @@
+{
+  "data": {
+    "created_at": "2026-09-17T15:07:30.570744",
+    "created_by": "API Tests",
+    "id": 5,
+    "name": "R09-FULL-112-20260917-updated",
+    "parent_id": null,
+    "resource_id": 129,
+    "resource_path": "/workspace:API Tests:4/project:API Tests_project:3/label:R09-FULL-112-20260917-updated:5",
+    "status": "ready",
+    "updated_at": "2026-09-17T15:07:30.570752"
+  },
+  "meta": {
+    "command": "folder get",
+    "pagination": null,
+    "profile": "expanded-live",
+    "project_id": 3,
+    "workspace_id": 4
+  },
+  "schema_version": 1
+}
+

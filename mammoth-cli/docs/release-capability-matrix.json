@@ -12,8 +12,8 @@
     "manifest": "repo/mammoth-cli/spec/manifests/openapi-operations.yaml"
   },
   "counts": {
-    "Full": 0,
-    "Partial": 71,
+    "Full": 1,
+    "Partial": 70,
     "Not supported": 0,
     "Unassessed": 457
   },
@@ -4041,8 +4041,8 @@
     {
       "capability_id": "REL-224",
       "capability": "Get Folder Details",
-      "status": "Partial",
-      "remarks": "Partial development control only: local unreleased CLI 1.1.13 verified fields=__full, wrong-project/missing-ID errors, and disposable create/read/delete lifecycle. Not approved release evidence; retain Partial until public 1.1.12 (or another approved build) reproduces with byte-faithful stdout/stderr receipts.",
+      "status": "Full",
+      "remarks": "Full bounded support in approved release scope: public CLI 1.1.12 verified fields=__full, ready result state, wrong-project/missing-ID error envelopes, disposable create/read/update/delete lifecycle, filtered list option, and final absence readback. Row-level Full only; folder family remains incomplete.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetFolder",
       "method": "GET",
@@ -4053,10 +4053,10 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/live-evidence-20260917/core-readonly-20260917/folder-rel224-full.json",
-        "scope": "development-only disposable folders 3 and 4; workspace 4/project 3; unreleased local CLI 1.1.13; no retained resources touched"
+        "artifact": "docs/live-evidence-20260917/core-readonly-20260917/public-112/README.md",
+        "scope": "public CLI 1.1.12 disposable folder 5; workspace 4/project 3; separate stdout/stderr receipts; no retained resources touched"
       },
-      "evidence_version": "1.1.13-local-unreleased"
+      "evidence_version": "1.1.12"
     },
     {
       "capability_id": "REL-225",
