@@ -1,0 +1,49 @@
+{
+  "batch": "G-folder-111",
+  "captured_at": "2026-09-17T13:58:39.754161Z",
+  "scope": {
+    "profile": "expanded-live",
+    "workspace_id": 4,
+    "project_id": 3,
+    "cli_version": "1.1.11",
+    "sdk_version": "0.7.1",
+    "cli_wheel_sha256": "25a811dad8d843731d719f20948ffe7df85dfb16a89f4cea1d8999925b54c962",
+    "sdk_wheel_sha256": "41e606f1ce4705917449f6f926936abfb1f6e776b9339a42848370456fa7bf6e"
+  },
+  "owned_fixture": {
+    "folder_id": 2,
+    "resource_id": 123,
+    "initial_name": "codex-owned-g-20260917-1357",
+    "renamed_name": "codex-owned-g-20260917-1357-renamed",
+    "parent_id": null,
+    "baseline_folder_count": 0,
+    "final_folder_count": 0,
+    "cleanup_verified": true
+  },
+  "schema_discovery": {
+    "folder.create": {"sha256": "6d9478ba3a05e41e9a76ad6cdc99fcb9053ce0078b6ebb679e64eeb360fe8ccd", "effects": "benign_mutation", "async": "not_async", "typed_fields": ["name", "parent_resource_id"]},
+    "folder.get": {"sha256": "31feffb73e3f61cbca75353137635cf14885eac4030488520fe3550090ddff30", "effects": "read", "async": "not_async"},
+    "folder.list": {"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "effects": "read", "async": "not_async"},
+    "folder.update": {"sha256": "82704a2c05466ef1b7c9c651601b769d676fc13de95c0049aa7968ba62a88093", "effects": "benign_mutation", "async": "not_async", "required_fields": ["name"]},
+    "folder.move": {"sha256": "4aecd4840124c81dc3a6fe89d4fcabadfc195419a7b70cfa1cd4ba58cf6014e3", "effects": "benign_mutation", "async": "returns_job", "required_fields": ["resource_ids"], "limitation": "SDK exposes no public wait method"},
+    "folder.bulk-delete": {"sha256": "0bd043bf9a609796a7191fd5f9cee374c283758bdcaebe8e7385295c3b7ed977", "effects": "destructive", "async": "not_async", "fields": ["folder_ids", "check_dependency", "remove_contents"]},
+    "folder.delete": {"sha256": "fda90db137220188f19de99aab82f0a8b5bbfe7d7573be25f8457387b30195a8", "effects": "destructive", "async": "not_async", "confirmation": "--yes or prompt; exact target/project safeguards"},
+    "folder.root": {"sha256": "dc3899a51d1f6c996f3dd367dcfc1b60102df3ccd92be87f97bafd640cb669af", "effects": "read", "async": "not_async"}
+  },
+  "calls": [
+    {"label": "folder.root baseline", "captured_at": "2026-09-17T13:57:10.430473Z", "argv": ["folder", "root", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"], "exit_code": 0, "output_sha256": "634ddd96ca239739f0fb9f61d14404ec3ae5c39e14bab466ab587edd136b7e19", "summary": {"id": 0, "name": "Project Root", "resource_id": null, "parent_id": null}},
+    {"label": "folder.list baseline", "captured_at": "2026-09-17T13:57:13.480837Z", "argv": ["folder", "list", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"], "exit_code": 0, "output_sha256": "2fea550d36b70f544d50a63481c8c165bc9e65cb6571667591d731cb6a473de3", "summary": {"folder_count": 0, "offset": 0, "limit": 50}},
+    {"label": "folder.create owned", "captured_at": "2026-09-17T13:57:27.646603Z", "argv": ["folder", "create", "codex-owned-g-20260917-1357", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"], "exit_code": 0, "output_sha256": "160d0ed165dfa5eb9411157c2afabd003a47c310386e11fb472508271ed401a6", "summary": {"id": 2, "resource_id": 123, "status": "ready", "parent_id": null}},
+    {"label": "folder.get owned baseline", "captured_at": "2026-09-17T13:57:39.208283Z", "argv": ["folder", "get", "2", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"], "exit_code": 0, "output_sha256": "dd26f453854d038a30cb8f55e9570f4171ef98c14e1c494b33a63e18cde3f101", "summary": {"id": 2, "name": "codex-owned-g-20260917-1357", "status": "ready", "parent_id": null}},
+    {"label": "folder.list after create", "captured_at": "2026-09-17T13:57:43.844776Z", "argv": ["folder", "list", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"], "exit_code": 0, "output_sha256": "464d5b006802e9b430d557d5f17e70617660ed5eec33164558a885265404731e", "summary": {"folder_count": 1, "owned_ids": [2]}},
+    {"label": "folder.update owned", "captured_at": "2026-09-17T13:57:56.740306Z", "argv": ["folder", "update", "2", "--input", "{\"name\":\"codex-owned-g-20260917-1357-renamed\"}", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"], "exit_code": 0, "output_sha256": "8717395dd3f5b9d26571f3ba6939aa41365d05022c052374b6a0021a61fb931e", "summary": {"id": 2, "name": "codex-owned-g-20260917-1357-renamed", "status": "ready"}},
+    {"label": "folder.get after update", "captured_at": "2026-09-17T13:58:04.455690Z", "argv": ["folder", "get", "2", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"], "exit_code": 0, "output_sha256": "d4eade5ebc0ea614d93f5abf0c9d54bebcd8babbddd1d24ffa6ab55637620c66", "summary": {"id": 2, "name": "codex-owned-g-20260917-1357-renamed", "status": "ready", "parent_id": null}},
+    {"label": "folder.delete owned cleanup", "captured_at": "2026-09-17T13:58:28.768741Z", "argv": ["folder", "delete", "2", "--input", "{\"check_dependency\":true,\"remove_contents\":false}", "--yes", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"], "exit_code": 0, "output_sha256": "c23dcf2eafcd144c8cf9fd7788c6160f693281391e51dfb6bca6feef8a5f2d90", "summary": {"data": null, "owned_only": true}},
+    {"label": "folder.get post-delete", "captured_at": "2026-09-17T13:58:35.231085Z", "argv": ["folder", "get", "2", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"], "exit_code": 0, "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "summary": {"error_code": "INVALID_FOLDER_ID", "http_status": 400, "cli_exit_code_anomaly": true}},
+    {"label": "folder.list post-delete", "captured_at": "2026-09-17T13:58:39.754161Z", "argv": ["folder", "list", "--output", "json", "--no-input", "--profile", "expanded-live", "--project", "3"], "exit_code": 0, "output_sha256": "2fea550d36b70f544d50a63481c8c165bc9e65cb6571667591d731cb6a473de3", "summary": {"folder_count": 0, "matches_baseline": true}}
+  ],
+  "not_run": {
+    "REL-306": "folder.move skipped: no observed non-root destination resource ID; returns un-waitable job.",
+    "REL-059": "folder.bulk-delete skipped: destructive list operation; exact-owned single delete was sufficient."
+  }
+}
