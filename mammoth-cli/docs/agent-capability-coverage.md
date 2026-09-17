@@ -9,7 +9,7 @@ As of **2026-09-15**, this is the M0 inventory for audited product revision `303
 The historical pinned M0 snapshot contains **445 operations across 287 paths**.
 The current release OpenAPI matrix is a separate superset with **528 operations
 across 355 paths**, split into **230 Core** and **298 Miscellaneous** operations.
-The current matrix records **30 Partial** rows and **498 Unassessed** rows;
+The current matrix records **31 Partial** rows and **497 Unassessed** rows;
 it does not claim Full support or broad release readiness. The pinned 445-operation
 inventory below must not be read as the current release denominator.
 
