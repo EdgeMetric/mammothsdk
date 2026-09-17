@@ -181,7 +181,11 @@ def workflow_graph(invocation: Invocation) -> HandlerResult:
     # the backend graph shape is not yet a versioned public SDK model.
     if isinstance(raw, dict):
         data = dict(raw)
-        navigation_key = "cli_navigation" if "cli_navigation" not in data else "cli_navigation_v1"
+        navigation_key = "cli_navigation"
+        suffix = 1
+        while navigation_key in data:
+            navigation_key = f"cli_navigation_v{suffix}"
+            suffix += 1
         data[navigation_key] = _graph_projection(raw)
     else:
         data = {"backend_graph": raw, "cli_navigation": _graph_projection(raw)}

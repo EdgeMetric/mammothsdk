@@ -122,6 +122,22 @@ def test_graph_unknown_shape_is_preserved_with_incomplete_navigation(
     }
 
 
+def test_graph_navigation_uses_free_namespace_without_overwriting_backend_keys(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_GRAPH] = {
+        "cli_navigation": {"backend": 1},
+        "cli_navigation_v1": {"backend": 2},
+        "nodes": [],
+        "edges": [],
+    }
+    data, _ = workflow_cmd.workflow_graph(_inv("workflow.graph", project=180))
+
+    assert data["cli_navigation"] == {"backend": 1}
+    assert data["cli_navigation_v1"] == {"backend": 2}
+    assert data["cli_navigation_v2"]["complete"] is True
+
+
 def test_cleanup_passes_project(fake_service: FakeMammothService) -> None:
     workflow_cmd.workflow_cleanup(_inv("workflow.cleanup", project=180))
     assert fake_service.call_log == [(_CLEANUP, {"project_id": 180})]

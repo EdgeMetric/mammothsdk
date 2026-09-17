@@ -1,7 +1,7 @@
 # Workflow graph navigation projection
 
 `workflow graph` preserves the backend graph response and appends
-`cli_navigation` (or `cli_navigation_v1` if that backend key already exists).
+`cli_navigation` (or the first free deterministic `cli_navigation_vN` key).
 The projection is version 1 and only recognizes `nodes` entries with `id` and
 `edges` entries with `source`/`target`; it never fetches additional resources.
 
