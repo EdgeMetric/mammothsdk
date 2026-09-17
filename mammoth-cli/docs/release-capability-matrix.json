@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 29,
+    "Partial": 30,
     "Not supported": 0,
-    "Unassessed": 499
+    "Unassessed": 498
   },
   "rows": [
     {
@@ -2654,8 +2654,8 @@
     {
       "capability_id": "REL-198",
       "capability": "Get dataview information",
-      "status": "Unassessed",
-      "remarks": "Bounded live run observed dataview retrieval on an owned disposable fixture, but response artifacts are not retained for independent review; no release qualification or support promotion.",
+      "status": "Partial",
+      "remarks": "Bounded owned-fixture read succeeded with pinned CLI 1.1.9: view 16 returned 51 rows and 19-column metadata. No Full claim: view-data job failed with backend 502 and owned dataset-16 cleanup/postcheck also hit backend 502; cleanup remains unresolved.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewInformationIndividual",
       "method": "GET",
@@ -2663,9 +2663,16 @@
       "canonical_command": "view.get",
       "sdk_symbol": "mammoth.client.ViewsResource.get",
       "evidence": {
-        "artifact": "docs/release-owned-fixture-tranche1-20260917.md",
-        "report": "docs/release-owned-fixture-tranche1-20260917.md",
-        "scope": "owned disposable dataset 1; returned-ID cleanup; CLI 1.1.3"
+        "artifact": "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/view-get-16.json",
+        "related": [
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-create.json",
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-get-16.json",
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/view-data-16.json",
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-delete-16.json",
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-list-after-delete.json"
+        ],
+        "scope": "workspace 4/project 3; owned disposable dataset 16/view 16; cleanup unresolved after backend 502",
+        "cli": "1.1.9"
       }
     },
     {
