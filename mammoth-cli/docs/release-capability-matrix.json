@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 56,
+    "Partial": 59,
     "Not supported": 0,
-    "Unassessed": 472
+    "Unassessed": 469
   },
   "rows": [
     {
@@ -1654,8 +1654,8 @@
     {
       "capability_id": "REL-095",
       "capability": "Data-grounded starting points for the create screen",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Published PyPI CLI 1.1.11 job-backed suggestion read for retained dataview46 reconciled job158 to terminal success with 9 structured suggestions; bounded to one job and not Full. A permitted reread spawned pending job159 with null payload.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardSuggestions",
       "method": "GET",
@@ -1665,8 +1665,11 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.suggestion_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/job-158-followup-111/RESULTS.json",
+        "scope": "retained dataview46; job158 success, 9 suggestions; reread job159 unpolled"
+      },
+      "evidence_version": "1.1.11-pypi"
     },
     {
       "capability_id": "REL-096",
@@ -2333,8 +2336,8 @@
     {
       "capability_id": "REL-134",
       "capability": "Track multiple job ids",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Published PyPI CLI 1.1.11 job.get-many read of observed job158 returned terminal success and 9 structured suggestions; bounded to one observed job and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetJobs",
       "method": "GET",
@@ -2344,14 +2347,17 @@
       "sdk_symbol": "mammoth.api.jobs.JobsAPI.get_jobs",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/job-158-followup-111/RESULTS.json",
+        "scope": "job_ids=[158], terminal success; one observed job"
+      },
+      "evidence_version": "1.1.11-pypi"
     },
     {
       "capability_id": "REL-135",
       "capability": "Get job by id",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Published PyPI CLI 1.1.11 job.get read of observed job158 returned terminal success and 9 structured suggestions; bounded to one observed job and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetJob",
       "method": "GET",
@@ -2361,8 +2367,11 @@
       "sdk_symbol": "mammoth.api.jobs.JobsAPI.get_job",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/job-158-followup-111/RESULTS.json",
+        "scope": "job_id=158, terminal success; one observed job"
+      },
+      "evidence_version": "1.1.11-pypi"
     },
     {
       "capability_id": "REL-136",
