@@ -34,6 +34,26 @@ _SECRET_TEXT = re.compile(
     r"(\s*[:=]\s*)(?:\S+)"
 )
 _BEARER_TEXT = re.compile(r"(?i)\bBearer\s+\S+")
+_PRE_DISPATCH_ERROR_CODES = frozenset(
+    {
+        "authentication_failed",
+        "authorization_required",
+        "confirmation_declined",
+        "confirmation_required",
+        "incomplete_environment_auth",
+        "input_format_required",
+        "invalid_argument",
+        "invalid_arguments",
+        "invalid_config_value",
+        "invalid_input_document",
+        "invalid_input_format",
+        "invalid_workspace_id",
+        "missing_argument",
+        "missing_field",
+        "profile_not_found",
+        "project_required",
+    }
+)
 
 
 class BrokerPolicyError(ValueError):
@@ -260,9 +280,11 @@ class OwnerSubprocessSender:
                 "outcome": "outcome_unknown",
                 "handle": None,
             }
-        stdout = _redact_text(_as_text(completed.stdout))
-        stderr = _redact_text(_as_text(completed.stderr))
-        outcome = _subprocess_outcome(completed.returncode, stdout, stderr)
+        private_stdout = _as_text(completed.stdout)
+        private_stderr = _as_text(completed.stderr)
+        outcome = _subprocess_outcome(completed.returncode, private_stdout, private_stderr)
+        stdout = _redact_text(private_stdout)
+        stderr = _redact_text(private_stderr)
         return {
             "ok": completed.returncode == 0,
             "exit_status": completed.returncode,
@@ -289,6 +311,7 @@ def _subprocess_outcome(exit_status: int, stdout: str, stderr: str) -> str:
         return "succeeded"
     if exit_status == 7:
         return "outcome_unknown"
+    definite_failure = False
     for body in (stdout, stderr):
         try:
             envelope = json.loads(body)
@@ -296,7 +319,8 @@ def _subprocess_outcome(exit_status: int, stdout: str, stderr: str) -> str:
             continue
         if _has_unknown_outcome(envelope):
             return "outcome_unknown"
-    return "failed"
+        definite_failure = definite_failure or _has_definite_failure(envelope)
+    return "failed" if definite_failure else "outcome_unknown"
 
 
 def _has_unknown_outcome(value: object) -> bool:
@@ -309,6 +333,18 @@ def _has_unknown_outcome(value: object) -> bool:
         return any(_has_unknown_outcome(item) for item in value.values())
     if isinstance(value, list):
         return any(_has_unknown_outcome(item) for item in value)
+    return False
+
+
+def _has_definite_failure(value: object) -> bool:
+    if isinstance(value, dict):
+        if value.get("operation_state") in {"failed", "not_started"}:
+            return True
+        if value.get("code") in _PRE_DISPATCH_ERROR_CODES or value.get("status") == 403:
+            return True
+        return any(_has_definite_failure(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_has_definite_failure(item) for item in value)
     return False
 
 

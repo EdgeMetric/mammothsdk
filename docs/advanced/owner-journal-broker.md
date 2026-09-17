@@ -46,7 +46,11 @@ read operation repeatable. Fixed inputs are optional, but when used must be
 private owner-controlled files outside the agent workspace with an approved
 SHA-256 that is rechecked immediately before dispatch. Exit status 7 and a
 structured `outcome_unknown` envelope remain `outcome_unknown`; the broker
-does not reinterpret them as safe failures or replay them.
+does not reinterpret them as safe failures or replay them. Any other nonzero
+result is also `outcome_unknown` unless the original private CLI error envelope
+explicitly establishes `failed`/`not_started` or an authorization/usage-style
+pre-dispatch failure. Classification parses the private stream before applying
+presentation redaction, but does not persist that raw stream.
 
 Output redaction is best-effort presentation hygiene, not credential isolation.
 The journal never stores subprocess stdout or stderr, and protected profile

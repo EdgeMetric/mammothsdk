@@ -274,6 +274,56 @@ def test_sender_preserves_structured_or_retryable_unknown_outcomes(
     assert sender.send(_inv(broker_module))["outcome"] == "outcome_unknown"
 
 
+@pytest.mark.parametrize(
+    "exit_status,stderr",
+    [
+        (-9, b""),
+        (1, b"garbled partial output"),
+        (1, b""),
+    ],
+)
+def test_sender_defaults_unparseable_nonzero_mutations_to_unknown(
+    broker_module, tmp_path: Path, exit_status: int, stderr: bytes
+) -> None:
+    operation = broker_module.FrozenOperation(
+        argv=("dataset", "create"), target="dataset-44", resource="dataset", budget=30
+    )
+
+    def runner(command, **_kwargs):
+        return broker_module.subprocess.CompletedProcess(
+            command, exit_status, stdout=b"", stderr=stderr
+        )
+
+    sender = broker_module.OwnerSubprocessSender(
+        _subprocess_policy(broker_module, tmp_path, operation), runner=runner
+    )
+    assert sender.send(_inv(broker_module))["outcome"] == "outcome_unknown"
+
+
+@pytest.mark.parametrize(
+    "stderr",
+    [
+        b'{"error":{"status":403,"code":"authorization_required"}}',
+        b'{"error":{"code":"invalid_argument"}}',
+        b'{"error":{"details":{"operation_state":"not_started"}}}',
+    ],
+)
+def test_sender_accepts_explicit_definite_failure_envelopes(
+    broker_module, tmp_path: Path, stderr: bytes
+) -> None:
+    operation = broker_module.FrozenOperation(
+        argv=("dataset", "create"), target="dataset-44", resource="dataset", budget=30
+    )
+
+    def runner(command, **_kwargs):
+        return broker_module.subprocess.CompletedProcess(command, 1, stdout=b"", stderr=stderr)
+
+    sender = broker_module.OwnerSubprocessSender(
+        _subprocess_policy(broker_module, tmp_path, operation), runner=runner
+    )
+    assert sender.send(_inv(broker_module))["outcome"] == "failed"
+
+
 def test_owner_sender_rechecks_frozen_artifact_before_execution(
     broker_module, tmp_path: Path
 ) -> None:
