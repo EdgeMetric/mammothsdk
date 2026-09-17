@@ -29,7 +29,7 @@ installer's tool bin directory is on your PATH.
 The Python SDK remains independently installable with pip:
 
 ```bash
-python -m pip install mammoth-io==0.7.1
+python -m pip install mammoth-io==0.7.2
 ```
 
 This SDK command does not install the CLI.

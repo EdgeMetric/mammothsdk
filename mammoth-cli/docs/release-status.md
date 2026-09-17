@@ -1,18 +1,17 @@
 # CLI release provenance
 
-## 2.0.0 / SDK 0.7.2 — unreleased candidate
+## 2.0.0 / SDK 0.7.2 — CLI release candidate
 
 This is a release-preparation candidate for the breaking NDJSON contract
 change. The CLI candidate version is `2.0.0` and its SDK lower bound is
-`mammoth-io>=0.7.2,<0.8`; the SDK candidate version is `0.7.2`. Neither
-artifact has been published, uploaded, tagged, or promoted to the public
-installer. Keep user-facing installation examples pinned to the latest
-published release until review and publication complete.
+`mammoth-io>=0.7.2,<0.8`. SDK `0.7.2` is published on PyPI; CLI `2.0.0` has
+not been published, uploaded, tagged, or promoted to the public installer.
+Keep user-facing CLI installation examples pinned to the latest published
+release until review and publication complete.
 
-The lockfile still records the latest published SDK artifact (`0.7.1`) because
-the candidate `0.7.2` is not yet available from the package index. Regenerate
-and verify it from the exact candidate artifact before publication; do not
-claim a reproducible published lock until that step succeeds.
+The lockfile records SDK `0.7.2` and its published wheel hash; `poetry check
+--lock` passed after resolution from the public index. CLI artifact review and
+publication authorization remain required before treating this as a release.
 
 ## 1.1.12
 
