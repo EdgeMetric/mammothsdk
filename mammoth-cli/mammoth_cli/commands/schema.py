@@ -763,7 +763,9 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
         "contract_level": contract_level,
         "unresolved_nested_fields": opaque_fields,
         "safe_typed_alternatives": (
-            list(_TYPED_TRANSFORM_ALTERNATIVES) if contract_level != "typed" else []
+            list(_TYPED_TRANSFORM_ALTERNATIVES)
+            if record["command_id"] in _OPAQUE_EXPERT_COMMANDS
+            else []
         ),
         # Top-level aliases keep the compact contract easy to consume while
         # ``contract`` gives clients one stable namespace for future fields.

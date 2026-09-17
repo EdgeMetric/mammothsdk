@@ -20,7 +20,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands.capability import find_capabilities
-from mammoth_cli.commands.schema import find_schemas, get_schema
+from mammoth_cli.commands.schema import find_schemas, get_schema, schema_entries
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.output.normalize import normalize
@@ -179,6 +179,23 @@ def test_schema_marks_typed_transform_self_describing() -> None:
     assert schema["contract_level"] == "typed"
     assert schema["unresolved_nested_fields"] == []
     assert schema["safe_typed_alternatives"] == []
+
+
+def test_generic_body_route_has_no_unreviewed_alternatives_and_list_exposes_levels() -> None:
+    schema = get_schema("annotation.comment.add")
+    assert schema is not None
+    assert schema["contract_level"] == "partially_typed"
+    assert schema["unresolved_nested_fields"] == ["body"]
+    assert schema["safe_typed_alternatives"] == []
+
+    task_entry = next(item for item in schema_entries() if item["command_id"] == "view.task.add")
+    assert task_entry["contract_level"] == "opaque_expert"
+    assert task_entry["unresolved_nested_fields"] == ["task_spec"]
+    assert task_entry["safe_typed_alternatives"] == [
+        "view.transform.filter",
+        "view.transform.join",
+        "view.transform.math",
+    ]
 
 
 def test_json_is_one_complete_parseable_document_and_preserves_token_count() -> None:
