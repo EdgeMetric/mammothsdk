@@ -1,6 +1,6 @@
 {
   "artifact": "mammoth-cli-release-capability-matrix",
-  "source_sha256": "6d694dd7f096e667b332055654e2563b68d64eec130672651ba485af8f5ef823",
+  "source_sha256": "a48313b564e14a9bf87b2f98f262d218cbae06ddaa2b405f059a4273e8aa693b",
   "source_provenance": {
     "primary_source_url": "https://release.mammoth.io/api/v2/docs/openapi.json",
     "primary_retrieved_at_utc": "2026-09-16T10:12:43Z",
@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 69,
+    "Partial": 70,
     "Not supported": 0,
-    "Unassessed": 459
+    "Unassessed": 458
   },
   "rows": [
     {
@@ -39,7 +39,7 @@
       "capability_id": "REL-002",
       "capability": "Delete a tag from the workspace vocabulary",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDashboardTag",
       "method": "DELETE",
@@ -1394,7 +1394,7 @@
       "capability_id": "REL-081",
       "capability": "List the workspace tag vocabulary",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty tag list observed. No Full claim: no non-empty fixture. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty tag list observed. No Full claim: no non-empty fixture. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListDashboardTags",
       "method": "GET",
@@ -4803,7 +4803,7 @@
       "capability_id": "REL-268",
       "capability": "Rename a tag",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "RenameDashboardTag",
       "method": "PATCH",
@@ -5465,8 +5465,8 @@
     {
       "capability_id": "REL-307",
       "capability": "Updates the folder details",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 typed folder rename succeeded for one owned folder and exact-ID readback confirmed the new name. Owned cleanup list matched baseline; post-delete get returned structured HTTP 400 with authoritative exit 1. One field and fixture only; not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdateFolderDetails",
       "method": "PATCH",
@@ -5476,8 +5476,12 @@
       "sdk_symbol": "mammoth.api.folders.FoldersAPI.update",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/batch-g-folder-111/RESULTS.json",
+        "reproduction": "docs/live-evidence-20260917/batch-g-folder-111/POSTDELETE-GET-REPRO.json",
+        "scope": "one owned folder; cleanup list absence verified"
+      },
+      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
     },
     {
       "capability_id": "REL-308",
@@ -5806,7 +5810,7 @@
       "capability_id": "REL-327",
       "capability": "Merge one tag into another",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "MergeDashboardTags",
       "method": "POST",
@@ -9106,7 +9110,7 @@
       "capability_id": "REL-519",
       "capability": "Set a dashboard's tags",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SetDashboardTags",
       "method": "PUT",
