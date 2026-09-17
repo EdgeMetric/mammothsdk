@@ -68,9 +68,11 @@ No reproducible P0 or P1 defect was found within these checked boundaries.
 
 The isolated fresh-wheel smoke was attempted but could not finish because the
 audit host exhausted its disk quota while pip installed third-party
-dependencies (`OSError: [Errno 122] Disk quota exceeded`). That environmental
-failure is not evidence of a package defect, but means this audit does not add
-a fresh-install result beyond the exact artifact/hash and packaged-file checks.
+dependencies (`OSError: [Errno 122] Disk quota exceeded`). This limits only
+that local audit attempt; it is not evidence of a package defect. Independent
+public-PyPI Python 3.14 fresh-install evidence, including `pip check`, SDK/CLI
+version checks, NDJSON lifecycle framing, and bundled skill install/list, is
+recorded in [the release status](release-status.md#200--sdk-072).
 
 This audit does not qualify live API behavior, redirect behavior at real
 providers, complete command/API coverage, external export destinations,
