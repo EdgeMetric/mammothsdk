@@ -1,0 +1,13 @@
+{
+  "captured_at": "2026-09-17T10:36:29.138484Z",
+  "cli_version": "1.1.9",
+  "argv": [
+    "mammoth",
+    "dashboard-suggestion-list"
+  ],
+  "exit_code": 2,
+  "stdout": "",
+  "stderr": "{\n  \"error\": {\n    \"authorization_required\": false,\n    \"code\": \"missing_argument\",\n    \"details\": {},\n    \"hint\": \"Check the command schema with 'mammoth schema get'.\",\n    \"message\": \"Missing argument 'DATAVIEW_ID'.\",\n    \"recovery_commands\": [],\n    \"request_id\": null,\n    \"retryable\": false\n  },\n  \"schema_version\": 1\n}",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "b1c1b428ac75562d425cb07f2d4215567462f040e4f99d6dad060d8fbf6fbf8e"
+}

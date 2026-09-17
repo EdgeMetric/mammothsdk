@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 23,
+    "Partial": 28,
     "Not supported": 0,
-    "Unassessed": 505
+    "Unassessed": 500
   },
   "rows": [
     {
@@ -804,7 +804,11 @@
       "path": "/workspaces/{workspace_id}/projects/{project_id}/folders/{folder_id}",
       "canonical_command": "folder.delete",
       "sdk_symbol": "mammoth.api.folders.FoldersAPI.delete",
-      "evidence": {"artifact": "docs/live-evidence-20260917/core-next/folder-delete.json", "report": "docs/live-evidence-20260917/core-next/folder-final-list.json", "scope": "owned folder resource 10; returned-ID cleanup; CLI 1.1.5"}
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/core-next/folder-delete.json",
+        "report": "docs/live-evidence-20260917/core-next/folder-final-list.json",
+        "scope": "owned folder resource 10; returned-ID cleanup; CLI 1.1.5"
+      }
     },
     {
       "capability_id": "REL-061",
@@ -1073,15 +1077,19 @@
     {
       "capability_id": "REL-081",
       "capability": "List the workspace tag vocabulary",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "status": "Partial",
+      "remarks": "Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty tag list observed. No Full claim: no non-empty fixture.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListDashboardTags",
       "method": "GET",
       "path": "/dashboards/tags",
       "canonical_command": "dashboard.tags.list",
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.list_tags",
-      "evidence": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/core-next/capability-next/dashboard-tags-list.json",
+        "scope": "workspace 4; empty result",
+        "cli": "1.1.9"
+      }
     },
     {
       "capability_id": "REL-082",
@@ -1177,8 +1185,8 @@
     {
       "capability_id": "REL-089",
       "capability": "The workspace's contexts",
-      "status": "Unassessed",
-      "remarks": "Bounded release read succeeded; no independent wire evidence; support remains Unassessed.",
+      "status": "Partial",
+      "remarks": "Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty context list observed. No Full claim: no non-empty fixture.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListContexts",
       "method": "GET",
@@ -1186,14 +1194,16 @@
       "canonical_command": "dashboard.context.list",
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.context_list",
       "evidence": {
-        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917b-remaining-run.json"
+        "artifact": "docs/live-evidence-20260917/core-next/capability-next/dashboard-context-list.json",
+        "scope": "workspace 4; empty result",
+        "cli": "1.1.9"
       }
     },
     {
       "capability_id": "REL-090",
       "capability": "The workspace's signatures",
-      "status": "Unassessed",
-      "remarks": "Bounded release read succeeded; no independent wire evidence; support remains Unassessed.",
+      "status": "Partial",
+      "remarks": "Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty signature list observed. No Full claim: no non-empty fixture.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListSignatures",
       "method": "GET",
@@ -1201,14 +1211,16 @@
       "canonical_command": "dashboard.signature.list",
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.signature_list",
       "evidence": {
-        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917b-remaining-run.json"
+        "artifact": "docs/live-evidence-20260917/core-next/capability-next/dashboard-signature-list.json",
+        "scope": "workspace 4; empty result",
+        "cli": "1.1.9"
       }
     },
     {
       "capability_id": "REL-091",
       "capability": "The workspace's custom styles",
-      "status": "Unassessed",
-      "remarks": "Bounded release read succeeded; no independent wire evidence; support remains Unassessed.",
+      "status": "Partial",
+      "remarks": "Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty custom-style list observed. No Full claim: no non-empty fixture.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListCustomStyles",
       "method": "GET",
@@ -1216,7 +1228,9 @@
       "canonical_command": "dashboard.style.custom.list",
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.style_custom_list",
       "evidence": {
-        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917b-remaining-run.json"
+        "artifact": "docs/live-evidence-20260917/core-next/capability-next/dashboard-style-custom-list.json",
+        "scope": "workspace 4; empty result",
+        "cli": "1.1.9"
       }
     },
     {
@@ -1235,15 +1249,19 @@
     {
       "capability_id": "REL-093",
       "capability": "Style presets (stock + custom)",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; 10 stock presets returned. No Full claim: custom preset fixture not observed.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListStylePresets",
       "method": "GET",
       "path": "/dashboards/v3/styles/presets",
       "canonical_command": "dashboard.style.preset.list",
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.style_preset_list",
-      "evidence": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/core-next/capability-next/dashboard-style-preset-list.json",
+        "scope": "workspace 4; 10 returned presets",
+        "cli": "1.1.9"
+      }
     },
     {
       "capability_id": "REL-094",
@@ -3029,7 +3047,11 @@
       "path": "/workspaces/{workspace_id}/projects/{project_id}/folders/{folder_id}",
       "canonical_command": "folder.get",
       "sdk_symbol": "mammoth.api.folders.FoldersAPI.get",
-      "evidence": {"artifact": "docs/live-evidence-20260917/core-next/folder-get.json", "report": "docs/live-evidence-20260917/core-next/folder-get.json", "scope": "owned folder resource 10; returned-ID cleanup; CLI 1.1.5"}
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/core-next/folder-get.json",
+        "report": "docs/live-evidence-20260917/core-next/folder-get.json",
+        "scope": "owned folder resource 10; returned-ID cleanup; CLI 1.1.5"
+      }
     },
     {
       "capability_id": "REL-225",
@@ -6268,7 +6290,11 @@
       "path": "/workspaces/{workspace_id}/projects/{project_id}/folders",
       "canonical_command": "folder.create",
       "sdk_symbol": "mammoth.api.folders.FoldersAPI.create",
-      "evidence": {"artifact": "docs/live-evidence-20260917/core-next/folder-create.json", "report": "docs/live-evidence-20260917/core-next/folder-delete.json", "scope": "owned folder resource 10; returned-ID cleanup; CLI 1.1.5"}
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/core-next/folder-create.json",
+        "report": "docs/live-evidence-20260917/core-next/folder-delete.json",
+        "scope": "owned folder resource 10; returned-ID cleanup; CLI 1.1.5"
+      }
     },
     {
       "capability_id": "REL-473",

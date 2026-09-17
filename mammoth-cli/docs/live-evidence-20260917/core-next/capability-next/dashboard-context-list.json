@@ -1,0 +1,22 @@
+{
+  "captured_at": "2026-09-17T10:36:04.310126Z",
+  "cli_version": "1.1.9",
+  "argv": [
+    "mammoth",
+    "dashboard",
+    "context",
+    "list",
+    "--profile",
+    "expanded-live",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n  \"data\": {\n    \"contexts\": []\n  },\n  \"meta\": {\n    \"command\": \"dashboard context list\",\n    \"pagination\": null,\n    \"profile\": \"expanded-live\",\n    \"project_id\": null,\n    \"workspace_id\": 4\n  },\n  \"schema_version\": 1\n}",
+  "stderr": "",
+  "stdout_sha256": "92ee0d76e602042150e2198e88a45ddaeeddfa9bd42f2f0867f1b894105647a4",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "scope": "workspace 4",
+  "verification": "live_read_only"
+}
