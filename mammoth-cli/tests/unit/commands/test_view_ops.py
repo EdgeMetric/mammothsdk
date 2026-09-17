@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 
 from mammoth_cli.commands import view_ops as view_ops_cmd
+from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation, ResourceRef
 from mammoth_cli.services.testing import FakeMammothService
@@ -131,6 +132,23 @@ def test_transform_uses_exact_resource_parent_in_parallel_project_scope(
         )
     )
     assert fake_service.view_call_log == [(7, "discard_duplicates", {"dataset_id": 122})]
+
+
+def test_resource_reference_rejects_selected_profile_project_mismatch(
+    fake_service: FakeMammothService,
+) -> None:
+    profiles.save_profile(profiles.ProfileRecord(name="default", workspace_id=4, project_id=181))
+    with pytest.raises(CliError) as raised:
+        view_ops_cmd.view_get(
+            _inv(
+                "view.get",
+                extra_args=["7"],
+                resource_ref=ResourceRef(project_id=180, dataset_id=122, view_id=7),
+            )
+        )
+
+    assert raised.value.code == "invalid_resource_context"
+    assert fake_service.call_log == []
 
 
 # --- view draft * (``service.call_view`` seam) -----------------------------

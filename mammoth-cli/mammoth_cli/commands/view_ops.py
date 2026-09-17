@@ -32,7 +32,7 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.runtime.session import open_service
+from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.conditions import CONDITION_KWARG
 
@@ -84,10 +84,10 @@ def _view_id(invocation: Invocation) -> int:
     return _require_int_positional(invocation, "view id")
 
 
-def _delete_dataset_id(
+def _resolve_exact_dataset_id(
     invocation: Invocation, view_id: int, document: dict[str, Any], *, required: bool = False
 ) -> int | None:
-    """Resolve an optional exact parent for ``view delete``.
+    """Resolve and reconcile optional exact parent identity for one view.
 
     A resource reference is the strongest form of scope and therefore wins
     over the command's dual-sourced positional/input value.  Supplying the
@@ -103,8 +103,12 @@ def _delete_dataset_id(
             exit_status=EXIT_USAGE,
             hint="Use a resource reference for the same view id as the command target.",
         )
-    if resource is not None and resource.project_id is not None and invocation.project is not None:
-        if resource.project_id != invocation.project:
+    if resource is not None and resource.project_id is not None:
+        # Match the effective project the service will use: explicit --project
+        # first, otherwise the selected profile's project.  Do not require a
+        # project here; projectless view routes keep their existing semantics.
+        effective_project = resolved_project(invocation)
+        if effective_project is not None and resource.project_id != effective_project:
             raise CliError(
                 code="invalid_resource_context",
                 message="The resource reference project does not match --project.",
@@ -192,7 +196,7 @@ def _dispatch_view(
     # exact parent endpoint and prevents the SDK's legacy bare-view resolver
     # from probing an unrelated dataset.
     document = invocation.load_input() or {}
-    dataset_id = _delete_dataset_id(
+    dataset_id = _resolve_exact_dataset_id(
         invocation,
         view_id,
         document,
@@ -268,7 +272,7 @@ def view_get(invocation: Invocation) -> HandlerResult:
     """Get one view by id, optionally scoped to an exact dataset parent."""
     view_id = _view_id(invocation)
     document = invocation.load_input() or {}
-    dataset_id = _delete_dataset_id(invocation, view_id, document)
+    dataset_id = _resolve_exact_dataset_id(invocation, view_id, document)
     if dataset_id is not None:
         # The release operation is dataset-scoped.  Bypass the rich-object
         # resolver when the caller supplied the exact parent so no discovery
@@ -304,7 +308,7 @@ def view_delete(invocation: Invocation) -> HandlerResult:
     view_id = _view_id(invocation)
     enforce_confirmation(invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete view {view_id}")
     document = invocation.load_input() or {}
-    dataset_id = _delete_dataset_id(invocation, view_id, document)
+    dataset_id = _resolve_exact_dataset_id(invocation, view_id, document)
     context: dict[str, Any] = {"view_id": view_id}
     if dataset_id is not None:
         context["dataset_id"] = dataset_id
