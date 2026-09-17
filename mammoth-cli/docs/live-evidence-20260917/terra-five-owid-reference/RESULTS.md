@@ -64,20 +64,32 @@ Afghanistan,AFG,2005,46566715049,24404575,1908.114157
 Afghanistan,AFG,2008,58036781460,26482631,2191.503611
 ```
 
-## Current retained state and limitations
+## Current retained deliverable and limitations
 
-The dashboard was deleted before the later request to retain an inspectable
-deliverable. During authorized cleanup, downstream dataset 29 was trashed
-before upstream dataset 28; trashing 28 was correctly blocked with
-`TRASH_DEPENDENT_BLOCK`. Owned datasets 29, 30, 31, and 33 were restored to
-reconcile that state. Three later submitted reverse-order task removals were
-allowed to finish before cleanup was stopped, so the currently retained view
-46 has only the verified population join and GDP-per-capita math (six columns)
-and the live dashboard cannot be recovered from this evidence record.
+The dashboard was deleted during an initial cleanup attempt, then the user
+requested an inspectable deliverable. No new imports were made. The three
+removed typed joins were reapplied as tasks 8--10, with the pipeline returning
+`ready` after each. The current active sources are 28, 29, 30, 31, and 33;
+view 46 again has the nine-column preview above.
 
-Current retained active sources are 28, 29, 30, 31, and 33. The final
-five-source preview, export hash, and dashboard readback above are retained
-time-of-verification evidence, not claims about the current mutable view.
+Dashboard 48 is the current active draft, titled `Terra OWID five-source
+reference`, with source 46 and completed autosync. Its direct `dashboard get`
+readback succeeded. The final current CSV export is
+`/tmp/terra-owid-five-source-final.csv`: 508,309 bytes, SHA-256
+`1e0c8b5356412adfd42990084e70fc02c9fbdd8a79d46529c032f28469f07028`.
+Its header and first two rows are:
+
+```text
+Entity,Code,Year,GDP,Population,GDP per capita,Life expectancy,Internet use,CO2 per capita
+Afghanistan,AFG,2005,46566715049,24404575,1908.114157,58.2468,1.224148,0.077424
+Afghanistan,AFG,2008,58036781460,26482631,2191.503611,59.7081,1.84,0.160652
+```
+
+The interrupted cleanup still provides a useful limitation: downstream
+dataset 29 was first trashed before upstream 28, and the backend correctly
+returned `TRASH_DEPENDENT_BLOCK` for 28. Owned datasets were restored before
+the current joins were reapplied. No cleanup is pending or authorized for the
+active deliverable.
 
 Product follow-ups:
 
