@@ -4,6 +4,7 @@ Exports API client for managing dataview pipeline exports in Mammoth.
 
 from __future__ import annotations
 
+import errno
 import os
 import tempfile
 from contextlib import suppress
@@ -617,16 +618,18 @@ class ExportsAPI:
             completed_job = self._jobs_api.wait_for_job(job_id, timeout)
             if completed_job.get("response", {}).get("url"):
                 download_url = completed_job["response"]["url"]
-                return self._download_file(download_url, output_path)
+                return self._download_file(download_url, output_path, job_handle=job_id)
             raise ValueError(f"No download URL found in completed job {job_id}")
         raise ValueError("No job ID found in export result")
 
-    def _download_file(self, url: str, output_path: Path) -> Path:
+    def _download_file(self, url: str, output_path: Path, *, job_handle: int | None = None) -> Path:
         """Download a file from the given URL.
 
         Args:
             url: URL to download from.
             output_path: Path where to save the file.
+            job_handle: Completed remote export job id, retained on a local
+                download/write failure so callers can inspect the remote work.
 
         Returns:
             Path to the downloaded file.
@@ -673,6 +676,11 @@ class ExportsAPI:
             return None
 
         try:
+            # Never follow/replace a caller-supplied symlink.  Publishing via
+            # it could overwrite an unrelated target outside the requested
+            # artifact path.
+            if output_path.is_symlink():
+                raise OSError(errno.ELOOP, "Refusing to replace symbolic-link destination")
             output_path.parent.mkdir(parents=True, exist_ok=True)
             fd, raw_temp_path = tempfile.mkstemp(
                 prefix=f".{output_path.name}.", suffix=".part", dir=output_path.parent
@@ -714,6 +722,20 @@ class ExportsAPI:
                 retry_after=response_header("Retry-After"),
                 operation_state="not_started",
                 phase="download",
+                job_handle=job_handle,
+            ) from e
+        except KeyboardInterrupt as e:
+            quarantined_path = discard_partial()
+            details: dict[str, Any] = {"interrupted": True}
+            if quarantined_path is not None:
+                details["quarantined_path"] = quarantined_path
+            raise MammothAPIError(
+                "Download interrupted before the local artifact was published",
+                details=details,
+                method="GET",
+                operation_state="outcome_unknown",
+                phase="download",
+                job_handle=job_handle,
             ) from e
         except OSError as e:
             quarantined_path = discard_partial()
@@ -729,6 +751,7 @@ class ExportsAPI:
                 method="GET",
                 operation_state="not_started",
                 phase="download",
+                job_handle=job_handle,
             ) from e
         finally:
             if fd != -1:

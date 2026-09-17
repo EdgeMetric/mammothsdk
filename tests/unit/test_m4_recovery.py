@@ -300,3 +300,42 @@ def test_enospc_preserves_destination_and_cleans_temp(
     assert raised.value.details["errno"] == errno.ENOSPC
     assert destination.read_bytes() == b"old"
     assert list(tmp_path.glob("*.part")) == []
+
+
+def test_interrupted_download_preserves_destination_and_remote_job_handle(tmp_path: Path) -> None:
+    destination = tmp_path / "result.csv"
+    destination.write_bytes(b"old")
+
+    class InterruptedResponse(_Response):
+        def iter_content(self, chunk_size: int = 8192):  # noqa: ARG002
+            yield b"partial"
+            raise KeyboardInterrupt
+
+    session = MagicMock()
+    session.get.return_value = InterruptedResponse()
+    with pytest.raises(MammothAPIError) as raised:
+        _export_api(session)._download_file(
+            "https://download.invalid/file", destination, job_handle=919
+        )
+
+    assert raised.value.details["interrupted"] is True
+    assert raised.value.job_handle == 919
+    assert raised.value.details["job_handle"] == 919
+    assert destination.read_bytes() == b"old"
+    assert list(tmp_path.glob("*.part")) == []
+
+
+def test_symlink_destination_is_refused_without_touching_target(tmp_path: Path) -> None:
+    target = tmp_path / "target.csv"
+    target.write_bytes(b"old")
+    destination = tmp_path / "result.csv"
+    destination.symlink_to(target)
+    session = MagicMock()
+
+    with pytest.raises(MammothAPIError) as raised:
+        _export_api(session)._download_file("https://download.invalid/file", destination)
+
+    assert raised.value.details["errno"] == errno.ELOOP
+    assert target.read_bytes() == b"old"
+    assert destination.is_symlink()
+    assert session.get.call_count == 0
