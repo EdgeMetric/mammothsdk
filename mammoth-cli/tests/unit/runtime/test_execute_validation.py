@@ -11,10 +11,21 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from mammoth_cli.errors.envelope import EXIT_USAGE
+from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.runtime.executor import _profile_scope_recovery
 from mammoth_cli.testing import make_runner
 
 _JSON_NO_INPUT = ["--output", "json", "--no-input"]
+
+
+def test_profile_scoped_recovery_handles_commands_without_output_option() -> None:
+    error = CliError(
+        code="interrupted", message="interrupted", recovery_commands=["mammoth auth login"]
+    )
+
+    scoped = _profile_scope_recovery(error, "staging")
+
+    assert scoped.recovery_commands == ["mammoth auth login --profile staging"]
 
 
 # --- R5: a surplus positional is refused, not silently dropped ------------

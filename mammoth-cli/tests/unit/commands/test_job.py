@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -113,6 +114,28 @@ def test_wait_forwards_timeout_and_poll_interval(
 def test_wait_without_input_omits_optional_fields(fake_service: FakeMammothService) -> None:
     job_cmd.job_wait(_inv("job.wait", extra_args=["9"]))
     assert fake_service.call_log == [(_WAIT, {"job_id": 9})]
+
+
+def test_wait_interrupt_recovery_stays_on_selected_profile(
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _interrupt(_sdk_symbol: str, /, **_kwargs: object) -> object:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(fake_service, "call", _interrupt)
+    @contextmanager
+    def _service_context() -> object:
+        yield fake_service, type("Auth", (), {"workspace_id": 4})()
+
+    monkeypatch.setattr(job_cmd, "open_service", lambda _invocation: _service_context())
+    with pytest.raises(CliError) as excinfo:
+        job_cmd.job_wait(_inv("job.wait", extra_args=["9"], profile="staging"))
+
+    assert excinfo.value.recovery_commands == [
+        "mammoth job get 9 --output json --no-input --profile staging",
+        "mammoth job wait 9 --output json --no-input --profile staging",
+    ]
 
 
 # --- job wait-many ---------------------------------------------------------

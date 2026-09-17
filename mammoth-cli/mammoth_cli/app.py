@@ -18,6 +18,7 @@ import inspect
 import re
 import sys
 from collections.abc import Callable, Sequence
+from dataclasses import replace
 from functools import cache
 from typing import Annotated, Any
 
@@ -28,6 +29,7 @@ from typer.core import TyperGroup
 from mammoth_cli import __version__
 from mammoth_cli.commands import BESPOKE
 from mammoth_cli.commands.registry import HANDLERS
+from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError, not_implemented_error
 from mammoth_cli.manifest.loader import command_by_id, load_commands
 from mammoth_cli.output.policy import (
@@ -718,6 +720,11 @@ def _build_leaf(command_id: str, *, is_group_callback: bool = False) -> Callable
 
 def _execute(invocation: Invocation) -> None:
     """Run one command: dispatch to its handler and render the envelope."""
+    # Freeze the fallback profile before opening a service.  A recovery command
+    # must inspect the same account that submitted/observed a job, rather than
+    # resolving the mutable selected-profile pointer after an interrupt.
+    if invocation.profile is None:
+        invocation = replace(invocation, profile=profiles.get_selected())
 
     def producer() -> tuple[Any, dict[str, Any]]:
         validate.validate_invocation(invocation)
@@ -748,6 +755,7 @@ def _execute(invocation: Invocation) -> None:
         invocation.output,
         producer,
         agent_mode=invocation.no_input,
+        profile=invocation.profile,
     )
 
 

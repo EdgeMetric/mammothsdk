@@ -94,6 +94,18 @@ def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
     }
 
 
+def _profile_scoped_recovery(error: CliError, profile: str | None) -> CliError:
+    """Keep Ctrl-C recovery pinned to the profile that owns the observed job."""
+    if profile:
+        # The CLI validates profile names to shell-portable identifier syntax.
+        option = f" --profile {profile}"
+        error.recovery_commands = [
+            f"{command}{option}" if " --profile " not in command else command
+            for command in error.recovery_commands
+        ]
+    return error
+
+
 def job_get(invocation: Invocation) -> HandlerResult:
     """Get one job's status by id."""
     job_id = _require_int_positional(invocation, "job id")
@@ -133,12 +145,12 @@ def job_wait(invocation: Invocation) -> HandlerResult:
         # Keep the explicit handle even when the polling implementation raises
         # a bare SIGINT.  A caller can inspect/resume it without replaying the
         # operation that produced the job.
-        raise interrupted_error(
+        raise _profile_scoped_recovery(interrupted_error(
             job_id=job_id,
             operation_state="running",
             phase="polling",
             details={"interrupted": True},
-        ) from exc
+        ), invocation.profile) from exc
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -159,10 +171,10 @@ def job_wait_many(invocation: Invocation) -> HandlerResult:
             data = service.call(_symbol(invocation), **kwargs)
     except KeyboardInterrupt as exc:
         job_ids_for_recovery = job_ids if isinstance(job_ids, list) else str(job_ids)
-        raise interrupted_error(
+        raise _profile_scoped_recovery(interrupted_error(
             job_id=job_ids_for_recovery,
             operation_state="running",
             phase="polling",
             details={"interrupted": True, "job_ids": job_ids_for_recovery},
-        ) from exc
+        ), invocation.profile) from exc
     return data, _meta(invocation, auth.workspace_id)

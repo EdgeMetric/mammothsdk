@@ -14,6 +14,7 @@ import json
 import os
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
@@ -25,6 +26,17 @@ from mammoth_cli.output.normalize import normalize
 from mammoth_cli.output.policy import resolve_output, resolve_policy
 from mammoth_cli.output.render import render
 from mammoth_cli.runtime.input_loader import load_input_document
+
+
+@dataclass
+class _TypedCursor:
+    value: str
+
+
+class _SchemaDeclaration:
+    @classmethod
+    def model_json_schema(cls) -> dict[str, object]:
+        return {"type": "object", "properties": {"page": {"type": "integer"}}}
 
 
 def test_intent_synonyms_are_ranked_deterministically_from_a_cold_call() -> None:
@@ -175,6 +187,44 @@ def test_nonfinite_result_is_made_json_safe_instead_of_emitting_invalid_json() -
     assert parsed["data"]["value"] == "nan"
     assert "NaN" not in stream.getvalue()
     assert normalize({"value": float("inf")})["value"] == "inf"
+
+
+def test_normalize_redacts_typed_secrets_and_preserves_typed_cursors_and_schemas() -> None:
+    from pydantic import SecretStr
+
+    normalized = normalize(
+        {
+            "innocuous_name": SecretStr("must-not-appear"),
+            "cursor": _TypedCursor("opaque-next-page"),
+            "schema": _SchemaDeclaration,
+        }
+    )
+
+    assert normalized == {
+        "cursor": "opaque-next-page",
+        "innocuous_name": "***REDACTED***",
+        "schema": {"properties": {"page": {"type": "integer"}}, "type": "object"},
+    }
+
+
+def test_normalize_redacts_api_keys_without_erasing_cursor_or_schema_names() -> None:
+    normalized = normalize(
+        {
+            "api_key": "must-not-appear",
+            "secure_key": "must-not-appear",
+            "next_token": "opaque-next-page",
+            "continuation_token": "opaque-continuation",
+            "design_tokens": ["primary", "spacing"],
+            "schema": {"properties": {"password": {"type": "string"}}},
+        }
+    )
+
+    assert normalized["api_key"] == "***REDACTED***"
+    assert normalized["secure_key"] == "***REDACTED***"
+    assert normalized["next_token"] == "opaque-next-page"
+    assert normalized["continuation_token"] == "opaque-continuation"
+    assert normalized["design_tokens"] == ["primary", "spacing"]
+    assert normalized["schema"]["properties"]["password"] == {"type": "string"}
 
 
 def test_nonfinite_json_input_is_rejected_before_command_execution(tmp_path: Path) -> None:

@@ -25,6 +25,20 @@ from mammoth_cli.services.mapping import map_sdk_exception
 Producer = Callable[[], tuple[Any, dict[str, Any]]]
 
 
+def _profile_scope_recovery(error: CliError, profile: str | None) -> CliError:
+    """Add the selected profile to concrete recovery commands exactly once."""
+    if not profile:
+        return error
+    # Profile names are admitted as ``[A-Za-z0-9][A-Za-z0-9._-]{0,63}``, so
+    # this argv fragment is portable across POSIX shells and PowerShell.
+    profile_option = f" --profile {profile}"
+    error.recovery_commands = [
+        f"{command}{profile_option}" if " --profile " not in command else command
+        for command in error.recovery_commands
+    ]
+    return error
+
+
 def _validate_output(output: str) -> None:
     """Reject an unsupported ``--output`` mode before any work is done.
 
@@ -108,6 +122,7 @@ def run(
     producer: Producer,
     *,
     agent_mode: bool = False,
+    profile: str | None = None,
 ) -> None:
     """Run one command's producer and emit its envelope.
 
@@ -145,13 +160,13 @@ def run(
         # Polling can be interrupted after a job handle was observed.  Keep
         # that handle when an SDK exception exposes one; never turn Ctrl-C
         # into a successful/empty result or a Python traceback.
-        mapped_error = map_sdk_exception(exc)
+        mapped_error = _profile_scope_recovery(map_sdk_exception(exc), profile)
         emit_error(mapped_error, machine=machine_error)
         raise typer.Exit(mapped_error.exit_status) from None
     except Exception as exc:
         # Bespoke handlers should normally cross the SDK service seam, but a
         # malformed response or filesystem fault must still obey the same
         # machine envelope rather than leaking an implementation traceback.
-        mapped_error = map_sdk_exception(exc)
+        mapped_error = _profile_scope_recovery(map_sdk_exception(exc), profile)
         emit_error(mapped_error, machine=machine_error)
         raise typer.Exit(mapped_error.exit_status) from None
