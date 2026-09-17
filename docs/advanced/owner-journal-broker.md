@@ -22,3 +22,20 @@ that directory-entry durability guarantee. The offline tests inject both crash
 boundaries and verify no automatic replay. An intent ID is bound to the full
 secret-free invocation fingerprint, so reusing it with a different operation,
 scope, or payload digest is rejected.
+
+## Fixed subprocess transport
+
+`OwnerSubprocessSender` is the optional owner-side transport for a journal
+broker. It accepts only a broker `Invocation`: its CLI executable and SHA-256
+artifact digest, profile name, private configuration directory, workspace,
+project, operation command, target, resource, input, confirmation decision,
+and time budget are all fixed by `OwnerSubprocessPolicy`. It never accepts an
+agent shell string, arbitrary environment, extra arguments, or destination.
+The only supported commands are complete frozen operations selected by name;
+agent-provided request bodies and external destinations are intentionally
+unsupported in this slice.
+
+The sender verifies the executable digest immediately before execution and
+uses a minimal owner environment. It returns only redacted `ok`, `exit_status`,
+`stdout`, and `stderr` observations (plus broker outcome fields); neither the
+profile configuration nor its secrets enter the journal receipt.

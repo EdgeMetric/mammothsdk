@@ -117,6 +117,127 @@ def test_existing_insecure_root_is_not_repermissioned(broker_module, tmp_path: P
     assert root.stat().st_mode & 0o777 == 0o755
 
 
+def _subprocess_policy(module, tmp_path: Path, operation):
+    workspace = tmp_path / "agent-workspace"
+    workspace.mkdir()
+    config_home = tmp_path / "owner-config"
+    config_home.mkdir()
+    config_home.chmod(0o700)
+    executable = tmp_path / "owner-mammoth"
+    executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    executable.chmod(0o700)
+    return module.OwnerSubprocessPolicy(
+        executable=executable,
+        executable_sha256=module._sha256_bytes(executable.read_bytes()),
+        profile="owner-profile",
+        config_home=config_home,
+        agent_workspace=workspace,
+        workspace_id=7,
+        project_id=9,
+        operations={"dataset.create": operation},
+    )
+
+
+def test_owner_sender_constructs_fixed_redacted_subprocess(broker_module, tmp_path: Path) -> None:
+    owner_input = tmp_path / "owner-input.json"
+    owner_input.write_text("{}", encoding="utf-8")
+    operation = broker_module.FrozenOperation(
+        argv=("dataset", "create"),
+        target="dataset-44",
+        resource="dataset",
+        budget=30,
+        input_path=owner_input,
+        confirmation=True,
+    )
+    observed: dict[str, object] = {}
+
+    def runner(command, **kwargs):
+        observed["command"] = command
+        observed["kwargs"] = kwargs
+        return broker_module.subprocess.CompletedProcess(
+            command,
+            0,
+            stdout=b"Bearer token-value",
+            stderr=b"api_key=not-recorded",
+        )
+
+    sender = broker_module.OwnerSubprocessSender(
+        _subprocess_policy(broker_module, tmp_path, operation), runner=runner
+    )
+    result = sender.send(_inv(broker_module))
+
+    assert result == {
+        "ok": True,
+        "exit_status": 0,
+        "stdout": "Bearer <REDACTED>",
+        "stderr": "api_key=<REDACTED>",
+        "outcome": "succeeded",
+        "handle": None,
+    }
+    command = observed["command"]
+    assert command[0].endswith("owner-mammoth")
+    assert command[command.index("--profile") + 1] == "owner-profile"
+    assert command[command.index("--project") + 1] == "9"
+    assert command[command.index("--input") + 1] == str(owner_input)
+    assert command[-1] == "--yes"
+    assert observed["kwargs"]["env"] == {
+        "PATH": "/usr/bin:/bin",
+        "XDG_CONFIG_HOME": str((tmp_path / "owner-config").resolve()),
+        "MAMMOTH_OWNER_BROKER": "1",
+    }
+    injected_operation = broker_module.Invocation(
+        "intent-2",
+        "dataset.create --yes",
+        7,
+        9,
+        "a" * 64,
+    )
+    with pytest.raises(broker_module.BrokerPolicyError, match="subprocess allowlist"):
+        sender.send(injected_operation)
+
+
+def test_owner_sender_rechecks_frozen_artifact_before_execution(
+    broker_module, tmp_path: Path
+) -> None:
+    operation = broker_module.FrozenOperation(
+        argv=("dataset", "create"), target="dataset-44", resource="dataset", budget=30
+    )
+    policy = _subprocess_policy(broker_module, tmp_path, operation)
+    sender = broker_module.OwnerSubprocessSender(policy)
+    policy.executable.write_text("changed", encoding="utf-8")
+    policy.executable.chmod(0o700)
+
+    with pytest.raises(broker_module.BrokerPolicyError, match="changed after policy approval"):
+        sender.send(_inv(broker_module))
+
+
+@pytest.mark.parametrize(
+    "argv,input_in_workspace",
+    [
+        (("dataset", "create", "--profile", "agent"), False),
+        (("dataset", "create", "--project", "99"), False),
+        (("dataset", "create", "https://external.invalid"), False),
+        (("dataset", "create", "--yes"), False),
+        (("dataset", "create"), True),
+    ],
+)
+def test_agent_injected_overrides_cannot_enter_owner_policy(
+    broker_module, tmp_path: Path, argv: tuple[str, ...], input_in_workspace: bool
+) -> None:
+    workspace = tmp_path / "agent-workspace"
+    injected_input = workspace / "injected.json" if input_in_workspace else None
+    operation = broker_module.FrozenOperation(
+        argv=argv,
+        target="dataset-44",
+        resource="dataset",
+        budget=30,
+        input_path=injected_input,
+    )
+
+    with pytest.raises(broker_module.BrokerPolicyError):
+        broker_module.OwnerSubprocessSender(_subprocess_policy(broker_module, tmp_path, operation))
+
+
 def test_scope_allowlist_and_policy_replacement_fail_closed(broker_module, tmp_path: Path) -> None:
     root = tmp_path / "owner-only"
     broker = _broker(broker_module, root)

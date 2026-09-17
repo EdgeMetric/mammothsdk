@@ -16,6 +16,7 @@ import json
 import os
 import re
 import stat
+import subprocess
 import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
@@ -23,7 +24,16 @@ from pathlib import Path
 from typing import Any
 
 _HEX_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_PROFILE_NAME = re.compile(r"^[A-Za-z0-9_.-]+$")
 _OUTCOMES = frozenset({"succeeded", "failed", "outcome_unknown"})
+_CONTROLLER_FLAGS = frozenset(
+    {"--profile", "--project", "--input", "--yes", "--server-prefix", "--output", "--no-input"}
+)
+_SECRET_TEXT = re.compile(
+    r"(?i)(api[_-]?(?:key|secret)|access[_-]?token|authorization|password|secret)"
+    r"(\s*[:=]\s*)(?:\S+)"
+)
+_BEARER_TEXT = re.compile(r"(?i)\bBearer\s+\S+")
 
 
 class BrokerPolicyError(ValueError):
@@ -82,6 +92,173 @@ class Receipt:
 
 
 Sender = Callable[[Invocation], Mapping[str, object]]
+
+
+@dataclass(frozen=True)
+class FrozenOperation:
+    """One complete owner-approved command, with no agent-supplied arguments."""
+
+    argv: tuple[str, ...]
+    target: str
+    resource: str
+    budget: int
+    input_path: Path | None = None
+    confirmation: bool = False
+
+
+@dataclass(frozen=True)
+class OwnerSubprocessPolicy:
+    """Fixed executable, configuration, scope, and operation authority."""
+
+    executable: Path
+    executable_sha256: str
+    profile: str
+    config_home: Path
+    agent_workspace: Path
+    workspace_id: int
+    project_id: int
+    operations: Mapping[str, FrozenOperation]
+
+
+def _path_is_within(path: Path, parent: Path) -> bool:
+    return path == parent or parent in path.parents
+
+
+def _redact_text(value: str) -> str:
+    value = _SECRET_TEXT.sub(r"\1\2<REDACTED>", value)
+    return _BEARER_TEXT.sub("Bearer <REDACTED>", value)
+
+
+class OwnerSubprocessSender:
+    """Run only fixed owner commands with owner-only configuration.
+
+    This adapter intentionally does not expose argv, environment, destination,
+    or confirmation choices to an agent. The only accepted input is the
+    journal's already scope-checked ``Invocation``.
+    """
+
+    def __init__(
+        self,
+        policy: OwnerSubprocessPolicy,
+        *,
+        runner: Callable[..., subprocess.CompletedProcess[bytes]] = subprocess.run,
+    ) -> None:
+        self.policy = policy
+        self._runner = runner
+        self._validate_policy()
+
+    def _validate_policy(self) -> None:
+        executable = self.policy.executable.resolve()
+        config_home = self.policy.config_home.resolve()
+        workspace = self.policy.agent_workspace.resolve()
+        if not executable.is_file() or not os.access(executable, os.X_OK):
+            raise BrokerPolicyError("owner executable must be an executable regular file")
+        if not _HEX_SHA256.fullmatch(self.policy.executable_sha256):
+            raise BrokerPolicyError("owner executable hash must be a lowercase SHA-256 digest")
+        if _sha256_bytes(executable.read_bytes()) != self.policy.executable_sha256:
+            raise BrokerPolicyError("owner executable does not match frozen artifact hash")
+        if not _PROFILE_NAME.fullmatch(self.policy.profile) or not config_home.is_dir():
+            raise BrokerPolicyError("owner profile and configuration directory are required")
+        if _path_is_within(config_home, workspace):
+            raise BrokerPolicyError("owner configuration must be outside the agent workspace")
+        config_details = config_home.stat()
+        if config_details.st_uid != os.geteuid() or stat.S_IMODE(config_details.st_mode) & 0o077:
+            raise BrokerPolicyError("owner configuration must be private and owner-controlled")
+        if self.policy.workspace_id <= 0 or self.policy.project_id <= 0:
+            raise BrokerPolicyError("owner subprocess scope must be positive and fixed")
+        if not self.policy.operations:
+            raise BrokerPolicyError("owner subprocess operation allowlist is required")
+        for name, operation in self.policy.operations.items():
+            if not name or not operation.argv or not operation.target or not operation.resource:
+                raise BrokerPolicyError("each frozen operation needs command, target, and resource")
+            if operation.budget <= 0:
+                raise BrokerPolicyError("each frozen operation needs a positive fixed budget")
+            if any(
+                token in _CONTROLLER_FLAGS
+                or any(token.startswith(flag + "=") for flag in _CONTROLLER_FLAGS)
+                or "\x00" in token
+                or "\n" in token
+                or "://" in token
+                for token in operation.argv
+            ):
+                raise BrokerPolicyError("frozen operation contains an agent-bypass argument")
+            if operation.input_path is not None and _path_is_within(
+                operation.input_path.resolve(), workspace
+            ):
+                raise BrokerPolicyError("fixed input must be outside the agent workspace")
+
+    def send(self, invocation: Invocation) -> Mapping[str, object]:
+        """Execute one frozen command and return redacted process observation."""
+        operation = self.policy.operations.get(invocation.operation)
+        if operation is None:
+            raise BrokerPolicyError("operation is outside the owner subprocess allowlist")
+        if (invocation.workspace_id, invocation.project_id) != (
+            self.policy.workspace_id,
+            self.policy.project_id,
+        ):
+            raise BrokerPolicyError("subprocess invocation scope differs from fixed owner scope")
+        executable = self.policy.executable.resolve()
+        if _sha256_bytes(executable.read_bytes()) != self.policy.executable_sha256:
+            raise BrokerPolicyError("owner executable changed after policy approval")
+        command = [
+            str(executable),
+            *operation.argv,
+            "--profile",
+            self.policy.profile,
+            "--project",
+            str(self.policy.project_id),
+            "--output",
+            "json",
+            "--no-input",
+        ]
+        if operation.input_path is not None:
+            command.extend(("--input", str(operation.input_path.resolve())))
+        if operation.confirmation:
+            command.append("--yes")
+        environment = {
+            "PATH": "/usr/bin:/bin",
+            "XDG_CONFIG_HOME": str(self.policy.config_home.resolve()),
+            "MAMMOTH_OWNER_BROKER": "1",
+        }
+        try:
+            completed = self._runner(
+                command,
+                check=False,
+                capture_output=True,
+                env=environment,
+                timeout=operation.budget,
+            )
+        except subprocess.TimeoutExpired as error:
+            stdout = _redact_text(_as_text(error.stdout))
+            stderr = _redact_text(_as_text(error.stderr))
+            return {
+                "ok": False,
+                "exit_status": None,
+                "stdout": stdout,
+                "stderr": stderr,
+                "outcome": "outcome_unknown",
+                "handle": None,
+            }
+        stdout = _redact_text(_as_text(completed.stdout))
+        stderr = _redact_text(_as_text(completed.stderr))
+        return {
+            "ok": completed.returncode == 0,
+            "exit_status": completed.returncode,
+            "stdout": stdout,
+            "stderr": stderr,
+            "outcome": "succeeded" if completed.returncode == 0 else "failed",
+            "handle": None,
+        }
+
+
+def _as_text(value: bytes | str | None) -> str:
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return value or ""
+
+
+def _sha256_bytes(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
 
 
 def _canonical(value: object) -> bytes:
