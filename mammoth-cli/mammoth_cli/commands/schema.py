@@ -35,6 +35,12 @@ from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
 from mammoth_cli.services.type_system import is_opaque_mapping, json_schema, sample_value
 
 _OUTPUT_JSON_NO_INPUT = ("--output", "json", "--no-input")
+_OPAQUE_EXPERT_COMMANDS = frozenset({"view.task.add", "view.task.preview", "view.task.update"})
+_TYPED_TRANSFORM_ALTERNATIVES = [
+    "view.transform.filter",
+    "view.transform.join",
+    "view.transform.math",
+]
 
 # Human intent often uses the resource's familiar format or outcome rather
 # than a literal command token.  These small, stable hints supplement (never
@@ -734,6 +740,18 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
         # normalization pass without trusting arbitrary result dictionary keys.
         input_schema = trusted_json_schema(input_schema)
     contract = _compact_contract(record)
+    opaque_fields = [
+        str(field["name"])
+        for field in accepted or []
+        if str(field["name"]) in {"task_spec", "body"}
+    ]
+    contract_level = (
+        "opaque_expert"
+        if record["command_id"] in _OPAQUE_EXPERT_COMMANDS
+        else "partially_typed"
+        if opaque_fields
+        else "typed"
+    )
     return {
         "positionals": _positionals(record["command_id"]),
         "accepted_fields": accepted,
@@ -742,6 +760,11 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
         # Keep the contract alongside the detailed schema so callers can stop
         # after one bounded request when they only need execution semantics.
         "contract": contract,
+        "contract_level": contract_level,
+        "unresolved_nested_fields": opaque_fields,
+        "safe_typed_alternatives": (
+            list(_TYPED_TRANSFORM_ALTERNATIVES) if contract_level != "typed" else []
+        ),
         # Top-level aliases keep the compact contract easy to consume while
         # ``contract`` gives clients one stable namespace for future fields.
         **contract,

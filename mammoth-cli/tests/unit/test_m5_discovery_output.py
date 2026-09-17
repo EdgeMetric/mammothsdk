@@ -159,6 +159,28 @@ def test_compact_contract_has_all_execution_dimensions() -> None:
     assert "verify" in contract["recovery"]
 
 
+def test_schema_marks_raw_task_specs_opaque_and_points_to_typed_transforms() -> None:
+    schema = get_schema("view.task.add")
+    assert schema is not None
+
+    assert schema["contract_level"] == "opaque_expert"
+    assert schema["unresolved_nested_fields"] == ["task_spec"]
+    assert schema["safe_typed_alternatives"] == [
+        "view.transform.filter",
+        "view.transform.join",
+        "view.transform.math",
+    ]
+
+
+def test_schema_marks_typed_transform_self_describing() -> None:
+    schema = get_schema("view.transform.math")
+    assert schema is not None
+
+    assert schema["contract_level"] == "typed"
+    assert schema["unresolved_nested_fields"] == []
+    assert schema["safe_typed_alternatives"] == []
+
+
 def test_json_is_one_complete_parseable_document_and_preserves_token_count() -> None:
     stream = io.StringIO()
     envelope = {

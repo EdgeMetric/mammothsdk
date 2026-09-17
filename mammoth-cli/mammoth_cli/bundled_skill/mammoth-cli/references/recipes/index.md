@@ -12,6 +12,7 @@ hashes; stop on ambiguous schemas, authorization errors, or unknown effects.
 - [auth and scope](auth-scope.md)
 - [files, datasets, views and settings](resources.md)
 - [typed transformations and drafts](transforms.md)
+- [typed ETL discovery](typed-etl-discovery.md)
 - [exports and artifacts](exports.md)
 - [dashboards](dashboards.md)
 - [trash, recovery and cleanup](cleanup.md)
