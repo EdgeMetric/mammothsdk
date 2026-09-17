@@ -530,6 +530,7 @@
   - [Import errors](#import-errors)
   - [See also](#see-also)
 - [Changelog](#changelog)
+  - [v0.7.1](#v071)
   - [v0.7.0](#v070)
   - [v0.3.0](#v030)
     - [Breaking changes](#breaking-changes)
@@ -556,7 +557,7 @@
 
 # Mammoth Analytics Python SDK
 
-**Version 0.7.0** | Python 3.12–3.14 | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mammothsdk)
+**Version 0.7.1** | Python 3.12–3.14 | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mammothsdk)
 
 The official Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data pipelines, apply transformations, and export results -- all from Python.
 
@@ -634,7 +635,7 @@ view.export.to_csv("output.csv")
 
 ## Version information
 
-- **SDK version**: 0.7.0
+- **SDK version**: 0.7.1
 - **Python**: 3.12–3.14
 - **API version**: v2
 
@@ -658,13 +659,13 @@ view.export.to_csv("output.csv")
 ## Install from PyPI
 
 ```bash
-pip install mammoth-io==0.7.0
+pip install mammoth-io==0.7.1
 ```
 
 Or with Poetry:
 
 ```bash
-poetry add mammoth-io==0.7.0
+poetry add mammoth-io==0.7.1
 ```
 
 ## Dependencies
@@ -686,8 +687,9 @@ cd mammothsdk
 poetry install
 ```
 
-The development dependencies are a Poetry group in this repository, not a
-published `dev` extra. A PyPI install supplies only runtime dependencies.
+The development dependencies are a standard `[dependency-groups].dev` group
+in this repository, not a published `dev` extra. A PyPI install supplies only
+runtime dependencies.
 
 ### Dev tools
 
@@ -743,7 +745,7 @@ Get up and running with the Mammoth Python SDK in five minutes.
 ## 1. Install the SDK
 
 ```bash
-pip install mammoth-io==0.7.0
+pip install mammoth-io==0.7.1
 ```
 
 ## 2. Get your API credentials
@@ -994,7 +996,7 @@ The client adds these headers to every request automatically:
 | `X-API-KEY` | Your API key |
 | `X-API-SECRET` | Your API secret |
 | `X-WORKSPACE-ID` | Your workspace ID |
-| `User-Agent` | `mammoth-io/0.7.0` |
+| `User-Agent` | `mammoth-io/0.7.1` |
 
 ## Error handling
 
@@ -17945,6 +17947,11 @@ client = MammothClient(..., timeout=120)  # 2 minutes per request
 
 
 # Changelog
+
+## v0.7.1
+
+The current SDK release. It includes the current transformation and pipeline
+reliability fixes and requires Python 3.12, 3.13, or 3.14.
 
 ## v0.7.0
 

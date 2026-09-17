@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.1
+
+The current SDK release. It includes the current transformation and pipeline
+reliability fixes and requires Python 3.12, 3.13, or 3.14.
+
 ## v0.7.0
 
 The current SDK release. It requires Python 3.12, 3.13, or 3.14. Transformation
