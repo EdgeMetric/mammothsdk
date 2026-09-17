@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.2
+
+The current SDK release. It requires Python 3.12, 3.13, or 3.14 and improves
+response outcome classification, effectful webhook GET metadata, and bounded
+job waiting behavior.
+
 ## v0.7.1
 
 The current SDK release. It includes the current transformation and pipeline
