@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 70,
+    "Partial": 71,
     "Not supported": 0,
-    "Unassessed": 458
+    "Unassessed": 457
   },
   "rows": [
     {
@@ -3898,8 +3898,8 @@
     {
       "capability_id": "REL-217",
       "capability": "Get a pipeline version",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; retained view 46 / parent dataset 29 returned pipeline version 3 with structured metadata. One observed version and resource scope; no Full claim.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineVersion",
       "method": "GET",
@@ -3909,8 +3909,11 @@
       "sdk_symbol": "mammoth.api.pipeline_versions.PipelineVersionsAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/core-readonly-20260917/README.md",
+        "scope": "retained view 46 / dataset 29; read-only version get; CLI 1.1.5"
+      },
+      "evidence_version": "1.1.5"
     },
     {
       "capability_id": "REL-218",
@@ -9110,7 +9113,7 @@
       "capability_id": "REL-519",
       "capability": "Set a dashboard's tags",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SetDashboardTags",
       "method": "PUT",
