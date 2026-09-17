@@ -11,3 +11,11 @@ Wait/reconcile returned jobs. Verify local artifact headers, rows and hash;
 for external destinations use required confirmation and destination readback.
 Never put connector secrets in argv. Exit 7 or unknown outcome requires
 reconciliation before replay.
+
+Representative successful local export data is typically an envelope with a
+returned export/artifact identifier or path under `data`; verify that path is
+owned, exists, has the expected schema/row count, and hash it. If the command
+returns `job_id`, read it until terminal success before inspecting the artifact.
+If `schema get view.export.csv` rejects requested fields, preserve the
+structured error and discover another declared export route rather than using
+raw HTTP.
