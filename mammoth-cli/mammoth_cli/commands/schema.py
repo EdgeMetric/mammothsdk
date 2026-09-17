@@ -738,7 +738,7 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
         # not returned by an API. Preserve JSON-Schema declaration names (for
         # example ``properties.api_secret``) through Result/render's second
         # normalization pass without trusting arbitrary result dictionary keys.
-        input_schema = trusted_json_schema(input_schema)
+        input_schema = cast(dict[str, Any], trusted_json_schema(input_schema))
     contract = _compact_contract(record)
     opaque_fields = [
         str(field["name"])

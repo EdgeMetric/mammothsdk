@@ -110,7 +110,9 @@ def _resolve_exact_dataset_id(
         if effective_project is not None and resource.project_id != effective_project:
             raise CliError(
                 code="invalid_resource_context",
-                message="The resource reference project does not match the effective project scope.",
+                message=(
+                    "The resource reference project does not match the effective project scope."
+                ),
                 exit_status=EXIT_USAGE,
             )
     raw_values = [
