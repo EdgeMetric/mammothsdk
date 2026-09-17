@@ -1,12 +1,25 @@
 # CLI release provenance
 
-## 2.0.1 / SDK 0.7.3 — release candidate
+## 2.0.1 / SDK 0.7.3
 
-This local release-preparation candidate incorporates post-2.0.0 static gate
-fixes and requires `mammoth-io>=0.7.3,<0.8` for the SDK security release.
-Neither artifact has been published, uploaded, tagged, or promoted to the
-public installer. Keep release provenance and artifact hashes pending until
-the SDK is publicly available and the CLI candidate is independently reviewed.
+Published from deterministic local artifacts built from annotated tag
+`cli-v2.0.1` (source commit `9243430`). This maintenance release restores the
+CLI static release gates and requires `mammoth-io>=0.7.3,<0.8` for the SDK
+security release.
+
+PyPI JSON metadata reports the uploaded local artifact hashes:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `001ed77409aa44f405f47694ba9af0ad66cfd69b937a4860c3855fa66abe966d` |
+| Source distribution | `61ece65817b0769cab788ae7594fe8528b456ffad41c9780167d6cae2f956f73` |
+
+The lockfile resolves published SDK `0.7.3` and its wheel/sdist hashes;
+`poetry check --lock`, focused contracts, Ruff, and mypy passed before upload.
+An independent no-cache public-PyPI Python 3.14 install passed dependency
+checks, CLI/SDK version checks, NDJSON lifecycle framing, and bundled skill
+list checks. These checks do not qualify all API operations, autonomous
+workflows, or untested backend behavior.
 
 ## 2.0.0 / SDK 0.7.2
 
