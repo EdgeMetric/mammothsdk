@@ -1,12 +1,18 @@
 # Release capability matrix (sanitized)
 
-Source workbook SHA-256: `d5863cd64bf441930dea28bff29c3fb199b26b770be4c735128c775905c741b1`.
+Canonical repository matrix: `docs/release-capability-matrix.json` (row-level
+statuses and counts). Release OpenAPI baseline SHA-256:
+`b7c5aa651e6820dfee79afa9c10d17332e03c82e20f65ac30105879b8795236c`.
+Historical workbook evidence SHA-256:
+`d5863cd64bf441930dea28bff29c3fb199b26b770be4c735128c775905c741b1`.
 Current release OpenAPI: 528 operations / 355 paths; 230 Core / 298 Miscellaneous.
 Statuses: 41 Partial (bounded evidence only), 487 Unassessed, 0 Full, 0 Not supported.
 The earlier core-next read tranche used CLI 1.1.5; representative project
 checkpoint/data-check reads were rerun with pinned CLI 1.1.9 and retained under
 `docs/live-evidence-20260917/core-next/*-119.json`.
-This is a sanitized inventory; the readiness workbook remains authoritative.
+This is a sanitized inventory; the repository JSON is canonical for future
+drift and status reconciliation. The workbook is retained as historical
+evidence context.
 
 Latest release live-auth evidence (2026-09-17): [release-live-auth-20260917.md](release-live-auth-20260917.md).
 The saved `expanded-live` profile passed `doctor` with CLI 1.1.3; project 3
