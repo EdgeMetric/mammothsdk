@@ -32,7 +32,7 @@ Clone the repository and install with dev dependencies:
 
 ```bash
 git clone https://github.com/EdgeMetric/mammothsdk.git
-cd mm-pysdk
+cd mammothsdk
 poetry install
 ```
 

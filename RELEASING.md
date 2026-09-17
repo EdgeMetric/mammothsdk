@@ -39,11 +39,17 @@ there for a manual approval gate).
 Trusted Publishing must be registered on PyPI **before** the first CI publish,
 or the publish job fails with `invalid-publisher`:
 
+The `sdk-v0.7.0` CI publish received `invalid-publisher` on 2026-09-17;
+its build/verify job passed and the exact verified artifacts were published
+with the documented local Twine fallback. Register the publishers below
+before relying on unattended CI publication. Never treat a successful build
+job as proof that PyPI accepted the package.
+
 - **mammoth-io** — on the existing project → *Manage → Publishing → Add a
-  publisher*: Owner `EdgeMetric`, Repo `mm-pysdk`, Workflow `sdk-release.yml`,
+  publisher*: Owner `EdgeMetric`, Repo `mammothsdk`, Workflow `sdk-release.yml`,
   Environment `pypi`.
 - **mammoth-cli** — https://pypi.org/manage/account/publishing/ → *pending
-  publisher*: Project `mammoth-cli`, Owner `EdgeMetric`, Repo `mm-pysdk`,
+  publisher*: Project `mammoth-cli`, Owner `EdgeMetric`, Repo `mammothsdk`,
   Workflow `cli-release.yml`, Environment `pypi`.
 
 ## Fallback path — local publish from a maintainer machine
