@@ -25,30 +25,15 @@ mammoth --version
 mammoth doctor
 ```
 
-Under the hood this runs the same command you can also run by hand:
-
-With uv:
+To move to an exact version, rerun the supported installer with the approved
+release number:
 
 ```bash
-uv tool upgrade mammoth-cli
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version X.Y.Z
 mammoth --version
 ```
 
-With pip:
-
-```bash
-python -m pip install --upgrade mammoth-cli
-```
-
-To move to an exact version, pass it to the tool:
-
-```bash
-uv tool install mammoth-cli==X.Y.Z         # or: pipx install --force mammoth-cli==X.Y.Z
-mammoth --version
-```
-
-You can also re-run the convenience installer with `--version X.Y.Z`. After any
-upgrade, run `mammoth doctor` to confirm the new version works.
+After any upgrade, run `mammoth doctor` to confirm the new version works.
 
 ## Upgrade the agent skill
 

@@ -1,6 +1,0 @@
-{
-  "command": "mammoth view checkpoint list 46 29 --profile expanded-live --project 3 --output json --no-input",
-  "exit_code": 0,
-  "stderr": "",
-  "stdout": {"data": {"checkpoints": []}, "meta": {"command": "view checkpoint list", "profile": "expanded-live", "project_id": 3, "workspace_id": 4}, "schema_version": 1}
-}

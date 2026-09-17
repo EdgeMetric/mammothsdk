@@ -11,23 +11,17 @@ profile in that shell. If the broker/sidecar is not provided, stop before any
 authenticated action. The profile workflow below remains for ordinary,
 non-evaluated operator use.
 
-1. Check whether `mammoth` is available. If it is absent, create and activate a
-   dedicated virtual environment, then install either the exact wheel file
-   authorized by the task/release record or an actually published pinned
-   release:
+1. Check whether `mammoth` is available. If it is absent, install the CLI and
+   bundled skill with the supported host installer:
 
    ```bash
-   python -m venv .mammoth-cli-env
-   . .mammoth-cli-env/bin/activate
-   python -m pip install "/path/to/authorized/mammoth_cli-PINNED_VERSION-py3-none-any.whl"
-   # Or, only when that exact release is published and authorized:
-   python -m pip install "mammoth-cli==PINNED_VERSION"
+   curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
    ```
 
-   Replace `PINNED_VERSION` and the wheel path only with authorized values; do
-   not install an unpinned latest version. If a SHA-256 is supplied with the
-   authorized wheel, verify it before installation (for example with
-   `sha256sum`) and stop on mismatch. Then run `mammoth --version`.
+   For an evaluation or deployment that names an exact approved release, append
+   `--version X.Y.Z`. Verify the installed result with `mammoth --version`.
+   Do not substitute a manual pip/uv install for this
+   CLI path; Python applications install the SDK separately.
 2. Locate the installed guidance with `mammoth skill path --output json
    --no-input` and read the canonical skill plus its references. If a skill
    install is required for the agent host, run `mammoth skill install

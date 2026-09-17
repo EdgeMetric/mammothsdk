@@ -186,10 +186,9 @@ def test_installed_wheel_runs(wheelhouse: Path, tmp_path: Path) -> None:
     task_start_text = task_start.read_text(encoding="utf-8")
     assert "mammoth skill path" in task_start_text
     assert "mammoth capability list" in task_start_text
-    assert "PINNED_VERSION" in task_start_text
-    assert "python -m venv .mammoth-cli-env" in task_start_text
-    assert "authorized/mammoth_cli-PINNED_VERSION" in task_start_text
-    assert "install an unpinned latest version" in task_start_text
+    assert "mammoth-install.sh | bash" in task_start_text
+    assert "--version X.Y.Z" in task_start_text
+    assert "manual pip/uv install" in task_start_text
     assert "view.transform.filter" in task_start_text
     assert "view.transform.math" in task_start_text
     assert "view.transform.substring" in task_start_text

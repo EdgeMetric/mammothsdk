@@ -1,7 +1,0 @@
-{
-  "commands": {
-    "view46_wrong_parent28": {"exit": 4, "stdout_bytes": 0, "error": "authorization_required", "status": 403, "operation_state": "failed"},
-    "view999999_parent29": {"exit": 4, "stdout_bytes": 0, "error": "authorization_required", "status": 403, "operation_state": "failed"}
-  },
-  "note": "Sanitized stderr summary; no credentials or response payloads included."
-}

@@ -1,149 +1,99 @@
-# Agent and CI usage
+# Agent handover and operation
 
 [Documentation index](llms.txt)
 
-This guide describes the general operating contract for an external agent. The
-examples are nonexhaustive: discover the installed command surface and compose
-the sequence that the task requires. The CLI does not prescribe a fixed recipe.
+This is the operational entrypoint for a shell-capable agent. The installer
+puts the CLI and its bundled skill on the host; the skill gives focused routing
+to recipes and command families. This guide explains the short loop an agent
+uses to start, hand over, and recover a real task.
 
-For a fresh shell-capable agent with no repository or prior chat context, use
-the shipped [portable task-start playbook](../mammoth_cli/bundled_skill/mammoth-cli/references/task-start.md).
-It covers exact-version installation when the CLI is absent, skill discovery,
-protected configuration, capability discovery, verification, recovery, and
-cleanup without secrets or workbook-specific knowledge.
+## Give an agent Mammoth access
 
-## The unattended loop
-
-An agent should keep a small, nonsecret task record and repeat this loop as
-observations change:
-
-1. **Discover.** Search the capability catalog, then inspect the complete
-   contract and example for the selected operation.
-2. **Resolve scope and schema.** Authenticate a named profile. Resolve the
-   workspace, project, dataset, and view explicitly. `--project` is an
-   operation-local scope; it is safer than relying on a process's active
-   context. A dataset does not imply a usable default view: list its views and
-   choose one by the returned identity.
-3. **Compose.** Pass IDs and parent IDs returned by reads. Name input columns
-   by their display names exactly as returned in metadata or preview output;
-   internal backend column names are not agent inputs. Use one structured input
-   document for nested requests.
-4. **Verify.** Read the affected resource and compare its current state,
-   schema, row/sample, job, export, or dashboard identity with the acceptance
-   criteria. Process exit 0 alone is not proof of the requested outcome.
-5. **Recover or clean up.** On an interruption, timeout, conflict, or uncertain
-   write, inspect the observed job/resource in the same scope before changing
-   anything. Delete only resources recorded as created by this task, respecting
-   dependencies and confirmation policy.
-
-The loop is dynamic. A verification result can require a different operation,
-additional scope, or a safe stop. Do not keep replaying a recipe after the
-remote state has changed.
-
-## Machine behavior
-
-Use explicit machine flags in automation:
+Install once on the host:
 
 ```bash
-mammoth capability list --output json --no-input
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
+```
+
+The installer installs the CLI and skill for Codex, Claude Code, and Cursor.
+Confirm the local contract before assigning work:
+
+```bash
+mammoth --version
+mammoth skill list --output json --no-input
+mammoth schema find "export csv" --output json --no-input
+```
+
+For an exact release in a controlled evaluation, append `--version X.Y.Z`;
+ordinary host installation needs neither option. See [Installation](installation.md).
+
+Give the agent a task, acceptance criteria, and an explicitly authorized
+workspace/project scope. Provision credentials through the host’s protected
+secret mechanism or an interactive login. Do not place secrets in the task,
+argv, transcript, checkpoint, or a source file.
+
+## The operating loop
+
+1. **Discover the local contract.** Use `mammoth schema find QUERY` to locate
+   a command and `mammoth schema get COMMAND_ID` before composing a request.
+   `mammoth schema list` is the full CLI inventory. `mammoth capability list`
+   is instead an API-binding inventory and can omit typed or local CLI routes.
+2. **Resolve scope from reads.** Authenticate a named profile, run `mammoth
+   doctor`, then list/get the authorized project, dataset, view, folder, or
+   dashboard. Pass the observed `--project` and parents to every operation.
+   A dataset is not a default view: list its views and select one by returned
+   identity.
+3. **Operate with structured data.** Use `--output json --no-input` and one
+   `--input` document for nested fields. Column inputs and expressions use the
+   exact display names returned by the selected view—not backend aliases.
+4. **Verify the stated result.** Read back the resource, job, pipeline task,
+   dashboard, or exported artifact against the task’s acceptance criteria.
+   Exit zero alone does not prove the business outcome.
+5. **Checkpoint or recover.** Keep a nonsecret handoff record after each
+   material verified action. Inspect known jobs and reconcile an
+   `outcome_unknown` mutation before a replay, cleanup, or new mutation.
+
+The bundled [skill](../mammoth_cli/bundled_skill/mammoth-cli/SKILL.md) routes a
+specific task to auth/scope, data/transform, dashboard/export, safety, or
+handoff guidance. It intentionally does not make an agent load every reference
+for a simple read operation.
+
+## Machine contract
+
+Use explicit flags in automation:
+
+```bash
 mammoth schema get view.transform.math --output json --no-input
 mammoth project list --profile production --output json --no-input
 ```
 
-Piping or redirecting output already selects machine behavior, and
-`--no-input` is automatic off a terminal, but explicit flags make a handoff
-unambiguous. Success is one JSON envelope on stdout; errors are one JSON
-envelope on stderr. `ndjson` is available for commands that document streaming.
+Success is a JSON envelope on stdout; errors are a JSON envelope on stderr.
+Branch on the stable error code, `details.operation_state`, recovery metadata,
+and exit code—not prose. Preserve only nonsecret resource IDs, parent scope,
+job handles, request IDs, and bounded evidence hashes.
 
-Success has this shape:
+## Safe interruption and handover
 
-```json
-{"schema_version": 1, "data": {"id": 123}, "meta": {"command": "view get", "profile": "production", "workspace_id": 4, "project_id": 180, "pagination": null}}
-```
-
-Errors have a stable code and safe recovery metadata:
-
-```json
-{"schema_version": 1, "error": {"code": "...", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": []}}
-```
-
-Branch on `error.code`, `details.operation_state`, and the process exit code;
-never parse prose. Preserve resource IDs, parent scope, job handles, request IDs,
-and evidence hashes in the handoff record.
-
-## Authentication and explicit scope
-
-Provision credentials once through a protected file or an interactive terminal;
-never put a secret in argv, a prompt transcript, a checkpoint, or a log:
-
-```bash
-chmod 0600 creds.json
-mammoth auth login --input creds.json --output json --no-input
-mammoth doctor --profile production --output json --no-input
-```
-
-The input file is consumed by the login command and should be removed or
-rotated according to the runner's secret policy. See [authentication](authentication.md).
-For every data operation, record and pass the exact `--project` and relevant
-dataset/view parent. An active project is convenience context, not evidence
-that a similarly named resource is the intended target.
-
-## Structured input and display names
-
-Discover the request schema before constructing input. This is a runnable,
-display-name-only example (the IDs are placeholders for IDs returned by reads):
-
-```bash
-mammoth view transform math VIEW_ID --project PROJECT_ID \
-  --input '{"expression": "Unit Price * Quantity", "new_column": "Revenue"}' \
-  --output json --no-input
-```
-
-Do not copy an `internal_name` from an SDK response into a normal CLI request.
-For joins, lookups, conditions, and expressions, use the displayed names from
-the exact local and foreign view schemas. If a name is missing or ambiguous,
-stop before mutation, refresh the schema, and select from the available names.
-
-## Confirmations and effects
-
-Inspect `mammoth schema get COMMAND_ID` before a mutation. It describes effects,
-preconditions, confirmation, result identity, wait behavior, verification, and
-known limitations. Destructive commands need `--yes`; high-impact commands also
-need the exact `--confirm TARGET`. Under `--no-input` a missing confirmation is a
-structured failure, never a prompt.
-
-## Jobs, writes, and retries
-
-Commands that wait for a known job return or expose its job handle. A timeout
-while polling a known job means **running/known job**: inspect it with
+A timeout with a known job is **not** permission to resubmit: inspect it with
 `mammoth job get JOB_ID` or continue with `mammoth job wait JOB_ID` in the same
-scope. A transport failure during a mutation without a confirmed handle means
-**outcome_unknown**: the server may have committed it. Re-list or read the
-target and reconcile before any create/replay. A retryable read can be retried
-after honoring `Retry-After`; exit 7 is not a blanket permission to retry a
-mutation. A conflict, authorization failure, or job failure requires its
-documented correction, not repeated attempts.
+scope. A transport failure during a mutation without a confirmed job/result is
+`outcome_unknown`; re-list or read the exact target before any retry. Exit 7
+and exit 130 likewise do not prove a mutation was not applied.
 
-On SIGINT, preserve the last observed handle and checkpoint the interrupted
-state. Exit 130 means no terminal result was observed; it does not mean that a
-remote operation was cancelled.
+When transferring work, write the portable [nonsecret checkpoint
+format](agent-handoff.md). The receiving agent validates the profile and scope,
+checks the recorded versions and hash, re-reads each resource, reconciles every
+pending job or unknown outcome, and then chooses the next safe operation.
+There is no implicit resume command and a checkpoint never transfers authority.
 
-## Portable handoff
+## Focused next references
 
-Write an atomic, nonsecret checkpoint when pausing or transferring ownership.
-The format and receiving-agent procedure are in [agent-handoff.md](agent-handoff.md).
-The receiving agent validates CLI/SDK/contract compatibility, authorized scope,
-checkpoint integrity, and current remote state before choosing its own next
-operation. There is no implicit resume subcommand.
-
-## Cleanup and known gaps
-
-Keep a dependency-aware inventory of resources created by the task. Verify
-deletion or cleanup completion with a read/job result; do not delete arbitrary
-inventory differences. Feature families or backend routes marked unsupported
-by `capability list`/`schema get` are real capability gaps. Report them as
-unsupported or backend-blocked instead of substituting a local calculation or
-claiming success.
-
-See [safe mutation](safety.md), [output and errors](reference/output-and-errors.md),
-[troubleshooting](troubleshooting.md), and [portable handoff](agent-handoff.md).
+| Need | Read |
+|---|---|
+| First terminal workflow | [Quick start](quickstart.md) |
+| Login, profiles, and scope | [Authentication](authentication.md) |
+| Mutations and confirmations | [Safe mutation](safety.md) |
+| Envelopes, exit codes, recovery | [Output and errors](reference/output-and-errors.md) and [Troubleshooting](troubleshooting.md) |
+| Data import, transforms, dashboards, exports | [Bundled recipes](../mammoth_cli/bundled_skill/mammoth-cli/references/recipes/index.md) |
+| Every installed command | [Command reference](reference/commands.md) or `mammoth schema list` |
+| Cross-agent continuation | [Portable handoff](agent-handoff.md) |

@@ -1,49 +1,52 @@
 ---
 name: mammoth-cli
-description: "Operate Mammoth Analytics with the published CLI: authenticate, discover contracts, manage projects/data/views/pipelines/dashboards, and verify safe mutations."
+description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines, dashboards, exports, and handoffs."
 ---
 
 # Mammoth CLI
 
-Use deterministic JSON: `mammoth … --output json --no-input`. Discover before
-mutating: `mammoth schema get COMMAND_ID` gives exact fields; inspect the JSON
-success/error envelope and `recovery_commands`, never guess an alias or replay
-an `outcome_unknown` mutation. Read back results and delete only IDs returned
-by this task.
+Use this skill for Mammoth shell work, not for Python SDK integration. Start
+with the installed command contract rather than guessed routes or payloads:
 
-Resolve project/dataset/view parents from reads and pass the observed scope.
-For columns and expressions use exact view-schema **display names**, never
-backend aliases. A timeout or unknown mutation outcome requires reconciliation
-of the specific target before any retry.
+```bash
+mammoth schema find "TASK OR RESOURCE" --output json --no-input
+mammoth schema get COMMAND_ID --output json --no-input
+```
 
-Start cold tasks with [task-start](references/task-start.md). For credentials,
-scope, machine output, structured input, confirmations, jobs and recovery use
-[auth](references/auth.md), [machine output](references/machine-output.md),
-[input](references/input.md), [safety](references/safety.md),
-[jobs/drafts](references/jobs-drafts.md), and [recovery](references/recovery.md).
-In an evaluated worker, use a controller-provided auth broker; do not mount or
-read a credential profile.
+`schema list` is the complete CLI inventory. `capability list` is an
+API-binding inventory and can omit typed/local CLI routes. Use deterministic
+JSON (`--output json --no-input`) whenever another program or agent consumes
+the result.
 
-Before creating or cleaning resources, classify them with [retention and
-cleanup](references/retention.md). Preserve requested datasets, views,
-dashboards, and export artifacts; cleanup requires explicit exact-ID
-authorization and never means delete-all-owned-resources.
+## Working rules
 
-For data work—including transforms, blend/task/pipeline drafts, dashboards and
-exports—read [operations](references/operations.md). For every published CLI
-command, load only the relevant domain from the generated
-[command catalog](references/command-index.md): it provides the command path,
-schema ID, compact example, expected result type, mutation/confirmation/wait
-policy, and error/recovery pointer. The catalog covers local CLI manifest
-commands; `capability list` is an API-binding inventory, not a complete list
-of typed/local CLI routes. Use the catalog plus `schema list/find/get` to
-discover CLI support, then use capability metadata only for its API-binding
-and evidence boundary.
+- Resolve workspace/project/dataset/view parents from reads; pass observed IDs
+  and `--project`. A dataset does not select a default view.
+- Use exact view-schema **display names** in expressions and column inputs,
+  never backend aliases.
+- Inspect the result after a mutation. A timeout, exit 7, or interruption does
+  not prove it failed. Reconcile an `outcome_unknown` before replaying it.
+- Keep secrets out of argv, task notes, checkpoints, logs, and responses.
+- Preserve requested deliverables. Cleanup is exact-ID authorized and never means delete-all-owned-resources.
 
-For focused end-to-end patterns—uploads and URL imports, resource navigation,
-typed transforms, dashboards, exports, and owned cleanup—read the
-[recipes index](references/recipes/index.md).
+## Route only what the task needs
 
-For a safe cross-agent continuation, read the nonsecret [handoff
-format](references/handoff.md). It records scope, observed IDs, jobs, unknown
-outcomes, and cleanup ownership; it never transfers credentials or authority.
+- **Cold start, task plan, or unsupported route:** [task start](references/task-start.md)
+- **Login, profiles, and authorized scope:** [auth](references/auth.md)
+- **Nested input, output envelopes, confirmations, jobs, or recovery:**
+  [input](references/input.md), [machine output](references/machine-output.md),
+  [safety](references/safety.md), [jobs and drafts](references/jobs-drafts.md),
+  or [recovery](references/recovery.md)
+- **Import, resources, transforms, pipelines, dashboards, exports, or cleanup:**
+  [recipes](references/recipes/index.md) and [operations](references/operations.md)
+- **A known command family or exact command:** [command catalog](references/command-index.md)
+- **Pause or transfer to another agent:** [handoff](references/handoff.md)
+
+## Handoff checklist
+
+Before yielding work, write a nonsecret checkpoint with the intent and
+acceptance criteria; authorized profile/workspace/project; observed resource
+parents; verified evidence hashes; known jobs and unknown outcomes; remaining
+objectives; and exact cleanup ownership. The receiving agent validates that
+record and re-reads remote state before deciding what to do next. The handoff
+is not a resume command or a grant of authority.

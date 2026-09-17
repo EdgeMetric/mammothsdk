@@ -50,7 +50,7 @@ GUIDES = [
     ("installation.md", "Install the CLI and the agent skill."),
     ("quickstart.md", "Authenticate and run your first commands in five minutes."),
     ("authentication.md", "Getting an API key, login, profiles, and project context."),
-    ("agents.md", "Deterministic output, promptless mode, and CI patterns for agents."),
+    ("agents.md", "Cold start, discovery, checkpoints, recovery, and handoff for agents."),
     ("task-spec-pilot-gap.md", "Typed transform pilot coverage and generic task-spec limits."),
     ("dataset-view-update-contract-gap.md", "Why raw dataset and view patch commands are blocked."),
     ("agent-handoff.md", "Portable nonsecret checkpoints for continuing work in another session."),

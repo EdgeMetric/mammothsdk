@@ -1,5 +1,13 @@
 # CLI release provenance
 
+## 2.0.2 / SDK 0.7.3
+
+This CLI-only maintenance release updates the packaged agent skill, installation
+guidance, and release-capability documentation. It keeps the published SDK
+requirement at `mammoth-io>=0.7.3,<0.8` and does not add API bindings, promote
+capability statuses, or qualify autonomous workflows. The 2.0.1 API evidence
+below remains historical evidence for that published release.
+
 ## 2.0.1 / SDK 0.7.3
 
 Published from deterministic local artifacts built from annotated tag
@@ -166,7 +174,7 @@ changing its payload cannot create a dashboard. The documented source-list
 route returned HTTP 500 with an empty response body, a known server-variance
 boundary. The CLI preserved each status and server detail in its structured
 error envelope; no permission bypass, retry, or readiness promotion follows.
-See the retained [dashboard fixture evidence](live-evidence-20260917/dashboard-next/).
+See the retained [dashboard fixture evidence](capability-evidence/dashboard-next/).
 
 The immutable PyPI 1.1.9 description retains its pre-publication README
 snapshot of **7 Partial / 521 Unassessed**. Read the canonical

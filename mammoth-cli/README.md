@@ -25,10 +25,10 @@ for current row-level coverage and evidence status.
 
 ## Install
 
-Install the 2.0.1 CLI without a preinstalled Python tool manager:
+Install the CLI without a preinstalled Python tool manager:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 2.0.1 --noninteractive
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
 ```
 
 Open a new shell if needed so the installer-added tool directory is on PATH,
@@ -39,9 +39,11 @@ mammoth --version
 mammoth doctor          # checks config, credentials, endpoint, connectivity
 ```
 
-The installer bootstraps its pinned `uv` tool environment when needed. See
-[docs/installation.md](docs/installation.md) for the installer contract and
-the SDK-only pip installation path.
+The installer bootstraps its own `uv` tool environment when needed and installs
+the bundled agent skill. For an exact, reproducible release use `--version
+X.Y.Z`; the installer has no normal prompts. See
+[Installation](docs/installation.md) for that option and the SDK-only pip
+installation path.
 
 ## Quick start
 
@@ -109,26 +111,26 @@ The sample path and project ID are placeholders for a local workbook and a
 project you have resolved and are authorized to modify.
 
 The one-line installer already set up the bundled agent skill for Claude Code,
-Codex, and Cursor. If you installed with `uv`, `pipx`, or `pip` instead:
+Codex, and Cursor. To repair or refresh the installed copy:
 
 ```bash
 mammoth skill install
 ```
 
-See [docs/agents.md](docs/agents.md) and the
-[agent skill](mammoth_cli/bundled_skill/mammoth-cli/SKILL.md).
+Start with [Agent handover and operation](docs/agents.md), then load the
+[bundled agent skill](mammoth_cli/bundled_skill/mammoth-cli/SKILL.md) from the
+installed CLI. The skill routes a task to only the relevant recipe or command
+catalog section; it does not require an agent to absorb the whole reference.
 
 For a fresh external shell agent, start with the shipped
 [portable task-start playbook](mammoth_cli/bundled_skill/mammoth-cli/references/task-start.md).
 
-For an unattended task, use the open-ended loop documented in
-[Agent and CI usage](docs/agents.md): discover a capability and its schema,
-resolve every resource in its explicit scope, compose operations from the IDs
-returned by reads, verify the requested outcome, then recover or clean up from
-the observed state. Examples in this repository are nonexhaustive. The CLI
-never requires an agent to use backend column identifiers: inputs name columns
-by their display names. Do not infer a usable default view from a dataset; run
-`view list DATASET_ID` and choose a view explicitly.
+For an unattended task, use the handover loop: discover its schema, resolve
+every resource in explicit scope, operate from IDs returned by reads, verify
+the requested outcome, then record a nonsecret checkpoint. Examples in this
+repository are nonexhaustive. The CLI never requires backend column identifiers:
+inputs name columns by their display names. Do not infer a usable default view
+from a dataset; run `view list DATASET_ID` and choose a view explicitly.
 
 If another agent must continue the work, write the nonsecret checkpoint format
 described in [Portable agent handoff](docs/agent-handoff.md). It records scope,
@@ -176,7 +178,9 @@ The full generated list is in [docs/reference/commands.md](docs/reference/comman
 | [Installation](docs/installation.md) | Install the CLI and the agent skill. |
 | [Quick start](docs/quickstart.md) | Log in and run your first commands. |
 | [Authentication](docs/authentication.md) | Getting an API key, login, profiles, projects. |
-| [Agent and CI usage](docs/agents.md) | Machine output, structured input, patterns. |
+| [Agent handover and operation](docs/agents.md) | Cold start, discovery, checkpoints, recovery. |
+| [Portable handoff format](docs/agent-handoff.md) | Nonsecret checkpoint schema and receiving procedure. |
+| [Bundled agent skill](mammoth_cli/bundled_skill/mammoth-cli/SKILL.md) | Focused routing for shell-capable agents. |
 | [Safe mutation](docs/safety.md) | Mutation classes and confirmation policies. |
 | [Output and errors](docs/reference/output-and-errors.md) | Envelopes, exit codes, error codes. |
 | [Global flags](docs/reference/global-flags.md) | The flags every command shares. |
@@ -185,8 +189,8 @@ The full generated list is in [docs/reference/commands.md](docs/reference/comman
 | [Command reference](docs/reference/commands.md) | Every command, grouped by family. |
 
 Start with **Quick start** for a copy-paste workflow, **Authentication** for
-profiles and non-interactive login, or **Agent and CI usage** for schema-driven
-automation. The command reference is generated; use `mammoth schema get
+profiles and non-interactive login, or **Agent handover and operation** for a
+fresh-agent task. The command reference is generated; use `mammoth schema get
 COMMAND.ID` to verify a request shape against the installed CLI.
 
 Agent-readable indexes: [`docs/llms.txt`](docs/llms.txt) and
@@ -244,7 +248,7 @@ Use the [canonical matrix](docs/release-capability-matrix.md) for the full
 
 ## Compatibility
 
-`mammoth-cli` follows [Semantic Versioning](https://semver.org) for the 1.x
+`mammoth-cli` follows [Semantic Versioning](https://semver.org) for the 2.x
 series:
 
 - The machine-output and error-envelope contract is stable. `SCHEMA_VERSION`

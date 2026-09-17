@@ -1,6 +1,0 @@
-{
-  "command": "mammoth view data-check list 46 29 --profile expanded-live --project 3 --output json --no-input",
-  "exit_code": 0,
-  "stderr": "",
-  "stdout": {"data": {"data_checks": []}, "meta": {"command": "view data-check list", "profile": "expanded-live", "project_id": 3, "workspace_id": 4}, "schema_version": 1}
-}

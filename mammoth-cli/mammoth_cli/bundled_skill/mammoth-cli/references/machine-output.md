@@ -15,17 +15,13 @@
 These are compact shapes, not substitutes for `schema get`. IDs and field
 names must come from the preceding read/create response.
 
-The following are abbreviated from retained CLI 1.1.5 evidence, with values
-reduced only for brevity. They show envelope keys, not a universal result
-schema. Dashboard and transform result fields remain schema-driven.
+The following are illustrative envelope shapes. They show keys, not a universal
+result schema; dashboard and transform result fields remain schema-driven.
 
 ```json
 {"schema_version":1,"data":{"id":5,"ds_id":5,"name":"View 1","row_count":51,"status":"ready","metadata":[{"display_name":"store_id","internal_name":"column_1","type":"TEXT"}]},"meta":{"command":"view get","pagination":null,"profile":"expanded-live","project_id":null,"workspace_id":4}}
 {"schema_version":1,"data":{"output_path":"dataview_12_12_export.csv"},"meta":{"command":"view export csv","pagination":null,"profile":"expanded-live","project_id":null,"workspace_id":4}}
 ```
-
-Sources: `docs/live-evidence-20260917/transform-next/view-get.json` and
-`docs/live-evidence-20260917/export-next/export-csv.json` (CLI 1.1.5).
 
 For pagination, preserve the returned `meta.pagination`/`data.next` cursor and
 request the next page only with fields accepted by that command's schema. For

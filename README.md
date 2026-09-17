@@ -7,13 +7,13 @@ Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data 
 
 > **Prefer the terminal?** This repository also ships **`mammoth-cli`**, a
 > command-line interface for people, scripts, and schema-driven agent runs.
-> Install the pinned CLI without a preinstalled Python tool manager:
+> Install the CLI without a preinstalled Python tool manager:
 >
 > ```bash
-> curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 2.0.1 --noninteractive
+> curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
 > ```
 >
-> See [Command-line interface](#command-line-interface-mammoth-cli) below.
+> See the full [mammoth-cli guide](mammoth-cli/README.md).
 
 ## Installation
 
@@ -756,7 +756,7 @@ assumed to have a usable default view: list views and choose one explicitly.
 Install the published CLI without a preinstalled Python tool manager:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 2.0.1 --noninteractive
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
 ```
 
 Open a new shell if needed so the installer-added tool directory is on PATH,
@@ -770,11 +770,9 @@ mammoth project list             # a table in a terminal, JSON when piped
 
 For promptless work, log in from a protected JSON file with `mammoth auth login
 --input creds.json --output json --no-input`; do not put secrets on a command
-line. The CLI also ships a bundled agent skill (`mammoth skill install`). Start
-with the [CLI README](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli),
-the [agent guide](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agents.md),
-the [portable handoff format](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-handoff.md),
-and the [Core top-15 capability snapshot](mammoth-cli/README.md#core-top-15-snapshot).
+line. The installer also installs the bundled agent skill. Start with the
+[CLI README](mammoth-cli/README.md), which indexes the agent guide, portable
+handoff format, commands, and capability matrix.
 
 The CLI's examples are deliberately nonexhaustive. Use `mammoth capability list`
 and `mammoth schema get COMMAND_ID` for the installed version, and treat a
