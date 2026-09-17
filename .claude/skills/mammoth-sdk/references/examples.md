@@ -16,9 +16,8 @@ client.set_project_id(10)
 # 2. Upload CSV
 ds_id = client.files.upload("sales_data.csv")
 
-# 3. Get the default view
-views = client.views.list(dataset_id=ds_id)
-view = views[0]
+# 3. Create a named working view (listing may be empty or contain multiple views)
+view = client.views.create(dataset_id=ds_id, name="sales-analysis")
 print(view.display_names)  # ["Product", "Region", "Sales", "Date", ...]
 
 # 4. Apply transformations

@@ -34,7 +34,8 @@ def test_skill_views_list_documents_required_parent() -> None:
     api_reference = (_SKILL / "references" / "api-reference.md").read_text(encoding="utf-8")
     examples = (_SKILL / "references" / "examples.md").read_text(encoding="utf-8")
     assert "client.views.list(dataset_id=123)" in api_reference
-    assert "views = client.views.list(dataset_id=ds_id)" in examples
+    assert 'client.views.create(dataset_id=ds_id, name="sales-analysis")' in examples
+    assert "view = views[0]" not in examples
     assert "views.list()" in api_reference  # prose describing the method
     assert "views.list() no longer" not in api_reference
 
