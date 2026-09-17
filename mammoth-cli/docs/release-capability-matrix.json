@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 30,
+    "Partial": 31,
     "Not supported": 0,
-    "Unassessed": 498
+    "Unassessed": 497
   },
   "rows": [
     {
@@ -2655,7 +2655,7 @@
       "capability_id": "REL-198",
       "capability": "Get dataview information",
       "status": "Partial",
-      "remarks": "Bounded owned-fixture read succeeded with pinned CLI 1.1.9: view 16 returned 51 rows and 19-column metadata. No Full claim: view-data job failed with backend 502 and owned dataset-16 cleanup/postcheck also hit backend 502; cleanup remains unresolved.",
+      "remarks": "Bounded owned-fixture read succeeded with pinned CLI 1.1.9: view 16 returned 51 rows and 19-column metadata; owned dataset 16 cleanup completed with delete job 42 and final empty dataset list. No Full claim: no independent non-empty fixture beyond this disposable case.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewInformationIndividual",
       "method": "GET",
@@ -2669,9 +2669,11 @@
           "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-get-16.json",
           "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/view-data-16.json",
           "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-delete-16.json",
-          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-list-after-delete.json"
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-list-after-delete.json",
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-delete-42-reconcile.json",
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-list-final.json"
         ],
-        "scope": "workspace 4/project 3; owned disposable dataset 16/view 16; cleanup unresolved after backend 502",
+        "scope": "workspace 4/project 3; owned disposable dataset 16/view 16; cleanup verified by job 42 and final empty list",
         "cli": "1.1.9"
       }
     },
@@ -2704,8 +2706,8 @@
     {
       "capability_id": "REL-201",
       "capability": "Get dataview data",
-      "status": "Unassessed",
-      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
+      "status": "Partial",
+      "remarks": "Bounded owned-fixture read succeeded with pinned CLI 1.1.9: dataview 16 data returned 51 rows; initial CLI envelope reported backend 502, then job 41 reconciliation reported success. No Full claim: disposable fixture only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewData",
       "method": "GET",
@@ -2713,9 +2715,13 @@
       "canonical_command": "view.data.get",
       "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.get_data",
       "evidence": {
-        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
-        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
-        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+        "artifact": "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/job-41-reconcile.json",
+        "related": [
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/view-data-16.json",
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-delete-42-reconcile.json"
+        ],
+        "scope": "workspace 4/project 3; owned disposable dataset 16/view 16; 51 rows; cleanup verified",
+        "cli": "1.1.9"
       }
     },
     {
