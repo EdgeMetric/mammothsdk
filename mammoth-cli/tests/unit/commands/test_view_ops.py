@@ -148,6 +148,7 @@ def test_resource_reference_rejects_selected_profile_project_mismatch(
         )
 
     assert raised.value.code == "invalid_resource_context"
+    assert "effective project scope" in raised.value.message
     assert fake_service.call_log == []
 
 

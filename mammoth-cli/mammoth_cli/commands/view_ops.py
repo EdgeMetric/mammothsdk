@@ -89,11 +89,10 @@ def _resolve_exact_dataset_id(
 ) -> int | None:
     """Resolve and reconcile optional exact parent identity for one view.
 
-    A resource reference is the strongest form of scope and therefore wins
-    over the command's dual-sourced positional/input value.  Supplying the
-    parent is important: ``ViewsResource.delete`` only invokes its legacy
-    parent discovery when ``dataset_id`` is omitted, and that discovery can
-    select a different dataset for the same view id.
+    Every supplied resource reference, positional, and input value must agree.
+    Supplying the parent is important: ``ViewsResource.delete`` only invokes
+    its legacy parent discovery when ``dataset_id`` is omitted, and that
+    discovery can select a different dataset for the same view id.
     """
     resource = invocation.resource_ref
     if resource is not None and resource.view_id not in (None, view_id):
@@ -111,7 +110,7 @@ def _resolve_exact_dataset_id(
         if effective_project is not None and resource.project_id != effective_project:
             raise CliError(
                 code="invalid_resource_context",
-                message="The resource reference project does not match --project.",
+                message="The resource reference project does not match the effective project scope.",
                 exit_status=EXIT_USAGE,
             )
     raw_values = [
