@@ -2,9 +2,9 @@ name: CLI Release
 
 # Publishes mammoth-cli to PyPI and attaches signed assets to a GitHub release.
 #
-# This workflow runs ONLY when an authorized maintainer pushes a `cli-vX.Y.Z`
-# tag. It is never triggered by branch pushes or pull requests. Do not push a
-# `cli-v*` tag without separate, explicit release authorization.
+# This workflow runs only by manual dispatch. An authorized maintainer must
+# select a `cli-vX.Y.Z` tag ref; branch pushes and pull requests never trigger
+# it. Do not publish a `cli-v*` release without separate, explicit authorization.
 #
 # Permission model: the default is read-only. Only the jobs that must publish
 # receive elevated scopes, and only the scope each one needs.

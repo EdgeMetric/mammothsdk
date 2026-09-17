@@ -12,10 +12,10 @@ name: MCP Release
 # This file used to trigger on `release: published` and publish BOTH mammoth-io
 # and mammoth-mcp with MUTABLE action tags. Because cli-release.yml creates a
 # GitHub Release, that gave the SDK a second, unpinned publication path and
-# re-published MCP on every CLI release. It is now a tag-triggered, MCP-only,
-# SHA-pinned mirror of sdk-release.yml. It runs ONLY when an authorized
-# maintainer pushes an `mcp-vX.Y.Z` tag. Do not push an `mcp-v*` tag without
-# separate release authorization. The invariant is enforced by
+# re-published MCP on every CLI release. It is now a manually dispatched,
+# MCP-only, SHA-pinned mirror of sdk-release.yml. An authorized maintainer must
+# select an `mcp-vX.Y.Z` tag ref. Do not publish an `mcp-v*` release without
+# separate authorization. The invariant is enforced by
 # mammoth-cli/tests/contract/test_single_publication_path.py.
 on:
   workflow_dispatch:
