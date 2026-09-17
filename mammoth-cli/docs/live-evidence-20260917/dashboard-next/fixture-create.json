@@ -1,0 +1,23 @@
+{
+  "captured_at": "2026-09-17T09:29:11.959300+00:00",
+  "cli_version": "1.1.5",
+  "argv": [
+    "mammoth",
+    "dataset",
+    "create",
+    "--profile",
+    "expanded-live",
+    "--project",
+    "3",
+    "--input",
+    "{\"dataset_spec\":{\"url\":\"https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv\"},\"ds_creation_type\":\"weburl\"}",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n  \"data\": {\n    \"dataset_id\": 14,\n    \"job_id\": 35,\n    \"status\": \"ready\"\n  },\n  \"meta\": {\n    \"command\": \"dataset create\",\n    \"pagination\": null,\n    \"profile\": \"expanded-live\",\n    \"project_id\": 3,\n    \"workspace_id\": 4\n  },\n  \"schema_version\": 1\n}\n",
+  "stderr": "",
+  "stdout_sha256": "93a6228c63ec78967051feaefba172cd5ba20e34132a5b9ec1830926249bbbd6",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}
