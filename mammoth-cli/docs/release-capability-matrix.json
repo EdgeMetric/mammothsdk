@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 32,
+    "Partial": 33,
     "Not supported": 0,
-    "Unassessed": 496
+    "Unassessed": 495
   },
   "rows": [
     {
@@ -2414,15 +2414,23 @@
     {
       "capability_id": "REL-182",
       "capability": "Browse and discover project resources",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Bounded release read with pinned CLI 1.1.10: default browse returned documented structured HTTP 500; limit=1 and limit=0 returned valid empty resource pages. No Full claim: backend server variance and no non-empty resource fixture.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "BrowseProjectProjects",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/browse",
       "canonical_command": "browse.project",
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.browse",
-      "evidence": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/core-next/browse-project-110/browse-limit-1.json",
+        "related": [
+          "docs/live-evidence-20260917/core-next/browse-project-110/browse-default.json",
+          "docs/live-evidence-20260917/core-next/browse-project-110/browse-invalid.json"
+        ],
+        "scope": "expanded-live workspace 4/project 3; read-only option/error matrix",
+        "cli": "1.1.10"
+      }
     },
     {
       "capability_id": "REL-183",

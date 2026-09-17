@@ -2,7 +2,7 @@
 
 Source workbook SHA-256: `d5863cd64bf441930dea28bff29c3fb199b26b770be4c735128c775905c741b1`.
 Current release OpenAPI: 528 operations / 355 paths; 230 Core / 298 Miscellaneous.
-Statuses: 32 Partial (bounded evidence only), 496 Unassessed, 0 Full, 0 Not supported.
+Statuses: 33 Partial (bounded evidence only), 495 Unassessed, 0 Full, 0 Not supported.
 The earlier core-next read tranche used CLI 1.1.5; representative project
 checkpoint/data-check reads were rerun with pinned CLI 1.1.9 and retained under
 `docs/live-evidence-20260917/core-next/*-119.json`.
@@ -197,7 +197,7 @@ this project scope.
 | REL-179 | List annotations | Unassessed | Unassigned pending user approval and release evidence. | MISCELLANEOUS_API | ListAnnotations | GET | /workspaces/{workspace_id}/projects/{project_id}/annotations | annotation.list | mammoth.api.annotations.AnnotationsAPI.list | — |
 | REL-180 | Get list of automations | Unassessed | Unassigned pending user approval and release evidence. | MISCELLANEOUS_API | GetList | GET | /workspaces/{workspace_id}/projects/{project_id}/automations | automation.list | mammoth.api.automations.AutomationsAPI.list | — |
 | REL-181 | Get automation data | Unassessed | Unassigned pending user approval and release evidence. | MISCELLANEOUS_API | GetAutomation | GET | /workspaces/{workspace_id}/projects/{project_id}/automations/{automation_id} | automation.get | mammoth.api.automations.AutomationsAPI.get | — |
-| REL-182 | Browse and discover project resources | Unassessed | Unassigned pending user approval and release evidence. | MISCELLANEOUS_API | BrowseProjectProjects | GET | /workspaces/{workspace_id}/projects/{project_id}/browse | browse.project | mammoth.api.projects.ProjectsAPI.browse | — |
+| REL-182 | Browse and discover project resources | Partial | Bounded release read with pinned CLI 1.1.10: default browse returned documented structured HTTP 500; limit=1 and limit=0 returned valid empty resource pages. No Full claim: backend server variance and no non-empty resource fixture. | MISCELLANEOUS_API | BrowseProjectProjects | GET | /workspaces/{workspace_id}/projects/{project_id}/browse | browse.project | mammoth.api.projects.ProjectsAPI.browse | artifact=docs/live-evidence-20260917/core-next/browse-project-110/browse-limit-1.json; related default-error and limit=0 evidence; scope=workspace 4/project 3; CLI 1.1.10 |
 | REL-183 | Get all checkpoints across a project | Partial | Bounded release read in project 3 succeeded; empty checkpoint list observed. Pinned CLI 1.1.9 rerun matches the prior response. No Full claim: no non-empty fixture. | CLI_CORE_WORKFLOW | GetProjectCheckpoints | GET | /workspaces/{workspace_id}/projects/{project_id}/checkpoints | project.checkpoint.list | mammoth.api.projects.ProjectsAPI.checkpoint_list | artifact=docs/live-evidence-20260917/core-next/project-checkpoints-119.json |
 | REL-184 | List Connections | Unassessed | Unassigned pending user approval and release evidence. | MISCELLANEOUS_API | ListConnections | GET | /workspaces/{workspace_id}/projects/{project_id}/connectors/{connector_key}/connections | connector.connection.list | mammoth.api.connectors.ConnectorsAPI.list_connections | — |
 | REL-185 | Get Connection | Unassessed | Unassigned pending user approval and release evidence. | MISCELLANEOUS_API | GetConnection | GET | /workspaces/{workspace_id}/projects/{project_id}/connectors/{connector_key}/connections/{connection_key} | connector.connection.get | mammoth.api.connectors.ConnectorsAPI.get_connection | — |
