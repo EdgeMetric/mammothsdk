@@ -190,4 +190,8 @@ class WebhooksAPI:
             "GET",
             f"/webhooks/data/{webhook_uri}",
             params=params,
+            # This compatibility route ingests data despite its GET wire
+            # method.  A lost response therefore has an unknown outcome and
+            # must not be treated as a replay-safe read.
+            operation_effect="mutation",
         )

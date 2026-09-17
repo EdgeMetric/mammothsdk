@@ -374,6 +374,8 @@ class MammothClient:
         params: dict[str, Any] | None = None,
         json: dict[str, Any] | None = None,
         files: list[Any] | None = None,
+        operation_effect: str | None = None,
+        expected_response_shape: str | None = None,
         **kwargs: Any,
     ) -> dict[str, Any] | list[dict[str, Any]]:
         """Make an authenticated request to the Mammoth API.
@@ -435,9 +437,14 @@ class MammothClient:
             request_kwargs["headers"] = headers
 
         request_method = method.upper()
+        if operation_effect not in {None, "read", "mutation"}:
+            raise ValueError("operation_effect must be 'read', 'mutation', or None")
+        is_mutation = operation_effect == "mutation" or (
+            operation_effect is None and request_method not in {"GET", "HEAD", "OPTIONS"}
+        )
         operation_state = (
             "outcome_unknown"
-            if request_method not in {"GET", "HEAD", "OPTIONS"}
+            if is_mutation
             else "not_started"
         )
 
@@ -552,7 +559,7 @@ class MammothClient:
             if response.status_code == 204 or not response.content:
                 return {}
             try:
-                return response.json()
+                parsed_response = response.json()
             except (ValueError, TypeError) as e:
                 raise MammothAPIError(
                     "Invalid JSON response",
@@ -569,6 +576,40 @@ class MammothClient:
                     phase=phase,
                     endpoint=endpoint,
                 ) from e
+            if expected_response_shape == "dict" and not isinstance(parsed_response, dict):
+                raise MammothAPIError(
+                    "Expected dict response from API",
+                    status_code=response.status_code,
+                    details={
+                        "protocol_error": "response_contract_violation",
+                        "expected_shape": "dict",
+                        "actual_type": type(parsed_response).__name__,
+                    },
+                    method=request_method,
+                    request_id=request_id,
+                    retry_after=retry_after,
+                    operation_state=operation_state if is_mutation else "failed",
+                    phase="response",
+                    endpoint=endpoint,
+                )
+            if expected_response_shape == "list" and not isinstance(parsed_response, list):
+                raise MammothAPIError(
+                    "Expected list response from API",
+                    status_code=response.status_code,
+                    response_body=parsed_response if isinstance(parsed_response, dict) else {},
+                    details={
+                        "protocol_error": "response_contract_violation",
+                        "expected_shape": "list",
+                        "actual_type": type(parsed_response).__name__,
+                    },
+                    method=request_method,
+                    request_id=request_id,
+                    retry_after=retry_after,
+                    operation_state=operation_state if is_mutation else "failed",
+                    phase="response",
+                    endpoint=endpoint,
+                )
+            return parsed_response
 
         error_detail = "Unknown error"
         candidate_detail = body.get("detail", body.get("message"))
@@ -582,7 +623,7 @@ class MammothClient:
         # and server/gateway errors can all happen after a write is committed.
         # Preserve that uncertainty so callers reconcile instead of replaying.
         response_operation_state = operation_state
-        if request_method in {"GET", "HEAD", "OPTIONS"} or (
+        if not is_mutation or (
             400 <= response.status_code < 500 and response.status_code not in {408, 425, 429}
         ):
             response_operation_state = "failed"
@@ -609,12 +650,20 @@ class MammothClient:
         params: dict[str, Any] | None = None,
         json: dict[str, Any] | None = None,
         files: list[Any] | None = None,
+        operation_effect: str | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Make an authenticated request expecting a dict response."""
-        result = self._request(method, endpoint, params=params, json=json, files=files, **kwargs)
-        if isinstance(result, list):
-            raise MammothAPIError("Expected dict response from API, got list")
+        result = self._request(
+            method,
+            endpoint,
+            params=params,
+            json=json,
+            files=files,
+            operation_effect=operation_effect,
+            expected_response_shape="dict",
+            **kwargs,
+        )
         return result
 
     def _request_list(
@@ -623,12 +672,19 @@ class MammothClient:
         endpoint: str,
         params: dict[str, Any] | None = None,
         json: dict[str, Any] | None = None,
+        operation_effect: str | None = None,
         **kwargs: Any,
     ) -> list[dict[str, Any]]:
         """Make an authenticated request expecting a list response."""
-        result = self._request(method, endpoint, params=params, json=json, **kwargs)
-        if isinstance(result, dict):
-            return [result]
+        result = self._request(
+            method,
+            endpoint,
+            params=params,
+            json=json,
+            operation_effect=operation_effect,
+            expected_response_shape="list",
+            **kwargs,
+        )
         return result
 
     def _wait_if_job(

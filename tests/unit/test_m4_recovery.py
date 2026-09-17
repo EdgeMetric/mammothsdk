@@ -125,8 +125,8 @@ def test_job_timeout_retains_last_observed_handle_and_phase(
     client = SimpleNamespace(job_timeout=1)
     jobs = JobsAPI(client)  # type: ignore[arg-type]
     jobs.get_job = MagicMock(return_value={"job": {"id": 44, "status": "processing"}})
-    clock = iter([0.0, 0.0, 2.0])
-    monkeypatch.setattr("mammoth.api.jobs.time.time", lambda: next(clock))
+    clock = iter([0.0, 0.0, 0.0, 2.0])
+    monkeypatch.setattr("mammoth.api.jobs.time.monotonic", lambda: next(clock))
     monkeypatch.setattr("mammoth.api.jobs.time.sleep", lambda _seconds: None)
 
     with pytest.raises(MammothJobTimeoutError) as raised:
@@ -137,6 +137,24 @@ def test_job_timeout_retains_last_observed_handle_and_phase(
     assert error.operation_state == "running"
     assert error.phase == "polling"
     assert error.details["observed_job"]["status"] == "processing"
+
+
+def test_job_wait_uses_monotonic_budget_for_request_and_sleep(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = SimpleNamespace(job_timeout=1)
+    jobs = JobsAPI(client)  # type: ignore[arg-type]
+    jobs.get_job = MagicMock(return_value={"job": {"id": 44, "status": "processing"}})
+    clock = iter([100.0, 100.0, 100.25, 101.0])
+    sleeps: list[float] = []
+    monkeypatch.setattr("mammoth.api.jobs.time.monotonic", lambda: next(clock))
+    monkeypatch.setattr("mammoth.api.jobs.time.sleep", sleeps.append)
+
+    with pytest.raises(MammothJobTimeoutError):
+        jobs.wait_for_job(44, timeout=1, poll_interval=30)
+
+    assert jobs.get_job.call_args.kwargs["timeout"] == 1
+    assert sleeps == [0.75]
 
 
 @pytest.mark.parametrize(
@@ -152,8 +170,8 @@ def test_wait_for_jobs_does_not_treat_empty_or_partial_results_as_completion(
     client = SimpleNamespace(job_timeout=1)
     jobs = JobsAPI(client)  # type: ignore[arg-type]
     jobs.get_jobs = MagicMock(return_value=response)
-    clock = iter([0.0, 0.0, 2.0])
-    monkeypatch.setattr("mammoth.api.jobs.time.time", lambda: next(clock))
+    clock = iter([0.0, 0.0, 0.0, 2.0])
+    monkeypatch.setattr("mammoth.api.jobs.time.monotonic", lambda: next(clock))
     monkeypatch.setattr("mammoth.api.jobs.time.sleep", lambda _seconds: None)
 
     with pytest.raises(MammothJobTimeoutError) as raised:
@@ -176,7 +194,7 @@ def test_wait_for_jobs_returns_every_requested_success_in_request_order(
             ]
         }
     )
-    monkeypatch.setattr("mammoth.api.jobs.time.time", lambda: 0.0)
+    monkeypatch.setattr("mammoth.api.jobs.time.monotonic", lambda: 0.0)
 
     result = jobs.wait_for_jobs([101, 102], timeout=1)
 

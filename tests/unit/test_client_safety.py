@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+import requests
 from requests.adapters import BaseAdapter
 from requests.models import Response
 
@@ -135,6 +136,44 @@ def test_mutation_malformed_success_is_outcome_unknown_with_recovery_metadata() 
     assert error.endpoint == "/datasets"
     assert error.request_id == "req-malformed"
     assert error.status_code == 201
+    client.close()
+
+
+@pytest.mark.parametrize("body", [b"[]", b"null", b'"unexpected"', b"7"])
+def test_mutation_wrong_shape_preserves_unknown_outcome_metadata(body: bytes) -> None:
+    """A successful but incompatible response never makes a write replay-safe."""
+    client = MammothClient("dummy-key", "dummy-secret", workspace_id=4)
+    response = Response()
+    response.status_code = 201
+    response._content = body
+    response.headers["X-Request-ID"] = "req-shape"
+    client.session.request = lambda *args, **kwargs: response  # type: ignore[method-assign]
+
+    with pytest.raises(MammothAPIError) as raised:
+        client._request_json("POST", "/datasets", json={"name": "once"})
+
+    error = raised.value
+    assert error.status_code == 201
+    assert error.method == "POST"
+    assert error.endpoint == "/datasets"
+    assert error.request_id == "req-shape"
+    assert error.operation_state == "outcome_unknown"
+    assert error.details["protocol_error"] == "response_contract_violation"
+    client.close()
+
+
+def test_effectful_get_timeout_is_outcome_unknown() -> None:
+    """Webhook ingestion is a mutation even though its legacy route uses GET."""
+    client = MammothClient("dummy-key", "dummy-secret", workspace_id=4)
+    client.session.request = lambda *args, **kwargs: (_ for _ in ()).throw(
+        requests.exceptions.ReadTimeout()
+    )
+
+    with pytest.raises(MammothAPIError) as raised:
+        client.webhooks.send_data_get("ingest", {"record": "one"})
+
+    assert raised.value.method == "GET"
+    assert raised.value.operation_state == "outcome_unknown"
     client.close()
 
 

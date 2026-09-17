@@ -225,6 +225,7 @@ class TestWebhooksAPISendData:
             "GET",
             "/webhooks/data/nHC1zIl97J",
             params={"col1": "val1"},
+            operation_effect="mutation",
         )
         assert result == {"status": "ok"}
 

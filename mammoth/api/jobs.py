@@ -24,13 +24,14 @@ class JobsAPI:
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 
-    def get_job(self, job_id: int, timeout: int = 300) -> dict[str, Any]:
+    def get_job(self, job_id: int, timeout: float | None = None) -> dict[str, Any]:
         """
         Get job status by ID.
 
         Args:
             job_id: ID of the job to track
-            timeout: Timeout for the request (unused, kept for compatibility)
+            timeout: Maximum time for this observation request.  Waiters pass
+                their remaining polling budget so one request cannot exceed it.
 
         Returns:
             Dict containing job information including status, response, timestamps
@@ -42,10 +43,14 @@ class JobsAPI:
 
         headers = {"x-workspace-id": str(workspace_id)}
 
-        response = self._client._request_json("GET", f"/jobs/{job_id}", headers=headers)
+        response = self._client._request_json(
+            "GET", f"/jobs/{job_id}", headers=headers, **({"timeout": timeout} if timeout else {})
+        )
         return response
 
-    def get_jobs(self, job_ids: list[int] | str) -> dict[str, Any]:
+    def get_jobs(
+        self, job_ids: list[int] | str, timeout: float | None = None
+    ) -> dict[str, Any]:
         """
         Track multiple job IDs.
 
@@ -70,7 +75,9 @@ class JobsAPI:
 
         headers = {"x-workspace-id": str(workspace_id)}
 
-        response = self._client._request_json("GET", "/jobs", params=params, headers=headers)
+        response = self._client._request_json(
+            "GET", "/jobs", params=params, headers=headers, **({"timeout": timeout} if timeout else {})
+        )
         return response
 
     def wait_for_job(
@@ -97,10 +104,13 @@ class JobsAPI:
         if timeout is None:
             raise TypeError("timeout must not be None — set client.job_timeout or pass explicitly")
 
-        start_time = time.time()
+        deadline = time.monotonic() + timeout
         last_observed: dict[str, Any] | None = None
-        while time.time() - start_time < timeout:
-            job_response = self.get_job(job_id)
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            job_response = self.get_job(job_id, timeout=remaining)
 
             # Extract job from response
             if "job" in job_response:
@@ -136,10 +146,10 @@ class JobsAPI:
                 )
             elif status == "processing":
                 # Job still running, continue polling
-                time.sleep(poll_interval)
+                time.sleep(min(poll_interval, max(0.0, deadline - time.monotonic())))
             else:
                 # Unknown status, continue polling
-                time.sleep(poll_interval)
+                time.sleep(min(poll_interval, max(0.0, deadline - time.monotonic())))
 
         # Timeout reached
         timeout_phase = "polling"
@@ -186,12 +196,17 @@ class JobsAPI:
             raise ValueError("job_ids must not contain duplicate job ids")
         requested_ids = set(job_ids_list)
 
-        start_time = time.time()
+        deadline = time.monotonic() + timeout
         completed_jobs = {}
         last_observed: dict[int, dict[str, Any]] = {}
 
-        while time.time() - start_time < timeout:
-            jobs_response = self.get_jobs(job_ids_list)
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            # get_jobs is a read-only observation.  Supplying its remaining
+            # budget prevents one poll from overrunning the public wait limit.
+            jobs_response = self.get_jobs(job_ids_list, timeout=remaining)
             jobs = jobs_response.get("jobs", [])
             if not isinstance(jobs, list):
                 raise MammothAPIError(
@@ -245,7 +260,7 @@ class JobsAPI:
             if requested_ids <= set(completed_jobs):
                 return {"jobs": [completed_jobs[job_id] for job_id in job_ids_list]}
 
-            time.sleep(poll_interval)
+            time.sleep(min(poll_interval, max(0.0, deadline - time.monotonic())))
 
         # Timeout reached — use first pending job ID for error
         pending_ids = [jid for jid in job_ids_list if jid not in completed_jobs]
