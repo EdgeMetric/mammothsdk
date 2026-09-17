@@ -9,9 +9,10 @@ As of **2026-09-15**, this is the M0 inventory for audited product revision `303
 The historical pinned M0 snapshot contains **445 operations across 287 paths**.
 The current release OpenAPI matrix is a separate superset with **528 operations
 across 355 paths**, split into **230 Core** and **298 Miscellaneous** operations.
-The current matrix records **41 Partial** rows and **487 Unassessed** rows;
-it does not claim Full support or broad release readiness. The pinned 445-operation
-inventory below must not be read as the current release denominator.
+The current matrix does not claim Full support or broad release readiness. Read
+the canonical [machine-readable release matrix](release-capability-matrix.json)
+for current counts; the pinned 445-operation inventory below is not the current
+release denominator.
 
 Machine-readable sources: [agent-capability-coverage.json](agent-capability-coverage.json), [release-capability-matrix.json](release-capability-matrix.json), and [agent-compatibility.json](agent-compatibility.json). The committed [machine-readable release matrix](release-capability-matrix.json) is the canonical repository inventory. Historical workbooks retain their evidence context; they are not a runtime dependency. `scripts/report_release_capability_drift.py` compares a candidate OpenAPI JSON by method/path and produces review-only additions, removals, and operation-ID-change queues. It does not implement routes or promote support.
 

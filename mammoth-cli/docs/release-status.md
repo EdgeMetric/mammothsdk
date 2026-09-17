@@ -85,9 +85,8 @@ error envelope; no permission bypass, retry, or readiness promotion follows.
 See the retained [dashboard fixture evidence](live-evidence-20260917/dashboard-next/).
 
 The immutable PyPI 1.1.9 description retains its pre-publication README
-snapshot of **7 Partial / 521 Unassessed**. The current matrix is **0 Full /
-41 Partial / 487 Unassessed**; use the current
-[GitHub matrix](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/release-capability-matrix.md)
+snapshot of **7 Partial / 521 Unassessed**. Read the canonical
+[machine-readable matrix](release-capability-matrix.json) for current counts,
 rather than that immutable package description.
 
 ## 1.1.8
