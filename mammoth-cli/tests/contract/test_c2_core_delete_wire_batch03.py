@@ -48,11 +48,6 @@ def _path(api: Any) -> str:
 
 def test_delete_batch03_routes_match_release_openapi() -> None:
     """Pin operation IDs to the release method/path contract."""
-    spec = json.loads(
-        Path(
-            "/home/euler/Downloads/think/mammoth-cli-readiness/implementation/OPENAPI-release-20260916.json"
-        ).read_text(encoding="utf-8")
-    )
     expected = {
         "DeleteDashboard": ("DELETE", "/dashboards/{dashboard_id}"),
         "DashboardV3DeleteTemplate": ("DELETE", "/dashboards/v3/templates/{template_id}"),
@@ -72,12 +67,16 @@ def test_delete_batch03_routes_match_release_openapi() -> None:
             "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/batches/{batch_id}",
         ),
     }
-    actual = {
-        operation["operationId"]: (method.upper(), path)
-        for path, methods in spec["paths"].items()
-        for method, operation in methods.items()
-        if isinstance(operation, dict) and operation.get("operationId") in expected
+    fixture_path = (
+        Path(__file__).parent / "fixtures" / "openapi-release-20260916-delete-routes.json"
+    )
+    fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+    assert fixture["schema_version"] == 1
+    assert fixture["source"] == {
+        "path": "OPENAPI-release-20260916.json",
+        "sha256": "b7c5aa651e6820dfee79afa9c10d17332e03c82e20f65ac30105879b8795236c",
     }
+    actual = {operation_id: tuple(route) for operation_id, route in fixture["routes"].items()}
     assert actual == expected
 
 

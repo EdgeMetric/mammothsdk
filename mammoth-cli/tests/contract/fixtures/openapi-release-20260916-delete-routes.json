@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "source": {
+    "path": "OPENAPI-release-20260916.json",
+    "sha256": "b7c5aa651e6820dfee79afa9c10d17332e03c82e20f65ac30105879b8795236c"
+  },
+  "routes": {
+    "DeleteDashboard": ["DELETE", "/dashboards/{dashboard_id}"],
+    "DashboardV3DeleteTemplate": ["DELETE", "/dashboards/v3/templates/{template_id}"],
+    "DeleteProjects": ["DELETE", "/workspaces/{workspace_id}/projects"],
+    "DeleteProject": ["DELETE", "/workspaces/{workspace_id}/projects/{project_id}"],
+    "DeleteDatasets": ["DELETE", "/workspaces/{workspace_id}/projects/{project_id}/datasets"],
+    "DeleteDataset": [
+      "DELETE",
+      "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}"
+    ],
+    "DeleteBatches": [
+      "DELETE",
+      "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/batches"
+    ],
+    "DeleteBatch": [
+      "DELETE",
+      "/workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/batches/{batch_id}"
+    ]
+  }
+}

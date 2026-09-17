@@ -673,8 +673,8 @@ The SDK has two runtime dependencies, installed automatically:
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `requests` | ^2.32.0 | HTTP client for API requests |
-| `pydantic` | ^2.11.0 | Data validation and response models |
+| `requests` | >=2.32,<3 | HTTP client for API requests |
+| `pydantic` | >=2.10,<3 | Data validation and response models |
 
 ## Development installation
 
@@ -686,11 +686,8 @@ cd mammothsdk
 poetry install
 ```
 
-Or install the dev extras via pip:
-
-```bash
-pip install mammoth-io[dev]
-```
+The development dependencies are a Poetry group in this repository, not a
+published `dev` extra. A PyPI install supplies only runtime dependencies.
 
 ### Dev tools
 
@@ -17953,7 +17950,7 @@ client = MammothClient(..., timeout=120)  # 2 minutes per request
 
 The current SDK release. It requires Python 3.12, 3.13, or 3.14. Transformation
 arguments use the typed specifications and enums documented in the API
-reference; the bundled `mammoth-cli` release is 1.1.2 and depends on SDK 0.7.x.
+reference; the bundled `mammoth-cli` release is 1.1.3 and depends on SDK 0.7.x.
 
 ## v0.3.0
 

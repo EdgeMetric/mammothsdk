@@ -23,8 +23,8 @@ The SDK has two runtime dependencies, installed automatically:
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `requests` | ^2.32.0 | HTTP client for API requests |
-| `pydantic` | ^2.11.0 | Data validation and response models |
+| `requests` | >=2.32,<3 | HTTP client for API requests |
+| `pydantic` | >=2.10,<3 | Data validation and response models |
 
 ## Development installation
 
@@ -36,11 +36,8 @@ cd mammothsdk
 poetry install
 ```
 
-Or install the dev extras via pip:
-
-```bash
-pip install mammoth-io[dev]
-```
+The development dependencies are a Poetry group in this repository, not a
+published `dev` extra. A PyPI install supplies only runtime dependencies.
 
 ### Dev tools
 

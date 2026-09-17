@@ -17,7 +17,9 @@ from typing import Any
 import pytest
 
 from mammoth_cli.commands import view as view_cmd
+from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.runtime import session
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services import factory
 from mammoth_cli.testing import make_runner
@@ -59,6 +61,21 @@ def _bound_service(monkeypatch: pytest.MonkeyPatch, service: Any):
 
     monkeypatch.setattr(view_cmd, "open_service", context)
     yield
+
+
+def _bind_runner_auth(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Give the in-process runner deterministic credentials without keyring state."""
+
+    monkeypatch.setattr(
+        session,
+        "resolve_auth",
+        lambda _invocation: ResolvedAuth(
+            api_key="k",
+            api_secret="s",
+            workspace_id=WORKSPACE,
+            base_url="https://fake.mammoth.test/api/v2",
+        ),
+    )
 
 
 def _wire(api: Any) -> tuple[str, str, dict[str, list[str]], Any]:
@@ -287,6 +304,7 @@ def test_true_cli_runner_reaches_recording_transport(
     """Exercise Typer parsing, command dispatch, SDK, and recording HTTP."""
 
     service, api = real_service(project_id=PROJECT)
+    _bind_runner_auth(monkeypatch)
     monkeypatch.setattr(factory, "build_service", lambda *args, **kwargs: service)
     body: dict[str, Any] = {"dataset_id": DATASET}
     if expected_query:
@@ -320,6 +338,7 @@ def test_true_cli_wire_oracle_detects_mutated_valid_field(
     """A binding regression that changes an admitted field fails the oracle."""
 
     service, api = real_service(project_id=PROJECT)
+    _bind_runner_auth(monkeypatch)
     monkeypatch.setattr(factory, "build_service", lambda *args, **kwargs: service)
     original_call = service.call
 
@@ -420,6 +439,7 @@ def test_true_cli_s3_read_runner_routes(
     """Exercise six S3-owned reads through the complete CLI stack."""
 
     service, api = real_service(project_id=PROJECT)
+    _bind_runner_auth(monkeypatch)
     monkeypatch.setattr(factory, "build_service", lambda *args, **kwargs: service)
     doc = tmp_path / "s3-owned-read.json"
     doc.write_text(json.dumps(body), encoding="utf-8")
@@ -449,6 +469,7 @@ def test_true_cli_s3_binding_mutation_changes_data_check_wire(
     """A pre-dispatch status regression must fail the S3 literal oracle."""
 
     service, api = real_service(project_id=PROJECT)
+    _bind_runner_auth(monkeypatch)
     monkeypatch.setattr(factory, "build_service", lambda *args, **kwargs: service)
     original_call = service.call
 
@@ -490,6 +511,7 @@ def test_true_cli_data_query_wire_and_display_name_handling(
     """Check distinctive query body fields and display-name relabeling."""
 
     service, api = real_service(project_id=PROJECT)
+    _bind_runner_auth(monkeypatch)
     monkeypatch.setattr(factory, "build_service", lambda *args, **kwargs: service)
     api.on(
         "POST",
@@ -552,6 +574,7 @@ def test_true_cli_preview_wire_and_display_name_handling(
     """Check preview fields and the metadata-driven display-name path."""
 
     service, api = real_service(project_id=PROJECT)
+    _bind_runner_auth(monkeypatch)
     monkeypatch.setattr(factory, "build_service", lambda *args, **kwargs: service)
     api.on(
         "GET",
