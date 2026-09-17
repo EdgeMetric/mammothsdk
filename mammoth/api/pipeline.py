@@ -173,13 +173,33 @@ class PipelineAPI:
                 self._dataview_dataset_cache[cache_key] = dataset_id
                 return dataset_id
             except MammothAPIError as exc:
-                # Only a proven 404 means "this dataset does not contain the
-                # dataview" — a genuine miss we keep scanning past. Any other
-                # status (401/403/429/5xx) is a real failure that must
-                # propagate with its correct classification instead of being
-                # swallowed and misreported as a generic not-found.
+                # Some tenants return 403, not 404, when a view belongs to a
+                # different dataset. Confirm non-membership with the parent
+                # collection before moving on; never discard a genuine denial.
                 if exc.status_code == 404:
                     continue
+                if exc.status_code == 403:
+                    listing = self._client.dataviews.list(
+                        dataset_id=dataset_id,
+                        workspace_id=workspace_id,
+                        project_id=project_id,
+                        limit=1000,
+                    )
+                    views = listing.get("dataviews")
+                    # The backend emits a speculative `next` URL even for a
+                    # short final page. A short page relative to the server's
+                    # reported limit proves this dataset has no further views.
+                    page_limit = listing.get("limit", 1000)
+                    if (
+                        isinstance(views, list)
+                        and isinstance(page_limit, int)
+                        and len(views) < page_limit
+                    ):
+                        listed_ids = {
+                            view.get("id") for view in views if isinstance(view, dict)
+                        }
+                        if dataview_id not in listed_ids:
+                            continue
                 raise
             except KeyError:
                 # A missing dict key while reading the response is a local

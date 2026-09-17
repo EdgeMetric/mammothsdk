@@ -178,3 +178,35 @@ def test_genuine_404_still_yields_not_found() -> None:
         assert transport.dataview_calls == 1
     finally:
         client.close()
+
+
+def test_wrong_parent_403_is_disambiguated_by_collection_membership() -> None:
+    """A tenant's wrong-parent 403 must not hide a view in the next dataset."""
+
+    class TwoDatasetTransport(requests.adapters.HTTPAdapter):
+        def send(  # type: ignore[override]
+            self, request: requests.PreparedRequest, **kwargs: Any
+        ) -> requests.models.Response:
+            path = urlparse(request.url or "").path
+            if path.endswith("/browse"):
+                body = {"resources": [{"id": PROJECT_ID, "children": [
+                    {"id": 500, "type": "datasource"},
+                    {"id": 501, "type": "datasource"},
+                ]}]}
+                return _make_response(200, body, request)
+            if path.endswith("/datasets/500/dataviews/1039"):
+                return _make_response(403, {"detail": "forbidden"}, request)
+            if path.endswith("/datasets/500/dataviews"):
+                return _make_response(200, {
+                    "dataviews": [{"id": 22}], "limit": 1000,
+                    "next": "https://example.test/dataviews?offset=1000",
+                }, request)
+            if path.endswith("/datasets/501/dataviews/1039"):
+                return _make_response(200, {"id": DATAVIEW_ID}, request)
+            raise AssertionError(f"Unexpected request: {path}")
+
+    client = _client_with_transport(TwoDatasetTransport())
+    try:
+        assert client.pipeline.find_dataset_for_dataview(DATAVIEW_ID) == 501
+    finally:
+        client.close()
