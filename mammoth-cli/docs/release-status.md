@@ -86,7 +86,7 @@ See the retained [dashboard fixture evidence](live-evidence-20260917/dashboard-n
 
 The immutable PyPI 1.1.9 description retains its pre-publication README
 snapshot of **7 Partial / 521 Unassessed**. The current matrix is **0 Full /
-38 Partial / 490 Unassessed**; use the current
+41 Partial / 487 Unassessed**; use the current
 [GitHub matrix](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/release-capability-matrix.md)
 rather than that immutable package description.
 

@@ -6,39 +6,17 @@ Install `mammoth-cli` as an isolated command-line tool, then confirm that the
 `mammoth` executable is on your PATH. Choose one installation method; do not
 install the same CLI with more than one tool manager.
 
-## One-line installer (recommended)
+## PyPI with uv (recommended)
 
-This is the shortest path and needs no prerequisites. It installs `uv` if you do
-not have it, the `mammoth` CLI, and the bundled agent skill.
+Install the published 1.1.11 CLI into an isolated environment:
 
-Linux and macOS:
-
-```sh
-curl -fsSL https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.sh | sh
-```
-
-Windows PowerShell:
-
-```powershell
-irm https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.ps1 | iex
+```bash
+uv tool install mammoth-cli==1.1.11
 ```
 
 Confirm the result:
 
 ```bash
-mammoth --version
-```
-
-These one-line commands execute downloaded code. For a checksum-verified
-install, download the installer and `SHA256SUMS`, verify the installer's
-SHA-256 entry, inspect the script, then execute it. If the release also
-attaches `SHA256SUMS.sigstore.json`, verify that bundle before trusting the
-checksums; do not claim a signature when the bundle is absent.
-
-## With uv
-
-```bash
-uv tool install mammoth-cli
 mammoth --version
 ```
 
@@ -51,7 +29,7 @@ bin directory reported by `uv tool dir --bin` to your PATH.
 ## From PyPI with pip
 
 ```bash
-python -m pip install mammoth-cli      # Python 3.12, 3.13, or 3.14
+python -m pip install mammoth-cli==1.1.11  # Python 3.12, 3.13, or 3.14
 mammoth --version
 ```
 
@@ -61,32 +39,21 @@ The CLI supports Python 3.12 through the latest tested stable minor (currently
 ## From PyPI with pipx
 
 ```bash
-pipx install mammoth-cli
+pipx install mammoth-cli==1.1.11
 mammoth --version
 ```
 
 `pipx` installs the `mammoth` executable in an isolated environment and puts it
 on your PATH. Run `pipx upgrade mammoth-cli` to update it.
 
-## Convenience installers
+## GitHub release installers (conditional)
 
-The versioned release ships `mammoth-install.sh` (Linux and macOS, POSIX `sh`)
-and `mammoth-install.ps1` (Windows PowerShell 5.1+). Every release attaches
-`SHA256SUMS`; download the installer and that file, verify the checksum, then
-inspect and run the installer. Some releases additionally attach a Sigstore
-bundle. For the direct convenience flow:
-
-```sh
-curl -fsSL https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.sh | sh
-```
-
-```powershell
-irm https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.ps1 | iex
-```
-
-Piping a download directly to a shell does not verify it first. Verify the
-installer against its `SHA256SUMS` entry before execution. When the release
-contains `SHA256SUMS.sigstore.json`, verify that optional bundle first:
+The local-built 1.1.11 release has no GitHub release installer assets,
+`SHA256SUMS`, or Sigstore bundle. Do not use a `releases/latest` installer URL
+for it. If a future release explicitly attaches installers and `SHA256SUMS`,
+download a versioned asset, verify its checksum, inspect it, then execute it.
+If that release also attaches `SHA256SUMS.sigstore.json`, verify the optional
+bundle first:
 
 ```bash
 cosign verify-blob \
@@ -100,10 +67,8 @@ The `--certificate-identity-regexp` and `--certificate-oidc-issuer`
 constraints ensure a present signature came from the EdgeMetric/mammothsdk
 release workflow. Without them, `cosign` accepts any valid Sigstore
 certificate. Then run `sha256sum --check --ignore-missing SHA256SUMS` and
-inspect the installer before you execute it. If no bundle is attached, the
-checksum check is not signature verification and does not authenticate the
-assets unless you obtained the expected checksum through a separate trusted
-channel.
+inspect the installer before execution. Without a bundle, a checksum check is
+not signature verification and needs a separate trusted checksum source.
 
 ## Install the agent skill
 

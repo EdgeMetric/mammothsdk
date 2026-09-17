@@ -20,8 +20,8 @@ empty, and producers may add additional namespaced fields:
   "format_version": 1,
   "created_at": "2026-09-15T12:00:00Z",
   "producer": {
-    "cli_version": "1.1.3",
-    "sdk_version": "0.7.0",
+    "cli_version": "<installed-cli-version>",
+    "sdk_version": "<installed-sdk-version>",
     "contract_schema_version": 1,
     "skill_version": "1.0.0"
   },

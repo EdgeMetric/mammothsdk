@@ -27,17 +27,10 @@ for current coverage.
 
 ## Install
 
-One step, no prerequisites. This installs `uv` if you do not already have it,
-the `mammoth` CLI, and the agent skill for Claude Code, Codex, and Cursor:
+Install the published 1.1.11 CLI from PyPI with an isolated tool manager:
 
 ```bash
-curl -fsSL https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.sh | sh
-```
-
-Windows PowerShell:
-
-```powershell
-irm https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.ps1 | iex
+uv tool install mammoth-cli==1.1.11
 ```
 
 Then confirm it works:
@@ -51,18 +44,16 @@ mammoth doctor          # checks config, credentials, endpoint, connectivity
 <summary>Already have a Python tool manager?</summary>
 
 ```bash
-uv tool install mammoth-cli      # isolated, on your PATH
-pipx install mammoth-cli
-python -m pip install mammoth-cli
+pipx install mammoth-cli==1.1.11
+python -m pip install mammoth-cli==1.1.11
 ```
 
 </details>
 
-The CLI supports Python 3.12, 3.13, and 3.14. These one-line commands execute
-downloaded code; for checksum verification, see
-[docs/installation.md](docs/installation.md). A Sigstore signature is an
-additional verification step only when that release actually includes its
-`SHA256SUMS.sigstore.json` bundle.
+The CLI supports Python 3.12, 3.13, and 3.14. The locally built 1.1.11 release
+has no GitHub release assets or signing claim; install it from PyPI. A future
+release may provide a separate checksum or signature flow only when its release
+record explicitly says so. See [docs/installation.md](docs/installation.md).
 
 ## Quick start
 

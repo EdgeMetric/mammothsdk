@@ -38,3 +38,7 @@ and evidence boundary.
 For focused end-to-end patterns—uploads and URL imports, resource navigation,
 typed transforms, dashboards, exports, and owned cleanup—read the
 [recipes index](references/recipes/index.md).
+
+For a safe cross-agent continuation, read the nonsecret [handoff
+format](references/handoff.md). It records scope, observed IDs, jobs, unknown
+outcomes, and cleanup ownership; it never transfers credentials or authority.

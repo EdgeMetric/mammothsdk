@@ -7,10 +7,10 @@ Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data 
 
 > **Prefer the terminal?** This repository also ships **`mammoth-cli`**, a
 > command-line interface built for both people and autonomous agents. Install it
-> in one step -- no prerequisites:
+> from PyPI with an isolated tool manager:
 >
 > ```bash
-> curl -fsSL https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.sh | sh
+> uv tool install mammoth-cli==1.1.11
 > ```
 >
 > See [Command-line interface](#command-line-interface-mammoth-cli) below.
@@ -757,27 +757,27 @@ View and transformation inputs use the display names shown by Mammoth; agents do
 not need to find or manufacture backend column identifiers. A dataset is not
 assumed to have a usable default view: list views and choose one explicitly.
 
-Install in one step -- this brings `uv` if you lack it, the `mammoth` CLI, and
-the bundled agent skill (Windows PowerShell: `irm
-https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.ps1 | iex`):
+Install the published CLI with an isolated Python tool manager:
 
 ```bash
-curl -fsSL https://github.com/EdgeMetric/mammothsdk/releases/latest/download/mammoth-install.sh | sh
+uv tool install mammoth-cli==1.1.11
 
 mammoth auth login               # prompts for API key, API secret, and workspace id
 mammoth doctor                   # verify the saved profile and endpoint
 mammoth project list             # a table in a terminal, JSON when piped
 ```
 
-Already have a Python tool manager? `uv tool install mammoth-cli`, `pipx install
-mammoth-cli`, or `pip install mammoth-cli` work too.
+`pipx install mammoth-cli==1.1.11` or `python -m pip install
+mammoth-cli==1.1.11` also work. The 1.1.11 release has no GitHub release
+installer assets, so do not use a `releases/latest` installer URL as a proxy
+for this published PyPI version.
 
 For promptless work, log in from a protected JSON file with `mammoth auth login
 --input creds.json --output json --no-input`; do not put secrets on a command
 line. The CLI also ships a bundled agent skill (`mammoth skill install`). Start
 with the [CLI README](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli),
-the [agent guide](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli/docs/agents.md),
-or the [portable handoff format](https://github.com/EdgeMetric/mammothsdk/tree/main/mammoth-cli/docs/agent-handoff.md).
+the [agent guide](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agents.md),
+or the [portable handoff format](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-handoff.md).
 
 The CLI's examples are deliberately nonexhaustive. Use `mammoth capability list`
 and `mammoth schema get COMMAND_ID` for the installed version, and treat a
