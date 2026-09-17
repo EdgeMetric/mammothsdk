@@ -17,7 +17,7 @@ client.set_project_id(10)
 ds_id = client.files.upload("sales_data.csv")
 
 # 3. Get the default view
-views = client.views.list()
+views = client.views.list(dataset_id=ds_id)
 view = views[0]
 print(view.display_names)  # ["Product", "Region", "Sales", "Date", ...]
 

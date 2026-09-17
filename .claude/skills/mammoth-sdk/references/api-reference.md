@@ -10,13 +10,15 @@ Returns rich **View** objects (not raw dicts).
 
 ```python
 view = client.views.get(view_id)                           # View object
-views = client.views.list()                                 # list of View objects
+views = client.views.list(dataset_id=123)                  # list of View objects
 view = client.views.create(dataset_id, name="My View")      # new View
 client.views.delete(view_id)                                # delete
 client.views.bulk_delete([view_id1, view_id2])              # bulk delete
 ```
 
-Note: `views.get()`, `views.list()`, `views.delete()`, `views.bulk_delete()` no longer accept `dataset_id` — it's auto-detected. Only `views.create()` still requires it.
+`views.list()` requires the parent `dataset_id`. `views.get()`, `views.delete()`, and
+`views.bulk_delete()` accept an optional `dataset_id`; when omitted, the SDK discovers
+the parent through the pipeline API. `views.create()` always requires `dataset_id`.
 
 ### View metadata attributes
 

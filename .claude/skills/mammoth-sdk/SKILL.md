@@ -1,9 +1,9 @@
 ---
 name: mammoth-sdk
-description: Comprehensive knowledge base for the Mammoth Analytics Python SDK — client setup, View transformations, condition building, exports, and API sub-clients. Use this skill when the user asks to "use the SDK", "write SDK code", "apply a transformation", "build a condition", "export data", mentions "MammothClient", "View", "Condition", "Operator", "filter_rows", "set_values", "pivot", "window", "join", "export", or needs to understand or write code using the Mammoth Python SDK. Covers the full SDK surface from authentication through transformations to exports.
+description: Practical knowledge base for the Mammoth Analytics Python SDK — client setup, View transformations, condition building, exports, and documented API sub-clients. Use this skill when the user asks to "use the SDK", "write SDK code", "apply a transformation", "build a condition", "export data", mentions "MammothClient", "View", "Condition", "Operator", "filter_rows", "set_values", "pivot", "window", "join", "export", or needs to understand or write code using the Mammoth Python SDK. Covers documented SDK workflows from authentication through transformations to exports.
 ---
 
-# Mammoth Python SDK Knowledge Base (v0.3.6)
+# Mammoth Python SDK Knowledge Base (v0.7.1)
 
 The Mammoth Python SDK (`mammoth` package) provides programmatic access to the Mammoth Analytics platform. It wraps the REST API with Pythonic classes, rich View objects, a condition builder with operator overloading, and export helpers.
 
@@ -161,7 +161,7 @@ view.join(
 
 ## Transformations Reference
 
-See [references/transformations.md](references/transformations.md) for complete documentation of all 26+ transformation methods with signatures, payload structures, and examples.
+See [references/transformations.md](references/transformations.md) for documented transformation methods with signatures, payload structures, and examples.
 
 ## API Sub-Clients Reference
 
