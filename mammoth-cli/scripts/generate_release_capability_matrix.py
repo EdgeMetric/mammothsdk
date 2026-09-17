@@ -64,14 +64,19 @@ def main() -> None:
             command, symbol = CURRENT_CHECKOUT_BINDINGS[row["capability_id"]]
             safe_rows[-1]["canonical_command"] = command
             safe_rows[-1]["sdk_symbol"] = symbol
-            safe_rows[-1]["remarks"] += (
-                " Current checkout binding is committed structural mapping; release behavior "
+            binding_note = (
+                "Current checkout binding is committed structural mapping; release behavior "
                 "remains unverified."
             )
+            if binding_note not in safe_rows[-1]["remarks"]:
+                safe_rows[-1]["remarks"] = safe_rows[-1]["remarks"].rstrip() + " " + binding_note
     identities = {(row["method"].upper(), row["path"]) for row in safe_rows}
     if len(identities) != len(safe_rows):
         raise ValueError("matrix integrity failed: duplicate method/path identity")
-    digest = hashlib.sha256(raw).hexdigest()
+    # Preserve the upstream workbook digest when regenerating the canonical
+    # matrix. This keeps repeated JSON/Markdown generation idempotent instead
+    # of hashing the generated JSON (which would change on every run).
+    digest = source.get("source_sha256") or hashlib.sha256(raw).hexdigest()
     provenance = dict(source.get("source_provenance", source.get("provenance", {})))
     payload = {
         "artifact": "mammoth-cli-release-capability-matrix",

@@ -1,0 +1,6 @@
+{
+  "command": ".venv/bin/python -c 'import mammoth; print(mammoth.__version__)'",
+  "exit_code": 0,
+  "stderr": "",
+  "stdout": "0.7.1\n"
+}
