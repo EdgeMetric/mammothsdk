@@ -12,8 +12,8 @@
     "manifest": "repo/mammoth-cli/spec/manifests/openapi-operations.yaml"
   },
   "counts": {
-    "Full": 0,
-    "Partial": 71,
+    "Full": 1,
+    "Partial": 70,
     "Not supported": 0,
     "Unassessed": 457
   },
@@ -4041,8 +4041,8 @@
     {
       "capability_id": "REL-224",
       "capability": "Get Folder Details",
-      "status": "Partial",
-      "remarks": "Partial bounded release evidence: owned folder resource 10 was retrieved successfully; no Full claim.",
+      "status": "Full",
+      "remarks": "Full bounded support in approved release scope: fields=__full returned ready state for an owned folder; wrong-project and missing-ID reads returned structured errors; create/read/delete lifecycle and filtered absence readback were verified. Row-level Full only; folder family remains incomplete.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetFolder",
       "method": "GET",
@@ -4053,11 +4053,10 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/live-evidence-20260917/core-next/folder-get.json",
-        "report": "docs/live-evidence-20260917/core-next/folder-get.json",
-        "scope": "owned folder resource 10; returned-ID cleanup; CLI 1.1.5"
+        "artifact": "docs/live-evidence-20260917/core-readonly-20260917/folder-rel224-full.json",
+        "scope": "disposable folders 3 and 4; workspace 4/project 3; CLI 1.1.13; no retained resources touched"
       },
-      "evidence_version": "1.1.5"
+      "evidence_version": "1.1.13"
     },
     {
       "capability_id": "REL-225",

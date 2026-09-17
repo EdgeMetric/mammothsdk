@@ -31,4 +31,15 @@ All commands below were read-only and used the observed retained resource
   release endpoint returned HTTP 403 (`authorization_required`). This is not
   positive support evidence; REL-202 remains Unassessed.
 
-No Full status is claimed from this bounded evidence.
+No Full status is claimed for the pipeline-version or negative cases below.
+
+## Full candidate qualification
+
+The approved plan requires meaningful options, result/state, and applicable
+lifecycle/error behavior. The inspectable folder evidence for REL-224 is in
+[`folder-rel224-full.json`](folder-rel224-full.json): `fields=__full` returned
+the ready folder state; wrong-project and missing-ID reads returned structured
+authorization errors; the disposable folder was created, read, deleted with
+`remove_contents=false`, and its name-filtered post-delete list was empty.
+Only REL-224 is promoted to Full. This is a row-level claim; the folder family
+is not Full because its other child rows remain Partial/Unassessed.

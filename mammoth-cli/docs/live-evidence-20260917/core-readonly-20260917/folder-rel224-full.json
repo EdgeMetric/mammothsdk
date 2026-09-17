@@ -1,0 +1,48 @@
+{
+  "release": {"cli_version": "1.1.13", "sdk_version": "0.7.1", "endpoint": "https://release.mammoth.io/api/v2", "workspace_id": 4, "project_id": 3},
+  "secrets_recorded": false,
+  "cases": [
+    {
+      "id": "REL224-POSITIVE-FIELDS",
+      "command": "mammoth folder get 4 --profile expanded-live --project 3 --input '{\"fields\":\"__full\"}' --output json --no-input",
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": {"data": {"created_at": "2026-09-17T15:03:30.368498", "created_by": "API Tests", "id": 4, "name": "R09-FULL-20260917-fields", "parent_id": null, "resource_id": 128, "resource_path": "/workspace:API Tests:4/project:API Tests_project:3/label:R09-FULL-20260917-fields:4", "status": "ready", "updated_at": "2026-09-17T15:03:30.368505"}, "meta": {"command": "folder get", "profile": "expanded-live", "project_id": 3, "workspace_id": 4}, "schema_version": 1}
+    },
+    {
+      "id": "REL224-WRONG-SCOPE",
+      "command": "mammoth folder get 4 --profile expanded-live --project 180 --output json --no-input",
+      "exit_code": 4,
+      "stderr": "",
+      "stdout": {"error": {"authorization_required": true, "code": "authorization_required", "details": {"backend_code": "4RESO001", "endpoint": "/workspaces/4/projects/180/folders/4", "method": "GET", "status_code": 403, "response_body": {"error_code": "4RESO001", "name": "AUTHORIZATION_ERROR"}}, "message": "Mammoth denied access to the requested resource or operation."}, "schema_version": 1}
+    },
+    {
+      "id": "REL224-MISSING-ID",
+      "command": "mammoth folder get 999999 --profile expanded-live --project 3 --output json --no-input",
+      "exit_code": 4,
+      "stderr": "",
+      "stdout": {"error": {"authorization_required": true, "code": "authorization_required", "details": {"backend_code": "4PERM002", "endpoint": "/workspaces/4/projects/3/folders/999999", "method": "GET", "status_code": 403, "response_body": {"error_code": "4PERM002", "name": "PERMISSION_ERROR"}}, "message": "Mammoth denied access to the requested resource or operation."}, "schema_version": 1}
+    },
+    {
+      "id": "REL224-CREATE-READBACK",
+      "command": "mammoth folder create 'R09-FULL-20260917-fields' --profile expanded-live --project 3 --output json --no-input",
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": {"data": {"id": 4, "resource_id": 128, "name": "R09-FULL-20260917-fields", "status": "ready"}, "meta": {"command": "folder create", "profile": "expanded-live", "project_id": 3, "workspace_id": 4}, "schema_version": 1}
+    },
+    {
+      "id": "REL224-CLEANUP",
+      "command": "mammoth folder delete 4 --profile expanded-live --project 3 --input '{\"check_dependency\":true,\"remove_contents\":false}' --yes --confirm 4 --output json --no-input",
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": {"data": null, "meta": {"command": "folder delete", "profile": "expanded-live", "project_id": 3, "workspace_id": 4}, "schema_version": 1}
+    },
+    {
+      "id": "REL224-ABSENCE-READBACK",
+      "command": "mammoth folder list --profile expanded-live --project 3 --input '{\"names\":[\"R09-FULL-20260917-fields\"],\"limit\":1}' --output json --no-input",
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": {"data": {"folders": [], "limit": 1, "offset": 0}, "meta": {"command": "folder list", "profile": "expanded-live", "project_id": 3, "workspace_id": 4}, "schema_version": 1}
+    }
+  ]
+}
