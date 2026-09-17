@@ -16,7 +16,7 @@ import selectors
 import subprocess
 import sys
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 FORBIDDEN = ("api_key", "api-secret", "api_secret", "password", "token")
@@ -86,7 +86,7 @@ def main() -> int:
         ["mammoth", "--version"], capture_output=True, check=False
     )
     record = {
-        "captured_at": datetime.now(UTC).isoformat(),
+        "captured_at": datetime.now(timezone.utc).isoformat(),
         "cli_version": version_result.stdout.decode("utf-8", errors="replace").strip(),
         "argv": command,
         "exit_code": exit_code,
