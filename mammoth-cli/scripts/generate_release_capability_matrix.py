@@ -25,7 +25,12 @@ def main() -> None:
     args = parser.parse_args()
     raw = args.source.read_bytes()
     source = json.loads(raw)
-    rows = source["operations"]
+    # ``docs/release-capability-matrix.json`` is now the canonical repository
+    # inventory.  Accept it directly as well as the historical workbook export
+    # used for one-time imports; never bake a release's row counts into code.
+    rows = source.get("rows", source.get("operations"))
+    if not isinstance(rows, list):
+        raise ValueError("source must contain an operations or rows array")
     counts = {"Full": 0, "Partial": 0, "Not supported": 0, "Unassessed": 0}
     safe_rows = []
     for row in rows:
@@ -47,8 +52,12 @@ def main() -> None:
                 "method": row["method"],
                 "path": row["path"],
                 "canonical_command": row.get("canonical_command"),
+                "schema_id": row.get("schema_id", row.get("canonical_command")),
                 "sdk_symbol": row.get("sdk_symbol"),
+                "mapping_state": row.get("mapping_state"),
+                "mapping_gap_reason": row.get("mapping_gap_reason"),
                 "evidence": row.get("evidence"),
+                "evidence_version": row.get("evidence_version"),
             }
         )
         if row["capability_id"] in CURRENT_CHECKOUT_BINDINGS:
@@ -59,14 +68,11 @@ def main() -> None:
                 " Current checkout binding is committed structural mapping; release behavior "
                 "remains unverified."
             )
-    expected_counts = {"Full": 0, "Partial": 7, "Not supported": 0, "Unassessed": 521}
-    if len(safe_rows) != 528 or counts != expected_counts:
-        raise ValueError(f"matrix integrity failed: rows={len(safe_rows)} counts={counts}")
+    identities = {(row["method"].upper(), row["path"]) for row in safe_rows}
+    if len(identities) != len(safe_rows):
+        raise ValueError("matrix integrity failed: duplicate method/path identity")
     digest = hashlib.sha256(raw).hexdigest()
-    provenance = dict(source["provenance"])
-    provenance["primary_source_file"] = "workbook/OPENAPI-release-20260916.json"
-    provenance["pinned_source"] = "repo/mammoth-cli/spec/openapi/openapi.json"
-    provenance["manifest"] = "repo/mammoth-cli/spec/manifests/openapi-operations.yaml"
+    provenance = dict(source.get("source_provenance", source.get("provenance", {})))
     payload = {
         "artifact": "mammoth-cli-release-capability-matrix",
         "source_sha256": digest,
@@ -85,15 +91,15 @@ def main() -> None:
         "# Release capability matrix (sanitized)",
         "",
         f"Source workbook SHA-256: `{digest}`.",
-        "Current release OpenAPI: 528 operations / 355 paths; 230 Core / 298 Miscellaneous.",
-        "Statuses: 7 Partial (bounded evidence only), 521 Unassessed, 0 Full, 0 Not supported.",
-        "This is a sanitized inventory; the readiness workbook remains authoritative.",
+        f"Current release OpenAPI: {len(safe_rows)} operations / {len({row['path'] for row in safe_rows})} paths.",
+        "Statuses: " + ", ".join(f"{counts[name]} {name}" for name in counts) + ".",
+        "This is the canonical sanitized repository inventory; historical workbooks retain their original evidence context.",
         "",
         (
             "| ID | Capability | Status | Remarks | Group | Operation | Method | "
-            "Path | CLI | SDK | Evidence |"
+            "Path | CLI | Schema ID | SDK | Mapping state | Mapping gap | Evidence | Evidence version |"
         ),
-        "|---|---|---|---|---|---|---|---|---|---|---|",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for row in safe_rows:
 
@@ -131,8 +137,12 @@ def main() -> None:
                     "method",
                     "path",
                     "canonical_command",
+                    "schema_id",
                     "sdk_symbol",
+                    "mapping_state",
+                    "mapping_gap_reason",
                     "evidence",
+                    "evidence_version",
                 )
             )
             + " |"

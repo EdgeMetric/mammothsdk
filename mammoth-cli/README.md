@@ -215,8 +215,9 @@ Agent-readable indexes: [`docs/llms.txt`](docs/llms.txt) and
 
 ## Capability-matrix status
 
-The reviewed OpenAPI capability matrix is maintained in the readiness
-workbook; the repository-facing summary is
+The committed machine-readable release matrix is the canonical repository
+inventory; the readiness workbook is historical/live-evidence context. The
+repository-facing summary is
 [`docs/agent-capability-coverage.md`](docs/agent-capability-coverage.md).
 The current release snapshot contains **528 operations across 355 paths** (the
 historical pinned M0 snapshot was **445 operations across 287 paths**).
@@ -225,8 +226,13 @@ surfaces. Its live status counts are intentionally not duplicated here; read
 the linked row-level matrix for the current values. It does not declare Full
 readiness: matrix rows are planning/review status, not release qualification
 or live semantic proof.
-The workbook remains authoritative for row-level ownership, evidence, and
-qualification gates; no secrets or live evidence are copied into this README.
+No status changes are inferred from an OpenAPI refresh: additions begin
+Unassessed and removals or operation-ID changes require review. Use
+`scripts/report_release_capability_drift.py --help` to produce a deterministic
+local review queue from a candidate OpenAPI JSON; it never implements routes or
+promotes support. See the [capability drift workflow](docs/capability-drift-workflow.md)
+for the required row fields and review steps. No secrets or live evidence are
+copied into this README.
 The sanitized [row-level release matrix](docs/release-capability-matrix.md)
 and [machine-readable matrix](docs/release-capability-matrix.json) preserve all
 528 method/path line items without pilot payloads or credentials.

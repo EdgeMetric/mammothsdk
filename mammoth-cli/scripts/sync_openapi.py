@@ -21,6 +21,10 @@ Usage::
     python scripts/sync_openapi.py            # fetch, write snapshot + projection
     python scripts/sync_openapi.py --check    # re-project committed snapshot only
     python scripts/sync_openapi.py --check-live  # opt-in semantic contract drift check
+
+After reviewing a newly fetched candidate, generate a local release-matrix
+drift queue with ``report_release_capability_drift.py``. That report is keyed
+by method/path and never promotes or implements a capability automatically.
 """
 
 from __future__ import annotations
