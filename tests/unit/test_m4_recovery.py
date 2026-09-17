@@ -157,6 +157,22 @@ def test_job_wait_uses_monotonic_budget_for_request_and_sleep(
     assert sleeps == [0.75]
 
 
+def test_job_observation_timeout_reaches_transport() -> None:
+    client = _client()
+    response = _Response(body={"job": {"id": 44, "status": "processing"}})
+    client.session.request = MagicMock(return_value=response)
+
+    client.jobs.get_job(44, timeout=0.5)
+
+    assert client.session.request.call_args.kwargs["timeout"] == 0.5
+
+
+def test_job_observation_rejects_nonpositive_timeout() -> None:
+    jobs = JobsAPI(SimpleNamespace(workspace_id=7))  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="must be positive"):
+        jobs.get_job(44, timeout=0)
+
+
 @pytest.mark.parametrize(
     ("response", "expected_pending_id"),
     [

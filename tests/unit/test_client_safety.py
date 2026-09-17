@@ -177,6 +177,53 @@ def test_effectful_get_timeout_is_outcome_unknown() -> None:
     client.close()
 
 
+def test_effectful_get_server_error_is_outcome_unknown() -> None:
+    client = MammothClient("dummy-key", "dummy-secret", workspace_id=4)
+    response = Response()
+    response.status_code = 502
+    response._content = b'{"detail": "gateway failure"}'
+    client.session.request = lambda *args, **kwargs: response  # type: ignore[method-assign]
+
+    with pytest.raises(MammothAPIError) as raised:
+        client.webhooks.send_data_get("ingest", {"record": "one"})
+
+    assert raised.value.method == "GET"
+    assert raised.value.operation_state == "outcome_unknown"
+    client.close()
+
+
+def test_list_wrapper_preserves_single_dict_and_empty_success_is_list() -> None:
+    client = MammothClient("dummy-key", "dummy-secret", workspace_id=4)
+
+    single = Response()
+    single.status_code = 200
+    single._content = b'{"id": 7}'
+    client.session.request = lambda *args, **kwargs: single  # type: ignore[method-assign]
+    assert client._request_list("GET", "/workflows") == [{"id": 7}]
+
+    empty = Response()
+    empty.status_code = 204
+    empty._content = b""
+    client.session.request = lambda *args, **kwargs: empty  # type: ignore[method-assign]
+    assert client._request_list("GET", "/workflows") == []
+    client.close()
+
+
+def test_mutation_list_wrapper_rejects_scalar_with_unknown_outcome() -> None:
+    client = MammothClient("dummy-key", "dummy-secret", workspace_id=4)
+    response = Response()
+    response.status_code = 200
+    response._content = b"7"
+    client.session.request = lambda *args, **kwargs: response  # type: ignore[method-assign]
+
+    with pytest.raises(MammothAPIError) as raised:
+        client._request_list("POST", "/batch-operation", json={"ids": [1]})
+
+    assert raised.value.details["protocol_error"] == "response_contract_violation"
+    assert raised.value.operation_state == "outcome_unknown"
+    client.close()
+
+
 def test_signed_download_session_has_no_api_credentials() -> None:
     client = MammothClient("dummy-key", "dummy-secret", workspace_id=4)
 

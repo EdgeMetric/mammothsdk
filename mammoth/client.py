@@ -557,6 +557,8 @@ class MammothClient:
 
         if 200 <= response.status_code < 300:
             if response.status_code == 204 or not response.content:
+                if expected_response_shape == "list_or_dict":
+                    return []
                 return {}
             try:
                 parsed_response = response.json()
@@ -592,14 +594,16 @@ class MammothClient:
                     phase="response",
                     endpoint=endpoint,
                 )
-            if expected_response_shape == "list" and not isinstance(parsed_response, list):
+            if expected_response_shape == "list_or_dict" and not isinstance(
+                parsed_response, (list, dict)
+            ):
                 raise MammothAPIError(
-                    "Expected list response from API",
+                    "Expected list or dict response from API",
                     status_code=response.status_code,
                     response_body=parsed_response if isinstance(parsed_response, dict) else {},
                     details={
                         "protocol_error": "response_contract_violation",
-                        "expected_shape": "list",
+                        "expected_shape": "list_or_dict",
                         "actual_type": type(parsed_response).__name__,
                     },
                     method=request_method,
@@ -682,9 +686,14 @@ class MammothClient:
             params=params,
             json=json,
             operation_effect=operation_effect,
-            expected_response_shape="list",
+            # Several established list endpoints legitimately return a single
+            # object.  Preserve that SDK compatibility while still rejecting
+            # scalar/null response-contract violations.
+            expected_response_shape="list_or_dict",
             **kwargs,
         )
+        if isinstance(result, dict):
+            return [result]
         return result
 
     def _wait_if_job(

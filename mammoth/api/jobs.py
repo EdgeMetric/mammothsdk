@@ -43,8 +43,9 @@ class JobsAPI:
 
         headers = {"x-workspace-id": str(workspace_id)}
 
+        request_timeout = self._observation_timeout(timeout)
         response = self._client._request_json(
-            "GET", f"/jobs/{job_id}", headers=headers, **({"timeout": timeout} if timeout else {})
+            "GET", f"/jobs/{job_id}", headers=headers, **request_timeout
         )
         return response
 
@@ -75,10 +76,20 @@ class JobsAPI:
 
         headers = {"x-workspace-id": str(workspace_id)}
 
+        request_timeout = self._observation_timeout(timeout)
         response = self._client._request_json(
-            "GET", "/jobs", params=params, headers=headers, **({"timeout": timeout} if timeout else {})
+            "GET", "/jobs", params=params, headers=headers, **request_timeout
         )
         return response
+
+    @staticmethod
+    def _observation_timeout(timeout: float | None) -> dict[str, float]:
+        """Return a valid request timeout without silently dropping zero."""
+        if timeout is None:
+            return {}
+        if timeout <= 0:
+            raise ValueError("observation timeout must be positive")
+        return {"timeout": timeout}
 
     def wait_for_job(
         self, job_id: int, timeout: float | None = None, poll_interval: float = 2
