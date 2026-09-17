@@ -2707,7 +2707,7 @@
       "capability_id": "REL-201",
       "capability": "Get dataview data",
       "status": "Partial",
-      "remarks": "Bounded owned-fixture read succeeded with pinned CLI 1.1.9: dataview 16 data returned 51 rows; initial CLI envelope reported backend 502, then job 41 reconciliation reported success. No Full claim: disposable fixture only.",
+      "remarks": "Bounded owned-fixture read succeeded with pinned CLI 1.1.9: dataview 16 data returned 51 rows; initial CLI envelope reported backend 502, then job 41 reconciliation reported success; post-cleanup access returned structured 403 authorization_required. No Full claim: sequence/timeout option variants were not independently exercised.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewData",
       "method": "GET",
@@ -2718,7 +2718,8 @@
         "artifact": "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/job-41-reconcile.json",
         "related": [
           "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/view-data-16.json",
-          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-delete-42-reconcile.json"
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-delete-42-reconcile.json",
+          "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/view-data-postcleanup.json"
         ],
         "scope": "workspace 4/project 3; owned disposable dataset 16/view 16; 51 rows; cleanup verified",
         "cli": "1.1.9"
