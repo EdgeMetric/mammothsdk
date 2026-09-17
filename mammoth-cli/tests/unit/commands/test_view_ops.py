@@ -100,6 +100,39 @@ def test_delete_uses_typed_resource_parent_without_probe(
     assert fake_service.call_log == [(_DELETE, {"view_id": 7, "dataset_id": 122})]
 
 
+def test_get_rejects_conflicting_explicit_parent_identities(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"dataset_id": 122})
+    with pytest.raises(CliError) as raised:
+        view_ops_cmd.view_get(
+            _inv(
+                "view.get",
+                extra_args=["7"],
+                input_file=doc,
+                resource_ref=ResourceRef(dataset_id=123, view_id=7),
+            )
+        )
+
+    assert raised.value.code == "ambiguous_resource_identity"
+    assert fake_service.call_log == []
+
+
+def test_transform_uses_exact_resource_parent_in_parallel_project_scope(
+    fake_service: FakeMammothService,
+) -> None:
+    view_ops_cmd.view_transform_discard_duplicates(
+        _inv(
+            "view.transform.add-column",
+            extra_args=["7"],
+            resource_ref=ResourceRef(project_id=180, dataset_id=122, view_id=7),
+            project=180,
+            positionals={"view_id": "7"},
+        )
+    )
+    assert fake_service.view_call_log == [(7, "discard_duplicates", {"dataset_id": 122})]
+
+
 # --- view draft * (``service.call_view`` seam) -----------------------------
 
 

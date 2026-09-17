@@ -85,7 +85,7 @@ def _view_id(invocation: Invocation) -> int:
 
 
 def _delete_dataset_id(
-    invocation: Invocation, view_id: int, document: dict[str, Any]
+    invocation: Invocation, view_id: int, document: dict[str, Any], *, required: bool = False
 ) -> int | None:
     """Resolve an optional exact parent for ``view delete``.
 
@@ -103,22 +103,47 @@ def _delete_dataset_id(
             exit_status=EXIT_USAGE,
             hint="Use a resource reference for the same view id as the command target.",
         )
-    if resource is not None and resource.dataset_id is not None:
-        return int(resource.dataset_id)
-
-    raw = invocation.positional("dataset_id")
-    if raw is None:
-        raw = document.get("dataset_id")
-    if raw is None:
+    if resource is not None and resource.project_id is not None and invocation.project is not None:
+        if resource.project_id != invocation.project:
+            raise CliError(
+                code="invalid_resource_context",
+                message="The resource reference project does not match --project.",
+                exit_status=EXIT_USAGE,
+            )
+    raw_values = [
+        value
+        for value in (
+            resource.dataset_id if resource is not None else None,
+            invocation.positional("dataset_id"),
+            document.get("dataset_id"),
+        )
+        if value is not None
+    ]
+    if not raw_values:
+        if required:
+            raise CliError(
+                code="resource_identity_required",
+                message="This operation requires the exact parent dataset id.",
+                exit_status=EXIT_USAGE,
+                hint="Pass DATASET_ID or include dataset_id in --input.",
+            )
         return None
     try:
-        value = int(raw)
+        values = {int(value) for value in raw_values}
     except (TypeError, ValueError) as exc:
         raise CliError(
             code=CODE_INVALID_ARGUMENT,
-            message=f"The dataset id argument '{raw}' is not an integer.",
+            message="The dataset id must be an integer.",
             exit_status=EXIT_USAGE,
         ) from exc
+    if len(values) != 1:
+        raise CliError(
+            code="ambiguous_resource_identity",
+            message="Conflicting dataset ids identify different parent resources.",
+            exit_status=EXIT_USAGE,
+            hint="Pass one exact dataset id matching the target view.",
+        )
+    value = values.pop()
     if value <= 0:
         raise CliError(
             code=CODE_INVALID_ARGUMENT,
@@ -167,21 +192,14 @@ def _dispatch_view(
     # exact parent endpoint and prevents the SDK's legacy bare-view resolver
     # from probing an unrelated dataset.
     document = invocation.load_input() or {}
-    dataset_id = (
-        invocation.resource_ref.dataset_id
-        if invocation.resource_ref is not None
-        else document.get("dataset_id")
+    dataset_id = _delete_dataset_id(
+        invocation,
+        view_id,
+        document,
+        # Keep the legacy discovery path for existing transform callers, but
+        # reject conflicting explicit identities rather than selecting one.
+        required=False,
     )
-    if (
-        invocation.resource_ref is not None
-        and invocation.resource_ref.view_id not in (None, view_id)
-    ):
-        raise CliError(
-            code="invalid_resource_context",
-            message="The resource reference view_id does not match the target view.",
-            exit_status=EXIT_USAGE,
-            hint="Use a resource reference for the same view id as the command target.",
-        )
     with open_service(invocation) as (service, auth):
         if dataset_id is None:
             data = service.call_view(view_id, method, **kwargs)
