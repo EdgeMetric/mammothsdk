@@ -1,0 +1,38 @@
+{
+  "captured_at": "2026-09-17T13:51:30.844467+00:00",
+  "cli_version": "1.1.11",
+  "argv": [
+    "mammoth",
+    "view",
+    "ai",
+    "generation-info",
+    "46",
+    "--input",
+    "{\"dataset_id\":29}",
+    "--profile",
+    "expanded-live",
+    "--project",
+    "3",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 1,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "eec1e7a7f858a360621dfb09293312482b6989975a8e2352653f3624877fc539",
+  "response_summary": {
+    "parseable_json": true,
+    "error": {
+      "code": "api_error",
+      "retryable": false,
+      "authorization_required": false,
+      "details": {
+        "status_code": 400,
+        "method": "GET",
+        "operation_state": "failed",
+        "phase": "response"
+      }
+    }
+  },
+  "scope": "expanded-live workspace 4/project 3; retained IDs only; read-only"
+}
