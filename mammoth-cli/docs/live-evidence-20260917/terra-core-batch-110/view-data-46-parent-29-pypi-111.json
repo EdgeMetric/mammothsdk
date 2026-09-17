@@ -1,0 +1,64 @@
+{
+  "captured_at": "2026-09-17T13:15:05.183970+00:00",
+  "cli_version": "1.1.11",
+  "argv": [
+    "mammoth",
+    "view",
+    "data",
+    "get",
+    "46",
+    "29",
+    "--profile",
+    "expanded-live",
+    "--project",
+    "3",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 0,
+  "stdout_sha256": "06313355b2a08f94d87372d1d1541d2c5e3796a493b19bc129cdd03c287f62ef",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "response_summary": {
+    "parseable_json": true,
+    "data": {
+      "type": "object",
+      "keys": [
+        "data",
+        "paging"
+      ],
+      "fields": {
+        "data": {
+          "type": "array",
+          "count": 400,
+          "item": "dict",
+          "first_item_integer_ids": {}
+        },
+        "paging": {
+          "type": "object",
+          "keys": [
+            "count",
+            "limit",
+            "offset",
+            "self",
+            "total"
+          ],
+          "fields": {
+            "count": "int",
+            "limit": "int",
+            "offset": "int",
+            "self": "str",
+            "total": "int"
+          }
+        }
+      }
+    },
+    "meta": {
+      "command": "view data get",
+      "workspace_id": 4,
+      "project_id": 3,
+      "pagination": null
+    }
+  },
+  "scope": "expanded-live workspace 4/project 3; retained IDs only; read-only"
+}

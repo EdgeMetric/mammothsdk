@@ -1,0 +1,64 @@
+{
+  "captured_at": "2026-09-17T13:15:13.664950+00:00",
+  "cli_version": "1.1.11",
+  "argv": [
+    "mammoth",
+    "view",
+    "pipeline",
+    "get",
+    "46",
+    "--input",
+    "{\"dataset_id\":29}",
+    "--profile",
+    "expanded-live",
+    "--project",
+    "3",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 0,
+  "stdout_sha256": "24867024d472bd27664c297b7793c81b103ad8ec40f9a955600da586d198caa0",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "response_summary": {
+    "parseable_json": true,
+    "data": {
+      "type": "object",
+      "keys": [
+        "auto_run",
+        "draft_mode",
+        "executing_task_id",
+        "execution_state",
+        "staged_task_ids",
+        "state"
+      ],
+      "fields": {
+        "auto_run": {
+          "type": "bool"
+        },
+        "draft_mode": {
+          "type": "str"
+        },
+        "executing_task_id": {
+          "type": "NoneType"
+        },
+        "execution_state": {
+          "type": "str"
+        },
+        "staged_task_ids": {
+          "type": "NoneType"
+        },
+        "state": {
+          "type": "str"
+        }
+      }
+    },
+    "meta": {
+      "command": "view pipeline get",
+      "workspace_id": 4,
+      "project_id": null,
+      "pagination": null
+    }
+  },
+  "scope": "expanded-live workspace 4/project 3; retained IDs only; read-only"
+}
