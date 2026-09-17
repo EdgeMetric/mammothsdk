@@ -50,6 +50,11 @@ class _SchemaDeclaration:
         }
 
 
+class _SecretBearingObject:
+    def __init__(self) -> None:
+        self.api_key = "must-not-appear"
+
+
 def test_intent_synonyms_are_ranked_deterministically_from_a_cold_call() -> None:
     first = find_schemas("please import a spreadsheet")
     second = find_schemas("please import a spreadsheet")
@@ -244,6 +249,28 @@ def test_result_then_render_preserves_schema_names_but_redacts_result_secrets() 
         "default": "***REDACTED***",
         "type": "string",
     }
+
+
+def test_schema_discovery_input_schema_survives_render_without_trusting_result_keys() -> None:
+    stream = io.StringIO()
+    schema = get_schema("auth.login")
+    assert schema is not None
+    envelope = Result(
+        data={"schema": schema, "api_key": "must-not-appear"}, meta=Meta(command="test")
+    ).to_envelope()
+
+    render(envelope, output="json", stream=stream)
+    parsed = json.loads(stream.getvalue())
+
+    properties = parsed["data"]["schema"]["input_schema"]["properties"]
+    assert {"api_key", "api_secret", "workspace_id"}.issubset(properties)
+    assert parsed["data"]["api_key"] == "***REDACTED***"
+
+
+def test_unknown_rich_object_fails_closed_without_exposing_attributes() -> None:
+    normalized = normalize(_SecretBearingObject())
+
+    assert normalized == "<unserializable _SecretBearingObject>"
 
 
 def test_normalize_redacts_api_keys_without_erasing_cursor_or_schema_names() -> None:

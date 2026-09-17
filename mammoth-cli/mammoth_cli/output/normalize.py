@@ -117,6 +117,17 @@ def _normalize_json_schema(value: Any, *, sensitive_property: bool = False) -> A
     return normalize(value)
 
 
+def trusted_json_schema(value: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Mark a producer-owned JSON-Schema declaration for repeat-safe rendering.
+
+    Callers must use this only at reviewed schema-production boundaries.  A
+    result key named ``schema``/``input_schema`` never gains this provenance.
+    """
+    normalized = _normalize_json_schema(value)
+    assert isinstance(normalized, _NormalizedJsonSchema)
+    return normalized
+
+
 def normalize(value: Any, *, redact_secrets: bool = True) -> Any:
     """Return a deterministic, JSON-safe representation of ``value``."""
     if redact_secrets and _is_secret_value(value):
@@ -179,12 +190,7 @@ def normalize(value: Any, *, redact_secrets: bool = True) -> Any:
     if callable(model_json_schema):
         return _normalize_json_schema(model_json_schema())
 
-    # Views and other rich objects: expose safe public data if available.
-    for attr in ("data", "raw", "__dict__"):
-        candidate = getattr(value, attr, None)
-        if isinstance(candidate, dict):
-            return normalize(
-                {k: v for k, v in candidate.items() if not str(k).startswith("_")},
-                redact_secrets=redact_secrets,
-            )
-    return str(value)
+    # Unknown rich objects (SDK clients, sessions, and transport responses in
+    # particular) can carry credentials in ``__dict__`` or a convenient
+    # ``data`` attribute.  Only the explicit serializers above are trusted.
+    return f"<unserializable {type(value).__name__}>"
