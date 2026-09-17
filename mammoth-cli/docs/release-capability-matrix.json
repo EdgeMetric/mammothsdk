@@ -1,6 +1,6 @@
 {
   "artifact": "mammoth-cli-release-capability-matrix",
-  "source_sha256": "a068f922519de95c70d1783b00c704293362ece820c7f35e754c2b63b3abecb4",
+  "source_sha256": "6d694dd7f096e667b332055654e2563b68d64eec130672651ba485af8f5ef823",
   "source_provenance": {
     "primary_source_url": "https://release.mammoth.io/api/v2/docs/openapi.json",
     "primary_retrieved_at_utc": "2026-09-16T10:12:43Z",
@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 67,
+    "Partial": 69,
     "Not supported": 0,
-    "Unassessed": 461
+    "Unassessed": 459
   },
   "rows": [
     {
@@ -39,7 +39,7 @@
       "capability_id": "REL-002",
       "capability": "Delete a tag from the workspace vocabulary",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDashboardTag",
       "method": "DELETE",
@@ -1394,7 +1394,7 @@
       "capability_id": "REL-081",
       "capability": "List the workspace tag vocabulary",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty tag list observed. No Full claim: no non-empty fixture. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty tag list observed. No Full claim: no non-empty fixture. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListDashboardTags",
       "method": "GET",
@@ -1415,7 +1415,7 @@
       "capability_id": "REL-082",
       "capability": "Get Dashboard based on url",
       "status": "Partial",
-      "remarks": "Published PyPI CLI 1.1.11 exact observed URL slug resolved retained dashboard48; bounded single-dashboard read and not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 exact observed URL slug resolved retained dashboard48; bounded single-dashboard read and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDashboardByUrl",
       "method": "GET",
@@ -1425,7 +1425,10 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.get_by_url",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": {"artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json", "scope": "observed slug n0ReokM66zUyyEYI3g2mRA; dashboard48"},
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json",
+        "scope": "observed slug n0ReokM66zUyyEYI3g2mRA; dashboard48"
+      },
       "evidence_version": null
     },
     {
@@ -1923,7 +1926,7 @@
       "capability_id": "REL-110",
       "capability": "Editor chat transcript",
       "status": "Partial",
-      "remarks": "Published PyPI CLI 1.1.11 chat-history read for retained dashboard48 returned empty history with sequence1; bounded and not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 chat-history read for retained dashboard48 returned empty history with sequence1; bounded and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3ChatHistory",
       "method": "GET",
@@ -1933,7 +1936,10 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.chat_history",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": {"artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json", "scope": "dashboard48; messages empty, sequence1"},
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json",
+        "scope": "dashboard48; messages empty, sequence1"
+      },
       "evidence_version": null
     },
     {
@@ -2116,7 +2122,7 @@
       "capability_id": "REL-121",
       "capability": "List RLS viewer assignments",
       "status": "Partial",
-      "remarks": "Published PyPI CLI 1.1.11 RLS assignment read for retained dashboard48 returned disabled empty state; bounded and not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 RLS assignment read for retained dashboard48 returned disabled empty state; bounded and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListRlsAssignments",
       "method": "GET",
@@ -2126,14 +2132,17 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.rls_assignment_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": {"artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json", "scope": "dashboard48; assignments empty, enabled false"},
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json",
+        "scope": "dashboard48; assignments empty, enabled false"
+      },
       "evidence_version": null
     },
     {
       "capability_id": "REL-122",
       "capability": "Candidate columns for the RLS filter",
       "status": "Partial",
-      "remarks": "Published PyPI CLI 1.1.11 RLS column read for retained dashboard48 returned 9 display columns; bounded and not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 RLS column read for retained dashboard48 returned 9 display columns; bounded and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetRlsColumns",
       "method": "GET",
@@ -2143,14 +2152,17 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.rls_column_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": {"artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json", "scope": "dashboard48; 9 display columns"},
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json",
+        "scope": "dashboard48; 9 display columns"
+      },
       "evidence_version": null
     },
     {
       "capability_id": "REL-123",
       "capability": "Distinct values for an RLS filter column",
       "status": "Partial",
-      "remarks": "Published PyPI CLI 1.1.11 RLS value read using observed display column Entity returned 205 values; bounded and not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 RLS value read using observed display column Entity returned 205 values; bounded and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetRlsDistinctValues",
       "method": "GET",
@@ -2160,7 +2172,10 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.rls_value_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": {"artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json", "scope": "dashboard48; Entity column, 205 values"},
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json",
+        "scope": "dashboard48; Entity column, 205 values"
+      },
       "evidence_version": null
     },
     {
@@ -2201,7 +2216,7 @@
       "capability_id": "REL-126",
       "capability": "Motion-story video export state (never kicks a render)",
       "status": "Partial",
-      "remarks": "Published PyPI CLI 1.1.11 video-state read for retained dashboard48 returned status none and stale false; bounded and not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 video-state read for retained dashboard48 returned status none and stale false; bounded and not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetVideoState",
       "method": "GET",
@@ -2211,7 +2226,10 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.video_state",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": {"artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json", "scope": "dashboard48; status none, stale false"},
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json",
+        "scope": "dashboard48; status none, stale false"
+      },
       "evidence_version": null
     },
     {
@@ -4785,7 +4803,7 @@
       "capability_id": "REL-268",
       "capability": "Rename a tag",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "RenameDashboardTag",
       "method": "PATCH",
@@ -5788,7 +5806,7 @@
       "capability_id": "REL-327",
       "capability": "Merge one tag into another",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "MergeDashboardTags",
       "method": "POST",
@@ -7873,8 +7891,8 @@
     {
       "capability_id": "REL-449",
       "capability": "Get dataview data",
-      "status": "Unassessed",
-      "remarks": "CLI 1.1.10 typed binding verified in clean cli-v1.1.10 command manifest; live behavior remains Unassessed pending safe fixture/evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 schema-classified read POST succeeded for retained view 46/dataset 29 with a bounded 400-row page. One scope and no pagination breadth; not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewDataPost",
       "method": "POST",
@@ -7884,8 +7902,11 @@
       "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.get_data",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": "1.1.10"
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/terra-core-batch-f-pypi-111/view-data-get-46-parent-29.json",
+        "scope": "bounded retained view46/dataset29 read-only evidence"
+      },
+      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
     },
     {
       "capability_id": "REL-450",
@@ -7907,8 +7928,8 @@
     {
       "capability_id": "REL-451",
       "capability": "Execute volatile query on dataview",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 schema-classified read POST query succeeded for retained view 46/dataset 29 at documented limit=1, offset=1. One query shape and no continuation breadth; not Full.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ExecuteVolatileQuery",
       "method": "POST",
@@ -7918,8 +7939,11 @@
       "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.query_data",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/terra-core-batch-f-pypi-111/view-data-query-46-parent-29.json",
+        "scope": "bounded retained view46/dataset29 read-only evidence"
+      },
+      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
     },
     {
       "capability_id": "REL-452",
@@ -9082,7 +9106,7 @@
       "capability_id": "REL-519",
       "capability": "Set a dashboard's tags",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SetDashboardTags",
       "method": "PUT",
