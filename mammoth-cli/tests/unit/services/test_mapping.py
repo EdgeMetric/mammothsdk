@@ -16,6 +16,7 @@ from mammoth_cli.errors.envelope import (
     EXIT_AUTH,
     EXIT_CONFLICT,
     EXIT_INTERRUPT,
+    EXIT_NOT_FOUND,
     EXIT_RETRYABLE,
     CliError,
 )
@@ -74,6 +75,56 @@ def test_unknown_mutation_is_not_advertised_as_safe_retry() -> None:
     assert mapped.retryable is False
     assert mapped.details["job_handle"] == 44
     assert any("job get 44" in command for command in mapped.recovery_commands)
+
+
+@pytest.mark.parametrize(
+    ("status", "state", "expected_code", "expected_exit"),
+    [
+        (403, "failed", "authorization_required", EXIT_AUTH),
+        (404, "failed", "resource_not_found", EXIT_NOT_FOUND),
+        (409, "failed", "conflict", EXIT_CONFLICT),
+        (502, "outcome_unknown", "outcome_unknown", EXIT_RETRYABLE),
+    ],
+)
+def test_status_taxonomy_keeps_backend_identity_and_safe_next_action(
+    status: int, state: str, expected_code: str, expected_exit: int
+) -> None:
+    mapped = map_sdk_exception(
+        MammothAPIError(
+            "failed",
+            status_code=status,
+            method="POST",
+            operation_state=state,
+            request_id="req-status",
+            response_body={"code": "BACKEND_STATUS", "detail": "safe detail"},
+        )
+    )
+
+    assert mapped.code == expected_code
+    assert mapped.exit_status == expected_exit
+    assert mapped.request_id == "req-status"
+    assert mapped.details["backend_code"] == "BACKEND_STATUS"
+    assert mapped.retryable is False
+
+
+def test_metadata_free_api_failure_is_unknown_not_a_replayable_read() -> None:
+    mapped = map_sdk_exception(MammothAPIError("transport context lost"))
+
+    assert mapped.code == "outcome_unknown"
+    assert mapped.retryable is False
+    assert mapped.details["metadata_missing"] == ["method", "operation_state"]
+    assert "Do not replay" in mapped.hint
+
+
+def test_unclassified_mutation_gateway_and_malformed_success_are_unknown() -> None:
+    for error in (
+        MammothAPIError("gateway", status_code=502, method="PATCH"),
+        MammothAPIError("wrong response shape", status_code=200, method="POST", operation_state="outcome_unknown"),
+    ):
+        mapped = map_sdk_exception(error)
+        assert mapped.code == "outcome_unknown"
+        assert mapped.retryable is False
+        assert "Do not replay" in mapped.hint
 
 
 @pytest.mark.parametrize("status", [500, 502, 504, 200])

@@ -48,7 +48,17 @@ def _metadata(exc: MammothAPIError) -> dict[str, Any]:
         details["request_id"] = exc.request_id
     if exc.response_body:
         details["response_body"] = exc.response_body
+        # Backends commonly carry their stable diagnostic code in the JSON
+        # body. Preserve it independently of the human message so callers do
+        # not need to parse prose to decide the next safe action.
+        for name in ("code", "error_code"):
+            value = exc.response_body.get(name)
+            if isinstance(value, (str, int)) and not isinstance(value, bool):
+                details.setdefault("backend_code", value)
+                break
     for name in (
+        "backend_code",
+        "error_code",
         "exception_type",
         "operation_state",
         "phase",
@@ -71,6 +81,11 @@ def _metadata(exc: MammothAPIError) -> dict[str, Any]:
                 else exc.details[name]
             )
     return details
+
+
+def _is_known_read(method: object) -> bool:
+    """Return whether transport metadata proves the request was observational."""
+    return isinstance(method, str) and method.upper() in {"GET", "HEAD", "OPTIONS"}
 
 
 def _job_recovery(job_id: object, *, profile: str | None = None) -> list[str]:
@@ -160,6 +175,7 @@ def map_sdk_exception(
         if job_id is not None:
             details.setdefault("job_handle", job_id)
         request_id = getattr(exc, "request_id", None)
+        method = getattr(exc, "method", None) or details.get("method")
         recovery = _job_recovery(job_id, profile=profile) if job_id is not None else []
         if details.get("post_submitted"):
             task_id = details.get("task_handle")
@@ -209,6 +225,34 @@ def map_sdk_exception(
                 recovery_commands=recovery,
             )
 
+        # Missing metadata must never be interpreted as a safe read. Likewise,
+        # a write with a lost/gateway response can have committed even when an
+        # older SDK did not attach ``operation_state=outcome_unknown``.
+        uncertain_effect = operation_state == "outcome_unknown" or (
+            not _is_known_read(method)
+            and (status is None or status in {408, 425, 429} or (status is not None and status >= 500))
+        )
+        if uncertain_effect:
+            details.setdefault("operation_state", CODE_OUTCOME_UNKNOWN)
+            if method is None:
+                details.setdefault("metadata_missing", ["method", "operation_state"])
+            if workspace_id is not None:
+                details.setdefault("workspace_id", workspace_id)
+            if project_id is not None:
+                details.setdefault("project_id", project_id)
+            return CliError(
+                code=CODE_OUTCOME_UNKNOWN,
+                message="The request may have committed, but its outcome was not confirmed.",
+                exit_status=EXIT_RETRYABLE,
+                hint=(
+                    "Do not replay this operation. Inspect the observed job/resource "
+                    "and original request context before taking any further mutation."
+                ),
+                details=details,
+                request_id=request_id,
+                retryable=False,
+                recovery_commands=recovery,
+            )
         if status == 404:
             return CliError(
                 code=CODE_RESOURCE_NOT_FOUND,
@@ -238,26 +282,7 @@ def map_sdk_exception(
                 request_id=request_id,
                 recovery_commands=recovery,
             )
-        if operation_state == "outcome_unknown":
-            details.setdefault("operation_state", CODE_OUTCOME_UNKNOWN)
-            if workspace_id is not None:
-                details.setdefault("workspace_id", workspace_id)
-            if project_id is not None:
-                details.setdefault("project_id", project_id)
-            return CliError(
-                code=CODE_OUTCOME_UNKNOWN,
-                message="The request may have committed, but its outcome was not confirmed.",
-                exit_status=EXIT_RETRYABLE,
-                hint=(
-                    "The mutation outcome is unknown. Inspect the observed "
-                    "job/resource before taking any further mutation."
-                ),
-                details=details,
-                request_id=request_id,
-                retryable=False,
-                recovery_commands=recovery,
-            )
-        if status in {429, 503} or status is None:
+        if status in {429, 503} or (status is None and _is_known_read(method)):
             return CliError(
                 code=CODE_RETRYABLE,
                 message="Mammoth is temporarily unavailable or the request timed out.",
