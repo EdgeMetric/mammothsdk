@@ -36,8 +36,8 @@ _SECRET_KEY_HINTS = (
     "client_secret",
 )
 REDACTED = "***REDACTED***"
-
-_SCHEMA_KEYS = frozenset({"schema", "input_schema", "output_schema", "json_schema"})
+_SCHEMA_PROPERTY_CONTAINERS = frozenset({"properties", "patternProperties", "$defs", "definitions"})
+_SCHEMA_VALUE_KEYWORDS = frozenset({"default", "example", "examples", "const"})
 
 
 def _is_secret_key(key: str) -> bool:
@@ -70,6 +70,39 @@ def _typed_cursor_value(value: Any) -> Any | None:
         return None
     candidate = getattr(value, "value", None)
     return candidate if isinstance(candidate, (str, int, float, bool, type(None))) else None
+
+
+def _normalize_json_schema(value: Any, *, sensitive_property: bool = False) -> Any:
+    """Normalize a trusted JSON-Schema declaration without losing field names.
+
+    ``properties.api_key`` is a declaration name, while an ``api_key`` in an
+    ordinary API result is a credential value.  This helper is used only for
+    objects that explicitly expose ``model_json_schema`` and distinguishes
+    those two cases.  Defaults/examples for credential-shaped properties are
+    still redacted.
+    """
+    if isinstance(value, Mapping):
+        result: dict[str, Any] = {}
+        for key in sorted(value, key=str):
+            str_key = str(key)
+            child = value[key]
+            if str_key in _SCHEMA_PROPERTY_CONTAINERS and isinstance(child, Mapping):
+                result[str_key] = {
+                    str(name): _normalize_json_schema(
+                        declaration, sensitive_property=_is_secret_key(str(name))
+                    )
+                    for name, declaration in sorted(child.items(), key=lambda item: str(item[0]))
+                }
+            elif sensitive_property and str_key in _SCHEMA_VALUE_KEYWORDS:
+                result[str_key] = REDACTED
+            else:
+                result[str_key] = _normalize_json_schema(child)
+        return result
+    if isinstance(value, (list, tuple)):
+        return [
+            _normalize_json_schema(item, sensitive_property=sensitive_property) for item in value
+        ]
+    return normalize(value)
 
 
 def normalize(value: Any, *, redact_secrets: bool = True) -> Any:
@@ -110,12 +143,7 @@ def normalize(value: Any, *, redact_secrets: bool = True) -> Any:
         result: dict[str, Any] = {}
         for key in sorted(value, key=str):
             str_key = str(key)
-            if str_key.lower() in _SCHEMA_KEYS:
-                # A schema may declare a property called ``password`` or
-                # ``api_key``.  Preserve declarations while still redacting
-                # actual result values everywhere else.
-                result[str_key] = normalize(value[key], redact_secrets=False)
-            elif redact_secrets and _is_secret_key(str_key):
+            if redact_secrets and _is_secret_key(str_key):
                 result[str_key] = REDACTED
             else:
                 result[str_key] = normalize(value[key], redact_secrets=redact_secrets)
@@ -134,9 +162,7 @@ def normalize(value: Any, *, redact_secrets: bool = True) -> Any:
     # JSON-safe schema instead of falling back to a version-dependent repr.
     model_json_schema = getattr(value, "model_json_schema", None)
     if callable(model_json_schema):
-        # Schema property names such as ``password`` describe accepted input;
-        # they are not secret values and must remain discoverable to clients.
-        return normalize(model_json_schema(), redact_secrets=False)
+        return _normalize_json_schema(model_json_schema())
 
     # Views and other rich objects: expose safe public data if available.
     for attr in ("data", "raw", "__dict__"):

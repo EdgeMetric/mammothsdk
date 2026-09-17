@@ -36,7 +36,13 @@ class _TypedCursor:
 class _SchemaDeclaration:
     @classmethod
     def model_json_schema(cls) -> dict[str, object]:
-        return {"type": "object", "properties": {"page": {"type": "integer"}}}
+        return {
+            "type": "object",
+            "properties": {
+                "page": {"type": "integer"},
+                "api_key": {"type": "string", "default": "must-not-appear"},
+            },
+        }
 
 
 def test_intent_synonyms_are_ranked_deterministically_from_a_cold_call() -> None:
@@ -203,7 +209,13 @@ def test_normalize_redacts_typed_secrets_and_preserves_typed_cursors_and_schemas
     assert normalized == {
         "cursor": "opaque-next-page",
         "innocuous_name": "***REDACTED***",
-        "schema": {"properties": {"page": {"type": "integer"}}, "type": "object"},
+        "schema": {
+            "properties": {
+                "api_key": {"default": "***REDACTED***", "type": "string"},
+                "page": {"type": "integer"},
+            },
+            "type": "object",
+        },
     }
 
 
@@ -215,7 +227,7 @@ def test_normalize_redacts_api_keys_without_erasing_cursor_or_schema_names() -> 
             "next_token": "opaque-next-page",
             "continuation_token": "opaque-continuation",
             "design_tokens": ["primary", "spacing"],
-            "schema": {"properties": {"password": {"type": "string"}}},
+            "schema": {"api_key": "must-not-appear"},
         }
     )
 
@@ -224,7 +236,7 @@ def test_normalize_redacts_api_keys_without_erasing_cursor_or_schema_names() -> 
     assert normalized["next_token"] == "opaque-next-page"
     assert normalized["continuation_token"] == "opaque-continuation"
     assert normalized["design_tokens"] == ["primary", "spacing"]
-    assert normalized["schema"]["properties"]["password"] == {"type": "string"}
+    assert normalized["schema"]["api_key"] == "***REDACTED***"
 
 
 def test_nonfinite_json_input_is_rejected_before_command_execution(tmp_path: Path) -> None:
