@@ -1,5 +1,37 @@
 # CLI release provenance
 
+## 1.1.12
+
+Published from deterministic **local** artifacts built from immutable tag
+`cli-v1.1.12` (commit `7d02afa`). This is a fail-closed contract correction:
+`view update` rejects arbitrary raw patch data until the API publishes a typed
+request contract. It does not claim support for arbitrary view patches.
+
+The artifact bytes were reviewed before the authorized local Twine upload; they
+are not CI-built artifacts. PyPI JSON metadata reports the same SHA-256
+digests:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `135b3384742d66ca4168b5afc2762a9c2502263228d6ee1a45f38560abf81a2e` |
+| Source distribution | `a8caf87591e02bb06b130e20b6eebe1d92ec8b65a31db528b52ab77ae20138af` |
+
+Focused local prechecks passed for the selected view/dataset tests (162), four
+B09 no-dispatch regressions, Ruff, mypy, lock, generated-document check, links,
+and the bundled skill catalog. Vale reported zero errors and existing warnings.
+The full non-live CLI suite was not run for this release, so this release makes
+no full-suite-pass claim. GitHub Actions remain disabled repository-wide at the
+user's request, so no CI artifact, workflow, GitHub release asset, or signing
+claim applies.
+
+A fresh isolated Python 3.14 install of the exact local wheel passed `pip
+check`, `mammoth --version`, `schema get view.update`, and the installed B09
+no-dispatch smoke (`unsupported_contract`, exit 2) with an empty home directory.
+A fresh isolated Python 3.14 public-PyPI install passed the same `pip check`,
+version, schema, and B09 smoke checks after Simple-index propagation. These
+checks do not qualify autonomous workflows, dashboard runtime behavior, or all
+API operations.
+
 ## 1.1.11
 
 Published from deterministic **local** artifacts built from immutable tag

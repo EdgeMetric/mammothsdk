@@ -27,10 +27,10 @@ for current coverage.
 
 ## Install
 
-Install the published 1.1.11 CLI from PyPI with an isolated tool manager:
+Install the published 1.1.12 CLI from PyPI with an isolated tool manager:
 
 ```bash
-uv tool install mammoth-cli==1.1.11
+uv tool install mammoth-cli==1.1.12
 ```
 
 Then confirm it works:
@@ -44,16 +44,16 @@ mammoth doctor          # checks config, credentials, endpoint, connectivity
 <summary>Already have a Python tool manager?</summary>
 
 ```bash
-pipx install mammoth-cli==1.1.11
-python -m pip install mammoth-cli==1.1.11
+pipx install mammoth-cli==1.1.12
+python -m pip install mammoth-cli==1.1.12
 ```
 
 </details>
 
-The CLI supports Python 3.12, 3.13, and 3.14. The locally built 1.1.11 release
-has no GitHub release assets or signing claim; install it from PyPI. A future
-release may provide a separate checksum or signature flow only when its release
-record explicitly says so. See [docs/installation.md](docs/installation.md).
+The CLI supports Python 3.12, 3.13, and 3.14. The locally built 1.1.12 release
+has no GitHub release assets, CI-build provenance, or signing claim; install it
+from PyPI. A future release may provide a separate checksum or signature flow
+only when its release record explicitly says so. See [docs/installation.md](docs/installation.md).
 
 ## Quick start
 
