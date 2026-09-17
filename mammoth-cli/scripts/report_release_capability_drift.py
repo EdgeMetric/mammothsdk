@@ -13,6 +13,7 @@ writes deterministic review artifacts:
 Usage::
 
     python scripts/report_release_capability_drift.py \
+      --baseline-openapi /path/to/matrix-source-openapi.json \
       --openapi /path/to/candidate-openapi.json \
       --report-out /tmp/capability-drift.json \
       --scaffold-out /tmp/capability-additions.json
@@ -28,11 +29,57 @@ from typing import Any
 
 HTTP_METHODS = frozenset({"get", "put", "post", "delete", "options", "head", "patch", "trace"})
 DEFAULT_MATRIX = Path(__file__).resolve().parent.parent / "docs" / "release-capability-matrix.json"
+SEMANTIC_REVIEW_ACTION = (
+    "Review parameters, request body, and responses before updating the canonical row."
+)
+IMPLEMENTATION_ACTION = (
+    "Discover contract, implement, test, and obtain review; remain Unassessed "
+    "until evidence is accepted."
+)
+REPORT_NOTE = (
+    "Report-only: no route is implemented and no support status is promoted automatically."
+)
 
 
 def identity(method: str, path: str) -> str:
     """Return the matrix's stable method-and-path identity."""
     return f"{method.upper()} {path}"
+
+
+def _strip_presentation(node: Any) -> Any:
+    """Normalize one operation without presentation-only churn."""
+    if isinstance(node, dict):
+        return {
+            key: _strip_presentation(value)
+            for key, value in sorted(node.items())
+            if key
+            not in {
+                "default",
+                "description",
+                "example",
+                "examples",
+                "externalDocs",
+                "summary",
+                "title",
+                "operationId",
+            }
+        }
+    if isinstance(node, list):
+        normalized = [_strip_presentation(item) for item in node]
+        if all(isinstance(item, dict) and "name" in item and "in" in item for item in normalized):
+            return sorted(normalized, key=lambda item: (str(item["in"]), str(item["name"])))
+        return normalized
+    return node
+
+
+def operation_signature(operation: dict[str, Any], path_parameters: Any) -> str:
+    """Hash request/response/parameter semantics for one method/path operation."""
+    material = dict(operation)
+    if path_parameters is not None:
+        material["__path_parameters__"] = path_parameters
+    normalized = _strip_presentation(material)
+    encoded = json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
 def openapi_operations(document: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -57,6 +104,7 @@ def openapi_operations(document: dict[str, Any]) -> dict[str, dict[str, Any]]:
                 "method": method.upper(),
                 "path": path,
                 "operation_id": operation_id if isinstance(operation_id, str) else None,
+                "signature": operation_signature(operation, path_item.get("parameters")),
             }
     return result
 
@@ -107,14 +155,21 @@ def scaffold_addition(operation: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_report(matrix: dict[str, Any], candidate: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def build_report(
+    matrix: dict[str, Any], candidate: dict[str, Any], baseline: dict[str, Any] | None = None
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Build stable review data without modifying any existing row."""
     existing = matrix_rows(matrix)
     observed = openapi_operations(candidate)
+    baseline_operations = openapi_operations(baseline) if baseline is not None else {}
     existing_keys, observed_keys = set(existing), set(observed)
     added = [scaffold_addition(observed[key]) for key in sorted(observed_keys - existing_keys)]
     removed = [
-        {"identity": key, "capability_id": existing[key].get("capability_id"), "operation_id": existing[key].get("operation_id")}
+        {
+            "identity": key,
+            "capability_id": existing[key].get("capability_id"),
+            "operation_id": existing[key].get("operation_id"),
+        }
         for key in sorted(existing_keys - observed_keys)
     ]
     operation_id_changed = [
@@ -128,14 +183,22 @@ def build_report(matrix: dict[str, Any], candidate: dict[str, Any]) -> tuple[dic
         for key in sorted(existing_keys & observed_keys)
         if existing[key].get("operation_id") != observed[key]["operation_id"]
     ]
+    semantic_contract_changed = [
+        {
+            "identity": key,
+            "capability_id": existing[key].get("capability_id"),
+            "review_action": SEMANTIC_REVIEW_ACTION,
+        }
+        for key in sorted(existing.keys() & observed.keys() & baseline_operations.keys())
+        if observed[key]["signature"] != baseline_operations[key]["signature"]
+    ]
     preserved = [
         {
             "identity": key,
             "capability_id": existing[key].get("capability_id"),
             "status": existing[key].get("status"),
             "evidence": existing[key].get("evidence"),
-            "evidence_version": existing[key].get("evidence_version"),
-            "mapping_state": existing[key].get("mapping_state"),
+            "row": existing[key],
         }
         for key in sorted(existing_keys & observed_keys)
     ]
@@ -148,19 +211,29 @@ def build_report(matrix: dict[str, Any], candidate: dict[str, Any]) -> tuple[dic
             "added": len(added),
             "removed": len(removed),
             "operation_id_changed": len(operation_id_changed),
+            "semantic_contract_changed": len(semantic_contract_changed),
             "preserved_method_path_rows": len(preserved),
         },
         "added_scaffolds": added,
         "removed_review": removed,
         "operation_id_changed_review": operation_id_changed,
+        "semantic_contract_changed_review": semantic_contract_changed,
         "preserved": preserved,
         "implementation_queue": [
             {
                 "identity": identity(row["method"], row["path"]),
                 "capability_id": row["capability_id"],
-                "action": "Discover contract, implement, test, and obtain review; remain Unassessed until evidence is accepted.",
+                "action": IMPLEMENTATION_ACTION,
             }
             for row in added
+        ]
+        + [
+            {
+                "identity": item["identity"],
+                "capability_id": item["capability_id"],
+                "action": item["review_action"],
+            }
+            for item in semantic_contract_changed
         ]
         + [
             {
@@ -178,7 +251,12 @@ def build_report(matrix: dict[str, Any], candidate: dict[str, Any]) -> tuple[dic
             }
             for item in removed
         ],
-        "note": "Report-only: no route is implemented and no support status is promoted automatically.",
+        "note": REPORT_NOTE,
+        "semantic_baseline": (
+            "Compared against supplied baseline OpenAPI by normalized per-operation signature."
+            if baseline is not None
+            else "No baseline OpenAPI supplied; semantic operation changes were not detected."
+        ),
     }
     return report, added
 
@@ -190,13 +268,22 @@ def write_json(path: Path, data: Any) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--openapi", type=Path, required=True, help="candidate OpenAPI JSON")
-    parser.add_argument("--matrix", type=Path, default=DEFAULT_MATRIX, help="canonical release matrix")
+    parser.add_argument(
+        "--baseline-openapi",
+        type=Path,
+        required=True,
+        help="OpenAPI revision represented by the canonical matrix for semantic comparison",
+    )
+    parser.add_argument(
+        "--matrix", type=Path, default=DEFAULT_MATRIX, help="canonical release matrix"
+    )
     parser.add_argument("--report-out", type=Path, required=True)
     parser.add_argument("--scaffold-out", type=Path, required=True)
     args = parser.parse_args()
     matrix = json.loads(args.matrix.read_text(encoding="utf-8"))
     candidate = json.loads(args.openapi.read_text(encoding="utf-8"))
-    report, additions = build_report(matrix, candidate)
+    baseline = json.loads(args.baseline_openapi.read_text(encoding="utf-8"))
+    report, additions = build_report(matrix, candidate, baseline)
     write_json(args.report_out, report)
     write_json(args.scaffold_out, {"rows": additions})
 
