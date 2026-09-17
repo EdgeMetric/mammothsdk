@@ -37,6 +37,13 @@ also matched the oracle: dataset data returned 51 rows and 20 API columns,
 and file-settings returned a structured `info` response. Dataset 4 cleanup
 returned the project to zero datasets.
 
+Diagnosis note: `view task list` calls the public SDK's
+`PipelineAPI.list_tasks(dataview_id, dataset_id=None)`, which resolves the
+same project/dataset/view route used by the successful pipeline-get call. The
+captured release response is a generic `api_error` with `ValueError` and no
+request ID or HTTP status, so this is recorded as an undetermined server/SDK
+response issue; no CLI binding fix or readiness promotion is asserted.
+
 The independent public-fixture oracle is retained at
 `live-evidence-20260917/fixture-oracle.json`: 51 data rows, 19 source headers,
 and the first row matches the public CSV. The captured dataset-data response
