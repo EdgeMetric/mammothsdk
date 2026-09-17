@@ -1,5 +1,29 @@
 # CLI release provenance
 
+## 1.1.11
+
+Published from deterministic **local** artifacts built from immutable tag
+`cli-v1.1.11` (commit `ab0f898`). The artifact bytes were reviewed before the
+authorized local Twine upload; they are not CI-built artifacts. PyPI JSON
+metadata reports the same SHA-256 digests:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `25a811dad8d843731d719f20948ffe7df85dfb16a89f4cea1d8999925b54c962` |
+| Source distribution | `c5339664d5be43a27cd43c15414c5ef896fb0ae229fd135845aa1f96aa765a7e` |
+
+Local prechecks passed for the lock, Ruff, mypy, generated-document check,
+links, and Vale (zero errors). The full non-live CLI suite was explicitly
+cancelled at the release owner's direction and is therefore unconfirmed; this
+release makes no full-suite-pass claim. GitHub Actions were disabled
+repository-wide at the user's request, so no release workflow, CI artifact,
+GitHub release asset, or signing claim applies to this release.
+
+A fresh isolated, no-cache Python 3.14 install from PyPI passed `pip check`,
+`mammoth --version`, `schema get dataset.create`, and an installed bundled
+`SKILL.md` resource check. These checks do not qualify autonomous ETL,
+dashboard runtime behavior, or all API operations.
+
 ## 1.1.10
 
 Published from the exact `dist` artifact downloaded from successful CI

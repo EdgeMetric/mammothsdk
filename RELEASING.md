@@ -28,8 +28,8 @@ Sigstore-signed installer assets.
 
 ```bash
 # 1) SDK first
-git tag -a sdk-v0.7.0 -m "mammoth-io 0.7.0" <merge-commit>
-git push origin sdk-v0.7.0            # -> .github/workflows/sdk-release.yml
+git tag -a sdk-vX.Y.Z -m "mammoth-io X.Y.Z" <merge-commit>
+git push origin sdk-vX.Y.Z            # -> .github/workflows/sdk-release.yml
 
 # 2) CLI, after mammoth-io is live on PyPI
 git tag -a cli-vX.Y.Z -m "mammoth-cli X.Y.Z" <merge-commit>
@@ -38,6 +38,19 @@ git push origin cli-vX.Y.Z            # -> .github/workflows/cli-release.yml
 
 Both `publish` jobs use the `pypi` GitHub environment (add required reviewers
 there for a manual approval gate).
+
+### Current automation state
+
+GitHub Actions are currently disabled repository-wide at the release owner's
+request. This pauses all CI and release workflows; do not infer CI validation,
+CI-built artifacts, GitHub release assets, or signing from releases made while
+it is disabled. Re-enable only with explicit approval:
+
+```bash
+gh api -X PUT repos/EdgeMetric/mammothsdk/actions/permissions \
+  -H 'Accept: application/vnd.github+json' \
+  --input <(printf '{"enabled":true}')
+```
 
 ### One-time PyPI setup (required for the CI path)
 
