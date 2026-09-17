@@ -20,6 +20,12 @@ ships SHA256SUMS, wheel/sdist, and installers, but is explicitly unsigned: no
 Sigstore bundle or signing claim is made. These release checks do not qualify
 autonomous ETL, dashboard runtime behavior, or all API operations.
 
+The immutable PyPI 1.1.9 description retains its pre-publication README
+snapshot of **7 Partial / 521 Unassessed**. The current matrix is **0 Full /
+17 Partial / 511 Unassessed**; use the current
+[GitHub matrix](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/release-capability-matrix.md)
+rather than that immutable package description.
+
 ## 1.1.8
 
 Not published. Its CI full gate failed before artifact construction because a
