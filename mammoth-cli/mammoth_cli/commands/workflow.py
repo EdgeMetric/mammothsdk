@@ -28,6 +28,53 @@ from mammoth_cli.runtime.session import open_service, require_project
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
+
+def _graph_projection(raw: Any) -> dict[str, Any]:
+    """Project a backend graph into validated nodes, edges, and neighbors.
+
+    Unknown shapes are explicitly incomplete; this reader never invents an id
+    or follows additional resources to fill a hidden region.
+    """
+    if not isinstance(raw, dict) or not isinstance(raw.get("nodes"), list) or not isinstance(
+        raw.get("edges"), list
+    ):
+        return {"nodes": [], "edges": [], "complete": False, "hidden_regions": ["unknown_shape"]}
+    nodes: dict[str, dict[str, Any]] = {}
+    for node in raw["nodes"]:
+        if not isinstance(node, dict) or node.get("id") is None:
+            return {"nodes": [], "edges": [], "complete": False, "hidden_regions": ["invalid_node"]}
+        node_id = str(node["id"])
+        if node_id in nodes:
+            return {
+                "nodes": [],
+                "edges": [],
+                "complete": False,
+                "hidden_regions": ["duplicate_node"],
+            }
+        nodes[node_id] = {"id": node_id, "upstream": [], "downstream": []}
+    edges: list[dict[str, str]] = []
+    hidden: list[str] = []
+    for edge in raw["edges"]:
+        if not isinstance(edge, dict) or edge.get("source") is None or edge.get("target") is None:
+            hidden.append("invalid_edge")
+            continue
+        source, target = str(edge["source"]), str(edge["target"])
+        if source not in nodes or target not in nodes:
+            hidden.append("unauthorized_or_hidden_neighbor")
+            continue
+        nodes[source]["downstream"].append(target)
+        nodes[target]["upstream"].append(source)
+        edges.append({"source": source, "target": target})
+    for node in nodes.values():
+        node["upstream"].sort()
+        node["downstream"].sort()
+    return {
+        "nodes": [nodes[key] for key in sorted(nodes)],
+        "edges": edges,
+        "complete": not hidden,
+        "hidden_regions": sorted(set(hidden)),
+    }
+
 _CREATE_OPTIONAL = ("shape", "purpose", "seed_datasource_id")
 _UPDATE_OPTIONAL = ("name", "purpose", "pipeline_summary", "notes")
 _BLOCK_ADD_OPTIONAL = ("display_name", "connection_type", "position_hint")
@@ -129,7 +176,7 @@ def workflow_graph(invocation: Invocation) -> HandlerResult:
     """Get the active project's workflow graph."""
     project_id = require_project(invocation)
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), project_id=project_id)
+        data = _graph_projection(service.call(_symbol(invocation), project_id=project_id))
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

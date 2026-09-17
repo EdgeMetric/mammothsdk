@@ -79,8 +79,31 @@ def test_get_invalid_workflow_id_is_usage_error(fake_service: FakeMammothService
 
 
 def test_graph_passes_project(fake_service: FakeMammothService) -> None:
-    workflow_cmd.workflow_graph(_inv("workflow.graph", project=180))
+    fake_service.responses[_GRAPH] = {
+        "nodes": [{"id": "a"}, {"id": "b"}],
+        "edges": [{"source": "a", "target": "b"}, {"source": "b", "target": "a"}],
+    }
+    data, _ = workflow_cmd.workflow_graph(_inv("workflow.graph", project=180))
     assert fake_service.call_log == [(_GRAPH, {"project_id": 180})]
+    assert data["complete"] is True
+    assert data["nodes"] == [
+        {"id": "a", "upstream": ["b"], "downstream": ["b"]},
+        {"id": "b", "upstream": ["a"], "downstream": ["a"]},
+    ]
+
+
+def test_graph_marks_hidden_or_unauthorized_neighbors_incomplete(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_GRAPH] = {
+        "nodes": [{"id": "a"}],
+        "edges": [{"source": "a", "target": "hidden"}],
+    }
+    data, _ = workflow_cmd.workflow_graph(_inv("workflow.graph", project=180))
+
+    assert data["complete"] is False
+    assert data["hidden_regions"] == ["unauthorized_or_hidden_neighbor"]
+    assert data["edges"] == []
 
 
 def test_cleanup_passes_project(fake_service: FakeMammothService) -> None:
