@@ -2992,7 +2992,7 @@
       "capability_id": "REL-219",
       "capability": "Get File Settings",
       "status": "Partial",
-      "remarks": "Partial bounded release evidence: retained 1.1.5 file-settings response returned structured info for owned dataset 4; no Full claim.",
+      "remarks": "Bounded retained-resource read with published CLI 1.1.10 returned file-settings info for dataset 28; dataset_id=0 produced deterministic invalid_option_value. No Full claim: retained ETL-owned resource and no settings mutation/readback lifecycle.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetFileSettings",
       "method": "GET",
@@ -3000,9 +3000,12 @@
       "canonical_command": "dataset.file-settings.get",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.get_file_settings",
       "evidence": {
-        "artifact": "docs/live-evidence-20260917/dataset-next/settings.json",
-        "report": "docs/release-owned-fixture-tranche-20260917.md",
-        "scope": "owned disposable dataset 4; returned-ID cleanup; CLI 1.1.5"
+        "artifact": "docs/live-evidence-20260917/core-next/file-settings-110/settings-get-28.json",
+        "related": [
+          "docs/live-evidence-20260917/core-next/file-settings-110/settings-invalid-0.json"
+        ],
+        "scope": "expanded-live workspace 4/project 3; retained dataset 28; read-only positive/error matrix",
+        "cli": "1.1.10"
       }
     },
     {

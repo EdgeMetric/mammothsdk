@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-09-17T13:02:00.729570Z",
+  "cli_version": "1.1.10",
+  "argv": [
+    "mammoth"
+  ],
+  "exit_code": 2,
+  "stdout": "",
+  "stderr": "{\n  \"error\": {\n    \"authorization_required\": false,\n    \"code\": \"invalid_option_value\",\n    \"details\": {\n      \"argument\": \"dataset_id\",\n      \"value\": 0\n    },\n    \"hint\": \"Check the value passed to DATASET_ID.\",\n    \"message\": \"'dataset_id' must be a positive integer, got 0.\",\n    \"recovery_commands\": [],\n    \"request_id\": null,\n    \"retryable\": false\n  },\n  \"schema_version\": 1\n}\n",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "36203a36c872885a935bb3fbcf01a467ae8e89dbe8ece9355a51c9f673871b4a",
+  "scope": "expanded-live workspace 4/project 3; retained dataset 28 read-only",
+  "verification": "live_read_only"
+}
