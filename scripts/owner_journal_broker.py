@@ -15,6 +15,8 @@ import hashlib
 import json
 import os
 import re
+import stat
+import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -98,15 +100,38 @@ class OwnerJournalBroker:
             raise BrokerPolicyError(
                 "policy requires positive fixed scope and a non-empty allowlist"
             )
-        self.root = Path(root).resolve()
-        self.root.mkdir(mode=0o700, parents=True, exist_ok=True)
-        self.root.chmod(0o700)
+        requested_root = Path(root)
+        if requested_root.exists():
+            self.root = requested_root.resolve()
+            details = self.root.stat()
+            if not self.root.is_dir() or details.st_uid != os.geteuid():
+                raise BrokerPolicyError("journal root must be an owner-controlled directory")
+            if stat.S_IMODE(details.st_mode) & 0o077:
+                raise BrokerPolicyError(
+                    "existing journal root must not be group or world accessible"
+                )
+        else:
+            self.root = requested_root.resolve()
+            self.root.mkdir(mode=0o700, parents=True)
+            self.root.chmod(0o700)
+            self._fsync_directory(self.root.parent)
         self.policy = policy
         self._policy_path = self.root / "policy.json"
         self._journal_path = self.root / "journal.jsonl"
         self._lock_path = self.root / "journal.lock"
         self._policy_digest = _sha256(policy.as_dict())
         self._install_or_verify_policy()
+
+    @staticmethod
+    def _fsync_directory(directory: Path) -> None:
+        """Persist a new directory entry on Linux filesystems that support it."""
+        if sys.platform != "linux":
+            return
+        descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
 
     def _install_or_verify_policy(self) -> None:
         encoded = (
@@ -125,14 +150,18 @@ class OwnerJournalBroker:
             stream.write(encoded)
             stream.flush()
             os.fsync(stream.fileno())
+        self._fsync_directory(self.root)
 
     def _append(self, event: dict[str, object]) -> None:
         encoded = _canonical(event) + b"\n"
+        created = not self._journal_path.exists()
         descriptor = os.open(self._journal_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
         with os.fdopen(descriptor, "wb") as stream:
             stream.write(encoded)
             stream.flush()
             os.fsync(stream.fileno())
+        if created:
+            self._fsync_directory(self.root)
 
     def _events(self) -> list[dict[str, object]]:
         if not self._journal_path.exists():
@@ -191,6 +220,16 @@ class OwnerJournalBroker:
         prior = [
             event for event in self._events() if event.get("intent_id") == invocation.intent_id
         ]
+        intent = invocation.as_dict()
+        intent_records = [event for event in prior if event.get("event") == "intent"]
+        if intent_records and any(
+            event.get("policy_sha256") != self._policy_digest
+            or any(event.get(key) != value for key, value in intent.items())
+            for event in intent_records
+        ):
+            raise BrokerPolicyError(
+                "intent_id is already bound to a different immutable invocation"
+            )
         for event in prior:
             if event.get("event") == "receipt":
                 return Receipt(

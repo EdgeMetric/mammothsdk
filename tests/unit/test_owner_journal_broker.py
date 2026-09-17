@@ -33,13 +33,13 @@ def _inv(module, intent_id: str = "intent-1"):
     )
 
 
-def _broker(module, path: Path):
+def _broker(module, path: Path, *, allowlist: frozenset[str] | None = None):
     return module.OwnerJournalBroker(
         path,
         module.OwnerPolicy(
             workspace_id=7,
             project_id=9,
-            allowlist=frozenset({"dataset.create"}),
+            allowlist=allowlist or frozenset({"dataset.create"}),
         ),
     )
 
@@ -82,9 +82,39 @@ def test_crash_boundaries_never_automatically_replay(
     with pytest.raises(broker_module.InjectedCrashError):
         broker.submit(_inv(broker_module), sender, fault=fault)
     assert calls == ([] if fault == "after_intent_before_send" else ["intent-1"])
+    broker = _broker(broker_module, tmp_path / fault)
     with pytest.raises(broker_module.ReconciliationRequiredError):
         broker.submit(_inv(broker_module), sender)
     assert calls == ([] if fault == "after_intent_before_send" else ["intent-1"])
+
+
+def test_same_id_with_changed_fingerprint_is_rejected(broker_module, tmp_path: Path) -> None:
+    broker = _broker(
+        broker_module,
+        tmp_path / "owner-only",
+        allowlist=frozenset({"dataset.create", "dataset.update"}),
+    )
+
+    def sender(_):
+        return {"outcome": "succeeded", "handle": "job-44"}
+
+    broker.submit(_inv(broker_module), sender)
+
+    changed_payload = broker_module.Invocation("intent-1", "dataset.create", 7, 9, "b" * 64)
+    changed_operation = broker_module.Invocation("intent-1", "dataset.update", 7, 9, "a" * 64)
+    for invocation in (changed_payload, changed_operation):
+        with pytest.raises(broker_module.BrokerPolicyError, match="different immutable invocation"):
+            broker.submit(invocation, sender)
+
+
+def test_existing_insecure_root_is_not_repermissioned(broker_module, tmp_path: Path) -> None:
+    root = tmp_path / "existing-root"
+    root.mkdir(mode=0o700)
+    root.chmod(0o755)
+
+    with pytest.raises(broker_module.BrokerPolicyError, match="must not be group"):
+        _broker(broker_module, root)
+    assert root.stat().st_mode & 0o777 == 0o755
 
 
 def test_scope_allowlist_and_policy_replacement_fail_closed(broker_module, tmp_path: Path) -> None:

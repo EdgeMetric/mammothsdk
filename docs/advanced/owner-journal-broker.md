@@ -16,5 +16,9 @@ This gives at-most-one dispatch by this broker instance per intent id. It is
 not exactly-once backend execution: a crash after a backend commit and before
 the receipt leaves an ambiguity that requires independent reconciliation or a
 backend-supported idempotency key. An advisory owner-journal lock serializes
-submissions sharing that journal. The offline tests inject both crash boundaries
-and verify no automatic replay.
+submissions sharing that journal. On Linux it fsyncs the parent directory after
+creating the journal root, policy, or journal file; other platforms do not get
+that directory-entry durability guarantee. The offline tests inject both crash
+boundaries and verify no automatic replay. An intent ID is bound to the full
+secret-free invocation fingerprint, so reusing it with a different operation,
+scope, or payload digest is rejected.
