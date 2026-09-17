@@ -2,7 +2,7 @@
 
 Source workbook SHA-256: `d5863cd64bf441930dea28bff29c3fb199b26b770be4c735128c775905c741b1`.
 Current release OpenAPI: 528 operations / 355 paths; 230 Core / 298 Miscellaneous.
-Statuses: 28 Partial (bounded evidence only), 500 Unassessed, 0 Full, 0 Not supported.
+Statuses: 29 Partial (bounded evidence only), 499 Unassessed, 0 Full, 0 Not supported.
 The earlier core-next read tranche used CLI 1.1.5; representative project
 checkpoint/data-check reads were rerun with pinned CLI 1.1.9 and retained under
 `docs/live-evidence-20260917/core-next/*-119.json`.
@@ -249,7 +249,7 @@ this project scope.
 | REL-231 | Get a single resource | Unassessed | Unassigned pending user approval and release evidence. | MISCELLANEOUS_API | GetResource | GET | /workspaces/{workspace_id}/projects/{project_id}/resources/{resource_type}/{object_id} | — | — | — |
 | REL-232 | Get list of schedules | Unassessed | Unassigned pending user approval and release evidence. | MISCELLANEOUS_API | ListSchedules | GET | /workspaces/{workspace_id}/projects/{project_id}/schedules | schedule.list | mammoth.api.schedules.SchedulesAPI.list | — |
 | REL-233 | Get schedule data | Unassessed | Unassigned pending user approval and release evidence. | MISCELLANEOUS_API | GetSchedule | GET | /workspaces/{workspace_id}/projects/{project_id}/schedules/{schedule_id} | schedule.get | mammoth.api.schedules.SchedulesAPI.get | — |
-| REL-234 | List trashed items | Unassessed | Unassigned pending user approval and release evidence. | CLI_CORE_WORKFLOW | ListTrash | GET | /workspaces/{workspace_id}/projects/{project_id}/trash | trash.list | mammoth.api.trash.TrashAPI.list | — |
+| REL-234 | List trashed items | Partial | Bounded release read succeeded with pinned CLI 1.1.9 in expanded-live; empty trash inventory observed (zero datasets, dataviews, dashboards, automations). No Full claim: no trashed fixture. | CLI_CORE_WORKFLOW | ListTrash | GET | /workspaces/{workspace_id}/projects/{project_id}/trash | trash.list | mammoth.api.trash.TrashAPI.list | artifact=docs/live-evidence-20260917/core-next/capability-next/trash-list.json; scope=workspace 4/project 3; CLI 1.1.9 |
 | REL-235 | List webhooks | Unassessed | Unassigned pending user approval and release evidence. | MISCELLANEOUS_API | ListWebhooks | GET | /workspaces/{workspace_id}/projects/{project_id}/webhooks | webhook.list | mammoth.api.webhooks.WebhooksAPI.list | — |
 | REL-236 | Get webhook details | Unassessed | Unassigned pending user approval and release evidence. | MISCELLANEOUS_API | GetWebhookDetails | GET | /workspaces/{workspace_id}/projects/{project_id}/webhooks/{webhook_id} | webhook.get | mammoth.api.webhooks.WebhooksAPI.get | — |
 | REL-237 | List workflows | Unassessed | Unassigned pending user approval and release evidence. | MISCELLANEOUS_API | ListWorkflows | GET | /workspaces/{workspace_id}/projects/{project_id}/workflows | workflow.list | mammoth.api.workflows.WorkflowsAPI.list | — |

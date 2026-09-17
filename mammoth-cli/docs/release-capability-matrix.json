@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 28,
+    "Partial": 29,
     "Not supported": 0,
-    "Unassessed": 500
+    "Unassessed": 499
   },
   "rows": [
     {
@@ -3177,15 +3177,19 @@
     {
       "capability_id": "REL-234",
       "capability": "List trashed items",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Bounded release read succeeded with pinned CLI 1.1.9 in expanded-live; empty trash inventory observed (zero datasets, dataviews, dashboards, automations). No Full claim: no trashed fixture.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListTrash",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/trash",
       "canonical_command": "trash.list",
       "sdk_symbol": "mammoth.api.trash.TrashAPI.list",
-      "evidence": null
+      "evidence": {
+        "artifact": "docs/live-evidence-20260917/core-next/capability-next/trash-list.json",
+        "scope": "workspace 4/project 3; empty result",
+        "cli": "1.1.9"
+      }
     },
     {
       "capability_id": "REL-235",
