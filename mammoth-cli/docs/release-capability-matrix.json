@@ -796,15 +796,15 @@
     {
       "capability_id": "REL-060",
       "capability": "Delete Folder",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded release evidence: owned folder resource 10 was deleted and final folder list returned empty; no Full claim.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteFolder",
       "method": "DELETE",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/folders/{folder_id}",
       "canonical_command": "folder.delete",
       "sdk_symbol": "mammoth.api.folders.FoldersAPI.delete",
-      "evidence": null
+      "evidence": {"artifact": "docs/live-evidence-20260917/core-next/folder-delete.json", "report": "docs/live-evidence-20260917/core-next/folder-final-list.json", "scope": "owned folder resource 10; returned-ID cleanup; CLI 1.1.5"}
     },
     {
       "capability_id": "REL-061",
@@ -3007,8 +3007,8 @@
     {
       "capability_id": "REL-223",
       "capability": "List folders",
-      "status": "Unassessed",
-      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
+      "status": "Partial",
+      "remarks": "Partial bounded release evidence: retained 1.1.5 folder list and empty-baseline postcondition; no Full claim.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListFolders",
       "method": "GET",
@@ -3024,15 +3024,15 @@
     {
       "capability_id": "REL-224",
       "capability": "Get Folder Details",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded release evidence: owned folder resource 10 was retrieved successfully; no Full claim.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetFolder",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/folders/{folder_id}",
       "canonical_command": "folder.get",
       "sdk_symbol": "mammoth.api.folders.FoldersAPI.get",
-      "evidence": null
+      "evidence": {"artifact": "docs/live-evidence-20260917/core-next/folder-get.json", "report": "docs/live-evidence-20260917/core-next/folder-get.json", "scope": "owned folder resource 10; returned-ID cleanup; CLI 1.1.5"}
     },
     {
       "capability_id": "REL-225",
@@ -6263,15 +6263,15 @@
     {
       "capability_id": "REL-472",
       "capability": "Create Folder",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded release evidence: owned folder resource 10 was created ready and then cleaned; no Full claim.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateFolder",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/folders",
       "canonical_command": "folder.create",
       "sdk_symbol": "mammoth.api.folders.FoldersAPI.create",
-      "evidence": null
+      "evidence": {"artifact": "docs/live-evidence-20260917/core-next/folder-create.json", "report": "docs/live-evidence-20260917/core-next/folder-delete.json", "scope": "owned folder resource 10; returned-ID cleanup; CLI 1.1.5"}
     },
     {
       "capability_id": "REL-473",
