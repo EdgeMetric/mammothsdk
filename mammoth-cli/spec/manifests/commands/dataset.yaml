@@ -147,8 +147,10 @@ commands:
   - CT-DATASET-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'BLOCKED[B06 DATASET_CREATE_UNTYPED_ASYNC]: creation type is a free string and dataset_spec
-    is arbitrary; reserved, not registered.'
+  known_restrictions: ds_creation_type is freeform and dataset_spec is arbitrary, so variants beyond the
+    documented path are not qualified. Retained live evidence supports ds_creation_type=weburl with dataset_spec.url;
+    the CLI command waits for the raw SDK job and returned ready for five OWID URL imports. Re-read returned
+    dataset/view IDs and delete only IDs created by this task.
   reviewed_by: primary
 - command_id: dataset.create-from-pdf
   command_path: dataset create-from-pdf

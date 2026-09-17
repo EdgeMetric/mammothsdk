@@ -50,3 +50,19 @@ def test_recipes_do_not_present_known_guessed_transform_aliases_as_routes() -> N
     text = "\n".join(path.read_text(encoding="utf-8") for path in RECIPES.glob("*.md"))
     for command_id in FORBIDDEN_GUESSES:
         assert command_id not in text
+
+
+def test_resource_recipe_matches_published_ingestion_evidence_boundary() -> None:
+    """Guidance must expose the supported URL route without overclaiming variants."""
+    text = (RECIPES / "resources.md").read_text(encoding="utf-8")
+    commands = {str(record["command_id"]): record for record in load_commands()}
+    dataset_create = commands["dataset.create"]
+    file_upload = commands["file.upload"]
+
+    assert "ds_creation_type\":\"weburl" in text
+    assert "every freeform creation type" in text
+    assert "waits for its asynchronous work" in text
+    assert "tenant- and scope-specific" in text
+    assert "final\ncleanup absence was not verified" in text
+    assert "ds_creation_type=weburl" in str(dataset_create["known_restrictions"])
+    assert "tenant- and scope-specific" in str(file_upload["known_restrictions"])

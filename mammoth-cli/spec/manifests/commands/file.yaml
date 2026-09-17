@@ -310,7 +310,10 @@ commands:
   - CT-FILE-UPLOAD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Live upload permission is currently blocked (IO-LIVE-PERMISSION).
+  known_restrictions: Upload authorization is tenant- and scope-specific; a permission failure does not
+    make this route universally unavailable. Retained owned-fixture evidence observed a ready upload and
+    readback, but did not verify final cleanup absence. On success retain returned IDs, read them back,
+    and verify owned cleanup; do not assume other upload variants are qualified.
   reviewed_by: primary
 - command_id: file.upload-folder
   command_path: file upload-folder

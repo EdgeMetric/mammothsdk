@@ -29,7 +29,15 @@ The upload response is a standard JSON envelope. Treat its `data` object as
 opaque until `schema get file.upload` (or the returned command result) names
 the IDs to retain; do not assume that a job and dataset are returned together.
 Re-read the returned parent dataset and its views before a transform. URL
-import is a dataset creation route, not a file-upload shortcut:
+import is a dataset creation route, not a file-upload shortcut. Upload
+authorization is tenant- and scope-specific: a permission envelope means this
+attempt is unauthorized, not that `file.upload` is universally blocked. A
+retained owned-fixture upload reached ready and was read back, but its final
+cleanup absence was not verified; always verify cleanup for IDs returned by
+your own run.
+
+The following URL-import shape is a supported documented path, not a claim
+that every freeform creation type or `dataset_spec` variant works:
 
 ```bash
 mammoth schema get dataset.create --output json --no-input
@@ -40,6 +48,8 @@ mammoth dataset create --project PROJECT_ID --input \
 
 Use the `data` keys actually returned by that response for the subsequent
 `dataset get`/`view list`; a creation envelope without a successful readback is
-not sufficient. If the schema does not accept a URL, report URL import
-unsupported; do not silently substitute local processing. A 4/5/7 envelope is
-a failed or uncertain operation, not a usable dataset.
+not sufficient. `dataset.create` waits for its asynchronous work, and retained
+live evidence recorded five `weburl` OWID imports returning `ready`; other
+freeform variants remain unqualified. If the schema does not accept a URL,
+report URL import unsupported; do not silently substitute local processing. A
+4/5/7 envelope is a failed or uncertain operation, not a usable dataset.

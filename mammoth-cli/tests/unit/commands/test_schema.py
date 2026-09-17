@@ -11,6 +11,9 @@ from __future__ import annotations
 
 import json
 import shlex
+from pathlib import Path
+
+import yaml
 
 from mammoth_cli.commands.schema import find_schemas, get_schema, runnable_example
 from mammoth_cli.services.positionals import positionals_for
@@ -19,6 +22,7 @@ _BULK_REPLACE = "view.transform.bulk-replace"
 _TEXT_TRANSFORM = "view.transform.text"
 _MATH_TRANSFORM = "view.transform.math"
 _PROJECT_DELETE = "project.delete"
+ROOT = Path(__file__).parents[3]
 
 
 def test_enum_field_exposes_its_member_values() -> None:
@@ -172,6 +176,41 @@ def test_csv_export_contract_does_not_preserve_stale_permission_block() -> None:
     schema = get_schema("view.export.csv")
     assert schema is not None
     assert "Live dataset permission is currently blocked" not in schema["preconditions"]
+
+
+def test_ingestion_contract_preserves_supported_path_and_variant_boundaries() -> None:
+    """Published discovery must not turn retained live evidence into a blanket block."""
+    dataset_create = get_schema("dataset.create")
+    file_upload = get_schema("file.upload")
+    assert dataset_create is not None and file_upload is not None
+
+    assert "BLOCKED[B06" not in dataset_create["preconditions"]
+    assert "ds_creation_type=weburl" in dataset_create["preconditions"]
+    assert dataset_create["async"] == "always_wait"
+    assert (
+        "variants beyond the documented path are not qualified"
+        in dataset_create["preconditions"]
+    )
+
+    assert "IO-LIVE-PERMISSION" not in file_upload["preconditions"]
+    assert "tenant- and scope-specific" in file_upload["preconditions"]
+    assert "did not verify final cleanup absence" in file_upload["preconditions"]
+
+
+def test_dataset_create_sdk_catalog_does_not_conflate_cli_waiting() -> None:
+    """The SDK returns a job handle; the CLI handler owns its always-wait policy."""
+    catalog = yaml.safe_load(
+        (ROOT / "spec" / "manifests" / "sdk-catalog.source.yaml").read_text(encoding="utf-8")
+    )
+    record = next(
+        item
+        for item in catalog["sdk_methods"]
+        if item["sdk_symbol"] == "mammoth.api.datasets.DatasetsAPI.create"
+    )
+    schema = get_schema("dataset.create")
+    assert record["wait_policy"] == "not_async"
+    assert "CLI command waits for the raw SDK job" in record["notes"]
+    assert schema is not None and schema["async"] == "always_wait"
 
 
 def test_schema_omits_fields_that_handlers_ignore_or_replace() -> None:

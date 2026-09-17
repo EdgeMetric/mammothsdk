@@ -1976,8 +1976,10 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
-  notes: 'BLOCKED[B06 DATASET_CREATE_UNTYPED_ASYNC]: creation type is a free string and dataset_spec is
-    arbitrary; reserved, not registered.'
+  notes: 'ds_creation_type is freeform and dataset_spec is arbitrary, so variants beyond the documented path are
+    not qualified. Retained live evidence supports ds_creation_type=weburl with dataset_spec.url; the CLI
+    command waits for the raw SDK job and returned ready for five OWID URL imports. Re-read returned
+    dataset/view IDs and delete only IDs created by this task.'
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.create_from_pdf
   canonical_command: dataset.create-from-pdf
   alias_of: null
@@ -2435,7 +2437,10 @@ sdk_methods:
   wait_policy: start_or_wait
   pagination_policy: none
   openapi_operation_ids: []
-  notes: Live upload permission is currently blocked (IO-LIVE-PERMISSION).
+  notes: Upload authorization is tenant- and scope-specific; a permission failure does not make this route
+    universally unavailable. Retained owned-fixture evidence observed a ready upload and readback, but did not
+    verify final cleanup absence. On success retain returned IDs, read them back, and verify owned cleanup; do
+    not assume other upload variants are qualified.
 - sdk_symbol: mammoth.api.files.FilesAPI.upload_folder
   canonical_command: file.upload-folder
   alias_of: null
@@ -4233,8 +4238,8 @@ notes_on_dispositions:
   until OpenAPI proves exact targets and a typed SDK request carries them" (BLOCKED[B08], and doc 09 states
   it "MUST NOT be exposed").'
 - 'ProjectsAPI.bulk_update: "BLOCKED[B02]" — accepts an unconstrained dictionary; reserved but not registered.'
-- 'DatasetsAPI.create: "BLOCKED[B06]" — creation type is a free string and dataset_spec is arbitrary;
-  reserved but not registered.'
+- 'DatasetsAPI.create: freeform creation variants remain unqualified; retained live evidence supports the
+  documented weburl + dataset_spec.url path, which waits for ready. Do not infer support for other variants.'
 - 'DatasetsAPI.update / DatasetsAPI.bulk_update: "BLOCKED[B07]" — raw patch operations include rename,
   refresh, column changes, reattach, and deletion; reserved but not registered, and a benign command must
   not smuggle deletion.'
