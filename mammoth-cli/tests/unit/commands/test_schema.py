@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import shlex
 
-from mammoth_cli.commands.schema import get_schema, runnable_example
+from mammoth_cli.commands.schema import find_schemas, get_schema, runnable_example
 from mammoth_cli.services.positionals import positionals_for
 
 _BULK_REPLACE = "view.transform.bulk-replace"
@@ -150,6 +150,28 @@ def test_batch_data_schema_exposes_release_paging_bounds() -> None:
 
 def test_unknown_command_returns_none() -> None:
     assert get_schema("nope.nope") is None
+
+
+def test_agent_transform_language_finds_typed_routes() -> None:
+    assert "view.transform.discard-duplicates" in {
+        item["command_id"] for item in find_schemas("duplicate")["matches"]
+    }
+    assert "view.transform.convert-type" in {
+        item["command_id"] for item in find_schemas("cast numeric type")["matches"]
+    }
+    assert "view.transform.fill-missing" in {
+        item["command_id"] for item in find_schemas("fill missing")["matches"]
+    }
+    assert "view.transform.join" in {
+        item["command_id"] for item in find_schemas("join blend")["matches"]
+    }
+
+
+def test_csv_export_contract_does_not_preserve_stale_permission_block() -> None:
+    """Retained live evidence supersedes the old blanket export restriction."""
+    schema = get_schema("view.export.csv")
+    assert schema is not None
+    assert "Live dataset permission is currently blocked" not in schema["preconditions"]
 
 
 def test_schema_omits_fields_that_handlers_ignore_or_replace() -> None:

@@ -2319,7 +2319,7 @@ sdk_methods:
   pagination_policy: none
   openapi_operation_ids: []
   notes: SDK target for view export csv VIEW_ID; uses partial file, fsync, atomic rename, and explicit
-    --overwrite. Live dataset permission is currently blocked.
+    --overwrite.
 - sdk_symbol: mammoth.api.exports.ExportsAPI.to_dataset
   canonical_command: null
   alias_of: view.export.dataset

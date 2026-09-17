@@ -3,7 +3,8 @@
 Dashboard inputs are generated and release-dependent:
 
 ```bash
-mammoth schema find "dashboard create source page widget" --output json --no-input
+mammoth schema find "dashboard create" --output json --no-input
+mammoth schema find "dashboard source" --output json --no-input
 mammoth schema get dashboard.create-blank --output json --no-input
 mammoth dashboard create-blank --input INPUT_JSON --project PROJECT_ID --output json --no-input --yes
 mammoth dashboard get DASHBOARD_ID --output json --no-input
@@ -22,7 +23,8 @@ actually named in the returned `data` object, then run:
 ```bash
 mammoth dashboard get DASHBOARD_ID --output json --no-input
 mammoth dashboard source list --output json --no-input
-mammoth schema find "dashboard pages widget publish" --output json --no-input
+mammoth schema find "dashboard page" --output json --no-input
+mammoth schema find "dashboard" --output json --no-input
 ```
 
 Page/widget schemas vary by release. Read each schema, use returned IDs, and

@@ -1,15 +1,18 @@
 # Typed operations and verification
 
-The installed CLI manifest is the source of truth. `capability list` tells you
-what is exposed for this installation; `schema find TEXT` narrows the catalog;
-`schema get COMMAND_ID` returns the command path, typed positionals/options,
+The installed CLI manifest is the source of truth for local CLI routes. Use
+`schema list/find TEXT` to discover those routes; `capability list` is a
+separate API-binding inventory and can omit typed/local commands such as view
+transforms. `schema get COMMAND_ID` returns the command path, typed positionals/options,
 request/result models, accepted input shape, effect/confirmation policy,
 wait policy, known restrictions, and recovery/verification metadata. Read the
 schema immediately before composing a request because support and fields can
 vary by release, profile, or backend.
 
 ```bash
-mammoth capability find "transform pipeline export" --output json --no-input
+mammoth capability find "transform" --output json --no-input
+mammoth capability find "pipeline" --output json --no-input
+mammoth capability find "export" --output json --no-input
 mammoth schema find "view.transform" --output json --no-input
 mammoth schema get view.transform.math --output json --no-input
 ```
@@ -22,8 +25,10 @@ assuming a route is available. Typical discovery queries are:
 ```bash
 mammoth schema find "convert type" --output json --no-input
 mammoth schema find "duplicate" --output json --no-input
-mammoth schema find "join lookup blend" --output json --no-input
-mammoth schema find "fill missing replace text" --output json --no-input
+mammoth schema find "join" --output json --no-input
+mammoth schema find "lookup" --output json --no-input
+mammoth schema find "fill missing" --output json --no-input
+mammoth schema find "replace" --output json --no-input
 ```
 
 Use the exact returned command ID, then read its schema and the current view
@@ -35,6 +40,13 @@ route after numeric conversion and verified from a remote preview/readback.
 Deduplication is a semantic operation: inspect the route schema and define the
 key/retention rule explicitly; never treat a successful task submission as
 proof that duplicates were removed.
+
+Use the published typed route `view.transform.discard-duplicates` when its
+schema is present: inspect `mammoth schema get view.transform.discard-duplicates
+--output json --no-input` for its optional `ignore_columns` and `dataset_id`
+fields before use. Discover it with `schema find duplicate`, then read its
+exact schema; do not use a guessed alias, raw HTTP, local processing, or opaque
+`view task` `task_spec`.
 
 Prefer a typed `view transform <operation>` command. Its schema is the
 discoverable request contract and its result should be verified with a view
@@ -94,10 +106,13 @@ export before submitting another one.
 
 ## Capability boundaries
 
-An operation absent from `capability list`, marked `server_unavailable`, or
-rejected by `schema get` is a real current capability limitation. A manifest
-entry proves routing and validation only; it does not prove tenant permission,
-backend semantics, production readiness, or independent postcondition
-verification. Report the precise unsupported/unauthorized/backend-blocked
+An operation rejected by `schema get` is not a local CLI route. A capability
+inventory record marked `server_unavailable` is a documented API-binding
+limitation, but absence from that inventory does not negate a typed route that
+`schema get` exposes. A manifest entry proves routing and validation only; it
+does not prove tenant permission, backend semantics, production readiness, or
+independent postcondition verification. `contract_only_no_disposable_fixture`
+means the command lacks that automated test fixture; it is not a runtime
+unsupported result. Report the precise unsupported/unauthorized/backend-blocked
 condition. Do not substitute local processing, private SDK/HTTP calls, or an
 unverified success claim.

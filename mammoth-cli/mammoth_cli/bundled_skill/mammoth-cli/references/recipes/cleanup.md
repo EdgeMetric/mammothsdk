@@ -1,7 +1,8 @@
 # Trash, recovery and owned cleanup
 
 ```bash
-mammoth schema find "trash restore delete" --output json --no-input
+mammoth schema find "trash" --output json --no-input
+mammoth schema find "restore" --output json --no-input
 mammoth schema get dataset.delete --output json --no-input
 mammoth dataset delete OWNED_DATASET_ID --project PROJECT_ID --output json --no-input --yes
 ```

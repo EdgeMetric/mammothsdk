@@ -15,7 +15,8 @@ families, use `schema find`/`schema get` first, then read back the exact parent
 and resource IDs. For example:
 
 ```bash
-mammoth schema find "dataset settings folder" --output json --no-input
+mammoth schema find "dataset settings" --output json --no-input
+mammoth schema find "folder" --output json --no-input
 mammoth schema get dataset.file-settings.get --output json --no-input
 mammoth dataset file-settings get DATASET_ID --output json --no-input
 ```

@@ -36,9 +36,10 @@ non-evaluated operator use.
 3. Use the protected profile/configuration supplied by the user or environment.
    Run `mammoth doctor --profile PROFILE --output json --no-input`; do not print,
    echo, or copy its secret-bearing inputs.
-4. Discover instead of guessing. Run `mammoth capability list --output json
-   --no-input` and the relevant `mammoth schema get COMMAND.ID --output json
-   --no-input`, then resolve workspace/project/dataset/view
+4. Discover instead of guessing. Run `mammoth schema list/find/get --output
+   json --no-input` for local CLI routes; `mammoth capability list --output
+   json --no-input` is an API-binding inventory and can omit typed/local
+   routes. Then resolve workspace/project/dataset/view
    parents with reads. Use display names returned by the exact view schema.
 5. Translate the business intent into a plan the agent chooses. Submit only
    supported operations with explicit `--project` (and other returned parents),

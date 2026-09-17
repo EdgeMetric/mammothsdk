@@ -1796,7 +1796,7 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: SDK target for view export csv VIEW_ID; uses partial file, fsync, atomic rename,
-    and explicit --overwrite. Live dataset permission is currently blocked.
+    and explicit --overwrite.
   reviewed_by: primary
 - command_id: view.export.dataset
   command_path: view export dataset

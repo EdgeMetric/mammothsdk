@@ -50,6 +50,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "file.upload": "upload import CSV spreadsheet XLSX source data",
     "file.upload-folder": "upload source-data directory folder",
     "view.export.csv": "export download local CSV file artifact",
+    "view.transform.discard-duplicates": "duplicate duplicates dedup deduplicate remove repeated rows",
+    "view.transform.convert-type": "convert type cast numeric text date column",
+    "view.transform.fill-missing": "fill missing null empty impute carry forward values",
+    "view.transform.join": "join blend lookup merge matching keys rows",
 }
 
 _MAX_FIND_RESULTS = 20

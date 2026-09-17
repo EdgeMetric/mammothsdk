@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 1.1.5.
+Generated from the reviewed command manifests for mammoth-cli 1.1.6.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 
 Total commands: 547.
