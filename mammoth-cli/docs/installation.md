@@ -12,7 +12,7 @@ bootstraps `uv` when `uv` is absent and requires curl/bash/network access.
 Run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 1.1.12 --noninteractive
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 2.0.0 --noninteractive
 ```
 
 Confirm the result:

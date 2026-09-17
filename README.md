@@ -10,7 +10,7 @@ Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data 
 > Install the pinned CLI without a preinstalled Python tool manager:
 >
 > ```bash
-> curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 1.1.12 --noninteractive
+> curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 2.0.0 --noninteractive
 > ```
 >
 > See [Command-line interface](#command-line-interface-mammoth-cli) below.
@@ -756,7 +756,7 @@ assumed to have a usable default view: list views and choose one explicitly.
 Install the published CLI without a preinstalled Python tool manager:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 1.1.12 --noninteractive
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version 2.0.0 --noninteractive
 ```
 
 Open a new shell if needed so the installer-added tool directory is on PATH,
