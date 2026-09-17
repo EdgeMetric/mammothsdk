@@ -1,0 +1,22 @@
+{
+  "captured_at": "2026-09-17T09:31:58.877879+00:00",
+  "cli_version": "1.1.5",
+  "argv": [
+    "mammoth",
+    "dashboard",
+    "source",
+    "list",
+    "--profile",
+    "expanded-live",
+    "--project",
+    "3",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "{\n  \"error\": {\n    \"authorization_required\": false,\n    \"code\": \"api_error\",\n    \"details\": {\n      \"endpoint\": \"/dashboards/sources\",\n      \"exception_type\": null,\n      \"method\": \"GET\",\n      \"operation_state\": \"failed\",\n      \"phase\": \"response\",\n      \"response_body\": {},\n      \"status_code\": 500\n    },\n    \"hint\": \"Inspect the structured details and correct the request.\",\n    \"message\": \"Mammoth returned an API error.\",\n    \"recovery_commands\": [],\n    \"request_id\": null,\n    \"retryable\": false\n  },\n  \"schema_version\": 1\n}\n",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "b44417c728370891eb01b22afd0c26642e4d34e8109c0989333e50ae5a859ea1"
+}

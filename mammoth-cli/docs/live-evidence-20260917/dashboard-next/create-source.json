@@ -1,0 +1,24 @@
+{
+  "captured_at": "2026-09-17T09:31:14.841040+00:00",
+  "cli_version": "1.1.5",
+  "argv": [
+    "mammoth",
+    "dashboard",
+    "create",
+    "codex source dashboard",
+    "--profile",
+    "expanded-live",
+    "--project",
+    "3",
+    "--input",
+    "{\"source\":[15]}",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 6,
+  "stdout": "",
+  "stderr": "{\n  \"error\": {\n    \"authorization_required\": false,\n    \"code\": \"conflict\",\n    \"details\": {\n      \"endpoint\": \"/dashboards\",\n      \"exception_type\": null,\n      \"method\": \"POST\",\n      \"operation_state\": \"failed\",\n      \"phase\": \"response\",\n      \"response_body\": {\n        \"error_code\": \"4DASH012\",\n        \"message\": \"New dashboards are built on the current engine. Your existing dashboards are unchanged and still editable.\",\n        \"name\": \"DASHBOARD_LEGACY_CREATION_RETIRED\"\n      },\n      \"status_code\": 409\n    },\n    \"hint\": \"Inspect current remote state and resolve the conflict before retrying.\",\n    \"message\": \"Mammoth rejected the request because the target is in conflict.\",\n    \"recovery_commands\": [],\n    \"request_id\": null,\n    \"retryable\": false\n  },\n  \"schema_version\": 1\n}\n",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "ea29f227b1a4739925337ca9c7eac0a5e4384948899d0ac5c1fd6dd702b3e6e1"
+}
