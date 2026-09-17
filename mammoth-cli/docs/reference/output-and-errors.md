@@ -52,10 +52,13 @@ An empty list is therefore `start` then `end` with `count: 0`, not an empty
 byte stream. A successful scalar `data: null` is one `item` frame whose `data`
 is `null`, followed by `end` with `count: 1`; it is distinct from an empty list.
 
-On failure, stdout remains empty and **stderr** receives exactly one terminal
-`error` frame with `complete: false` and the normal error envelope payload.
-An absent `end` frame means the stream is incomplete (for example, the caller
-lost the process or transport) and must not be treated as success.
+When failure occurs before `start`, stdout is empty. A failure after `start` or
+an `item` leaves those already-written stdout frames intact, but never writes
+an `end`/`complete: true` frame. When stderr remains writable, it receives one
+terminal `error` frame with `complete: false` and the normal error envelope
+payload. A broken stderr or terminated process cannot guarantee that error
+frame. An absent `end` frame means the stream is incomplete (for example, the
+caller lost the process or transport) and must not be treated as success.
 
 Example successful list stream:
 
