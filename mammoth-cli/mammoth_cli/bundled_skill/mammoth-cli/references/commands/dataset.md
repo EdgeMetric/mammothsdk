@@ -20,9 +20,11 @@ Expected success: `DatasetBulkDeleteResult` in the standard JSON envelope; mutat
 
 Run: `mammoth dataset bulk-update`. Exact input fields: `mammoth schema get dataset.bulk-update --output json --no-input`.
 
-Example: `mammoth dataset bulk-update --input '{"patch_data": {"sample_key": "Status"}}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth dataset bulk-update --input '{"patch_data": {"sample_key": "Status"}}' --output json --no-input`. Discovery only: this command is fail-closed and must not dispatch a request.
 
-Expected success: `DatasetBulkUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
+
+Known restriction: BLOCKED[B07 DATASET_PATCH_UNTYPED]; reserved, not registered.
 
 ### `dataset.create`
 
@@ -124,6 +126,8 @@ Expected success: `DatasetTrashResult` in the standard JSON envelope; mutation `
 
 Run: `mammoth dataset update`. Exact input fields: `mammoth schema get dataset.update --output json --no-input`.
 
-Example: `mammoth schema get dataset.update --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth schema get dataset.update --output json --no-input`. Discovery only: this command is fail-closed and must not dispatch a request.
 
-Expected success: `DatasetUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
+
+Known restriction: BLOCKED[B07 DATASET_PATCH_UNTYPED]: raw patch operations include rename/refresh/column changes/reattach/deletion; do not dispatch them. Use dataset.rename or dataset.file-settings.update for their typed variants. The pinned SDK has no public binding for the singular UpdateDataset route, so its other OpenAPI patch variants remain unavailable until a typed SDK contract exists.

@@ -92,9 +92,11 @@ Expected success: `ViewCheckpointUpdateResult` in the standard JSON envelope; mu
 
 Run: `mammoth view conditional-format create`. Exact input fields: `mammoth schema get view.conditional-format.create --output json --no-input`.
 
-Example: `mammoth view conditional-format create 123 123 --input '{"rule": {"sample_key": "Status"}}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view conditional-format create 123 123 --input '{"rule": {"sample_key": "Status"}}' --output json --no-input`. Discovery only: this command is fail-closed and must not dispatch a request.
 
-Expected success: `ViewConditionalFormatCreateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
+
+Known restriction: BLOCKED[B09 DATAVIEW_INPUT_UNTYPED]: rule is an arbitrary dictionary; reserved, not registered.
 
 ### `view.conditional-format.delete-all`
 
@@ -116,9 +118,11 @@ Expected success: `ViewConditionalFormatListResult` in the standard JSON envelop
 
 Run: `mammoth view conditional-format update`. Exact input fields: `mammoth schema get view.conditional-format.update --output json --no-input`.
 
-Example: `mammoth view conditional-format update 123 123 --input '{"rule": {"sample_key": "Status"}}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view conditional-format update 123 123 --input '{"rule": {"sample_key": "Status"}}' --output json --no-input`. Discovery only: this command is fail-closed and must not dispatch a request.
 
-Expected success: `ViewConditionalFormatUpdateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
+
+Known restriction: BLOCKED[B09 DATAVIEW_INPUT_UNTYPED]; reserved, not registered.
 
 ### `view.create`
 
@@ -484,9 +488,9 @@ Expected success: `ViewExportUpdateResult` in the standard JSON envelope; mutati
 
 Run: `mammoth view exportable-config apply`. Exact input fields: `mammoth schema get view.exportable-config.apply --output json --no-input`.
 
-Example: `mammoth view exportable-config apply 123 --input-format json --input '{"config": {"tasks": []}}' --output json --no-input --yes --confirm 123`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view exportable-config apply 123 --input-format json --input '{"config": {"tasks": []}}' --output json --no-input --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `ViewExportableConfigApplyResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Expected success: `ViewExportableConfigApplyResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `confirm_target`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
 ### `view.exportable-config.get`
 
@@ -884,9 +888,11 @@ Expected success: `ViewTrashResult` in the standard JSON envelope; mutation `ben
 
 Run: `mammoth view update`. Exact input fields: `mammoth schema get view.update --output json --no-input`.
 
-Example: `mammoth schema get view.update --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth schema get view.update --output json --no-input`. Discovery only: this command is fail-closed and must not dispatch a request.
 
-Expected success: `ViewUpdateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
+
+Known restriction: BLOCKED[B09 DATAVIEW_INPUT_UNTYPED]: patch_data is an arbitrary dictionary; reserved, not registered.
 
 ### `view.version.apply`
 

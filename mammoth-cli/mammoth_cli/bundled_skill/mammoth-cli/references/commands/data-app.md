@@ -60,9 +60,9 @@ Expected success: `DataAppPipelineChangesResult` in the standard JSON envelope; 
 
 Run: `mammoth data-app share`. Exact input fields: `mammoth schema get data-app.share --output json --no-input`.
 
-Example: `mammoth data-app share 123 --input '{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth data-app share 123 --input '{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}' --output json --no-input --yes`. Illustrative only: append `--yes` after observing an owned target.
 
-Expected success: `DataAppShareResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Expected success: `DataAppShareResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
 ### `data-app.update`
 

@@ -52,14 +52,18 @@ Expected success: `UserPreferenceGetResult` in the standard JSON envelope; mutat
 
 Run: `mammoth user preference update`. Exact input fields: `mammoth schema get user.preference.update --output json --no-input`.
 
-Example: `mammoth user preference update --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth user preference update --output json --no-input`. Discovery only: this command is fail-closed and must not dispatch a request.
 
-Expected success: `UserPreferenceUpdateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
+
+Known restriction: BLOCKED[B17 VARIADIC_INPUT_UNTYPED]: **prefs is unconstrained; reserved, not registered.
 
 ### `user.update`
 
 Run: `mammoth user update`. Exact input fields: `mammoth schema get user.update --output json --no-input`.
 
-Example: `mammoth user update --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth user update --output json --no-input`. Discovery only: this command is fail-closed and must not dispatch a request.
 
-Expected success: `UserUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
+
+Known restriction: BLOCKED[B17 VARIADIC_INPUT_UNTYPED]: **fields is unconstrained; reserved, not registered.

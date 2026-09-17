@@ -19,6 +19,13 @@ from mammoth_cli.manifest.loader import load_commands  # noqa: E402
 SKILL = ROOT / "mammoth_cli" / "bundled_skill" / "mammoth-cli"
 REFS = SKILL / "references" / "commands"
 INDEX = SKILL / "references" / "command-index.md"
+_FAIL_CLOSED_PATCH_RESTRICTIONS = (
+    "BLOCKED[B07",
+    "BLOCKED[B09",
+    "BLOCKED[B17",
+    "BLOCKED[B19",
+    "BLOCKED[B21",
+)
 
 
 def body(record: dict[str, object]) -> str:
@@ -29,7 +36,20 @@ def body(record: dict[str, object]) -> str:
     mutation = str(record.get("mutation_class") or "unknown")
     wait = str(record.get("wait_policy") or "not_async")
     confirmation = str(record.get("confirmation") or "none")
-    if confirmation == "confirm_target":
+    restriction = str(record.get("known_restrictions") or "")
+    # These restrictions mark untyped or variadic contracts that the local CLI
+    # rejects before dispatch, so catalog wording must not advertise success.
+    fail_closed = restriction.startswith(_FAIL_CLOSED_PATCH_RESTRICTIONS)
+    if fail_closed:
+        example_note = (
+            "Discovery only: this command is fail-closed and must not dispatch a request."
+        )
+        outcome = (
+            "Execution is unavailable for the current contract and returns "
+            "`unsupported_contract`. Do not infer request fields or retry it; use only a "
+            "separately typed alternative."
+        )
+    elif confirmation == "confirm_target":
         example_note = (
             "Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target."
         )
@@ -39,16 +59,27 @@ def body(record: dict[str, object]) -> str:
         example_note = (
             "Runnable only after resolving schema-required IDs and input from observed reads."
         )
+    details = (
+        f"Known restriction: {restriction}\n\n" if fail_closed else ""
+    )
     return (
         f"### `{command_id}`\n\n"
         f"Run: `mammoth {path}`. Exact input fields: `mammoth schema get {command_id} "
         "--output json --no-input`.\n\n"
         f"Example: `{example}`. {example_note}\n\n"
-        f"Expected success: `{result}` in the standard JSON envelope; mutation `{mutation}`, "
-        f"confirmation `{confirmation}`, wait policy `{wait}`. On nonzero exit, inspect the "
-        "JSON error envelope and its `recovery_commands`; do not guess request fields. "
-        "See [representative envelopes](../machine-output.md) for concrete "
-        "success/error shapes.\n\n"
+        + (
+            f"{outcome}\n\n{details}"
+            if fail_closed
+            else (
+                "Expected success: "
+                f"`{result}` in the standard JSON envelope; mutation `{mutation}`, "
+                f"confirmation `{confirmation}`, wait policy `{wait}`. "
+                "On nonzero exit, inspect the "
+                "JSON error envelope and its `recovery_commands`; do not guess request fields. "
+                "See [representative envelopes](../machine-output.md) for concrete "
+                "success/error shapes.\n\n"
+            )
+        )
     )
 
 

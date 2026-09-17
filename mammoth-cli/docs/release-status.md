@@ -1,5 +1,19 @@
 # CLI release provenance
 
+## 2.0.0 / SDK 0.7.2 — unreleased candidate
+
+This is a release-preparation candidate for the breaking NDJSON contract
+change. The CLI candidate version is `2.0.0` and its SDK lower bound is
+`mammoth-io>=0.7.2,<0.8`; the SDK candidate version is `0.7.2`. Neither
+artifact has been published, uploaded, tagged, or promoted to the public
+installer. Keep user-facing installation examples pinned to the latest
+published release until review and publication complete.
+
+The lockfile still records the latest published SDK artifact (`0.7.1`) because
+the candidate `0.7.2` is not yet available from the package index. Regenerate
+and verify it from the exact candidate artifact before publication; do not
+claim a reproducible published lock until that step succeeds.
+
 ## 1.1.12
 
 Published from deterministic **local** artifacts built from immutable tag
@@ -31,6 +45,15 @@ A fresh isolated Python 3.14 public-PyPI install passed the same `pip check`,
 version, schema, and B09 smoke checks after Simple-index propagation. These
 checks do not qualify autonomous workflows, dashboard runtime behavior, or all
 API operations.
+
+An isolated published-skill smoke used a literal, prevalidated temporary
+`HOME`, `CODEX_HOME`, and `XDG_DATA_HOME`. `skill path` resolved all three
+agent destinations beneath that temporary root; the first install wrote three
+owned copies, the repeat reported all three as identical, and `skill list`
+reported all copies present and intact. Sixty bundled catalog and recipe links
+resolved. The smoke found that the 1.1.12 generated catalog described the
+fail-closed B07/B09 patch commands as runnable; that documentation defect is
+corrected only in unreleased 1.1.13 source and does not change 1.1.12 behavior.
 
 ## 1.1.11
 

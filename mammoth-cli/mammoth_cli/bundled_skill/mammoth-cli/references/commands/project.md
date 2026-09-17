@@ -140,6 +140,6 @@ Expected success: `ProjectUserRemoveResult` in the standard JSON envelope; mutat
 
 Run: `mammoth project user update`. Exact input fields: `mammoth schema get project.user.update --output json --no-input`.
 
-Example: `mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --output json --no-input --yes`. Illustrative only: append `--yes` after observing an owned target.
 
-Expected success: `ProjectUserUpdateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Expected success: `ProjectUserUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `yes_always`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.

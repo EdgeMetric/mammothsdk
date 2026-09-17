@@ -36,6 +36,8 @@ Expected success: `ClientAppListResult` in the standard JSON envelope; mutation 
 
 Run: `mammoth client-app update`. Exact input fields: `mammoth schema get client-app.update --output json --no-input`.
 
-Example: `mammoth client-app update sample --input '{"patch_request": {"patch": [{"op": "replace", "path": "role"}]}}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth client-app update sample --input '{"patch_request": {"patch": [{"op": "replace", "path": "role"}]}}' --output json --no-input`. Discovery only: this command is fail-closed and must not dispatch a request.
 
-Expected success: `ClientAppUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
+
+Known restriction: BLOCKED[B21 CLIENT_APP_PATCH_UNCONSTRAINED]: op/path/value are arbitrary strings; reserved, not registered.

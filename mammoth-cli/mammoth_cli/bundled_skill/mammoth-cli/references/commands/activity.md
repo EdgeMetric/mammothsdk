@@ -4,14 +4,18 @@
 
 Run: `mammoth activity export`. Exact input fields: `mammoth schema get activity.export --output json --no-input`.
 
-Example: `mammoth activity export --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth activity export --output json --no-input`. Discovery only: this command is fail-closed and must not dispatch a request.
 
-Expected success: `ActivityExportResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
+
+Known restriction: BLOCKED[B19 ACTIVITY_EXPORT_UNTYPED_ASYNC]: format/filters/download response are raw; reserved, not registered.
 
 ### `activity.list`
 
 Run: `mammoth activity list`. Exact input fields: `mammoth schema get activity.list --output json --no-input`.
 
-Example: `mammoth activity list --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth activity list --output json --no-input`. Discovery only: this command is fail-closed and must not dispatch a request.
 
-Expected success: `ActivityListResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
+
+Known restriction: BLOCKED[B17 VARIADIC_INPUT_UNTYPED]: **filters is unconstrained; reserved, not registered.
