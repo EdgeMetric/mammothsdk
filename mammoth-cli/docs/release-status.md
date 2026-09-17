@@ -1,5 +1,25 @@
 # CLI release provenance
 
+## 1.1.10
+
+Published from the exact `dist` artifact downloaded from successful CI
+build-and-verify job [`105174083438`](https://github.com/EdgeMetric/mammothsdk/actions/runs/35212798832/job/105174083438)
+for tag `cli-v1.1.10` (commit `20430eb`). Trusted Publishing failed, so the
+authorized local Twine fallback uploaded only those downloaded bytes. PyPI's
+JSON metadata reports the same SHA-256 digests:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `7b31296f1d2227791533a76cee1eb32a29eda4a344b4650f7aa3a0be556ddf4c` |
+| Source distribution | `cfd7cab3e4d11f1b261805d5fdd9b149e83df8dfcacf2e5aa6a8abe0bdfc977a` |
+
+A fresh Python 3.14 install from PyPI passed `mammoth --version`,
+`schema get dataset.create` (including the documented `weburl` path and CLI
+wait policy), and a bundled-skill recipe check. The GitHub-release job was
+skipped; no signed GitHub release, Sigstore bundle, or signing claim is made.
+These checks do not qualify autonomous ETL, dashboard runtime behavior, or all
+API operations.
+
 ## 1.1.9
 
 Published from the exact distribution files downloaded from successful CI
