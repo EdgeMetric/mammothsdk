@@ -1,0 +1,142 @@
+{
+  "captured_at": "2026-09-17T13:05:36.414406+00:00",
+  "cli_version": "1.1.10",
+  "argv": [
+    "mammoth",
+    "view",
+    "get",
+    "46",
+    "29",
+    "--profile",
+    "expanded-live",
+    "--project",
+    "3",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 0,
+  "stdout_sha256": "548077bce13ffb995410e60f1078aade37edec6f4e246d36cab0aaf82164bcda",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "response_summary": {
+    "parseable_json": true,
+    "data": {
+      "type": "object",
+      "keys": [
+        "column_count",
+        "created_at",
+        "data_updated_at",
+        "data_url",
+        "dependencies_info",
+        "display_properties",
+        "ds_id",
+        "id",
+        "is_dataview_data_in_sync",
+        "metadata",
+        "name",
+        "original_data_updated",
+        "row_count",
+        "status",
+        "sys_cols",
+        "updated_at",
+        "user_display_properties"
+      ],
+      "fields": {
+        "column_count": {
+          "type": "int"
+        },
+        "created_at": {
+          "type": "str"
+        },
+        "data_updated_at": {
+          "type": "str"
+        },
+        "data_url": {
+          "type": "str"
+        },
+        "dependencies_info": {
+          "type": "object",
+          "keys": [
+            "dependees",
+            "dependents"
+          ],
+          "fields": {
+            "dependees": "dict",
+            "dependents": "dict"
+          }
+        },
+        "display_properties": {
+          "type": "object",
+          "keys": [
+            "COLUMN_NAMES",
+            "COLUMN_ORDER",
+            "COLUMN_WIDTHS",
+            "EXPLORE_PANEL",
+            "FORMAT_INFO",
+            "HIDDEN_COLUMNS",
+            "REVERT_COLUMN_NAMES",
+            "SORT",
+            "WHITESPACE_HIGHLIGHTED_COLUMNS_IN_EXPLORE_SECTION",
+            "WHITESPACE_HIGHLIGHTED_COLUMNS_IN_GRID"
+          ],
+          "fields": {
+            "COLUMN_NAMES": "NoneType",
+            "COLUMN_ORDER": "dict",
+            "COLUMN_WIDTHS": "NoneType",
+            "EXPLORE_PANEL": "NoneType",
+            "FORMAT_INFO": "dict",
+            "HIDDEN_COLUMNS": "list",
+            "REVERT_COLUMN_NAMES": "NoneType",
+            "SORT": "list",
+            "WHITESPACE_HIGHLIGHTED_COLUMNS_IN_EXPLORE_SECTION": "NoneType",
+            "WHITESPACE_HIGHLIGHTED_COLUMNS_IN_GRID": "NoneType"
+          }
+        },
+        "ds_id": {
+          "type": "int"
+        },
+        "id": {
+          "type": "int"
+        },
+        "is_dataview_data_in_sync": {
+          "type": "bool"
+        },
+        "metadata": {
+          "type": "array",
+          "count": 9,
+          "item": "dict"
+        },
+        "name": {
+          "type": "str"
+        },
+        "original_data_updated": {
+          "type": "bool"
+        },
+        "row_count": {
+          "type": "int"
+        },
+        "status": {
+          "type": "str"
+        },
+        "sys_cols": {
+          "type": "array",
+          "count": 0,
+          "item": null
+        },
+        "updated_at": {
+          "type": "str"
+        },
+        "user_display_properties": {
+          "type": "NoneType"
+        }
+      }
+    },
+    "meta": {
+      "command": "view get",
+      "workspace_id": 4,
+      "project_id": null,
+      "pagination": null
+    }
+  },
+  "scope": "expanded-live workspace 4/project 3; retained IDs only; read-only"
+}

@@ -1,0 +1,81 @@
+{
+  "captured_at": "2026-09-17T13:04:37.478267+00:00",
+  "cli_version": "1.1.10",
+  "argv": [
+    "mammoth",
+    "dataset",
+    "get",
+    "28",
+    "--profile",
+    "expanded-live",
+    "--project",
+    "3",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 0,
+  "stdout_sha256": "fe09c070eae780c4763ab4ba485d03fa1b589d8b5d5a01e3b2a7d20cc838ad91",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "response_summary": {
+    "parseable_json": true,
+    "data": {
+      "type": "object",
+      "keys": [
+        "dataset"
+      ],
+      "fields": {
+        "dataset": {
+          "type": "object",
+          "keys": [
+            "additional_info",
+            "configurations",
+            "created_at",
+            "created_by",
+            "data_schema",
+            "data_url",
+            "dependencies",
+            "display_info",
+            "get_url",
+            "id",
+            "name",
+            "recipe",
+            "resource_path",
+            "sources",
+            "stats",
+            "status",
+            "status_info",
+            "updated_at"
+          ],
+          "fields": {
+            "additional_info": "dict",
+            "configurations": "dict",
+            "created_at": "str",
+            "created_by": "str",
+            "data_schema": "list",
+            "data_url": "str",
+            "dependencies": "dict",
+            "display_info": "dict",
+            "get_url": "str",
+            "id": "int",
+            "name": "str",
+            "recipe": "dict",
+            "resource_path": "str",
+            "sources": "list",
+            "stats": "dict",
+            "status": "str",
+            "status_info": "dict",
+            "updated_at": "str"
+          }
+        }
+      }
+    },
+    "meta": {
+      "command": "dataset get",
+      "workspace_id": 4,
+      "project_id": 3,
+      "pagination": null
+    }
+  },
+  "scope": "expanded-live workspace 4/project 3; retained IDs only; read-only"
+}

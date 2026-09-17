@@ -1,0 +1,39 @@
+{
+  "captured_at": "2026-09-17T13:06:13.884577+00:00",
+  "cli_version": "1.1.10",
+  "argv": [
+    "mammoth",
+    "view",
+    "export",
+    "list",
+    "46",
+    "29",
+    "--limit",
+    "1",
+    "--profile",
+    "expanded-live",
+    "--project",
+    "3",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 2,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "72091530241f4654da65f761f22d9ee20d7d2d871241680518b0b9355626e2fc",
+  "response_summary": {
+    "parseable_json": true,
+    "error": {
+      "code": "unknown_option",
+      "retryable": false,
+      "authorization_required": false,
+      "details": {
+        "status_code": null,
+        "method": null,
+        "operation_state": null,
+        "phase": null
+      }
+    }
+  },
+  "scope": "expanded-live workspace 4/project 3; retained IDs only; read-only"
+}
