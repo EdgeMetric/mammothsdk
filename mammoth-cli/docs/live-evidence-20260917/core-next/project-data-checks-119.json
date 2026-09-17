@@ -1,0 +1,21 @@
+{
+  "captured_at": "2026-09-17T09:57:16.870813+00:00",
+  "cli_version": "1.1.9",
+  "argv": [
+    "mammoth",
+    "project",
+    "data-check",
+    "list",
+    "3",
+    "--profile",
+    "expanded-live",
+    "--output",
+    "json",
+    "--no-input"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n  \"data\": {\n    \"data_checks\": []\n  },\n  \"meta\": {\n    \"command\": \"project data-check list\",\n    \"pagination\": null,\n    \"profile\": \"expanded-live\",\n    \"project_id\": 3,\n    \"workspace_id\": 4\n  },\n  \"schema_version\": 1\n}\n",
+  "stderr": "",
+  "stdout_sha256": "cf2c074609a55da5eae44cbf85e12a3c7ac3009f2749c475a8b8f0c5d9bb1e75",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 0,
-    "Partial": 24,
+    "Partial": 23,
     "Not supported": 0,
-    "Unassessed": 504
+    "Unassessed": 505
   },
   "rows": [
     {
@@ -1058,8 +1058,8 @@
     {
       "capability_id": "REL-080",
       "capability": "Get Dashboard Sources",
-      "status": "Partial",
-      "remarks": "Bounded release call reached the endpoint but returned structured HTTP 500 API error; exact envelope retained. No success or Full claim.",
+      "status": "Unassessed",
+      "remarks": "Bounded release call reached the endpoint but returned structured HTTP 500 API error; exact envelope retained. This does not establish capability support.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDashboardSources",
       "method": "GET",
@@ -2422,7 +2422,7 @@
       "canonical_command": "project.checkpoint.list",
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.checkpoint_list",
       "evidence": {
-        "artifact": "docs/live-evidence-20260917/core-next/project-checkpoints-next.json"
+        "artifact": "docs/live-evidence-20260917/core-next/project-checkpoints-119.json"
       }
     },
     {
@@ -2515,7 +2515,7 @@
       "canonical_command": "project.data-check.list",
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.data_check_list",
       "evidence": {
-        "artifact": "docs/live-evidence-20260917/core-next/project-data-checks-next.json"
+        "artifact": "docs/live-evidence-20260917/core-next/project-data-checks-119.json"
       }
     },
     {
