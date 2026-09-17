@@ -2870,8 +2870,8 @@
     {
       "capability_id": "REL-214",
       "capability": "Get dataview pipeline tasks information",
-      "status": "Unassessed",
-      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
+      "status": "Partial",
+      "remarks": "Partial bounded release evidence: retained 1.1.5 task-list repro returned an empty task list successfully; earlier ValueError did not reproduce; no Full claim.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineTasks",
       "method": "GET",
@@ -2879,9 +2879,9 @@
       "canonical_command": "view.task.list",
       "sdk_symbol": "mammoth.api.pipeline.PipelineAPI.list_tasks",
       "evidence": {
-        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
-        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
-        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+        "artifact": "docs/live-evidence-20260917/task-list-repro.json",
+        "report": "docs/live-evidence-20260917/task-list-repro.json",
+        "scope": "owned disposable dataset 6/view 6; returned-ID cleanup; CLI 1.1.5"
       }
     },
     {

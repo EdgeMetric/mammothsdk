@@ -1,0 +1,11 @@
+{
+  "cli_version": "1.1.5",
+  "argv": ["mammoth", "view", "task", "list", "6", "--profile", "expanded-live", "--project", "3", "--output", "json", "--no-input", "--debug"],
+  "exit_code": 0,
+  "stdout_summary": {"tasks": [], "limit": 50, "offset": 50},
+  "stderr_summary": "empty",
+  "stdout_sha256": "e808887b60695bce53b36ba395e5347a9273d30ffc9873f070950461e0c89058",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "fixture": {"dataset_id": 6, "view_id": 6, "cleanup": "dataset 6 deleted; final absence verified"},
+  "note": "Earlier task-list ValueError did not reproduce; treat it as transient/fixture-state-specific."
+}
