@@ -20,6 +20,11 @@ shell and predictable in scripts and agent runs.
 The CLI is built on the public [`mammoth-io`](https://pypi.org/project/mammoth-io/)
 SDK. It adds no second HTTP client and calls no private SDK members.
 
+Agent-oriented interfaces are not a claim that autonomous long pipelines or
+every release API operation are qualified. See the
+[capability matrix](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/release-capability-matrix.md)
+for current coverage.
+
 ## Install
 
 One step, no prerequisites. This installs `uv` if you do not already have it,
