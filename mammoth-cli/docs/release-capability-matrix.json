@@ -2750,8 +2750,8 @@
     {
       "capability_id": "REL-206",
       "capability": "Get dataview pipeline information",
-      "status": "Unassessed",
-      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
+      "status": "Partial",
+      "remarks": "Partial bounded release evidence: retained 1.1.5 pipeline response for owned view 5; no Full claim.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipeline",
       "method": "GET",
@@ -2759,9 +2759,9 @@
       "canonical_command": "view.pipeline.get",
       "sdk_symbol": "mammoth.api.pipeline.PipelineAPI.get_pipeline",
       "evidence": {
-        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
-        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
-        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+        "artifact": "docs/live-evidence-20260917/transform-next/pipeline.json",
+        "report": "docs/live-evidence-20260917/transform-next/pipeline.json",
+        "scope": "owned disposable dataset 5/view 5; returned-ID cleanup; CLI 1.1.5"
       }
     },
     {
@@ -2853,8 +2853,8 @@
     {
       "capability_id": "REL-213",
       "capability": "Get dataview pipeline items",
-      "status": "Unassessed",
-      "remarks": "Bounded candidate 1.1.0 read-only evidence; no release qualification or support promotion.",
+      "status": "Partial",
+      "remarks": "Partial bounded release evidence: retained 1.1.5 pipeline-items response returned an empty item list for owned view 5; no Full claim.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineItems",
       "method": "GET",
@@ -2862,9 +2862,9 @@
       "canonical_command": "view.pipeline.items",
       "sdk_symbol": "mammoth.api.pipeline.PipelineAPI.items",
       "evidence": {
-        "artifact": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-argv-hashes.json",
-        "report": "readiness-closure/evidence/core-readonly-tranche-20260917-candidate-report.md",
-        "scope": "bounded read-only candidate transcript; protected dataset120/view114"
+        "artifact": "docs/live-evidence-20260917/transform-next/items.json",
+        "report": "docs/live-evidence-20260917/transform-next/items.json",
+        "scope": "owned disposable dataset 5/view 5; returned-ID cleanup; CLI 1.1.5"
       }
     },
     {
