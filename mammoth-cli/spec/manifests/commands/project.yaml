@@ -687,8 +687,8 @@ commands:
   sdk_conversion: Call mammoth.api.projects.ProjectsAPI.user_update with validated request fields.
   request_model: ProjectUserUpdateRequest
   result_model: ProjectUserUpdateResult
-  mutation_class: benign_mutation
-  confirmation: none
+  mutation_class: high_impact
+  confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project

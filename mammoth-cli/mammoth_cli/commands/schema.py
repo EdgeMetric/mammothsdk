@@ -58,6 +58,31 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.join": "join blend lookup merge matching keys rows",
 }
 
+# A compact string scope is retained for existing discovery consumers.  These
+# reviewed exceptions add the exact binding facts an agent needs for the
+# sensitive operations repaired in this release; do not infer a project parent
+# merely from a command-family name.
+_SCOPE_REQUIREMENTS: dict[str, dict[str, Any]] = {
+    "project.user.update": {
+        "kind": "project",
+        "required_context": ["project_id"],
+        "target_fields": ["user_id", "invite_id"],
+        "target_rule": "exactly one target field is required by the backend contract",
+    },
+    "data-app.share": {
+        "kind": "workspace",
+        "required_context": ["workspace_id"],
+        "target_fields": ["data_app_id"],
+        "target_rule": "data_app_id is a required positional",
+    },
+    "view.exportable-config.apply": {
+        "kind": "project",
+        "required_context": ["project_id"],
+        "target_fields": ["view_id", "dataset_id"],
+        "target_rule": "view_id is required; dataset_id may be supplied or resolved from the view",
+    },
+}
+
 _MAX_FIND_RESULTS = 20
 _MAX_FIND_LIMIT = 100
 
@@ -334,6 +359,19 @@ def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
             else None,
         },
     }
+
+
+def _scope_requirements(command_id: str, scope: str) -> dict[str, Any]:
+    """Return detailed binding facts without expanding compact discovery."""
+    return _SCOPE_REQUIREMENTS.get(
+        command_id,
+        {
+            "kind": scope,
+            "required_context": [],
+            "target_fields": [],
+            "target_rule": "Inspect positionals and accepted_fields for operation-specific bindings.",
+        },
+    )
 
 
 # Public name for callers that want contract semantics without rebuilding a
@@ -831,13 +869,22 @@ def get_schema(command_id: str) -> dict[str, Any] | None:
     record = command_by_id(command_id)
     if record is None or record.get("disposition") == "alias":
         return None
+    common = _schema_common(record)
     return {
         "command_id": record["command_id"],
         "command_path": record["command_path"],
         "request_model": record["request_model"],
         "result_model": record["result_model"],
         "options": record.get("options", []),
-        **_schema_common(record),
+        **common,
+        "scope_requirements": _scope_requirements(command_id, str(common["scope"])),
+        # ``schema list`` already exposed these execution controls.  Keep the
+        # detail endpoint self-sufficient so an agent does not need a second
+        # inventory lookup before deciding whether it may dispatch.
+        "mutation_class": record["mutation_class"],
+        "confirmation": record["confirmation"],
+        "wait_policy": record["wait_policy"],
+        "pagination_policy": record["pagination_policy"],
         "human_example": record["human_example"],
         "agent_example": record["agent_example"],
         "exit_codes": {

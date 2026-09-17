@@ -2804,7 +2804,7 @@ commands:
   request_model: ViewExportableConfigApplyRequest
   result_model: ViewExportableConfigApplyResult
   mutation_class: reversible_pipeline
-  confirmation: none
+  confirmation: confirm_target
   wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: live_disposable_project

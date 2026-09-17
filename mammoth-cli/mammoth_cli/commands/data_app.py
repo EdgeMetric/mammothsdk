@@ -26,7 +26,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
-from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
+from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, POLICY_YES_ALWAYS, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
@@ -208,6 +208,11 @@ def data_app_share(invocation: Invocation) -> HandlerResult:
     data_app_id = _require_int_positional(invocation, "data app id")
     document = _bound_document(invocation)
     body = _require_field(document, "body")
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_YES_ALWAYS,
+        action=f"share data app {data_app_id}",
+    )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), data_app_id=data_app_id, body=body)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))

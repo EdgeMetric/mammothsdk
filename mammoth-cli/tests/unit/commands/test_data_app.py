@@ -227,8 +227,20 @@ def test_share_without_id_is_usage_error(fake_service: FakeMammothService) -> No
 def test_share_forwards_id_and_body(fake_service: FakeMammothService, tmp_path: Path) -> None:
     body = {"params": {"auth": {"type_of_auth": "mammoth"}}}
     doc = _write(tmp_path, {"body": body})
-    data_app_cmd.data_app_share(_inv("data-app.share", extra_args=["7"], input_file=doc))
+    data_app_cmd.data_app_share(
+        _inv("data-app.share", extra_args=["7"], input_file=doc, yes=True)
+    )
     assert fake_service.call_log == [(_SHARE, {"data_app_id": 7, "body": body})]
+
+
+def test_share_is_blocked_before_dispatch_without_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}})
+    with pytest.raises(CliError) as excinfo:
+        data_app_cmd.data_app_share(_inv("data-app.share", extra_args=["7"], input_file=doc))
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []
 
 
 # --- data-app upload ---------------------------------------------------------

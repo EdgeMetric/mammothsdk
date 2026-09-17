@@ -293,8 +293,8 @@ commands:
   sdk_conversion: Call mammoth.api.data_apps.DataAppsAPI.share with validated request fields.
   request_model: DataAppShareRequest
   result_model: DataAppShareResult
-  mutation_class: benign_mutation
-  confirmation: none
+  mutation_class: external_effect
+  confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project

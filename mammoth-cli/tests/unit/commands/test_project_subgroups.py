@@ -100,7 +100,20 @@ def test_user_update_forwards_role_and_user_id(
 ) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"role": "project_analyst", "user_id": 9}), encoding="utf-8")
-    project_cmd.project_user_update(_inv("project.user.update", project=180, input_file=str(doc)))
+    project_cmd.project_user_update(
+        _inv("project.user.update", project=180, input_file=str(doc), yes=True)
+    )
     assert fake_service.call_log == [
         (_USER_UPDATE, {"project_id": 180, "role": "project_analyst", "user_id": 9})
     ]
+
+
+def test_user_update_is_blocked_before_dispatch_without_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"role": "project_admin", "user_id": 9}), encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        project_cmd.project_user_update(_inv("project.user.update", project=180, input_file=str(doc)))
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []

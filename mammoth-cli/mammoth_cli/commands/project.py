@@ -26,6 +26,7 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
     POLICY_PROMPT_OR_YES,
+    POLICY_YES_ALWAYS,
     enforce_confirmation,
 )
 from mammoth_cli.runtime.invocation import Invocation
@@ -361,6 +362,11 @@ def project_user_update(invocation: Invocation) -> HandlerResult:
     for field in ("user_id", "invite_id"):
         if field in document:
             kwargs[field] = document[field]
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_YES_ALWAYS,
+        action=f"update membership role in project {project_id}",
+    )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
