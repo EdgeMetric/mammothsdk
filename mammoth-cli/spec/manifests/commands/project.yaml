@@ -699,7 +699,7 @@ commands:
   secret_fields: []
   human_example: mammoth project user update --help
   agent_example: 'mammoth project user update 123 --input ''{"role": "project_admin", "user_id": 123}''
-    --output json --no-input'
+    --output json --no-input --yes'
   unit_tests:
   - UT-PROJECT-USER-UPDATE
   contract_tests:

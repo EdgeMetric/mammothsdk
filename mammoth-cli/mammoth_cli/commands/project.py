@@ -359,6 +359,15 @@ def project_user_update(invocation: Invocation) -> HandlerResult:
     role = _require_input_field(document, "role")
     kwargs: dict[str, Any] = {"project_id": project_id, "role": role}
     assert document is not None
+    target_count = sum(
+        field in document and document[field] is not None for field in ("user_id", "invite_id")
+    )
+    if target_count != 1:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="Exactly one of 'user_id' or 'invite_id' is required.",
+            exit_status=EXIT_USAGE,
+        )
     for field in ("user_id", "invite_id"):
         if field in document:
             kwargs[field] = document[field]

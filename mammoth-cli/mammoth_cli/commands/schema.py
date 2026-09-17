@@ -22,6 +22,7 @@ from functools import cache
 from typing import Any, cast
 
 from mammoth_cli.manifest.loader import command_by_id, load_commands, load_operations
+from mammoth_cli.output.normalize import trusted_json_schema
 from mammoth_cli.services.argspec import FieldSpec
 from mammoth_cli.services.command_contract import LOCAL_COMMANDS, resolve_command_contract
 from mammoth_cli.services.input_fields import (
@@ -558,6 +559,11 @@ def runnable_example(
         document.update(hints)
         tokens.extend(["--input", json.dumps(document)])
     tokens.extend(_OUTPUT_JSON_NO_INPUT)
+    if record["command_id"] in {"project.user.update", "data-app.share"}:
+        # These published high-impact examples must satisfy the same policy
+        # their manifests advertise; otherwise discovery emits a command that
+        # deterministically fails before dispatch.
+        tokens.append("--yes")
     if record["command_id"] == "project.resource-dependencies.update":
         # This command has a confirm_target policy.  Keep its generated
         # example executable in non-interactive mode instead of advertising a
@@ -720,6 +726,11 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
                     field["schema"].update({"minimum": 0})
         if definitions:
             input_schema["$defs"] = definitions
+        # This mapping is produced locally from reviewed command contracts,
+        # not returned by an API. Preserve JSON-Schema declaration names (for
+        # example ``properties.api_secret``) through Result/render's second
+        # normalization pass without trusting arbitrary result dictionary keys.
+        input_schema = trusted_json_schema(input_schema)
     contract = _compact_contract(record)
     return {
         "positionals": _positionals(record["command_id"]),

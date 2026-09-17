@@ -117,3 +117,23 @@ def test_user_update_is_blocked_before_dispatch_without_confirmation(
         project_cmd.project_user_update(_inv("project.user.update", project=180, input_file=str(doc)))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
+
+
+@pytest.mark.parametrize(
+    "document",
+    [
+        {"role": "project_admin"},
+        {"role": "project_admin", "user_id": 9, "invite_id": 10},
+    ],
+)
+def test_user_update_requires_exactly_one_member_target_before_dispatch(
+    fake_service: FakeMammothService, tmp_path: Path, document: dict[str, object]
+) -> None:
+    path = tmp_path / "in.json"
+    path.write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        project_cmd.project_user_update(
+            _inv("project.user.update", project=180, input_file=str(path), yes=True)
+        )
+    assert excinfo.value.code == "invalid_argument"
+    assert fake_service.call_log == []

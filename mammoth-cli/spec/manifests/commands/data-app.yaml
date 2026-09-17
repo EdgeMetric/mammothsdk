@@ -305,7 +305,7 @@ commands:
   secret_fields: []
   human_example: mammoth data-app share DATA_APP_ID --help
   agent_example: 'mammoth data-app share 123 --input ''{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}''
-    --output json --no-input'
+    --output json --no-input --yes'
   unit_tests:
   - UT-DATA-APP-SHARE
   contract_tests:

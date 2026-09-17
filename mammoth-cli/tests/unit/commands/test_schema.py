@@ -179,6 +179,10 @@ def test_schema_get_exposes_dispatch_policy_and_exact_sensitive_scope() -> None:
         "returns_job",
     )
     assert apply["scope_requirements"]["target_fields"] == ["view_id", "dataset_id"]
+    assert "--yes" in shlex.split(project_admin["agent_example"])
+    assert "--yes" in shlex.split(share["agent_example"])
+    assert "--yes" in shlex.split(project_admin["runnable_example"])
+    assert "--yes" in shlex.split(share["runnable_example"])
 
 
 def test_agent_transform_language_finds_typed_routes() -> None:
