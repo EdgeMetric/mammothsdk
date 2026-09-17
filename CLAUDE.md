@@ -77,7 +77,7 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
 - All enums extend `str, Enum` — serialize as strings in JSON, work with IDE autocomplete
 - Version is set in **two places** (keep in sync): `pyproject.toml` and `mammoth/__init__.py`
 - Line length: 100 (black + ruff)
-- Python target: 3.10+ (`from __future__ import annotations` used throughout)
+- Python target: 3.12–3.14 (`from __future__ import annotations` used throughout)
 - mypy strict mode with overrides for `api/` (return-value), `_mixins/` (attr-defined), and `view` (return-any)
 - Backend reference code lives in `mvc-service/` (param_templates, constants) — useful for verifying payload formats
 - CSV date columns upload as TEXT — must `convert_type` before date operations

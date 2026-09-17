@@ -2,19 +2,19 @@
 
 ## Requirements
 
-- Python 3.10 or higher
+- Python 3.12, 3.13, or 3.14
 - pip or Poetry package manager
 
 ## Install from PyPI
 
 ```bash
-pip install mammoth-io==0.3.7
+pip install mammoth-io==0.7.0
 ```
 
 Or with Poetry:
 
 ```bash
-poetry add mammoth-io==0.3.7
+poetry add mammoth-io==0.7.0
 ```
 
 ## Dependencies

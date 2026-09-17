@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.0
+
+The current SDK release. It requires Python 3.12, 3.13, or 3.14. Transformation
+arguments use the typed specifications and enums documented in the API
+reference; the bundled `mammoth-cli` release is 1.1.1 and depends on SDK 0.7.x.
+
 ## v0.3.0
 
 ### Breaking changes

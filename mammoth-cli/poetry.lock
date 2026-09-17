@@ -852,10 +852,11 @@ name = "mammoth-io"
 version = "0.7.0"
 description = "Python SDK for Mammoth Analytics platform"
 optional = false
-python-versions = ">=3.12,<3.15"
+python-versions = "<3.15,>=3.12"
 groups = ["main"]
 files = [
-    {file = "mammoth_io-0.7.0-py3-none-any.whl", hash = "sha256:27d23e5c3fbbddfed99d13b0337ba95ba9c884e3b7ea209de92f8a732b26214d"},
+    {file = "mammoth_io-0.7.0-py3-none-any.whl", hash = "sha256:666bc2130282fa1cbb1912d78d3973c13d2facd4962a5a79cad88346e247351a"},
+    {file = "mammoth_io-0.7.0.tar.gz", hash = "sha256:6c9e9c54b1480739324d94039aaf19c02a39c11ce43394ed79758b50a524ee10"},
 ]
 
 [package.dependencies]

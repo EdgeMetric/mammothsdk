@@ -92,7 +92,7 @@ Deploy as a remote MCP server with OAuth 2.0 authentication for multi-user acces
 
 ### Prerequisites
 
-- Python 3.10+, Poetry
+- Python 3.12, 3.13, or 3.14; Poetry
 - Redis server
 - Domain with DNS (e.g. mcp.mammoth.io)
 - SSL certificate (Let's Encrypt)
