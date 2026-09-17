@@ -33,13 +33,16 @@ All commands below were read-only and used the observed retained resource
 
 No Full status is claimed for the pipeline-version or negative cases below.
 
-## Full candidate qualification
+## Development-only Full candidate control
 
-The approved plan requires meaningful options, result/state, and applicable
-lifecycle/error behavior. The inspectable folder evidence for REL-224 is in
+The approved plan requires approved-release evidence in addition to meaningful
+options, result/state, and applicable lifecycle/error behavior. The inspectable
+folder control evidence for REL-224 is in
 [`folder-rel224-full.json`](folder-rel224-full.json): `fields=__full` returned
 the ready folder state; wrong-project and missing-ID reads returned structured
 authorization errors; the disposable folder was created, read, deleted with
 `remove_contents=false`, and its name-filtered post-delete list was empty.
-Only REL-224 is promoted to Full. This is a row-level claim; the folder family
-is not Full because its other child rows remain Partial/Unassessed.
+This receipt was produced with local unreleased CLI 1.1.13, so it is not
+eligible for a Full claim and REL-224 remains Partial. The receipt is retained
+as a development control only; a release-grade rerun must capture the public
+approved CLI's actual stdout and stderr streams separately.
