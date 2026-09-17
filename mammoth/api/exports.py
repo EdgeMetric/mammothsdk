@@ -643,6 +643,20 @@ class ExportsAPI:
         published = False
         fd = -1
 
+        def local_delivery_details(state: str) -> dict[str, Any]:
+            details: dict[str, Any] = {"local_artifact_state": state}
+            if job_handle is not None:
+                details.update(
+                    {
+                        "remote_export_state": "succeeded",
+                        "recovery_hint": (
+                            "Inspect the completed export job and re-download its artifact; "
+                            "do not recreate the export."
+                        ),
+                    }
+                )
+            return details
+
         def response_header(*names: str) -> str | None:
             if response is None:
                 return None
@@ -710,7 +724,8 @@ class ExportsAPI:
             status_code = getattr(response, "status_code", None)
             if not isinstance(status_code, int):
                 status_code = None
-            details: dict[str, Any] = {"exception_type": type(e).__name__}
+            details = local_delivery_details("failed")
+            details["exception_type"] = type(e).__name__
             if quarantined_path is not None:
                 details["quarantined_path"] = quarantined_path
             raise MammothAPIError(
@@ -720,36 +735,38 @@ class ExportsAPI:
                 method="GET",
                 request_id=response_header("X-Request-ID", "X-Correlation-ID", "Request-ID"),
                 retry_after=response_header("Retry-After"),
-                operation_state="not_started",
+                operation_state="succeeded" if job_handle is not None else "not_started",
                 phase="download",
                 job_handle=job_handle,
             ) from e
         except KeyboardInterrupt as e:
             quarantined_path = discard_partial()
-            details: dict[str, Any] = {"interrupted": True}
+            details = local_delivery_details("interrupted")
+            details["interrupted"] = True
             if quarantined_path is not None:
                 details["quarantined_path"] = quarantined_path
             raise MammothAPIError(
                 "Download interrupted before the local artifact was published",
                 details=details,
                 method="GET",
-                operation_state="outcome_unknown",
+                operation_state="succeeded" if job_handle is not None else "outcome_unknown",
                 phase="download",
                 job_handle=job_handle,
             ) from e
         except OSError as e:
             quarantined_path = discard_partial()
-            details = {
+            details = local_delivery_details("failed")
+            details.update({
                 "exception_type": type(e).__name__,
                 "errno": e.errno,
-            }
+            })
             if quarantined_path is not None:
                 details["quarantined_path"] = quarantined_path
             raise MammothAPIError(
                 "Failed to save downloaded file",
                 details=details,
                 method="GET",
-                operation_state="not_started",
+                operation_state="succeeded" if job_handle is not None else "not_started",
                 phase="download",
                 job_handle=job_handle,
             ) from e

@@ -259,3 +259,27 @@ def test_keyboard_interrupt_has_exit_130_and_resume_commands() -> None:
     assert mapped.exit_status == EXIT_INTERRUPT
     assert mapped.details["job_handle"] == 44
     assert any("job wait 44" in command for command in mapped.recovery_commands)
+
+
+def test_completed_export_local_failure_keeps_delivery_state_and_redownload_hint() -> None:
+    mapped = map_sdk_exception(
+        MammothAPIError(
+            "Failed to save downloaded file",
+            method="GET",
+            operation_state="succeeded",
+            phase="download",
+            job_handle=919,
+            details={
+                "errno": 28,
+                "remote_export_state": "succeeded",
+                "local_artifact_state": "failed",
+                "recovery_hint": "Re-download the observed artifact; do not recreate the export.",
+            },
+        )
+    )
+
+    assert mapped.code == "download_failed"
+    assert mapped.details["remote_export_state"] == "succeeded"
+    assert mapped.details["local_artifact_state"] == "failed"
+    assert mapped.hint == "Re-download the observed artifact; do not recreate the export."
+    assert any("job get 919" in command for command in mapped.recovery_commands)

@@ -73,6 +73,9 @@ def _metadata(exc: MammothAPIError) -> dict[str, Any]:
         "dataset_id",
         "project_id",
         "readback_error",
+        "remote_export_state",
+        "local_artifact_state",
+        "recovery_hint",
     ):
         if name in exc.details and name not in details:
             details[name] = (
@@ -216,9 +219,12 @@ def map_sdk_exception(
                 code="download_failed",
                 message="The export could not be saved locally; the destination was not replaced.",
                 exit_status=EXIT_API,
-                hint=(
-                    "Free disk space or choose another destination, then inspect the "
-                    "export job before downloading again."
+                hint=str(
+                    details.get(
+                        "recovery_hint",
+                        "Free disk space or choose another destination, then inspect the "
+                        "export job before downloading again.",
+                    )
                 ),
                 details=details,
                 request_id=request_id,

@@ -321,6 +321,10 @@ def test_interrupted_download_preserves_destination_and_remote_job_handle(tmp_pa
     assert raised.value.details["interrupted"] is True
     assert raised.value.job_handle == 919
     assert raised.value.details["job_handle"] == 919
+    assert raised.value.operation_state == "succeeded"
+    assert raised.value.details["remote_export_state"] == "succeeded"
+    assert raised.value.details["local_artifact_state"] == "interrupted"
+    assert "do not recreate" in raised.value.details["recovery_hint"]
     assert destination.read_bytes() == b"old"
     assert list(tmp_path.glob("*.part")) == []
 
@@ -339,3 +343,25 @@ def test_symlink_destination_is_refused_without_touching_target(tmp_path: Path) 
     assert target.read_bytes() == b"old"
     assert destination.is_symlink()
     assert session.get.call_count == 0
+
+
+def test_local_save_failure_marks_remote_export_succeeded_when_handle_known(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destination = tmp_path / "result.csv"
+    session = MagicMock()
+    session.get.return_value = _Response(chunks=[b"new"])
+
+    def full_disk(_fd: int) -> None:
+        raise OSError(errno.ENOSPC, "full")
+
+    monkeypatch.setattr("mammoth.api.exports.os.fsync", full_disk)
+
+    with pytest.raises(MammothAPIError) as raised:
+        _export_api(session)._download_file(
+            "https://download.invalid/file", destination, job_handle=919
+        )
+
+    assert raised.value.operation_state == "succeeded"
+    assert raised.value.details["remote_export_state"] == "succeeded"
+    assert raised.value.details["local_artifact_state"] == "failed"
