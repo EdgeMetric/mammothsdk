@@ -39,6 +39,12 @@ operations without a CLI command and the 44 support/billing write routes
 requires `mammoth-io>=0.7.8,<0.8`, adds no API bindings, and makes no
 capability-status or autonomous-workflow qualification claim.
 
+Published from deterministic local artifacts built from tag `cli-v2.0.16`
+(source commit `5c115c3`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.16-py3-none-any.whl` sha256 `fecf5fe94f6436c6cfb29f9ed1adb39a86755bf2ebcf0236f2d0edf924f9219c`
+- `mammoth_cli-2.0.16.tar.gz` sha256 `a7a95806b7b8f1fd9bf0e7b2ba2d5e4fa4213672b7a1a1249b89774c3bc48d21`
+
 SDK 0.7.8 (`sdk-v0.7.8`, source commit `2df82ed`): `mammoth_io-0.7.8-py3-none-any.whl` sha256
 `5bd01357df1fbf0d0898434701b52eacf9dc04d333b6fdb6f145516b6ac0d395`; `mammoth_io-0.7.8.tar.gz` sha256 `6c954e0dc7aabdd1346f9b0c3f6b0f26752db6354ecdd94919c3ca3f36fc9230`; digests verified against PyPI.
 
