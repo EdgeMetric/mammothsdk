@@ -81,17 +81,119 @@ def _delete_keyring(profile: str) -> bool:
         return False
 
 
+def _insecure_file_error(reason: str) -> CliError:
+    """Return a secret-safe error for an unsafe POSIX credential store."""
+    return CliError(
+        code="insecure_credential_file",
+        message="The file-backed credential store is not safe to use.",
+        exit_status=EXIT_USAGE,
+        hint=(
+            f"Secure {credentials_path().parent} and its credential file: "
+            "the directory and file must be owned by this user and private "
+            "(mode 0700/0600)."
+        ),
+        details={"reason": reason},
+    )
+
+
+def _check_private_directory(directory: Path) -> None:
+    """Reject an unsafe config directory without changing its permissions."""
+    try:
+        directory_stat = os.lstat(directory)
+    except FileNotFoundError:
+        return
+    except OSError:
+        raise _insecure_file_error("directory_unreadable") from None
+    if not stat.S_ISDIR(directory_stat.st_mode):
+        raise _insecure_file_error("directory_not_directory")
+    if directory_stat.st_uid != os.geteuid():
+        raise _insecure_file_error("directory_wrong_owner")
+    if directory_stat.st_mode & 0o077:
+        raise _insecure_file_error("directory_permissions")
+
+
+def _read_file_bytes(path: Path) -> bytes | None:
+    """Read the credential file with POSIX ownership and race checks."""
+    directory_fd = -1
+    fd = -1
+    try:
+        directory_flags = (
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_DIRECTORY", 0)
+        )
+        directory_fd = os.open(path.parent, directory_flags)
+    except FileNotFoundError:
+        return None
+    except OSError:
+        raise _insecure_file_error("file_unreadable") from None
+    try:
+        directory_stat = os.fstat(directory_fd)
+        if not stat.S_ISDIR(directory_stat.st_mode):
+            raise _insecure_file_error("directory_not_directory")
+        if directory_stat.st_uid != os.geteuid():
+            raise _insecure_file_error("directory_wrong_owner")
+        if directory_stat.st_mode & 0o077:
+            raise _insecure_file_error("directory_permissions")
+        flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+        try:
+            fd = os.open(path.name, flags, dir_fd=directory_fd)
+        except FileNotFoundError:
+            return None
+        except OSError:
+            raise _insecure_file_error("file_unreadable") from None
+        file_stat = os.fstat(fd)
+        if not stat.S_ISREG(file_stat.st_mode):
+            raise _insecure_file_error("file_not_regular")
+        if file_stat.st_uid != os.geteuid():
+            raise _insecure_file_error("file_wrong_owner")
+        if file_stat.st_mode & 0o077:
+            raise _insecure_file_error("file_permissions")
+        with os.fdopen(fd, "rb") as handle:
+            fd = -1
+            raw = handle.read()
+        # The file descriptor cannot be redirected, but make the corresponding
+        # path-entry identity explicit before the caller parses its contents.
+        # This also detects a replacement between open and validation.
+        try:
+            path_stat = os.stat(path.name, dir_fd=directory_fd, follow_symlinks=False)
+        except OSError:
+            raise _insecure_file_error("file_identity_changed") from None
+        if (path_stat.st_dev, path_stat.st_ino) != (file_stat.st_dev, file_stat.st_ino):
+            raise _insecure_file_error("file_identity_changed")
+        if not stat.S_ISREG(path_stat.st_mode):
+            raise _insecure_file_error("file_not_regular")
+        if path_stat.st_uid != os.geteuid():
+            raise _insecure_file_error("file_wrong_owner")
+        if path_stat.st_mode & 0o077:
+            raise _insecure_file_error("file_permissions")
+        return raw
+    finally:
+        if fd != -1:
+            os.close(fd)
+        if directory_fd != -1:
+            os.close(directory_fd)
+
+
 def _load_file_document() -> TOMLDocument:
     path = credentials_path()
-    if not path.exists():
+    if os.name != "posix":
+        if not path.exists():
+            return tomlkit.document()
+        return tomlkit.parse(path.read_text(encoding="utf-8"))
+    raw = _read_file_bytes(path)
+    if raw is None:
         return tomlkit.document()
-    return tomlkit.parse(path.read_text(encoding="utf-8"))
+    return tomlkit.parse(raw.decode("utf-8"))
 
 
 def _write_file_document(document: TOMLDocument) -> None:
     directory = config_dir()
-    directory.mkdir(parents=True, exist_ok=True)
+    directory.mkdir(mode=stat.S_IRWXU, parents=True, exist_ok=True)
     if os.name == "posix":
+        _check_private_directory(directory)
         os.chmod(directory, stat.S_IRWXU)
     fd, tmp_name = tempfile.mkstemp(dir=str(directory), prefix=".credentials-", suffix=".tmp")
     try:
@@ -218,6 +320,6 @@ def delete_credentials(profile: str) -> bool:
     Returns:
         True if a credential was removed from either backend.
     """
-    removed_keyring = _delete_keyring(profile) if _keyring_available() else False
     removed_file = _delete_file(profile)
+    removed_keyring = _delete_keyring(profile) if _keyring_available() else False
     return removed_keyring or removed_file

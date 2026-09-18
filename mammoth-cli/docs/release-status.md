@@ -1,5 +1,14 @@
 # CLI release provenance
 
+## 2.0.4 / SDK 0.7.3
+
+This security maintenance release hardens the explicit file-backed credential
+fallback on POSIX. Every file read, update, and delete now rejects unsafe
+directory or file ownership and permissions, symlinks, non-regular files, and
+file-entry replacement before parsing secrets. It retains
+`mammoth-io>=0.7.3,<0.8`, makes no API-binding or capability-status change,
+and does not qualify autonomous workflows or backend behavior.
+
 ## 2.0.3 / SDK 0.7.3
 
 This CLI-only documentation correction makes every `mammoth-cli` README link
