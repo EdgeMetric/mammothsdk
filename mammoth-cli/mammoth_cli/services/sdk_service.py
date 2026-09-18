@@ -17,6 +17,7 @@ from mammoth.exceptions import MammothColumnError
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENTS,
+    CODE_MISSING_ARGUMENT,
     CODE_RESOURCE_NOT_FOUND,
     CODE_SDK_SYMBOL_UNRESOLVED,
     EXIT_NOT_FOUND,
@@ -269,6 +270,8 @@ class SdkMammothService:
                 kwargs = self._hydrate_foreign_view(
                     kwargs, view_kwarg="lookup_view_id", parent_kwarg="lookup_dataset_id"
                 )
+        except CliError:
+            raise
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
         self._reject_internal_column_inputs(view, method, kwargs)
@@ -343,11 +346,25 @@ class SdkMammothService:
         if not isinstance(value, int) or isinstance(value, bool):
             return kwargs
         parent = kwargs.get(parent_kwarg)
-        foreign = (
-            self._client.views.get(value, dataset_id=int(parent))
-            if parent is not None
-            else self._client.get_view(value)
-        )
+        if parent is None:
+            # Resolving the foreign view without its parent would re-enter the
+            # SDK's project-wide browse-and-probe discovery before a mutation,
+            # the same path the target view is already protected from.
+            raise CliError(
+                code=CODE_MISSING_ARGUMENT,
+                message=(
+                    f"'{view_kwarg}' {value} needs its exact parent '{parent_kwarg}'; "
+                    "project-wide parent discovery is only performed for reads."
+                ),
+                exit_status=EXIT_USAGE,
+                hint=(
+                    f"Add '{parent_kwarg}' to --input with the dataset that owns view {value} "
+                    "(from 'view list DATASET_ID' or a 'view get' read)."
+                ),
+                details={view_kwarg: value, "missing_field": parent_kwarg},
+                recovery_commands=[f"mammoth view get {value} --output json --no-input"],
+            )
+        foreign = self._client.views.get(value, dataset_id=int(parent))
         hydrated = dict(kwargs)
         hydrated[view_kwarg] = foreign
         return hydrated

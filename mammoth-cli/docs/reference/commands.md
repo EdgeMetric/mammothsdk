@@ -5023,7 +5023,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.join`
-- Agent example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456}' --output json --no-input`
+- Agent example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456, "foreign_dataset_id": 457}' --output json --no-input`
 
 ### `mammoth view transform json-extract`
 
@@ -5056,7 +5056,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.lookup`
-- Agent example: `mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample", "dataset_id": 456}' --output json --no-input`
+- Agent example: `mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample", "dataset_id": 456, "lookup_dataset_id": 457}' --output json --no-input`
 
 ### `mammoth view transform math`
 

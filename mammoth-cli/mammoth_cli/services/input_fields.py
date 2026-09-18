@@ -68,33 +68,56 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     },
     "view.export.managed-s3": {"file_name": "report.csv"},
     "view.export.mssql": {
-        "host": "db.example", "port": 1433, "database": "analytics", "table": "exports",
-        "username": "agent", "password": "replace-with-secret",
+        "host": "db.example",
+        "port": 1433,
+        "database": "analytics",
+        "table": "exports",
+        "username": "agent",
+        "password": "replace-with-secret",
     },
     "view.export.mysql": {
-        "host": "db.example", "port": 3306, "database": "analytics", "table": "exports",
-        "username": "agent", "password": "replace-with-secret",
+        "host": "db.example",
+        "port": 3306,
+        "database": "analytics",
+        "table": "exports",
+        "username": "agent",
+        "password": "replace-with-secret",
     },
     "view.export.onedrive": {
-        "tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret",
+        "tenant_id": "tenant-id",
+        "client_id": "client-id",
+        "client_secret": "replace-with-secret",
         "user_id": "user-id",
     },
     "view.export.postgres": {
-        "host": "db.example", "port": 5432, "database": "analytics", "table": "exports",
-        "username": "agent", "password": "replace-with-secret",
+        "host": "db.example",
+        "port": 5432,
+        "database": "analytics",
+        "table": "exports",
+        "username": "agent",
+        "password": "replace-with-secret",
     },
     "view.export.powerbi": {
-        "username": "agent", "password": "replace-with-secret", "client_id": "client-id",
-        "dataset": "dataset", "table": "exports",
+        "username": "agent",
+        "password": "replace-with-secret",
+        "client_id": "client-id",
+        "dataset": "dataset",
+        "table": "exports",
     },
     "view.export.redshift": {
-        "host": "db.example", "port": 5439, "database": "analytics", "table": "exports",
-        "username": "agent", "password": "replace-with-secret",
+        "host": "db.example",
+        "port": 5439,
+        "database": "analytics",
+        "table": "exports",
+        "username": "agent",
+        "password": "replace-with-secret",
     },
     "view.export.rest": {"base_url": "https://api.example", "endpoint_path": "/records"},
     "view.export.sftp": {"host": "sftp.example", "username": "agent"},
     "view.export.sharepoint": {
-        "tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret",
+        "tenant_id": "tenant-id",
+        "client_id": "client-id",
+        "client_secret": "replace-with-secret",
         "site_url": "https://sharepoint.example/site",
     },
     "view.export.tableau": {
@@ -111,9 +134,7 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # request a new customer can understand and run.
     "dataset.create": {
         "ds_creation_type": "weburl",
-        "dataset_spec": {
-            "url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"
-        },
+        "dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"},
     },
     # project user update targets a specific member: the handler requires ``role``
     # (auto-filled) plus one of ``user_id``/``invite_id`` to say *which* member.
@@ -143,6 +164,10 @@ def example_input_hints(command_id: str) -> dict[str, Any]:
         # Non-read view commands refuse project-wide parent discovery, so a
         # runnable example must show the exact parent.
         hints.setdefault("dataset_id", 456)
+    if command_id == "view.transform.join":
+        hints.setdefault("foreign_dataset_id", 457)
+    if command_id == "view.transform.lookup":
+        hints.setdefault("lookup_dataset_id", 457)
     return hints
 
 

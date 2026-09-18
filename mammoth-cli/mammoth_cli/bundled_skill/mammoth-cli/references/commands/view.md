@@ -790,7 +790,7 @@ Expected success: `ViewTransformIncrementDateResult` in the standard JSON envelo
 
 Run: `mammoth view transform join`. Exact input fields: `mammoth schema get view.transform.join --output json --no-input`.
 
-Example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456, "foreign_dataset_id": 457}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformJoinResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -814,7 +814,7 @@ Expected success: `ViewTransformLimitRowsResult` in the standard JSON envelope; 
 
 Run: `mammoth view transform lookup`. Exact input fields: `mammoth schema get view.transform.lookup --output json --no-input`.
 
-Example: `mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample", "dataset_id": 456, "lookup_dataset_id": 457}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformLookupResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

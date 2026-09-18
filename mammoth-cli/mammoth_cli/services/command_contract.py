@@ -205,11 +205,7 @@ def _input_schema(
     operation_ids = tuple(str(item) for item in record.get("operation_ids", ()))
     body_schema = openapi_body_schema_for(operation_ids)
     for field in fields:
-        if (
-            field.name == "body"
-            and is_opaque_mapping(field.annotation)
-            and body_schema is not None
-        ):
+        if field.name == "body" and is_opaque_mapping(field.annotation) and body_schema is not None:
             properties[field.name] = body_schema
         else:
             properties[field.name] = json_schema(field.annotation, field.name)
@@ -267,9 +263,7 @@ _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     "completion.install": (
         FieldSpec("shell", required=False, annotation=str | None, default=None),
     ),
-    "completion.show": (
-        FieldSpec("shell", required=False, annotation=str | None, default=None),
-    ),
+    "completion.show": (FieldSpec("shell", required=False, annotation=str | None, default=None),),
     "skill.install": (
         FieldSpec("agents", required=False, annotation=list[str] | None, default=None),
         FieldSpec("scope", required=False, annotation=str, default="user"),
@@ -489,9 +483,9 @@ _SPECIAL_EXPORT_COMMON: dict[str, Any] = {
     "additional_properties": dict[str, Any],
     "condition": Any,
 }
-def _special_export_fields(
-    command_id: str, spec: ArgSpec | None
-) -> tuple[FieldSpec, ...] | None:
+
+
+def _special_export_fields(command_id: str, spec: ArgSpec | None) -> tuple[FieldSpec, ...] | None:
     required = _SPECIAL_EXPORT_REQUIRED.get(command_id)
     if required is None:
         return None
@@ -501,6 +495,7 @@ def _special_export_fields(
         if name not in declared_names:
             declared.append(FieldSpec(name=name, required=False, annotation=annotation))
     return tuple(declared)
+
 
 # These family sets are derived from the checked-in command manifest rather
 # than copied from the workbook.  They make the admission boundary closed for
@@ -530,8 +525,7 @@ S4_COMMANDS = frozenset(
 S6_COMMANDS = frozenset(
     record["command_id"]
     for record in load_commands()
-    if str(record["command_id"]).split(".", 1)[0]
-    in {"dashboard", "data-app", "report", "template"}
+    if str(record["command_id"]).split(".", 1)[0] in {"dashboard", "data-app", "report", "template"}
 )
 # S7 owns these remaining families.  Exporting the manifest-derived inventory
 # here keeps the shared interface available to its worker without claiming
@@ -629,9 +623,11 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
         for field in (
             local_fields
             if local_fields is not None
-            else special_fields
-            if special_fields is not None
-            else (spec.fields if spec is not None else ())
+            else (
+                special_fields
+                if special_fields is not None
+                else (spec.fields if spec is not None else ())
+            )
         )
         if field.name not in excluded
     )
@@ -663,17 +659,13 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
         "closed"
         if is_local or command_id in CONTRACT_BOUND_COMMANDS or special_fields is not None
         else (
-        "closed"
-        if is_closed_zero_input(command_id)
-        else "open"
-        if spec is None or spec.accepts_extra
-        else "closed"
+            "closed"
+            if is_closed_zero_input(command_id)
+            else "open" if spec is None or spec.accepts_extra else "closed"
         )
     )
     schema = (
-        None
-        if extensibility == "open"
-        else _input_schema(command_id, record, fields, positions)
+        None if extensibility == "open" else _input_schema(command_id, record, fields, positions)
     )
     return ResolvedCommandContract(
         command_id=command_id,

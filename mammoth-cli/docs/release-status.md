@@ -29,8 +29,10 @@ and math with valid inputs). These commands now fail closed with
 `missing_argument` and the `view get` read that supplies the parent; the
 `dataset_id` input field is admitted for `view draft *` as it already was for
 transforms; every generated transform/draft example carries `dataset_id`;
-and a discovery miss on a read maps to `resource_not_found` with the reason
-and recovery reads instead of the opaque failure. Verified live on release:
+a join or lookup whose foreign view is given without `foreign_dataset_id` /
+`lookup_dataset_id` is refused the same way instead of discovering it; and a
+discovery miss on a read maps to `resource_not_found` with the reason and
+recovery reads instead of the opaque failure. Verified live on release:
 a transform without the parent is refused before any request, and with
 `dataset_id` in `--input` it submits.
 

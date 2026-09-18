@@ -4306,7 +4306,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform join VIEW_ID --help
-  agent_example: 'mammoth view transform join 123 --input ''{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456}'' --output json --no-input'
+  agent_example: 'mammoth view transform join 123 --input ''{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456, "foreign_dataset_id": 457}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-JOIN
   contract_tests:
@@ -4427,7 +4427,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform lookup VIEW_ID --help
-  agent_example: 'mammoth view transform lookup 123 --input ''{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample", "dataset_id": 456}'' --output json --no-input'
+  agent_example: 'mammoth view transform lookup 123 --input ''{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample", "dataset_id": 456, "lookup_dataset_id": 457}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-LOOKUP
   contract_tests:
