@@ -11,12 +11,14 @@ files. Regenerate on every release, after the matrix is updated.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MATRIX = ROOT / "docs" / "release-capability-matrix.json"
+_CLI_VERSION = re.compile(r"(?<![\d.])(\d+)\.(\d+)\.(\d+)")
 OUTPUT = ROOT / "mammoth_cli" / "bundled_skill" / "mammoth-cli" / "references" / "capabilities.md"
 
 _VERIFIED = {"Full", "Partial"}
@@ -56,9 +58,20 @@ def _cell(text: object) -> str:
 def build() -> str:
     matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
     rows = [row for row in matrix["rows"] if row.get("canonical_command")]
-    version = max(
-        (str(row.get("evidence_version") or "") for row in rows if row.get("evidence_version")),
-        default="",
+    # Rows carry the CLI release their evidence was collected on, in mixed
+    # spellings ("2.0.15", "1.1.11-pypi", "mammoth-cli 1.1.11; mammoth-io
+    # 0.7.1"); compare parsed versions, never the strings.
+    observed = sorted(
+        {
+            tuple(int(part) for part in match.groups())
+            for row in rows
+            if (match := _CLI_VERSION.search(str(row.get("evidence_version") or "")))
+        }
+    )
+    version_range = (
+        f"{'.'.join(map(str, observed[0]))} through {'.'.join(map(str, observed[-1]))}"
+        if observed
+        else "unknown"
     )
     families: dict[str, list[dict[str, object]]] = defaultdict(list)
     for row in rows:
@@ -144,7 +157,10 @@ def build() -> str:
                 lines.append(f"| `{cid}` | CLI defect fixed, untried since | {_cell(note)} |")
             lines.append("")
     lines.append(
-        f"Evidence version: CLI {version}. Details: `docs/capability-evidence/` in the repository."
+        f"Evidence collected on CLI releases {version_range}; each row's release is "
+        "recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row "
+        "verified on an older release has not been re-run since unless its note says so. "
+        "Details: `docs/capability-evidence/` in the repository."
     )
     lines.append("")
     return "\n".join(lines)

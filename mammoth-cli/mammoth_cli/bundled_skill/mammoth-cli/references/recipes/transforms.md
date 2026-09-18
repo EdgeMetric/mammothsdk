@@ -30,7 +30,13 @@ lists them. Pick the operation by what it does, not by its name:
 mammoth view transform set-values VIEW_ID --project PROJECT_ID \
   --input '{"dataset_id":DATASET_ID,"existing_column":"revenue","values":[{"value":0}],"condition":{"column":"revenue","operator":"IS_EMPTY"}}' \
   --output json --no-input
+mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID --output json --no-input
 ```
+
+Then confirm from the read-back that blank rows are now `0` and non-blank
+rows kept their values. If non-matching rows changed too, the condition was
+not applied: stop, do not build joins or summaries on this view, and report
+it.
 
 - `filter` keeps matching rows by default (`filter_type: "SHOW"`); to drop
   rows, say so: `{"condition":{"column":"units","operator":"LT","value":0},"filter_type":"REMOVE"}`. For each operation, a successful result should contain a returned
@@ -84,7 +90,23 @@ mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID --output json --no
 
 Read the data back after every value-changing step (`view data get`, or
 `view preview`); a task that executed is not proof it changed the rows you
-meant, and a join that matched nothing shows nulls, not a filled default.
+meant, and a join that matched nothing shows nulls, not a filled default. A
+join that leaves most rows unmatched is not evidence about the source data
+until you have sampled the key column on both sides (`view data get` on
+each view) and confirmed an earlier step did not rewrite the key or the
+values you are summing.
+
+## How to look at your data
+
+- Schema and types: `view get VIEW_ID` (falls back to discovery) or
+  `dataset get DATASET_ID`; the column list with display names is what every
+  transform input must use.
+- Rows and values: `view data get VIEW_ID DATASET_ID` (paged) or
+  `view preview VIEW_ID` for a sample; use these after every value-changing
+  step and before reporting any number.
+- What actually ran: `view task list VIEW_ID`, `view task get VIEW_ID TASK_ID`,
+  `view pipeline get VIEW_ID` (state, auto_run, executing task).
+- Async completion: `job get JOB_ID` / `job wait JOB_ID`.
 
 Reject malformed fields with the structured error envelope and stop rather than
 guessing names. Verify exact display names, join multiplicity, math values and

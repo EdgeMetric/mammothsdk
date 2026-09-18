@@ -58,6 +58,13 @@ the result.
   never backend aliases.
 - Inspect the result after a mutation. A timeout, exit 7, or interruption does
   not prove it failed. Reconcile an `outcome_unknown` before replaying it.
+- A success envelope is not proof the mutation did what you meant. After a
+  row-scoped change (set-values, filter, replace, join, fill) read rows back
+  with `view data get VIEW_ID DATASET_ID` and check both rows the condition
+  should have touched and rows it should not have. A uniform result (every
+  amount 0, every region "Unknown", most join rows unmatched) is a signal
+  that the previous step went wrong, not a fact about the source data: stop
+  and re-inspect that step before building anything on it.
 - Keep secrets out of argv, task notes, checkpoints, logs, and responses.
 - Preserve requested deliverables. Cleanup is exact-ID authorized and never means delete-all-owned-resources.
 
@@ -71,7 +78,10 @@ the result.
   or [recovery](references/recovery.md)
 - **Import, resources, transforms, pipelines, dashboards, exports, or cleanup:**
   [recipes](references/recipes/index.md) and [operations](references/operations.md)
-- **A known command family or exact command:** [command catalog](references/command-index.md)
+- **A known command family or exact command:** [command catalog](references/command-index.md),
+  then check the same command in [capabilities](references/capabilities.md)
+  before composing input from its example (the catalog lists retired and
+  blocked routes with the same wording as working ones)
 - **Whether a route is proven, known-blocked, or untried on release:**
   [capabilities](references/capabilities.md) — read it before promising a
   deliverable or reporting a failure as a backend fault

@@ -265,4 +265,4 @@ Verified: `workflow.graph`, `workflow.list`, `workflow.workspace-datasets`, `wor
 
 Verified: `workspace.app-usage`, `workspace.get`, `workspace.list`, `workspace.segment.list`, `workspace.segment.update`, `workspace.storage-breakdown`, `workspace.user.list`
 
-Evidence version: CLI mammoth-cli 1.1.11; mammoth-io 0.7.1. Details: `docs/capability-evidence/` in the repository.
+Evidence collected on CLI releases 1.1.5 through 2.0.17; each row's release is recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row verified on an older release has not been re-run since unless its note says so. Details: `docs/capability-evidence/` in the repository.
