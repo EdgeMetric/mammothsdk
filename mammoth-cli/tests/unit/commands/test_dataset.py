@@ -417,16 +417,32 @@ def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
 # -- bulk-delete --------------------------------------------------------
 
 
-def test_bulk_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
+def test_bulk_delete_blocked_without_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"dataset_ids": [7, 8]})
     with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_bulk_delete(_inv("dataset.bulk-delete", project=180, output="json"))
+        dataset_cmd.dataset_bulk_delete(
+            _inv("dataset.bulk-delete", project=180, output="json", input_file=doc)
+        )
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
 
 
-def test_bulk_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    dataset_cmd.dataset_bulk_delete(_inv("dataset.bulk-delete", project=180, yes=True))
-    assert fake_service.call_log == [(_BULK_DELETE, {"project_id": 180})]
+def test_bulk_delete_requires_explicit_ids(fake_service: FakeMammothService) -> None:
+    # The route has no delete-all form; never confirm an implicit whole-project delete.
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_bulk_delete(_inv("dataset.bulk-delete", project=180, yes=True))
+    assert excinfo.value.code == "missing_field"
+    assert fake_service.call_log == []
+
+
+def test_bulk_delete_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {"dataset_ids": [7, 8]})
+    dataset_cmd.dataset_bulk_delete(
+        _inv("dataset.bulk-delete", project=180, yes=True, input_file=doc)
+    )
+    assert fake_service.call_log == [(_BULK_DELETE, {"dataset_ids": [7, 8], "project_id": 180})]
 
 
 # -- bulk-update --------------------------------------------------------

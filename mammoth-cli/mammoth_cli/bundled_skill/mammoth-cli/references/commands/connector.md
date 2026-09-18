@@ -164,7 +164,7 @@ Expected success: `ConnectorListResult` in the standard JSON envelope; mutation 
 
 Run: `mammoth connector query generate`. Exact input fields: `mammoth schema get connector.query.generate --output json --no-input`.
 
-Example: `mammoth connector query generate sample sample --input '{"prompt": "Summarize revenue by region"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth connector query generate sample sample --input '{"query": "Total sales for January"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ConnectorQueryGenerateResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

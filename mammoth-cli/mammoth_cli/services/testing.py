@@ -38,6 +38,7 @@ class FakeMammothService:
     view_responses: dict[tuple[int, str], Any] = field(default_factory=dict)
     view_call_log: list[tuple[int, str, dict[str, Any]]] = field(default_factory=list)
     wait_log: list[Any] = field(default_factory=list)
+    wait_scopes: list[str] = field(default_factory=list)
     job_result: Any = None
 
     def call_view(self, view_id: int, method: str, /, **kwargs: Any) -> Any:
@@ -83,7 +84,7 @@ class FakeMammothService:
             return programmed
         return {}
 
-    def wait_if_job(self, response: Any) -> Any:
+    def wait_if_job(self, response: Any, *, dashboard_url: str | None = None) -> Any:
         """Resolve a job-shaped response like the real service would.
 
         Records the call so handler tests can assert the CLI applied the job
@@ -94,6 +95,8 @@ class FakeMammothService:
         """
         self.calls.append("wait_if_job")
         self.wait_log.append(response)
+        if dashboard_url is not None:
+            self.wait_scopes.append(dashboard_url)
         if self.job_result is not None:
             return self.job_result
         return response

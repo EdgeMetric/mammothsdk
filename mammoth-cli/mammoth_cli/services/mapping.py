@@ -8,9 +8,11 @@ from typing import Any
 from mammoth.exceptions import (
     MammothAPIError,
     MammothAuthError,
+    MammothColumnError,
     MammothError,
     MammothJobFailedError,
     MammothJobTimeoutError,
+    MammothValidationError,
     safe_response_body,
 )
 
@@ -19,6 +21,7 @@ from mammoth_cli.errors.envelope import (
     CODE_AUTHENTICATION_FAILED,
     CODE_AUTHORIZATION_REQUIRED,
     CODE_CONFLICT,
+    CODE_INVALID_ARGUMENTS,
     CODE_JOB_FAILED,
     CODE_OUTCOME_UNKNOWN,
     CODE_RESOURCE_NOT_FOUND,
@@ -28,6 +31,7 @@ from mammoth_cli.errors.envelope import (
     EXIT_CONFLICT,
     EXIT_NOT_FOUND,
     EXIT_RETRYABLE,
+    EXIT_USAGE,
     CliError,
     interrupted_error,
 )
@@ -310,6 +314,21 @@ def map_sdk_exception(
             details=details,
             request_id=request_id,
             recovery_commands=recovery,
+        )
+
+    if isinstance(exc, (MammothValidationError, MammothColumnError)):
+        # The SDK rejected the arguments before any request was sent; its
+        # message names the offending argument, so surface it instead of a
+        # generic API-error envelope that hides what to change.
+        return CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message=str(getattr(exc, "message", None) or exc),
+            exit_status=EXIT_USAGE,
+            hint="Correct the listed argument; no request was sent.",
+            details={
+                "exception_type": type(exc).__name__,
+                **dict(getattr(exc, "details", {}) or {}),
+            },
         )
 
     if isinstance(exc, MammothError):

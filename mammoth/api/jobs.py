@@ -5,6 +5,7 @@ Jobs API client for tracking job status in Mammoth.
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from ..exceptions import (
@@ -49,9 +50,7 @@ class JobsAPI:
         )
         return response
 
-    def get_jobs(
-        self, job_ids: list[int] | str, timeout: float | None = None
-    ) -> dict[str, Any]:
+    def get_jobs(self, job_ids: list[int] | str, timeout: float | None = None) -> dict[str, Any]:
         """
         Track multiple job IDs.
 
@@ -92,7 +91,11 @@ class JobsAPI:
         return {"timeout": timeout}
 
     def wait_for_job(
-        self, job_id: int, timeout: float | None = None, poll_interval: float = 2
+        self,
+        job_id: int,
+        timeout: float | None = None,
+        poll_interval: float = 2,
+        fetch: Callable[[int, float], dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """
         Wait for a job to complete and return the result.
@@ -101,6 +104,10 @@ class JobsAPI:
             job_id: ID of the job to wait for
             timeout: Maximum time to wait in seconds (default: client.job_timeout)
             poll_interval: Time between polling attempts in seconds (default: 2)
+            fetch: Optional observer ``(job_id, remaining_timeout) -> job dict``
+                used instead of ``GET /jobs/{id}``. Published-dashboard jobs
+                are only readable through the URL-scoped job route, for
+                example, and ``GET /jobs/{id}`` answers ``4PERM002`` for them.
 
         Returns:
             Dict containing the completed job information
@@ -121,7 +128,11 @@ class JobsAPI:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
-            job_response = self.get_job(job_id, timeout=remaining)
+            job_response = (
+                fetch(job_id, remaining)
+                if fetch is not None
+                else self.get_job(job_id, timeout=remaining)
+            )
 
             # Extract job from response
             if "job" in job_response:

@@ -122,7 +122,15 @@ def test_next_ten_etl_routes_have_literal_wire_contracts(
     assert (api.last().method, _path(api), api.last().json_body) == (
         "PATCH",
         f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/tasks/{TASK}",
-        {"DATAVIEW_ID": VIEW, "MATH": {"expression": "value"}},
+        {
+            "patches": [
+                {
+                    "op": "replace",
+                    "path": "params",
+                    "value": {"DATAVIEW_ID": VIEW, "MATH": {"expression": "value"}},
+                }
+            ]
+        },
     )
 
     run("view.export.get", [str(VIEW), str(EXPORT)], {"dataset_id": DATASET, "fields": "__full"})

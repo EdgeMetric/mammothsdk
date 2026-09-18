@@ -581,8 +581,9 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("user_ids", required=False, annotation=list[Any] | None, default=None),
     ),
     "user.preference.update": (
-        FieldSpec("theme", required=False, annotation=str | None, default=None),
-        FieldSpec("locale", required=False, annotation=str | None, default=None),
+        # PreferencesPatchRequest: replace ops on dotted paths rooted at
+        # GLOBAL or WORKSPACE_PREFERENCES.
+        FieldSpec("patch", required=False, annotation=list[Any] | None, default=None),
     ),
     "user.update": (
         FieldSpec("name", required=False, annotation=str | None, default=None),

@@ -175,9 +175,7 @@ def project_resource_dependencies_update(invocation: Invocation) -> HandlerResul
             action=f"update resource data-sync settings in project {project_id}",
             target=str(project_id),
         )
-        data = service.call(
-            _symbol(invocation), project_id=project_id, patches=patches
-        )
+        data = service.call(_symbol(invocation), project_id=project_id, patches=patches)
         settled = service.wait_if_job(data)
     if isinstance(data, dict) and isinstance(settled, dict):
         data = {**data, **settled}
@@ -263,15 +261,59 @@ def project_bulk_delete(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
+def _bulk_update_project_ids(patch_data: Any) -> list[int]:
+    """Return the project ids a ``ProjectsPatch`` body targets, or raise usage.
+
+    The release contract is ``{"patches": [{"op", "path": "role", "value":
+    [{"project_id", ...}]}]}``: every value item names the project it changes,
+    so the CLI refuses a body that would not name its targets.
+    """
+    patches = patch_data.get("patches") if isinstance(patch_data, dict) else None
+    targets: list[int] = []
+    if isinstance(patches, list) and patches:
+        for op in patches:
+            values = op.get("value") if isinstance(op, dict) else None
+            if not isinstance(values, list) or not values:
+                targets = []
+                break
+            for item in values:
+                project_id = item.get("project_id") if isinstance(item, dict) else None
+                if not isinstance(project_id, int) or isinstance(project_id, bool):
+                    targets = []
+                    break
+                targets.append(project_id)
+            else:
+                continue
+            break
+    if not targets:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=(
+                "patch_data must be a ProjectsPatch body whose every value item names a "
+                "project_id."
+            ),
+            exit_status=EXIT_USAGE,
+            hint=(
+                'Shape: {"patch_data": {"patches": [{"op": "add", "path": "role", "value": '
+                '[{"project_id": 41, "user_roles": [{"user_id": 3, "role": "project_admin"}]}]}]}}.'
+            ),
+        )
+    return sorted(set(targets))
+
+
 def project_bulk_update(invocation: Invocation) -> HandlerResult:
-    """Apply a bulk patch across projects. High-impact: ``--yes --confirm WS``."""
+    """Apply a role patch across named projects. High-impact: ``--yes --confirm WS``."""
     document = invocation.load_input()
     patch_data = _require_input_field(document, "patch_data")
+    project_ids = _bulk_update_project_ids(patch_data)
     with open_service(invocation) as (service, auth):
         enforce_confirmation(
             invocation,
             policy=POLICY_CONFIRM_TARGET,
-            action=f"bulk-update projects in workspace {auth.workspace_id}",
+            action=(
+                f"bulk-update roles in projects {', '.join(str(p) for p in project_ids)} "
+                f"of workspace {auth.workspace_id}"
+            ),
             target=str(auth.workspace_id),
         )
         data = service.call(_symbol(invocation), patch_data=patch_data)

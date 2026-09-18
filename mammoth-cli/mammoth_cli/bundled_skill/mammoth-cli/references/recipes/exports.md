@@ -21,3 +21,12 @@ returns `job_id`, read it until terminal success before inspecting the artifact.
 If `schema get view.export.csv` rejects requested fields, preserve the
 structured error and discover another declared export route rather than using
 raw HTTP.
+
+## Generic export routes
+
+`view export csv` and the typed destination commands are the proven path. The
+generic `view export create` accepts a raw `export_spec`; for `handler_type`
+`csv_file` the release job failed with a bare `'destination'` key even when
+`target_properties.destination` was set, so do not use it for CSV. `view export
+publish-db-update` only rotates credentials: the body is
+`{"patch":[{"op":"replace","path":"credentials","value":"postgres"|"bigquery"}]}`.

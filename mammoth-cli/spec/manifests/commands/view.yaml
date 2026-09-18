@@ -204,7 +204,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view ai profile DATAVIEW_ID --help
-  agent_example: mammoth view ai profile 123 --output json --no-input
+  agent_example: 'mammoth view ai profile 123 --input ''{"dataset_id": 456, "action": "insights"}'' --output
+    json --no-input'
   unit_tests:
   - UT-VIEW-AI-PROFILE
   contract_tests:
@@ -496,8 +497,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view checkpoint update VIEW_ID CHECKPOINT_ID --help
-  agent_example: 'mammoth view checkpoint update 123 123 123 --input ''{"body": {"patches": [{"op": "replace",
-    "path": "approve"}]}}'' --output json --no-input'
+  agent_example: 'mammoth view checkpoint update 123 123 123 --input ''{"body": {"patches": [{"op": "command",
+    "path": "approve", "value": null}]}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-CHECKPOINT-UPDATE
   contract_tests:
@@ -555,8 +556,9 @@ commands:
   - CT-VIEW-CONDITIONAL-FORMAT-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'BLOCKED[B09 DATAVIEW_INPUT_UNTYPED]: rule is an arbitrary dictionary; reserved,
-    not registered.'
+  known_restrictions: 'rule is forwarded verbatim and dispatches. The release backend requires
+    {"cf_type": "RULE"|"COLOR_SCALE", "payload": {...}} with a CONDITION (RULE) or scale (COLOR_SCALE)
+    inside payload; other shapes return HTTP 400 4GENR007. Untyped; no working payload observed yet.'
   reviewed_by: primary
 - command_id: view.conditional-format.delete-all
   command_path: view conditional-format delete-all
@@ -595,7 +597,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view conditional-format delete-all VIEW_ID --help
-  agent_example: mammoth view conditional-format delete-all 123 123 --output json --no-input
+  agent_example: 'mammoth view conditional-format delete-all 123 123 --input ''{"rule_id": "rule-1"}'' --output
+    json --no-input'
   unit_tests:
   - UT-VIEW-CONDITIONAL-FORMAT-DELETE-ALL
   contract_tests:
@@ -2495,8 +2498,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export publish-db-update DATAVIEW_ID --help
-  agent_example: 'mammoth view export publish-db-update 123 --input ''{"patch": [{"sample_key": "Status"}]}''
-    --output json --no-input'
+  agent_example: 'mammoth view export publish-db-update 123 --input ''{"patch": [{"op": "replace", "path":
+    "credentials", "value": "postgres"}]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-EXPORT-PUBLISH-DB-UPDATE
   contract_tests:
@@ -3049,8 +3052,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view pipeline edit DATAVIEW_ID --help
-  agent_example: 'mammoth view pipeline edit 123 --input ''{"patches": [{"sample_key": "Status"}]}'' --output
-    json --no-input'
+  agent_example: 'mammoth view pipeline edit 123 --input ''{"patches": [{"op": "replace", "path": "auto_run",
+    "value": true}]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-PIPELINE-EDIT
   contract_tests:

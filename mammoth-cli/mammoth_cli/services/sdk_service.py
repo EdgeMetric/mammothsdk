@@ -167,11 +167,23 @@ class SdkMammothService:
         except Exception:
             return kwargs
 
-    def wait_if_job(self, response: Any) -> Any:
-        """Wait for a recognized job response using the client's configured timeout."""
+    def wait_if_job(self, response: Any, *, dashboard_url: str | None = None) -> Any:
+        """Wait for a recognized job response using the client's configured timeout.
+
+        ``dashboard_url`` names a published dashboard's URL slug: jobs those
+        routes dispatch are readable only through the URL-scoped job route
+        (``GET /jobs/{id}`` answers ``4PERM002`` and used to fail the command
+        although the job succeeded), so the wait observes ``job_by_url``.
+        """
         try:
             with spinner(self._progress):
-                return self._client.wait_if_job(response)
+                if dashboard_url is None:
+                    return self._client.wait_if_job(response)
+                dashboards = self._client.dashboards
+                return self._client.wait_if_job(
+                    response,
+                    fetch=lambda job_id, _remaining: dashboards.job_by_url(dashboard_url, job_id),
+                )
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
 

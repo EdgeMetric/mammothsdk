@@ -216,7 +216,7 @@
 - [Projects](#projects)
   - [`ProjectsAPI`](#projectsapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
-    - [`add_users(self, project_id: 'int', user_ids: '_list[str]', role: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#add_usersself-project_id-int-user_ids-_liststr-role-str-none-none-workspace_id-int-none-none---dictstr-any)
+    - [`add_users(self, project_id: 'int', user_ids: '_list[int]', role: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#add_usersself-project_id-int-user_ids-_listint-role-str-none-none-workspace_id-int-none-none---dictstr-any)
     - [`browse(self, project_id: 'int', workspace_id: 'int | None' = None, fields: 'str | None' = None, name: 'str | None' = None, browse_type: 'str | None' = None, sort: 'str | None' = None, offset: 'int | None' = None, limit: 'int | None' = None) -> 'dict[str, Any]'`](#browseself-project_id-int-workspace_id-int-none-none-fields-str-none-none-name-str-none-none-browse_type-str-none-none-sort-str-none-none-offset-int-none-none-limit-int-none-none---dictstr-any)
     - [`bulk_delete(self, project_ids: '_list[int]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#bulk_deleteself-project_ids-_listint-workspace_id-int-none-none---dictstr-any)
     - [`bulk_update(self, patch_data: 'dict[str, Any]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#bulk_updateself-patch_data-dictstr-any-workspace_id-int-none-none---dictstr-any)
@@ -238,7 +238,7 @@
 - [Datasets](#datasets)
   - [`DatasetsAPI`](#datasetsapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
-    - [`bulk_delete(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'None'`](#bulk_deleteself-workspace_id-int-none-none-project_id-int-none-none---none)
+    - [`bulk_delete(self, dataset_ids: '_list[int] | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'None'`](#bulk_deleteself-dataset_ids-_listint-none-none-workspace_id-int-none-none-project_id-int-none-none---none)
     - [`bulk_update(self, patch_data: 'dict[str, Any]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#bulk_updateself-patch_data-dictstr-any-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`create(self, dataset_spec: 'dict[str, Any]', ds_creation_type: 'str', folder_resource_id: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#createself-dataset_spec-dictstr-any-ds_creation_type-str-folder_resource_id-str-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`create_from_pdf(self, file_object_id: 'int', file_name: 'str', file_id: 'str | None' = None, table_list: '_list[int] | None' = None, delete_file_after_extract: 'bool' = False, is_preview_needed: 'bool | None' = None, user_instruction: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#create_from_pdfself-file_object_id-int-file_name-str-file_id-str-none-none-table_list-_listint-none-none-delete_file_after_extract-bool-false-is_preview_needed-bool-none-none-user_instruction-str-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
@@ -265,7 +265,7 @@
     - [`apply_exportable_config(self, dataset_id: 'int', dataview_id: 'int', *, items: '_list[dict[str, Any]] | None' = None, config: 'dict[str, Any] | None' = None, insert_after_sequence: 'int | None' = None, is_paste_mode: 'bool' = False, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#apply_exportable_configself-dataset_id-int-dataview_id-int-items-_listdictstr-any-none-none-config-dictstr-any-none-none-insert_after_sequence-int-none-none-is_paste_mode-bool-false-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`bulk_delete(self, dataset_id: 'int', dataview_ids: '_list[int] | str', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#bulk_deleteself-dataset_id-int-dataview_ids-_listint-str-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`conditional_format_create(self, dataset_id: 'int', dataview_id: 'int', rule: 'dict[str, Any]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#conditional_format_createself-dataset_id-int-dataview_id-int-rule-dictstr-any-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
-    - [`conditional_format_delete(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#conditional_format_deleteself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`conditional_format_delete(self, dataset_id: 'int', dataview_id: 'int', rule_id: 'str | int | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#conditional_format_deleteself-dataset_id-int-dataview_id-int-rule_id-str-int-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`conditional_format_list(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`](#conditional_format_listself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---_listdictstr-any)
     - [`conditional_format_update(self, dataset_id: 'int', dataview_id: 'int', rule: 'dict[str, Any]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#conditional_format_updateself-dataset_id-int-dataview_id-int-rule-dictstr-any-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`create(self, dataset_id: 'int', name: 'str | None' = 'View', clone_config_from: 'int | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#createself-dataset_id-int-name-str-none-view-clone_config_from-int-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
@@ -301,14 +301,14 @@
     - [`preview_task(self, dataview_id: 'int', task_spec: 'dict[str, Any]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#preview_taskself-dataview_id-int-task_spec-dictstr-any-dataset_id-int-none-none---dictstr-any)
     - [`reconcile_draft_submission(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#reconcile_draft_submissionself-dataview_id-int-dataset_id-int-none-none---dictstr-any)
     - [`rerun(self, dataview_id: 'int', from_sequence: 'int | None' = None, dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#rerunself-dataview_id-int-from_sequence-int-none-none-dataset_id-int-none-none---dictstr-any)
-    - [`update_task(self, dataview_id: 'int', task_id: 'int', task_spec: 'dict[str, Any]', dataset_id: 'int') -> 'dict[str, Any]'`](#update_taskself-dataview_id-int-task_id-int-task_spec-dictstr-any-dataset_id-int---dictstr-any)
+    - [`update_task(self, dataview_id: 'int', task_id: 'int', task_spec: 'dict[str, Any] | None' = None, dataset_id: 'int | None' = None, patches: 'list[dict[str, Any]] | None' = None, skip_validation: 'bool | None' = None) -> 'dict[str, Any]'`](#update_taskself-dataview_id-int-task_id-int-task_spec-dictstr-any-none-none-dataset_id-int-none-none-patches-listdictstr-any-none-none-skip_validation-bool-none-none---dictstr-any)
     - [`wait_for_pipeline(self, dataview_id: 'int', dataset_id: 'int | None' = None, timeout: 'float | None' = None, poll_interval: 'float' = 3) -> 'dict[str, Any]'`](#wait_for_pipelineself-dataview_id-int-dataset_id-int-none-none-timeout-float-none-none-poll_interval-float-3---dictstr-any)
 - [Jobs](#jobs)
   - [`JobsAPI`](#jobsapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
     - [`get_job(self, job_id: 'int', timeout: 'float | None' = None) -> 'dict[str, Any]'`](#get_jobself-job_id-int-timeout-float-none-none---dictstr-any)
     - [`get_jobs(self, job_ids: 'list[int] | str', timeout: 'float | None' = None) -> 'dict[str, Any]'`](#get_jobsself-job_ids-listint-str-timeout-float-none-none---dictstr-any)
-    - [`wait_for_job(self, job_id: 'int', timeout: 'float | None' = None, poll_interval: 'float' = 2) -> 'dict[str, Any]'`](#wait_for_jobself-job_id-int-timeout-float-none-none-poll_interval-float-2---dictstr-any)
+    - [`wait_for_job(self, job_id: 'int', timeout: 'float | None' = None, poll_interval: 'float' = 2, fetch: 'Callable[[int, float], dict[str, Any]] | None' = None) -> 'dict[str, Any]'`](#wait_for_jobself-job_id-int-timeout-float-none-none-poll_interval-float-2-fetch-callableint-float-dictstr-any-none-none---dictstr-any)
     - [`wait_for_jobs(self, job_ids: 'list[int] | str', timeout: 'int | None' = None, poll_interval: 'int' = 2) -> 'dict[str, Any]'`](#wait_for_jobsself-job_ids-listint-str-timeout-int-none-none-poll_interval-int-2---dictstr-any)
 - [Dashboards](#dashboards)
   - [`DashboardsAPI`](#dashboardsapi)
@@ -419,6 +419,7 @@
     - [`v3_generate(self: 'Any', body: 'GenerateDashboardV3Spec') -> 'ObjectJobSchema | JobResponse'`](#v3_generateself-any-body-generatedashboardv3spec---objectjobschema-jobresponse)
     - [`video_export(self: 'Any', dashboard_id: 'int') -> 'ObjectJobSchema | JobResponse'`](#video_exportself-any-dashboard_id-int---objectjobschema-jobresponse)
     - [`video_state(self: 'Any', dashboard_id: 'int') -> 'dict[str, Any]'`](#video_stateself-any-dashboard_id-int---dictstr-any)
+    - [`wait_for_job_by_url(self, url: 'str', job_id: 'int', timeout: 'float | None' = None, poll_interval: 'float' = 2) -> 'dict[str, Any]'`](#wait_for_job_by_urlself-url-str-job_id-int-timeout-float-none-none-poll_interval-float-2---dictstr-any)
     - [`widget_data(self, dashboard_id: 'int', body: 'dict[str, Any]') -> 'dict[str, Any]'`](#widget_dataself-dashboard_id-int-body-dictstr-any---dictstr-any)
     - [`widget_data_by_url(self, url: 'str', body: 'dict[str, Any]') -> 'dict[str, Any]'`](#widget_data_by_urlself-url-str-body-dictstr-any---dictstr-any)
 - [Webhooks](#webhooks)
@@ -534,6 +535,9 @@
   - [Import errors](#import-errors)
   - [See also](#see-also)
 - [Changelog](#changelog)
+  - [v0.7.7](#v077)
+    - [Changed](#changed)
+    - [Fixed](#fixed)
   - [v0.7.6](#v076)
     - [Changed](#changed)
     - [Fixed](#fixed)
@@ -13402,14 +13406,18 @@ Access via client.projects:
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-### `add_users(self, project_id: 'int', user_ids: '_list[str]', role: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `add_users(self, project_id: 'int', user_ids: '_list[int]', role: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Add users to a project.
 
+The route takes ``{"users": [{"user_id", "role"}]}``; users are
+addressed by numeric id (see ``workspace user list``), not by email.
+
 Args:
     project_id: ID of the project.
-    user_ids: List of user email addresses or IDs.
-    role: Role to assign (optional).
+    user_ids: Numeric user ids to add.
+    role: ``project_admin`` or ``project_analyst`` (server default
+        ``project_analyst``) applied to every listed user.
     workspace_id: ID of the workspace (uses client default if not provided).
 
 Returns:
@@ -13718,11 +13726,14 @@ Access via client.datasets:
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-### `bulk_delete(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'None'`
+### `bulk_delete(self, dataset_ids: '_list[int] | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'None'`
 
-Delete multiple datasets (bulk operation).
+Delete several datasets by id (bulk operation).
 
 Args:
+    dataset_ids: Ids of the datasets to delete (sent as the ``ids``
+        query parameter). Required: the route has no delete-all form
+        and rejects an empty id list.
     workspace_id: ID of the workspace (uses client default if not provided).
     project_id: ID of the project (uses client default if not provided).
 
@@ -14070,13 +14081,17 @@ Args:
 Returns:
     Dict with created rule.
 
-### `conditional_format_delete(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `conditional_format_delete(self, dataset_id: 'int', dataview_id: 'int', rule_id: 'str | int | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
-Delete all conditional formatting rules.
+Delete one conditional formatting rule.
+
+The route requires the ``rule_id`` query parameter (from
+:meth:`conditional_format_list`); there is no delete-all form.
 
 Args:
     dataset_id: ID of the dataset.
     dataview_id: ID of the dataview.
+    rule_id: ID of the rule to delete.
     workspace_id: ID of the workspace (uses client default if not provided).
     project_id: ID of the project (uses client default if not provided).
 
@@ -14576,15 +14591,23 @@ Returns:
 Raises:
     MammothValidationError: If from_sequence is negative.
 
-### `update_task(self, dataview_id: 'int', task_id: 'int', task_spec: 'dict[str, Any]', dataset_id: 'int') -> 'dict[str, Any]'`
+### `update_task(self, dataview_id: 'int', task_id: 'int', task_spec: 'dict[str, Any] | None' = None, dataset_id: 'int | None' = None, patches: 'list[dict[str, Any]] | None' = None, skip_validation: 'bool | None' = None) -> 'dict[str, Any]'`
 
 Update an existing pipeline task.
+
+The route takes ``{"patches": [{"op", "path", "value"}]}`` with ``op``
+``replace`` or ``command`` and ``path`` one of ``params``,
+``display_info``, ``suspend``, ``restore``, ``discard``. ``task_spec``
+is the shortcut for ``[{"op": "replace", "path": "params", "value":
+task_spec}]``.
 
 Args:
     dataview_id: ID of the dataview.
     task_id: ID of the task to update.
-    task_spec: Updated task specification.
-    dataset_id: Dataset ID (auto-detected if not provided).
+    task_spec: New task params (replaces the ``params`` path).
+    dataset_id: Exact parent dataset id.
+    patches: Explicit patch operations, used instead of ``task_spec``.
+    skip_validation: Forwarded as the ``skip_validation`` query flag.
 
 Returns:
     Updated task dict.
@@ -14661,7 +14684,7 @@ Returns:
 Raises:
     MammothAPIError: If the API request fails
 
-### `wait_for_job(self, job_id: 'int', timeout: 'float | None' = None, poll_interval: 'float' = 2) -> 'dict[str, Any]'`
+### `wait_for_job(self, job_id: 'int', timeout: 'float | None' = None, poll_interval: 'float' = 2, fetch: 'Callable[[int, float], dict[str, Any]] | None' = None) -> 'dict[str, Any]'`
 
 Wait for a job to complete and return the result.
 
@@ -14669,6 +14692,10 @@ Args:
     job_id: ID of the job to wait for
     timeout: Maximum time to wait in seconds (default: client.job_timeout)
     poll_interval: Time between polling attempts in seconds (default: 2)
+    fetch: Optional observer ``(job_id, remaining_timeout) -> job dict``
+        used instead of ``GET /jobs/{id}``. Published-dashboard jobs
+        are only readable through the URL-scoped job route, for
+        example, and ``GET /jobs/{id}`` answers ``4PERM002`` for them.
 
 Returns:
     Dict containing the completed job information
@@ -15341,6 +15368,15 @@ Kick a motion-story video export.
 
 Motion-story video export state (never kicks a render).
 
+### `wait_for_job_by_url(self, url: 'str', job_id: 'int', timeout: 'float | None' = None, poll_interval: 'float' = 2) -> 'dict[str, Any]'`
+
+Wait for a published-dashboard job through the URL-scoped job route.
+
+Jobs dispatched by the ``/dashboards/url/{url}/...`` routes are not
+readable through ``GET /jobs/{id}`` (the server answers ``4PERM002``),
+so poll :meth:`job_by_url` with the same timeout and failure semantics
+as :meth:`~mammoth.api.jobs.JobsAPI.wait_for_job`.
+
 ### `widget_data(self, dashboard_id: 'int', body: 'dict[str, Any]') -> 'dict[str, Any]'`
 
 Get data for multiple dashboard widgets in bulk.
@@ -15956,12 +15992,19 @@ Args:
 Returns:
     Dict with updated profile.
 
-#### `update_preferences(self, **prefs: 'Any') -> 'dict[str, Any]'`
+#### `update_preferences(self, patch: 'list[dict[str, Any]] | None' = None, **prefs: 'Any') -> 'dict[str, Any]'`
 
 Update user preferences.
 
+The route takes ``{"patch": [{"op": "replace", "path": ..., "value": ...}]}``
+where ``path`` is a dot-separated preference path rooted at ``GLOBAL``
+or ``WORKSPACE_PREFERENCES`` (for example
+``GLOBAL.PREFERENCES.TOP_TABS``). Keyword arguments are turned into
+``replace`` operations on the given path.
+
 Args:
-    **prefs: Preference fields to update.
+    patch: Explicit patch operations.
+    **prefs: ``path=value`` shortcuts, each becoming a ``replace``.
 
 Returns:
     Dict with updated preferences.
@@ -16162,18 +16205,17 @@ Args:
 Returns:
     Dict with deletion result.
 
-#### `create(self, dataset_id: 'int', source_id: 'int', mapping: 'dict[str, str]', project_id: 'int | None' = None, new_ds_params: 'dict[str, Any] | None' = None, is_validation_required: 'bool | None' = None, change_map: 'dict[str, Any] | None' = None, delete_source_ds: 'bool' = False) -> 'dict[str, Any]'`
+#### `create(self, dataset_id: 'int', source_id: 'int', mapping: 'dict[str, str] | _list[dict[str, Any]]', project_id: 'int | None' = None, new_ds_params: 'dict[str, Any] | None' = None, is_validation_required: 'bool | None' = None, change_map: 'dict[str, Any] | None' = None, delete_source_ds: 'bool' = False) -> 'dict[str, Any]'`
 
 Create a new batch for a dataset.
 
-The ``source`` field is hardcoded to ``"datasource"`` — the only
-supported source type.
 
 Args:
     dataset_id: ID of the destination dataset.
     source_id: ID of the source dataset (must be a positive integer).
-    mapping: Non-empty dict mapping source column names to destination
-        column names, e.g. ``{"src_col": "dst_col"}``.
+    mapping: Non-empty ``{"src_col": "dst_col"}`` dict (expanded to
+        ``ColumnNameMapping`` items) or an explicit list of
+        ``ColumnNameMapping`` / ``ColumnIdMapping`` objects.
     project_id: Project ID (uses client default if not provided).
     new_ds_params: Optional params for creating a new dataset.
     is_validation_required: Whether to validate the batch.
@@ -16710,6 +16752,24 @@ Access via client.ai:
     client.ai.generate_sql(intent="total sales by region")
     suggestions = client.ai.get_suggestions()
 
+#### `PROFILE_ACTIONS`
+
+Built-in immutable sequence.
+
+If no argument is given, the constructor returns an empty tuple.
+If iterable is specified the tuple is initialized from iterable's items.
+
+If the argument is a tuple, the return value is the same object.
+
+#### `SUGGESTION_TYPES`
+
+Built-in immutable sequence.
+
+If no argument is given, the constructor returns an empty tuple.
+If iterable is specified the tuple is initialized from iterable's items.
+
+If the argument is a tuple, the return value is the same object.
+
 #### `__init__(self, client: 'MammothClient') -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
@@ -16774,26 +16834,37 @@ Raises:
     MammothValidationError: If ``prompt`` is empty or ``no_of_rows``
         is outside the 1–100 range.
 
-#### `generate_profile(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `generate_profile(self, dataview_id: 'int', dataset_id: 'int | None' = None, action: 'str' = 'insights') -> 'dict[str, Any]'`
 
 Generate an AI profile/summary of the dataview data.
+
+Corresponds to the backend ``ProfileGenerationSpec``:
+``{"params": {"action": <action>}}``.
 
 Args:
     dataview_id: ID of the dataview.
     dataset_id: ID of the dataset (auto-detected if not provided).
+    action: One of ``"stats"``, ``"insights"`` (default),
+        ``"data_quality"`` or ``"join_recommendation"``.
 
 Returns:
     Dict with profile information.
 
-#### `generate_sql(self, intent: 'str', sequence_number: 'int' = 0) -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If ``action`` is not a supported value.
+
+#### `generate_sql(self, intent: 'str', sequence_number: 'int' = 0, dataset_id: 'int | None' = None, dataview_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Generate SQL from natural language intent.
 
-Uses the project-level sql_generation endpoint.
+Uses the project-level sql_generation endpoint, which requires the
+``dataset_id`` query parameter (``dataview_id`` optional).
 
 Args:
     intent: Natural language description of the query.
     sequence_number: Sequence number for the SQL generation request.
+    dataset_id: Dataset the SQL is generated against (required).
+    dataview_id: Optional dataview within that dataset.
 
 Returns:
     Dict with generated SQL and metadata.
@@ -16809,22 +16880,46 @@ Args:
 Returns:
     Dict with data generation info.
 
-#### `get_suggestions(self) -> 'dict[str, Any]'`
+#### `get_suggestions(self, suggestion_type: 'str | None' = None, params: 'dict[str, Any] | None' = None, dataset_id: 'int | None' = None, dataview_id: 'int | None' = None) -> 'dict[str, Any]'`
 
-Get AI-powered transformation suggestions for the current project.
+Get AI-powered suggestions for the current project.
+
+Corresponds to the backend ``UnifiedPromptSpec``:
+``{"suggestion_type": <type>, "params": {...}}`` where the ``params``
+shape depends on the type (e.g. ``generate_task`` takes ``{"prompt"}``,
+``add_condition`` takes ``{"prompt", "sequence_number"}``,
+``extract_text`` takes ``{"column_name", "sequence_number", "prompt"}``).
+
+Args:
+    suggestion_type: One of ``extract_text``, ``add_condition``,
+        ``generate_task``, ``apply_ai_template``, ``dashboards`` or
+        ``derivative_fuzzy_bucket`` (required).
+    params: Type-specific parameters (required).
+    dataset_id: Optional dataset to scope the suggestions to
+        (query parameter).
+    dataview_id: Optional dataview to scope the suggestions to
+        (query parameter).
 
 Returns:
-    Dict with suggested transformations.
+    Dict with suggestions.
 
-#### `query_gen(self, connector_key: 'str', connection_key: 'str', prompt: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`
+Raises:
+    MammothValidationError: If ``suggestion_type`` or ``params`` is
+        missing or the type is unknown.
+
+#### `query_gen(self, connector_key: 'str', connection_key: 'str', query: 'str', project_id: 'int | None' = None, profile: 'str | None' = None) -> 'dict[str, Any]'`
 
 Generate a query for a connector using AI.
+
+Corresponds to the backend ``Intent`` body: ``{"query": <intent>,
+"profile": <optional profile>}``.
 
 Args:
     connector_key: Key identifying the connector type.
     connection_key: Key identifying the connection.
-    prompt: Natural language prompt describing the query.
+    query: Natural language intent describing the query.
     project_id: Project ID (uses client default if not provided).
+    profile: Optional connector profile name.
 
 Returns:
     Dict with generated query.
@@ -18099,6 +18194,33 @@ client = MammothClient(..., timeout=120)  # 2 minutes per request
 
 
 # Changelog
+
+## v0.7.7
+
+### Changed
+
+- Request bodies now match the release API contracts: `projects.update()`
+  sends `{"patches": [...]}`, `projects.add_users()` takes numeric user ids
+  and sends `{"users": [{"user_id", "role"}]}`, `folders.move()` sends a
+  `{"patch": [{"op": "move", ...}]}` list, `user_profile.update_preferences()`
+  takes a `patch` list, `pipeline.update_task()` sends `{"patches": [...]}`
+  (with optional `skip_validation`), `batches.create()` sends the
+  `BatchesPostRequest` shape (list `mapping`, `new_ds_details`,
+  `validate_only`), `ai.generate_sql()` requires `dataset_id`,
+  `ai.get_suggestions()` takes `suggestion_type` + `params`,
+  `ai.generate_profile()` sends `{"params": {"action"}}`, `ai.query_gen()`
+  takes `query` (was `prompt`), `dataviews.conditional_format_delete()`
+  requires `rule_id`, and `datasets.bulk_delete()` requires `dataset_ids`.
+- `jobs.wait_for_job()` and `wait_if_job()` accept a `fetch` callable so a job
+  can be polled through a scoped route; `dashboards.wait_for_job_by_url()`
+  uses it for published-dashboard jobs, whose `/jobs/{id}` reads return
+  4PERM002.
+
+### Fixed
+
+- A 2xx response whose body is not an object (for example `202 Accepted`
+  with a bare status) is returned as `{"status_code", "response"}` instead
+  of raising an outcome-unknown error for a write that committed.
 
 ## v0.7.6
 

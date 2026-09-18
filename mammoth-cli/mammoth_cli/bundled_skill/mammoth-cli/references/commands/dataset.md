@@ -12,7 +12,7 @@ Expected success: `DatasetBatchDataResult` in the standard JSON envelope; mutati
 
 Run: `mammoth dataset bulk-delete`. Exact input fields: `mammoth schema get dataset.bulk-delete --output json --no-input`.
 
-Example: `mammoth dataset bulk-delete --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dataset bulk-delete --input '{"dataset_ids": [456, 457]}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
 
 Expected success: `DatasetBulkDeleteResult` in the standard JSON envelope; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

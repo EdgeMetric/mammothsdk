@@ -1125,7 +1125,7 @@ def view_ai_profile(invocation: Invocation) -> HandlerResult:
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
-    _forward_optional(document, kwargs, ("dataset_id",))
+    _forward_optional(document, kwargs, ("dataset_id", "action"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, None)

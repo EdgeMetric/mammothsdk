@@ -1,5 +1,57 @@
 # CLI release provenance
 
+## 2.0.15 / SDK 0.7.7
+
+This release closes the CLI-side defects the 2026-09-18 write sweep (79
+mutating commands in disposable projects) and the dashboard re-verification
+found on release (evidence under `docs/capability-evidence/write-sweep-20260918`
+and `docs/capability-evidence/dashboard-reverify-20260918`):
+
+- Seven writes that committed (`project delete`, `view checkpoint delete`,
+  `view data-check delete`, `view derivative update` / `delete`, `dataset
+  file-settings undo`, `workspace segment update`) reported `outcome_unknown`
+  (exit 7) because the backend answered 2xx with a non-object body such as
+  `202 Accepted`. SDK 0.7.7 returns those as `{status_code, response}` and the
+  CLI reports success.
+- Request bodies that did not match the release contracts (HTTP 400 `Field
+  required`): `project update` (`patches`), `project user add` (`users` with
+  numeric ids), `folder move` (`patch` with a `move` op), `user preference
+  update` (`patch` list), `view task update` (`patches`), `batch create`
+  (list `mapping`, `new_ds_details`, `validate_only`), `ai sql generate`
+  (`dataset_id` query parameter), `ai suggestion list` (`suggestion_type` +
+  `params`), `view ai profile` (`{"params": {"action"}}`), `connector query
+  generate` (`query`, not `prompt`), `view conditional-format delete-all`
+  (`rule_id`), `dataset bulk-delete` (`dataset_ids`, named in the
+  confirmation). Input schemas, examples and the manifests follow the SDK.
+- `dashboard published data` polled the job through `GET /jobs/{id}`, which
+  answers 4PERM002 for published-dashboard jobs although the job succeeded;
+  `wait_if_job` now takes a `fetch` seam and the published commands poll
+  `GET /dashboards/url/{url}/jobs/{id}`.
+- Arguments the SDK rejects before any request (`ai expression generate` with
+  a mode other than `math`/`metric`, `batch update` ops other than
+  `replace`/`remove`) surfaced as an empty `api_error`; they are
+  `invalid_arguments` (exit 2) with the SDK's message now.
+- `project bulk-update` confirmed "bulk-update projects in workspace N" with
+  no visible target set; the body must now be a `ProjectsPatch` whose every
+  value item names a `project_id`, and the confirmation lists those projects.
+- Examples that could not run as printed: `view checkpoint update` (needs
+  `value: null`), `view export publish-db-update` (only `path: credentials`
+  with `postgres`/`bigquery`), `view pipeline edit` (allowed paths and value
+  types are documented in the transforms recipe). `view conditional-format
+  create` and `user preference update` no longer claim to be fail-closed:
+  they dispatch, and the catalog says what the backend expects.
+
+Not fixed here because they are backend behaviour, recorded in the matrix:
+`view checkpoint get` / `update` HTTP 500, `view data-check update` HTTP 500,
+`view derivative data` HTTP 500, `dashboard template create` HTTP 500,
+`ai retention condition` 4PERM001, `dashboard published pdf` / `video export`
+4PERM002, `view export create` job failure on a bare `'destination'` key,
+`view task preview` needing internal column names, `dataset create-from-pdf`
+requiring a table list. The CLI requires `mammoth-io>=0.7.7,<0.8`, adds no
+API bindings, and makes no capability-status or autonomous-workflow
+qualification claim. Fixed routes are marked "CLI defect fixed in 2.0.15" in
+the matrix until they are re-run live.
+
 ## 2.0.14 / SDK 0.7.6
 
 This release closes the CLI-side defects the 2026-09-18 dashboard sweep and

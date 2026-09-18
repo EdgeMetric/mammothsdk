@@ -48,26 +48,43 @@ class AIAPI:
             return dataset_id
         return self._client.pipeline.find_dataset_for_dataview(dataview_id)
 
+    PROFILE_ACTIONS: tuple[str, ...] = ("stats", "insights", "data_quality", "join_recommendation")
+
     def generate_profile(
         self,
         dataview_id: int,
         dataset_id: int | None = None,
+        action: str = "insights",
     ) -> dict[str, Any]:
         """Generate an AI profile/summary of the dataview data.
+
+        Corresponds to the backend ``ProfileGenerationSpec``:
+        ``{"params": {"action": <action>}}``.
 
         Args:
             dataview_id: ID of the dataview.
             dataset_id: ID of the dataset (auto-detected if not provided).
+            action: One of ``"stats"``, ``"insights"`` (default),
+                ``"data_quality"`` or ``"join_recommendation"``.
 
         Returns:
             Dict with profile information.
+
+        Raises:
+            MammothValidationError: If ``action`` is not a supported value.
         """
+        if action not in self.PROFILE_ACTIONS:
+            raise MammothValidationError(
+                f"action must be one of {list(self.PROFILE_ACTIONS)}, got {action!r}.",
+                {"action": action},
+            )
         ws = self._ws()
         proj = self._proj()
         ds = self._find_dataset(dataview_id, dataset_id)
         response = self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{ds}/dataviews/{dataview_id}/profile_generation",
+            json={"params": {"action": action}},
         )
         return self._client._wait_if_job(response)
 
@@ -141,38 +158,102 @@ class AIAPI:
         self,
         intent: str,
         sequence_number: int = 0,
+        dataset_id: int | None = None,
+        dataview_id: int | None = None,
     ) -> dict[str, Any]:
         """Generate SQL from natural language intent.
 
-        Uses the project-level sql_generation endpoint.
+        Uses the project-level sql_generation endpoint, which requires the
+        ``dataset_id`` query parameter (``dataview_id`` optional).
 
         Args:
             intent: Natural language description of the query.
             sequence_number: Sequence number for the SQL generation request.
+            dataset_id: Dataset the SQL is generated against (required).
+            dataview_id: Optional dataview within that dataset.
 
         Returns:
             Dict with generated SQL and metadata.
         """
+        if dataset_id is None:
+            raise MammothValidationError("generate_sql requires `dataset_id`.")
         ws = self._ws()
         proj = self._proj()
+        params: dict[str, Any] = {"dataset_id": dataset_id}
+        if dataview_id is not None:
+            params["dataview_id"] = dataview_id
         response = self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/sql_generation",
+            params=params,
             json={"params": {"intent": intent, "sequence_number": sequence_number}},
         )
         return self._client._wait_if_job(response)
 
-    def get_suggestions(self) -> dict[str, Any]:
-        """Get AI-powered transformation suggestions for the current project.
+    SUGGESTION_TYPES: tuple[str, ...] = (
+        "extract_text",
+        "add_condition",
+        "generate_task",
+        "apply_ai_template",
+        "dashboards",
+        "derivative_fuzzy_bucket",
+    )
+
+    def get_suggestions(
+        self,
+        suggestion_type: str | None = None,
+        params: dict[str, Any] | None = None,
+        dataset_id: int | None = None,
+        dataview_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Get AI-powered suggestions for the current project.
+
+        Corresponds to the backend ``UnifiedPromptSpec``:
+        ``{"suggestion_type": <type>, "params": {...}}`` where the ``params``
+        shape depends on the type (e.g. ``generate_task`` takes ``{"prompt"}``,
+        ``add_condition`` takes ``{"prompt", "sequence_number"}``,
+        ``extract_text`` takes ``{"column_name", "sequence_number", "prompt"}``).
+
+        Args:
+            suggestion_type: One of ``extract_text``, ``add_condition``,
+                ``generate_task``, ``apply_ai_template``, ``dashboards`` or
+                ``derivative_fuzzy_bucket`` (required).
+            params: Type-specific parameters (required).
+            dataset_id: Optional dataset to scope the suggestions to
+                (query parameter).
+            dataview_id: Optional dataview to scope the suggestions to
+                (query parameter).
 
         Returns:
-            Dict with suggested transformations.
+            Dict with suggestions.
+
+        Raises:
+            MammothValidationError: If ``suggestion_type`` or ``params`` is
+                missing or the type is unknown.
         """
+        if suggestion_type not in self.SUGGESTION_TYPES:
+            raise MammothValidationError(
+                f"suggestion_type must be one of {list(self.SUGGESTION_TYPES)}, "
+                f"got {suggestion_type!r}.",
+                {"suggestion_type": suggestion_type},
+            )
+        if params is None:
+            raise MammothValidationError(
+                "get_suggestions requires `params` matching the suggestion_type.",
+                {"suggestion_type": suggestion_type},
+            )
         ws = self._ws()
         proj = self._proj()
+        query: dict[str, Any] = {}
+        if dataset_id is not None:
+            query["dataset_id"] = dataset_id
+        if dataview_id is not None:
+            query["dataview_id"] = dataview_id
         response = self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/suggestions",
+            params=query or None,
+            json={"suggestion_type": suggestion_type, "params": params},
         )
         return self._client._wait_if_job(response)
 
@@ -180,26 +261,34 @@ class AIAPI:
         self,
         connector_key: str,
         connection_key: str,
-        prompt: str,
+        query: str,
         project_id: int | None = None,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """Generate a query for a connector using AI.
+
+        Corresponds to the backend ``Intent`` body: ``{"query": <intent>,
+        "profile": <optional profile>}``.
 
         Args:
             connector_key: Key identifying the connector type.
             connection_key: Key identifying the connection.
-            prompt: Natural language prompt describing the query.
+            query: Natural language intent describing the query.
             project_id: Project ID (uses client default if not provided).
+            profile: Optional connector profile name.
 
         Returns:
             Dict with generated query.
         """
         ws = self._ws()
         proj = project_id if project_id is not None else self._proj()
+        body: dict[str, Any] = {"query": query}
+        if profile is not None:
+            body["profile"] = profile
         response = self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/connectors/{connector_key}/connections/{connection_key}/chat",
-            json={"prompt": prompt},
+            json=body,
         )
         return self._client._wait_if_job(response)
 

@@ -57,8 +57,9 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project bulk-update --help
-  agent_example: 'mammoth project bulk-update --input ''{"patch_data": {"sample_key": "Status"}}'' --output
-    json --no-input'
+  agent_example: 'mammoth project bulk-update --input ''{"patch_data": {"patches": [{"op": "add", "path":
+    "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}''
+    --output json --no-input'
   unit_tests:
   - UT-PROJECT-BULK-UPDATE
   contract_tests:
@@ -67,8 +68,9 @@ commands:
   - CT-PROJECT-BULK-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'BLOCKED[B02 PROJECT_BULK_PATCH_UNTYPED]: patch_data is an unconstrained dictionary;
-    reserved, not registered.'
+  known_restrictions: Release contract is ProjectsPatch (role add/replace/remove across projects).
+    The CLI requires every patches[].value item to name a project_id and the confirmation names
+    those ids; a body that names no project is refused before dispatch. Not verified live.
   reviewed_by: primary
 - command_id: project.checkpoint.list
   command_path: project checkpoint list
@@ -575,7 +577,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project update --help
-  agent_example: mammoth project update 123 --output json --no-input
+  agent_example: 'mammoth project update 123 --input ''{"name": "Renamed project"}'' --output json --no-input'
   unit_tests:
   - UT-PROJECT-UPDATE
   contract_tests:
@@ -615,8 +617,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project user add --help
-  agent_example: 'mammoth project user add 123 --input ''{"user_ids": ["resource-123"]}'' --output json
-    --no-input'
+  agent_example: 'mammoth project user add 123 --input ''{"user_ids": [123], "role": "project_analyst"}''
+    --output json --no-input'
   unit_tests:
   - UT-PROJECT-USER-ADD
   contract_tests:

@@ -136,8 +136,18 @@ class TestProjectsAPI:
         )
 
     def test_update(self, client: MammothClient):
-        client.projects.update(project_id=42, name="Renamed")
+        # ProjectPatch: ``patches`` with bare-name paths; colour lives in properties.
+        client.projects.update(project_id=42, name="Renamed", color="#123456")
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/projects/42")
+        assert_json_body(
+            client._request_json,
+            {
+                "patches": [
+                    {"op": "replace", "path": "name", "value": "Renamed"},
+                    {"op": "replace", "path": "properties", "value": {"color": "#123456"}},
+                ]
+            },
+        )
 
     def test_delete(self, client: MammothClient):
         client.projects.delete(project_id=42)
@@ -150,8 +160,23 @@ class TestProjectsAPI:
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/projects/42/browse")
 
     def test_add_users(self, client: MammothClient):
-        client.projects.add_users(project_id=42, user_ids=["u1", "u2"])
+        # AddUsersToProject: ``users`` of {user_id, role}; ids are numeric.
+        client.projects.add_users(project_id=42, user_ids=[5, "6"], role="project_analyst")
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/projects/42/users")
+        assert_json_body(
+            client._request_json,
+            {
+                "users": [
+                    {"user_id": 5, "role": "project_analyst"},
+                    {"user_id": 6, "role": "project_analyst"},
+                ]
+            },
+        )
+
+    def test_add_users_rejects_emails(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="numeric user ids"):
+            client.projects.add_users(project_id=42, user_ids=["someone@example.com"])
+        client._request_json.assert_not_called()
 
     def test_remove_users(self, client: MammothClient):
         client.projects.remove_users(project_id=42, user_ids=["u1"])
@@ -402,8 +427,14 @@ class TestDatasetsAPI:
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/datasets")
 
     def test_bulk_delete(self, client: MammothClient):
-        client.datasets.bulk_delete()
-        assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/datasets")
+        # The route takes the ids query parameter; there is no delete-all form.
+        client.datasets.bulk_delete(dataset_ids=[7, 8])
+        assert_called_with_method_and_endpoint(
+            client._request_json, "DELETE", "/workspaces/1/projects/100/datasets"
+        )
+        assert client._request_json.call_args.kwargs["params"] == {"ids": "7,8"}
+        with pytest.raises(MammothValidationError, match="dataset_ids"):
+            client.datasets.bulk_delete()
 
     def test_create_from_pdf(self, client: MammothClient):
         client.datasets.create_from_pdf(file_object_id=7, file_name="report.pdf")
@@ -621,10 +652,14 @@ class TestDataviewsAPI:
         )
 
     def test_conditional_format_delete(self, client: MammothClient):
-        client.dataviews.conditional_format_delete(dataset_id=500, dataview_id=42)
+        # The route requires the rule_id query parameter; there is no delete-all.
+        client.dataviews.conditional_format_delete(dataset_id=500, dataview_id=42, rule_id="r1")
         assert_called_with_method_and_endpoint(
             client._request_json, "DELETE", "/dataviews/42/conditional-format"
         )
+        assert client._request_json.call_args.kwargs["params"] == {"rule_id": "r1"}
+        with pytest.raises(MammothValidationError, match="rule_id"):
+            client.dataviews.conditional_format_delete(dataset_id=500, dataview_id=42)
 
     def test_draft_mode(self, client: MammothClient):
         client.dataviews.draft_mode(dataset_id=500, dataview_id=42, command="enter")
@@ -698,10 +733,15 @@ class TestPipelineAPI:
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/pipeline/tasks/7")
 
     def test_update_task(self, client: MammothClient):
+        # TaskPatch: ``patches``; task_spec is the replace-params shortcut.
         client.pipeline.update_task(
             dataview_id=42, task_id=7, task_spec={"MATH": {}}, dataset_id=500
         )
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/pipeline/tasks/7")
+        assert_json_body(
+            client._request_json,
+            {"patches": [{"op": "replace", "path": "params", "value": {"MATH": {}}}]},
+        )
 
     def test_delete_task(self, client: MammothClient):
         client.pipeline.delete_task(dataview_id=42, task_id=7, dataset_id=500)
@@ -920,8 +960,19 @@ class TestFoldersAPI:
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/folders")
 
     def test_move(self, client: MammothClient):
-        client.folders.move(resource_ids=["r1"], target_folder_resource_id="r2")
+        # BulkFolderPatchRequest: patch [{op: move, from: [ids], path: folder | "root"}].
+        client.folders.move(resource_ids=["8024", 8025], target_folder_resource_id="17")
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/folders")
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "move", "from": [8024, 8025], "path": 17}]},
+        )
+        client._request_json.reset_mock()
+        client.folders.move(resource_ids=[8024])
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "move", "from": [8024], "path": "root"}]},
+        )
 
     def test_bulk_delete(self, client: MammothClient):
         client.folders.bulk_delete(folder_ids=[1, 2], check_dependency=False)
@@ -2166,9 +2217,9 @@ class TestBatchesAPI:
         assert_json_body(
             client._request_json,
             {
-                "source": "datasource",
+                # BatchesPostRequest: mapping is a list of ColumnNameMapping items.
                 "source_id": 42,
-                "mapping": {"src_col": "dst_col"},
+                "mapping": [{"source_c_name": "src_col", "destination_c_name": "dst_col"}],
                 "delete_source_ds": False,
             },
         )
@@ -2184,10 +2235,9 @@ class TestBatchesAPI:
         assert_json_body(
             client._request_json,
             {
-                "source": "datasource",
                 "source_id": 42,
-                "mapping": {"a": "b"},
-                "is_validation_required": True,
+                "mapping": [{"source_c_name": "a", "destination_c_name": "b"}],
+                "validate_only": True,
                 "delete_source_ds": True,
             },
         )
@@ -2534,8 +2584,13 @@ class TestUserProfileAPI:
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/preferences")
 
     def test_update_preferences(self, client: MammothClient):
-        client.user_profile.update_preferences(theme="dark")
+        # PreferencesPatchRequest: patch of replace ops on dotted preference paths.
+        client.user_profile.update_preferences(**{"GLOBAL.PREFERENCES.THEME": "dark"})
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/preferences")
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "replace", "path": "GLOBAL.PREFERENCES.THEME", "value": "dark"}]},
+        )
 
 
 # ======================================================================
@@ -2699,18 +2754,46 @@ class TestAIAPI:
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/data/generate")
 
     def test_generate_sql(self, client: MammothClient):
-        client.ai.generate_sql(intent="count employees")
+        # The route requires the dataset_id query parameter.
+        client.ai.generate_sql(intent="count employees", dataset_id=48)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/sql_generation")
+        assert client._request_json.call_args.kwargs["params"] == {"dataset_id": 48}
+        with pytest.raises(MammothValidationError, match="dataset_id"):
+            client.ai.generate_sql(intent="count employees")
+
+    def test_generate_profile_sends_action(self, client: MammothClient):
+        client.ai.generate_profile(dataview_id=42, dataset_id=500, action="data_quality")
+        assert client._request_json.call_args.kwargs["json"] == {
+            "params": {"action": "data_quality"}
+        }
+        with pytest.raises(MammothValidationError, match="action"):
+            client.ai.generate_profile(dataview_id=42, dataset_id=500, action="profile")
 
     def test_get_suggestions(self, client: MammothClient):
-        client.ai.get_suggestions()
+        client.ai.get_suggestions(
+            suggestion_type="generate_task", params={"prompt": "Filter Price > 100"}, dataview_id=73
+        )
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/suggestions")
+        kwargs = client._request_json.call_args.kwargs
+        assert kwargs["json"] == {
+            "suggestion_type": "generate_task",
+            "params": {"prompt": "Filter Price > 100"},
+        }
+        assert kwargs["params"] == {"dataview_id": 73}
+
+    def test_get_suggestions_requires_type_and_params(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="suggestion_type"):
+            client.ai.get_suggestions()
+        with pytest.raises(MammothValidationError, match="params"):
+            client.ai.get_suggestions(suggestion_type="dashboards")
+        client._request_json.assert_not_called()
 
     def test_query_gen(self, client: MammothClient):
-        client.ai.query_gen(connector_key="sf", connection_key="conn1", prompt="list tables")
+        client.ai.query_gen(connector_key="sf", connection_key="conn1", query="list tables")
         assert_called_with_method_and_endpoint(
             client._request_json, "POST", "/connections/conn1/chat"
         )
+        assert client._request_json.call_args.kwargs["json"] == {"query": "list tables"}
 
     def test_status(self, client: MammothClient):
         client.ai.status(connector_key="sf", connection_key="conn1")
@@ -2804,4 +2887,30 @@ class TestAIAPI:
     ):
         with pytest.raises(MammothValidationError, match="mode|intent|condition_sql|project_id"):
             client.ai.retention_condition(**kwargs)
+        client._request_json.assert_not_called()
+
+
+class TestUrlScopedJobWait:
+    def test_wait_for_job_by_url_polls_the_url_scoped_route(self, client: MammothClient):
+        # Published-dashboard jobs answer 4PERM002 on GET /jobs/{id}; the
+        # URL-scoped job route is the only readable observer for them.
+        client._request_json.return_value = {
+            "job": {"id": 313, "status": "success", "response": {"ok": 1}}
+        }
+        job = client.dashboards.wait_for_job_by_url("IuZl5tk5", 313, timeout=5)
+        assert job["status"] == "success"
+        client._request_json.assert_called_once_with("GET", "/dashboards/url/IuZl5tk5/jobs/313")
+
+    def test_wait_if_job_uses_custom_fetch(self):
+        with patch("mammoth.client.requests.Session"):
+            client = MammothClient(api_key="key", api_secret="secret", workspace_id=1)
+        client._request_json = MagicMock(return_value={})
+        seen: list[int] = []
+
+        def fetch(job_id: int, remaining: float) -> dict:
+            seen.append(job_id)
+            return {"id": job_id, "status": "success", "response": {"value": 58824}}
+
+        assert client.wait_if_job({"job_id": 311}, timeout=5, fetch=fetch) == {"value": 58824}
+        assert seen == [311]
         client._request_json.assert_not_called()

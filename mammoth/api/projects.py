@@ -168,12 +168,17 @@ class ProjectsAPI:
             Dict with updated project info.
         """
         ws = workspace_id or self._ws()
-        operations = []
+        # ``ProjectPatch``: ``patches`` of ``{op, path, value}`` where ``path``
+        # is the bare name ``name`` or ``properties`` (colour lives inside
+        # ``properties``). A JSON-pointer ``/name`` under ``patch`` is rejected.
+        operations: list[dict[str, Any]] = []
         if name is not None:
-            operations.append({"op": "replace", "path": "/name", "value": name})
+            operations.append({"op": "replace", "path": "name", "value": name})
         if color is not None:
-            operations.append({"op": "replace", "path": "/color", "value": color})
-        payload = {"patch": operations}
+            operations.append({"op": "replace", "path": "properties", "value": {"color": color}})
+        if not operations:
+            raise MammothValidationError("Provide at least one of `name` or `color` to update.")
+        payload = {"patches": operations}
         return self._client._request_json(
             "PATCH", f"/workspaces/{ws}/projects/{project_id}", json=payload
         )
@@ -193,9 +198,7 @@ class ProjectsAPI:
             Dict with deletion result.
         """
         ws = workspace_id or self._ws()
-        return self._client._request_json(
-            "DELETE", f"/workspaces/{ws}/projects/{project_id}"
-        )
+        return self._client._request_json("DELETE", f"/workspaces/{ws}/projects/{project_id}")
 
     def bulk_update(
         self,
@@ -237,27 +240,43 @@ class ProjectsAPI:
     def add_users(
         self,
         project_id: int,
-        user_ids: _list[str],
+        user_ids: _list[int],
         role: str | None = None,
         workspace_id: int | None = None,
     ) -> dict[str, Any]:
         """Add users to a project.
 
+        The route takes ``{"users": [{"user_id", "role"}]}``; users are
+        addressed by numeric id (see ``workspace user list``), not by email.
+
         Args:
             project_id: ID of the project.
-            user_ids: List of user email addresses or IDs.
-            role: Role to assign (optional).
+            user_ids: Numeric user ids to add.
+            role: ``project_admin`` or ``project_analyst`` (server default
+                ``project_analyst``) applied to every listed user.
             workspace_id: ID of the workspace (uses client default if not provided).
 
         Returns:
             Dict with result.
         """
         ws = workspace_id or self._ws()
-        payload: dict[str, Any] = {"user_emails": user_ids}
-        if role:
-            payload["role"] = role
+        users: list[dict[str, Any]] = []
+        for raw in user_ids:
+            if isinstance(raw, bool) or not (
+                isinstance(raw, int) or (isinstance(raw, str) and raw.isdigit())
+            ):
+                raise MammothValidationError(
+                    f"user_ids must be numeric user ids, got {raw!r}; "
+                    "look ids up with the workspace user list."
+                )
+            entry: dict[str, Any] = {"user_id": int(raw)}
+            if role:
+                entry["role"] = role
+            users.append(entry)
+        if not users:
+            raise MammothValidationError("user_ids must contain at least one user id.")
         return self._client._request_json(
-            "POST", f"/workspaces/{ws}/projects/{project_id}/users", json=payload
+            "POST", f"/workspaces/{ws}/projects/{project_id}/users", json={"users": users}
         )
 
     def remove_users(
@@ -532,9 +551,11 @@ class ProjectsAPI:
             raise MammothValidationError("`patches` must contain at least one operation.")
         try:
             typed = [
-                item
-                if isinstance(item, DataSyncPatchItem)
-                else DataSyncPatchItem.model_validate(item)
+                (
+                    item
+                    if isinstance(item, DataSyncPatchItem)
+                    else DataSyncPatchItem.model_validate(item)
+                )
                 for item in patches
             ]
         except ValidationError as exc:

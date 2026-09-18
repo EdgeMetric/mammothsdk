@@ -87,11 +87,22 @@ def test_bulk_delete_blocked_without_confirmation(
     assert excinfo.value.code == "confirmation_required"
 
 
+_ROLE_PATCH = {
+    "patches": [
+        {
+            "op": "add",
+            "path": "role",
+            "value": [{"project_id": 41, "user_roles": [{"user_id": 3, "role": "project_admin"}]}],
+        }
+    ]
+}
+
+
 def test_bulk_update_requires_confirm_target(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"patch_data": {"color": "#000"}}), encoding="utf-8")
+    doc.write_text(json.dumps({"patch_data": _ROLE_PATCH}), encoding="utf-8")
     with pytest.raises(CliError) as excinfo:
         project_cmd.project_bulk_update(
             _inv("project.bulk-update", input_file=str(doc), yes=True, confirm="999")
@@ -99,12 +110,27 @@ def test_bulk_update_requires_confirm_target(
     assert excinfo.value.code == "confirmation_target_mismatch"
 
 
+def test_bulk_update_refuses_a_body_that_names_no_project(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # A freeform body used to be confirmed as "bulk-update projects in
+    # workspace 4", i.e. with no visible target set.
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"patch_data": {"color": "#000"}}), encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        project_cmd.project_bulk_update(
+            _inv("project.bulk-update", input_file=str(doc), yes=True, confirm="4")
+        )
+    assert excinfo.value.code == "invalid_argument"
+    assert fake_service.call_log == []
+
+
 def test_bulk_update_proceeds_with_matching_target(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"patch_data": {"color": "#000"}}), encoding="utf-8")
+    doc.write_text(json.dumps({"patch_data": _ROLE_PATCH}), encoding="utf-8")
     project_cmd.project_bulk_update(
         _inv("project.bulk-update", input_file=str(doc), yes=True, confirm="4")
     )
-    assert fake_service.call_log == [(_BULK_UPDATE, {"patch_data": {"color": "#000"}})]
+    assert fake_service.call_log == [(_BULK_UPDATE, {"patch_data": _ROLE_PATCH})]

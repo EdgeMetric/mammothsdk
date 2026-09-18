@@ -840,9 +840,14 @@
           "destination": "connection_key",
           "wire": "path_or_context"
         },
-        "prompt": {
+        "query": {
           "source": "input",
-          "destination": "prompt",
+          "destination": "query",
+          "wire": "sdk_argument"
+        },
+        "profile": {
+          "source": "input",
+          "destination": "profile",
           "wire": "sdk_argument"
         }
       },
@@ -853,7 +858,7 @@
       "wire": {
         "method": "POST",
         "path": "/workspaces/{workspace}/projects/{project}/connectors/{connector_key}/connections/{connection_key}/chat",
-        "body": "json:prompt",
+        "body": "json:Intent{query,profile?}",
         "checks": [
           "method",
           "path",

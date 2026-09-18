@@ -96,9 +96,7 @@ class PipelineAPI:
 
         return workspace_id, project_id, dataset_id, dataview_id
 
-    def find_dataset_for_dataview(
-        self, dataview_id: int, dataset_id: int | None = None
-    ) -> int:
+    def find_dataset_for_dataview(self, dataview_id: int, dataset_id: int | None = None) -> int:
         """Public typed resolver: find the dataset that contains a dataview.
 
         This is the supported public seam for dataview-to-dataset resolution.
@@ -195,9 +193,7 @@ class PipelineAPI:
                         and isinstance(page_limit, int)
                         and len(views) < page_limit
                     ):
-                        listed_ids = {
-                            view.get("id") for view in views if isinstance(view, dict)
-                        }
+                        listed_ids = {view.get("id") for view in views if isinstance(view, dict)}
                         if dataview_id not in listed_ids:
                             continue
                 raise
@@ -347,23 +343,42 @@ class PipelineAPI:
         self,
         dataview_id: int,
         task_id: int,
-        task_spec: dict[str, Any],
-        dataset_id: int,
+        task_spec: dict[str, Any] | None = None,
+        dataset_id: int | None = None,
+        patches: list[dict[str, Any]] | None = None,
+        skip_validation: bool | None = None,
     ) -> dict[str, Any]:
         """Update an existing pipeline task.
+
+        The route takes ``{"patches": [{"op", "path", "value"}]}`` with ``op``
+        ``replace`` or ``command`` and ``path`` one of ``params``,
+        ``display_info``, ``suspend``, ``restore``, ``discard``. ``task_spec``
+        is the shortcut for ``[{"op": "replace", "path": "params", "value":
+        task_spec}]``.
 
         Args:
             dataview_id: ID of the dataview.
             task_id: ID of the task to update.
-            task_spec: Updated task specification.
-            dataset_id: Dataset ID (auto-detected if not provided).
+            task_spec: New task params (replaces the ``params`` path).
+            dataset_id: Exact parent dataset id.
+            patches: Explicit patch operations, used instead of ``task_spec``.
+            skip_validation: Forwarded as the ``skip_validation`` query flag.
 
         Returns:
             Updated task dict.
         """
+        operations = list(patches or [])
+        if task_spec is not None:
+            operations.append({"op": "replace", "path": "params", "value": task_spec})
+        if not operations:
+            raise MammothValidationError("Provide `task_spec` or `patches` to update a task.")
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
+        params = {"skip_validation": skip_validation} if skip_validation is not None else None
         response = self._client._request_json(
-            "PATCH", f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}", json=task_spec
+            "PATCH",
+            f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}",
+            params=params,
+            json={"patches": operations},
         )
         return self._client._wait_if_job(response)
 

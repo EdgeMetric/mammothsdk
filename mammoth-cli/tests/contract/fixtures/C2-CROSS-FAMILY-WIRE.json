@@ -15,8 +15,8 @@
   "cases": [
     {"id":"project-list","route":"project.list","expected":{"method":"GET","path":"/workspaces/17/projects","kwargs":{"params":{"fields":"id,name","limit":13}}}},
     {"id":"project-create","route":"project.create","expected":{"method":"POST","path":"/workspaces/17/projects","kwargs":{"json":{"name":"C2_PROJECT","properties":{"color":"#C20001","project_access":"only_me"}}}}},
-    {"id":"project-update","route":"project.update","expected":{"method":"PATCH","path":"/workspaces/17/projects/41","kwargs":{"json":{"patch":[{"op":"replace","path":"/name","value":"C2_RENAMED"},{"op":"replace","path":"/color","value":"#C20002"}]}}}},
-    {"id":"project-user-add","route":"project.user.add","expected":{"method":"POST","path":"/workspaces/17/projects/41/users","kwargs":{"json":{"user_emails":["c2-user@example.invalid"],"role":"editor"}}}},
+    {"id":"project-update","route":"project.update","expected":{"method":"PATCH","path":"/workspaces/17/projects/41","kwargs":{"json":{"patches":[{"op":"replace","path":"name","value":"C2_RENAMED"},{"op":"replace","path":"properties","value":{"color":"#C20002"}}]}}}},
+    {"id":"project-user-add","route":"project.user.add","expected":{"method":"POST","path":"/workspaces/17/projects/41/users","kwargs":{"json":{"users":[{"user_id":4102,"role":"project_analyst"}]}}}},
     {"id":"project-delete","route":"project.delete","expected":{"method":"DELETE","path":"/workspaces/17/projects/41","kwargs":{}}},
     {"id":"dataset-list","route":"dataset.list","expected":{"method":"GET","path":"/workspaces/17/projects/41/datasets","kwargs":{"params":{"fields":"id,name","limit":19,"offset":7,"sort":"C2_SORT"}}}},
     {"id":"dataset-create","route":"dataset.create","expected":{"method":"POST","path":"/workspaces/17/projects/41/datasets","kwargs":{"json":{"dataset_spec":{"name":"C2_DATASET","url":"https://example.invalid/data.csv"},"ds_creation_type":"weburl","folder_resource_id":"C2_FOLDER"}}}},

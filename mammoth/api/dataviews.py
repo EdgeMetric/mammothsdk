@@ -503,25 +503,35 @@ class DataviewsAPI:
         self,
         dataset_id: int,
         dataview_id: int,
+        rule_id: str | int | None = None,
         workspace_id: int | None = None,
         project_id: int | None = None,
     ) -> dict[str, Any]:
-        """Delete all conditional formatting rules.
+        """Delete one conditional formatting rule.
+
+        The route requires the ``rule_id`` query parameter (from
+        :meth:`conditional_format_list`); there is no delete-all form.
 
         Args:
             dataset_id: ID of the dataset.
             dataview_id: ID of the dataview.
+            rule_id: ID of the rule to delete.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
 
         Returns:
             Dict with deletion result.
         """
+        if rule_id is None or rule_id == "":
+            raise MammothValidationError(
+                "conditional_format_delete requires `rule_id`; list rules first."
+            )
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
         return self._client._request_json(
             "DELETE",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional-format",
+            params={"rule_id": rule_id},
         )
 
     def draft_mode(

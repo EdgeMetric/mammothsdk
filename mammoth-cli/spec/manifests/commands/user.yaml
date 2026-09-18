@@ -240,7 +240,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth user preference update --help
-  agent_example: mammoth user preference update --output json --no-input
+  agent_example: 'mammoth user preference update --input ''{"patch": [{"op": "replace", "path": "GLOBAL.PREFERENCES.TOP_TABS",
+    "value": []}]}'' --output json --no-input'
   unit_tests:
   - UT-USER-PREFERENCE-UPDATE
   contract_tests:
@@ -249,7 +250,8 @@ commands:
   - CT-USER-PREFERENCE-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'BLOCKED[B17 VARIADIC_INPUT_UNTYPED]: **prefs is unconstrained; reserved, not registered.'
+  known_restrictions: 'Body is the release {"patch": [{"op", "path", "value"}]} list; the CLI does not
+    validate preference paths (observed key GLOBAL.PREFERENCES.TOP_TABS). Not verified live.'
   reviewed_by: primary
 - command_id: user.update
   command_path: user update

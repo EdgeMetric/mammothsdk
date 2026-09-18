@@ -60,7 +60,21 @@ def _resolve_job(service: Any, invocation: Invocation, data: Any) -> Any:
         return data
     if hasattr(data, "model_dump"):
         data = data.model_dump(mode="json")
-    return service.wait_if_job(data)
+    # A job dispatched by a /dashboards/url/{url}/... route is readable only
+    # through the URL-scoped job route; the generic GET /jobs/{id} answers
+    # 4PERM002 and used to fail the command although the job succeeded.
+    return service.wait_if_job(data, dashboard_url=_url_scope(invocation))
+
+
+def _url_scope(invocation: Invocation) -> str | None:
+    """Return the dashboard URL slug positional when this command addresses one."""
+    value = invocation.positionals.get("url")
+    if value is None:
+        for index, spec in enumerate(resolve_positionals(invocation.command_id)):
+            if spec.name == "url" and index < len(invocation.extra_args):
+                value = invocation.extra_args[index]
+                break
+    return str(value) if value else None
 
 
 def _symbol(invocation: Invocation) -> str:

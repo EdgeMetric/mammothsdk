@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from ..client import MammothClient
 
 from ..exceptions import MammothValidationError
-from ..models.folders import BulkFolderPatchRequest, CreateFolder, FolderSchema, FoldersList
+from ..models.folders import CreateFolder, FolderSchema, FoldersList
 from ..models.jobs import JobResponse, ObjectJobSchema
 
 _list = list  # Alias to avoid shadowing by method name
@@ -218,16 +218,28 @@ class FoldersAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        move_request = BulkFolderPatchRequest(
-            source_folder_resource_id=source_folder_resource_id,
-            target_folder_resource_id=target_folder_resource_id,
-            resource_ids=resource_ids,
-            operation="move",
-        )
+        # ``BulkFolderPatchRequest``: ``patch`` of ``{op: "move", from: [resource
+        # ids], path: destination folder id | "root"}``. ``source_folder_resource_id``
+        # is accepted for compatibility; the route infers the source.
+        try:
+            moved = [int(item) for item in resource_ids]
+        except (TypeError, ValueError) as exc:
+            raise MammothValidationError(
+                f"resource_ids must be integer resource ids, got {resource_ids!r}"
+            ) from exc
+        if not moved:
+            raise MammothValidationError("resource_ids must contain at least one id.")
+        destination: int | str = "root"
+        if target_folder_resource_id not in (None, "", "root"):
+            destination = (
+                int(target_folder_resource_id)
+                if str(target_folder_resource_id).isdigit()
+                else str(target_folder_resource_id)
+            )
         response = self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/folders",
-            json=move_request.model_dump(exclude_none=True),
+            json={"patch": [{"op": "move", "from": moved, "path": destination}]},
         )
         return ObjectJobSchema(**response)
 

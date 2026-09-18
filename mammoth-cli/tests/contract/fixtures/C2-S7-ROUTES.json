@@ -4166,14 +4166,9 @@
       "operation_id": "UpdateUserPreferences",
       "sdk_symbol": "mammoth.api.user_profile.UserProfileAPI.update_preferences",
       "field_destinations": {
-        "theme": {
+        "patch": {
           "source": "input",
-          "destination": "theme",
-          "wire": "request_body"
-        },
-        "locale": {
-          "source": "input",
-          "destination": "locale",
+          "destination": "patch",
           "wire": "request_body"
         }
       },

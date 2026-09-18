@@ -68,3 +68,26 @@ Reject malformed fields with the structured error envelope and stop rather than
 guessing names. Verify exact display names, join multiplicity, math values and
 remote task/pipeline readback. Draft submit is not proof all tasks persisted:
 discover draft enter/status/submit/discard schemas and reconcile IDs/parents.
+
+## Pipeline, checkpoint and raw task routes
+
+These routes forward release patch bodies that `schema get` shows only as
+free-form lists. Observed shapes:
+
+- `view pipeline edit VIEW_ID --input '{"dataset_id":DATASET_ID,"patches":[{"op":"command","path":"discard-changes","value":null}]}'`
+  takes exactly one patch; `path` is one of `auto_run`, `run`, `submit-changes`,
+  `reset`, `discard-changes`, `suspend`, `restore`, `discard`, `reorder`, and
+  the `value` type follows the path (bool for `auto_run`, a reorder spec for
+  `reorder`, `null` for commands). Prefer `view draft *` for submit/discard.
+- `view task update VIEW_ID TASK_ID --input '{"dataset_id":DATASET_ID,"task_spec":{...}}'`
+  sends `{"patches":[{"op":"replace","path":"params","value":task_spec}]}`;
+  pass `patches` directly for other paths. `view task preview` needs the
+  task's internal column names (`view columns`), not display names.
+- `view checkpoint update` sends `{"patches":[{"op":"command","path":"approve","value":null}]}`;
+  the release backend answered HTTP 500 to that shape, so treat checkpoint
+  approval as unavailable until `checkpoint get` succeeds again.
+- `view exportable-config apply` needs the complete object returned by
+  `view exportable-config get` (tasks, dependencies, metadata, ...); a partial
+  config fails the job with a bare key name instead of a validation message.
+- `ai expression generate` accepts `mode` `math` or `metric` only; an invalid
+  mode is refused before any request as `invalid_arguments`.

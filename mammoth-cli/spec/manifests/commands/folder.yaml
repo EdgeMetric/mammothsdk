@@ -251,7 +251,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth folder move --help
-  agent_example: 'mammoth folder move --input ''{"resource_ids": ["resource-123"]}'' --output json --no-input'
+  agent_example: 'mammoth folder move --input ''{"resource_ids": [8024], "target_folder_resource_id": "root"}''
+    --output json --no-input'
   unit_tests:
   - UT-FOLDER-MOVE
   contract_tests:

@@ -704,6 +704,27 @@ class DashboardsAPI:
             raise MammothValidationError(ERR_JOB_ID_POSITIVE.format(job_id))
         return self._client._request_json("GET", f"/dashboards/url/{url}/jobs/{job_id}")
 
+    def wait_for_job_by_url(
+        self,
+        url: str,
+        job_id: int,
+        timeout: float | None = None,
+        poll_interval: float = 2,
+    ) -> dict[str, Any]:
+        """Wait for a published-dashboard job through the URL-scoped job route.
+
+        Jobs dispatched by the ``/dashboards/url/{url}/...`` routes are not
+        readable through ``GET /jobs/{id}`` (the server answers ``4PERM002``),
+        so poll :meth:`job_by_url` with the same timeout and failure semantics
+        as :meth:`~mammoth.api.jobs.JobsAPI.wait_for_job`.
+        """
+        return self._client.jobs.wait_for_job(
+            job_id,
+            timeout=timeout,
+            poll_interval=poll_interval,
+            fetch=lambda jid, _remaining: self.job_by_url(url, jid),
+        )
+
     def published_data_by_url(self, url: str, body: dict[str, Any]) -> dict[str, Any]:
         """Get published dashboard widget data via SQL, addressed by URL slug.
 

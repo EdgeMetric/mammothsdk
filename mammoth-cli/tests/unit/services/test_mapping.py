@@ -310,3 +310,20 @@ def test_pydantic_validation_error_names_the_failing_fields() -> None:
     assert error.details["validation_errors"][0]["loc"] == "tokens"
     assert error.details["validation_errors"][0]["type"] == "dict_type"
     assert "schema get" in (error.hint or "")
+
+
+def test_sdk_validation_error_surfaces_its_message_as_invalid_arguments() -> None:
+    # `ai expression generate --input {"mode": "sample"}` used to come back as
+    # an opaque api_error with empty details even though the SDK had rejected
+    # the mode before sending anything.
+    from mammoth.exceptions import MammothValidationError
+
+    error = map_sdk_exception(
+        MammothValidationError("mode must be 'math' or 'metric', got 'sample'.", {"mode": "sample"})
+    )
+
+    assert error.code == "invalid_arguments"
+    assert error.exit_status == 2
+    assert error.message == "mode must be 'math' or 'metric', got 'sample'."
+    assert error.details == {"exception_type": "MammothValidationError", "mode": "sample"}
+    assert "no request was sent" in (error.hint or "")

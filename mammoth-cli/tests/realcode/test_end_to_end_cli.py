@@ -133,10 +133,14 @@ def test_generated_dashboard_async_result_waits_for_job(
     real_wait = JobsAPI.wait_for_job
 
     def recording_wait(
-        self: JobsAPI, job_id: int, timeout: int | None = None, poll_interval: int = 2
+        self: JobsAPI,
+        job_id: int,
+        timeout: int | None = None,
+        poll_interval: int = 2,
+        fetch: Any = None,
     ) -> dict[str, Any]:
         observed_timeouts.append(timeout)
-        return real_wait(self, job_id, timeout, poll_interval)
+        return real_wait(self, job_id, timeout, poll_interval, fetch=fetch)
 
     monkeypatch.setattr(JobsAPI, "wait_for_job", recording_wait)
     service, api = real_service()

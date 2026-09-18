@@ -441,15 +441,37 @@ def dataset_delete(invocation: Invocation) -> HandlerResult:
 
 
 def dataset_bulk_delete(invocation: Invocation) -> HandlerResult:
-    """Permanently delete all datasets in the active project. Prompt or ``--yes`` required."""
+    """Permanently delete the listed datasets. ``dataset_ids`` from ``--input``; ``--yes`` required.
+
+    The route has no delete-all form: it takes an explicit ``ids`` list and
+    rejects an empty one, so the CLI never confirms an implicit whole-project
+    delete.
+    """
     project_id = require_project(invocation)
+    document = invocation.load_input()
+    dataset_ids = _require_field(document, "dataset_ids")
+    if (
+        not isinstance(dataset_ids, list)
+        or not dataset_ids
+        or any(
+            isinstance(item, bool) or not isinstance(item, int) or item <= 0 for item in dataset_ids
+        )
+    ):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The 'dataset_ids' input field must be a non-empty list of positive integers.",
+            exit_status=EXIT_USAGE,
+        )
     enforce_confirmation(
         invocation,
         policy=POLICY_PROMPT_OR_YES,
-        action=f"delete all datasets in project {project_id}",
+        action=(
+            f"delete datasets {', '.join(str(item) for item in dataset_ids)} "
+            f"in project {project_id}"
+        ),
     )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), project_id=project_id)
+        data = service.call(_symbol(invocation), dataset_ids=dataset_ids, project_id=project_id)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

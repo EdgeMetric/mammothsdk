@@ -152,7 +152,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth ai sql generate --help
-  agent_example: mammoth ai sql generate 'Summarize revenue by region' --output json --no-input
+  agent_example: 'mammoth ai sql generate ''Summarize revenue by region'' --input ''{"dataset_id": 456}''
+    --output json --no-input'
   unit_tests:
   - UT-AI-SQL-GENERATE
   contract_tests:
@@ -187,7 +188,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth ai suggestion list --help
-  agent_example: mammoth ai suggestion list --output json --no-input
+  agent_example: 'mammoth ai suggestion list --input ''{"suggestion_type": "generate_task", "params": {"prompt":
+    "Filter rows where Price > 100"}, "dataset_id": 456, "dataview_id": 123}'' --output json --no-input'
   unit_tests:
   - UT-AI-SUGGESTION-LIST
   contract_tests:
@@ -196,5 +198,8 @@ commands:
   - CT-AI-SUGGESTION-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Body is the release UnifiedPromptSpec. suggestion_type is one of extract_text,
+    add_condition, generate_task, apply_ai_template, dashboards, derivative_fuzzy_bucket and params
+    follows that type (generate_task {prompt}; add_condition {prompt, sequence_number}; extract_text
+    {column_name, sequence_number, prompt}). dataset_id/dataview_id scope the request.
   reviewed_by: primary

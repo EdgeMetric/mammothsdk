@@ -883,8 +883,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth connector query generate CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: 'mammoth connector query generate sample sample --input ''{"prompt": "Summarize revenue
-    by region"}'' --output json --no-input'
+  agent_example: 'mammoth connector query generate sample sample --input ''{"query": "Total sales for January"}''
+    --output json --no-input'
   unit_tests:
   - UT-CONNECTOR-QUERY-GENERATE
   contract_tests:

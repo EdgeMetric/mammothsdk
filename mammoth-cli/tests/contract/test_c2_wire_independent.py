@@ -76,9 +76,7 @@ def _invoke(client: RecordingClient, route: str) -> None:
         "project.list": lambda: projects.list(workspace_id=17, limit=13),
         "project.create": lambda: projects.create("C2_PROJECT", "#C20001", "only_me", 17),
         "project.update": lambda: projects.update(41, "C2_RENAMED", "#C20002", 17),
-        "project.user.add": lambda: projects.add_users(
-            41, ["c2-user@example.invalid"], "editor", 17
-        ),
+        "project.user.add": lambda: projects.add_users(41, [4102], "project_analyst", 17),
         "project.delete": lambda: projects.delete(41, 17),
         "dataset.list": lambda: datasets.list(17, 41, 19, 7, "C2_SORT"),
         "dataset.create": lambda: datasets.create(

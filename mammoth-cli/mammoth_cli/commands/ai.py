@@ -305,11 +305,13 @@ def ai_retention_condition(invocation: Invocation) -> HandlerResult:
 
 
 def ai_suggestion_list(invocation: Invocation) -> HandlerResult:
-    """List AI-powered transformation suggestions for the active project.
+    """List AI-powered suggestions for the active project.
 
-    The backing SDK method takes no arguments — it resolves the project bound
-    on the client — so an active project is required but not forwarded as a
-    keyword argument.
+    The release route is ``POST .../suggestions`` with a ``UnifiedPromptSpec``
+    body: ``suggestion_type`` (``extract_text``, ``add_condition``,
+    ``generate_task``, ``apply_ai_template``, ``dashboards`` or
+    ``derivative_fuzzy_bucket``) plus the type-specific ``params`` object.
+    ``dataset_id``/``dataview_id`` scope the request via query parameters.
 
     Args:
         invocation: The current command's resolved global options.
@@ -318,6 +320,11 @@ def ai_suggestion_list(invocation: Invocation) -> HandlerResult:
         The raw suggestions response and envelope metadata.
     """
     project_id = require_project(invocation)
+    document = invocation.load_input()
+    suggestion_type = _require_field(document, "suggestion_type")
+    params = _require_field(document, "params")
+    kwargs: dict[str, Any] = {"suggestion_type": suggestion_type, "params": params}
+    _forward_optional(document or {}, kwargs, ("dataset_id", "dataview_id"))
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation))
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)

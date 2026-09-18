@@ -1189,6 +1189,14 @@ def test_ai_profile_passes_dataview_id(fake_service: FakeMammothService) -> None
     assert fake_service.call_log == [(_AI_PROFILE, {"dataview_id": 7})]
 
 
+def test_ai_profile_forwards_action(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _doc(tmp_path, {"dataset_id": 9, "action": "data_quality"})
+    view_cmd.view_ai_profile(_inv("view.ai.profile", extra_args=["7"], input_file=doc))
+    assert fake_service.call_log == [
+        (_AI_PROFILE, {"dataview_id": 7, "dataset_id": 9, "action": "data_quality"})
+    ]
+
+
 # ── draft.command ───────────────────────────────────────────────────────────
 
 

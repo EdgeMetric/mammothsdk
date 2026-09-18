@@ -103,7 +103,7 @@ class BatchesAPI:
         self,
         dataset_id: int,
         source_id: int,
-        mapping: dict[str, str],
+        mapping: dict[str, str] | _list[dict[str, Any]],
         project_id: int | None = None,
         new_ds_params: dict[str, Any] | None = None,
         is_validation_required: bool | None = None,
@@ -112,14 +112,13 @@ class BatchesAPI:
     ) -> dict[str, Any]:
         """Create a new batch for a dataset.
 
-        The ``source`` field is hardcoded to ``"datasource"`` — the only
-        supported source type.
 
         Args:
             dataset_id: ID of the destination dataset.
             source_id: ID of the source dataset (must be a positive integer).
-            mapping: Non-empty dict mapping source column names to destination
-                column names, e.g. ``{"src_col": "dst_col"}``.
+            mapping: Non-empty ``{"src_col": "dst_col"}`` dict (expanded to
+                ``ColumnNameMapping`` items) or an explicit list of
+                ``ColumnNameMapping`` / ``ColumnIdMapping`` objects.
             project_id: Project ID (uses client default if not provided).
             new_ds_params: Optional params for creating a new dataset.
             is_validation_required: Whether to validate the batch.
@@ -140,16 +139,26 @@ class BatchesAPI:
             raise MammothValidationError(ERR_BATCH_MAPPING_EMPTY)
         ws = self._ws()
         proj = self._proj(project_id)
+        # ``BatchesPostRequest``: ``mapping`` is a list of ``ColumnNameMapping``
+        # (``source_c_name``/``destination_c_name``) or ``ColumnIdMapping``
+        # items; the ``{src: dst}`` dict shortcut is expanded to the former.
+        mapping_items: list[dict[str, Any]] = (
+            [
+                {"source_c_name": source, "destination_c_name": destination}
+                for source, destination in mapping.items()
+            ]
+            if isinstance(mapping, dict)
+            else list(mapping)
+        )
         body: dict[str, Any] = {
-            "source": "datasource",
             "source_id": source_id,
-            "mapping": mapping,
+            "mapping": mapping_items,
             "delete_source_ds": delete_source_ds,
         }
         if new_ds_params is not None:
-            body["new_ds_params"] = new_ds_params
+            body["new_ds_details"] = new_ds_params
         if is_validation_required is not None:
-            body["is_validation_required"] = is_validation_required
+            body["validate_only"] = is_validation_required
         if change_map is not None:
             body["change_map"] = change_map
         return self._client._request_json(

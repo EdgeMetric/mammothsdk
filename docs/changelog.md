@@ -1,5 +1,32 @@
 # Changelog
 
+## v0.7.7
+
+### Changed
+
+- Request bodies now match the release API contracts: `projects.update()`
+  sends `{"patches": [...]}`, `projects.add_users()` takes numeric user ids
+  and sends `{"users": [{"user_id", "role"}]}`, `folders.move()` sends a
+  `{"patch": [{"op": "move", ...}]}` list, `user_profile.update_preferences()`
+  takes a `patch` list, `pipeline.update_task()` sends `{"patches": [...]}`
+  (with optional `skip_validation`), `batches.create()` sends the
+  `BatchesPostRequest` shape (list `mapping`, `new_ds_details`,
+  `validate_only`), `ai.generate_sql()` requires `dataset_id`,
+  `ai.get_suggestions()` takes `suggestion_type` + `params`,
+  `ai.generate_profile()` sends `{"params": {"action"}}`, `ai.query_gen()`
+  takes `query` (was `prompt`), `dataviews.conditional_format_delete()`
+  requires `rule_id`, and `datasets.bulk_delete()` requires `dataset_ids`.
+- `jobs.wait_for_job()` and `wait_if_job()` accept a `fetch` callable so a job
+  can be polled through a scoped route; `dashboards.wait_for_job_by_url()`
+  uses it for published-dashboard jobs, whose `/jobs/{id}` reads return
+  4PERM002.
+
+### Fixed
+
+- A 2xx response whose body is not an object (for example `202 Accepted`
+  with a bare status) is returned as `{"status_code", "response"}` instead
+  of raising an outcome-unknown error for a write that committed.
+
 ## v0.7.6
 
 ### Changed

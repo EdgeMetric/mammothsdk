@@ -435,9 +435,9 @@ def test_unknown_s7_field_is_rejected_before_service_dispatch(
         (
             user_cmd.user_preference_update,
             "user.preference.update",
-            {"theme": "S7-THEME", "locale": "S7-LOCALE"},
+            {"patch": [{"op": "replace", "path": "GLOBAL.PREFERENCES.S7", "value": "S7"}]},
             "mammoth.api.user_profile.UserProfileAPI.update_preferences",
-            {"theme": "S7-THEME", "locale": "S7-LOCALE"},
+            {"patch": [{"op": "replace", "path": "GLOBAL.PREFERENCES.S7", "value": "S7"}]},
             [],
             {},
         ),

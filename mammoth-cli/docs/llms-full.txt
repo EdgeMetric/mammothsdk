@@ -49,9 +49,9 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth ai retention condition` [benign_mutation/none] -> mammoth.api.ai.AIAPI.retention_condition
   example: mammoth ai retention condition 123 --input '{"mode": "generate", "intent": "completed payments older than 90 days"}' --output json --no-input --project 456
 - `mammoth ai sql generate` [read/none] -> mammoth.api.ai.AIAPI.generate_sql
-  example: mammoth ai sql generate 'Summarize revenue by region' --output json --no-input
+  example: mammoth ai sql generate 'Summarize revenue by region' --input '{"dataset_id": 456}' --output json --no-input
 - `mammoth ai suggestion list` [read/none] -> mammoth.api.ai.AIAPI.get_suggestions
-  example: mammoth ai suggestion list --output json --no-input
+  example: mammoth ai suggestion list --input '{"suggestion_type": "generate_task", "params": {"prompt": "Filter rows where Price > 100"}, "dataset_id": 456, "dataview_id": 123}' --output json --no-input
 
 ## annotation
 
@@ -252,7 +252,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth connector list` [read/none] -> mammoth.api.connectors.ConnectorsAPI.list
   example: mammoth connector list --output json --no-input
 - `mammoth connector query generate` [read/none] -> mammoth.api.ai.AIAPI.query_gen
-  example: mammoth connector query generate sample sample --input '{"prompt": "Summarize revenue by region"}' --output json --no-input
+  example: mammoth connector query generate sample sample --input '{"query": "Total sales for January"}' --output json --no-input
 - `mammoth connector query status` [read/none] -> mammoth.api.ai.AIAPI.status
   example: mammoth connector query status sample sample --output json --no-input
 
@@ -508,7 +508,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dataset batch-data` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_batch_data
   example: mammoth dataset batch-data 123 123 --output json --no-input
 - `mammoth dataset bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.bulk_delete
-  example: mammoth dataset bulk-delete --output json --no-input
+  example: mammoth dataset bulk-delete --input '{"dataset_ids": [456, 457]}' --output json --no-input
 - `mammoth dataset bulk-update` [high_impact/confirm_target] -> mammoth.api.datasets.DatasetsAPI.bulk_update
   example: mammoth dataset bulk-update --input '{"patch_data": {"sample_key": "Status"}}' --output json --no-input
 - `mammoth dataset create` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.create
@@ -593,7 +593,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth folder list` [read/none] -> mammoth.api.folders.FoldersAPI.list
   example: mammoth folder list --output json --no-input
 - `mammoth folder move` [benign_mutation/none] -> mammoth.api.folders.FoldersAPI.move
-  example: mammoth folder move --input '{"resource_ids": ["resource-123"]}' --output json --no-input
+  example: mammoth folder move --input '{"resource_ids": [8024], "target_folder_resource_id": "root"}' --output json --no-input
 - `mammoth folder root` [read/none] -> mammoth.api.folders.FoldersAPI.get_project_root
   example: mammoth folder root --output json --no-input
 - `mammoth folder trash` [benign_mutation/none] -> mammoth.api.folders.FoldersAPI.trash
@@ -661,7 +661,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth project bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.projects.ProjectsAPI.bulk_delete
   example: mammoth project bulk-delete --input '{"project_ids": [1]}' --output json --no-input
 - `mammoth project bulk-update` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.bulk_update
-  example: mammoth project bulk-update --input '{"patch_data": {"sample_key": "Status"}}' --output json --no-input
+  example: mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}' --output json --no-input
 - `mammoth project checkpoint list` [read/none] -> mammoth.api.projects.ProjectsAPI.checkpoint_list
   example: mammoth project checkpoint list 123 --output json --no-input
 - `mammoth project create` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.create
@@ -687,9 +687,9 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth project sample-flow` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.sample_flow
   example: mammoth project sample-flow 123 --output json --no-input
 - `mammoth project update` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.update
-  example: mammoth project update 123 --output json --no-input
+  example: mammoth project update 123 --input '{"name": "Renamed project"}' --output json --no-input
 - `mammoth project user add` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.add_users
-  example: mammoth project user add 123 --input '{"user_ids": ["resource-123"]}' --output json --no-input
+  example: mammoth project user add 123 --input '{"user_ids": [123], "role": "project_analyst"}' --output json --no-input
 - `mammoth project user remove` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.remove_users
   example: mammoth project user remove 123 --input '{"user_ids": ["resource-123"]}' --output json --no-input
 - `mammoth project user update` [high_impact/yes_always] -> mammoth.api.projects.ProjectsAPI.user_update
@@ -889,7 +889,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth user preference get` [read/none] -> mammoth.api.user_profile.UserProfileAPI.get_preferences
   example: mammoth user preference get --output json --no-input
 - `mammoth user preference update` [benign_mutation/none] -> mammoth.api.user_profile.UserProfileAPI.update_preferences
-  example: mammoth user preference update --output json --no-input
+  example: mammoth user preference update --input '{"patch": [{"op": "replace", "path": "GLOBAL.PREFERENCES.TOP_TABS", "value": []}]}' --output json --no-input
 - `mammoth user update` [high_impact/confirm_target] -> mammoth.api.user_profile.UserProfileAPI.update
   example: mammoth user update --output json --no-input
 
@@ -909,7 +909,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view ai generation-info` [read/none] -> mammoth.api.ai.AIAPI.get_data_gen_info
   example: mammoth view ai generation-info 123 --output json --no-input
 - `mammoth view ai profile` [benign_mutation/none] -> mammoth.api.ai.AIAPI.generate_profile
-  example: mammoth view ai profile 123 --output json --no-input
+  example: mammoth view ai profile 123 --input '{"dataset_id": 456, "action": "insights"}' --output json --no-input
 - `mammoth view bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.dataviews.DataviewsAPI.bulk_delete
   example: mammoth view bulk-delete 123 --input '{"dataview_ids": [1]}' --output json --no-input
 - `mammoth view checkpoint create` [benign_mutation/none] -> mammoth.api.checkpoints.CheckpointsAPI.create
@@ -921,11 +921,11 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view checkpoint list` [read/none] -> mammoth.api.checkpoints.CheckpointsAPI.list
   example: mammoth view checkpoint list 123 123 --output json --no-input
 - `mammoth view checkpoint update` [benign_mutation/none] -> mammoth.api.checkpoints.CheckpointsAPI.update
-  example: mammoth view checkpoint update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "approve"}]}}' --output json --no-input
+  example: mammoth view checkpoint update 123 123 123 --input '{"body": {"patches": [{"op": "command", "path": "approve", "value": null}]}}' --output json --no-input
 - `mammoth view conditional-format create` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_create
   example: mammoth view conditional-format create 123 123 --input '{"rule": {"sample_key": "Status"}}' --output json --no-input
 - `mammoth view conditional-format delete-all` [destructive/prompt_or_yes] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_delete
-  example: mammoth view conditional-format delete-all 123 123 --output json --no-input
+  example: mammoth view conditional-format delete-all 123 123 --input '{"rule_id": "rule-1"}' --output json --no-input
 - `mammoth view conditional-format list` [read/none] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_list
   example: mammoth view conditional-format list 123 123 --output json --no-input
 - `mammoth view conditional-format update` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_update
@@ -1007,7 +1007,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view export publish-db` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.publish_db
   example: mammoth view export publish-db 123 --input '{"odbc_type": "postgres", "target_properties": {"sample_key": "Status"}}' --output json --no-input
 - `mammoth view export publish-db-update` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.publish_db_update
-  example: mammoth view export publish-db-update 123 --input '{"patch": [{"sample_key": "Status"}]}' --output json --no-input
+  example: mammoth view export publish-db-update 123 --input '{"patch": [{"op": "replace", "path": "credentials", "value": "postgres"}]}' --output json --no-input
 - `mammoth view export redshift` [external_effect/yes_always] -> mammoth.view.ViewExport.to_redshift
   example: mammoth view export redshift 123 123 --input /private/path/request.json --output json --no-input
 - `mammoth view export rest` [external_effect/yes_always] -> mammoth.view.ViewExport.to_rest_api
@@ -1031,7 +1031,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view parameter-context` [read/none] -> mammoth.api.dataviews.DataviewsAPI.parameter_context
   example: mammoth view parameter-context 123 123 --output json --no-input
 - `mammoth view pipeline edit` [benign_mutation/none] -> mammoth.api.pipeline.PipelineAPI.edit_pipeline
-  example: mammoth view pipeline edit 123 --input '{"patches": [{"sample_key": "Status"}]}' --output json --no-input
+  example: mammoth view pipeline edit 123 --input '{"patches": [{"op": "replace", "path": "auto_run", "value": true}]}' --output json --no-input
 - `mammoth view pipeline get` [read/none] -> mammoth.api.pipeline.PipelineAPI.get_pipeline
   example: mammoth view pipeline get 123 --output json --no-input
 - `mammoth view pipeline items` [read/none] -> mammoth.api.pipeline.PipelineAPI.items

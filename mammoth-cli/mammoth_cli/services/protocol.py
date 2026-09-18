@@ -32,7 +32,7 @@ class MammothService(Protocol):
         """
         ...
 
-    def wait_if_job(self, response: Any) -> Any:
+    def wait_if_job(self, response: Any, *, dashboard_url: str | None = None) -> Any:
         """Wait for an SDK response containing a recognized async job reference."""
         ...
 

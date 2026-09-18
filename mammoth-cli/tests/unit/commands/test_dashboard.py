@@ -375,6 +375,33 @@ def test_published_data_by_url_forwards_url_and_body(
         _inv("dashboard.published-data-by-url", extra_args=["slug"], input_file=doc)
     )
     assert fake_service.call_log == [(_PUBLISHED_DATA_BY_URL, {"url": "slug", "body": body})]
+    # Jobs from /dashboards/url/{url}/... routes are only readable through the
+    # URL-scoped job route; the generic GET /jobs/{id} answers 4PERM002.
+    assert fake_service.wait_scopes == ["slug"]
+
+
+def test_published_data_generated_route_waits_through_url_scoped_job(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses["mammoth.api.dashboards.DashboardsAPI.published_data"] = {"job_id": 313}
+    fake_service.job_result = {"completed": 1}
+    doc = _write_doc(tmp_path, {"body": {"params": {"descriptor_ids": ["abc"]}}})
+    data, _meta = dashboard_cmd.generated_dashboard(
+        _inv("dashboard.published.data", extra_args=["IuZl5tk5"], input_file=doc)
+    )
+    assert data == {"completed": 1}
+    assert fake_service.wait_scopes == ["IuZl5tk5"]
+
+
+def test_dashboard_id_routes_wait_without_url_scope(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    body = {"params": {"widgets": [{"widget_id": "00000000-0000-4000-8000-000000000001"}]}}
+    doc = _write_doc(tmp_path, {"body": body})
+    dashboard_cmd.dashboard_widget_data(
+        _inv("dashboard.widget-data", extra_args=["7"], input_file=doc)
+    )
+    assert fake_service.wait_scopes == []
 
 
 # --- dashboard widget-data / widget-data-by-url -----------------------------

@@ -12,7 +12,7 @@ Expected success: `ProjectBulkDeleteResult` in the standard JSON envelope; mutat
 
 Run: `mammoth project bulk-update`. Exact input fields: `mammoth schema get project.bulk-update --output json --no-input`.
 
-Example: `mammoth project bulk-update --input '{"patch_data": {"sample_key": "Status"}}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Expected success: `ProjectBulkUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -116,7 +116,7 @@ Expected success: `ProjectSampleFlowResult` in the standard JSON envelope; mutat
 
 Run: `mammoth project update`. Exact input fields: `mammoth schema get project.update --output json --no-input`.
 
-Example: `mammoth project update 123 --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth project update 123 --input '{"name": "Renamed project"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ProjectUpdateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -124,7 +124,7 @@ Expected success: `ProjectUpdateResult` in the standard JSON envelope; mutation 
 
 Run: `mammoth project user add`. Exact input fields: `mammoth schema get project.user.add --output json --no-input`.
 
-Example: `mammoth project user add 123 --input '{"user_ids": ["resource-123"]}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth project user add 123 --input '{"user_ids": [123], "role": "project_analyst"}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Expected success: `ProjectUserAddResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

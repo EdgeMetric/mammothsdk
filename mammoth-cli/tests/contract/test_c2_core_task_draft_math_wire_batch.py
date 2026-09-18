@@ -148,7 +148,15 @@ def test_task_draft_and_math_routes_have_literal_wires(
     assert (_path(api), api.last().method, api.last().json_body) == (
         f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/tasks/{TASK}",
         "PATCH",
-        {"task_type": "MATH", "params": {"expression": "amount * 2"}},
+        {
+            "patches": [
+                {
+                    "op": "replace",
+                    "path": "params",
+                    "value": {"task_type": "MATH", "params": {"expression": "amount * 2"}},
+                }
+            ]
+        },
     )
 
     # A successful math transform requires a server-backed display-name map;

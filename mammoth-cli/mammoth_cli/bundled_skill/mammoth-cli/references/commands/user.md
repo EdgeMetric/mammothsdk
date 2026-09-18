@@ -54,11 +54,9 @@ Expected success: `UserPreferenceGetResult` in the standard JSON envelope; mutat
 
 Run: `mammoth user preference update`. Exact input fields: `mammoth schema get user.preference.update --output json --no-input`.
 
-Example: `mammoth user preference update --output json --no-input`. Discovery only: this command is fail-closed and must not dispatch a request.
+Example: `mammoth user preference update --input '{"patch": [{"op": "replace", "path": "GLOBAL.PREFERENCES.TOP_TABS", "value": []}]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
-Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
-
-Known restriction: BLOCKED[B17 VARIADIC_INPUT_UNTYPED]: **prefs is unconstrained; reserved, not registered.
+Expected success: `UserPreferenceUpdateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
 ### `user.update`
 

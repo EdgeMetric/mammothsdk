@@ -748,7 +748,7 @@ def test_ds_config_update_dispatches_with_yes(
 # --- query generate -------------------------------------------------------------------
 
 
-def test_query_generate_requires_prompt(fake_service: FakeMammothService) -> None:
+def test_query_generate_requires_query(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         connector_cmd.connector_query_generate(
             _inv("connector.query.generate", project=180, extra_args=["postgres", "conn1"])
@@ -757,7 +757,7 @@ def test_query_generate_requires_prompt(fake_service: FakeMammothService) -> Non
 
 
 def test_query_generate_dispatches(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write(tmp_path, {"prompt": "top customers by revenue"})
+    doc = _write(tmp_path, {"query": "top customers by revenue"})
     connector_cmd.connector_query_generate(
         _inv(
             "connector.query.generate",
@@ -772,7 +772,7 @@ def test_query_generate_dispatches(fake_service: FakeMammothService, tmp_path: P
             {
                 "connector_key": "postgres",
                 "connection_key": "conn1",
-                "prompt": "top customers by revenue",
+                "query": "top customers by revenue",
                 "project_id": 180,
             },
         )

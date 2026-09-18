@@ -186,9 +186,11 @@ def test_preference_update_requires_fields(fake_service: FakeMammothService) -> 
 def test_preference_update_forwards_fields(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write(tmp_path, {"theme": "dark", "locale": "en-US"})
+    # PreferencesPatchRequest: replace ops on dotted preference paths.
+    patch = [{"op": "replace", "path": "GLOBAL.PREFERENCES.TOP_TABS", "value": []}]
+    doc = _write(tmp_path, {"patch": patch})
     user_cmd.user_preference_update(_inv("user.preference.update", input_file=doc))
-    assert fake_service.call_log == [(_PREFERENCE_UPDATE, {"theme": "dark", "locale": "en-US"})]
+    assert fake_service.call_log == [(_PREFERENCE_UPDATE, {"patch": patch})]
 
 
 # --- update ----------------------------------------------------------------------

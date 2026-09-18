@@ -36,7 +36,7 @@ Expected success: `ViewAiGenerationInfoResult` in the standard JSON envelope; mu
 
 Run: `mammoth view ai profile`. Exact input fields: `mammoth schema get view.ai.profile --output json --no-input`.
 
-Example: `mammoth view ai profile 123 --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view ai profile 123 --input '{"dataset_id": 456, "action": "insights"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewAiProfileResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -84,7 +84,7 @@ Expected success: `ViewCheckpointListResult` in the standard JSON envelope; muta
 
 Run: `mammoth view checkpoint update`. Exact input fields: `mammoth schema get view.checkpoint.update --output json --no-input`.
 
-Example: `mammoth view checkpoint update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "approve"}]}}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view checkpoint update 123 123 123 --input '{"body": {"patches": [{"op": "command", "path": "approve", "value": null}]}}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewCheckpointUpdateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -92,17 +92,15 @@ Expected success: `ViewCheckpointUpdateResult` in the standard JSON envelope; mu
 
 Run: `mammoth view conditional-format create`. Exact input fields: `mammoth schema get view.conditional-format.create --output json --no-input`.
 
-Example: `mammoth view conditional-format create 123 123 --input '{"rule": {"sample_key": "Status"}}' --output json --no-input`. Discovery only: this command is fail-closed and must not dispatch a request.
+Example: `mammoth view conditional-format create 123 123 --input '{"rule": {"sample_key": "Status"}}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
-Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
-
-Known restriction: BLOCKED[B09 DATAVIEW_INPUT_UNTYPED]: rule is an arbitrary dictionary; reserved, not registered.
+Expected success: `ViewConditionalFormatCreateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
 ### `view.conditional-format.delete-all`
 
 Run: `mammoth view conditional-format delete-all`. Exact input fields: `mammoth schema get view.conditional-format.delete-all --output json --no-input`.
 
-Example: `mammoth view conditional-format delete-all 123 123 --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view conditional-format delete-all 123 123 --input '{"rule_id": "rule-1"}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
 
 Expected success: `ViewConditionalFormatDeleteAllResult` in the standard JSON envelope; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -448,7 +446,7 @@ Expected success: `ViewExportPublishDbResult` in the standard JSON envelope; mut
 
 Run: `mammoth view export publish-db-update`. Exact input fields: `mammoth schema get view.export.publish-db-update --output json --no-input`.
 
-Example: `mammoth view export publish-db-update 123 --input '{"patch": [{"sample_key": "Status"}]}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export publish-db-update 123 --input '{"patch": [{"op": "replace", "path": "credentials", "value": "postgres"}]}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
 
 Expected success: `ViewExportPublishDbUpdateResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -550,7 +548,7 @@ Expected success: `ViewParameterContextResult` in the standard JSON envelope; mu
 
 Run: `mammoth view pipeline edit`. Exact input fields: `mammoth schema get view.pipeline.edit --output json --no-input`.
 
-Example: `mammoth view pipeline edit 123 --input '{"patches": [{"sample_key": "Status"}]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view pipeline edit 123 --input '{"patches": [{"op": "replace", "path": "auto_run", "value": true}]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewPipelineEditResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

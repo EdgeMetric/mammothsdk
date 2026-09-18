@@ -68,7 +68,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset bulk-delete --help
-  agent_example: mammoth dataset bulk-delete --output json --no-input
+  agent_example: 'mammoth dataset bulk-delete --input ''{"dataset_ids": [456, 457]}'' --output json --no-input'
   unit_tests:
   - UT-DATASET-BULK-DELETE
   contract_tests:

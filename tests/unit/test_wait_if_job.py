@@ -42,27 +42,35 @@ class TestWaitIfJobPatterns:
         """Pattern 1: {"job_id": N} (ObjectJobSchema)."""
         response = {"job_id": 42}
         result = self.client._wait_if_job(response)
-        self.client.jobs.wait_for_job.assert_called_once_with(42, timeout=60, poll_interval=2)
+        self.client.jobs.wait_for_job.assert_called_once_with(
+            42, timeout=60, poll_interval=2, fetch=None
+        )
         assert result == {"rows": [1, 2, 3]}
 
     def test_public_wait_seam_uses_the_same_job_contract(self):
         """Generated integrations can wait without reaching into SDK internals."""
         result = self.client.wait_if_job({"job_id": 42})
-        self.client.jobs.wait_for_job.assert_called_once_with(42, timeout=60, poll_interval=2)
+        self.client.jobs.wait_for_job.assert_called_once_with(
+            42, timeout=60, poll_interval=2, fetch=None
+        )
         assert result == {"rows": [1, 2, 3]}
 
     def test_pattern_job_dict(self):
         """Pattern 2: {"job": {"id": N}} (JobResponse)."""
         response = {"job": {"id": 99, "status": "processing"}}
         result = self.client._wait_if_job(response)
-        self.client.jobs.wait_for_job.assert_called_once_with(99, timeout=60, poll_interval=2)
+        self.client.jobs.wait_for_job.assert_called_once_with(
+            99, timeout=60, poll_interval=2, fetch=None
+        )
         assert result == {"rows": [1, 2, 3]}
 
     def test_pattern_response_job_schema(self):
         """Pattern 3: {"id": N, "status": "processing"} (ResponseJobSchema)."""
         response = {"id": 77, "status": "processing"}
         result = self.client._wait_if_job(response)
-        self.client.jobs.wait_for_job.assert_called_once_with(77, timeout=60, poll_interval=2)
+        self.client.jobs.wait_for_job.assert_called_once_with(
+            77, timeout=60, poll_interval=2, fetch=None
+        )
         assert result == {"rows": [1, 2, 3]}
 
     def test_pattern_response_job_schema_success(self):
@@ -132,16 +140,22 @@ class TestWaitIfJobTimeoutForwarding:
 
     def test_custom_timeout(self):
         self.client._wait_if_job({"job_id": 1}, timeout=120)
-        self.client.jobs.wait_for_job.assert_called_once_with(1, timeout=120, poll_interval=2)
+        self.client.jobs.wait_for_job.assert_called_once_with(
+            1, timeout=120, poll_interval=2, fetch=None
+        )
 
     def test_custom_poll_interval(self):
         self.client._wait_if_job({"job_id": 1}, poll_interval=5)
-        self.client.jobs.wait_for_job.assert_called_once_with(1, timeout=60, poll_interval=5)
+        self.client.jobs.wait_for_job.assert_called_once_with(
+            1, timeout=60, poll_interval=5, fetch=None
+        )
 
     def test_uses_client_job_timeout_as_default(self):
         self.client.job_timeout = 300
         self.client._wait_if_job({"job_id": 1})
-        self.client.jobs.wait_for_job.assert_called_once_with(1, timeout=300, poll_interval=2)
+        self.client.jobs.wait_for_job.assert_called_once_with(
+            1, timeout=300, poll_interval=2, fetch=None
+        )
 
     def test_completed_job_without_response_key(self):
         """When completed job has no 'response' key, return the whole job dict."""
@@ -163,7 +177,9 @@ class TestDataviewsJobWaiting:
     def test_get_data_with_job_response(self):
         self.client._request_json = MagicMock(return_value={"job_id": 55})
         result = self.client.dataviews.get_data(dataset_id=10, dataview_id=20)
-        self.client.jobs.wait_for_job.assert_called_once_with(55, timeout=60, poll_interval=2)
+        self.client.jobs.wait_for_job.assert_called_once_with(
+            55, timeout=60, poll_interval=2, fetch=None
+        )
         assert result == {"rows": [1, 2, 3]}
 
     def test_get_data_without_job(self):
@@ -176,7 +192,9 @@ class TestDataviewsJobWaiting:
     def test_get_data_custom_timeout(self):
         self.client._request_json = MagicMock(return_value={"job_id": 55})
         self.client.dataviews.get_data(dataset_id=10, dataview_id=20, timeout=120, poll_interval=5)
-        self.client.jobs.wait_for_job.assert_called_once_with(55, timeout=120, poll_interval=5)
+        self.client.jobs.wait_for_job.assert_called_once_with(
+            55, timeout=120, poll_interval=5, fetch=None
+        )
 
     def test_query_data_with_job_response(self):
         self.client._request_json = MagicMock(return_value={"id": 66, "status": "processing"})
@@ -212,7 +230,9 @@ class TestPipelineJobWaiting:
         result = self.client.pipeline.add_task(
             dataview_id=20, task_spec={"TYPE": "SET"}, dataset_id=10
         )
-        self.client.jobs.wait_for_job.assert_called_once_with(101, timeout=60, poll_interval=2)
+        self.client.jobs.wait_for_job.assert_called_once_with(
+            101, timeout=60, poll_interval=2, fetch=None
+        )
         assert result == {"rows": [1, 2, 3]}
 
     def test_delete_task_waits(self):
@@ -288,7 +308,9 @@ class TestViewAddTaskSimplified:
         view._add_task({"TYPE": "SET"})
 
         # wait_for_job called exactly once (by pipeline.add_task)
-        self.client.jobs.wait_for_job.assert_called_once_with(200, timeout=60, poll_interval=2)
+        self.client.jobs.wait_for_job.assert_called_once_with(
+            200, timeout=60, poll_interval=2, fetch=None
+        )
 
 
 # ── Integration: ai methods ──────────────────────────────────
@@ -315,12 +337,12 @@ class TestAIJobWaiting:
 
     def test_generate_sql_waits(self):
         self.client._request_json = MagicMock(return_value={"id": 302, "status": "processing"})
-        self.client.ai.generate_sql(intent="total sales")
+        self.client.ai.generate_sql(intent="total sales", dataset_id=48)
         self.client.jobs.wait_for_job.assert_called_once()
 
     def test_get_suggestions_waits(self):
         self.client._request_json = MagicMock(return_value={"job_id": 303})
-        self.client.ai.get_suggestions()
+        self.client.ai.get_suggestions(suggestion_type="dashboards", params={})
         self.client.jobs.wait_for_job.assert_called_once()
 
     def test_generate_data_waits(self):
@@ -334,7 +356,7 @@ class TestAIJobWaiting:
         self.client._request_json = MagicMock(
             return_value={"job": {"id": 305, "status": "processing"}}
         )
-        self.client.ai.query_gen(connector_key="pg", connection_key="conn1", prompt="show tables")
+        self.client.ai.query_gen(connector_key="pg", connection_key="conn1", query="show tables")
         self.client.jobs.wait_for_job.assert_called_once()
 
 
@@ -353,7 +375,9 @@ class TestDatasetsGetDataRefactored:
     def test_get_data_job_id_pattern(self):
         self.client._request_json = MagicMock(return_value={"job_id": 401})
         result = self.client.datasets.get_data(dataset_id=10)
-        self.client.jobs.wait_for_job.assert_called_once_with(401, timeout=300, poll_interval=2)
+        self.client.jobs.wait_for_job.assert_called_once_with(
+            401, timeout=300, poll_interval=2, fetch=None
+        )
         assert result == {"rows": [1, 2, 3]}
 
     def test_get_data_no_job(self):
@@ -366,4 +390,6 @@ class TestDatasetsGetDataRefactored:
     def test_get_data_custom_timeout(self):
         self.client._request_json = MagicMock(return_value={"job_id": 402})
         self.client.datasets.get_data(dataset_id=10, timeout=600, poll_interval=5)
-        self.client.jobs.wait_for_job.assert_called_once_with(402, timeout=600, poll_interval=5)
+        self.client.jobs.wait_for_job.assert_called_once_with(
+            402, timeout=600, poll_interval=5, fetch=None
+        )

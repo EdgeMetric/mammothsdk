@@ -57,3 +57,17 @@ this as a known limitation instead of retrying with `{}`. `dashboard create`
 (legacy engine) is retired on release (HTTP 409 `4DASH012`); use
 `create-blank` or `v3 generate`.
 
+## Publishing and the url routes
+
+`dashboard share DASHBOARD_ID --input '{"type_of_auth":"public"}'` alone does
+not publish: `was_published` stays false until you also run
+`dashboard action DASHBOARD_ID --input '{"action":"publish-presentation"}'`.
+`share` returns `data: null`; read the url slug back with `dashboard get`.
+Only then do `dashboard published canvas URL`, `published data URL`,
+`job-by-url URL JOB_ID` and the other `/dashboards/url/...` routes answer;
+before that they return 404 `DASHBOARD_NOT_FOUND`. Legacy widget routes
+(`widget-data`, `widget-data-by-url`, `published-data-by-url`, `data draft`,
+`data published`) answer 409 `DASHBOARD_WRONG_ENGINE` on a v3 dashboard.
+`video export` needs a motion-story dashboard. Revert the share
+(`type_of_auth: "mammoth"`) before trashing a temporary dashboard.
+

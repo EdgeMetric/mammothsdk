@@ -432,20 +432,22 @@ def connector_ds_config_update(invocation: Invocation) -> HandlerResult:
 
 
 def connector_query_generate(invocation: Invocation) -> HandlerResult:
-    """Generate a query for a connector using AI. ``prompt`` is required input."""
+    """Generate a query for a connector using AI. ``query`` (the intent) is required input."""
     project_id = require_project(invocation)
     connector_key = _require_string_positional_at(invocation, 0, "connector key")
     connection_key = _require_string_positional_at(invocation, 1, "connection key")
     document = invocation.load_input()
-    prompt = _require_field(document, "prompt")
+    query = _require_field(document, "query")
+    kwargs: dict[str, Any] = {
+        "connector_key": connector_key,
+        "connection_key": connection_key,
+        "query": query,
+        "project_id": project_id,
+    }
+    if document is not None and document.get("profile") is not None:
+        kwargs["profile"] = document["profile"]
     with open_service(invocation) as (service, auth):
-        data = service.call(
-            _symbol(invocation),
-            connector_key=connector_key,
-            connection_key=connection_key,
-            prompt=prompt,
-            project_id=project_id,
-        )
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

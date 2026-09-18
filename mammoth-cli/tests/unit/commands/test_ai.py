@@ -294,13 +294,48 @@ def test_suggestion_list_requires_project(fake_service: FakeMammothService) -> N
     assert fake_service.call_log == []
 
 
-def test_suggestion_list_calls_with_no_kwargs(fake_service: FakeMammothService) -> None:
-    ai_cmd.ai_suggestion_list(_inv("ai.suggestion.list", project=180))
-    assert fake_service.call_log == [(_SUGGESTION_LIST, {})]
+def test_suggestion_list_requires_type_and_params(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        ai_cmd.ai_suggestion_list(_inv("ai.suggestion.list", project=180))
+    assert excinfo.value.code == "missing_field"
+    doc = _write_input(tmp_path, {"suggestion_type": "generate_task"})
+    with pytest.raises(CliError) as excinfo:
+        ai_cmd.ai_suggestion_list(_inv("ai.suggestion.list", project=180, input_file=doc))
+    assert excinfo.value.code == "missing_field"
+    assert fake_service.call_log == []
 
 
-def test_suggestion_list_returns_response_and_meta(fake_service: FakeMammothService) -> None:
+def test_suggestion_list_forwards_unified_prompt_spec(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_input(
+        tmp_path,
+        {
+            "suggestion_type": "generate_task",
+            "params": {"prompt": "Filter rows where Price > 100"},
+            "dataview_id": 73,
+        },
+    )
+    ai_cmd.ai_suggestion_list(_inv("ai.suggestion.list", project=180, input_file=doc))
+    assert fake_service.call_log == [
+        (
+            _SUGGESTION_LIST,
+            {
+                "suggestion_type": "generate_task",
+                "params": {"prompt": "Filter rows where Price > 100"},
+                "dataview_id": 73,
+            },
+        )
+    ]
+
+
+def test_suggestion_list_returns_response_and_meta(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
     fake_service.responses[_SUGGESTION_LIST] = {"suggestions": []}
-    data, meta = ai_cmd.ai_suggestion_list(_inv("ai.suggestion.list", project=180))
+    doc = _write_input(tmp_path, {"suggestion_type": "dashboards", "params": {}})
+    data, meta = ai_cmd.ai_suggestion_list(_inv("ai.suggestion.list", project=180, input_file=doc))
     assert data == {"suggestions": []}
     assert meta == {"profile": None, "workspace_id": 4, "project_id": 180}

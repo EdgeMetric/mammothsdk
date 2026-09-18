@@ -52,7 +52,7 @@ Expected success: `FolderListResult` in the standard JSON envelope; mutation `re
 
 Run: `mammoth folder move`. Exact input fields: `mammoth schema get folder.move --output json --no-input`.
 
-Example: `mammoth folder move --input '{"resource_ids": ["resource-123"]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth folder move --input '{"resource_ids": [8024], "target_folder_resource_id": "root"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `FolderMoveResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

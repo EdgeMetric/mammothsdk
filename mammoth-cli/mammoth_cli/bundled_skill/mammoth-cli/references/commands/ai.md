@@ -28,7 +28,7 @@ Expected success: `AiRetentionConditionResult` in the standard JSON envelope; mu
 
 Run: `mammoth ai sql generate`. Exact input fields: `mammoth schema get ai.sql.generate --output json --no-input`.
 
-Example: `mammoth ai sql generate 'Summarize revenue by region' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth ai sql generate 'Summarize revenue by region' --input '{"dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `AiSqlGenerateResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -36,6 +36,6 @@ Expected success: `AiSqlGenerateResult` in the standard JSON envelope; mutation 
 
 Run: `mammoth ai suggestion list`. Exact input fields: `mammoth schema get ai.suggestion.list --output json --no-input`.
 
-Example: `mammoth ai suggestion list --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth ai suggestion list --input '{"suggestion_type": "generate_task", "params": {"prompt": "Filter rows where Price > 100"}, "dataset_id": 456, "dataview_id": 123}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `AiSuggestionListResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.

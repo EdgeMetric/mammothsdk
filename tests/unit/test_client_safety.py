@@ -199,26 +199,29 @@ def test_mutation_malformed_success_is_outcome_unknown_with_recovery_metadata() 
     client.close()
 
 
-@pytest.mark.parametrize("body", [b"[]", b"null", b'"unexpected"', b"7"])
-def test_mutation_wrong_shape_preserves_unknown_outcome_metadata(body: bytes) -> None:
-    """A successful but incompatible response never makes a write replay-safe."""
+@pytest.mark.parametrize(
+    ("body", "parsed"), [(b"[]", []), (b"null", None), (b'"Accepted"', "Accepted"), (b"7", 7)]
+)
+def test_mutation_2xx_with_non_dict_body_is_success_with_body_preserved(
+    body: bytes, parsed: object
+) -> None:
+    """A 2xx is the server's confirmation of the write.
+
+    Routes that declare no response schema (202 "processing continues
+    off-line" deletes, PATCH /workspace segments, DELETE file_settings) answer
+    with null or a scalar; reporting those as outcome_unknown told operators a
+    committed delete was unconfirmed.
+    """
     client = MammothClient("dummy-key", "dummy-secret", workspace_id=4)
     response = Response()
-    response.status_code = 201
+    response.status_code = 202
     response._content = body
-    response.headers["X-Request-ID"] = "req-shape"
     client.session.request = lambda *args, **kwargs: response  # type: ignore[method-assign]
 
-    with pytest.raises(MammothAPIError) as raised:
-        client._request_json("POST", "/datasets", json={"name": "once"})
-
-    error = raised.value
-    assert error.status_code == 201
-    assert error.method == "POST"
-    assert error.endpoint == "/datasets"
-    assert error.request_id == "req-shape"
-    assert error.operation_state == "outcome_unknown"
-    assert error.details["protocol_error"] == "response_contract_violation"
+    assert client._request_json("DELETE", "/datasets/9") == {
+        "status_code": 202,
+        "response": parsed,
+    }
     client.close()
 
 
@@ -269,18 +272,16 @@ def test_list_wrapper_preserves_single_dict_and_empty_success_is_list() -> None:
     client.close()
 
 
-def test_mutation_list_wrapper_rejects_scalar_with_unknown_outcome() -> None:
+def test_mutation_list_wrapper_keeps_scalar_success_body() -> None:
     client = MammothClient("dummy-key", "dummy-secret", workspace_id=4)
     response = Response()
     response.status_code = 200
     response._content = b"7"
     client.session.request = lambda *args, **kwargs: response  # type: ignore[method-assign]
 
-    with pytest.raises(MammothAPIError) as raised:
-        client._request_list("POST", "/batch-operation", json={"ids": [1]})
-
-    assert raised.value.details["protocol_error"] == "response_contract_violation"
-    assert raised.value.operation_state == "outcome_unknown"
+    assert client._request_list("POST", "/batch-operation", json={"ids": [1]}) == [
+        {"status_code": 200, "response": 7}
+    ]
     client.close()
 
 

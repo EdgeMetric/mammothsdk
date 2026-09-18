@@ -355,18 +355,27 @@ class DatasetsAPI:
 
     def bulk_delete(
         self,
+        dataset_ids: _list[int] | None = None,
         workspace_id: int | None = None,
         project_id: int | None = None,
     ) -> None:
-        """Delete multiple datasets (bulk operation).
+        """Delete several datasets by id (bulk operation).
 
         Args:
+            dataset_ids: Ids of the datasets to delete (sent as the ``ids``
+                query parameter). Required: the route has no delete-all form
+                and rejects an empty id list.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
         """
+        if not dataset_ids:
+            raise MammothValidationError("bulk_delete requires a non-empty `dataset_ids` list.")
+        ids = ",".join(str(int(item)) for item in dataset_ids)
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        self._client._request_json("DELETE", f"/workspaces/{ws}/projects/{proj}/datasets")
+        self._client._request_json(
+            "DELETE", f"/workspaces/{ws}/projects/{proj}/datasets", params={"ids": ids}
+        )
 
     def list_batches(
         self,

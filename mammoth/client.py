@@ -29,6 +29,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import math
+from collections.abc import Callable
 from ipaddress import ip_address
 from typing import Any, cast
 from urllib.parse import urljoin, urlsplit
@@ -645,40 +646,17 @@ class MammothClient:
                     endpoint=endpoint,
                 ) from e
             if expected_response_shape == "dict" and not isinstance(parsed_response, dict):
-                raise MammothAPIError(
-                    "Expected dict response from API",
-                    status_code=response.status_code,
-                    details={
-                        "protocol_error": "response_contract_violation",
-                        "expected_shape": "dict",
-                        "actual_type": type(parsed_response).__name__,
-                    },
-                    method=request_method,
-                    request_id=request_id,
-                    retry_after=retry_after,
-                    operation_state=operation_state if is_mutation else "failed",
-                    phase="response",
-                    endpoint=endpoint,
-                )
+                # A 2xx is the server's confirmation. Several routes that
+                # declare no response schema (202 "processing continues
+                # off-line" deletes, PATCH /segments, DELETE file_settings)
+                # answer with a scalar or null; a list is likewise data. Keep
+                # the body and the status instead of reporting a committed
+                # write as outcome_unknown.
+                return {"status_code": response.status_code, "response": parsed_response}
             if expected_response_shape == "list_or_dict" and not isinstance(
                 parsed_response, (list, dict)
             ):
-                raise MammothAPIError(
-                    "Expected list or dict response from API",
-                    status_code=response.status_code,
-                    response_body=parsed_response if isinstance(parsed_response, dict) else {},
-                    details={
-                        "protocol_error": "response_contract_violation",
-                        "expected_shape": "list_or_dict",
-                        "actual_type": type(parsed_response).__name__,
-                    },
-                    method=request_method,
-                    request_id=request_id,
-                    retry_after=retry_after,
-                    operation_state=operation_state if is_mutation else "failed",
-                    phase="response",
-                    endpoint=endpoint,
-                )
+                return {"status_code": response.status_code, "response": parsed_response}
             return parsed_response
 
         error_detail = "Unknown error"
@@ -787,6 +765,7 @@ class MammothClient:
         response: dict[str, Any],
         timeout: int | None = None,
         poll_interval: int = 2,
+        fetch: Callable[[int, float], dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """Detect job references in API responses and wait for completion.
 
@@ -829,7 +808,9 @@ class MammothClient:
 
         if job_id:
             t = timeout if timeout is not None else self.job_timeout
-            completed = self.jobs.wait_for_job(job_id, timeout=t, poll_interval=poll_interval)
+            completed = self.jobs.wait_for_job(
+                job_id, timeout=t, poll_interval=poll_interval, fetch=fetch
+            )
             return completed.get("response", completed)
 
         return response
@@ -839,14 +820,20 @@ class MammothClient:
         response: dict[str, Any],
         timeout: int | None = None,
         poll_interval: int = 2,
+        fetch: Callable[[int, float], dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """Wait when an API response contains a recognized job reference.
 
         This is the public counterpart to the SDK's internal response helper,
         intended for integrations that dispatch generated SDK methods and must
         apply the same job timeout and polling semantics as handwritten APIs.
+        ``fetch`` swaps the job observer, e.g.
+        ``client.dashboards.job_by_url`` for published-dashboard jobs, which
+        ``GET /jobs/{id}`` refuses with ``4PERM002``.
         """
-        return self._wait_if_job(response, timeout=timeout, poll_interval=poll_interval)
+        return self._wait_if_job(
+            response, timeout=timeout, poll_interval=poll_interval, fetch=fetch
+        )
 
     def set_project_id(self, project_id: int) -> None:
         """Set the active project for subsequent API calls.

@@ -159,6 +159,56 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     "dashboard.update": {
         "patch": [{"op": "replace", "path": "title", "value": "Renamed dashboard"}]
     },
+    # Contracts observed on release (write sweep 2026-09-18): the SQL route
+    # requires dataset_id; conditional-format deletion is per rule; bulk
+    # dataset deletion takes explicit ids; folder moves take integer resource
+    # ids and a destination folder id or "root"; a project rename needs a field.
+    "ai.sql.generate": {"dataset_id": 456},
+    # UnifiedPromptSpec: the params shape follows suggestion_type.
+    "ai.suggestion.list": {
+        "suggestion_type": "generate_task",
+        "params": {"prompt": "Filter rows where Price > 100"},
+        "dataset_id": 456,
+        "dataview_id": 123,
+    },
+    "view.ai.profile": {"dataset_id": 456, "action": "insights"},
+    "connector.query.generate": {"query": "Total sales for January"},
+    "view.conditional-format.delete-all": {"rule_id": "rule-1"},
+    "dataset.bulk-delete": {"dataset_ids": [456, 457]},
+    "folder.move": {"resource_ids": [8024], "target_folder_resource_id": "root"},
+    "project.update": {"name": "Renamed project"},
+    # ProjectsPatch: role changes across explicitly named projects.
+    "project.bulk-update": {
+        "patch_data": {
+            "patches": [
+                {
+                    "op": "add",
+                    "path": "role",
+                    "value": [
+                        {
+                            "project_id": 456,
+                            "user_roles": [{"user_id": 123, "role": "project_analyst"}],
+                        }
+                    ],
+                }
+            ]
+        }
+    },
+    "project.user.add": {"user_ids": [123], "role": "project_analyst"},
+    "user.preference.update": {
+        "patch": [{"op": "replace", "path": "GLOBAL.PREFERENCES.TOP_TABS", "value": []}]
+    },
+    # Release patch bodies observed on the write sweep; the generic list/dict
+    # annotations would otherwise render a placeholder that the backend rejects.
+    "view.pipeline.edit": {
+        "patches": [{"op": "replace", "path": "auto_run", "value": True}],
+    },
+    "view.export.publish-db-update": {
+        "patch": [{"op": "replace", "path": "credentials", "value": "postgres"}],
+    },
+    "view.checkpoint.update": {
+        "body": {"patches": [{"op": "command", "path": "approve", "value": None}]},
+    },
 }
 
 
