@@ -2219,7 +2219,13 @@ class TestBatchesAPI:
             {
                 # BatchesPostRequest: mapping is a list of ColumnNameMapping items.
                 "source_id": 42,
-                "mapping": [{"source_c_name": "src_col", "destination_c_name": "dst_col"}],
+                "mapping": [
+                    {
+                        "source_c_name": "src_col",
+                        "destination_c_name": "dst_col",
+                        "expected_destination_c_type": "TEXT",
+                    }
+                ],
                 "delete_source_ds": False,
             },
         )
@@ -2236,7 +2242,13 @@ class TestBatchesAPI:
             client._request_json,
             {
                 "source_id": 42,
-                "mapping": [{"source_c_name": "a", "destination_c_name": "b"}],
+                "mapping": [
+                    {
+                        "source_c_name": "a",
+                        "destination_c_name": "b",
+                        "expected_destination_c_type": "TEXT",
+                    }
+                ],
                 "validate_only": True,
                 "delete_source_ds": True,
             },

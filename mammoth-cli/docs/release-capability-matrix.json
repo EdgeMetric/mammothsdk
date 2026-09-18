@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 1,
-    "Partial": 192,
+    "Partial": 224,
     "Not supported": 2,
-    "Unassessed": 333
+    "Unassessed": 301
   },
   "rows": [
     {
@@ -696,8 +696,8 @@
     {
       "capability_id": "REL-037",
       "capability": "Delete a project",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (2xx non-object bodies such as 202 Accepted are reported as success instead of outcome_unknown); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: Without --yes: confirmation_required (correct). With --yes: backend returned HTTP 202 Accepted but CLI reported {code:outcome_unknown,status_code:202} exit 7. Verified via project list: project 21 (cli-write-sweep-20260918) is gone, only protected project 3 (API Tests_project) remains -- the delete DID succeed, cascading away all our fixtures (datasets 48/49/51/52, views, folders, etc). Same systemic 202-Accepted-...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 202 Accepted with non-object body reported as success, not outcome_unknown. Response: {\"data\":{\"response\":null,\"status_code\":202}}. Reconciled: project 23 no longer in `project list` after this call. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteProject",
       "method": "DELETE",
@@ -708,14 +708,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "project.delete",
-        "exit_status": 7
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-038",
@@ -805,8 +805,8 @@
     {
       "capability_id": "REL-043",
       "capability": "Delete multiple datasets",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (dataset_ids is required, confirmation names the ids, and ids are sent as the ids query parameter); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: CLI input_schema for this command has ZERO accepted fields (properties:{}, additionalProperties:false) yet its own confirmation prompt says 'This command needs explicit confirmation to delete all datasets in project 21' implying an implicit delete-all. Executing with --yes -> HTTP 400 4DSET025 INVALID_DATASET_IDS \"Invalid dataset ids, need at least one valid dataset id\" -- so the backend does NOT do an implicit de...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: dataset_ids accepted as required list, no confirm-name issue blocked us, --yes sufficed. Response: {\"data\":null}. Reconciled: `dataset list --project 23` returned empty datasets array immediately after. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDatasets",
       "method": "DELETE",
@@ -817,14 +817,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "dataset.bulk-delete",
-        "exit_status": 2
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-044",
@@ -962,7 +962,7 @@
       "capability_id": "REL-049",
       "capability": "delete conditional format",
       "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (rule_id is required and sent as the query parameter); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: Backend DELETE requires query param 'rule_id' even for 'delete-all': HTTP 400 4GENR007 \"Missing required query parameter 'rule_id' for path .../conditional-format\". CLI accepted_fields is only dataset_id; adding rule_id is rejected client-side: unknown_input_field {accepted:[dataset_id],unknown:[rule_id]}. Command cannot succeed via any input the CLI accepts.",
+      "remarks": "CLI defect fixed in 2.0.16 (the handler now forwards rule_id from --input (2.0.15 accepted the field but dropped it before the SDK call)); not re-verified live yet. re-verification 2026-09-18 observed blocked_missing_fixture: No conditional-format rule exists to delete (view.conditional-format.create is documented blocked B09; view.conditional-format.list on our fresh view returned []). With rule_id supplied (int and string tried), CLI still rejected client-side before dispatch: {\"error\":{\"code\":\"invalid_arguments\",\"message\":\"conditional_format_delete requires `rule_id`; list rules first.\",\"exception_type\":\"MammothValidationError\"}}. C...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteConditionalFormat",
       "method": "DELETE",
@@ -973,20 +973,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "view.conditional-format.delete-all",
         "exit_status": 2
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-050",
       "capability": "Delete a derivative",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (2xx non-object bodies such as 202 Accepted are reported as success instead of outcome_unknown); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: HTTP 202 Accepted reported as {code:outcome_unknown,status_code:202} exit 7. Verified via view derivative list 73 -> derivatives:[] confirms deletion succeeded. Same systemic 202-misclassification defect (4th occurrence: checkpoint.delete, data-check.delete, derivative.update, derivative.delete).",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 202 Accepted non-object body reported as success. Response: {\"data\":{\"response\":null,\"status_code\":202}}. Derivative 3 was created earlier by us on view 75/dataset 53 via view.derivative.create. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDerivative",
       "method": "DELETE",
@@ -997,20 +997,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "view.derivative.delete",
-        "exit_status": 7
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-051",
       "capability": "Delete a pipeline checkpoint",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (2xx non-object bodies such as 202 Accepted are reported as success instead of outcome_unknown); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: Backend returned HTTP 202 Accepted (a standard successful async-accept status) but CLI could not confirm it and reported {code:outcome_unknown,status_code:202} exit 7 -- envelope mismatch on a success status. Did not replay per outcome_unknown guidance; could not verify via view.checkpoint.get since that route independently 500s (see view.checkpoint.get).",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 202 Accepted non-object body reported as success. Response: {\"data\":{\"response\":null,\"status_code\":202}}. Checkpoint 3 was created earlier by us via view.checkpoint.create (required pinned_to_end:true). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteCheckpoint",
       "method": "DELETE",
@@ -1021,20 +1021,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "view.checkpoint.delete",
-        "exit_status": 7
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-052",
       "capability": "Delete a pipeline data check",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (2xx non-object bodies such as 202 Accepted are reported as success instead of outcome_unknown); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: Backend returned HTTP 202 Accepted but CLI reported {code:outcome_unknown,status_code:202} exit 7. Verified via follow-up view data-check get 73 1 -> HTTP 404 4RESO002 NON_EXISTENT_RESOURCE, proving the delete DID succeed. Confirms a genuine CLI defect: 202 Accepted responses on DELETE are misclassified as unconfirmed outcomes (same pattern as view.checkpoint.delete).",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 202 Accepted non-object body reported as success. Response: {\"data\":{\"response\":null,\"status_code\":202}}. Data-check 2 was created earlier by us via view.data-check.create (required pinned_to_end:true). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDataCheck",
       "method": "DELETE",
@@ -1045,14 +1045,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "view.data-check.delete",
-        "exit_status": 7
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-053",
@@ -1129,8 +1129,8 @@
     {
       "capability_id": "REL-056",
       "capability": "Undo updates done on dataset file settings",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (2xx non-object bodies are reported as success instead of outcome_unknown); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: Without --yes: correct confirmation_required (exit 2). With --yes: backend returned HTTP 200 but CLI could not parse/confirm it -- {\"error\":{\"code\":\"outcome_unknown\",\"message\":\"The request may have committed, but its outcome was not confirmed.\",\"details\":{\"status_code\":200,\"method\":\"DELETE\",\"endpoint\":\".../datasets/49/file_settings\"}}} exit 7 (envelope mismatch on a 2xx). Follow-up readback dataset file-settings g...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 200 non-object body reported as success. Response: {\"data\":{\"response\":null,\"status_code\":200}}. Preceded by dataset.file-settings.update on dataset 53 to give the undo something to revert. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UndoFileSettings",
       "method": "DELETE",
@@ -1141,14 +1141,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "dataset.file-settings.undo",
-        "exit_status": 7
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-057",
@@ -1446,7 +1446,7 @@
       "capability_id": "REL-071",
       "capability": "Read messages for one agent session",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed blocked_missing_fixture: Not run: id source 'agent session list' returned exit 0 with data.sessions:[] (empty envelope), so no session_id was observed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetAgentSessionMessages",
       "method": "GET",
@@ -1457,14 +1457,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
         "command_id": "agent.session.messages",
         "exit_status": null
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-072",
@@ -2363,8 +2363,8 @@
     {
       "capability_id": "REL-114",
       "capability": "Dashboard card thumbnail (draft or published PNG)",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in SDK 0.7.5 returns a described binary body; not re-verified live yet. Earlier observation: dashboard sweep 2026-09-18 on release observed cli_error: Backend returned HTTP 200 (status_code embedded in error details) but CLI raised JSONDecodeError trying to parse the response (og-card likely returns a binary image, not JSON) -- CLI failed to handle a 200 response correctly.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: binary PNG body returned as described base64 content ({\"data\":{\"content_base64\":\"iVBORw0KGgo...\"}}) instead of crashing/misreporting. Dashboard 59 was our own dashboard.create-blank on view 75. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "OgCard",
       "method": "GET",
@@ -2375,14 +2375,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
-        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
-        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "dashboard.og-card",
-        "exit_status": 1
+        "exit_status": 0
       },
-      "evidence_version": "2.0.12"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-115",
@@ -2974,8 +2974,8 @@
     {
       "capability_id": "REL-140",
       "capability": "List users of all workspaces",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data keyed by workspace id ('4') listing users Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListUsersOfWorkspaces",
       "method": "GET",
@@ -2985,14 +2985,21 @@
       "sdk_symbol": "mammoth.api.support.SupportAPI.user_list_all",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "support.user.list-all",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-141",
       "capability": "List all connector profiles",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.connector_profiles Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListConnectorProfiles",
       "method": "GET",
@@ -3002,14 +3009,21 @@
       "sdk_symbol": "mammoth.api.support.SupportAPI.connector_profile_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "support.connector-profile.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-142",
       "capability": "List all connectors",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.connectors Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListSubscriptionConnectors",
       "method": "GET",
@@ -3019,14 +3033,21 @@
       "sdk_symbol": "mammoth.api.support.SupportAPI.connector_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "support.connector.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-143",
       "capability": "List all feature profiles",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.feature_profiles Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListFeatureProfiles",
       "method": "GET",
@@ -3036,14 +3057,21 @@
       "sdk_symbol": "mammoth.api.support.SupportAPI.feature_profile_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "support.feature-profile.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-144",
       "capability": "List all features",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.features Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListFeatures",
       "method": "GET",
@@ -3053,14 +3081,21 @@
       "sdk_symbol": "mammoth.api.support.SupportAPI.feature_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "support.feature.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-145",
       "capability": "List all subscription plans",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.plans (5 plans, ids 4-8) Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListSubscriptionPlans",
       "method": "GET",
@@ -3070,14 +3105,21 @@
       "sdk_symbol": "mammoth.api.support.SupportAPI.plan_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "support.plan.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-146",
       "capability": "Get a specific plan",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed forbidden: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 403 4PERM002 'User lacks permission to perform given action' on GET /subscription/plans/4 (plan id from support plan list)",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetPlan",
       "method": "GET",
@@ -3087,8 +3129,15 @@
       "sdk_symbol": "mammoth.api.support.SupportAPI.plan_get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "support.plan.get",
+        "exit_status": 4
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-147",
@@ -3110,8 +3159,8 @@
     {
       "capability_id": "REL-148",
       "capability": "List all subscription plans for self-serve",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.plans Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListSelfServePlans",
       "method": "GET",
@@ -3121,14 +3170,21 @@
       "sdk_symbol": "mammoth.api.support.SupportAPI.plan_self_serve_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "support.plan.self-serve-list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-149",
       "capability": "Get available plans and other chargebee resources",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.available_plans Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetPlans",
       "method": "GET",
@@ -3138,14 +3194,21 @@
       "sdk_symbol": "mammoth.api.support.SupportAPI.plan_chargebee_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "support.plan.chargebee-list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-150",
       "capability": "Get workspaces list",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; route returns a bare array so the SDK wraps it as {status_code:200, response:[...]} (2 workspaces, ids 4 and 5) Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListWorkspaces",
       "method": "GET",
@@ -3155,14 +3218,21 @@
       "sdk_symbol": "mammoth.api.support.SupportAPI.workspace_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "support.workspace.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-151",
       "capability": "Get workspace details",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed forbidden: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 403 4PERM001 PERMISSION_UNDEFINED on GET /support/workspaces/4",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetWorkspaceDetail",
       "method": "GET",
@@ -3172,14 +3242,21 @@
       "sdk_symbol": "mammoth.api.support.SupportAPI.workspace_get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "support.workspace.get",
+        "exit_status": 4
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-152",
       "capability": "Get subscription details",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed forbidden: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 403 4PERM001 PERMISSION_UNDEFINED on GET /support/workspaces/4/sms",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetSubscriptionDetail",
       "method": "GET",
@@ -3189,14 +3266,21 @@
       "sdk_symbol": "mammoth.api.support.SupportAPI.subscription_get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "support.subscription.get",
+        "exit_status": 4
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-153",
       "capability": "Get users list",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed forbidden: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 403 4PERM001 PERMISSION_UNDEFINED on GET /support/workspaces/4/users",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetUserList",
       "method": "GET",
@@ -3206,8 +3290,15 @@
       "sdk_symbol": "mammoth.api.support.SupportAPI.workspace_user_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "support.workspace.user.list",
+        "exit_status": 4
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-154",
@@ -3367,7 +3458,7 @@
       "capability_id": "REL-161",
       "capability": "Get Chargebee plan",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 4SUBS014 'Chargebee plan not found for the given workspace' (workspace 4 is not on a Chargebee plan)",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetChargebeePlan",
       "method": "GET",
@@ -3377,14 +3468,21 @@
       "sdk_symbol": "mammoth.api.billing.BillingAPI.chargebee_plan",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "billing.chargebee-plan",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-162",
       "capability": "Get list of client apps",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed authorization_error: HTTP 403 'Cannot access this API with API-tokens' (expected auth scoping).",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed forbidden: backend_code=4GENR012 INVALID_TOKEN_FOR_CLIENT_APPS: 'Cannot access this API with API-tokens' on GET /workspaces/4/clientapps.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListApps",
       "method": "GET",
@@ -3395,20 +3493,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
         "command_id": "client-app.list",
         "exit_status": 4
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-163",
       "capability": "Get client app details",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed blocked_missing_fixture: Not run: id source client-app.list came back forbidden (4GENR012 INVALID_TOKEN_FOR_CLIENT_APPS, HTTP 403), so no client_key was observed. Per brief, a forbidden list means record the get as blocked_missing_fixture rather than guessing an id.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "AppDetails",
       "method": "GET",
@@ -3419,14 +3517,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
         "command_id": "client-app.get",
         "exit_status": null
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-164",
@@ -3877,7 +3975,7 @@
       "capability_id": "REL-181",
       "capability": "Get automation data",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed blocked_missing_fixture: Not run: id source 'automation list --project 3' returned exit 0 with data:[] (empty envelope), so no automation_id was observed. Per brief, an empty list means record the get as blocked_missing_fixture rather than guessing an id.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetAutomation",
       "method": "GET",
@@ -3888,14 +3986,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
         "command_id": "automation.get",
         "exit_status": null
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-182",
@@ -4516,7 +4614,7 @@
       "capability_id": "REL-202",
       "capability": "Get validation information",
       "status": "Unassessed",
-      "remarks": "Unassessed; write sweep 2026-09-18 (CLI 2.0.14) observed backend_error: HTTP 400 5GENR011 NOT_IMPLEMENTED: \"Not implemented\" -- matches known capabilities.md observed blocker for this route (backend-side, not CLI).",
+      "remarks": "Unassessed; backend reproduction 2026-09-18 (CLI 2.0.15) observed backend: GET /workspaces/4/projects/24/datasets/54/dataviews/76/data/generate -> HTTP 400 5GENR011 NOT_IMPLEMENTED 'Not implemented', request_id:null. One attempt only, as instructed (item states expected/known blocker). This is a GET with no meaningful body variation to try, and the backend explicitly self-reports the route as unimplemented -- a server-side gap, not a client input problem.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetValidationInfo",
       "method": "GET",
@@ -4527,14 +4625,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/backend-repro-20260918/results.jsonl",
+        "report": "docs/capability-evidence/backend-repro-20260918/HANDOVER.md",
+        "scope": "backend-defect reproduction on release ws 4 with the published CLI 2.0.15 in disposable project 24 (dataset 54 / view 76), each item run once plus one alternative input; fixtures deleted",
+        "sha256": "e9880ab0d06f5dc6ea0b8ccc213c16019459ca5f580082f3e71552ce5e75c4a3",
         "command_id": "view.ai.generation-info",
         "exit_status": 1
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-203",
@@ -4695,7 +4793,7 @@
       "capability_id": "REL-208",
       "capability": "Get the given dataview pipeline checkpoint",
       "status": "Unassessed",
-      "remarks": "Unassessed; write sweep 2026-09-18 (CLI 2.0.14) observed backend_error: HTTP 500 on GET /workspaces/4/projects/21/datasets/48/dataviews/73/pipeline/checkpoints/1 with empty response_body:{}, reproduced twice (2s apart) right after checkpoint 1 was created successfully by view.checkpoint.create. No error_code/message surfaced by the backend.",
+      "remarks": "Unassessed; backend reproduction 2026-09-18 (CLI 2.0.15) observed backend: GET /workspaces/4/projects/24/datasets/54/dataviews/76/pipeline/checkpoints/2 -> HTTP 500, empty response_body:{}, request_id:null, backend code: none surfaced (generic api_error/500). Reproduced immediately after view.checkpoint.create returned checkpoint_id:2 on our own view 76/dataset 54/project 24. Alternative input tried: omitted dataset_id from --input (letting CLI discover the parent) -> identical HTTP 500...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineCheckpoint",
       "method": "GET",
@@ -4706,14 +4804,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/backend-repro-20260918/results.jsonl",
+        "report": "docs/capability-evidence/backend-repro-20260918/HANDOVER.md",
+        "scope": "backend-defect reproduction on release ws 4 with the published CLI 2.0.15 in disposable project 24 (dataset 54 / view 76), each item run once plus one alternative input; fixtures deleted",
+        "sha256": "e9880ab0d06f5dc6ea0b8ccc213c16019459ca5f580082f3e71552ce5e75c4a3",
         "command_id": "view.checkpoint.get",
         "exit_status": 1
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-209",
@@ -5369,7 +5467,7 @@
       "capability_id": "REL-232",
       "capability": "Get list of schedules",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed validation_error: HTTP 400 with message 'Not implemented'.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed backend_error: backend_code=5GENR011 NOT_IMPLEMENTED: 'Not implemented' on GET /workspaces/4/projects/3/schedules. Matches known capabilities.md note for schedule.list.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListSchedules",
       "method": "GET",
@@ -5380,20 +5478,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
         "command_id": "schedule.list",
         "exit_status": 1
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-233",
       "capability": "Get schedule data",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed blocked_missing_fixture: Not run: id source schedule.list failed with backend_error (5GENR011 NOT_IMPLEMENTED, HTTP 400), so no schedule_id was observed to use.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetSchedule",
       "method": "GET",
@@ -5404,14 +5502,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
         "command_id": "schedule.get",
         "exit_status": null
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-234",
@@ -5788,7 +5886,7 @@
       "capability_id": "REL-249",
       "capability": "Get workspace subscription from Stripe",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed forbidden: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 403 4PERM001 PERMISSION_UNDEFINED on GET /workspaces/4/subscription",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetWorkspaceSubscription",
       "method": "GET",
@@ -5798,14 +5896,21 @@
       "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "billing.stripe.get",
+        "exit_status": 4
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-250",
       "capability": "Get workspace billing history from Stripe",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.billing_history Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetWorkspaceBillingHistory",
       "method": "GET",
@@ -5815,14 +5920,21 @@
       "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_history",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "billing.stripe.history",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-251",
       "capability": "Get workspace payment methods from Stripe",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.payment_methods Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetPaymentMethods",
       "method": "GET",
@@ -5832,14 +5944,21 @@
       "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_payment_method_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "billing.stripe.payment-method.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-252",
       "capability": "Preview next invoice",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 4SUBS037 'Failed to perform subscription operation'",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "PreviewInvoice",
       "method": "GET",
@@ -5849,14 +5968,21 @@
       "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_preview_invoice",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "billing.stripe.preview-invoice",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-253",
       "capability": "Get workspace subscription status",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data with billing_cycle, has_active_subscription, is_trial_expired, ... (20 keys) Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetWorkspaceSubscriptionStatus",
       "method": "GET",
@@ -5866,14 +5992,21 @@
       "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_status",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "billing.stripe.status",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-254",
       "capability": "Get upcoming invoice from Stripe",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 4SUBS074 'Upcoming invoice not found' (no active Stripe subscription on workspace 4)",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetUpcomingInvoice",
       "method": "GET",
@@ -5883,14 +6016,21 @@
       "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_upcoming_invoice",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "billing.stripe.upcoming-invoice",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-255",
       "capability": "Get workspace usage from Stripe",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 400 5GENR010 UNKNOWN_ERROR 'Unknown error occurred. Please contact support.'",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetWorkspaceUsage",
       "method": "GET",
@@ -5900,14 +6040,21 @@
       "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_usage",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "billing.stripe.usage",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-256",
       "capability": "Get subscription details",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data with current_plan_new, next_action_info, over_limit_info, sms_details Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetWkspSubscriptionDetail",
       "method": "GET",
@@ -5917,14 +6064,21 @@
       "sdk_symbol": "mammoth.api.billing.BillingAPI.subscription_get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "billing.subscription.get",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-257",
       "capability": "List all invoices",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed backend_error: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: HTTP 500 with empty body on GET /workspaces/4/subscription_v1/invoices",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListInvoices",
       "method": "GET",
@@ -5934,14 +6088,21 @@
       "sdk_symbol": "mammoth.api.billing.BillingAPI.invoice_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "billing.invoice.list",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-258",
       "capability": "Get associated plan details",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed blocked_missing_fixture: The CLI gates this GET behind --yes --confirm WORKSPACE_ID; with confirmation: billing invoice list answered HTTP 500, so no invoice id was observed",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetInvoice",
       "method": "GET",
@@ -5951,8 +6112,15 @@
       "sdk_symbol": "mammoth.api.billing.BillingAPI.invoice_get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
+        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "command_id": "billing.invoice.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-259",
@@ -6254,8 +6422,8 @@
     {
       "capability_id": "REL-274",
       "capability": "Update user preferences",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (command takes the release {patch:[...]} list instead of free keyword fields); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: CLI sends theme/locale directly; backend PATCH /preferences requires field 'patch': HTTP 400 4GENR007 extra=[{key:patch,message:\"Field required\"}]. Adding patch to --input is rejected client-side: unknown_input_field {accepted:[locale,theme],unknown:[patch]}. Same systemic request-shape mismatch as folder.move/project.update/project.user.add/dataset.bulk-update.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: command accepted the release {patch:[...]} list shape. Read `user preference get` first (GLOBAL.FIRST_TIME_ON_DL=true), wrote back the SAME value. Response: {\"data\":{\"response\":null,\"status_code\":200}}. Verified via `user preference get` afterward: unchanged (GLOBAL.FIRST_TIME_ON_DL=true, WORKSPACE_PREFERENCES={}). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdateUserPreferences",
       "method": "PATCH",
@@ -6266,14 +6434,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "user.preference.update",
-        "exit_status": 2
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-275",
@@ -6448,8 +6616,8 @@
     {
       "capability_id": "REL-285",
       "capability": "Update multiple projects by adding/removing users or changing roles of the users",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (body must be a ProjectsPatch naming project_id in every value item and the confirmation lists those projects); not re-verified live yet. Write sweep 2026-09-18 observed skipped_out_of_scope: Confirmation probe reveals this command has NO per-project targeting: the confirmation message is 'This command needs explicit confirmation to bulk-update projects in workspace 4' (recovery hint: --yes --confirm 4), i.e. it patches ALL projects in workspace 4, which includes protected project 3. Deliberately not confirmed/executed to avoid touching project 3, per hard rule never to touch resources not created. Not...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: body accepted as ProjectsPatch naming project_id in every value item; confirmation named the workspace scope (message: 'bulk-update roles in projects 23 of workspace 4', hint 'Pass --confirm 4'). Job 372 (first call, set role to project_analyst on our own project 23/user 5) and job 374 (restore to project_admin) both completed status:success via `job get`. Note: only path:'role' is accepted on this route... Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdateProjects",
       "method": "PATCH",
@@ -6460,20 +6628,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "project.bulk-update",
-        "exit_status": 2
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-286",
       "capability": "Update a project",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (SDK now sends the release ProjectPatch {patches:[{op:replace,path:name|properties,...}]} body); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: CLI sends color/name fields directly; backend PATCH /workspaces/4/projects/21 requires a 'patches' field: HTTP 400 4GENR007 extra=[{key:patches,message:\"Field required\"}]. Adding patches to --input is rejected client-side: unknown_input_field {accepted:[color,name],unknown:[patches]}. Same request-shape mismatch pattern as folder.move and dataset.bulk-update -- project 21 color/name unchanged.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: CLI sent the release ProjectPatch shape internally; command returned the full updated project object with unchanged name (no-op rename) and a fresh updated_at timestamp, confirming the PATCH applied. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdateProject",
       "method": "PATCH",
@@ -6484,14 +6652,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "project.update",
-        "exit_status": 2
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-287",
@@ -6612,8 +6780,8 @@
     {
       "capability_id": "REL-293",
       "capability": "Update batches",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (SDK-side argument rejections (patch ops must be replace|remove) surface as invalid_arguments with the SDK message instead of an empty api_error); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: Both patch key shapes (id and batch_id) produced identical opaque envelope: {\"error\":{\"code\":\"api_error\",\"message\":\"Mammoth could not complete the operation.\",\"details\":{},\"recovery_commands\":[],\"request_id\":null,\"retryable\":false}}. No HTTP status or actionable detail surfaced.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 2 on release with CLI 2.0.15. Fix held: SDK-side argument rejection surfaced as invalid_arguments with a clear SDK message instead of an empty api_error: {\"error\":{\"code\":\"invalid_arguments\",\"message\":\"Each patch op must have op='replace' or op='remove', got 'bogus_op'.\",\"exception_type\":\"MammothValidationError\"}}. No request was sent (client-side fail-closed), exactly matching the documented fix. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdateBatches",
       "method": "PATCH",
@@ -6624,14 +6792,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "batch.update",
-        "exit_status": 1
+        "exit_status": 2
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-294",
@@ -6684,8 +6852,8 @@
     {
       "capability_id": "REL-296",
       "capability": "Edit a derivative",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (2xx non-object bodies such as 202 Accepted are reported as success instead of outcome_unknown); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: Backend returned HTTP 202 Accepted but CLI reported {code:outcome_unknown,status_code:202} exit 7. Verified via view derivative list 73: the derivative WAS updated (AS:sweep_metric2, FUNCTION:AVG, status:ready). Same systemic 202-Accepted-misclassified-as-unconfirmed defect as view.checkpoint.delete and view.data-check.delete, this time on a PATCH.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 202 Accepted non-object body reported as success. Response: {\"data\":{\"response\":null,\"status_code\":202}}. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "EditDerivative",
       "method": "PATCH",
@@ -6696,20 +6864,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "view.derivative.update",
-        "exit_status": 7
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-297",
       "capability": "Edit and perform bulk operations on a dataview pipeline",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (example now shows a valid patch (path auto_run with a bool value); allowed paths documented in the transforms recipe); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: Attempt 1 patches:[] -> HTTP 400 4GENR007 clear message: 'List should have at least 1 item after validation, not 0'. Attempt 2 patches:[{op:replace,path:name,value:...}] -> HTTP 400 4GENR007 revealing path must be one of auto_run/run/submit-changes/reset/discard-changes/suspend/restore/discard/reorder and value must match PatchValueBulkOps/PatchValueReorder/bool depending on path -- none of which are documented in...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: documented runnable_example (path auto_run, bool value) ran cleanly and returned the pipeline state object: {\"auto_run\":true,\"draft_mode\":\"off\",\"execution_state\":\"idle\",\"state\":\"ready\"}. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "EditPipeline",
       "method": "PATCH",
@@ -6720,20 +6888,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "view.pipeline.edit",
-        "exit_status": 1
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-298",
       "capability": "Edit and perform operations on a pipeline checkpoint",
       "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (example now carries value:null as the backend requires; the corrected shape still returned HTTP 500 on release); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: Schema's own runnable_example (--input {body:{patches:[{op:replace,path:approve}]}}) omits value and fails: HTTP 400 4GENR007 extra=[{key:patches.0.value,message:\"Field required\"}]. Adding value:null (matching the schema example payload) instead produced an unconfirmed HTTP 500: {code:outcome_unknown,status_code:500,response_body:{}}. Neither the documented example nor the corrected shape reaches a confirmed succe...",
+      "remarks": "Unassessed; re-verification 2026-09-18 (CLI 2.0.15) observed backend_error: CLI-side fix (payload now carries value:null as required) held: the correctly-shaped request was dispatched and the backend returned HTTP 500 (not a CLI-side crash): {\"error\":{\"code\":\"outcome_unknown\",\"details\":{\"status_code\":500,\"response_body\":{}},\"message\":\"The request may have committed, but its outcome was not confirmed.\"}}. Reconciliation attempt (`view checkpoint list 75`) also returned HTTP 500 with empty...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "EditPatches",
       "method": "PATCH",
@@ -6744,20 +6912,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "view.checkpoint.update",
         "exit_status": 7
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-299",
       "capability": "Edit and perform operations on a pipeline data check",
       "status": "Unassessed",
-      "remarks": "Unassessed; write sweep 2026-09-18 (CLI 2.0.14) observed backend_error: PATCH .../pipeline/data-checks/1 -> HTTP 500, empty response_body, CLI correctly reported outcome_unknown (exit 7) rather than a false success. Same failure pattern as view.checkpoint.update on the analogous command-patch route. Follow-up view data-check get 73 1 shows enabled still true (unchanged); did not replay the patch.",
+      "remarks": "Unassessed; backend reproduction 2026-09-18 (CLI 2.0.15) observed backend: PATCH .../pipeline/data-checks/3 -> HTTP 500, empty response_body, request_id:null, code:outcome_unknown. Reconciled via view.data-check.get 76 3: enabled still true, updated_at still null -> patch did NOT commit. Alternative 1 tried: op:replace,path:enable (no value) -> HTTP 400 4GENR007 'patches.0.value: Field required'. Alternative 2: op:replace,path:enable,value:null -> HTTP 400 4GENR007 \"For op PatchOps.REPLA...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "EditDatacheck",
       "method": "PATCH",
@@ -6768,14 +6936,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/backend-repro-20260918/results.jsonl",
+        "report": "docs/capability-evidence/backend-repro-20260918/HANDOVER.md",
+        "scope": "backend-defect reproduction on release ws 4 with the published CLI 2.0.15 in disposable project 24 (dataset 54 / view 76), each item run once plus one alternative input; fixtures deleted",
+        "sha256": "e9880ab0d06f5dc6ea0b8ccc213c16019459ca5f580082f3e71552ce5e75c4a3",
         "command_id": "view.data-check.update",
         "exit_status": 7
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-300",
@@ -6804,8 +6972,8 @@
     {
       "capability_id": "REL-301",
       "capability": "Edit a dataview pipeline task",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (SDK now sends {patches:[{op:replace,path:params,value:task_spec}]} (or caller-supplied patches)); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: CLI sends task_spec directly; backend PATCH .../pipeline/tasks/24 requires field 'patches': HTTP 400 4GENR007 extra=[{key:patches,message:\"Field required\"}]. Adding patches to --input is rejected client-side: unknown_input_field {accepted:[dataset_id,task_spec],unknown:[patches]}. Same systemic request-shape mismatch as folder.move/project.update/user.preference.update/dataset.bulk-update/project.user.add. Task 24...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: {\"patches\":[{\"op\":\"replace\",\"path\":\"params\",\"value\":task_spec}]} shape accepted; response: {\"data\":{\"future_id\":365,\"has_error\":false,\"status\":\"processing\",\"type_of_modification\":\"edit_rule\"}}. Task 26 was created earlier via `view transform math` on view 75/dataset 53. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "EditTask",
       "method": "PATCH",
@@ -6816,14 +6984,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "view.task.update",
-        "exit_status": 2
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-302",
@@ -6853,7 +7021,7 @@
       "capability_id": "REL-303",
       "capability": "Update Publish to DB credentials",
       "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (example now shows the only accepted patch path (credentials -> postgres|bigquery)); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: Schema's own runnable_example (patch:[{sample_key:Status}]) fails: HTTP 400 4GENR007 extra=[patch.0.op/path/value Field required]. Attempt 2 patch:[{op:replace,path:target_properties,value:{table:...}}] -> HTTP 400 4GENR007 extra=[{key:patch.0.path,message:\"Input should be 'credentials'\"},{key:patch.0.value.table,message:\"Input should be 'postgres' or 'bigquery'\"}]. So the ONLY documented-by-error path is the lite...",
+      "remarks": "CLI defect fixed in 2.0.16 (example value is the documented {\"odbc_type\": \"postgres\"} object (a bare string is rejected)); not re-verified live yet. re-verification 2026-09-18 observed backend_error: Fix partially confirmed: path:'credentials' is accepted and dispatched to backend (matches the documented fix note); backend gives precise field-level validation each time rather than a generic error. Attempt 1 (value:'postgres' string): {\"error\":{\"details\":{\"extra\":[{\"key\":\"patch.0.value\",\"message\":\"Input should be a valid dictionary\"}]}}}. Attempt 2 (value:{'postgres':{...creds...}}): {\"error\":{\"details\":{\"extra...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdatePublishToDb",
       "method": "PATCH",
@@ -6864,14 +7032,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "view.export.publish-db-update",
         "exit_status": 1
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-304",
@@ -6917,8 +7085,8 @@
     {
       "capability_id": "REL-306",
       "capability": "Move resources from/to folder",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (SDK now sends {patch:[{op:move,from:[ids],path:destination|root}]}); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: CLI accepted_fields are resource_ids/source_folder_resource_id/target_folder_resource_id sent directly; backend PATCH /workspaces/4/projects/21/folders requires top-level field 'patch': HTTP 400 4GENR007 extra=[{key:patch,message:\"Field required\"}]. Adding patch to --input is rejected client-side before any request: unknown_input_field {accepted:[resource_ids,source_folder_resource_id,target_folder_resource_id],un...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: SDK-built {patch:[{op:move,from:[ids],path:destination|root}]} body accepted; response: {\"data\":{\"job_id\":368,\"failure_reason\":null,\"status_code\":null}}. `job get 368` showed status:processing (bulk_remove_label op) shortly after. Folder 12 (resource_id 196) was created by us via folder.create. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdateFolderResources",
       "method": "PATCH",
@@ -6929,14 +7097,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "folder.move",
-        "exit_status": 2
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-307",
@@ -7161,8 +7329,8 @@
     {
       "capability_id": "REL-318",
       "capability": "Update segments with workspace Id",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (2xx non-object bodies are reported as success instead of outcome_unknown; body is {patch:[{op:add|remove,path:segments,value:SEGMENT_NAME}]}); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: Attempt 1 guessing path=Alpha,value={features,status} -> HTTP 400 4GENR007, revealing real shape: op must be 'add'/'remove', path must be literal 'segments', value must be a segment name string. Attempt 2 op:add,path:segments,value:Alpha -> backend returned HTTP 200 but CLI reported {code:outcome_unknown,status_code:200} exit 7 -- envelope mismatch on success. Verified via workspace segment list: Alpha.status flip...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 200 non-object body reported as success on both op:add and the immediate op:remove for the same segment name: {\"data\":{\"response\":null,\"status_code\":200}} (both calls). `workspace segment list` before and after the add+remove pair was identical: {\"Alpha\":{\"features\":[],\"status\":false},\"Beta\":{\"features\":[],\"status\":false}} -- no visible net change, confirming baseline restored (and suggesting the add its... Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdateSegments",
       "method": "PATCH",
@@ -7173,14 +7341,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "workspace.segment.update",
-        "exit_status": 7
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-319",
@@ -7353,7 +7521,7 @@
       "capability_id": "REL-328",
       "capability": "Descriptor data for a published dashboard",
       "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (published-dashboard jobs are polled through the URL-scoped job route); not re-verified live yet. Earlier observation (2.0.14): Ran twice (2 attempts, both identical). Each run dispatches a job (311, then 313) and then the CLI's own always_wait polling GETs /jobs/{id} and gets back backend_code 4PERM002 PERMISSION_ERROR, \"User lacks permission to perform given action\" -- envelope: {\"error\":{\"code\":\"api_error\",\"details\":{\"bac",
+      "remarks": "Unassessed; re-verification 2026-09-18 (CLI 2.0.15) observed blocked_missing_fixture: Could not publish dashboard 59 to reach a live published state: `dashboard action 59 {action:publish-presentation}` failed twice with HTTP 500 outcome_unknown ({\"error\":{\"code\":\"outcome_unknown\",\"details\":{\"status_code\":500,\"response_body\":{}}}}); `dashboard get 59` confirmed was_published stayed false both times. Calling dashboard.published.data against the (unpublished) url slug correctly dispatched via the URL-...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DescriptorDataByUrl",
       "method": "POST",
@@ -7364,14 +7532,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/dashboard-reverify-20260918/results.jsonl",
-        "report": "docs/capability-evidence/dashboard-reverify-20260918/SUMMARY.md",
-        "scope": "dashboard re-verification on release ws 4 / project 3 with CLI 2.0.14 build: owned dashboard 56 (create-blank on view 45), publicly shared + publish-presentation to reach url routes, then unshared, trashed, deleted; baseline verified",
-        "sha256": "5fbf6cb406576e8e8f7329d4be95b427927d60ff88f4a9f3f4211978f74219cc",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "dashboard.published.data",
-        "exit_status": 1
+        "exit_status": 5
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-329",
@@ -7771,7 +7939,7 @@
       "capability_id": "REL-346",
       "capability": "Save a dashboard as a workspace template",
       "status": "Unassessed",
-      "remarks": "Unassessed; dashboard re-verification 2026-09-18 (CLI 2.0.14) observed backend_error: Both attempts (2/2) returned the same outcome_unknown envelope: {\"error\":{\"code\":\"outcome_unknown\",\"details\":{\"endpoint\":\"/dashboards/v3/templates\",\"method\":\"POST\",\"status_code\":500,\"response_body\":{}},\"message\":\"The request may have committed, but its outcome was not confirmed.\",\"hint\":\"Do not repl",
+      "remarks": "Unassessed; backend reproduction 2026-09-18 (CLI 2.0.15) observed backend: POST /dashboards/v3/templates -> HTTP 500, empty response_body, request_id:null, code:outcome_unknown. Fixture: dashboard 58 created via dashboard create-blank on view 76/dataset 54/project 24 (our only dashboard, per the ONE-dashboard limit). Reconciled via dashboard template list: templates with is_yours:true = [] -> attempt did NOT commit. Alternative tried: same dashboard_id, different title+description ('repr...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SaveTemplate",
       "method": "POST",
@@ -7782,14 +7950,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/dashboard-reverify-20260918/results.jsonl",
-        "report": "docs/capability-evidence/dashboard-reverify-20260918/SUMMARY.md",
-        "scope": "dashboard re-verification on release ws 4 / project 3 with CLI 2.0.14 build: owned dashboard 56 (create-blank on view 45), publicly shared + publish-presentation to reach url routes, then unshared, trashed, deleted; baseline verified",
-        "sha256": "5fbf6cb406576e8e8f7329d4be95b427927d60ff88f4a9f3f4211978f74219cc",
+        "artifact": "docs/capability-evidence/backend-repro-20260918/results.jsonl",
+        "report": "docs/capability-evidence/backend-repro-20260918/HANDOVER.md",
+        "scope": "backend-defect reproduction on release ws 4 with the published CLI 2.0.15 in disposable project 24 (dataset 54 / view 76), each item run once plus one alternative input; fixtures deleted",
+        "sha256": "e9880ab0d06f5dc6ea0b8ccc213c16019459ca5f580082f3e71552ce5e75c4a3",
         "command_id": "dashboard.template.create",
         "exit_status": 7
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-347",
@@ -9631,7 +9799,7 @@
       "capability_id": "REL-441",
       "capability": "Generate query",
       "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (input field is query (release Intent body) instead of prompt); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: CLI schema only accepts field prompt, but backend requires field query: HTTP 400 4GENR007 VALIDATION_ERROR extra=[{key:query,message:\"Field required\"}]. Adding query is rejected client-side: unknown_input_field {accepted:[prompt],unknown:[query]}. CLI cannot satisfy the backend contract for this route. No real connection existed (none is_added in connector list) so this used placeholder keys sample/sample; the fie...",
+      "remarks": "Unassessed; re-verification 2026-09-18 (CLI 2.0.15) observed blocked_missing_fixture: No real connector connection exists in workspace 4 (connector.list shows all is_added:false; connector.active returns []), matching the documented capabilities.md blocker; creating one requires external credentials, out of scope. Ran anyway with a placeholder connection_key: request reached backend connection-lookup (not a field-shape 400), returning {\"error\":{\"details\":{\"backend_code\":\"4CONN004\"},\"message\":\"Conne...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetQuerySuggestion",
       "method": "POST",
@@ -9642,14 +9810,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "connector.query.generate",
-        "exit_status": 2
+        "exit_status": 1
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-442",
@@ -9725,7 +9893,7 @@
       "capability_id": "REL-444",
       "capability": "Create datasets from Selected Tables of PDF",
       "status": "Unassessed",
-      "remarks": "Unassessed; write sweep 2026-09-18 (CLI 2.0.14) observed backend_error: Attempt 1 (file_name only) -> HTTP 400 4DSET053 MUST_PROVIDE_TABLE_LIST_OR_PREVIEW: \"Either 'table_list' or 'is_preview_needed' must be provided.\" (clear, actionable). Attempt 2 added is_preview_needed:true -> HTTP 400 4DTSTO003 PDF_TABLES_DATASET_CREATION_FAILED: \"Unexpected errors while creating datasets of pdf tables\". Used a minimal synthetic PDF (no real drawn table/lines) since no real tabular PDF fixture wa...",
+      "remarks": "Unassessed; backend reproduction 2026-09-18 (CLI 2.0.15) observed backend: POST /workspaces/4/projects/24/datasets-from-pdf. Attempt 1 (file_name only, no table_list/is_preview_needed) -> HTTP 400 4DSET053 MUST_PROVIDE_TABLE_LIST_OR_PREVIEW (clear, actionable, reproduced verbatim). Attempt 2 added is_preview_needed:true on the provided fixture sample.pdf (a minimal synthetic PDF with plain text, no drawn table lines) -> HTTP 400 4DTSTO003 PDF_TABLES_DATASET_CREATION_FAILED 'Unexpected er...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateDatasetFromPdf",
       "method": "POST",
@@ -9736,20 +9904,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/backend-repro-20260918/results.jsonl",
+        "report": "docs/capability-evidence/backend-repro-20260918/HANDOVER.md",
+        "scope": "backend-defect reproduction on release ws 4 with the published CLI 2.0.15 in disposable project 24 (dataset 54 / view 76), each item run once plus one alternative input; fixtures deleted",
+        "sha256": "e9880ab0d06f5dc6ea0b8ccc213c16019459ca5f580082f3e71552ce5e75c4a3",
         "command_id": "dataset.create-from-pdf",
         "exit_status": 1
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-445",
       "capability": "Create batch",
       "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (mapping is sent as the release list of {source_c_name,destination_c_name} items and body keys match BatchesPostRequest); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: CLI schema types mapping as dict[str,str] (object); backend rejects that shape: HTTP 400 4GENR007 VALIDATION_ERROR, extra=[{key:\"mapping.list[...ColumnIdMapping]\",message:\"Input should be a valid list\"},{key:\"mapping.list[ColumnNameMapping]\",message:\"Input should be a valid list\"}] -- backend wants mapping as a LIST of ColumnNameMapping/ColumnIdMapping objects. Retrying with a list is rejected client-side before a...",
+      "remarks": "CLI defect fixed in 2.0.16 (mapping items carry expected_destination_c_type (TEXT|NUMERIC|DATE); the {src: dst} shortcut stamps a default and the example shows the full item); not re-verified live yet. re-verification 2026-09-18 observed backend_error: Fix held on attempt 2: attempt 1 (mapping without expected_destination_c_type) got a clear structured 400 naming the missing fields (proving the CLI now sends the release list-of-{source_c_name,destination_c_name,...} shape rather than an empty api_error): {\"error\":{\"details\":{\"extra\":[{\"key\":\"mapping...0.source_c_id\",\"message\":\"Field required\"},{\"key\":\"mapping...0.expected_destination_c_type\",\"message\":\"Field req...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateBatch",
       "method": "POST",
@@ -9760,14 +9928,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "batch.create",
-        "exit_status": 2
+        "exit_status": 7
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-446",
@@ -9956,7 +10124,7 @@
       "capability_id": "REL-453",
       "capability": "Fetch derivative data",
       "status": "Unassessed",
-      "remarks": "Unassessed; write sweep 2026-09-18 (CLI 2.0.14) observed backend_error: HTTP 500 on POST .../dataviews/73/derivatives/2/data, empty response_body. CLI correctly reported outcome_unknown rather than a false success (this is a read-shaped POST, not a mutation, so no state change to reconcile).",
+      "remarks": "Unassessed; backend reproduction 2026-09-18 (CLI 2.0.15) observed backend: POST .../derivatives/4/data -> HTTP 500, empty response_body, request_id:null, code:outcome_unknown. Input is the documented runnable_example verbatim (condition:{FILTER_TYPE:SHOW}) against our own freshly-created derivative id 4 (SUM of column_1/store_id) on view 76. Read-shaped POST, so no state to reconcile. Alternative tried: richer condition with STRING_PROP filter (COLUMN:column_2,OPERATOR:CONTAINS,VALUE:Sto...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "FetchDerivativeData",
       "method": "POST",
@@ -9967,14 +10135,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/backend-repro-20260918/results.jsonl",
+        "report": "docs/capability-evidence/backend-repro-20260918/HANDOVER.md",
+        "scope": "backend-defect reproduction on release ws 4 with the published CLI 2.0.15 in disposable project 24 (dataset 54 / view 76), each item run once plus one alternative input; fixtures deleted",
+        "sha256": "e9880ab0d06f5dc6ea0b8ccc213c16019459ca5f580082f3e71552ce5e75c4a3",
         "command_id": "view.derivative.data",
         "exit_status": 7
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-454",
@@ -10076,7 +10244,7 @@
       "capability_id": "REL-458",
       "capability": "Add a export in the pipeline",
       "status": "Unassessed",
-      "remarks": "Unassessed; write sweep 2026-09-18 (CLI 2.0.14) observed cli_error: Both attempts return exit 0 with a job accepted (334, then 335 after adding target_properties.destination:local), but the job itself always fails: job get shows status:error, response:{error:{message:\"'destination'\"}} (a raw Python KeyError repr, not a structured message). The export_spec schema documents no 'destination' field anywhere for csv_file/S3TargetProperties, so there is no discoverable way to satisfy it...",
+      "remarks": "Unassessed; backend reproduction 2026-09-18 (CLI 2.0.15) observed backend: CLI accepts the request (exit 0, job 358 accepted on POST /dataviews/76/actions), but job get 358 -> status:error, response:{\"error\":{\"message\":\"'destination'\"}} (a raw Python KeyError repr, not a structured message) -- matches the item exactly. Alternative tried: target_properties.destination:local added explicitly (item's own text) -- same failure. Checked schema get view.export.create: target_properties for csv...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AddExport",
       "method": "POST",
@@ -10087,14 +10255,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/backend-repro-20260918/results.jsonl",
+        "report": "docs/capability-evidence/backend-repro-20260918/HANDOVER.md",
+        "scope": "backend-defect reproduction on release ws 4 with the published CLI 2.0.15 in disposable project 24 (dataset 54 / view 76), each item run once plus one alternative input; fixtures deleted",
+        "sha256": "e9880ab0d06f5dc6ea0b8ccc213c16019459ca5f580082f3e71552ce5e75c4a3",
         "command_id": "view.export.create",
         "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-459",
@@ -10124,7 +10292,7 @@
       "capability_id": "REL-460",
       "capability": "Get task preview",
       "status": "Unassessed",
-      "remarks": "Unassessed; write sweep 2026-09-18 (CLI 2.0.14) observed cli_error: Schema's own runnable_example (COPY:{}) fails: HTTP 400 5GENR010 UNKNOWN_ERROR \"Unknown error occurred. Please contact support.\" wrapping error_object {code:720,message:\"Source column not present.\"} -- a real, clear underlying validation issue mislabeled as an unknown/support-ticket error. Attempt 2 guessing COPY:{SOURCE_COLUMN,NEW_COLUMN_NAME} using display name column_2 -> identical error, so either the field na...",
+      "remarks": "CLI defect fixed in 2.0.16 (example now uses the backend COPY param-template shape: list of {SOURCE, AS{COLUMN,TYPE,INTERNAL_NAME}}, VERSION 2; the former COPY:{} placeholder was rejected with code 720); not re-verified live yet. Backend reproduction 2026-09-18 observed backend: with the corrected shape the preview job is accepted and then fails with '(builtins.TypeError) Object of type datetime is not JSON serializable' while storing the preview response for a view with a DATE column (job 379, project 25).",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetTaskPreview",
       "method": "POST",
@@ -10135,14 +10303,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/backend-repro-20260918/results.jsonl",
+        "report": "docs/capability-evidence/backend-repro-20260918/HANDOVER.md",
+        "scope": "backend-defect reproduction on release ws 4 with the published CLI 2.0.15 in disposable project 24 (dataset 54 / view 76), each item run once plus one alternative input; fixtures deleted",
+        "sha256": "e9880ab0d06f5dc6ea0b8ccc213c16019459ca5f580082f3e71552ce5e75c4a3",
         "command_id": "view.task.preview",
         "exit_status": 1
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-461",
@@ -10195,8 +10363,8 @@
     {
       "capability_id": "REL-463",
       "capability": "Generate or Update Dataset Profile",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (SDK sends the release ProfileGenerationSpec {params:{action}} body (action defaults to insights)); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: Attempt 1 (dataset_id only) -> HTTP 400 4GENR007 VALIDATION_ERROR extra=[{key:data,message:(quote)data(quote),source:body}] -- CLI sends empty POST body; backend wants a top-level 'data' field. Attempt 2 adding data:{} -> rejected client-side: unknown_input_field {accepted:[dataset_id],unknown:[data]}. Same systemic POST-body-mismatch defect as ai.suggestion.list/project.sample-flow.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: release ProfileGenerationSpec {params:{action}} body accepted; returned real generated insights: {\"data\":{\"insights\":{\"performance_analysis\":{\"domain_specific_insights\":[...]}}}}. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GenerateProfile",
       "method": "POST",
@@ -10207,14 +10375,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "view.ai.profile",
-        "exit_status": 2
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-464",
@@ -10606,7 +10774,7 @@
       "capability_id": "REL-477",
       "capability": "Generate SQL query based on intent",
       "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (dataset_id is required and sent as the query parameter; example updated); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: runnable_example omits dataset_id but backend requires it: HTTP 400 4GENR007 \"Missing required query parameter 'dataset_id' for path /workspaces/4/projects/21/sql_generation\". Retrying with --input {\"dataset_id\":48} is rejected by the CLI itself: unknown_input_field {\"accepted\":[\"intent\",\"sequence_number\"],\"unknown\":[\"dataset_id\"]}. The typed schema has no field to satisfy the backend requirement -- command cannot...",
+      "remarks": "Unassessed; re-verification 2026-09-18 (CLI 2.0.15) observed backend_error: Fix held (dataset_id required and sent as query param -- request reached backend and got a domain-specific conflict, not an empty api_error). Tried on both dataset 53 and dataset 55 (untouched fresh dataset), same clear structured error both times: {\"error\":{\"code\":\"conflict\",\"details\":{\"backend_code\":\"4DTVW029\"},\"message\":\"Cannot run AI generation for this rule: the input table from the previous rule is not avail...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GenerateSql",
       "method": "POST",
@@ -10617,14 +10785,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "ai.sql.generate",
-        "exit_status": 2
+        "exit_status": 6
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-478",
@@ -10653,8 +10821,8 @@
     {
       "capability_id": "REL-479",
       "capability": "Generate SQL expression based on intent",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (SDK-side argument rejections (e.g. mode not math|metric) surface as invalid_arguments with the SDK message instead of an empty api_error); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: Both mode=sample and mode=generate produced identical opaque envelope: {\"error\":{\"code\":\"api_error\",\"message\":\"Mammoth could not complete the operation.\",\"details\":{},\"hint\":\"Inspect the structured details and correct the request.\",\"recovery_commands\":[],\"request_id\":null,\"retryable\":false}}. No HTTP status surfaced, no actionable detail despite valid dataset/view/intent.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 2 on release with CLI 2.0.15. Fix held: invalid mode surfaced as invalid_arguments with the SDK message before any request was sent: {\"error\":{\"code\":\"invalid_arguments\",\"message\":\"`mode` must be 'math' or 'metric', got 'sample'.\",\"exception_type\":\"MammothValidationError\"}}, matching the documented fix exactly. A follow-up call with mode:'math' passed client-side validation and reached a real job, which failed for an unrelated backend reason (... Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GenerateExpression",
       "method": "POST",
@@ -10665,20 +10833,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "ai.expression.generate",
-        "exit_status": 1
+        "exit_status": 2
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-480",
       "capability": "Generate or test a retention condition WHERE clause",
       "status": "Unassessed",
-      "remarks": "Unassessed; write sweep 2026-09-18 (CLI 2.0.14) observed backend_error: HTTP 403 4PERM001 PERMISSION_UNDEFINED: \"Permissions have not been set correctly for this API, please contact Mammoth Help to report this error\" on POST /workspaces/4/projects/21/sql_generation/retention_policy.",
+      "remarks": "Unassessed; backend reproduction 2026-09-18 (CLI 2.0.15) observed permission: POST /workspaces/4/projects/24/sql_generation/retention_policy -> HTTP 403 4PERM001 PERMISSION_UNDEFINED, error_object {code:76,message:'Permissions have not been set correctly for this API, please contact Mammoth Help to report this error'}, request_id:null. One attempt only, as instructed (expected to stay 403 -- this is a workspace/account entitlement gap, not something any client input can fix). No retry attem...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "RetentionCondition",
       "method": "POST",
@@ -10689,20 +10857,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/backend-repro-20260918/results.jsonl",
+        "report": "docs/capability-evidence/backend-repro-20260918/HANDOVER.md",
+        "scope": "backend-defect reproduction on release ws 4 with the published CLI 2.0.15 in disposable project 24 (dataset 54 / view 76), each item run once plus one alternative input; fixtures deleted",
+        "sha256": "e9880ab0d06f5dc6ea0b8ccc213c16019459ca5f580082f3e71552ce5e75c4a3",
         "command_id": "ai.retention.condition",
         "exit_status": 4
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-481",
       "capability": "Generate AI-based Suggestions for Dataview",
       "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (command takes the release UnifiedPromptSpec (suggestion_type + params, optional dataset_id/dataview_id)); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: HTTP 400 4GENR007 VALIDATION_ERROR: \"Validation failed for POST /workspaces/4/projects/21/suggestions\" extra: [{key:data, message: (quote)data(quote), source:body}] -- CLI sends a POST with no body/no accepted_fields (positionals=[], accepted_fields=[] per schema) so the request can never satisfy the backend's required 'data' field.",
+      "remarks": "Unassessed; re-verification 2026-09-18 (CLI 2.0.15) observed backend_error: Fix held: release UnifiedPromptSpec (suggestion_type + params, optional dataset_id/dataview_id) shape accepted and dispatched to a real job (id 381), which failed for an unrelated backend reason rather than a client-side/api shape rejection: {\"error\":{\"code\":\"job_failed\",\"details\":{\"observed_job\":{\"operation\":\"generate_transformations_based_on_intent\",\"response\":{\"reason\":\"Unexpected error using param generation\"}...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AiSuggestions",
       "method": "POST",
@@ -10713,14 +10881,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "ai.suggestion.list",
         "exit_status": 1
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-482",
@@ -10773,8 +10941,8 @@
     {
       "capability_id": "REL-484",
       "capability": "Add user to a project",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.15 (SDK now sends {users:[{user_id,role}]} with numeric user ids); not re-verified live yet. Write sweep 2026-09-18 observed cli_error: CLI sends user_ids field; backend POST /workspaces/4/projects/21/users requires field 'users': HTTP 400 4GENR007 extra=[{key:users,message:\"Field required\"}]. Adding users to --input is rejected client-side: unknown_input_field {accepted:[role,user_ids],unknown:[users]}. Same request-shape mismatch pattern as folder.move/project.update/dataset.bulk-update -- no user was actually added to project 21, so project.use...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: {users:[{user_id,role}]} with numeric user id accepted. First attempt (immediately after we had inadvertently self-demoted via project.bulk-update) got HTTP 403 4PERM002 'User lacks permission to perform given action' -- our own account (user 5) had lost project_admin on project 23 from an earlier project.bulk-update test call. We restored project_admin via project.bulk-update (job 373) then re-ran: {\"da... Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AddUserProject",
       "method": "POST",
@@ -10785,14 +10953,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
+        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
         "command_id": "project.user.add",
-        "exit_status": 2
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.15"
     },
     {
       "capability_id": "REL-485",

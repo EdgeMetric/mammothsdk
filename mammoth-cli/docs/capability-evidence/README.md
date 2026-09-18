@@ -32,3 +32,6 @@ in the matrix rows by SHA-256) and a `SUMMARY.md`:
 - `write-sweep-20260918` — 79 mutating routes in disposable projects; the
   CLI defects it found are fixed in 2.0.15 and marked "CLI defect fixed in
   2.0.15" in the matrix until re-run.
+- `reverify-215-20260918`, `admin-read-sweep-20260918`,
+  `backend-repro-20260918` — runs on the published 2.0.15: the fixed routes
+  re-run, the admin/billing GET routes, and the backend handover.

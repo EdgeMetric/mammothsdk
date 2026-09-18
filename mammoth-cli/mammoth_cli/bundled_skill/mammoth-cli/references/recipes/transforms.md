@@ -81,8 +81,12 @@ free-form lists. Observed shapes:
   `reorder`, `null` for commands). Prefer `view draft *` for submit/discard.
 - `view task update VIEW_ID TASK_ID --input '{"dataset_id":DATASET_ID,"task_spec":{...}}'`
   sends `{"patches":[{"op":"replace","path":"params","value":task_spec}]}`;
-  pass `patches` directly for other paths. `view task preview` needs the
-  task's internal column names (`view columns`), not display names.
+  pass `patches` directly for other paths. Raw `task_spec` bodies use the
+  backend param-template shape with internal column names, e.g. COPY is
+  `{"COPY":[{"SOURCE":"column_1","AS":{"COLUMN":"Copy","TYPE":"TEXT","INTERNAL_NAME":"column_9"}}],"VERSION":2,...}`;
+  prefer the typed `view transform *` commands, which build these for you.
+  `view task preview` currently fails on the backend for views with a DATE
+  column (`datetime is not JSON serializable`), so do not rely on it.
 - `view checkpoint update` sends `{"patches":[{"op":"command","path":"approve","value":null}]}`;
   the release backend answered HTTP 500 to that shape, so treat checkpoint
   approval as unavailable until `checkpoint get` succeeds again.

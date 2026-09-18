@@ -615,9 +615,22 @@ def test_conditional_format_create_forwards_rule(
     ]
 
 
-def test_conditional_format_delete_all_blocked_without_confirmation(
+def test_conditional_format_delete_all_requires_rule_id(
     fake_service: FakeMammothService,
 ) -> None:
+    # The release route deletes one rule per call and needs rule_id.
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_conditional_format_delete_all(
+            _inv("view.conditional-format.delete-all", project=180, extra_args=["9", "7"], yes=True)
+        )
+    assert excinfo.value.code == "missing_field"
+    assert fake_service.call_log == []
+
+
+def test_conditional_format_delete_all_blocked_without_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"rule_id": "rule-1"})
     with pytest.raises(CliError) as excinfo:
         view_cmd.view_conditional_format_delete_all(
             _inv(
@@ -625,6 +638,7 @@ def test_conditional_format_delete_all_blocked_without_confirmation(
                 project=180,
                 extra_args=["9", "7"],
                 output="json",
+                input_file=doc,
             )
         )
     assert excinfo.value.code == "confirmation_required"
@@ -632,13 +646,23 @@ def test_conditional_format_delete_all_blocked_without_confirmation(
 
 
 def test_conditional_format_delete_all_proceeds_with_yes(
-    fake_service: FakeMammothService,
+    fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
+    doc = _doc(tmp_path, {"rule_id": "rule-1"})
     view_cmd.view_conditional_format_delete_all(
-        _inv("view.conditional-format.delete-all", project=180, extra_args=["7", "9"], yes=True)
+        _inv(
+            "view.conditional-format.delete-all",
+            project=180,
+            extra_args=["7", "9"],
+            yes=True,
+            input_file=doc,
+        )
     )
     assert fake_service.call_log == [
-        (_CF_DELETE_ALL, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
+        (
+            _CF_DELETE_ALL,
+            {"dataset_id": 9, "dataview_id": 7, "rule_id": "rule-1", "project_id": 180},
+        )
     ]
 
 

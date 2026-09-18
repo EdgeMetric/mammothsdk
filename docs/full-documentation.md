@@ -535,6 +535,8 @@
   - [Import errors](#import-errors)
   - [See also](#see-also)
 - [Changelog](#changelog)
+  - [v0.7.8](#v078)
+    - [Changed](#changed)
   - [v0.7.7](#v077)
     - [Changed](#changed)
     - [Fixed](#fixed)
@@ -16205,7 +16207,7 @@ Args:
 Returns:
     Dict with deletion result.
 
-#### `create(self, dataset_id: 'int', source_id: 'int', mapping: 'dict[str, str] | _list[dict[str, Any]]', project_id: 'int | None' = None, new_ds_params: 'dict[str, Any] | None' = None, is_validation_required: 'bool | None' = None, change_map: 'dict[str, Any] | None' = None, delete_source_ds: 'bool' = False) -> 'dict[str, Any]'`
+#### `create(self, dataset_id: 'int', source_id: 'int', mapping: 'dict[str, str] | _list[dict[str, Any]]', project_id: 'int | None' = None, new_ds_params: 'dict[str, Any] | None' = None, is_validation_required: 'bool | None' = None, change_map: 'dict[str, Any] | None' = None, delete_source_ds: 'bool' = False, expected_destination_c_type: 'str' = 'TEXT') -> 'dict[str, Any]'`
 
 Create a new batch for a dataset.
 
@@ -16214,14 +16216,20 @@ Args:
     dataset_id: ID of the destination dataset.
     source_id: ID of the source dataset (must be a positive integer).
     mapping: Non-empty ``{"src_col": "dst_col"}`` dict (expanded to
-        ``ColumnNameMapping`` items) or an explicit list of
-        ``ColumnNameMapping`` / ``ColumnIdMapping`` objects.
+        ``ColumnNameMapping`` items, each stamped with
+        ``expected_destination_c_type``) or an explicit list of
+        ``ColumnNameMapping`` / ``ColumnIdMapping`` objects, every
+        item carrying its own ``expected_destination_c_type``
+        (``TEXT``, ``NUMERIC`` or ``DATE``; the route requires it).
     project_id: Project ID (uses client default if not provided).
     new_ds_params: Optional params for creating a new dataset.
     is_validation_required: Whether to validate the batch.
     change_map: Optional change-tracking column map.
     delete_source_ds: Whether to delete the source dataset after batch
         (default ``False``).
+    expected_destination_c_type: Type stamped on every item of a
+        ``{src: dst}`` mapping dict (default ``"TEXT"``); ignored for
+        list mappings, which carry their own.
 
 Returns:
     Dict with created batch info.
@@ -18194,6 +18202,16 @@ client = MammothClient(..., timeout=120)  # 2 minutes per request
 
 
 # Changelog
+
+## v0.7.8
+
+### Changed
+
+- `batches.create()` stamps `expected_destination_c_type` (default
+  `"TEXT"`, or the new keyword) on every item expanded from a `{src: dst}`
+  mapping and rejects list items that lack it; the route requires the field.
+- `support.workspace_list()` wraps the bare JSON array the release backend
+  returns as `{"workspaces": [...]}`.
 
 ## v0.7.7
 

@@ -12,7 +12,7 @@ Expected success: `BatchBulkDeleteResult` in the standard JSON envelope; mutatio
 
 Run: `mammoth batch create`. Exact input fields: `mammoth schema get batch.create --output json --no-input`.
 
-Example: `mammoth batch create 123 123 --input '{"mapping": {"sample_key": "Status"}}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth batch create 123 123 --input '{"mapping": [{"source_c_name": "column_1", "destination_c_name": "column_1", "expected_destination_c_type": "TEXT"}]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `BatchCreateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

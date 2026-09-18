@@ -75,8 +75,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch create DATASET_ID SOURCE_ID --help
-  agent_example: 'mammoth batch create 123 123 --input ''{"mapping": {"sample_key": "Status"}}'' --output
-    json --no-input'
+  agent_example: 'mammoth batch create 123 123 --input ''{"mapping": [{"source_c_name": "column_1", "destination_c_name":
+    "column_1", "expected_destination_c_type": "TEXT"}]}'' --output json --no-input'
   unit_tests:
   - UT-BATCH-CREATE
   contract_tests:

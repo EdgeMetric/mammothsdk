@@ -2499,7 +2499,7 @@ commands:
   secret_fields: []
   human_example: mammoth view export publish-db-update DATAVIEW_ID --help
   agent_example: 'mammoth view export publish-db-update 123 --input ''{"patch": [{"op": "replace", "path":
-    "credentials", "value": "postgres"}]}'' --output json --no-input'
+    "credentials", "value": {"odbc_type": "postgres"}}]}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-EXPORT-PUBLISH-DB-UPDATE
   contract_tests:
@@ -3394,7 +3394,8 @@ commands:
   secret_fields: []
   human_example: mammoth view task add DATAVIEW_ID --help
   agent_example: 'mammoth view task add 123 --input ''{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER":
-    1, "COPY": {}}}'' --output json --no-input'
+    1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME":
+    "column_9"}}], "VERSION": 2}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TASK-ADD
   contract_tests:
@@ -3569,7 +3570,8 @@ commands:
   secret_fields: []
   human_example: mammoth view task preview DATAVIEW_ID --help
   agent_example: 'mammoth view task preview 123 --input ''{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER":
-    1, "COPY": {}}}'' --output json --no-input'
+    1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME":
+    "column_9"}}], "VERSION": 2}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TASK-PREVIEW
   contract_tests:
@@ -3616,7 +3618,8 @@ commands:
   secret_fields: []
   human_example: mammoth view task update DATAVIEW_ID TASK_ID --help
   agent_example: 'mammoth view task update 123 123 --input ''{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER":
-    1, "COPY": {}}, "dataset_id": 456}'' --output json --no-input'
+    1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME":
+    "column_9"}}], "VERSION": 2}, "dataset_id": 456}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-TASK-UPDATE
   contract_tests:

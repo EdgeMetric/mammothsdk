@@ -63,7 +63,10 @@ def test_generic_pipeline_task_examples_are_structural_and_warn_about_typed_rout
         example = record["agent_example"]
         assert "sample_key" not in example
         assert '"DATAVIEW_ID": 123' in example
-        assert '"COPY": {}' in example
+        # The backend COPY param template: a list of SOURCE/AS items, VERSION 2.
+        assert '"COPY": [{"SOURCE": "column_1", "AS": {' in example
+        assert '"INTERNAL_NAME": "column_9"' in example
+        assert '"VERSION": 2' in example
 
 
 def test_generated_task_docs_do_not_present_opaque_examples_as_usable_tasks() -> None:

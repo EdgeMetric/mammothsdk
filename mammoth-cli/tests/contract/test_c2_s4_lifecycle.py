@@ -92,7 +92,13 @@ def test_batch_wire_oracles_cover_query_body_and_distinct_lifecycle_paths() -> N
         {
             "json": {
                 "source_id": 732,
-                "mapping": [{"source_c_name": "S4_SOURCE", "destination_c_name": "S4_DEST"}],
+                "mapping": [
+                    {
+                        "source_c_name": "S4_SOURCE",
+                        "destination_c_name": "S4_DEST",
+                        "expected_destination_c_type": "TEXT",
+                    }
+                ],
                 "delete_source_ds": False,
                 "new_ds_details": {"name": "S4_DATASET"},
                 "validate_only": True,

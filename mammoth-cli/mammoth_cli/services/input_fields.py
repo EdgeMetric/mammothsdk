@@ -204,7 +204,18 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "patches": [{"op": "replace", "path": "auto_run", "value": True}],
     },
     "view.export.publish-db-update": {
-        "patch": [{"op": "replace", "path": "credentials", "value": "postgres"}],
+        "patch": [{"op": "replace", "path": "credentials", "value": {"odbc_type": "postgres"}}],
+    },
+    # BatchesPostRequest: every ColumnNameMapping item carries the expected
+    # destination type; a bare {src: dst} map cannot satisfy the route.
+    "batch.create": {
+        "mapping": [
+            {
+                "source_c_name": "column_1",
+                "destination_c_name": "column_1",
+                "expected_destination_c_type": "TEXT",
+            }
+        ]
     },
     "view.checkpoint.update": {
         "body": {"patches": [{"op": "command", "path": "approve", "value": None}]},

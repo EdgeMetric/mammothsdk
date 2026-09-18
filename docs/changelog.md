@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.7.8
+
+### Changed
+
+- `batches.create()` stamps `expected_destination_c_type` (default
+  `"TEXT"`, or the new keyword) on every item expanded from a `{src: dst}`
+  mapping and rejects list items that lack it; the route requires the field.
+- `support.workspace_list()` wraps the bare JSON array the release backend
+  returns as `{"workspaces": [...]}`.
+
 ## v0.7.7
 
 ### Changed

@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.15.
+Generated from the reviewed command manifests for mammoth-cli 2.0.16.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -345,7 +345,7 @@ Total commands: 549.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.create`
-- Agent example: `mammoth batch create 123 123 --input '{"mapping": {"sample_key": "Status"}}' --output json --no-input`
+- Agent example: `mammoth batch create 123 123 --input '{"mapping": [{"source_c_name": "column_1", "destination_c_name": "column_1", "expected_destination_c_type": "TEXT"}]}' --output json --no-input`
 
 ### `mammoth batch create-spec`
 
@@ -4518,7 +4518,7 @@ Total commands: 549.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.publish_db_update`
-- Agent example: `mammoth view export publish-db-update 123 --input '{"patch": [{"op": "replace", "path": "credentials", "value": "postgres"}]}' --output json --no-input`
+- Agent example: `mammoth view export publish-db-update 123 --input '{"patch": [{"op": "replace", "path": "credentials", "value": {"odbc_type": "postgres"}}]}' --output json --no-input`
 
 ### `mammoth view export redshift`
 
@@ -4751,7 +4751,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.add_task`
-- Agent example: `mammoth view task add 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": {}}}' --output json --no-input`
+- Agent example: `mammoth view task add 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}}' --output json --no-input`
 
   **Agent note:** this is an illustrative low-level expert envelope, not
   a guaranteed executable task. `task_spec` is opaque here and its
@@ -4806,7 +4806,7 @@ Total commands: 549.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.preview_task`
-- Agent example: `mammoth view task preview 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": {}}}' --output json --no-input`
+- Agent example: `mammoth view task preview 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}}' --output json --no-input`
 
   **Agent note:** this is an illustrative low-level expert envelope, not
   a guaranteed executable task. `task_spec` is opaque here and its
@@ -4827,7 +4827,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.update_task`
-- Agent example: `mammoth view task update 123 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": {}}, "dataset_id": 456}' --output json --no-input`
+- Agent example: `mammoth view task update 123 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}, "dataset_id": 456}' --output json --no-input`
 
   **Agent note:** this is an illustrative low-level expert envelope, not
   a guaranteed executable task. `task_spec` is opaque here and its

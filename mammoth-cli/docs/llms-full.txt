@@ -97,7 +97,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth batch bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.batches.BatchesAPI.bulk_delete
   example: mammoth batch bulk-delete 123 --output json --no-input
 - `mammoth batch create` [benign_mutation/none] -> mammoth.api.batches.BatchesAPI.create
-  example: mammoth batch create 123 123 --input '{"mapping": {"sample_key": "Status"}}' --output json --no-input
+  example: mammoth batch create 123 123 --input '{"mapping": [{"source_c_name": "column_1", "destination_c_name": "column_1", "expected_destination_c_type": "TEXT"}]}' --output json --no-input
 - `mammoth batch create-spec` [benign_mutation/none] -> mammoth.api.batches.BatchesAPI.create_spec
   example: mammoth batch create-spec 123 --input '{"file_id": 94}' --output json --no-input
 - `mammoth batch delete` [destructive/prompt_or_yes] -> mammoth.api.batches.BatchesAPI.delete
@@ -1007,7 +1007,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view export publish-db` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.publish_db
   example: mammoth view export publish-db 123 --input '{"odbc_type": "postgres", "target_properties": {"sample_key": "Status"}}' --output json --no-input
 - `mammoth view export publish-db-update` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.publish_db_update
-  example: mammoth view export publish-db-update 123 --input '{"patch": [{"op": "replace", "path": "credentials", "value": "postgres"}]}' --output json --no-input
+  example: mammoth view export publish-db-update 123 --input '{"patch": [{"op": "replace", "path": "credentials", "value": {"odbc_type": "postgres"}}]}' --output json --no-input
 - `mammoth view export redshift` [external_effect/yes_always] -> mammoth.view.ViewExport.to_redshift
   example: mammoth view export redshift 123 123 --input /private/path/request.json --output json --no-input
 - `mammoth view export rest` [external_effect/yes_always] -> mammoth.view.ViewExport.to_rest_api
@@ -1047,7 +1047,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view restore` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.restore
   example: mammoth view restore 123 123 --output json --no-input
 - `mammoth view task add` [reversible_pipeline/none] -> mammoth.api.pipeline.PipelineAPI.add_task
-  example: mammoth view task add 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": {}}}' --output json --no-input
+  example: mammoth view task add 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}}' --output json --no-input
   agent note: illustrative low-level envelope, not a guaranteed executable task; prefer typed view transform commands because task_spec fields are not fully discoverable.
 - `mammoth view task delete` [destructive/prompt_or_yes] -> mammoth.api.pipeline.PipelineAPI.delete_task
   example: mammoth view task delete 123 123 --output json --no-input
@@ -1056,10 +1056,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view task list` [read/none] -> mammoth.api.pipeline.PipelineAPI.list_tasks
   example: mammoth view task list 123 --output json --no-input
 - `mammoth view task preview` [read/none] -> mammoth.api.pipeline.PipelineAPI.preview_task
-  example: mammoth view task preview 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": {}}}' --output json --no-input
+  example: mammoth view task preview 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}}' --output json --no-input
   agent note: illustrative low-level envelope, not a guaranteed executable task; prefer typed view transform commands because task_spec fields are not fully discoverable.
 - `mammoth view task update` [reversible_pipeline/none] -> mammoth.api.pipeline.PipelineAPI.update_task
-  example: mammoth view task update 123 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": {}}, "dataset_id": 456}' --output json --no-input
+  example: mammoth view task update 123 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}, "dataset_id": 456}' --output json --no-input
   agent note: illustrative low-level envelope, not a guaranteed executable task; prefer typed view transform commands because task_spec fields are not fully discoverable.
 - `mammoth view transform add-column` [reversible_pipeline/none] -> mammoth.View.add_column
   example: mammoth view transform add-column 123 --input '{"name": "Revenue report", "dataset_id": 456}' --output json --no-input

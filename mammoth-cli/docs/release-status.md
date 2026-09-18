@@ -1,5 +1,44 @@
 # CLI release provenance
 
+## 2.0.16 / SDK 0.7.8
+
+This release folds three 2026-09-18 runs on the published 2.0.15 build
+(evidence under `docs/capability-evidence/reverify-215-20260918`,
+`admin-read-sweep-20260918` and `backend-repro-20260918`) and repairs what
+they found on the CLI side:
+
+- Re-verification of the 27 routes marked "CLI defect fixed in 2.0.15": 19
+  now verified live, 5 dispatch correctly but hit backend errors, 3 lacked a
+  fixture. Three follow-ups: `view conditional-format delete-all` accepted
+  `rule_id` but dropped it before the SDK call (now forwarded and required);
+  `batch create` mapping items need `expected_destination_c_type` (the SDK
+  stamps it on the `{src: dst}` shortcut and the example shows a full item);
+  `view export publish-db-update` takes `{"odbc_type": "postgres"}` as the
+  patch value, not a bare string.
+- `view task preview`'s documented `COPY: {}` placeholder was rejected with
+  backend code 720; the example now uses the backend param-template shape
+  (`COPY` list of `{SOURCE, AS{COLUMN, TYPE, INTERNAL_NAME}}`, `VERSION` 2).
+  With that shape the backend accepts the job and then fails serializing a
+  DATE column, so the route stays a backend blocker.
+- Admin/billing read sweep: 13 of the 30 GET routes verified (with the
+  `--yes --confirm WORKSPACE_ID` gate the CLI puts on every support/billing
+  command), 6 forbidden for an API key, 6 backend errors, 5 without a
+  fixture. `support workspace list` returns a bare array; SDK 0.7.8 wraps it
+  as `{"workspaces": [...]}`.
+- Backend reproduction: nine defects confirmed with a second input each
+  (checkpoint get/update 500, data-check update 500, derivative data 500,
+  generic csv export job `'destination'`, PDF import 4DTSTO003, template
+  create 500, generation-info 5GENR011, task preview serialization) plus
+  `ai retention condition` 4PERM001. The handover with reproduction commands
+  is `docs/capability-evidence/backend-repro-20260918/HANDOVER.md`.
+
+Matrix after this release: 225 verified of 528 (core workflow 185/230), 2
+Not supported, 4 rows "CLI defect fixed in 2.0.16" awaiting a re-run. The 73
+operations without a CLI command and the 44 support/billing write routes
+(subscriptions, charges, user registration) were not exercised. The CLI
+requires `mammoth-io>=0.7.8,<0.8`, adds no API bindings, and makes no
+capability-status or autonomous-workflow qualification claim.
+
 ## 2.0.15 / SDK 0.7.7
 
 This release closes the CLI-side defects the 2026-09-18 write sweep (79

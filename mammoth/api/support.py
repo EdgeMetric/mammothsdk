@@ -939,9 +939,16 @@ class SupportAPI:
 
         Returns:
             Dict with the ``workspaces`` list (or ``instance_types``, depending
-            on the server response variant).
+            on the server response variant). The release backend answers this
+            route with a bare JSON array, which is wrapped as ``{"workspaces":
+            [...]}`` so callers get the usual dict shape.
         """
-        return self._client._request_json("GET", "/support/workspaces")
+        result = self._client._request(
+            "GET", "/support/workspaces", expected_response_shape="list_or_dict"
+        )
+        if isinstance(result, list):
+            return {"workspaces": result}
+        return result
 
     def workspace_get(self, workspace_id: int, fields: str | None = None) -> dict[str, Any]:
         """Get details of a workspace.

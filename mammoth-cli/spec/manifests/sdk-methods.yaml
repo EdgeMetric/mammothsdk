@@ -881,7 +881,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.batches.BatchesAPI.create
   implementation_origin: mammoth.api.batches.BatchesAPI.create
-  signature: 'create(self, dataset_id: ''int'', source_id: ''int'', mapping: ''dict[str, str] | _list[dict[str, Any]]'', project_id: ''int | None'' = None, new_ds_params: ''dict[str, Any] | None'' = None, is_validation_required: ''bool | None'' = None, change_map: ''dict[str, Any] | None'' = None, delete_source_ds: ''bool'' = False) -> ''dict[str, Any]'''
+  signature: 'create(self, dataset_id: ''int'', source_id: ''int'', mapping: ''dict[str, str] | _list[dict[str, Any]]'', project_id: ''int | None'' = None, new_ds_params: ''dict[str, Any] | None'' = None, is_validation_required: ''bool | None'' = None, change_map: ''dict[str, Any] | None'' = None, delete_source_ds: ''bool'' = False, expected_destination_c_type: ''str'' = ''TEXT'') -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: batch.create
   alias_of: null

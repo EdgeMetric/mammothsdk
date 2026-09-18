@@ -109,6 +109,7 @@ class BatchesAPI:
         is_validation_required: bool | None = None,
         change_map: dict[str, Any] | None = None,
         delete_source_ds: bool = False,
+        expected_destination_c_type: str = "TEXT",
     ) -> dict[str, Any]:
         """Create a new batch for a dataset.
 
@@ -117,14 +118,20 @@ class BatchesAPI:
             dataset_id: ID of the destination dataset.
             source_id: ID of the source dataset (must be a positive integer).
             mapping: Non-empty ``{"src_col": "dst_col"}`` dict (expanded to
-                ``ColumnNameMapping`` items) or an explicit list of
-                ``ColumnNameMapping`` / ``ColumnIdMapping`` objects.
+                ``ColumnNameMapping`` items, each stamped with
+                ``expected_destination_c_type``) or an explicit list of
+                ``ColumnNameMapping`` / ``ColumnIdMapping`` objects, every
+                item carrying its own ``expected_destination_c_type``
+                (``TEXT``, ``NUMERIC`` or ``DATE``; the route requires it).
             project_id: Project ID (uses client default if not provided).
             new_ds_params: Optional params for creating a new dataset.
             is_validation_required: Whether to validate the batch.
             change_map: Optional change-tracking column map.
             delete_source_ds: Whether to delete the source dataset after batch
                 (default ``False``).
+            expected_destination_c_type: Type stamped on every item of a
+                ``{src: dst}`` mapping dict (default ``"TEXT"``); ignored for
+                list mappings, which carry their own.
 
         Returns:
             Dict with created batch info.
@@ -142,14 +149,31 @@ class BatchesAPI:
         # ``BatchesPostRequest``: ``mapping`` is a list of ``ColumnNameMapping``
         # (``source_c_name``/``destination_c_name``) or ``ColumnIdMapping``
         # items; the ``{src: dst}`` dict shortcut is expanded to the former.
+        if expected_destination_c_type not in ("TEXT", "NUMERIC", "DATE"):
+            raise MammothValidationError(
+                "expected_destination_c_type must be TEXT, NUMERIC or DATE, "
+                f"got {expected_destination_c_type!r}.",
+                {"expected_destination_c_type": expected_destination_c_type},
+            )
         mapping_items: list[dict[str, Any]] = (
             [
-                {"source_c_name": source, "destination_c_name": destination}
+                {
+                    "source_c_name": source,
+                    "destination_c_name": destination,
+                    "expected_destination_c_type": expected_destination_c_type,
+                }
                 for source, destination in mapping.items()
             ]
             if isinstance(mapping, dict)
             else list(mapping)
         )
+        for item in mapping_items:
+            if "expected_destination_c_type" not in item:
+                raise MammothValidationError(
+                    "Every mapping item needs `expected_destination_c_type` "
+                    "(TEXT, NUMERIC or DATE); the batches route rejects items without it.",
+                    {"mapping_item": item},
+                )
         body: dict[str, Any] = {
             "source_id": source_id,
             "mapping": mapping_items,

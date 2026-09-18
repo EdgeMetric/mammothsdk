@@ -625,14 +625,27 @@ def view_conditional_format_create(invocation: Invocation) -> HandlerResult:
 
 
 def view_conditional_format_delete_all(invocation: Invocation) -> HandlerResult:
-    """Delete all conditional-format rules on a dataview. Prompt or ``--yes``."""
+    """Delete a conditional-format rule on a dataview. Prompt or ``--yes``.
+
+    The release route deletes one rule per call and requires ``rule_id`` as a
+    query parameter (``view conditional-format list`` shows the ids).
+    """
     project_id = require_project(invocation)
     dataview_id = _require_int_positional_at(invocation, 0, "view id")
     document = invocation.load_input() or {}
+    rule_id = document.get("rule_id")
+    if rule_id is None:
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message="This command requires the 'rule_id' input field.",
+            exit_status=EXIT_USAGE,
+            hint="List rules with 'view conditional-format list VIEW_ID', then pass "
+            "--input '{\"rule_id\": ...}'.",
+        )
     enforce_confirmation(
         invocation,
         policy=POLICY_PROMPT_OR_YES,
-        action=f"delete all conditional-format rules on view {dataview_id}",
+        action=f"delete conditional-format rule {rule_id} on view {dataview_id}",
     )
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
@@ -640,6 +653,7 @@ def view_conditional_format_delete_all(invocation: Invocation) -> HandlerResult:
             _symbol(invocation),
             dataset_id=dataset_id,
             dataview_id=dataview_id,
+            rule_id=rule_id,
             project_id=project_id,
         )
     return data, _meta(invocation, auth.workspace_id, project_id)

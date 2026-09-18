@@ -452,8 +452,25 @@ def runnable_example(
         "view.task.update": ["mammoth", "view", "task", "update", "123", "123"],
     }
     if record["command_id"] in task_examples:
+        # COPY follows the backend param template (a list of SOURCE/AS items
+        # with VERSION 2); the former ``COPY: {}`` placeholder was rejected
+        # with backend code 720.
         task_input: dict[str, Any] = {
-            "task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": {}}
+            "task_spec": {
+                "DATAVIEW_ID": 123,
+                "SEQUENCE_NUMBER": 1,
+                "COPY": [
+                    {
+                        "SOURCE": "column_1",
+                        "AS": {
+                            "COLUMN": "Copy of column 1",
+                            "TYPE": "TEXT",
+                            "INTERNAL_NAME": "column_9",
+                        },
+                    }
+                ],
+                "VERSION": 2,
+            }
         }
         if record["command_id"] == "view.task.update":
             task_input["dataset_id"] = 456

@@ -537,9 +537,18 @@ class TestUsers:
 class TestWorkspaces:
     def test_workspace_list(self):
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"workspaces": []}
-        api.workspace_list()
-        mock_client._request_json.assert_called_once_with("GET", "/support/workspaces")
+        mock_client._request.return_value = {"workspaces": []}
+        result = api.workspace_list()
+        mock_client._request.assert_called_once_with(
+            "GET", "/support/workspaces", expected_response_shape="list_or_dict"
+        )
+        assert result == {"workspaces": []}
+
+    def test_workspace_list_wraps_bare_array(self):
+        # The release backend answers this route with a bare JSON array.
+        api, mock_client = _make_api()
+        mock_client._request.return_value = [{"id": 4}, {"id": 5}]
+        assert api.workspace_list() == {"workspaces": [{"id": 4}, {"id": 5}]}
 
     def test_workspace_get(self):
         api, mock_client = _make_api()
