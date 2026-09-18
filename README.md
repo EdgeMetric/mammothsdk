@@ -21,38 +21,11 @@ Copy-paste prompt for a shell-capable agent:
 Install the Mammoth CLI with:
 curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
 
-The installer also installs the bundled agent skill. Before doing any work,
-verify it with `mammoth skill list --output json --no-input`, locate it with
-`mammoth skill path --output json --no-input`, and read the installed
-`SKILL.md`.
-
-Authenticate before discovery or data operations. In an evaluated or isolated
-run with a controller-provided credential broker/sidecar, use that broker's
-readiness check; do not inspect saved profiles, run login, or run doctor, and
-stop if the broker is absent. Otherwise, check the selected profile with
-`mammoth auth status --output json --no-input` (a local presence check, not a
-live access test). If the profile or stored credentials are absent, do not ask for or paste
-secrets into this chat, a prompt, a task record, or a command line. For a human
-at a terminal, run `mammoth auth login` and answer its hidden prompts. For an
-agent or CI on POSIX, use a private owner-only (0600) JSON file outside the
-repository:
-`mammoth auth login --input /private/path/credentials.json --storage file --output json --no-input`.
-On Windows, use the approved OS keyring or credential broker instead; do not
-use a file fallback unless its ACL hardening is approved, and stop if neither
-is available.
-The default server prefix is `app`; use `--server-prefix release` only when
-that endpoint is explicitly intended. Never put API secrets in argv.
-
-In the ordinary shell path, run `mammoth doctor --output json --no-input` and
-stop to fix any reported auth, configuration, endpoint, or connectivity error.
-Discover the installed command surface with `mammoth schema find "TASK OR RESOURCE"
---output json --no-input`, then inspect a selected command with `mammoth
-schema get COMMAND_ID --output json --no-input`. Use `mammoth capability list
---output json --no-input` only as API-binding inventory; it can omit typed or
-local CLI routes.
-Resolve the exact workspace, project, dataset, and view scope from read
-results, use returned IDs and display names, and verify every mutation before
-reporting success.
+Find and read the bundled `SKILL.md` with `mammoth skill path`. Follow that
+skill to authenticate for the intended endpoint (`app` for production), verify
+the profile endpoint matches it, and run `mammoth doctor`. Do not reuse a
+mismatched release profile. Once it passes, use the skill to complete my task.
+Never put secrets in chat, prompts, task records, or command arguments.
 ```
 
 ## Installation

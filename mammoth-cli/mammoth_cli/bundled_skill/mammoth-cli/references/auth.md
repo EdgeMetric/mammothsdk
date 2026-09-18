@@ -13,9 +13,11 @@ override.
 
 ## Cold-start sequence
 
-For an ordinary operator, before any remote command, inspect authentication and
-then verify the connection. These checks are mandatory even when a profile may
-already exist:
+For an ordinary operator, identify the intended environment before any remote
+command. Production means the `app` endpoint by default; use `release` only
+when the task explicitly requests the release environment. Inspect
+authentication and then verify the connection. These checks are mandatory even
+when a profile may already exist:
 
 ```bash
 mammoth auth status --profile PROFILE --output json --no-input
@@ -30,16 +32,21 @@ mammoth auth status --profile PROFILE --output json --no-input
 ```
 
 `auth status` is a local profile/credential-presence check; it does not prove
-that credentials are valid remotely. After the profile is present, verify the
-live connection:
+that credentials are valid remotely. Compare its reported `endpoint` with the
+intended environment before proceeding. A profile for another endpoint is a
+scope mismatch: stop and select or authenticate the explicitly intended
+profile; do not silently reuse, rewrite, or promote it. After the profile is
+present and its endpoint matches, verify the live connection:
 
 ```bash
 mammoth doctor --profile PROFILE --output json --no-input
 ```
 
 Do not continue to schema discovery or business operations after an
-authentication or doctor failure. The `app` server prefix is the default;
-release or other environment credentials do not imply authorization for `app`.
+authentication or doctor failure. The `app` server prefix is the production
+default; release or other environment credentials do not imply authorization
+for `app`, and a release profile is not appropriate unless the task explicitly
+targets release.
 
 For an evaluated or isolated agent, do not run these profile commands: use the
 controller-provided credential broker/sidecar check instead. Never mount or

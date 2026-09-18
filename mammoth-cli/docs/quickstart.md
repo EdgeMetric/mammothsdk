@@ -20,11 +20,17 @@ mammoth skill list --output json --no-input
 mammoth skill path --output json --no-input
 # Check whether the selected profile and stored credentials are present.
 mammoth auth status --output json --no-input
+# Compare the reported endpoint with the intended target before doctor:
+# app is production; release is only for an explicitly intended release run.
 # Human terminal only, if status shows no usable credentials:
 mammoth auth login
 mammoth doctor --output json --no-input
 mammoth project list --output json --no-input
 ```
+
+If the status endpoint is not the intended target, stop before `doctor` and
+select or create a separate profile for the correct endpoint. Do not reuse a
+production profile for release (or vice versa).
 
 Select an authorized project and pass it explicitly on subsequent commands:
 

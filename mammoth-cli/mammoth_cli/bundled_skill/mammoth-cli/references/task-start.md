@@ -31,18 +31,22 @@ non-evaluated operator use.
    or isolated run, do not inspect a saved profile and do not run `auth login`:
    use the controller-provided credential broker/sidecar check. If it is not
    provided, stop before authenticated actions. The remaining instructions in
-   this step are for ordinary operator runs only. First inspect the selected
-   profile without attempting business work:
+   this step are for ordinary operator runs only. Determine the intended
+   environment from the task first: production defaults to the `app` endpoint;
+   use `release` only when the task explicitly names release. Then inspect the
+   selected profile without attempting business work:
 
    ```bash
    mammoth auth status --output json --no-input
    ```
 
-   If the status says the profile or credentials are missing, follow
-   [authentication](auth.md) to log in using a hidden interactive prompt or a
-   protected input file. Never invent a profile, put credentials in chat, or
-   put secrets in argv. After login (or when an existing profile is present),
-   run the connectivity and configuration check and require success:
+   Compare the status response's `endpoint` with the intended environment. If
+   the profile or credentials are missing, or the endpoint is for another
+   environment, stop and follow [authentication](auth.md) to select or log in
+   to the explicitly intended profile. Never silently reuse or rewrite a
+   mismatched profile, invent a profile, put credentials in chat, or put
+   secrets in argv. After login (or when an existing, matching profile is
+   present), run the connectivity and configuration check and require success:
 
    ```bash
    mammoth doctor --profile PROFILE --output json --no-input

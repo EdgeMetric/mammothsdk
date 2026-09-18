@@ -58,6 +58,8 @@ mammoth skill list --output json --no-input
 mammoth skill path --output json --no-input
 # Read the installed SKILL.md before operating.
 mammoth auth status --output json --no-input
+# Compare the reported endpoint with the intended target before doctor.
+# Use app for production; use release only when explicitly intended.
 # Human terminal only, if profile or stored credentials are absent:
 mammoth auth login
 # Then verify configuration, credentials, endpoint, and connectivity:
@@ -83,7 +85,9 @@ use a file fallback unless its ACL hardening is approved, and stop if neither
 is available.
 
 The default server prefix is `app`; pass `--server-prefix release` only when
-the release endpoint is explicitly intended. See
+the release endpoint is explicitly intended. Compare the endpoint reported by
+`auth status` with the intended target before running `doctor`; if it does not
+match, stop and switch to a separate correctly configured profile. See
 [Authentication](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/authentication.md)
 for the required JSON fields and profile behavior. After `doctor` succeeds,
 resolve the exact workspace, project, dataset, and view from read results

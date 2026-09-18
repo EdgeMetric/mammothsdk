@@ -33,6 +33,12 @@ Start with a read-only status check:
 mammoth auth status --output json --no-input
 ```
 
+Compare the status report's endpoint with the intended target before running
+`doctor`: use the default `app` endpoint for production, and use `release` only
+when release is explicitly intended. If the endpoint is wrong, stop and switch
+to a separate correctly configured profile; do not run `doctor` or business
+commands against the mismatched profile.
+
 If the selected profile is missing or has no credentials, log in. A successful
 status alone does not prove the credentials remain usable; run `doctor` after
 login or before work with a saved profile. Do not continue to discovery or a
@@ -169,6 +175,11 @@ endpoint in use. Add `--check` to test a live authenticated request:
 ```bash
 mammoth auth status --check
 ```
+
+Treat the reported endpoint as a preflight value, not a cosmetic detail: it
+must match the intended target before `doctor`. Production uses `app`; `release`
+requires explicit intent and should use its own profile. On a mismatch, stop,
+select or create the separate correct profile, and recheck its status first.
 
 After a successful status or login, run `mammoth doctor`; it reports
 configuration and connectivity without displaying secrets. If status, login, or
