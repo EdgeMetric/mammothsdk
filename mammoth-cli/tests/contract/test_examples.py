@@ -23,7 +23,15 @@ def test_all_examples_start_with_command_path() -> None:
         if record.get("disposition") == "alias":
             continue
         path_tokens = record["command_path"].split()
+        safe_schema_handoff = (
+            f"mammoth schema get {record['command_id']} --output json --no-input"
+        )
         for key in ("human_example", "agent_example"):
+            if key == "agent_example" and record[key] == safe_schema_handoff:
+                # A deliberately blocked raw request shape hands the agent to
+                # the schema lookup instead of advertising a runnable payload.
+                assert str(record.get("known_restrictions", "")).startswith("BLOCKED[")
+                continue
             tokens = shlex.split(record[key])[1:]
             assert tokens[: len(path_tokens)] == path_tokens, f"{record['command_id']}.{key}"
 

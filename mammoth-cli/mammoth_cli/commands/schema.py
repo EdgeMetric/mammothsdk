@@ -35,6 +35,10 @@ from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
 from mammoth_cli.services.type_system import is_opaque_mapping, json_schema, sample_value
 
 _OUTPUT_JSON_NO_INPUT = ("--output", "json", "--no-input")
+# A command whose request carries a secret never gets an inline JSON example:
+# the published example points at a protected owner-only file instead, so no
+# generated or copied command line ever puts a credential in argv.
+_PROTECTED_INPUT_PATH = "/private/path/request.json"
 _OPAQUE_EXPERT_COMMANDS = frozenset({"view.task.add", "view.task.preview", "view.task.update"})
 _TYPED_TRANSFORM_ALTERNATIVES = [
     "view.transform.filter",
@@ -565,7 +569,10 @@ def runnable_example(
         # cannot express supplies the missing accepted field here, so the
         # documented example is actually runnable rather than just well-formed.
         document.update(hints)
-        tokens.extend(["--input", json.dumps(document)])
+        if set(record.get("secret_fields") or ()).intersection(document):
+            tokens.extend(["--input", _PROTECTED_INPUT_PATH])
+        else:
+            tokens.extend(["--input", json.dumps(document)])
     tokens.extend(_OUTPUT_JSON_NO_INPUT)
     if record["command_id"] in {"project.user.update", "data-app.share"}:
         # These published high-impact examples must satisfy the same policy

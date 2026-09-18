@@ -1,5 +1,23 @@
 # CLI release provenance
 
+## 2.0.7 / SDK 0.7.3
+
+This CLI-only discovery-contract correction makes `schema get` and the
+generated reference publish a protected `--input /private/path/request.json`
+reference, instead of an inline `replace-with-secret` JSON body, for the
+fourteen commands whose required request fields carry a secret
+(`file.set-password`, `user.change-password`, `workspace.accept-invite`, and
+eleven credentialed `view.export.*` targets). It also corrects the recorded
+SDK signatures of `JobsAPI.get_job` and `JobsAPI.get_jobs` to the published
+`mammoth-io` 0.7.3 (`timeout: float | None = None`), so discovery output and
+introspection agree. Contract tests now accept the deliberate schema hand-off
+example for blocked raw-patch commands (`dataset.update`, `view.update`) and
+the manual-dispatch publication policy. It retains `mammoth-io>=0.7.3,<0.8`,
+adds no API bindings or request-execution path, and makes no
+capability-status or autonomous-workflow qualification claim.
+
+Publication hashes are recorded after upload.
+
 ## 2.0.6 / SDK 0.7.3
 
 This CLI-only bundled-skill and documentation correction closes the agent

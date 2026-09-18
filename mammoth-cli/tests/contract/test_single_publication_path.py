@@ -3,7 +3,7 @@
 This monorepo ships THREE PyPI distributions — ``mammoth-io`` (repo root),
 ``mammoth-cli`` (``mammoth-cli/``), and ``mammoth-mcp`` (``mammoth-mcp/``). The
 release design is that each is published by EXACTLY ONE tag-triggered workflow
-and by no other path:
+and by no other path (currently dispatched manually; see the trigger test):
 
 * ``mammoth-io``  -> ``sdk-release.yml`` (tag ``sdk-v*``)
 * ``mammoth-cli`` -> ``cli-release.yml`` (tag ``cli-v*``; also cuts a GitHub Release)
@@ -163,18 +163,27 @@ def test_no_publisher_is_triggered_by_a_release_event() -> None:
 
 
 def test_publishers_trigger_only_on_tag_pushes() -> None:
-    """Publishers trigger on tag pushes, not branch pushes or pull requests."""
+    """Publishers start only from a tag push or an explicit manual dispatch.
+
+    Manual ``workflow_dispatch`` is the release owner's current policy (Actions
+    are disabled repository-wide and every release is dispatched by hand). It
+    satisfies the invariant this guard exists for: nothing publishes on a
+    branch push, a pull request, or a ``release:`` event.
+    """
     for name, doc in _publishing_workflows().items():
         section = _trigger_section(doc)
         assert isinstance(section, dict), f"{name}: unexpected `on:` shape {section!r}"
-        assert "push" in section, f"{name}: publisher must trigger on a push"
-        push = section["push"]
-        assert isinstance(push, dict) and "tags" in push, (
-            f"{name}: publisher must trigger on tag pushes (`push: tags: [...]`), got {push!r}"
+        assert "push" in section or "workflow_dispatch" in section, (
+            f"{name}: publisher must trigger on a tag push or a manual dispatch"
         )
-        assert "branches" not in push, (
-            f"{name}: publisher must not trigger on branch pushes, got {push!r}"
-        )
+        if "push" in section:
+            push = section["push"]
+            assert isinstance(push, dict) and "tags" in push, (
+                f"{name}: publisher must trigger on tag pushes (`push: tags: [...]`), got {push!r}"
+            )
+            assert "branches" not in push, (
+                f"{name}: publisher must not trigger on branch pushes, got {push!r}"
+            )
         assert "pull_request" not in section, (
             f"{name}: publisher must not trigger on pull_request"
         )
