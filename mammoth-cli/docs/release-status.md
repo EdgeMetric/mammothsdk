@@ -14,7 +14,16 @@ check states that write access is not verifiable and is proven by the
 first write. It retains `mammoth-io>=0.7.3,<0.8`, adds no API bindings, and
 makes no capability-status or autonomous-workflow qualification claim.
 
-Publication hashes are recorded after upload.
+Published from deterministic local artifacts built from tag `cli-v2.0.11`
+(source commit `ac1806a`). PyPI reports the uploaded local artifact hashes:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `577f86b333981d72e7c19fa2e349a84e35ae0dde10c069ba709b369bdced7165` |
+| Source distribution | `68249f9dcefcdd7e401e17b3a65dc959d8b2680792b706f2907ddf8ff958f8be` |
+
+Before upload, the full non-live suite at the release source recorded
+3,861 passed, 2 skipped, 7 deselected; Ruff, mypy, and `twine check` passed.
 
 ## 2.0.10 / SDK 0.7.3
 
