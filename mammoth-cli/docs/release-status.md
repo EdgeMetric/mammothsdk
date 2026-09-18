@@ -29,7 +29,18 @@ schema admits. The CLI requires `mammoth-io>=0.7.5,<0.8`, adds no API
 bindings, and makes no capability-status or autonomous-workflow
 qualification claim.
 
-Publication hashes are recorded after upload.
+Published from deterministic local artifacts built from tag `cli-v2.0.13`
+(source commit `4600720`). PyPI reports the uploaded local artifact hashes:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `2818c1dbc767205531e5c82ab24abdbb0a4df8f9e81437db6201433f7b4a1219` |
+| Source distribution | `cc37db4906529c890c89346c3197d5bfc5a0fd3a0beeb2f9660ce903aa831800` |
+
+Before upload, the full non-live suite at the release source recorded
+3,881 passed plus the 6 tests touched afterwards re-run green (3,887 total),
+2 skipped, 7 deselected; SDK unit suite 1,824 passed; Ruff, mypy, and
+`twine check` passed.
 
 ## 2.0.12 / SDK 0.7.4
 
