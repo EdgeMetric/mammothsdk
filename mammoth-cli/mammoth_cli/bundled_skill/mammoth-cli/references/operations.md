@@ -9,6 +9,13 @@ wait policy, known restrictions, and recovery/verification metadata. Read the
 schema immediately before composing a request because support and fields can
 vary by release, profile, or backend.
 
+`schema find`/`schema get`/`schema list` read the installed manifest. They
+need no project and no stored credentials. `dataset list`, `folder list`, and
+`view list` call the live API and are scoped to one project through
+`--project`. `dataset find NAME` and `folder find NAME` search every project
+the credential can see (or one, with `--project`); they still need
+credentials because they call the live API.
+
 ```bash
 mammoth capability find "transform" --output json --no-input
 mammoth capability find "pipeline" --output json --no-input
@@ -30,6 +37,11 @@ mammoth schema find "lookup" --output json --no-input
 mammoth schema find "fill missing" --output json --no-input
 mammoth schema find "replace" --output json --no-input
 ```
+
+There is no pipeline `union`/`append` transform. `join` and `lookup` are the
+typed routes for combining views. Appending rows is a dataset-level
+operation: upload into the existing dataset with `file upload --input
+'{"append_to_ds_id": DATASET_ID}'`, not a view transform.
 
 Use the exact returned command ID, then read its schema and the current view
 schema before composing input. For row-oriented sources such as OWID files,
@@ -82,6 +94,14 @@ Draft mode is server-side batching for view pipeline edits. Enter, inspect
 status, submit, and verify pipeline state; discard only with the required
 confirmation. A draft submit result is not proof that every intended task was
 applied.
+
+## Response shapes
+
+Response shapes are not uniform; never reuse one `jq` path across commands.
+`dataset get` returns `data.dataset.{...}`. `dataset list` returns
+`data.datasets[]`. `project list` returns `data.projects[]`. Every other
+command returns its object directly under `data`. Inspect the first response
+before extracting a field.
 
 ## Exports
 

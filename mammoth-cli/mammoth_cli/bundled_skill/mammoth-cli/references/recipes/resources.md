@@ -1,5 +1,11 @@
 # Files, URL imports, datasets, views and settings
 
+Uploads and dataset creation return a dataset id, not a view id. Every
+pipeline transform, `join`'s `foreign_view`, export, and preview needs a view
+id instead. Run `view list DATASET_ID --project PROJECT_ID` to get it. Do not
+dig through `dataset get` and its `dependencies` field for a view id; `view
+list` is the supported route.
+
 Discover exact contracts, then upload and read back explicit parents:
 
 ```bash
