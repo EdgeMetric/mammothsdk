@@ -20,6 +20,8 @@ from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
 from mammoth_cli.output.render import render
+from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.runlog import RunLog
 from mammoth_cli.services.mapping import map_sdk_exception
 
 Producer = Callable[[], tuple[Any, dict[str, Any]]]
@@ -129,8 +131,14 @@ def run(
     *,
     agent_mode: bool = False,
     profile: str | None = None,
+    invocation: Invocation | None = None,
 ) -> None:
     """Run one command's producer and emit its envelope.
+
+    When ``invocation`` is given a run log is opened for the command
+    (:mod:`mammoth_cli.runtime.runlog`): SDK request and job records are
+    captured while ``producer`` runs, the outcome is recorded, and an error
+    envelope carries ``log_ref`` so the failure can be traced.
 
     Args:
         command_id: The manifest command id driving this invocation.
@@ -155,24 +163,49 @@ def run(
     machine_error = output in MACHINE_OUTPUTS or (
         output not in VALID_OUTPUTS and (agent_mode or not sys.stdout.isatty())
     )
+    run_log = _open_run_log(command_id, invocation)
+
+    def fail(error: CliError) -> None:
+        if run_log is not None:
+            error.log_ref = run_log.ref
+            run_log.finish(error.exit_status, error_code=error.code)
+        emit_error(error, machine=machine_error, output=output)
+
     try:
         _validate_output(output)
         data, meta_extra = producer()
         emit_success(command_id, data, output, **meta_extra)
     except CliError as error:
-        emit_error(error, machine=machine_error, output=output)
+        fail(error)
         raise typer.Exit(error.exit_status) from None
     except KeyboardInterrupt as exc:
         # Polling can be interrupted after a job handle was observed.  Keep
         # that handle when an SDK exception exposes one; never turn Ctrl-C
         # into a successful/empty result or a Python traceback.
         mapped_error = _profile_scope_recovery(map_sdk_exception(exc), profile)
-        emit_error(mapped_error, machine=machine_error, output=output)
+        fail(mapped_error)
         raise typer.Exit(mapped_error.exit_status) from None
     except Exception as exc:
         # Bespoke handlers should normally cross the SDK service seam, but a
         # malformed response or filesystem fault must still obey the same
         # machine envelope rather than leaking an implementation traceback.
         mapped_error = _profile_scope_recovery(map_sdk_exception(exc), profile)
-        emit_error(mapped_error, machine=machine_error, output=output)
+        fail(mapped_error)
         raise typer.Exit(mapped_error.exit_status) from None
+    if run_log is not None:
+        run_log.finish(0)
+
+
+def _open_run_log(command_id: str, invocation: Invocation | None) -> RunLog | None:
+    """Open the run log for ``invocation``; never let logging break a command."""
+    if invocation is None:
+        return None
+    try:
+        return RunLog.start(
+            command_id,
+            profile=invocation.profile,
+            project_id=invocation.project,
+            debug=invocation.debug,
+        )
+    except Exception:
+        return None

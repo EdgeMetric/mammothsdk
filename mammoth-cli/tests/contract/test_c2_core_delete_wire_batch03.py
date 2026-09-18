@@ -125,7 +125,8 @@ def test_delete_batch03_emits_exact_method_path_query_and_no_body(
         {"ids": ["17,18"]},
         None,
     )
-    run(project, "project.delete", [str(PROJECT)])
+    # A project delete cascades, so it is confirm_target: --confirm must name it.
+    run(project, "project.delete", [str(PROJECT)], confirm=str(PROJECT))
     assert (_path(api), api.last().method, api.last().query, api.last().json_body) == (
         f"/workspaces/4/projects/{PROJECT}",
         "DELETE",

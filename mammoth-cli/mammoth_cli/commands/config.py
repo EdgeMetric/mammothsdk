@@ -198,6 +198,7 @@ def config_get(
         invocation.output,
         producer,
         agent_mode=invocation.no_input,
+        invocation=invocation,
     )
 
 
@@ -251,6 +252,7 @@ def config_set(
         invocation.output,
         producer,
         agent_mode=invocation.no_input,
+        invocation=invocation,
     )
 
 
@@ -295,6 +297,7 @@ def config_list(
         invocation.output,
         producer,
         agent_mode=invocation.no_input,
+        invocation=invocation,
     )
 
 
@@ -337,4 +340,5 @@ def config_path(
         invocation.output,
         producer,
         agent_mode=invocation.no_input,
+        invocation=invocation,
     )

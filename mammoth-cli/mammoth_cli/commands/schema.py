@@ -945,6 +945,9 @@ def get_schema(command_id: str) -> dict[str, Any] | None:
         # inventory lookup before deciding whether it may dispatch.
         "mutation_class": record["mutation_class"],
         "confirmation": record["confirmation"],
+        # Named so a caller knows which fields must arrive through a protected
+        # ``--input FILE`` rather than an inline document or argv.
+        "secret_fields": list(record.get("secret_fields") or ()),
         "wait_policy": record["wait_policy"],
         "pagination_policy": record["pagination_policy"],
         "human_example": record["human_example"],

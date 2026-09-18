@@ -68,6 +68,7 @@ _GROUP_DESCRIPTIONS = {
     "completion": "Install or print shell completion.",
     "config": "Read and update local CLI configuration.",
     "connector": "Manage data connectors and connector profiles.",
+    "log": "Locate and read the local run log.",
     "context": "Inspect and select the active project context.",
     "dashboard": "Build, query, and publish dashboards.",
     "data-app": "Create and manage data applications.",
@@ -135,6 +136,7 @@ _ROOT_HELP_PANELS = {
     "config": "CLI and agent tools",
     "completion": "CLI and agent tools",
     "skill": "CLI and agent tools",
+    "log": "CLI and agent tools",
     "upgrade": "CLI and agent tools",
     "version": "CLI and agent tools",
 }
@@ -782,6 +784,7 @@ def _execute(invocation: Invocation) -> None:
         invocation.output,
         producer,
         agent_mode=invocation.no_input,
+        invocation=invocation,
         profile=invocation.profile,
     )
 

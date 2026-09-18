@@ -269,6 +269,14 @@ _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("scope", required=False, annotation=str, default="user"),
         FieldSpec("force", required=False, annotation=bool, default=False),
     ),
+    "log.path": (),
+    "log.tail": (
+        FieldSpec("days", required=False, annotation=int, default=1),
+        FieldSpec("limit", required=False, annotation=int, default=50),
+        FieldSpec("errors_only", required=False, annotation=bool, default=False),
+        FieldSpec("command_id", required=False, annotation=str | None, default=None),
+        FieldSpec("run_id", required=False, annotation=str | None, default=None),
+    ),
     "skill.list": (),
     "skill.path": (
         FieldSpec("agents", required=False, annotation=list[str] | None, default=None),
@@ -328,6 +336,8 @@ _LOCAL_COMMANDS = frozenset(
         "dataset.find",
         "doctor",
         "folder.find",
+        "log.path",
+        "log.tail",
         "schema.find",
         "schema.get",
         "schema.list",

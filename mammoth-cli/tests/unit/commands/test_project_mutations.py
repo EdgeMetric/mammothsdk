@@ -70,8 +70,22 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
     assert fake_service.call_log == []
 
 
-def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    project_cmd.project_delete(_inv("project.delete", extra_args=["5"], yes=True))
+def test_delete_requires_the_exact_project_as_confirm_target(
+    fake_service: FakeMammothService,
+) -> None:
+    # A project delete cascades; --yes alone (or the wrong id) is not enough.
+    with pytest.raises(CliError) as excinfo:
+        project_cmd.project_delete(_inv("project.delete", extra_args=["5"], yes=True))
+    assert excinfo.value.code == "confirmation_target_mismatch"
+    with pytest.raises(CliError):
+        project_cmd.project_delete(_inv("project.delete", extra_args=["5"], yes=True, confirm="6"))
+    assert fake_service.call_log == []
+
+
+def test_delete_proceeds_with_yes_and_matching_confirm(
+    fake_service: FakeMammothService,
+) -> None:
+    project_cmd.project_delete(_inv("project.delete", extra_args=["5"], yes=True, confirm="5"))
     assert fake_service.call_log == [(_DELETE, {"project_id": 5})]
 
 

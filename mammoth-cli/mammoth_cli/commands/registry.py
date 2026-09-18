@@ -57,6 +57,7 @@ from mammoth_cli.commands import workflow as workflow_cmd
 from mammoth_cli.commands import workspace as workspace_cmd
 from mammoth_cli.errors.envelope import CODE_MISSING_ARGUMENT, EXIT_USAGE, CliError
 from mammoth_cli.manifest.loader import load_commands
+from mammoth_cli.runtime import runlog
 from mammoth_cli.runtime.invocation import Invocation
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -140,8 +141,28 @@ def _schema_find(invocation: Invocation) -> HandlerResult:
     return schema_cmd.find_schemas(query), {}
 
 
+def _log_path(_: Invocation) -> HandlerResult:
+    """Show the run-log directory, today's file, and the days kept."""
+    return runlog.log_path(), {}
+
+
+def _log_tail(invocation: Invocation) -> HandlerResult:
+    """Read recent run-log records; filter with 'errors_only', 'command_id', 'run_id', 'days'."""
+    document = invocation.bound_input()
+    records = runlog.read_records(
+        days=int(document.get("days", 1)),
+        limit=int(document.get("limit", 50)),
+        errors_only=bool(document.get("errors_only", False)),
+        command_id=document.get("command_id"),
+        run_id=document.get("run_id"),
+    )
+    return {"records": records, "count": len(records)}, {}
+
+
 HANDLERS: dict[str, Handler] = {
     "version": _version,
+    "log.path": _log_path,
+    "log.tail": _log_tail,
     "doctor": doctor_cmd.doctor,
     "completion.show": completion_cmd.completion_show,
     "completion.install": completion_cmd.completion_install,

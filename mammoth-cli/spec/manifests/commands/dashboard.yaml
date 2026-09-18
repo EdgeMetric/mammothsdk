@@ -685,8 +685,8 @@ commands:
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.create_blank with validated request fields.
   request_model: DashboardCreateBlankRequest
   result_model: DashboardCreateBlankResult
-  mutation_class: destructive
-  confirmation: prompt_or_yes
+  mutation_class: benign_mutation
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture

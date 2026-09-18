@@ -39,6 +39,15 @@ _CLOSED_ZERO_INPUT_COMMANDS = frozenset({"config.get"})
 #: value here is a genuine, accepted --input field so the documented example both
 #: validates against the input schema and works when run.
 _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
+    # Every field is optional; the useful call narrows to failures.
+    "log.tail": {"errors_only": True, "limit": 20},
+    # The signature marks the target column and the condition optional, but a
+    # SET with neither ``existing_column`` nor ``new_column`` has no target and
+    # an unconditional SET rewrites every row; show the verified conditional form.
+    "view.transform.set-values": {
+        "existing_column": "Status",
+        "condition": {"column": "Status", "operator": "IS_EMPTY"},
+    },
     # The backend requires integer resource ids ("resource_ids must be
     # comma-separated integers"); the SDK annotation is a plain list[str].
     "project.resource-dependencies": {"resource_ids": [456]},

@@ -4595,7 +4595,9 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view transform set-values VIEW_ID --help
-  agent_example: 'mammoth view transform set-values 123 --input ''{"values": [{"value": "sample"}], "dataset_id": 456}'' --output json --no-input'
+  agent_example: 'mammoth view transform set-values 123 --input ''{"values": [{"value": "sample"}], "existing_column":
+    "Status", "condition": {"column": "Status", "operator": "IS_EMPTY"}, "dataset_id": 456}'' --output json
+    --no-input'
   unit_tests:
   - UT-VIEW-TRANSFORM-SET-VALUES
   contract_tests:

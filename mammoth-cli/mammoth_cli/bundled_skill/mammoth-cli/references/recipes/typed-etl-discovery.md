@@ -1,12 +1,7 @@
 # Typed ETL discovery
 
-There is no pipeline union or append transform. `join` and `lookup` are the
-typed routes for combining views; neither appends rows across two views.
-Appending rows is a dataset-level operation: upload into the existing dataset
-with `mammoth file upload FILE --project PROJECT_ID --input
-'{"append_to_ds_id": DATASET_ID}' --output json --no-input`. Confirm the exact
-field name first with `mammoth schema get file.upload --output json
---no-input`; do not guess a `union`/`append` command id.
+For union/append and how to combine or append across views, see
+[operations](../operations.md).
 
 Start with typed transforms rather than raw `view task` payloads:
 

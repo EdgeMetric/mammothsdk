@@ -1,5 +1,6 @@
 ---
 name: mammoth-cli
+version: 2.0.18
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines, dashboards, exports, and handoffs."
 ---
 
@@ -46,10 +47,19 @@ the result.
 - Resolve workspace/project/dataset/view parents from reads; pass observed IDs
   and `--project`. A dataset does not select a default view. Every `view`
   command that changes, exports, or deletes data requires the exact parent
-  `DATASET_ID`: `view transform *` and `view draft *` take it as the
-  `dataset_id` input field, every other `view` command as the trailing
-  positional after `VIEW_ID`; only reads may omit it and discover the parent.
-  Get it from `mammoth view get VIEW_ID`.
+  `DATASET_ID`. Where it goes depends on the family: `view delete`, `view
+  data get`, `view preview`, `view get`, `view derivative *`, `view
+  conditional-format *`, `view data-check *`, `view checkpoint *`, `view
+  export list` and the typed destination exports (`view export
+  postgres|s3|dataset|...`) take it as the trailing positional after
+  `VIEW_ID`; `view transform *`, `view draft *`, `view task *`, `view
+  pipeline *` (except `items-all`), `view export csv` and the generic `view
+  export create|get|update|delete|publish-db*` take it as the `dataset_id`
+  input field. `schema get COMMAND_ID` shows which (`positionals` vs
+  `accepted_fields`);
+  reads may omit it and discover the parent. You already have it from the
+  upload result or `view list DATASET_ID`; otherwise `mammoth dataset get
+  DATASET_ID` or `mammoth view get VIEW_ID DATASET_ID`.
 - Uploads and dataset creation return a **dataset** id. Transforms, joins,
   exports, and previews need a **view** id: run `view list DATASET_ID
   --project PROJECT_ID` to get it. See
@@ -64,8 +74,16 @@ the result.
   should have touched and rows it should not have. A uniform result (every
   amount 0, every region "Unknown", most join rows unmatched) is a signal
   that the previous step went wrong, not a fact about the source data: stop
-  and re-inspect that step before building anything on it.
+  and re-inspect that step before building anything on it. Sample the target
+  column *before* a value-changing step so the after-read has something to
+  compare against.
+- Before reporting any number or declaring a step done, run the
+  [report checklist](references/report-checklist.md).
+- When files in this skill disagree, [capabilities](references/capabilities.md)
+  wins over a recipe, and a recipe wins over the generated command catalog.
 - Keep secrets out of argv, task notes, checkpoints, logs, and responses.
+  A command whose schema lists `secret_fields` takes `--input FILE` (mode
+  0600), never an inline document.
 - Preserve requested deliverables. Cleanup is exact-ID authorized and never means delete-all-owned-resources.
 
 ## Route only what the task needs
@@ -74,14 +92,18 @@ the result.
 - **Login, profiles, and authorized scope:** [auth](references/auth.md)
 - **Nested input, output envelopes, confirmations, jobs, or recovery:**
   [input](references/input.md), [machine output](references/machine-output.md),
-  [safety](references/safety.md), [jobs and drafts](references/jobs-drafts.md),
-  or [recovery](references/recovery.md)
+  [safety](references/safety.md), or [jobs and drafts](references/jobs-drafts.md)
 - **Import, resources, transforms, pipelines, dashboards, exports, or cleanup:**
-  [recipes](references/recipes/index.md) and [operations](references/operations.md)
-- **A known command family or exact command:** [command catalog](references/command-index.md),
-  then check the same command in [capabilities](references/capabilities.md)
-  before composing input from its example (the catalog lists retired and
-  blocked routes with the same wording as working ones)
+  [recipes](references/recipes/index.md)
+- **Which id is which, appending rows, response shapes, and other one-off
+  rules:** [operations](references/operations.md)
+- **Something failed or you are unsure whether to continue:**
+  [recovery](references/recovery.md) — failure modes by message and the
+  stop-condition list
+- **A known command family or exact command:** [command catalog](references/command-index.md)
+  — a lookup for the one command you need, not upfront reading; each entry
+  carries its release status line, and a `not supported` or `observed
+  blocker` entry names the route to use instead
 - **Whether a route is proven, known-blocked, or untried on release:**
   [capabilities](references/capabilities.md) — read it before promising a
   deliverable or reporting a failure as a backend fault

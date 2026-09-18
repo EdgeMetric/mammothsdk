@@ -1,12 +1,16 @@
 # `support` commands
 
+Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it, *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
+
 ### `support.connector-profile.add-connector`
 
 Run: `mammoth support connector-profile add-connector`. Exact input fields: `mammoth schema get support.connector-profile.add-connector --output json --no-input`.
 
 Example: `mammoth support connector-profile add-connector 123 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportConnectorProfileAddConnectorResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportConnectorProfileAddConnectorResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.connector-profile.create`
 
@@ -14,7 +18,9 @@ Run: `mammoth support connector-profile create`. Exact input fields: `mammoth sc
 
 Example: `mammoth support connector-profile create 'Revenue report' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportConnectorProfileCreateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportConnectorProfileCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.connector-profile.delete`
 
@@ -22,7 +28,9 @@ Run: `mammoth support connector-profile delete`. Exact input fields: `mammoth sc
 
 Example: `mammoth support connector-profile delete 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportConnectorProfileDeleteResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportConnectorProfileDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.connector-profile.list`
 
@@ -30,7 +38,9 @@ Run: `mammoth support connector-profile list`. Exact input fields: `mammoth sche
 
 Example: `mammoth support connector-profile list --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportConnectorProfileListResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportConnectorProfileListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.connector_profiles Single invocation only.
 
 ### `support.connector-profile.update`
 
@@ -38,7 +48,9 @@ Run: `mammoth support connector-profile update`. Exact input fields: `mammoth sc
 
 Example: `mammoth support connector-profile update 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportConnectorProfileUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportConnectorProfileUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.connector.create`
 
@@ -46,7 +58,9 @@ Run: `mammoth support connector create`. Exact input fields: `mammoth schema get
 
 Example: `mammoth support connector create 'Revenue report' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportConnectorCreateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportConnectorCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.connector.delete`
 
@@ -54,7 +68,9 @@ Run: `mammoth support connector delete`. Exact input fields: `mammoth schema get
 
 Example: `mammoth support connector delete 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportConnectorDeleteResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportConnectorDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.connector.list`
 
@@ -62,7 +78,9 @@ Run: `mammoth support connector list`. Exact input fields: `mammoth schema get s
 
 Example: `mammoth support connector list --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportConnectorListResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportConnectorListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.connectors Single invocation only.
 
 ### `support.connector.update`
 
@@ -70,7 +88,9 @@ Run: `mammoth support connector update`. Exact input fields: `mammoth schema get
 
 Example: `mammoth support connector update 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportConnectorUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportConnectorUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.feature-profile.add-feature`
 
@@ -78,7 +98,9 @@ Run: `mammoth support feature-profile add-feature`. Exact input fields: `mammoth
 
 Example: `mammoth support feature-profile add-feature 123 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportFeatureProfileAddFeatureResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportFeatureProfileAddFeatureResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.feature-profile.create`
 
@@ -86,7 +108,9 @@ Run: `mammoth support feature-profile create`. Exact input fields: `mammoth sche
 
 Example: `mammoth support feature-profile create 'Revenue report' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportFeatureProfileCreateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportFeatureProfileCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.feature-profile.delete`
 
@@ -94,7 +118,9 @@ Run: `mammoth support feature-profile delete`. Exact input fields: `mammoth sche
 
 Example: `mammoth support feature-profile delete 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportFeatureProfileDeleteResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportFeatureProfileDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.feature-profile.list`
 
@@ -102,7 +128,9 @@ Run: `mammoth support feature-profile list`. Exact input fields: `mammoth schema
 
 Example: `mammoth support feature-profile list --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportFeatureProfileListResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportFeatureProfileListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.feature_profiles Single invocation only.
 
 ### `support.feature-profile.update`
 
@@ -110,7 +138,9 @@ Run: `mammoth support feature-profile update`. Exact input fields: `mammoth sche
 
 Example: `mammoth support feature-profile update 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportFeatureProfileUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportFeatureProfileUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.feature.create`
 
@@ -118,7 +148,9 @@ Run: `mammoth support feature create`. Exact input fields: `mammoth schema get s
 
 Example: `mammoth support feature create 'Revenue report' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportFeatureCreateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportFeatureCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.feature.delete`
 
@@ -126,7 +158,9 @@ Run: `mammoth support feature delete`. Exact input fields: `mammoth schema get s
 
 Example: `mammoth support feature delete 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportFeatureDeleteResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportFeatureDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.feature.list`
 
@@ -134,7 +168,9 @@ Run: `mammoth support feature list`. Exact input fields: `mammoth schema get sup
 
 Example: `mammoth support feature list --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportFeatureListResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportFeatureListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.features Single invocation only.
 
 ### `support.feature.update`
 
@@ -142,7 +178,9 @@ Run: `mammoth support feature update`. Exact input fields: `mammoth schema get s
 
 Example: `mammoth support feature update 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportFeatureUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportFeatureUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.ownership.transfer`
 
@@ -150,7 +188,9 @@ Run: `mammoth support ownership transfer`. Exact input fields: `mammoth schema g
 
 Example: `mammoth support ownership transfer 123 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportOwnershipTransferResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportOwnershipTransferResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.plan.archive`
 
@@ -158,7 +198,9 @@ Run: `mammoth support plan archive`. Exact input fields: `mammoth schema get sup
 
 Example: `mammoth support plan archive 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportPlanArchiveResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportPlanArchiveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.plan.chargebee-list`
 
@@ -166,7 +208,9 @@ Run: `mammoth support plan chargebee-list`. Exact input fields: `mammoth schema 
 
 Example: `mammoth support plan chargebee-list --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportPlanChargebeeListResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportPlanChargebeeListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.available_plans Single invocation only.
 
 ### `support.plan.create`
 
@@ -174,7 +218,9 @@ Run: `mammoth support plan create`. Exact input fields: `mammoth schema get supp
 
 Example: `mammoth support plan create 'Revenue report' --input '{"monthly_price": 1.0, "is_self_serve": true}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportPlanCreateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportPlanCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.plan.delete`
 
@@ -182,7 +228,9 @@ Run: `mammoth support plan delete`. Exact input fields: `mammoth schema get supp
 
 Example: `mammoth support plan delete 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportPlanDeleteResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportPlanDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.plan.get`
 
@@ -190,7 +238,9 @@ Run: `mammoth support plan get`. Exact input fields: `mammoth schema get support
 
 Example: `mammoth support plan get 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportPlanGetResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportPlanGetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.plan.list`
 
@@ -198,7 +248,9 @@ Run: `mammoth support plan list`. Exact input fields: `mammoth schema get suppor
 
 Example: `mammoth support plan list --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportPlanListResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportPlanListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.plans (5 plans, ids 4-8) Single invocation only.
 
 ### `support.plan.self-serve-list`
 
@@ -206,7 +258,9 @@ Run: `mammoth support plan self-serve-list`. Exact input fields: `mammoth schema
 
 Example: `mammoth support plan self-serve-list --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportPlanSelfServeListResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportPlanSelfServeListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data.plans Single invocation only.
 
 ### `support.plan.update`
 
@@ -214,7 +268,9 @@ Run: `mammoth support plan update`. Exact input fields: `mammoth schema get supp
 
 Example: `mammoth support plan update 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportPlanUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportPlanUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.plan.update-storage-tiers`
 
@@ -222,7 +278,9 @@ Run: `mammoth support plan update-storage-tiers`. Exact input fields: `mammoth s
 
 Example: `mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"sample_key": "Status"}]}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportPlanUpdateStorageTiersResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportPlanUpdateStorageTiersResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.subscription.create`
 
@@ -230,7 +288,9 @@ Run: `mammoth support subscription create`. Exact input fields: `mammoth schema 
 
 Example: `mammoth support subscription create 123 resource-123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportSubscriptionCreateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportSubscriptionCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.subscription.get`
 
@@ -238,7 +298,9 @@ Run: `mammoth support subscription get`. Exact input fields: `mammoth schema get
 
 Example: `mammoth support subscription get 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportSubscriptionGetResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportSubscriptionGetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.subscription.update`
 
@@ -246,7 +308,9 @@ Run: `mammoth support subscription update`. Exact input fields: `mammoth schema 
 
 Example: `mammoth support subscription update 123 resource-123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportSubscriptionUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportSubscriptionUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.user.list-all`
 
@@ -254,7 +318,9 @@ Run: `mammoth support user list-all`. Exact input fields: `mammoth schema get su
 
 Example: `mammoth support user list-all --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportUserListAllResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportUserListAllResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; data keyed by workspace id ('4') listing users Single invocation only.
 
 ### `support.user.register`
 
@@ -262,7 +328,9 @@ Run: `mammoth support user register`. Exact input fields: `mammoth schema get su
 
 Example: `mammoth support user register analyst@example.com --input '{"first_name": "Revenue report", "last_name": "Revenue report", "verified": true}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportUserRegisterResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportUserRegisterResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.user.update`
 
@@ -270,7 +338,9 @@ Run: `mammoth support user update`. Exact input fields: `mammoth schema get supp
 
 Example: `mammoth support user update analyst@example.com --input '{"verified": true}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportUserUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportUserUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.workspace.create`
 
@@ -278,7 +348,9 @@ Run: `mammoth support workspace create`. Exact input fields: `mammoth schema get
 
 Example: `mammoth support workspace create 'Revenue report' --input '{"user_email": "analyst@example.com", "payment_frequency": "sample"}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportWorkspaceCreateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportWorkspaceCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.workspace.delete`
 
@@ -286,7 +358,9 @@ Run: `mammoth support workspace delete`. Exact input fields: `mammoth schema get
 
 Example: `mammoth support workspace delete 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportWorkspaceDeleteResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportWorkspaceDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.workspace.get`
 
@@ -294,7 +368,9 @@ Run: `mammoth support workspace get`. Exact input fields: `mammoth schema get su
 
 Example: `mammoth support workspace get 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportWorkspaceGetResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportWorkspaceGetResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.workspace.list`
 
@@ -302,7 +378,9 @@ Run: `mammoth support workspace list`. Exact input fields: `mammoth schema get s
 
 Example: `mammoth support workspace list --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportWorkspaceListResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportWorkspaceListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; route returns a bare array so the SDK wraps it as {status_code:200, response:[...]}…
 
 ### `support.workspace.restore-access`
 
@@ -310,7 +388,9 @@ Run: `mammoth support workspace restore-access`. Exact input fields: `mammoth sc
 
 Example: `mammoth support workspace restore-access 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportWorkspaceRestoreAccessResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportWorkspaceRestoreAccessResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.workspace.suspend-access`
 
@@ -318,7 +398,9 @@ Run: `mammoth support workspace suspend-access`. Exact input fields: `mammoth sc
 
 Example: `mammoth support workspace suspend-access 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportWorkspaceSuspendAccessResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportWorkspaceSuspendAccessResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.workspace.update`
 
@@ -326,7 +408,9 @@ Run: `mammoth support workspace update`. Exact input fields: `mammoth schema get
 
 Example: `mammoth support workspace update 123 --input '{"name": "Revenue report", "payment_frequency": "sample", "plan_id": 1}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportWorkspaceUpdateResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportWorkspaceUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.workspace.user.add`
 
@@ -334,7 +418,9 @@ Run: `mammoth support workspace user add`. Exact input fields: `mammoth schema g
 
 Example: `mammoth support workspace user add 123 --input '{"email": "analyst@example.com", "role": "sample"}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportWorkspaceUserAddResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportWorkspaceUserAddResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.workspace.user.list`
 
@@ -342,7 +428,9 @@ Run: `mammoth support workspace user list`. Exact input fields: `mammoth schema 
 
 Example: `mammoth support workspace user list 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportWorkspaceUserListResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportWorkspaceUserListResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.workspace.user.remove`
 
@@ -350,7 +438,9 @@ Run: `mammoth support workspace user remove`. Exact input fields: `mammoth schem
 
 Example: `mammoth support workspace user remove 123 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportWorkspaceUserRemoveResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportWorkspaceUserRemoveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.workspace.user.transfer`
 
@@ -358,4 +448,6 @@ Run: `mammoth support workspace user transfer`. Exact input fields: `mammoth sch
 
 Example: `mammoth support workspace user transfer 123 123 --input '{"role": "sample"}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Expected success: `SupportWorkspaceUserTransferResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SupportWorkspaceUserTransferResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.

@@ -23,11 +23,12 @@ remote write did or did not commit.
 Errors print to stderr as one stable envelope:
 
 ```json
-{"schema_version": 1, "error": {"code": "...", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": []}}
+{"schema_version": 1, "error": {"code": "...", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": [], "log_ref": {"file": "~/.local/state/mammoth-cli/logs/2026-09-19.jsonl", "run_id": "b6bc6bf6d166"}}}
 ```
 
 Branch on `error.code`, `details.operation_state`, and `request_id`, not the
-human message. `details` is secret-safe and may include `status_code`, HTTP
+human message. `log_ref` names the run log file and the `run_id` of the failed
+invocation (see [Run log](#run-log)). `details` is secret-safe and may include `status_code`, HTTP
 method, retry delay, phase, job/resource handle, and a quarantined local path.
 `recovery_commands` are suggestions for inspection/correction, not permission
 to blindly replay a mutation.
@@ -57,6 +58,35 @@ Important operation states include:
 | 7 | `retryable_error` on a read | Honor `Retry-After`, then retry the read within the deadline. |
 | 130 | `interrupted` | Use the observed handle/recovery command and checkpoint the state. |
 
+## Run log
+
+Every invocation appends structured JSON lines to a per-day file under the
+run-log directory: `$MAMMOTH_LOG_DIR` if set, otherwise the platform state
+directory (`~/.local/state/mammoth-cli/logs/YYYY-MM-DD.jsonl` on Linux,
+`~/Library/Application Support/mammoth-cli/logs` on macOS,
+`%LOCALAPPDATA%\Mammoth\mammoth-cli\logs` on Windows). The directory is
+created `0700` and files `0600`; files older than 7 days are removed and a
+day file over 20 MB is rotated to `.1.jsonl`.
+
+Each run writes `command.start` (argv with the `--input` document redacted,
+profile, project, CLI/SDK versions), one `http` record per API request
+(method, path, status, duration, backend request id, outcome), `job.poll`
+records under `--debug`, and `command.end` (exit status, error code,
+duration). Headers, bodies and credentials are never logged; every record
+passes through the same secret redaction as command output.
+
+```bash
+mammoth log path --output json --no-input                                  # where the files are
+mammoth log tail --input '{"errors_only": true, "limit": 20}' --output json --no-input
+mammoth log tail --input '{"run_id": "b6bc6bf6d166"}' --output json --no-input   # one failed invocation
+mammoth log tail --input '{"command_id": "view.transform.join", "days": 3}' --output json --no-input
+mammoth view get 49 28 --debug --output json --no-input                    # mirror the records to stderr
+```
+
+`mammoth doctor` reports the directory as the `log_directory` check. When
+you report a backend fault, quote the `run_id` and the `request_id` from the
+matching `http` record.
+
 ## First diagnostic
 
 Run read-only checks with the same profile and explicit project:
@@ -67,8 +97,8 @@ mammoth auth status --check --profile PROFILE --output json --no-input
 mammoth context project status --profile PROFILE --output json --no-input
 ```
 
-Capture the exit code, `error.code`, `details`, and `request_id` for support;
-never include an API secret or credentials file.
+Capture the exit code, `error.code`, `details`, `request_id` and the
+`log_ref.run_id` for support; never include an API secret or credentials file.
 
 ## Recovery sequence
 

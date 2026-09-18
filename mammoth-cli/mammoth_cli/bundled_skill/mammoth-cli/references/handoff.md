@@ -12,7 +12,9 @@ operator logs in from their own terminal as described in [auth](auth.md).
 ## Required record
 
 Include `format: "mammoth-agent-handoff"`, `format_version`, producer
-`cli_version`, `sdk_version`, `contract_schema_version`, and `skill_version`;
+`cli_version`, `sdk_version`, `contract_schema_version`, and `skill_version`
+(the `version:` field in this skill's `SKILL.md` frontmatter; `mammoth
+--version` gives the other two);
 the intent and acceptance criteria; authorized `profile` name and exact
 workspace/project scope; observed resources with dataset/view parents and
 dependencies; last verified state and hashes of bounded secret-free evidence;

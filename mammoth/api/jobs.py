@@ -4,6 +4,7 @@ Jobs API client for tracking job status in Mammoth.
 
 from __future__ import annotations
 
+import logging
 import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
@@ -17,6 +18,10 @@ from ..exceptions import (
 
 if TYPE_CHECKING:
     from ..client import MammothClient
+
+
+#: Job polling log; silent unless a handler is attached (see the CLI run log).
+_JOB_LOG = logging.getLogger("mammoth.jobs")
 
 
 class JobsAPI:
@@ -149,6 +154,20 @@ class JobsAPI:
             observed_phase = job.get("phase") or job.get("execution_phase") or "polling"
             if not isinstance(observed_phase, str):
                 observed_phase = "polling"
+            if _JOB_LOG.isEnabledFor(logging.INFO):
+                _JOB_LOG.info(
+                    "job.poll",
+                    extra={
+                        "mammoth": {
+                            "event": "job.poll",
+                            "job_id": job_id,
+                            "status": status,
+                            "phase": observed_phase,
+                            "operation": job.get("operation"),
+                            "remaining_s": round(max(0.0, deadline - time.monotonic()), 1),
+                        }
+                    },
+                )
 
             if status == "success":
                 return job

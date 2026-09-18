@@ -19,6 +19,7 @@ from functools import reduce
 from typing import Any
 
 from mammoth.condition import CompoundCondition, Condition, NotCondition
+from mammoth.models.pipeline import Operator
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 
@@ -37,6 +38,42 @@ _LEAF_FIELDS = {
     "truncate",
     "value_is_date_fn",
 }
+
+
+#: Comparison symbols accepted as aliases for the backend operator names. The
+#: SDK ``Condition`` forwards any string, so an unaliased symbol would reach the
+#: backend as an unknown operator; validate here, at the CLI boundary.
+_OPERATOR_ALIASES = {
+    "=": Operator.EQ,
+    "==": Operator.EQ,
+    "!=": Operator.NE,
+    "<>": Operator.NE,
+    ">": Operator.GT,
+    ">=": Operator.GTE,
+    "<": Operator.LT,
+    "<=": Operator.LTE,
+}
+OPERATOR_NAMES = tuple(member.value for member in Operator)
+
+
+def _resolve_operator(raw: Any) -> str:
+    if isinstance(raw, str):
+        alias = _OPERATOR_ALIASES.get(raw.strip())
+        if alias is not None:
+            return alias.value
+        name = raw.strip().upper()
+        if name in OPERATOR_NAMES:
+            return name
+    raise CliError(
+        code="invalid_condition",
+        message=f"Unknown condition operator {raw!r}.",
+        exit_status=EXIT_USAGE,
+        hint=(
+            "Use one of: " + ", ".join(OPERATOR_NAMES) + ". Symbols =, !=, >, >=, <, <= are "
+            "accepted as aliases. IS_EMPTY / IS_NOT_EMPTY take no value."
+        ),
+        details={"operator": raw, "accepted": list(OPERATOR_NAMES)},
+    )
 
 
 def _invalid(message: str) -> CliError:
@@ -82,4 +119,4 @@ def compile_condition(spec: Any) -> _ConditionResult:
         raise _invalid(f"Unknown condition field(s): {', '.join(sorted(unknown))}.")
     if "column" not in spec or "operator" not in spec:
         raise _invalid("A leaf condition needs at least 'column' and 'operator'.")
-    return Condition(**spec)
+    return Condition(**{**spec, "operator": _resolve_operator(spec["operator"])})

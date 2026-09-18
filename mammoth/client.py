@@ -28,7 +28,9 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import logging
 import math
+import time
 from collections.abc import Callable
 from ipaddress import ip_address
 from typing import Any, cast
@@ -108,6 +110,39 @@ DEFAULT_JOB_TIMEOUT = 60  # seconds — max time to poll a job to completion
 DEFAULT_PIPELINE_TIMEOUT = 3600  # seconds — max time to wait for pipeline readiness
 
 _list = list  # Alias to avoid shadowing by method name
+
+
+#: Transport log. Silent unless a handler is attached (the CLI attaches one
+#: per invocation). Records carry a ``mammoth`` dict in ``extra``: method,
+#: path, status, duration_ms, request_id, outcome. Never headers or bodies.
+_HTTP_LOG = logging.getLogger("mammoth.http")
+
+
+def _log_http(
+    method: str,
+    endpoint: str,
+    *,
+    started: float,
+    status: int | None,
+    request_id: str | None = None,
+    outcome: str,
+) -> None:
+    if not _HTTP_LOG.isEnabledFor(logging.INFO):
+        return
+    _HTTP_LOG.info(
+        "http",
+        extra={
+            "mammoth": {
+                "event": "http",
+                "method": method,
+                "path": endpoint,
+                "status": status,
+                "duration_ms": round((time.perf_counter() - started) * 1000),
+                "request_id": request_id,
+                "outcome": outcome,
+            }
+        },
+    )
 
 
 class ViewsResource:
@@ -210,9 +245,7 @@ class ViewsResource:
             dataset_id = self._client.pipeline.find_dataset_for_dataview(view_id)
         return self._client.dataviews.delete(dataset_id=dataset_id, dataview_id=view_id)
 
-    def bulk_delete(
-        self, view_ids: _list[int], dataset_id: int | None = None
-    ) -> dict[str, Any]:
+    def bulk_delete(self, view_ids: _list[int], dataset_id: int | None = None) -> dict[str, Any]:
         """Delete multiple dataviews.
 
         Args:
@@ -392,9 +425,7 @@ class MammothClient:
         # workspace-collection, membership, invite, usage, and AI operations.
         self.workspace = WorkspacesAPI(self)
 
-    def find_dataset_for_dataview(
-        self, dataview_id: int, dataset_id: int | None = None
-    ) -> int:
+    def find_dataset_for_dataview(self, dataview_id: int, dataset_id: int | None = None) -> int:
         """Find the parent dataset ID for a given dataview.
 
         Searches all datasets in the current project to locate which
@@ -494,15 +525,13 @@ class MammothClient:
         is_mutation = operation_effect == "mutation" or (
             operation_effect is None and request_method not in {"GET", "HEAD", "OPTIONS"}
         )
-        operation_state = (
-            "outcome_unknown"
-            if is_mutation
-            else "not_started"
-        )
+        operation_state = "outcome_unknown" if is_mutation else "not_started"
 
+        started = time.perf_counter()
         try:
             response = self.session.request(method, url, **request_kwargs)
         except requests.exceptions.Timeout as e:
+            _log_http(request_method, endpoint, started=started, status=None, outcome="timeout")
             raise MammothAPIError(
                 "Request timed out",
                 details={"exception_type": type(e).__name__},
@@ -512,6 +541,9 @@ class MammothClient:
                 endpoint=endpoint,
             ) from e
         except requests.exceptions.ConnectionError as e:
+            _log_http(
+                request_method, endpoint, started=started, status=None, outcome="connection_error"
+            )
             raise MammothAPIError(
                 "Connection error",
                 details={"exception_type": type(e).__name__},
@@ -521,6 +553,9 @@ class MammothClient:
                 endpoint=endpoint,
             ) from e
         except requests.exceptions.RequestException as e:
+            _log_http(
+                request_method, endpoint, started=started, status=None, outcome="request_failed"
+            )
             raise MammothAPIError(
                 "Request failed",
                 details={"exception_type": type(e).__name__},
@@ -552,6 +587,14 @@ class MammothClient:
 
         request_id = response_header("X-Request-ID", "X-Correlation-ID", "Request-ID")
         retry_after = response_header("Retry-After")
+        _log_http(
+            request_method,
+            endpoint,
+            started=started,
+            status=response.status_code,
+            request_id=request_id,
+            outcome="ok" if 200 <= response.status_code < 300 else "error",
+        )
 
         body: dict[str, Any] = {}
         if not 200 <= response.status_code < 300:

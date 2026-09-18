@@ -46,6 +46,7 @@
 - `file` (9 commands)
 - `folder` (10 commands)
 - `job` (4 commands)
+- `log` (2 commands)
 - `notification` (5 commands)
 - `parameter` (14 commands)
 - `project` (18 commands)

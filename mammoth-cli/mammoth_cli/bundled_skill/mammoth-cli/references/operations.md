@@ -9,6 +9,19 @@ wait policy, known restrictions, and recovery/verification metadata. Read the
 schema immediately before composing a request because support and fields can
 vary by release, profile, or backend.
 
+## Which id is which
+
+| Name | Where it appears | Notes |
+|---|---|---|
+| `PROJECT_ID` | `--project`, `project_id` input field | the workspace container; required on almost every command |
+| `DATASET_ID` | positional; `dataset_id` input field; API `ds_id` | the id returned by an upload or dataset creation; a dataset does not select a view |
+| `VIEW_ID` | positional; `dataview_id` in API bodies/responses; `foreign_view` in a join input | the view you transform, export, or preview; get it from `view list DATASET_ID` |
+| `foreign_dataset_id` | join input field | the parent dataset of `foreign_view` |
+| `JOB_ID` | `job get JOB_ID` | async task/job handle |
+| `DASHBOARD_ID` | dashboard commands | dashboard resource id |
+| `rule_id` | conditional-format commands | id of one conditional-format rule |
+| `task_id` / `sequence` | `view task list` results | pipeline task identifiers |
+
 `schema find`/`schema get`/`schema list` read the installed manifest. They
 need no project and no stored credentials. `dataset list`, `folder list`, and
 `view list` call the live API and are scoped to one project through
@@ -44,27 +57,22 @@ operation: upload into the existing dataset with `file upload --input
 '{"append_to_ds_id": DATASET_ID}'`, not a view transform.
 
 Use the exact returned command ID, then read its schema and the current view
-schema before composing input. For row-oriented sources such as OWID files,
-preserve the observed display names (often `Entity`, `Code`, `Year`, and one
-measure column); join only on keys confirmed in both exact view schemas. A
-derived measure such as GDP per capita should be created through the typed math
-route after numeric conversion and verified from a remote preview/readback.
-Deduplication is a semantic operation: inspect the route schema and define the
-key/retention rule explicitly; never treat a successful task submission as
-proof that duplicates were removed.
+schema before composing input. Join only on keys confirmed in both exact view
+schemas. Create derived measures through the typed math route after numeric
+conversion and verify them from a `view data get` readback. Deduplication is a
+semantic operation: define the key/retention rule explicitly; never treat a
+successful task submission as proof that duplicates were removed.
 
-Use the published typed route `view.transform.discard-duplicates` when its
-schema is present: inspect `mammoth schema get view.transform.discard-duplicates
---output json --no-input` for its optional `ignore_columns` and `dataset_id`
-fields before use. Discover it with `schema find duplicate`, then read its
-exact schema; do not use a guessed alias, raw HTTP, local processing, or opaque
-`view task` `task_spec`.
+For deduplication, discover and use `view.transform.discard-duplicates`; see
+recipes/transforms.md for the full procedure.
 
 Prefer a typed `view transform <operation>` command. Its schema is the
-discoverable request contract and its result should be verified with a view
-read, preview, pipeline read/items, or the returned job according to
-`wait_policy`. Every transform and draft mutation carries the exact parent
-`dataset_id` in `--input`; it never falls back to project-wide discovery:
+discoverable request contract. A job status or pipeline/task definition only
+proves the task ran; for any value-changing step the proof is `view data get`
+rows — see SKILL.md working rules and
+[report-checklist](report-checklist.md). Every transform and draft mutation
+carries the exact parent `dataset_id` in `--input`; it never falls back to
+project-wide discovery:
 
 ```bash
 mammoth view transform math VIEW_ID --project PROJECT_ID \

@@ -498,24 +498,16 @@ def test_create_forwards_optional_flags(fake_service: FakeMammothService, tmp_pa
     ]
 
 
-def test_create_blank_requires_yes_before_request(
+def test_create_blank_is_an_ordinary_create_and_needs_no_confirmation(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write_doc(tmp_path, {"params": {"dataview_id": 42}})
-    with pytest.raises(CliError) as excinfo:
-        dashboard_cmd.generated_dashboard(_inv("dashboard.create-blank", input_file=doc))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_create_blank_forwards_typed_params_after_confirmation(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
+    # Creating a new dashboard destroys nothing; it is classified like
+    # ``project create`` and ``dashboard v3 generate``.
     doc = _write_doc(
         tmp_path,
         {"params": {"dataview_id": 42, "style": "presentation", "title": "Revenue"}},
     )
-    dashboard_cmd.generated_dashboard(_inv("dashboard.create-blank", input_file=doc, yes=True))
+    dashboard_cmd.generated_dashboard(_inv("dashboard.create-blank", input_file=doc))
     assert fake_service.call_log == [
         (
             _CREATE_BLANK,

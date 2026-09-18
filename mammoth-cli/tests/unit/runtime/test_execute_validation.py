@@ -74,7 +74,9 @@ def test_single_positional_for_project_delete_reaches_past_arg_validation(
     isolated_cli_config: Path,
 ) -> None:
     """A single id is accepted by argument validation (fails later, on auth)."""
-    result = make_runner().invoke(["project", "delete", "1", "--yes", *_JSON_NO_INPUT])
+    result = make_runner().invoke(
+        ["project", "delete", "1", "--yes", "--confirm", "1", *_JSON_NO_INPUT]
+    )
     # No credentials configured: this must fail on auth/profile resolution, not
     # on argument validation.
     assert "unexpected_argument" not in result.output
@@ -139,3 +141,55 @@ def test_zero_view_id_positional_is_rejected_through_the_app(isolated_cli_config
     result = make_runner().invoke(["view", "get", "0", *_JSON_NO_INPUT])
     assert result.exit_code == EXIT_USAGE
     assert "invalid_option_value" in result.output
+
+
+# --- run log: every invocation is recorded; errors point at it -------------
+
+
+def test_error_envelope_carries_log_ref_and_the_run_is_recorded(
+    isolated_run_log: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from mammoth_cli.runtime import runlog
+    from mammoth_cli.runtime.invocation import Invocation
+
+    invocation = Invocation(command_id="project.list", output="json", no_input=True, profile="p")
+
+    def _failure() -> tuple[object, dict[str, object]]:
+        raise CliError(code="resource_not_found", message="gone", exit_status=5)
+
+    with pytest.raises(typer.Exit):
+        run("project.list", "json", _failure, invocation=invocation)
+
+    envelope = json.loads(capsys.readouterr().err)
+    ref = envelope["error"]["log_ref"]
+    assert Path(ref["file"]).parent == isolated_run_log
+    records = runlog.read_records(run_id=ref["run_id"])
+    assert [r["event"] for r in records] == ["command.start", "command.end"]
+    assert records[0]["profile"] == "p"
+    assert (records[-1]["exit_status"], records[-1]["error_code"]) == (5, "resource_not_found")
+
+
+def test_success_is_recorded_without_touching_the_envelope(
+    isolated_run_log: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from mammoth_cli.runtime import runlog
+    from mammoth_cli.runtime.invocation import Invocation
+
+    invocation = Invocation(command_id="version", output="json", no_input=True)
+    run("version", "json", lambda: ({"ok": True}, {}), invocation=invocation)
+
+    envelope = json.loads(capsys.readouterr().out)
+    assert envelope["data"] == {"ok": True} and "log_ref" not in envelope
+    assert runlog.read_records(command_id="version")[-1]["exit_status"] == 0
+
+
+def test_the_cli_process_logs_and_log_tail_reads_it_back(isolated_run_log: Path) -> None:
+    runner = make_runner()
+    assert runner.invoke(["version", *_JSON_NO_INPUT]).exit_code == 0
+    result = runner.invoke(["log", "tail", "--input", '{"command_id": "version"}', *_JSON_NO_INPUT])
+    assert result.exit_code == 0, result.output
+    data = json.loads(result.output)["data"]
+    assert data["count"] >= 2
+    assert {r["event"] for r in data["records"]} == {"command.start", "command.end"}
+    path = json.loads(runner.invoke(["log", "path", *_JSON_NO_INPUT]).output)["data"]
+    assert path["directory"] == str(isolated_run_log)

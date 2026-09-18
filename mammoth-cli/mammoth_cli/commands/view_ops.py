@@ -227,14 +227,10 @@ def _without_resource_context(document: dict[str, Any]) -> dict[str, Any]:
     # mapping.  These identifiers select the View receiver and are not method
     # kwargs; strip both parent and receiver identities before the transform
     # adapter forwards the document.
-    return {
-        key: value for key, value in document.items() if key not in {"dataset_id", "view_id"}
-    }
+    return {key: value for key, value in document.items() if key not in {"dataset_id", "view_id"}}
 
 
-def _bind_transform_inputs(
-    invocation: Invocation, document: dict[str, Any]
-) -> dict[str, Any]:
+def _bind_transform_inputs(invocation: Invocation, document: dict[str, Any]) -> dict[str, Any]:
     """Bind every admitted transform field through its reviewed contract.
 
     Transform handlers still own domain-specific required-field checks and the
@@ -244,9 +240,7 @@ def _bind_transform_inputs(
     optional ``dataset_id`` is resource identity context for resolving the
     target view and must never be passed to a View transform method.
     """
-    bound = bind_command_inputs(
-        invocation.command_id, _without_resource_context(document)
-    )
+    bound = bind_command_inputs(invocation.command_id, _without_resource_context(document))
     direction = str(getattr(bound.get("direction"), "value", bound.get("direction"))).upper()
     if direction in {"LEFT", "RIGHT"} and bound.get("num_char") is not None:
         raise CliError(
@@ -302,7 +296,26 @@ def view_get(invocation: Invocation) -> HandlerResult:
         kwargs["dataset_id"] = dataset_id
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-    return data, _meta(invocation, auth.workspace_id)
+    return _view_payload(data), _meta(invocation, auth.workspace_id)
+
+
+def _view_payload(value: Any) -> Any:
+    """Return the dataview record for a resolved rich ``View`` object.
+
+    The discovery path returns the SDK's ``View`` (methods, client handle),
+    which the output normaliser rightly refuses to serialise. Its ``raw``
+    attribute is the same dataview record the exact-parent path returns, so
+    both paths emit one shape; the discovered parent is added because the
+    caller did not know it and needs it for every mutating follow-up.
+    """
+    raw = getattr(value, "raw", None)
+    if not isinstance(raw, dict):
+        return value
+    record = dict(raw)
+    dataset_id = getattr(value, "dataset_id", None)
+    if isinstance(dataset_id, int) and "dataset_id" not in record:
+        record["dataset_id"] = dataset_id
+    return record
 
 
 def view_delete(invocation: Invocation) -> HandlerResult:

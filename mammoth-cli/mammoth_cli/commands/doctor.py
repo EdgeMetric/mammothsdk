@@ -20,6 +20,7 @@ from mammoth_cli import __version__
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.resolver import resolve_auth
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.runtime import runlog
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 
@@ -146,6 +147,21 @@ def doctor(invocation: Invocation) -> HandlerResult:
                 f"{config_directory} is writable"
                 if config_ok
                 else f"cannot write configuration below {writable_target}"
+            ),
+        )
+    )
+
+    log_directory = runlog.log_dir()
+    log_target = log_directory if log_directory.exists() else log_directory.parent
+    log_ok = os.access(log_target, os.W_OK | os.X_OK)
+    checks.append(
+        _check(
+            "log_directory",
+            log_ok,
+            (
+                f"{log_directory} is writable; run logs are kept {runlog.RETENTION_DAYS} days"
+                if log_ok
+                else f"cannot write run logs below {log_target}; set {runlog.LOG_DIR_ENV}"
             ),
         )
     )

@@ -22,6 +22,29 @@ If `schema get view.export.csv` rejects requested fields, preserve the
 structured error and discover another declared export route rather than using
 raw HTTP.
 
+## Destination exports that carry a secret
+
+`schema get` lists `secret_fields` for every typed destination export
+(`postgres`, `mysql`, `mssql`, `redshift`, `elasticsearch`, `ftp`, `sftp`,
+`powerbi`, `tableau`, `azure-blob`, `onedrive`, `sharepoint`, `rest`). When
+that list is non-empty the request body is written by the operator to a
+`0600` file and passed as `--input FILE`; it is never an inline document and
+never appears in argv, the run log, or a checkpoint. The connector command is
+`external_effect` with `confirmation: yes_always`, so `--yes` is required.
+
+```bash
+mammoth schema get view.export.postgres --output json --no-input   # read secret_fields, required fields
+# operator writes /private/path/request.json (mode 0600):
+# {"host":"db.example","port":5432,"database":"analytics","table":"exports",
+#  "username":"agent","password":"…","dataset_id":DATASET_ID}
+mammoth view export postgres VIEW_ID DATASET_ID --project PROJECT_ID \
+  --input /private/path/request.json --yes --output json --no-input
+mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID --output json --no-input
+```
+
+If the operator has not supplied such a file, stop and ask for it; do not
+compose the body yourself from values seen in chat.
+
 ## Generic export routes
 
 `view export csv` and the typed destination commands are the proven path. The

@@ -1,41 +1,53 @@
 # `skill` commands
 
+Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it, *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
+
 ### `skill.install`
 
 Run: `mammoth skill install`. Exact input fields: `mammoth schema get skill.install --output json --no-input`.
 
-Example: `mammoth skill install --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth skill install --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `SkillInstallResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SkillInstallResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `skill.list`
 
 Run: `mammoth skill list`. Exact input fields: `mammoth schema get skill.list --output json --no-input`.
 
-Example: `mammoth skill list --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth skill list --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `SkillListResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SkillListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `skill.path`
 
 Run: `mammoth skill path`. Exact input fields: `mammoth schema get skill.path --output json --no-input`.
 
-Example: `mammoth skill path --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth skill path --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `SkillPathResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SkillPathResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `skill.uninstall`
 
 Run: `mammoth skill uninstall`. Exact input fields: `mammoth schema get skill.uninstall --output json --no-input`.
 
-Example: `mammoth skill uninstall --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth skill uninstall --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `SkillUninstallResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SkillUninstallResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `skill.update`
 
 Run: `mammoth skill update`. Exact input fields: `mammoth schema get skill.update --output json --no-input`.
 
-Example: `mammoth skill update --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth skill update --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `SkillUpdateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `SkillUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.

@@ -93,6 +93,7 @@ def context_project_status(
         invocation.output,
         producer,
         agent_mode=invocation.no_input,
+        invocation=invocation,
     )
 
 
@@ -161,6 +162,7 @@ def context_project_use(
         invocation.output,
         producer,
         agent_mode=invocation.no_input,
+        invocation=invocation,
     )
 
 
@@ -219,4 +221,5 @@ def context_project_clear(
         invocation.output,
         producer,
         agent_mode=invocation.no_input,
+        invocation=invocation,
     )

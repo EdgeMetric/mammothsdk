@@ -5,22 +5,24 @@ task and has no repository or prior chat context. The user supplies the intent,
 authorized scope, and (when needed) a protected profile. Never put credentials
 or secrets in an argument, prompt, transcript, or checkpoint.
 
-1. Check whether `mammoth` is available. If it is absent, install the CLI and
-   bundled skill with the supported host installer:
+1. Check whether `mammoth` is available. If it is absent, install the CLI
+   from PyPI into a fresh environment and verify it:
 
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
+   python3 -m venv .mammoth && .mammoth/bin/python -m pip install --upgrade mammoth-cli
+   .mammoth/bin/mammoth --version      # or: uv tool install mammoth-cli
    ```
 
-   For an evaluation or deployment that names an exact approved release, append
-   `--version X.Y.Z`. Verify the installed result with `mammoth --version`.
-   Do not substitute a manual pip/uv install for this
-   CLI path; Python applications install the SDK separately.
+   Pin `mammoth-cli==X.Y.Z` when the task names an approved release. Use the
+   host installer script (`installers/mammoth-install.sh` in the repository)
+   only when the operator names it; do not pipe a remote script to a shell on
+   your own initiative. The SDK (`mammoth-io`) comes with the CLI.
 2. Locate the installed guidance with `mammoth skill path --output json
-   --no-input` and read the canonical skill plus its references. If a skill
-   install is required for the agent host, run `mammoth skill install
-   --output json --no-input` and verify ownership with `mammoth skill list
-   --output json --no-input`.
+   --no-input` and read `SKILL.md`; open a reference only when the routing
+   table sends you there. `references/commands/*.md` are per-command lookups,
+   not upfront reading. If a skill install is required for the agent host,
+   run `mammoth skill install --output json --no-input` and verify ownership
+   with `mammoth skill list --output json --no-input`.
 3. Establish authentication before any remote read or write. Determine the
    intended environment from the task first: production defaults to the `app` endpoint;
    use `release` only when the task explicitly names release. Then inspect the
@@ -32,14 +34,10 @@ or secrets in an argument, prompt, transcript, or checkpoint.
 
    Compare the status response's `endpoint` with the intended environment. If
    the profile or credentials are missing, or the endpoint is for another
-   environment, stop and follow [authentication](auth.md): tell the operator
-   to run `mammoth auth login` (production; `--server-prefix release` for
-   release) in their own terminal, wait for them, then re-check status.
-   The CLI does not read credentials from environment variables; do not look
-   for them there. Never silently reuse or rewrite a mismatched profile,
-   invent a profile, ask for credentials in chat, or put secrets in argv.
-   After the operator has logged in (or when an existing, matching profile is
-   present), run the connectivity and configuration check and require success:
+   environment, stop and follow the credential rule in
+   [authentication](auth.md) (the operator logs in from their own terminal;
+   you never handle the key or secret). Then run the connectivity and
+   configuration check and require success:
 
    ```bash
    mammoth doctor --profile PROFILE --output json --no-input
@@ -72,9 +70,11 @@ or secrets in an argument, prompt, transcript, or checkpoint.
    unsupported/ambiguous and stop. See
    [operations](operations.md) for task/pipeline, workflow, and export
    read-back guidance.
-6. Verify each mutation from remote reads, schemas, jobs, pipeline/task
-   definitions, and exported content. On timeout or unknown outcome, reconcile
-   the observed job/resource before retrying; never blindly replay a mutation.
+6. Verify each mutation from remote reads and exported content. A job status
+   or pipeline/task definition only proves the task ran, not that it changed
+   what you meant; for any value-changing step the proof is `view data get`
+   row read-back. On timeout or unknown outcome, reconcile the observed
+   job/resource before retrying; never blindly replay a mutation.
 7. Record only nonsecret IDs, parents, job handles, evidence hashes, and the
    remaining objective in the portable handoff. Clean up only resources created
    by this task, with required confirmations, and verify they are gone.

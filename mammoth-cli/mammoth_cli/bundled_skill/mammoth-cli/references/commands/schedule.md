@@ -1,12 +1,16 @@
 # `schedule` commands
 
+Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it, *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
+
 ### `schedule.create`
 
 Run: `mammoth schedule create`. Exact input fields: `mammoth schema get schedule.create --output json --no-input`.
 
 Example: `mammoth schedule create --input '{"spec": {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}}}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
 
-Expected success: `ScheduleCreateResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `ScheduleCreateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `schedule.delete`
 
@@ -14,23 +18,29 @@ Run: `mammoth schedule delete`. Exact input fields: `mammoth schema get schedule
 
 Example: `mammoth schedule delete 123 --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
 
-Expected success: `ScheduleDeleteResult` in the standard JSON envelope; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `ScheduleDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `schedule.get`
 
 Run: `mammoth schedule get`. Exact input fields: `mammoth schema get schedule.get --output json --no-input`.
 
-Example: `mammoth schedule get 123 --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth schedule get 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `ScheduleGetResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `ScheduleGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: observed blocker — blocked_missing_fixture: Not run: id source schedule.list failed with backend_error (5GENR011 NOT_IMPLEMENTED, HTTP 400), so no schedule_id was observed to use. Re-check before relying on it.
 
 ### `schedule.list`
 
 Run: `mammoth schedule list`. Exact input fields: `mammoth schema get schedule.list --output json --no-input`.
 
-Example: `mammoth schedule list --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth schedule list --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `ScheduleListResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `ScheduleListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: observed blocker — backend_error: backend_code=5GENR011 NOT_IMPLEMENTED: 'Not implemented' on GET /workspaces/4/projects/3/schedules. Re-check before relying on it.
 
 ### `schedule.update`
 
@@ -38,4 +48,6 @@ Run: `mammoth schedule update`. Exact input fields: `mammoth schema get schedule
 
 Example: `mammoth schedule update 123 --input '{"patch": [{"op": "replace", "path": "rrule", "value": {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}, "work_items": [{"name": "pull_cloud_data", "execution_params": {"schedule_type": "moment", "first_pull_at": "now", "on_refresh_action": "replace"}, "args": [1]}]}}]}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
 
-Expected success: `ScheduleUpdateResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `ScheduleUpdateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.

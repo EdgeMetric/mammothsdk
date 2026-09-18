@@ -301,7 +301,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard context update resource-123 --input '{"body": {"params": {"name": "Revenue report"}}}' --output json --no-input
 - `mammoth dashboard create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.create
   example: mammoth dashboard create 'Summarize revenue by region' --input '{"source": [1]}' --output json --no-input
-- `mammoth dashboard create-blank` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.create_blank
+- `mammoth dashboard create-blank` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.create_blank
   example: mammoth dashboard create-blank --input '{"params": {"dataview_id": 1}}' --output json --no-input --yes
 - `mammoth dashboard data draft` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_draft_data
   example: mammoth dashboard data draft 123 --input '{"widget_id": "550e8400-e29b-41d4-a716-446655440000"}' --output json --no-input
@@ -612,6 +612,13 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth job wait-many` [read/none] -> mammoth.api.jobs.JobsAPI.wait_for_jobs
   example: mammoth job wait-many --input '{"job_ids": [1]}' --output json --no-input
 
+## log
+
+- `mammoth log path` [read/none] -> mammoth_cli.runtime.runlog.log_path
+  example: mammoth log path --output json --no-input
+- `mammoth log tail` [read/none] -> mammoth_cli.runtime.runlog.read_records
+  example: mammoth log tail --input '{"errors_only": true, "limit": 20}' --output json --no-input
+
 ## notification
 
 - `mammoth notification delete` [destructive/prompt_or_yes] -> mammoth.api.notifications.NotificationsAPI.delete
@@ -668,7 +675,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth project create 'Revenue report' --output json --no-input
 - `mammoth project data-check list` [read/none] -> mammoth.api.projects.ProjectsAPI.data_check_list
   example: mammoth project data-check list 123 --output json --no-input
-- `mammoth project delete` [destructive/prompt_or_yes] -> mammoth.api.projects.ProjectsAPI.delete
+- `mammoth project delete` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.delete
   example: mammoth project delete 123 --output json --no-input
 - `mammoth project get` [read/none] -> mammoth.api.projects.ProjectsAPI.get
   example: mammoth project get 123 --output json --no-input
@@ -1108,7 +1115,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view transform replace` [reversible_pipeline/none] -> mammoth.View.replace_values
   example: mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "sample", "replace": "sample", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform set-values` [reversible_pipeline/none] -> mammoth.View.set_values
-  example: mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}], "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}], "existing_column": "Status", "condition": {"column": "Status", "operator": "IS_EMPTY"}, "dataset_id": 456}' --output json --no-input
 - `mammoth view transform small-large` [reversible_pipeline/none] -> mammoth.View.small_large
   example: mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["Status"], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform split` [reversible_pipeline/none] -> mammoth.View.split_column

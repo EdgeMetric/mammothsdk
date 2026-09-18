@@ -287,3 +287,19 @@ def test_build_time_example_uses_explicit_operation_ids_not_generated_manifest(
     assert example is not None
     document = json.loads(shlex.split(example)[5])
     assert document == {"body": {"params": {"name": "Revenue report"}}}
+
+
+def test_schema_get_names_secret_fields_and_routes_their_example_through_a_file() -> None:
+    from mammoth_cli.output.normalize import normalize
+
+    postgres = get_schema("view.export.postgres")
+    csv = get_schema("view.export.csv")
+    assert postgres is not None and csv is not None
+
+    assert postgres["secret_fields"] == ["password"]
+    assert csv["secret_fields"] == []
+    # The list names protected fields; it must survive output redaction so an
+    # agent can see which commands need ``--input FILE``.
+    assert normalize({"secret_fields": ["password"]}) == {"secret_fields": ["password"]}
+    assert "/private/path/request.json" in postgres["agent_example"]
+    assert "password" not in postgres["agent_example"]

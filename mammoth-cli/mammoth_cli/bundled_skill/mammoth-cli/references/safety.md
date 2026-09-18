@@ -20,6 +20,9 @@ mammoth folder delete 7 --project 180 --output json --no-input --yes
 # high-impact: target must equal the resource
 mammoth project user remove --project 180 --output json --no-input \
   --yes --confirm 180 --input '{"user_ids": ["u_123"]}'
+
+# project delete cascades to every dataset, view, export and dashboard in it
+mammoth project delete 180 --output json --no-input --yes --confirm 180
 ```
 
 Discover a command's policy with `mammoth schema get <command.id> --output json`.

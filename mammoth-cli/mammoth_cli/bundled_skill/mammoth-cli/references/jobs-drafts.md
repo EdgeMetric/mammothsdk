@@ -34,6 +34,12 @@ mammoth view draft submit 1039 --project 180 --output json --no-input
 mammoth view draft discard 1039 --project 180 --output json --no-input --yes
 ```
 Draft state is server-side, so it persists across separate CLI processes.
+Do not put a value-changing step you have not yet verified into a draft: a
+draft is read back once, after submit, and a uniform result then has every
+batched task as a suspect. If you do batch, run `view task list VIEW_ID`
+after `draft submit` and read the data back once per task, in order.
+(The example above omits `dataset_id`; every real `view transform` and
+`view draft` call needs it in `--input`.)
 
 ## Bulk replace
 Bulk replace is a reversible pipeline mutation; it needs no `--yes`. Preview or

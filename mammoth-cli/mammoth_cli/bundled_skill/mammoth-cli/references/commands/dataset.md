@@ -1,12 +1,16 @@
 # `dataset` commands
 
+Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it, *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
+
 ### `dataset.batch-data`
 
 Run: `mammoth dataset batch-data`. Exact input fields: `mammoth schema get dataset.batch-data --output json --no-input`.
 
-Example: `mammoth dataset batch-data 123 123 --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dataset batch-data 123 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `DatasetBatchDataResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetBatchDataResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.7.1 batch-data read succeeded for an ID observed from retained dataset 29; bounded 50-row page. One observed-ID chain and page; not Full.
 
 ### `dataset.bulk-delete`
 
@@ -14,7 +18,9 @@ Run: `mammoth dataset bulk-delete`. Exact input fields: `mammoth schema get data
 
 Example: `mammoth dataset bulk-delete --input '{"dataset_ids": [456, 457]}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
 
-Expected success: `DatasetBulkDeleteResult` in the standard JSON envelope; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetBulkDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: dataset_ids accepted as required list, no confirm-name issue blocked us, --yes sufficed. Response: {"data":null}. Reconciled: `dataset list --project 23` returned empty datasets array im…
 
 ### `dataset.bulk-update`
 
@@ -30,25 +36,31 @@ Known restriction: BLOCKED[B07 DATASET_PATCH_UNTYPED]; reserved, not registered.
 
 Run: `mammoth dataset create`. Exact input fields: `mammoth schema get dataset.create --output json --no-input`.
 
-Example: `mammoth dataset create --input '{"dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"}, "ds_creation_type": "weburl"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dataset create --input '{"dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"}, "ds_creation_type": "weburl"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `DatasetCreateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: ran once on CLI 1.1.9 — Bounded owned-fixture create succeeded with pinned CLI 1.1.9 using the documented weburl variant (ds_creation_type=weburl + dataset_spec.url): dataset 16 returned ready with job 39. No Full claim: other creation variants and broader lifecycle/error coverage a…
 
 ### `dataset.create-from-pdf`
 
 Run: `mammoth dataset create-from-pdf`. Exact input fields: `mammoth schema get dataset.create-from-pdf --output json --no-input`.
 
-Example: `mammoth dataset create-from-pdf 123 --input '{"file_name": "./sales.csv"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dataset create-from-pdf 123 --input '{"file_name": "./sales.csv"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `DatasetCreateFromPdfResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetCreateFromPdfResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: observed blocker — backend: POST /workspaces/4/projects/24/datasets-from-pdf. Re-check before relying on it.
 
 ### `dataset.data`
 
 Run: `mammoth dataset data`. Exact input fields: `mammoth schema get dataset.data --output json --no-input`.
 
-Example: `mammoth dataset data 123 --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dataset data 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `DatasetDataResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetDataResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: ran once on CLI 1.1.10 — Bounded retained-resource read with published CLI 1.1.10 and explicit timeout=30,poll_interval=1 returned 100 rows and five headers for dataset 28. No Full claim: retained ETL-owned resource and no option/error/lifecycle matrix beyond this read.
 
 ### `dataset.delete`
 
@@ -56,15 +68,19 @@ Run: `mammoth dataset delete`. Exact input fields: `mammoth schema get dataset.d
 
 Example: `mammoth dataset delete 123 --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
 
-Expected success: `DatasetDeleteResult` in the standard JSON envelope; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: ran once on CLI 1.1.9 — Bounded owned-fixture delete succeeded with pinned CLI 1.1.9: delete job 42 succeeded for dataset 16 and final dataset list was empty. No Full claim: no protected-resource preservation check or broader delete variants.
 
 ### `dataset.file-settings.get`
 
 Run: `mammoth dataset file-settings get`. Exact input fields: `mammoth schema get dataset.file-settings.get --output json --no-input`.
 
-Example: `mammoth dataset file-settings get 123 --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dataset file-settings get 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `DatasetFileSettingsGetResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetFileSettingsGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 1.1.10 — Bounded retained-resource read with published CLI 1.1.10 returned file-settings info for dataset 28; dataset_id=0 produced deterministic invalid_option_value. No Full claim: retained ETL-owned resource and no settings mutation/readback lifecycle.
 
 ### `dataset.file-settings.undo`
 
@@ -72,63 +88,79 @@ Run: `mammoth dataset file-settings undo`. Exact input fields: `mammoth schema g
 
 Example: `mammoth dataset file-settings undo 123 --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
 
-Expected success: `DatasetFileSettingsUndoResult` in the standard JSON envelope; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetFileSettingsUndoResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 200 non-object body reported as success. Response: {"data":{"response":null,"status_code":200}}. Preceded by dataset.file-settings.update on dataset 53 to give the undo something to reve…
 
 ### `dataset.file-settings.update`
 
 Run: `mammoth dataset file-settings update`. Exact input fields: `mammoth schema get dataset.file-settings.update --output json --no-input`.
 
-Example: `mammoth dataset file-settings update 123 --input '{"delimiter": "sample", "has_header": true, "initial_skip_count": 1, "quotechar": "sample"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dataset file-settings update 123 --input '{"delimiter": "sample", "has_header": true, "initial_skip_count": 1, "quotechar": "sample"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `DatasetFileSettingsUpdateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetFileSettingsUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.7.1 sent only the owned dataset 35 pre-read file-settings baseline and verified identical remote readback. Safe no-op update path only; not Full.
 
 ### `dataset.find`
 
 Run: `mammoth dataset find`. Exact input fields: `mammoth schema get dataset.find --output json --no-input`.
 
-Example: `mammoth dataset find sales --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dataset find sales --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `DatasetFindResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetFindResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `dataset.get`
 
 Run: `mammoth dataset get`. Exact input fields: `mammoth schema get dataset.get --output json --no-input`.
 
-Example: `mammoth dataset get 123 --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dataset get 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `DatasetGetResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 1.1.10 — Bounded retained-resource read with published CLI 1.1.10 returned dataset 28 details and schema metadata. No Full claim: retained ETL-owned resource, no mutation/lifecycle coverage.
 
 ### `dataset.list`
 
 Run: `mammoth dataset list`. Exact input fields: `mammoth schema get dataset.list --output json --no-input`.
 
-Example: `mammoth dataset list --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dataset list --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `DatasetListResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 1.1.9 — Bounded owned-fixture read with pinned CLI 1.1.9 returned dataset 16 in project 3; no Full claim: single disposable fixture and no pagination/variant coverage.
 
 ### `dataset.rename`
 
 Run: `mammoth dataset rename`. Exact input fields: `mammoth schema get dataset.rename --output json --no-input`.
 
-Example: `mammoth dataset rename 123 --input '{"name": "Revenue report"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dataset rename 123 --input '{"name": "Revenue report"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `DatasetRenameResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetRenameResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `dataset.restore`
 
 Run: `mammoth dataset restore`. Exact input fields: `mammoth schema get dataset.restore --output json --no-input`.
 
-Example: `mammoth dataset restore 123 --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dataset restore 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `DatasetRestoreResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetRestoreResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. job 312 restore_datasource -> status success. dataset list --project 21 confirms dataset 49 (name 'stores.csv 2') is back and visible alongside 48. Single invocation only.
 
 ### `dataset.trash`
 
 Run: `mammoth dataset trash`. Exact input fields: `mammoth schema get dataset.trash --output json --no-input`.
 
-Example: `mammoth dataset trash 123 --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dataset trash 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Expected success: `DatasetTrashResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
+Result: `DatasetTrashResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: ran once on CLI 2.0.13 — Haiku e2e 2026-09-18: dataset trash then delete for owned datasets 44-47; final dataset list showed only the baseline ids. Single path only.
 
 ### `dataset.update`
 

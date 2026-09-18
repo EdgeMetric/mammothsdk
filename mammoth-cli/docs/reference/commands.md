@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.17.
+Generated from the reviewed command manifests for mammoth-cli 2.0.18.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 549.
+Total commands: 551.
 
 ## activity
 
@@ -1208,8 +1208,8 @@ Total commands: 549.
 
 ### `mammoth dashboard create-blank`
 
-- Mutation class: `destructive`
-- Confirmation: `prompt_or_yes`
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.create_blank`
 - Agent example: `mammoth dashboard create-blank --input '{"params": {"dataview_id": 1}}' --output json --no-input --yes`
 
@@ -2671,6 +2671,22 @@ Total commands: 549.
 - Backing SDK: `mammoth.api.jobs.JobsAPI.wait_for_jobs`
 - Agent example: `mammoth job wait-many --input '{"job_ids": [1]}' --output json --no-input`
 
+## log
+
+### `mammoth log path`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.runtime.runlog.log_path`
+- Agent example: `mammoth log path --output json --no-input`
+
+### `mammoth log tail`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.runtime.runlog.read_records`
+- Agent example: `mammoth log tail --input '{"errors_only": true, "limit": 20}' --output json --no-input`
+
 ## notification
 
 ### `mammoth notification delete`
@@ -2911,8 +2927,8 @@ Total commands: 549.
 
 - `PROJECT_ID` (int, optional) — ID of the project to act on; defaults to the active project.
 
-- Mutation class: `destructive`
-- Confirmation: `prompt_or_yes`
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.delete`
 - Agent example: `mammoth project delete 123 --output json --no-input`
 
@@ -5100,7 +5116,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.set_values`
-- Agent example: `mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}], "dataset_id": 456}' --output json --no-input`
+- Agent example: `mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}], "existing_column": "Status", "condition": {"column": "Status", "operator": "IS_EMPTY"}, "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform small-large`
 

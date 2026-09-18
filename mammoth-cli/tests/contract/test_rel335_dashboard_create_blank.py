@@ -45,9 +45,7 @@ def test_rel335_approved_cli_emits_exact_wire_and_returns_response(
     source = tmp_path / "blank.json"
     source.write_text(json.dumps(payload), encoding="utf-8")
     with _bind(monkeypatch, service):
-        data, _meta = dashboard_cmd.generated_dashboard(
-            _invocation(str(source), yes=True)
-        )
+        data, _meta = dashboard_cmd.generated_dashboard(_invocation(str(source)))
     request = api.last()
     assert request.method == "POST"
     assert request.path.removeprefix("/api/v2") == "/dashboards/v3/blank"
@@ -55,14 +53,12 @@ def test_rel335_approved_cli_emits_exact_wire_and_returns_response(
     assert data == {"id": 88, "sequence": 1}
 
 
-def test_rel335_confirmation_blocks_request(
+def test_rel335_create_blank_needs_no_confirmation_flag(
     real_service: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     service, api = real_service()
     source = tmp_path / "blank.json"
     source.write_text(json.dumps({"params": {"dataview_id": 42}}), encoding="utf-8")
     with _bind(monkeypatch, service):
-        with pytest.raises(CliError) as error:
-            dashboard_cmd.generated_dashboard(_invocation(str(source)))
-    assert error.value.code == "confirmation_required"
-    assert api.requests == []
+        dashboard_cmd.generated_dashboard(_invocation(str(source)))
+    assert len(api.requests) == 1

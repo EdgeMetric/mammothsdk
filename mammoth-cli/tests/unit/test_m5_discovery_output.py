@@ -150,7 +150,7 @@ def test_compact_contract_has_all_execution_dimensions() -> None:
         "limits",
     }
     assert contract["scope"] == "project"
-    assert contract["effects"] == "destructive"
+    assert contract["effects"] == "high_impact"  # cascades to every resource in the project
     assert contract["result"] == "ProjectDeleteResult"
     assert contract["async"] == "not_async"
     assert contract["limits"]["continuation"] is None

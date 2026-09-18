@@ -7,8 +7,10 @@
 
 ## Error envelope (stderr)
 ```json
-{"schema_version": 1, "error": {"code": "resource_not_found", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": ["..."]}}
+{"schema_version": 1, "error": {"code": "resource_not_found", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": ["..."], "log_ref": {"file": ".../logs/2026-09-19.jsonl", "run_id": "b6bc6bf6d166"}}}
 ```
+
+`log_ref` points at the local run log: `mammoth log tail --input '{"run_id": "RUN_ID"}' --output json --no-input` lists every request that invocation made, with HTTP status and backend `request_id`. Quote both when reporting a backend fault.
 
 ## Representative result keys
 

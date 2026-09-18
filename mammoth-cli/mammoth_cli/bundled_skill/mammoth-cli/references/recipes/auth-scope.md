@@ -11,11 +11,9 @@ mammoth context project use PROJECT_ID --profile PROFILE --output json --no-inpu
 ```
 
 The successful envelope should identify the selected profile/workspace/project
-in `data` or `meta`; retain only nonsecret IDs. A deliberately invalid or
-expired profile should return the structured auth error (exit 4), which is a
-stop-and-recover condition, not permission to retry mutations. Never inline
-tokens or secrets in argv, logs, or evidence. Headless login may receive
-protected credential JSON through stdin or a 0600 input file only when the
-operator explicitly supplies that file.
+in `data` or `meta`; retain only nonsecret IDs. An invalid or expired profile
+returns the structured auth error (exit 4), which is a stop-and-recover
+condition, not permission to retry mutations. The credential rule lives in
+[auth](../auth.md); this recipe does not restate it.
 
 Exit 4 is auth/authorization; preserve the structured error and stop safely.

@@ -17,9 +17,17 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from mammoth_cli.manifest.loader import load_commands  # noqa: E402
+
 MATRIX = ROOT / "docs" / "release-capability-matrix.json"
 _CLI_VERSION = re.compile(r"(?<![\d.])(\d+)\.(\d+)\.(\d+)")
-OUTPUT = ROOT / "mammoth_cli" / "bundled_skill" / "mammoth-cli" / "references" / "capabilities.md"
+_REFS = ROOT / "mammoth_cli" / "bundled_skill" / "mammoth-cli" / "references"
+OUTPUT = _REFS / "capabilities.md"
+OUTPUT_MISC = _REFS / "capabilities-misc.md"
+# Families an ETL / dashboard task touches; everything else is administration
+# and goes to the companion file so the main one stays small.
+_CORE_FAMILIES = frozenset({"dashboard", "dataset", "file", "folder", "job", "project", "view"})
 
 _VERIFIED = {"Full", "Partial"}
 # Remark markers that mean "the route itself answered with an error", as
@@ -56,6 +64,10 @@ def _cell(text: object) -> str:
 
 
 def build() -> str:
+    return build_all()[OUTPUT]
+
+
+def build_all() -> dict[Path, str]:
     matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
     rows = [row for row in matrix["rows"] if row.get("canonical_command")]
     # Rows carry the CLI release their evidence was collected on, in mixed
@@ -79,20 +91,27 @@ def build() -> str:
 
     verified = sum(1 for row in rows if row["status"] in _VERIFIED)
     unsupported = sum(1 for row in rows if row["status"] == "Not supported")
+    published = sum(1 for _ in load_commands())
+    total_operations = len(matrix["rows"])
     lines = [
         "# What is proven on release",
         "",
         "Generated from `docs/release-capability-matrix.json`; do not edit by hand.",
-        f"{len(rows)} API operations have a CLI command. {verified} were exercised "
-        f"successfully on release, {unsupported} are not supported there, and the "
-        "rest are untried. Untried is not broken: discover the contract with "
+        f"The CLI publishes {published} commands. {len(rows)} of them bind one of the "
+        f"{total_operations} API operations in the matrix; the remainder are local "
+        "commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share "
+        "an operation (every `view transform *` command submits through "
+        f"`view.task.add`). {verified} bound commands ran once successfully on release, "
+        f"{unsupported} are not supported there, and the rest are untried. Untried is "
+        "not broken: discover the contract with "
         "`mammoth schema get COMMAND_ID --output json --no-input`, run it, and "
         "treat the structured error envelope as the answer.",
         "",
         "Status meanings:",
         "",
-        "- **verified**: one bounded live run on release returned a success "
-        "envelope (single path; variants and error paths are usually untested).",
+        "- **ran once**: one bounded live run on release returned a success "
+        "envelope (single path; variants and error paths are usually untested). "
+        "It is not a guarantee that the route works for other inputs.",
         "- **not supported**: the backend refuses the route on release; the note "
         "says why and what to use instead.",
         "- **observed blocker**: the last run hit an error; the note quotes it. "
@@ -102,13 +121,14 @@ def build() -> str:
         "- Commands not listed under a family are untried.",
         "",
         "The typed `view transform *` commands all submit through `view.task.add`; "
-        "its row below carries the transformations proven end to end (filter, "
-        "fill-missing, join, pivot with an exported summary). A transformation not "
-        "named there has the same untried status as any other command.",
+        "its matrix row names the transformations that ran end to end and were read "
+        "back (filter, fill-missing, join, pivot, set-values with a condition, text, "
+        "bulk-replace, convert-type, discard-duplicates). A transformation not named "
+        "there has the same untried status as any other command.",
         "",
         "## Coverage by family",
         "",
-        "| Family | Commands | Verified | Not supported | Untried |",
+        "| Family | Commands | Ran once | Not supported | Untried |",
         "|---|---|---|---|---|",
     ]
     for family in sorted(families, key=lambda name: (-len(families[name]), name)):
@@ -118,7 +138,23 @@ def build() -> str:
         lines.append(f"| `{family}` | {len(group)} | {v} | {n} | {len(group) - v - n} |")
     lines.append("")
 
+    misc: list[str] = [
+        "# What is proven on release: administration families",
+        "",
+        "Generated from `docs/release-capability-matrix.json`; do not edit by hand. "
+        "Companion to [capabilities](capabilities.md), which holds the status "
+        "meanings, the coverage table and the core families (dashboard, dataset, "
+        "file, folder, job, project, view). Load this file only for a task in one "
+        "of the families below.",
+        "",
+    ]
+    lines.append(
+        "Administration families (`workspace`, `user`, `billing`, `support`, "
+        "`connector`, ...) are in [capabilities-misc](capabilities-misc.md)."
+    )
+    lines.append("")
     for family in sorted(families):
+        target = lines if family in _CORE_FAMILIES else misc
         group = sorted(families[family], key=lambda row: str(row["canonical_command"]))
         verified_ids = sorted(
             {str(row["canonical_command"]) for row in group if row["status"] in _VERIFIED}
@@ -139,44 +175,47 @@ def build() -> str:
                 blocked.setdefault(str(row["canonical_command"]), note)
         if not (verified_ids or unsupported_rows or blocked or fixed):
             continue
-        lines.append(f"## `{family}`")
-        lines.append("")
+        target.append(f"## `{family}`")
+        target.append("")
         if verified_ids:
-            lines.append("Verified: " + ", ".join(f"`{cid}`" for cid in verified_ids))
-            lines.append("")
+            target.append("Ran once: " + ", ".join(f"`{cid}`" for cid in verified_ids))
+            target.append("")
         if unsupported_rows or blocked or fixed:
-            lines.append("| Command | State | Note |")
-            lines.append("|---|---|---|")
+            target.append("| Command | State | Note |")
+            target.append("|---|---|---|")
             for row in unsupported_rows:
-                lines.append(
+                target.append(
                     f"| `{row['canonical_command']}` | not supported | {_cell(row['remarks'])} |"
                 )
             for cid, note in sorted(blocked.items()):
-                lines.append(f"| `{cid}` | observed blocker | {_cell(note)} |")
+                target.append(f"| `{cid}` | observed blocker | {_cell(note)} |")
             for cid, note in sorted(fixed.items()):
-                lines.append(f"| `{cid}` | CLI defect fixed, untried since | {_cell(note)} |")
-            lines.append("")
-    lines.append(
+                target.append(f"| `{cid}` | CLI defect fixed, untried since | {_cell(note)} |")
+            target.append("")
+    footer = (
         f"Evidence collected on CLI releases {version_range}; each row's release is "
         "recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row "
-        "verified on an older release has not been re-run since unless its note says so. "
+        "that ran on an older release has not been re-run since unless its note says so. "
         "Details: `docs/capability-evidence/` in the repository."
     )
-    lines.append("")
-    return "\n".join(lines)
+    lines += [footer, ""]
+    misc += [footer, ""]
+    return {OUTPUT: "\n".join(lines), OUTPUT_MISC: "\n".join(misc)}
 
 
 def main(argv: list[str] | None = None) -> int:
     args = argv if argv is not None else sys.argv[1:]
-    content = build()
+    outputs = build_all()
     if "--check" in args:
-        current = OUTPUT.read_text(encoding="utf-8") if OUTPUT.exists() else ""
-        if current != content:
-            print(f"{OUTPUT} is stale; run scripts/build_skill_capabilities.py", file=sys.stderr)
-            return 1
+        for path, content in outputs.items():
+            current = path.read_text(encoding="utf-8") if path.exists() else ""
+            if current != content:
+                print(f"{path} is stale; run scripts/build_skill_capabilities.py", file=sys.stderr)
+                return 1
         return 0
-    OUTPUT.write_text(content, encoding="utf-8")
-    print(f"wrote {OUTPUT}")
+    for path, content in outputs.items():
+        path.write_text(content, encoding="utf-8")
+        print(f"wrote {path}")
     return 0
 
 

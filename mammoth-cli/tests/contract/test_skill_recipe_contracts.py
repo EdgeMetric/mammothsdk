@@ -1,4 +1,5 @@
 """Keep packaged skill recipes tied to the published command manifest."""
+
 from __future__ import annotations
 
 import re
@@ -23,9 +24,9 @@ def test_recipe_schema_references_exist_in_published_manifest() -> None:
     for path in SKILL_REFERENCES.rglob("*.md"):
         text = path.read_text(encoding="utf-8")
         for command_id in re.findall(r"mammoth schema get ([a-z0-9.-]+)", text):
-            assert command_id in SCHEMA_IDS, (
-                f"{path.name} references unavailable schema {command_id}"
-            )
+            assert (
+                command_id in SCHEMA_IDS
+            ), f"{path.name} references unavailable schema {command_id}"
 
 
 def test_skill_discovery_queries_have_published_matches() -> None:
@@ -37,13 +38,13 @@ def test_skill_discovery_queries_have_published_matches() -> None:
     for path in SKILL_REFERENCES.rglob("*.md"):
         text = path.read_text(encoding="utf-8")
         for query in re.findall(r'mammoth schema find "([^"]+)"', text):
-            assert find_schemas(query)["matches"], (
-                f"{path.name} discovery query has no match: {query!r}"
-            )
+            assert find_schemas(query)[
+                "matches"
+            ], f"{path.name} discovery query has no match: {query!r}"
         for query in re.findall(r'mammoth capability find "([^"]+)"', text):
-            assert find_capabilities(query)["matches"], (
-                f"{path.name} capability query has no match: {query!r}"
-            )
+            assert find_capabilities(query)[
+                "matches"
+            ], f"{path.name} capability query has no match: {query!r}"
 
 
 def test_recipes_do_not_present_known_guessed_transform_aliases_as_routes() -> None:
@@ -59,11 +60,13 @@ def test_resource_recipe_matches_published_ingestion_evidence_boundary() -> None
     dataset_create = commands["dataset.create"]
     file_upload = commands["file.upload"]
 
-    assert "ds_creation_type\":\"weburl" in text
+    assert 'ds_creation_type":"weburl' in text
     assert "every freeform creation type" in text
     assert "waits for its asynchronous work" in text
     assert "tenant- and scope-specific" in text
-    assert "final\ncleanup absence was not verified" in text
+    # Evidence-log prose ("a retained owned-fixture upload ... was not verified")
+    # was removed from the recipe; the rule an agent acts on stays.
+    assert "verify cleanup for IDs returned by your own run" in text
     assert "ds_creation_type=weburl" in str(dataset_create["known_restrictions"])
     assert "tenant- and scope-specific" in str(file_upload["known_restrictions"])
 

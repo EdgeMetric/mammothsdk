@@ -1,17 +1,19 @@
 # Dashboards
 
-Dashboard inputs are generated and release-dependent:
+`dashboard create` (legacy engine) is retired on release (HTTP 409
+`4DASH012`): `schema find "dashboard create"` lists it first, do not use it.
+Create with `create-blank` (or `v3 generate` when an AI route is allowed).
+`dashboard source list` is an observed blocker on release (see
+capabilities); verify the view binding with `dashboard get DASHBOARD_ID`
+(`data.dataview_id`) instead.
 
 ```bash
-mammoth schema find "dashboard create" --output json --no-input
-mammoth schema find "dashboard source" --output json --no-input
 mammoth schema get dashboard.create-blank --output json --no-input
-mammoth dashboard create-blank --input INPUT_JSON --project PROJECT_ID --output json --no-input --yes
+mammoth dashboard create-blank --input INPUT_JSON --project PROJECT_ID --output json --no-input
 mammoth dashboard get DASHBOARD_ID --output json --no-input
-mammoth dashboard source list --output json --no-input
 ```
 
-Discover page/widget/publish routes and verify source binding, draft/published
+Discover page/widget/publish routes and verify the binding, draft/published
 data and terminal jobs. Use only returned IDs and schema confirmation policy;
 do not invent dashboard JSON or opaque task specs.
 
@@ -24,13 +26,12 @@ temporary/intermediate before authorizing deletion. Then run:
 
 ```bash
 mammoth dashboard get DASHBOARD_ID --output json --no-input
-mammoth dashboard source list --output json --no-input
 mammoth schema find "dashboard page" --output json --no-input
 mammoth schema find "dashboard" --output json --no-input
 ```
 
 Page/widget schemas vary by release. Read each schema, use returned IDs, and
-verify dashboard source plus draft/published data after every mutation. A
+verify the binding plus draft/published data after every mutation. A
 creation response alone is not proof of a usable published view.
 
 ## Canvas, widget data and PDF
@@ -53,9 +54,7 @@ descriptor with a `kind` (`scalar`, `group`, `rate`, `detail`, `options`,
 `dashboard pdf export` and `dashboard video export` cannot be completed from
 the CLI: the backend requires the browser-hydrated `DashboardData` map
 (pre-rendered widget results) in `params.data` and refuses to rebuild it. Report
-this as a known limitation instead of retrying with `{}`. `dashboard create`
-(legacy engine) is retired on release (HTTP 409 `4DASH012`); use
-`create-blank` or `v3 generate`.
+this as a known limitation instead of retrying with `{}`.
 
 ## Publishing and the url routes
 

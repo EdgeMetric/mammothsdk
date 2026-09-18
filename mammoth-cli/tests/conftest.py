@@ -18,6 +18,7 @@ import json
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
@@ -29,6 +30,18 @@ from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.services.sdk_service import SdkMammothService
 
 Route = Callable[["RecordedRequest"], "tuple[int, Any]"]
+
+
+@pytest.fixture(autouse=True)
+def isolated_run_log(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Send every test's run log to a disposable directory.
+
+    The CLI logs each invocation to the platform state directory; tests must
+    never write there. Subprocess-based tests inherit the variable.
+    """
+    log_dir = tmp_path / "mammoth-run-log"
+    monkeypatch.setenv("MAMMOTH_LOG_DIR", str(log_dir))
+    return log_dir
 
 
 @pytest.fixture(autouse=True)

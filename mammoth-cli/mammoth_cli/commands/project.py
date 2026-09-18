@@ -237,10 +237,18 @@ def project_update(invocation: Invocation) -> HandlerResult:
 
 
 def project_delete(invocation: Invocation) -> HandlerResult:
-    """Delete one project (positional or active). Prompt or ``--yes`` required."""
+    """Delete one project (positional or active).
+
+    A project delete cascades to every dataset, view, export and dashboard in
+    it, so it needs ``--yes --confirm PROJECT_ID``: the caller must name the
+    exact project, not just agree to "the active one".
+    """
     project_id = _project_id(invocation)
     enforce_confirmation(
-        invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete project {project_id}"
+        invocation,
+        policy=POLICY_CONFIRM_TARGET,
+        action=f"delete project {project_id}",
+        target=str(project_id),
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), project_id=project_id)

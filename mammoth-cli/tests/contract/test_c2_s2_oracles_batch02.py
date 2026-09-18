@@ -70,7 +70,7 @@ CASES = [
     {"route":"workspace.delete","argv":["workspace","delete","4"],"input":None,"yes":True,"api":WorkspaceAPI,"method":"delete","kwargs":{"workspace_id":4},"wire":["DELETE","/workspaces/4",{}],"response":{}},
     {"route":"workspace.reactivate","argv":["workspace","reactivate","4"],"input":None,"yes":True,"api":WorkspaceAPI,"method":"reactivate","kwargs":{"workspace_id":4},"wire":["POST","/workspaces/4/reactivate",{}],"response":{}},
     {"route":"workspace.user.list","argv":["workspace","user","list"],"input":None,"api":WorkspaceAPI,"method":"list_users","kwargs":{},"wire":["GET","/workspaces/4/users",{}],"response":{"users":[]}},
-    {"route":"project.delete","argv":["project","delete","42"],"project":42,"input":None,"yes":True,"api":ProjectsAPI,"method":"delete","kwargs":{"project_id":42},"wire":["DELETE","/workspaces/4/projects/42",{}],"response":{}},
+    {"route":"project.delete","argv":["project","delete","42"],"project":42,"input":None,"yes":True,"confirm":"42","api":ProjectsAPI,"method":"delete","kwargs":{"project_id":42},"wire":["DELETE","/workspaces/4/projects/42",{}],"response":{}},
     {"route":"project.bulk-delete","argv":["project","bulk-delete"],"input":{"project_ids":[42,43]},"yes":True,"api":ProjectsAPI,"method":"bulk_delete","kwargs":{"project_ids":[42,43]},"wire":["DELETE","/workspaces/4/projects",{"params":{"ids":"42,43"}}],"response":{}},
     {"route":"project.bulk-update","argv":["project","bulk-update"],"input":{"patch_data":{"patches":[{"op":"add","path":"role","value":[{"project_id":47,"user_roles":[{"user_id":9,"role":"project_analyst"}]}]}]}},"yes":True,"api":ProjectsAPI,"method":"bulk_update","kwargs":{"patch_data":{"patches":[{"op":"add","path":"role","value":[{"project_id":47,"user_roles":[{"user_id":9,"role":"project_analyst"}]}]}]}},"wire":["PATCH","/workspaces/4/projects",{"json":{"patches":[{"op":"add","path":"role","value":[{"project_id":47,"user_roles":[{"user_id":9,"role":"project_analyst"}]}]}]}}],"response":{}},
     {"route":"project.pending-changes","argv":["project","pending-changes"],"project":41,"input":None,"api":ProjectsAPI,"method":"pending_changes","kwargs":{"project_id":41},"wire":["GET","/workspaces/4/projects/41/pending-changes",{}],"response":{}},
@@ -99,7 +99,7 @@ def _argv(case: dict[str, Any]) -> list[str]:
     if case.get("project") is not None:
         out += ["--project", str(case["project"])]
     if case.get("yes"):
-        out += ["--yes", "--confirm", "4"]
+        out += ["--yes", "--confirm", str(case.get("confirm", "4"))]
     if case.get("input") is not None:
         out += ["--input", json.dumps(case["input"]), "--input-format", "json"]
     out += ["--output", "json", "--no-input"]

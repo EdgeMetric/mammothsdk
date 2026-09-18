@@ -198,7 +198,7 @@ installer and reports modified copies instead of silently replacing them.
 | Organize | `project`, `folder`, `dashboard`, `report`, `template` |
 | Automate | `automation`, `workflow`, `schedule`, `batch`, `webhook` |
 | Administer | `workspace`, `user`, `billing`, `client-app`, `external-key` |
-| Operate the CLI | `auth`, `context`, `config`, `doctor`, `capability`, `schema`, `skill`, `upgrade` |
+| Operate the CLI | `auth`, `context`, `config`, `doctor`, `log`, `capability`, `schema`, `skill`, `upgrade` |
 
 The full generated list is in [docs/reference/commands.md](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/reference/commands.md).
 
@@ -215,7 +215,7 @@ The full generated list is in [docs/reference/commands.md](https://github.com/Ed
 | [Safe mutation](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/safety.md) | Mutation classes and confirmation policies. |
 | [Output and errors](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/reference/output-and-errors.md) | Envelopes, exit codes, error codes. |
 | [Global flags](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/reference/global-flags.md) | The flags every command shares. |
-| [Troubleshooting](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/troubleshooting.md) | Exit codes, error envelopes, recovery. |
+| [Troubleshooting](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/troubleshooting.md) | Exit codes, error envelopes, the run log, recovery. |
 | [Upgrade](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/upgrade.md) / [Uninstall](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/uninstall.md) | Keep the CLI current, or remove it. |
 | [Command reference](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/reference/commands.md) | Every command, grouped by family. |
 

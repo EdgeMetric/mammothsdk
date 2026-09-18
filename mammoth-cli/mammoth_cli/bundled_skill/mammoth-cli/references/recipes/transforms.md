@@ -27,16 +27,19 @@ lists them. Pick the operation by what it does, not by its name:
   on the existing column with an `IS_EMPTY` condition:
 
 ```bash
+mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID --output json --no-input   # before: note which rows have a blank revenue, and a few non-blank values
 mammoth view transform set-values VIEW_ID --project PROJECT_ID \
   --input '{"dataset_id":DATASET_ID,"existing_column":"revenue","values":[{"value":0}],"condition":{"column":"revenue","operator":"IS_EMPTY"}}' \
   --output json --no-input
-mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID --output json --no-input
+mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID --output json --no-input   # after
 ```
 
-Then confirm from the read-back that blank rows are now `0` and non-blank
-rows kept their values. If non-matching rows changed too, the condition was
-not applied: stop, do not build joins or summaries on this view, and report
-it.
+Compare the two reads: the row count is unchanged, the rows that were blank
+now read `0`, and every non-blank value is identical to the before-sample.
+If every row now reads `0`, or a non-blank value changed, the condition was
+dropped: stop, do not build joins or summaries on this view, and report it.
+Use `view data get` (paged, 400 rows per page) for this, not `view preview`
+(50 rows), and sample from more than one page on a large view.
 
 - `filter` keeps matching rows by default (`filter_type: "SHOW"`); to drop
   rows, say so: `{"condition":{"column":"units","operator":"LT","value":0},"filter_type":"REMOVE"}`. For each operation, a successful result should contain a returned
@@ -77,8 +80,10 @@ For a grouped summary (totals per region, counts per status) use the typed
 SELECT that names the view as the quoted table `"view:VIEW_ID"` (or its quoted
 display name) with display-name columns; unquoted or placeholder table names
 (`data`, `__TABLE__`) are rejected with "table name ... not found" or "only
-select queries allowed". The result replaces the view's columns, so run it on
-a copy (`view create` with `clone_from`) or as the last step:
+select queries allowed". The result replaces the view's columns: never run it
+(or `pivot`) on a view that is itself a deliverable; run it on a copy
+(`view create DATASET_ID --input '{"name": "...", "clone_from": VIEW_ID}'`)
+or as the last step, and prefer `pivot` (proven on release) over a SQL task:
 
 ```bash
 mammoth schema get view.transform.pivot --output json --no-input
@@ -98,15 +103,25 @@ values you are summing.
 
 ## How to look at your data
 
-- Schema and types: `view get VIEW_ID` (falls back to discovery) or
-  `dataset get DATASET_ID`; the column list with display names is what every
-  transform input must use.
+- Schema and types: `view get VIEW_ID DATASET_ID` (exact parent; the
+  no-parent form discovers the parent with one request per dataset in the
+  project) or `dataset get DATASET_ID`; the `metadata[].display_name` list is
+  what every transform input must use. If `view get` ever returns
+  `"<unserializable View>"` you are on a CLI older than 2.0.18: rerun with the
+  parent, or use `view preview VIEW_ID DATASET_ID` for the column list.
 - Rows and values: `view data get VIEW_ID DATASET_ID` (paged) or
   `view preview VIEW_ID` for a sample; use these after every value-changing
   step and before reporting any number.
 - What actually ran: `view task list VIEW_ID`, `view task get VIEW_ID TASK_ID`,
   `view pipeline get VIEW_ID` (state, auto_run, executing task).
 - Async completion: `job get JOB_ID` / `job wait JOB_ID`.
+- Response shapes are not uniform: `dataset get` returns `data.dataset.{...}`,
+  `view list` returns `data.dataviews[]`, `view data get` returns rows keyed by
+  display name. Read the envelope you got, not the one you expected.
+
+Prefer `pivot` over `add-sql` for a grouped summary when `capabilities.md`
+lists it as run on release; `add-sql` replaces every column of the view, so
+never run it on a deliverable view.
 
 Reject malformed fields with the structured error envelope and stop rather than
 guessing names. Verify exact display names, join multiplicity, math values and

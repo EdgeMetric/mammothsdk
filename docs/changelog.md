@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.7.10
+
+### Added
+
+- Structured logging on the `mammoth.http` and `mammoth.jobs` loggers. Every
+  request emits one `http` record (method, path, status, duration,
+  backend request id, outcome) and every job poll one `job.poll` record, as
+  `extra={"mammoth": {...}}` on a standard `logging` record. No headers,
+  bodies or credentials are logged. Nothing is emitted unless the
+  application attaches a handler; the CLI's run log does.
+
 ## v0.7.9
 
 ### Fixed

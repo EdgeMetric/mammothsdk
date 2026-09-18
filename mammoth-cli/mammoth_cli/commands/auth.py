@@ -378,6 +378,7 @@ def auth_login(
         invocation.output,
         producer,
         agent_mode=invocation.no_input,
+        invocation=invocation,
     )
 
 
@@ -459,6 +460,7 @@ def auth_status(
         invocation.output,
         producer,
         agent_mode=invocation.no_input,
+        invocation=invocation,
     )
 
 
@@ -556,4 +558,5 @@ def auth_logout(
         invocation.output,
         producer,
         agent_mode=invocation.no_input,
+        invocation=invocation,
     )

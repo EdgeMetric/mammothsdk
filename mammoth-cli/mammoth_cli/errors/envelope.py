@@ -66,24 +66,28 @@ class CliError(Exception):
     retryable: bool = False
     authorization_required: bool = False
     recovery_commands: list[str] = field(default_factory=list)
+    #: Where this invocation's run log is (``{"file", "run_id"}``); set by the
+    #: executor when a run log is active so a failure can be traced to its
+    #: request trail. Omitted from the envelope when no log was written.
+    log_ref: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         super().__init__(self.message)
 
     def to_envelope(self) -> dict[str, Any]:
-        return {
-            "schema_version": SCHEMA_VERSION,
-            "error": {
-                "code": self.code,
-                "message": self.message,
-                "hint": self.hint,
-                "details": self.details,
-                "request_id": self.request_id,
-                "retryable": self.retryable,
-                "authorization_required": self.authorization_required,
-                "recovery_commands": list(self.recovery_commands),
-            },
+        error: dict[str, Any] = {
+            "code": self.code,
+            "message": self.message,
+            "hint": self.hint,
+            "details": self.details,
+            "request_id": self.request_id,
+            "retryable": self.retryable,
+            "authorization_required": self.authorization_required,
+            "recovery_commands": list(self.recovery_commands),
         }
+        if self.log_ref is not None:
+            error["log_ref"] = dict(self.log_ref)
+        return {"schema_version": SCHEMA_VERSION, "error": error}
 
 
 # --- Common typed errors ---------------------------------------------------

@@ -61,12 +61,15 @@ def _is_secret_key(key: str) -> bool:
     lowered = _CAMEL_BOUNDARY.sub("_", key).lower()
     # ``token_count`` is ordinary result metadata (for example an LLM usage
     # counter), not a credential.  Do not let the broad token guard erase it.
+    # ``secret_fields`` is schema metadata naming which fields are protected;
+    # it never carries a value.
     if lowered in {
         "token_count",
         "next_token",
         "continuation_token",
         "page_token",
         "design_tokens",
+        "secret_fields",
     }:
         return False
     if "token" in lowered and not any(

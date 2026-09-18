@@ -67,6 +67,33 @@ def test_get_uses_positional_view_id(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == [(_GET, {"view_id": 7})]
 
 
+class _RichView:
+    """Stand-in for the SDK ``View``: a record plus a discovered parent."""
+
+    def __init__(self) -> None:
+        self.raw = {"id": 7, "name": "View 1", "metadata": [{"display_name": "amount"}]}
+        self.dataset_id = 63
+
+    def get_data(self) -> None:  # pragma: no cover - method presence only
+        raise AssertionError
+
+
+def test_get_via_discovery_returns_the_dataview_record(
+    fake_service: FakeMammothService,
+) -> None:
+    # Without an exact parent the SDK hands back a rich View object; the
+    # envelope must carry its dataview record (and the discovered parent),
+    # not "<unserializable View>".
+    fake_service.responses[_GET] = _RichView()
+    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    assert data == {
+        "id": 7,
+        "name": "View 1",
+        "metadata": [{"display_name": "amount"}],
+        "dataset_id": 63,
+    }
+
+
 def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7"], output="json"))

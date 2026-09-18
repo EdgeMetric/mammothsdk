@@ -10311,7 +10311,7 @@
       "capability_id": "REL-461",
       "capability": "Add a task in the pipeline",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Haiku e2e 2026-09-18: filter, fill-missing, two joins (foreign_dataset_id) and pivot submitted through view transform * on owned view 65 with exact parent dataset_id; per-region summary exported and read back with the expected four rows. No error-path or per-operation readback of each task.",
+      "remarks": "Partial bounded evidence only; transforms proven end to end on release through view transform *: filter, fill-missing, join (two, foreign_dataset_id), pivot (Haiku e2e 2026-09-18, CLI 2.0.13, owned view 65; per-region summary exported and read back with the expected four rows); set-values with a task-level condition (only the matching row changed; SDK 0.7.9 job 439), text, bulk-replace, convert-type, discard-duplicates (reverify-216 2026-09-18, CLI 2.0.16/2.0.17, read back with view data get); Haiku cold-start 2026-09-18 on 2.0.17 ran the same ETL end to end. Transforms not named here are untried.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AddTask",
       "method": "POST",
@@ -10322,14 +10322,25 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/haiku-e2e-20260918/REPORT.md",
-        "report": "docs/capability-evidence/haiku-e2e-20260918/REPORT.md",
-        "scope": "Haiku end-to-end run on release ws 4 / project 3 with public CLI 2.0.13: upload -> filter/fill/join/pivot -> export dataset -> blank dashboard + page -> cleanup; owned datasets 44-47, views 64-67, dashboard 55; baseline verified",
-        "sha256": "e00df502c4cd974669bfef300d56e6108c3558a367faf163afb3513ae2f7a716",
+        "artifact": "docs/capability-evidence/reverify-216-20260918/SUMMARY.md",
+        "report": "docs/capability-evidence/reverify-216-20260918/SUMMARY.md",
+        "scope": "reverify-216 probe on release ws 4 (owned project 29): set-values with condition, text, bulk-replace, convert-type, discard-duplicates, each read back with view data get; plus Haiku e2e 2026-09-18 (docs/capability-evidence/haiku-e2e-20260918/REPORT.md) for filter/fill-missing/join/pivot",
         "command_id": "view.task.add",
-        "exit_status": 0
+        "exit_status": 0,
+        "sha256": "6ea6dec70c8ac1affa362a643253d6ff597341982b016d080e9a1cf057ef1118",
+        "proven_transforms": [
+          "filter",
+          "fill-missing",
+          "join",
+          "pivot",
+          "set-values",
+          "text",
+          "bulk-replace",
+          "convert-type",
+          "discard-duplicates"
+        ]
       },
-      "evidence_version": "2.0.13"
+      "evidence_version": "2.0.17"
     },
     {
       "capability_id": "REL-462",

@@ -349,4 +349,5 @@ def upgrade_command(
         invocation.output,
         producer,
         agent_mode=invocation.no_input,
+        invocation=invocation,
     )

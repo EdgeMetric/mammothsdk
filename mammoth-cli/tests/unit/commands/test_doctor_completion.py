@@ -198,3 +198,12 @@ def test_doctor_reports_visible_projects_and_selected_project(
     assert checks["project_context"]["ok"] is False
     assert data["ok"] is False
     assert "mammoth project list --output json --no-input" in data["recommendations"]
+
+
+def test_doctor_checks_the_run_log_directory(
+    isolated_cli_config: Path, isolated_run_log: Path
+) -> None:
+    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    check = next(c for c in data["checks"] if c["name"] == "log_directory")
+    assert check["ok"] is True
+    assert str(isolated_run_log) in check["detail"]
