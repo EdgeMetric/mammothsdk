@@ -39,6 +39,9 @@ _CLOSED_ZERO_INPUT_COMMANDS = frozenset({"config.get"})
 #: value here is a genuine, accepted --input field so the documented example both
 #: validates against the input schema and works when run.
 _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
+    # The backend requires integer resource ids ("resource_ids must be
+    # comma-separated integers"); the SDK annotation is a plain list[str].
+    "project.resource-dependencies": {"resource_ids": [456]},
     "view.export.azure-blob": {
         "storage_account_name": "storage-account",
         "tenant_id": "tenant-id",

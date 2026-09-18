@@ -538,3 +538,40 @@ def test_automation_create_coerces_pydantic_task_specs_full_stack(
     assert sent["condition_mode"] == "and"
     assert sent["tasks"][0]["task_type"] == "send_an_alert"
     assert sent["tasks"][0]["details"]["recipients"] == ["ops@example.com"]
+
+
+def test_group_leaf_positional_with_trailing_options_full_stack(
+    monkeypatch: pytest.MonkeyPatch, real_service: ServiceFactory, tmp_path: Path
+) -> None:
+    """`project resource-dependencies 3 --input ...` is a leaf under a group node.
+
+    Click used to resolve ``3`` as a subcommand name ("No such command '3'");
+    the leaf group now keeps bare tokens as positionals and still parses the
+    options that follow them.
+    """
+    api = _bind_real_service(monkeypatch, real_service)
+    api.on("GET", r"/projects/3/resource-dependencies", 200, {"dependencies": []})
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"resource_ids": [28]}), encoding="utf-8")
+
+    result = make_runner().invoke(
+        [
+            "project",
+            "resource-dependencies",
+            "3",
+            "--input",
+            str(doc),
+            "--output",
+            "json",
+            "--no-input",
+        ]
+    )
+
+    assert result.exit_code == 0, result.output
+    assert any(r.path.endswith("/projects/3/resource-dependencies") for r in api.requests)
+    assert json.loads(result.output)["data"] == {"dependencies": []}
+
+    # The genuine subcommand under the same node still resolves.
+    sub = make_runner().invoke(["project", "resource-dependencies", "update", "--help"])
+    assert sub.exit_code == 0, sub.output
+    assert "Usage" in sub.output

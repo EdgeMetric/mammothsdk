@@ -413,8 +413,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project resource-dependencies --help
-  agent_example: 'mammoth project resource-dependencies 123 --input ''{"resource_ids": ["resource-123"]}''
-    --output json --no-input'
+  agent_example: 'mammoth project resource-dependencies 123 --input ''{"resource_ids": [456]}'' --output json --no-input'
   unit_tests:
   - UT-PROJECT-RESOURCE-DEPENDENCIES
   contract_tests:

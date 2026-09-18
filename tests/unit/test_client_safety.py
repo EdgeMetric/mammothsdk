@@ -290,3 +290,34 @@ def test_signed_download_session_has_no_api_credentials() -> None:
     assert "X-API-KEY" not in client.download_session.headers
     assert "X-API-SECRET" not in client.download_session.headers
     client.close()
+
+
+def test_binary_wrapper_describes_png_and_returns_html_as_text() -> None:
+    # Artifact routes (og-card PNG, PDF, MP4, share page HTML) are not JSON;
+    # parsing them used to raise JSONDecodeError on a successful 200.
+    import base64
+    import hashlib
+
+    client = MammothClient("dummy-key", "dummy-secret", workspace_id=4)
+
+    png = Response()
+    png.status_code = 200
+    png._content = b"\x89PNG\r\n\x1a\nfake"
+    png.headers["Content-Type"] = "image/png"
+    client.session.request = lambda *args, **kwargs: png  # type: ignore[method-assign]
+    assert client._request_binary("GET", "/dashboards/48/og-card") == {
+        "content_type": "image/png",
+        "size_bytes": len(png._content),
+        "sha256": hashlib.sha256(png._content).hexdigest(),
+        "content_base64": base64.b64encode(png._content).decode("ascii"),
+    }
+
+    html = Response()
+    html.status_code = 200
+    html._content = b"<html>share</html>"
+    html.headers["Content-Type"] = "text/html; charset=utf-8"
+    client.session.request = lambda *args, **kwargs: html  # type: ignore[method-assign]
+    described = client._request_binary("GET", "/dashboards/url/x/share")
+    assert described["text"] == "<html>share</html>"
+    assert "content_base64" not in described
+    client.close()

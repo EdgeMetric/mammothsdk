@@ -160,6 +160,17 @@ def _media_schema(container: dict[str, Any]) -> dict[str, Any] | None:
     return schema if isinstance(schema, dict) and schema else None
 
 
+def _is_binary_operation(operation: dict[str, Any]) -> bool:
+    """True when every documented 2xx body is a non-JSON media type."""
+    media_types: list[str] = []
+    for status, response in operation.get("responses", {}).items():
+        if str(status).startswith("2") and isinstance(response, dict):
+            media_types.extend(str(key) for key in response.get("content", {}))
+    return bool(media_types) and not any(
+        media.split(";", 1)[0].strip().endswith("json") for media in media_types
+    )
+
+
 def _success_schemas(operation: dict[str, Any]) -> list[dict[str, Any]]:
     schemas = []
     for status, response in operation.get("responses", {}).items():
@@ -482,10 +493,18 @@ def build() -> str:
         else:
             lines.append("    params = None")
         body_arg = ", json=_json_body(body)" if body_schema else ""
-        lines.append(
-            "    response = self._client._request_json("
-            f"{method.upper()!r}, path, params=params{body_arg})"
-        )
+        if _is_binary_operation(operation):
+            # PNG/PDF/MP4/HTML artifacts: describe the body instead of parsing
+            # it as JSON, which used to raise JSONDecodeError on a 200.
+            lines.append(
+                "    response = self._client._request_binary("
+                f"{method.upper()!r}, path, params=params{body_arg})"
+            )
+        else:
+            lines.append(
+                "    response = self._client._request_json("
+                f"{method.upper()!r}, path, params=params{body_arg})"
+            )
         opaque = {"dict[str, Any]", "Any"}
         named_responses = [item for item in response_types if item not in opaque]
         has_untyped = any(item in opaque for item in response_types)

@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.7.5
+
+### Fixed
+
+- `templates.list()` and `connector_ai.session_list()` accept the bare-array
+  responses those routes return.
+- Dashboard artifact reads (og-card, PDF, video, share page) return a
+  described body (`content_type`, `size_bytes`, `sha256`, and `text` or
+  `content_base64`) instead of failing to parse JSON.
+
 ## v0.7.4
 
 ### Fixed

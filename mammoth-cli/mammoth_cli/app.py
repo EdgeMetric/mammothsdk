@@ -24,6 +24,7 @@ from typing import Annotated, Any
 
 import typer
 from typer._click import exceptions as _typer_click_exceptions
+from typer._click.core import Command as _ClickCommand
 from typer.core import TyperGroup
 
 from mammoth_cli import __version__
@@ -297,6 +298,31 @@ def _usage_error_report(error: Any, tokens: Sequence[str]) -> CliError | None:
     )
 
 
+class _LeafGroup(TyperGroup):
+    """Group for a node that is also an invocable command with positionals.
+
+    Click resolves the first bare token after a group as a subcommand name, so
+    ``mammoth project resource-dependencies 3`` failed with ``No such command
+    '3'`` even though the manifest (and every printed example) takes the
+    project id positionally. When the leading token is not a registered
+    subcommand, keep every token as an argument for the group callback instead;
+    genuine subcommands (``... resource-dependencies update 3``) are unaffected.
+    """
+
+    def parse_args(self, ctx: Any, args: list[str]) -> list[str]:
+        super().parse_args(ctx, args)
+        protected = list(getattr(ctx, "_protected_args", ()) or ())
+        if protected and protected[0] not in self.commands:
+            # Leaf invocation. A group parser stops at the first bare token, so
+            # options after the positional were left unparsed; parse again as a
+            # plain command with interspersed options, keeping the bare tokens
+            # as the callback's positional arguments.
+            ctx.allow_interspersed_args = True
+            ctx.args = _ClickCommand.parse_args(self, ctx, list(args))
+            ctx._protected_args = []
+        return list(ctx.args)
+
+
 class _EnvelopeGroup(TyperGroup):
     """Root group that renders Click usage errors as the machine error envelope.
 
@@ -358,10 +384,10 @@ class _EnvelopeGroup(TyperGroup):
         # group-level classifier (schema get and nested commands rely on the
         # stable missing_argument envelope).
         error_message = error.format_message()
-        is_missing_parameter = isinstance(
-            error, _typer_click_exceptions.MissingParameter
-        ) or error.__class__.__name__ == "MissingParameter" or bool(
-            re.match(r"^Missing argument '[^']+'\.", error_message)
+        is_missing_parameter = (
+            isinstance(error, _typer_click_exceptions.MissingParameter)
+            or error.__class__.__name__ == "MissingParameter"
+            or bool(re.match(r"^Missing argument '[^']+'\.", error_message))
         )
         report = None if is_missing_parameter else _usage_error_report(error, tokens)
         if _output_mode_from_argv(argv) in MACHINE_OUTPUTS:
@@ -393,8 +419,7 @@ class _EnvelopeGroup(TyperGroup):
                         (
                             token.split("=", 1)[0]
                             for token in tokens
-                            if token.startswith("--")
-                            and token.split("=", 1)[0] not in known
+                            if token.startswith("--") and token.split("=", 1)[0] not in known
                         ),
                         None,
                     )
@@ -829,6 +854,7 @@ def build_app() -> typer.Typer:
         if command_id is not None:
             # This node is both a group and an invocable command.
             sub = typer.Typer(
+                cls=_LeafGroup,
                 no_args_is_help=False,
                 invoke_without_command=True,
                 context_settings={"allow_extra_args": True, "ignore_unknown_options": True},

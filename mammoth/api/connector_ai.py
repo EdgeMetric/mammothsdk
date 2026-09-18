@@ -91,7 +91,8 @@ class ConnectorAIAPI:
             project_id: Project ID (uses client default if not provided).
 
         Returns:
-            Dict with the sessions list.
+            ``{"sessions": [...]}``. The backend answers this route with a bare
+            JSON array, which is wrapped so callers get the usual dict shape.
 
         Raises:
             MammothValidationError: If *project_id* is not a positive integer.
@@ -99,9 +100,10 @@ class ConnectorAIAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        return self._client._request_json(
+        items = self._client._request_list(
             "GET", f"/workspaces/{ws}/projects/{proj}/ai/connector-chat/sessions"
         )
+        return {"sessions": items}
 
     def session_messages(self, session_id: int, project_id: int | None = None) -> dict[str, Any]:
         """Get messages for a connector chat session.

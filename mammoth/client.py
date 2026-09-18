@@ -26,6 +26,8 @@ Example::
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import math
 from ipaddress import ip_address
 from typing import Any, cast
@@ -223,6 +225,12 @@ class ViewsResource:
         if dataset_id is None:
             dataset_id = self._client.pipeline.find_dataset_for_dataview(view_ids[0])
         return self._client.dataviews.bulk_delete(dataset_id=dataset_id, dataview_ids=view_ids)
+
+
+#: Artifact media types returned as text rather than base64.
+_TEXT_ARTIFACT_TYPES = frozenset(
+    {"text/html", "text/plain", "text/csv", "application/xml", "text/xml"}
+)
 
 
 class MammothClient:
@@ -599,6 +607,21 @@ class MammothClient:
             )
 
         if 200 <= response.status_code < 300:
+            if expected_response_shape == "binary":
+                # Artifact routes (PNG, PDF, MP4, HTML) are not JSON. Describe
+                # the body instead of parsing it, so callers get a stable dict.
+                content = response.content or b""
+                content_type = response.headers.get("Content-Type", "") or ""
+                payload: dict[str, Any] = {
+                    "content_type": content_type,
+                    "size_bytes": len(content),
+                    "sha256": hashlib.sha256(content).hexdigest(),
+                }
+                if content_type.split(";", 1)[0].strip() in _TEXT_ARTIFACT_TYPES:
+                    payload["text"] = response.text
+                else:
+                    payload["content_base64"] = base64.b64encode(content).decode("ascii")
+                return payload
             if response.status_code == 204 or not response.content:
                 if expected_response_shape == "list_or_dict":
                     return []
@@ -714,6 +737,24 @@ class MammothClient:
         # ``expected_response_shape`` above rejects every non-dict successful
         # response before it reaches this typed wrapper.
         return cast(dict[str, Any], result)
+
+    def _request_binary(
+        self,
+        method: str,
+        endpoint: str,
+        params: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Make an authenticated request for a non-JSON artifact.
+
+        Returns ``{"content_type", "size_bytes", "sha256"}`` plus ``"text"``
+        for HTML/plain-text bodies or ``"content_base64"`` for binary ones.
+        """
+        result = self._request(
+            method, endpoint, params=params, expected_response_shape="binary", **kwargs
+        )
+        assert isinstance(result, dict)
+        return result
 
     def _request_list(
         self,

@@ -60,10 +60,12 @@ class TestConnectorAIAPIHistory:
 
 class TestConnectorAIAPISessionList:
     def test_session_list(self):
+        # The route answers with a bare JSON array on release; the SDK reads
+        # it as a list and wraps it in the usual dict shape.
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"sessions": []}
-        api.session_list()
-        mock_client._request_json.assert_called_once_with(
+        mock_client._request_list.return_value = [{"id": 7}]
+        assert api.session_list() == {"sessions": [{"id": 7}]}
+        mock_client._request_list.assert_called_once_with(
             "GET", "/workspaces/2/projects/100/ai/connector-chat/sessions"
         )
 

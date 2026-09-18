@@ -4,6 +4,20 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.5]
+
+### Fixed
+
+- `TemplatesAPI.list` and `ConnectorAIAPI.session_list` read the bare JSON
+  array those routes return and wrap it as `{"templates": [...]}` /
+  `{"sessions": [...]}`; previously a successful HTTP 200 raised
+  "Expected dict response from API".
+- Dashboard artifact routes (`og_card`, `published_og_card`, `pdf_artifact`,
+  `published_pdf_artifact`, `published_video_artifact`,
+  `published_share_page`) no longer try to parse PNG/PDF/MP4/HTML as JSON.
+  They return `{"content_type", "size_bytes", "sha256"}` plus `"text"` for
+  HTML or `"content_base64"` for binary bodies (new `MammothClient._request_binary`).
+
 ## [0.7.4]
 
 ### Fixed

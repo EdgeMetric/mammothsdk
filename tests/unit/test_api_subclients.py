@@ -325,6 +325,13 @@ class TestProjectsAPI:
 # ======================================================================
 
 
+class TestTemplatesAPI:
+    def test_list_reads_bare_array_and_wraps_it(self, client: MammothClient):
+        client._request_list.return_value = [{"id": 3}]
+        assert client.templates.list() == {"templates": [{"id": 3}]}
+        assert_called_with_method_and_endpoint(client._request_list, "GET", "/workspaces/1/templates")
+
+
 class TestDatasetsAPI:
     def test_list(self, client: MammothClient):
         client.datasets.list()

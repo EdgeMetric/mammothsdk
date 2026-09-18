@@ -437,7 +437,7 @@ def pdf_artifact(self: Any, dashboard_id: int, job_id: int) -> dict[str, Any]:
     path = path.replace("{dashboard_id}", str(dashboard_id))
     path = path.replace("{job_id}", str(job_id))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = self._client._request_binary("GET", path, params=params)
     return response
 
 
@@ -447,7 +447,7 @@ def published_pdf_artifact(self: Any, url: str, job_id: int) -> dict[str, Any]:
     path = path.replace("{url}", str(url))
     path = path.replace("{job_id}", str(job_id))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = self._client._request_binary("GET", path, params=params)
     return response
 
 
@@ -465,7 +465,7 @@ def og_card(self: Any, dashboard_id: int) -> dict[str, Any]:
     path = "/dashboards/{dashboard_id}/og-card"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = self._client._request_binary("GET", path, params=params)
     return response
 
 
@@ -474,7 +474,7 @@ def published_og_card(self: Any, url: str) -> dict[str, Any]:
     path = "/dashboards/url/{url}/og-card"
     path = path.replace("{url}", str(url))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = self._client._request_binary("GET", path, params=params)
     return response
 
 
@@ -521,7 +521,7 @@ def published_share_page(self: Any, url: str) -> dict[str, Any]:
     path = "/dashboards/url/{url}/share"
     path = path.replace("{url}", str(url))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = self._client._request_binary("GET", path, params=params)
     return response
 
 
@@ -530,7 +530,7 @@ def published_video_artifact(self: Any, url: str) -> dict[str, Any]:
     path = "/dashboards/url/{url}/video.mp4"
     path = path.replace("{url}", str(url))
     params = None
-    response = self._client._request_json("GET", path, params=params)
+    response = self._client._request_binary("GET", path, params=params)
     return response
 
 

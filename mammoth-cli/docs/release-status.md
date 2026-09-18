@@ -1,5 +1,36 @@
 # CLI release provenance
 
+## 2.0.13 / SDK 0.7.5
+
+This release closes the CLI-side defects the 2026-09-18 read-only sweep
+found, each re-verified live on release before the fix and after it:
+
+- `project resource-dependencies 3` failed with "No such command '3'": the
+  path is also a group (`... update`), and Click resolved the positional as a
+  subcommand name. Leaf groups now keep bare tokens as positionals and still
+  parse the options that follow them; the subcommand is unaffected. The
+  example carries integer `resource_ids`, which the backend requires.
+- `view pipeline items-all VIEW_ID DATASET_ID`: the advertised trailing
+  parent positional was ignored; it is honoured now and a conflicting
+  `dataset_id` input field is rejected.
+- `template list` and `connector ai session list` raised `api_error` on an
+  HTTP 200 because those routes return a bare JSON array (SDK 0.7.5 wraps it).
+- `dashboard og-card` and the other artifact reads raised `JSONDecodeError` on
+  a 200 PNG/PDF/MP4/HTML body (SDK 0.7.5 returns a described body with
+  `content_type`, `size_bytes`, `sha256`, and `text` or `content_base64`).
+
+Not fixed here because they are backend behaviour, recorded in the matrix:
+`browse folder 0` returns 400 although `folder root` reports id 0 and
+`browse project` returns 500, so the project root cannot be browsed;
+`schedule list` 400 "Not implemented"; `workspace user get` 405;
+`connector get bigquery` rejects a key `connector list` returned;
+`dashboard rls value list` and `dashboard data draft` reject inputs the
+schema admits. The CLI requires `mammoth-io>=0.7.5,<0.8`, adds no API
+bindings, and makes no capability-status or autonomous-workflow
+qualification claim.
+
+Publication hashes are recorded after upload.
+
 ## 2.0.12 / SDK 0.7.4
 
 This release exists to pick up mammoth-io 0.7.4, which fixes `dataset

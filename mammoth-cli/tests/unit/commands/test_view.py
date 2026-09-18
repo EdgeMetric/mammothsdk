@@ -1652,3 +1652,24 @@ def test_export_update_proceeds_with_yes(fake_service: FakeMammothService, tmp_p
             },
         )
     ]
+
+
+def test_pipeline_items_all_accepts_trailing_parent_positional(
+    fake_service: FakeMammothService,
+) -> None:
+    # The schema advertises DATAVIEW_ID [DATASET_ID]; the trailing positional
+    # used to be ignored and the command then demanded the input field.
+    view_cmd.view_pipeline_items_all(_inv("view.pipeline.items-all", extra_args=["7", "9"]))
+    assert fake_service.call_log == [(_PIPE_ITEMS_ALL, {"dataview_id": 7, "dataset_id": 9})]
+
+
+def test_pipeline_items_all_rejects_conflicting_parents(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"dataset_id": 10})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_pipeline_items_all(
+            _inv("view.pipeline.items-all", extra_args=["7", "9"], input_file=doc)
+        )
+    assert excinfo.value.code == "ambiguous_resource_identity"
+    assert fake_service.call_log == []

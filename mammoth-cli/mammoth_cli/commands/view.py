@@ -1214,13 +1214,25 @@ def view_pipeline_items(invocation: Invocation) -> HandlerResult:
 def view_pipeline_items_all(invocation: Invocation) -> HandlerResult:
     """Read all pipeline items through bounded, exact-parent pagination."""
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
-    document = invocation.load_input() or {}
+    document = dict(invocation.load_input() or {})
+    # The schema advertises an optional trailing DATASET_ID positional that
+    # falls back to the input field; honour both, and reject a disagreement.
+    positional_parent = _int_positional_at(invocation, 1, "dataset id")
+    if positional_parent is not None:
+        if document.get("dataset_id") not in (None, positional_parent):
+            raise CliError(
+                code="ambiguous_resource_identity",
+                message="Conflicting dataset ids identify different parent resources.",
+                exit_status=EXIT_USAGE,
+                hint="Pass one exact dataset id matching the target view.",
+            )
+        document["dataset_id"] = positional_parent
     if "dataset_id" not in document:
         raise CliError(
             code=CODE_MISSING_FIELD,
-            message="This command requires the 'dataset_id' input field.",
+            message="This command requires the exact parent dataset id.",
             exit_status=EXIT_USAGE,
-            hint="Pass the exact parent dataset_id via --input.",
+            hint="Pass it as the trailing DATASET_ID positional or the 'dataset_id' input field.",
         )
     dataset_id = document["dataset_id"]
     if isinstance(dataset_id, bool) or not isinstance(dataset_id, int) or dataset_id <= 0:

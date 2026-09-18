@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.12.
+Generated from the reviewed command manifests for mammoth-cli 2.0.13.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -2965,7 +2965,7 @@ Total commands: 549.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.resource_dependencies`
-- Agent example: `mammoth project resource-dependencies 123 --input '{"resource_ids": ["resource-123"]}' --output json --no-input`
+- Agent example: `mammoth project resource-dependencies 123 --input '{"resource_ids": [456]}' --output json --no-input`
 
 ### `mammoth project resource-dependencies update`
 

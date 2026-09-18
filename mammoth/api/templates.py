@@ -38,9 +38,11 @@ class TemplatesAPI:
         """List templates in the workspace.
 
         Returns:
-            Dict with the templates list.
+            ``{"templates": [...]}``. The backend answers this route with a bare
+            JSON array, which is wrapped so callers get the usual dict shape.
         """
-        return self._client._request_json("GET", f"/workspaces/{self._ws()}/templates")
+        items = self._client._request_list("GET", f"/workspaces/{self._ws()}/templates")
+        return {"templates": items}
 
     def get(self, template_id: int) -> dict[str, Any]:
         """Get details of a template.

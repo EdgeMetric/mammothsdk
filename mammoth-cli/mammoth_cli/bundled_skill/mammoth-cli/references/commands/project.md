@@ -84,7 +84,7 @@ Expected success: `ProjectPublishCredentialsResult` in the standard JSON envelop
 
 Run: `mammoth project resource-dependencies`. Exact input fields: `mammoth schema get project.resource-dependencies --output json --no-input`.
 
-Example: `mammoth project resource-dependencies 123 --input '{"resource_ids": ["resource-123"]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth project resource-dependencies 123 --input '{"resource_ids": [456]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ProjectResourceDependenciesResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

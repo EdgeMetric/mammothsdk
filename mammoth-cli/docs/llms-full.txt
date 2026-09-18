@@ -679,7 +679,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth project publish-credentials` [read/none] -> mammoth.api.projects.ProjectsAPI.publish_credentials
   example: mammoth project publish-credentials 123 --input '{"odbc_type": "postgres"}' --output json --no-input
 - `mammoth project resource-dependencies` [read/none] -> mammoth.api.projects.ProjectsAPI.resource_dependencies
-  example: mammoth project resource-dependencies 123 --input '{"resource_ids": ["resource-123"]}' --output json --no-input
+  example: mammoth project resource-dependencies 123 --input '{"resource_ids": [456]}' --output json --no-input
 - `mammoth project resource-dependencies update` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.resource_dependencies_update
   example: mammoth project resource-dependencies update 123 --input '{"patches": [{"op": "replace", "path": "data_sync", "value": {"context_type": "dataview", "context_id": 1}}]}' --output json --no-input --yes --confirm 123
 - `mammoth project resource-status` [read/none] -> mammoth.api.projects.ProjectsAPI.resource_status
