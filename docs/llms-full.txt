@@ -343,8 +343,8 @@
     - [`get(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#getself-dashboard_id-int---dictstr-any)
     - [`get_analytics(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#get_analyticsself-dashboard_id-int---dictstr-any)
     - [`get_by_url(self, url: 'str') -> 'dict[str, Any]'`](#get_by_urlself-url-str---dictstr-any)
-    - [`get_draft_data(self, dashboard_id: 'int', sql: 'str') -> 'dict[str, Any]'`](#get_draft_dataself-dashboard_id-int-sql-str---dictstr-any)
-    - [`get_publish_data(self, dashboard_id: 'int', sql: 'str') -> 'dict[str, Any]'`](#get_publish_dataself-dashboard_id-int-sql-str---dictstr-any)
+    - [`get_draft_data(self, dashboard_id: 'int', widget_id: 'str', global_filters: 'dict[str, Any] | None' = None, drilldown_filters: 'dict[str, Any] | None' = None) -> 'dict[str, Any]'`](#get_draft_dataself-dashboard_id-int-widget_id-str-global_filters-dictstr-any-none-none-drilldown_filters-dictstr-any-none-none---dictstr-any)
+    - [`get_publish_data(self, dashboard_id: 'int', widget_id: 'str', global_filters: 'dict[str, Any] | None' = None, drilldown_filters: 'dict[str, Any] | None' = None) -> 'dict[str, Any]'`](#get_publish_dataself-dashboard_id-int-widget_id-str-global_filters-dictstr-any-none-none-drilldown_filters-dictstr-any-none-none---dictstr-any)
     - [`get_sources(self) -> '_list[dict[str, Any]]'`](#get_sourcesself---_listdictstr-any)
     - [`import_workbook(self, file: 'str | Path', project_id: 'int | None' = None) -> 'ImportDatasetResponse'`](#import_workbookself-file-str-path-project_id-int-none-none---importdatasetresponse)
     - [`job_by_url(self, url: 'str', job_id: 'int') -> 'dict[str, Any]'`](#job_by_urlself-url-str-job_id-int---dictstr-any)
@@ -534,6 +534,9 @@
   - [Import errors](#import-errors)
   - [See also](#see-also)
 - [Changelog](#changelog)
+  - [v0.7.6](#v076)
+    - [Changed](#changed)
+    - [Fixed](#fixed)
   - [v0.7.5](#v075)
     - [Fixed](#fixed)
   - [v0.7.4](#v074)
@@ -14758,8 +14761,10 @@ Get Dashboard Analytics.
 Set whether a dashboard is archived.
 
 ``archived=True`` archives the dashboard and ``archived=False``
-restores it. The API declares no response body schema, so the raw
-response is returned unchanged.
+restores it. The API declares no response body schema and the live
+server answers with a non-object JSON value, so any 2xx JSON body is
+accepted and returned unchanged instead of being rejected as a
+response-contract violation on a write that already committed.
 
 ### `assess_pbix(self, file: 'str | Path') -> 'PbixAssessResponse'`
 
@@ -14919,27 +14924,39 @@ Args:
 Returns:
     Dict with dashboard details.
 
-### `get_draft_data(self, dashboard_id: 'int', sql: 'str') -> 'dict[str, Any]'`
+### `get_draft_data(self, dashboard_id: 'int', widget_id: 'str', global_filters: 'dict[str, Any] | None' = None, drilldown_filters: 'dict[str, Any] | None' = None) -> 'dict[str, Any]'`
 
-Get draft data using SQL query.
+Get one widget's rows from a dashboard's draft (unpublished) state.
 
-Args:
-    dashboard_id: ID of the dashboard.
-    sql: SQL query to execute against draft data.
-
-Returns:
-    Dict with query results.
-
-### `get_publish_data(self, dashboard_id: 'int', sql: 'str') -> 'dict[str, Any]'`
-
-Get published data using SQL query.
+The route is historically named ``GetDraftDataFromSql`` but the API
+contract takes a ``WidgetDataSpec``: ``{"params": {"widget_id", ...}}``.
+A top-level ``sql`` body is rejected with HTTP 400 ``params: Field
+required``.
 
 Args:
     dashboard_id: ID of the dashboard.
-    sql: SQL query to execute against published data.
+    widget_id: UUID of the widget whose data to fetch.
+    global_filters: Sidebar filters, ``{column: value}``.
+    drilldown_filters: Chart-click filters, ``{column: value}``
+        (always exact match).
 
 Returns:
-    Dict with query results.
+    Dict with a ``data`` list of row dicts.
+
+### `get_publish_data(self, dashboard_id: 'int', widget_id: 'str', global_filters: 'dict[str, Any] | None' = None, drilldown_filters: 'dict[str, Any] | None' = None) -> 'dict[str, Any]'`
+
+Get one widget's rows from a dashboard's published state.
+
+Same ``WidgetDataSpec`` contract as :meth:`get_draft_data`.
+
+Args:
+    dashboard_id: ID of the dashboard.
+    widget_id: UUID of the widget whose data to fetch.
+    global_filters: Sidebar filters, ``{column: value}``.
+    drilldown_filters: Chart-click filters, ``{column: value}``.
+
+Returns:
+    Dict with a ``data`` list of row dicts.
 
 ### `get_sources(self) -> '_list[dict[str, Any]]'`
 
@@ -15282,7 +15299,12 @@ Raises:
 
 ### `update(self, dashboard_id: 'int', patch: '_list[DashboardPatchItem]') -> 'dict[str, Any]'`
 
-Update a dashboard via JSON-patch operations.
+Update a dashboard with patch operations.
+
+The patch items look like RFC 6902 JSON Patch but ``path`` is a bare
+field name from :class:`~mammoth.models.dashboards.DashboardPatchPath`
+(``"title"``, ``"intent"``, ``"theme"``, ``"pages"``, ``"filters"``),
+not a JSON pointer: ``"/title"`` is rejected.
 
 Args:
     dashboard_id: ID of the dashboard (must be > 0).
@@ -18077,6 +18099,25 @@ client = MammothClient(..., timeout=120)  # 2 minutes per request
 
 
 # Changelog
+
+## v0.7.6
+
+### Changed
+
+- `dashboards.get_draft_data()` / `get_publish_data()` take `widget_id` (plus
+  optional `global_filters` / `drilldown_filters`) and send the
+  `WidgetDataSpec` envelope the routes require; the former `sql` body was
+  rejected with HTTP 400.
+
+### Fixed
+
+- `dashboards.archive()` and `share()` accept any 2xx JSON body on their
+  undeclared-schema routes instead of raising a response-contract violation
+  for a write that committed.
+- Generated dashboard wrappers return a 2xx body unchanged when it matches no
+  snapshot model instead of raising `ValidationError`.
+- `dashboards.update()` documents that `path` is a bare field name, not a
+  JSON pointer.
 
 ## v0.7.5
 

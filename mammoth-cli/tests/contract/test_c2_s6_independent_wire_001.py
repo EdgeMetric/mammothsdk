@@ -114,7 +114,7 @@ def _invoke(client: RecordingClient, route: str) -> None:
             },
         ),
         "dashboard.data.published": lambda: dashboards.get_publish_data(
-            2009, "C2_S6_PUBLISHED_SQL_2009"
+            2009, "c2000000-0000-4000-8000-000000002009"
         ),
         "dashboard.delete": lambda: dashboards.delete(2010),
         "dashboard.descriptor-data": lambda: dashboards.descriptor_data(

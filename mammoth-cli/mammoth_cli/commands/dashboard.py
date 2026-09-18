@@ -365,24 +365,52 @@ def dashboard_analytics(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
-def dashboard_data_draft(invocation: Invocation) -> HandlerResult:
-    """Run a SQL query against a dashboard's draft data. ``sql`` comes from ``--input``."""
-    dashboard_id = _require_int_positional(invocation, "dashboard id")
+def _widget_data_kwargs(invocation: Invocation) -> dict[str, Any]:
+    """Bind the ``WidgetDataSpec`` fields the draft/published data routes take.
+
+    ``widget_id`` (the widget UUID) is required; ``global_filters`` and
+    ``drilldown_filters`` are optional ``{column: value}`` objects.
+    """
     document = _bound_document(invocation)
-    sql = _require_field(document, "sql")
+    widget_id = _require_field(document, "widget_id")
+    if not isinstance(widget_id, str) or not widget_id.strip():
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The 'widget_id' input field must be a non-empty widget UUID string.",
+            exit_status=EXIT_USAGE,
+            hint="Read widget ids from 'mammoth dashboard canvas get DASHBOARD_ID'.",
+        )
+    kwargs: dict[str, Any] = {"widget_id": widget_id}
+    for name in ("global_filters", "drilldown_filters"):
+        if name not in document:
+            continue
+        value = document[name]
+        if not isinstance(value, dict):
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=f"The '{name}' input field must be an object of column -> value.",
+                exit_status=EXIT_USAGE,
+            )
+        kwargs[name] = value
+    return kwargs
+
+
+def dashboard_data_draft(invocation: Invocation) -> HandlerResult:
+    """Read one widget's rows from a dashboard's draft state. Fields come from ``--input``."""
+    dashboard_id = _require_int_positional(invocation, "dashboard id")
+    kwargs = _widget_data_kwargs(invocation)
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), dashboard_id=dashboard_id, sql=sql)
+        data = service.call(_symbol(invocation), dashboard_id=dashboard_id, **kwargs)
         data = _resolve_job(service, invocation, data)
     return data, _meta(invocation, auth.workspace_id)
 
 
 def dashboard_data_published(invocation: Invocation) -> HandlerResult:
-    """Run a SQL query against a dashboard's published data. ``sql`` from ``--input``."""
+    """Read one widget's rows from a dashboard's published state. Fields from ``--input``."""
     dashboard_id = _require_int_positional(invocation, "dashboard id")
-    document = _bound_document(invocation)
-    sql = _require_field(document, "sql")
+    kwargs = _widget_data_kwargs(invocation)
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), dashboard_id=dashboard_id, sql=sql)
+        data = service.call(_symbol(invocation), dashboard_id=dashboard_id, **kwargs)
         data = _resolve_job(service, invocation, data)
     return data, _meta(invocation, auth.workspace_id)
 
@@ -561,6 +589,10 @@ def dashboard_archive(invocation: Invocation) -> HandlerResult:
         data = service.call(
             _symbol(invocation), dashboard_id=dashboard_id, archived=document["archived"]
         )
+    if not isinstance(data, dict):
+        # The route declares no response body; give the committed state a
+        # stable object shape instead of a bare scalar.
+        data = {"dashboard_id": dashboard_id, "archived": document["archived"], "response": data}
     return data, _meta(invocation, auth.workspace_id)
 
 

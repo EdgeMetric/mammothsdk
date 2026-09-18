@@ -14,6 +14,7 @@ import decimal
 import enum
 import ipaddress
 import math
+import re
 import uuid
 from collections.abc import Mapping
 from pathlib import Path
@@ -50,12 +51,33 @@ class _NormalizedJsonSchema(dict[str, Any]):
     """
 
 
+_CAMEL_BOUNDARY = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
+# Plural ``*_tokens`` keys that still name credentials rather than design data.
+_CREDENTIAL_TOKEN_PREFIXES = ("access", "refresh", "auth", "api", "bearer", "session", "oauth")
+
+
 def _is_secret_key(key: str) -> bool:
-    lowered = key.lower()
+    # ``styleTokens`` and ``style_tokens`` must be judged the same way.
+    lowered = _CAMEL_BOUNDARY.sub("_", key).lower()
     # ``token_count`` is ordinary result metadata (for example an LLM usage
     # counter), not a credential.  Do not let the broad token guard erase it.
-    if lowered in {"token_count", "next_token", "continuation_token", "design_tokens"}:
+    if lowered in {
+        "token_count",
+        "next_token",
+        "continuation_token",
+        "page_token",
+        "design_tokens",
+    }:
         return False
+    if "token" in lowered and not any(
+        hint in lowered for hint in _SECRET_KEY_HINTS if hint != "token"
+    ):
+        # Credential tokens are singular (``token``, ``access_token``).  Plural
+        # ``tokens`` / ``style_tokens`` are dashboard design-system data, and
+        # erasing them breaks the canvas get -> save round-trip.
+        if lowered == "tokens" or lowered.endswith("_tokens"):
+            return lowered.startswith(_CREDENTIAL_TOKEN_PREFIXES)
+        return True
     return any(hint in lowered for hint in _SECRET_KEY_HINTS)
 
 
@@ -69,8 +91,7 @@ def _is_secret_value(value: Any) -> bool:
     """
     value_type = type(value)
     return value_type.__name__ in {"SecretStr", "SecretBytes"} or (
-        "secret" in value_type.__name__.lower()
-        and hasattr(value, "get_secret_value")
+        "secret" in value_type.__name__.lower() and hasattr(value, "get_secret_value")
     )
 
 

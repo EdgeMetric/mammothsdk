@@ -61,9 +61,7 @@ def test_intent_synonyms_are_ranked_deterministically_from_a_cold_call() -> None
 
     assert first == second
     assert first["matches"][0]["command_id"] == "file.upload"
-    assert first["matches"][0]["full_schema_command"].startswith(
-        "mammoth schema get file.upload"
-    )
+    assert first["matches"][0]["full_schema_command"].startswith("mammoth schema get file.upload")
 
 
 def test_display_name_language_composes_with_column_intent() -> None:
@@ -453,3 +451,27 @@ def test_subprocess_machine_success_and_error_keep_streams_separate() -> None:
     assert failure.returncode == 2
     assert failure.stdout == ""
     assert json.loads(failure.stderr)["error"]["code"] == "schema_not_found"
+
+
+def test_normalize_keeps_dashboard_style_tokens_but_redacts_credential_tokens() -> None:
+    # ``dashboard canvas get`` returns ``style_tokens``; erasing it broke the
+    # documented canvas get -> save round-trip (HTTP 400: must be a dict).
+    normalized = normalize(
+        {
+            "canvas": {"style_tokens": {"color.primary": "#123456"}},
+            "styleTokens": {"font.body": "Inter"},
+            "tokens": [{"name": "spacing.1", "value": "4px"}],
+            "token": "must-not-appear",
+            "access_token": "must-not-appear",
+            "accessToken": "must-not-appear",
+            "refresh_tokens": ["must-not-appear"],
+        }
+    )
+
+    assert normalized["canvas"]["style_tokens"] == {"color.primary": "#123456"}
+    assert normalized["styleTokens"] == {"font.body": "Inter"}
+    assert normalized["tokens"] == [{"name": "spacing.1", "value": "4px"}]
+    assert normalized["token"] == "***REDACTED***"
+    assert normalized["access_token"] == "***REDACTED***"
+    assert normalized["accessToken"] == "***REDACTED***"
+    assert normalized["refresh_tokens"] == "***REDACTED***"

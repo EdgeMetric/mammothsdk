@@ -510,9 +510,19 @@
           "source": "positional",
           "destination": "dashboard_id"
         },
-        "sql": {
+        "widget_id": {
           "source": "input",
-          "destination": "sql",
+          "destination": "widget_id",
+          "wire": "sdk_argument"
+        },
+        "global_filters": {
+          "source": "input",
+          "destination": "global_filters",
+          "wire": "sdk_argument"
+        },
+        "drilldown_filters": {
+          "source": "input",
+          "destination": "drilldown_filters",
           "wire": "sdk_argument"
         }
       },
@@ -520,7 +530,7 @@
       "wire": {
         "method": "POST",
         "path": "/dashboards/{dashboard_id}/getDraftData",
-        "body": "json:sql",
+        "body": "json:params{widget_id,global_filters,drilldown_filters}",
         "checks": [
           "method",
           "path",
@@ -548,9 +558,19 @@
           "source": "positional",
           "destination": "dashboard_id"
         },
-        "sql": {
+        "widget_id": {
           "source": "input",
-          "destination": "sql",
+          "destination": "widget_id",
+          "wire": "sdk_argument"
+        },
+        "global_filters": {
+          "source": "input",
+          "destination": "global_filters",
+          "wire": "sdk_argument"
+        },
+        "drilldown_filters": {
+          "source": "input",
+          "destination": "drilldown_filters",
           "wire": "sdk_argument"
         }
       },
@@ -558,7 +578,7 @@
       "wire": {
         "method": "POST",
         "path": "/dashboards/{dashboard_id}/getPublishData",
-        "body": "json:sql",
+        "body": "json:params{widget_id,global_filters,drilldown_filters}",
         "checks": [
           "method",
           "path",

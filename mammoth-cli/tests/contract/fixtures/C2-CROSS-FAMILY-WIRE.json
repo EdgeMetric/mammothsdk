@@ -32,7 +32,7 @@
     {"id":"dashboard-create","route":"dashboard.create","expected":{"method":"POST","path":"/dashboards","kwargs":{"json":{"params":{"intent":"C2 dashboard intent","source":[1001,1002],"enable_filters":false,"enable_pages":true}}}}},
     {"id":"dashboard-analytics","route":"dashboard.analytics","expected":{"method":"GET","path":"/dashboards/1001/analytics","kwargs":{}}},
     {"id":"dashboard-action","route":"dashboard.action","expected":{"method":"POST","path":"/dashboards/1001/action","kwargs":{"json":{"action":"auto-sync","params":{"enabled":false,"view_id":1002}}}}},
-    {"id":"dashboard-data-draft","route":"dashboard.data.draft","expected":{"method":"POST","path":"/dashboards/1001/getDraftData","kwargs":{"json":{"sql":"C2_SQL"}}}},
+    {"id":"dashboard-data-draft","route":"dashboard.data.draft","expected":{"method":"POST","path":"/dashboards/1001/getDraftData","kwargs":{"json":{"params":{"widget_id":"c2000000-0000-4000-8000-000000000001"}}}}},
     {"id":"dashboard-widget-data","route":"dashboard.widget-data","expected":{"method":"POST","path":"/dashboards/1001/widgets/data","kwargs":{"json":{"params":{"widget_ids":[1003],"C2":"C2_VALUE"}}}}},
     {"id":"dashboard-canvas-get","route":"dashboard.canvas.get","expected":{"method":"GET","path":"/dashboards/1001/canvas","kwargs":{"params":{"sequence":7}}}},
     {"id":"dashboard-rls-value-list","route":"dashboard.rls.value.list","expected":{"method":"GET","path":"/dashboards/1001/rls/values","kwargs":{"params":{"column":"C2_COLUMN","search":"C2_SEARCH"}}}},

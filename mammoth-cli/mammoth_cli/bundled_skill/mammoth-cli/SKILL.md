@@ -65,6 +65,9 @@ the result.
 - **Import, resources, transforms, pipelines, dashboards, exports, or cleanup:**
   [recipes](references/recipes/index.md) and [operations](references/operations.md)
 - **A known command family or exact command:** [command catalog](references/command-index.md)
+- **Whether a route is proven, known-blocked, or untried on release:**
+  [capabilities](references/capabilities.md) — read it before promising a
+  deliverable or reporting a failure as a backend fault
 - **Pause or transfer to another agent:** [handoff](references/handoff.md)
 
 ## Handoff checklist

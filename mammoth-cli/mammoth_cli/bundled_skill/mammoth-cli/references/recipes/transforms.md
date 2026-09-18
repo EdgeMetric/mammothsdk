@@ -19,7 +19,21 @@ parent from `view list DATASET_ID` (you already know it after upload) or
 
 Prefer typed operations such as convert-type, fill-missing, replace, join,
 lookup, filter and math only when the live schema
-lists them. For each operation, a successful result should contain a returned
+lists them. Pick the operation by what it does, not by its name:
+
+- `fill-missing` copies the previous/next row's value into blanks
+  (`direction` = `LAST_VALUE` forward-fill or `FIRST_VALUE`). It cannot write a
+  literal. To fill blanks with a constant (for example `0`), use `set-values`
+  on the existing column with an `IS_EMPTY` condition:
+
+```bash
+mammoth view transform set-values VIEW_ID --project PROJECT_ID \
+  --input '{"dataset_id":DATASET_ID,"existing_column":"revenue","values":[{"value":0}],"condition":{"column":"revenue","operator":"IS_EMPTY"}}' \
+  --output json --no-input
+```
+
+- `filter` keeps matching rows by default (`filter_type: "SHOW"`); to drop
+  rows, say so: `{"condition":{"column":"units","operator":"LT","value":0},"filter_type":"REMOVE"}`. For each operation, a successful result should contain a returned
 task/job reference or updated view envelope; then verify with `view task list`,
 `view task get`, `view pipeline items`, or preview according to its schema.
 

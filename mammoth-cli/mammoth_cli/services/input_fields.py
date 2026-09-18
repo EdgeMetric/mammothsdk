@@ -145,6 +145,20 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # Blank dashboard creation requires a typed params envelope. Keep the
     # generated destructive example runnable with the explicit approval flag.
     "dashboard.create-blank": {"params": {"dataview_id": 1}},
+    # The draft/published data routes take a WidgetDataSpec keyed by the
+    # widget UUID (read it from ``dashboard canvas get``), not a SQL string.
+    "dashboard.data.draft": {"widget_id": "550e8400-e29b-41d4-a716-446655440000"},
+    "dashboard.data.published": {"widget_id": "550e8400-e29b-41d4-a716-446655440000"},
+    # ``descriptor`` is a baked/1 QueryDescriptor discriminated by ``kind``
+    # (group | scalar | rate | detail | options | range); an empty object is
+    # rejected. A scalar row count runs against any dashboard.
+    "dashboard.query": {"body": {"params": {"descriptor": {"kind": "scalar", "agg": "count"}}}},
+    # ``path`` is a bare field name (title | intent | theme | pages | filters),
+    # not a JSON pointer, and an ``intent`` value must be at least 10 chars; a
+    # title rename is the smallest patch that runs.
+    "dashboard.update": {
+        "patch": [{"op": "replace", "path": "title", "value": "Renamed dashboard"}]
+    },
 }
 
 

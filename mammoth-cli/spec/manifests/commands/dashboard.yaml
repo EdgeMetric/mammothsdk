@@ -738,8 +738,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard data draft DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard data draft 123 --input ''{"sql": "SELECT region, SUM(revenue) FROM
-    data GROUP BY region"}'' --output json --no-input'
+  agent_example: 'mammoth dashboard data draft 123 --input ''{"widget_id": "550e8400-e29b-41d4-a716-446655440000"}''
+    --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-DATA-DRAFT
   contract_tests:
@@ -779,8 +779,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard data published DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard data published 123 --input ''{"sql": "SELECT region, SUM(revenue)
-    FROM data GROUP BY region"}'' --output json --no-input'
+  agent_example: 'mammoth dashboard data published 123 --input ''{"widget_id": "550e8400-e29b-41d4-a716-446655440000"}''
+    --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-DATA-PUBLISHED
   contract_tests:
@@ -1398,7 +1398,9 @@ commands:
   - CT-DASHBOARD-PDF-EXPORT-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Backend requires params.data to be the browser-hydrated DashboardData map
+    (pre-rendered widget results); the server stores only query descriptors and cannot rebuild
+    it, so a PDF cannot be produced from the CLI alone.
   reviewed_by: primary
 - command_id: dashboard.published-data-by-url
   command_path: dashboard published-data-by-url
@@ -2415,8 +2417,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard query DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard query 123 --input ''{"body": {"params": {"descriptor": {}}}}'' --output
-    json --no-input'
+  agent_example: 'mammoth dashboard query 123 --input ''{"body": {"params": {"descriptor": {"kind": "scalar",
+    "agg": "count"}}}}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-QUERY
   contract_tests:
@@ -3999,8 +4001,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard update DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard update 123 --input ''{"patch": [{"op": "add", "path": "intent", "value":
-    "sample"}]}'' --output json --no-input'
+  agent_example: 'mammoth dashboard update 123 --input ''{"patch": [{"op": "replace", "path": "title", "value":
+    "Renamed dashboard"}]}'' --output json --no-input'
   unit_tests:
   - UT-DASHBOARD-UPDATE
   contract_tests:

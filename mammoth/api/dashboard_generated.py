@@ -154,16 +154,18 @@ def _typed_response(
     operation also documents an untyped branch (``allow_untyped``) and no model
     is a positive match, the raw response is returned instead of raising -- so a
     valid arbitrary-object response is never rejected.
+
+    A successful (2xx) body that matches no generated model is also returned
+    unchanged: the models are a snapshot of the API contract and the live
+    server may answer with a newer shape, which is data, not an error.
     """
     ranked = sorted(models, key=lambda model: len(model.model_fields), reverse=True)
     best: Any = None
     best_score = -1
-    last_error: ValidationError | None = None
     for model in ranked:
         try:
             validated = model.model_validate(response)
-        except ValidationError as error:
-            last_error = error
+        except ValidationError:
             continue
         if isinstance(response, dict):
             score = sum(
@@ -177,11 +179,9 @@ def _typed_response(
             best, best_score = validated, score
     if best is not None and (best_score > 0 or not allow_untyped):
         return best
-    if allow_untyped:
-        return response
-    if last_error is not None:
-        raise last_error
-    raise ValueError("typed response requires at least one model")
+    if not models:
+        raise ValueError("typed response requires at least one model")
+    return response
 
 
 def analytics(self: Any, dashboard_id: int) -> DashboardAnalyticsResponse:

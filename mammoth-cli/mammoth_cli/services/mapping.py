@@ -321,6 +321,37 @@ def map_sdk_exception(
             details=dict(getattr(exc, "details", {}) or {}),
         )
 
+    errors = getattr(exc, "errors", None)
+    if type(exc).__name__ == "ValidationError" and callable(errors):
+        # A pydantic validation failure: say which fields, not just the class
+        # name, or the operator cannot tell what was wrong with the call.
+        try:
+            raw_errors = errors(include_url=False, include_input=False)
+        except TypeError:
+            raw_errors = errors()
+        summary = [
+            {
+                "loc": ".".join(str(part) for part in item.get("loc", ())),
+                "type": item.get("type"),
+                "msg": item.get("msg"),
+            }
+            for item in list(raw_errors)[:10]
+        ]
+        return CliError(
+            code=CODE_API_ERROR,
+            message=(
+                f"The SDK could not validate {getattr(exc, 'title', 'the payload')} "
+                "against its model."
+            ),
+            exit_status=EXIT_API,
+            hint="Compare the listed fields with 'mammoth schema get COMMAND_ID'.",
+            details={
+                "exception_type": "ValidationError",
+                "model": getattr(exc, "title", None),
+                "validation_errors": summary,
+            },
+        )
+
     return CliError(
         code=CODE_API_ERROR,
         message="The Mammoth operation failed unexpectedly.",

@@ -304,9 +304,9 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dashboard create-blank` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.create_blank
   example: mammoth dashboard create-blank --input '{"params": {"dataview_id": 1}}' --output json --no-input --yes
 - `mammoth dashboard data draft` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_draft_data
-  example: mammoth dashboard data draft 123 --input '{"sql": "SELECT region, SUM(revenue) FROM data GROUP BY region"}' --output json --no-input
+  example: mammoth dashboard data draft 123 --input '{"widget_id": "550e8400-e29b-41d4-a716-446655440000"}' --output json --no-input
 - `mammoth dashboard data published` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_publish_data
-  example: mammoth dashboard data published 123 --input '{"sql": "SELECT region, SUM(revenue) FROM data GROUP BY region"}' --output json --no-input
+  example: mammoth dashboard data published 123 --input '{"widget_id": "550e8400-e29b-41d4-a716-446655440000"}' --output json --no-input
 - `mammoth dashboard delete` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.delete
   example: mammoth dashboard delete 123 --output json --no-input
 - `mammoth dashboard descriptor-data` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.descriptor_data
@@ -382,7 +382,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dashboard qa settings set` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.qa_settings_set
   example: mammoth dashboard qa settings set 123 --input '{"body": {"params": {"allow_viewer_qa": true}}}' --output json --no-input
 - `mammoth dashboard query` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.query
-  example: mammoth dashboard query 123 --input '{"body": {"params": {"descriptor": {}}}}' --output json --no-input
+  example: mammoth dashboard query 123 --input '{"body": {"params": {"descriptor": {"kind": "scalar", "agg": "count"}}}}' --output json --no-input
 - `mammoth dashboard restore` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.restore
   example: mammoth dashboard restore 123 --output json --no-input
 - `mammoth dashboard rls assignment list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.rls_assignment_list
@@ -464,7 +464,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dashboard trash` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.trash
   example: mammoth dashboard trash 123 --output json --no-input
 - `mammoth dashboard update` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.update
-  example: mammoth dashboard update 123 --input '{"patch": [{"op": "add", "path": "intent", "value": "sample"}]}' --output json --no-input
+  example: mammoth dashboard update 123 --input '{"patch": [{"op": "replace", "path": "title", "value": "Renamed dashboard"}]}' --output json --no-input
 - `mammoth dashboard v3 generate` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.v3_generate
   example: mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "Summarize revenue by region", "dataview_id": 1}}}' --output json --no-input
 - `mammoth dashboard video export` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.video_export

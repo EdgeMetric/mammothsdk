@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.13.
+Generated from the reviewed command manifests for mammoth-cli 2.0.14.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -1222,7 +1222,7 @@ Total commands: 549.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.get_draft_data`
-- Agent example: `mammoth dashboard data draft 123 --input '{"sql": "SELECT region, SUM(revenue) FROM data GROUP BY region"}' --output json --no-input`
+- Agent example: `mammoth dashboard data draft 123 --input '{"widget_id": "550e8400-e29b-41d4-a716-446655440000"}' --output json --no-input`
 
 ### `mammoth dashboard data published`
 
@@ -1233,7 +1233,7 @@ Total commands: 549.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.get_publish_data`
-- Agent example: `mammoth dashboard data published 123 --input '{"sql": "SELECT region, SUM(revenue) FROM data GROUP BY region"}' --output json --no-input`
+- Agent example: `mammoth dashboard data published 123 --input '{"widget_id": "550e8400-e29b-41d4-a716-446655440000"}' --output json --no-input`
 
 ### `mammoth dashboard delete`
 
@@ -1657,7 +1657,7 @@ Total commands: 549.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.query`
-- Agent example: `mammoth dashboard query 123 --input '{"body": {"params": {"descriptor": {}}}}' --output json --no-input`
+- Agent example: `mammoth dashboard query 123 --input '{"body": {"params": {"descriptor": {"kind": "scalar", "agg": "count"}}}}' --output json --no-input`
 
 ### `mammoth dashboard restore`
 
@@ -2040,7 +2040,7 @@ Total commands: 549.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.update`
-- Agent example: `mammoth dashboard update 123 --input '{"patch": [{"op": "add", "path": "intent", "value": "sample"}]}' --output json --no-input`
+- Agent example: `mammoth dashboard update 123 --input '{"patch": [{"op": "replace", "path": "title", "value": "Renamed dashboard"}]}' --output json --no-input`
 
 ### `mammoth dashboard v3 generate`
 

@@ -50,7 +50,9 @@ or secrets in an argument, prompt, transcript, or checkpoint.
 4. Discover instead of guessing. Run `mammoth schema list/find/get --output
    json --no-input` for local CLI routes; `mammoth capability list --output
    json --no-input` is an API-binding inventory and can omit typed/local
-   routes. Then resolve workspace/project/dataset/view
+   routes. Check [capabilities](capabilities.md) for whether a route is
+   proven, not supported, or untried on release before building a plan on
+   it. Then resolve workspace/project/dataset/view
    parents with reads. Use display names returned by the exact view schema.
 5. Translate the business intent into a plan the agent chooses. Submit only
    supported operations with explicit `--project` (and other returned parents),

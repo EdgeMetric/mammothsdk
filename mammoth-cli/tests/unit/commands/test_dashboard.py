@@ -71,6 +71,19 @@ def test_archive_requires_target_confirmation_and_forwards_set_state(
     assert fake_service.call_log == [(_ARCHIVE, {"dashboard_id": 7, "archived": True})]
 
 
+def test_archive_wraps_scalar_response_in_committed_state(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # The archive route declares no response body and answers with a non-dict
+    # JSON value; the CLI used to report outcome_unknown on that 200.
+    fake_service.responses[_ARCHIVE] = True
+    doc = _write_doc(tmp_path, {"archived": True})
+    data, _meta = dashboard_cmd.dashboard_archive(
+        _inv("dashboard.archive", extra_args=["7"], input_file=doc, yes=True, confirm="7")
+    )
+    assert data == {"dashboard_id": 7, "archived": True, "response": True}
+
+
 def test_archive_rejects_non_boolean_state(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
@@ -266,38 +279,59 @@ def test_analytics_without_id_is_usage_error(fake_service: FakeMammothService) -
 
 # --- dashboard data draft / published ---------------------------------------
 
+_WIDGET = "550e8400-e29b-41d4-a716-446655440000"
 
-def test_data_draft_requires_sql(fake_service: FakeMammothService) -> None:
+
+def test_data_draft_requires_widget_id(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         dashboard_cmd.dashboard_data_draft(_inv("dashboard.data.draft", extra_args=["7"]))
     assert excinfo.value.code == "missing_field"
     assert fake_service.call_log == []
 
 
-def test_data_draft_forwards_dashboard_id_and_sql(
+def test_data_draft_forwards_widget_data_spec_fields(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write_doc(tmp_path, {"sql": "select 1"})
+    # The route takes a WidgetDataSpec; a top-level ``sql`` body was rejected
+    # on release with HTTP 400 "params: Field required".
+    doc = _write_doc(tmp_path, {"widget_id": _WIDGET, "global_filters": {"region": "North"}})
     dashboard_cmd.dashboard_data_draft(
         _inv("dashboard.data.draft", extra_args=["7"], input_file=doc)
     )
-    assert fake_service.call_log == [(_DATA_DRAFT, {"dashboard_id": 7, "sql": "select 1"})]
+    assert fake_service.call_log == [
+        (
+            _DATA_DRAFT,
+            {"dashboard_id": 7, "widget_id": _WIDGET, "global_filters": {"region": "North"}},
+        )
+    ]
 
 
-def test_data_published_requires_sql(fake_service: FakeMammothService) -> None:
+def test_data_draft_rejects_non_object_filters(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write_doc(tmp_path, {"widget_id": _WIDGET, "drilldown_filters": ["x"]})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.dashboard_data_draft(
+            _inv("dashboard.data.draft", extra_args=["7"], input_file=doc)
+        )
+    assert excinfo.value.code == "invalid_input_field_type"
+    assert fake_service.call_log == []
+
+
+def test_data_published_requires_widget_id(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         dashboard_cmd.dashboard_data_published(_inv("dashboard.data.published", extra_args=["7"]))
     assert excinfo.value.code == "missing_field"
 
 
-def test_data_published_forwards_dashboard_id_and_sql(
+def test_data_published_forwards_widget_id(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    doc = _write_doc(tmp_path, {"sql": "select 2"})
+    doc = _write_doc(tmp_path, {"widget_id": _WIDGET})
     dashboard_cmd.dashboard_data_published(
         _inv("dashboard.data.published", extra_args=["7"], input_file=doc)
     )
-    assert fake_service.call_log == [(_DATA_PUBLISHED, {"dashboard_id": 7, "sql": "select 2"})]
+    assert fake_service.call_log == [(_DATA_PUBLISHED, {"dashboard_id": 7, "widget_id": _WIDGET})]
 
 
 # --- dashboard job-by-url ---------------------------------------------------

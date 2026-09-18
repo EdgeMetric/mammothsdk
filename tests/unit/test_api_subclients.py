@@ -329,7 +329,9 @@ class TestTemplatesAPI:
     def test_list_reads_bare_array_and_wraps_it(self, client: MammothClient):
         client._request_list.return_value = [{"id": 3}]
         assert client.templates.list() == {"templates": [{"id": 3}]}
-        assert_called_with_method_and_endpoint(client._request_list, "GET", "/workspaces/1/templates")
+        assert_called_with_method_and_endpoint(
+            client._request_list, "GET", "/workspaces/1/templates"
+        )
 
 
 class TestDatasetsAPI:
@@ -1326,7 +1328,10 @@ class TestDashboardsAPI:
     @pytest.mark.parametrize("archived", [True, False])
     def test_archive_sets_archived_state(self, client: MammothClient, archived: bool):
         client.dashboards.archive(dashboard_id=5, archived=archived)
-        client._request_json.assert_called_once_with(
+        # The route declares no response schema and answers with a non-dict
+        # JSON value; the shape-checked wrapper would report outcome_unknown
+        # for a write that committed.
+        client._request.assert_called_once_with(
             "POST", "/dashboards/5/archive", json={"archived": archived}
         )
 
@@ -1335,7 +1340,7 @@ class TestDashboardsAPI:
             client.dashboards.archive(dashboard_id=0, archived=True)
         with pytest.raises(MammothValidationError, match="archived"):
             client.dashboards.archive(dashboard_id=5, archived="true")  # type: ignore[arg-type]
-        client._request_json.assert_not_called()
+        client._request.assert_not_called()
 
     def test_get_sources(self, client: MammothClient):
         client.dashboards.get_sources()
@@ -1353,17 +1358,39 @@ class TestDashboardsAPI:
             client._request_json, "GET", "/dashboards/url/my-dashboard"
         )
 
-    def test_get_draft_data(self, client: MammothClient):
-        client.dashboards.get_draft_data(dashboard_id=5, sql="SELECT 1")
-        assert_called_with_method_and_endpoint(
-            client._request_json, "POST", "/dashboards/5/getDraftData"
+    def test_get_draft_data_sends_widget_data_spec(self, client: MammothClient):
+        # The route takes ``{"params": WidgetDataParams}``; a top-level ``sql``
+        # body was rejected on release with HTTP 400 "params: Field required".
+        client.dashboards.get_draft_data(
+            dashboard_id=5,
+            widget_id="550e8400-e29b-41d4-a716-446655440000",
+            global_filters={"region": "North"},
+        )
+        client._request_json.assert_called_once_with(
+            "POST",
+            "/dashboards/5/getDraftData",
+            json={
+                "params": {
+                    "widget_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "global_filters": {"region": "North"},
+                }
+            },
         )
 
-    def test_get_publish_data(self, client: MammothClient):
-        client.dashboards.get_publish_data(dashboard_id=5, sql="SELECT 1")
-        assert_called_with_method_and_endpoint(
-            client._request_json, "POST", "/dashboards/5/getPublishData"
+    def test_get_publish_data_sends_widget_data_spec(self, client: MammothClient):
+        client.dashboards.get_publish_data(
+            dashboard_id=5, widget_id="550e8400-e29b-41d4-a716-446655440000"
         )
+        client._request_json.assert_called_once_with(
+            "POST",
+            "/dashboards/5/getPublishData",
+            json={"params": {"widget_id": "550e8400-e29b-41d4-a716-446655440000"}},
+        )
+
+    def test_widget_data_reads_reject_empty_widget_id(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="widget_id"):
+            client.dashboards.get_draft_data(dashboard_id=5, widget_id="")
+        client._request_json.assert_not_called()
 
     # ── create ───────────────────────────────────────────────────────────────
 
@@ -1499,9 +1526,9 @@ class TestDashboardsAPI:
 
     def test_share_public(self, client: MammothClient):
         client.dashboards.share(dashboard_id=5, type_of_auth=DashboardAuthType.PUBLIC)
-        assert_called_with_method_and_endpoint(client._request_json, "POST", "/dashboards/5/share")
+        assert_called_with_method_and_endpoint(client._request, "POST", "/dashboards/5/share")
         assert_json_body(
-            client._request_json,
+            client._request,
             {"params": {"auth": {"type_of_auth": "public"}}},
         )
 
@@ -1515,7 +1542,7 @@ class TestDashboardsAPI:
             users=[user],
         )
         assert_json_body(
-            client._request_json,
+            client._request,
             {
                 "params": {
                     "auth": {
@@ -1537,14 +1564,14 @@ class TestDashboardsAPI:
     def test_share_password_type(self, client: MammothClient):
         client.dashboards.share(dashboard_id=5, type_of_auth=DashboardAuthType.PASSWORD)
         assert_json_body(
-            client._request_json,
+            client._request,
             {"params": {"auth": {"type_of_auth": "password"}}},
         )
 
     def test_share_rejects_nonpositive_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dashboard_id"):
             client.dashboards.share(dashboard_id=0, type_of_auth=DashboardAuthType.PUBLIC)
-        client._request_json.assert_not_called()
+        client._request.assert_not_called()
 
     def test_share_rejects_empty_user_email(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="email"):
@@ -1553,7 +1580,7 @@ class TestDashboardsAPI:
                 type_of_auth=DashboardAuthType.MAMMOTH,
                 users=[DashboardShareUser(email="", role=DashboardShareRole.VIEWER, shared=True)],
             )
-        client._request_json.assert_not_called()
+        client._request.assert_not_called()
 
     # ── action ───────────────────────────────────────────────────────────────
 

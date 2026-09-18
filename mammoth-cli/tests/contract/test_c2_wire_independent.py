@@ -124,7 +124,9 @@ def _invoke(client: RecordingClient, route: str) -> None:
         "dashboard.action": lambda: dashboards.action(
             1001, DashboardActionType.AUTO_SYNC, False, 1002
         ),
-        "dashboard.data.draft": lambda: dashboards.get_draft_data(1001, "C2_SQL"),
+        "dashboard.data.draft": lambda: dashboards.get_draft_data(
+            1001, "c2000000-0000-4000-8000-000000000001"
+        ),
         "dashboard.widget-data": lambda: dashboards.widget_data(
             1001, {"params": {"widget_ids": [1003], "C2": "C2_VALUE"}}
         ),

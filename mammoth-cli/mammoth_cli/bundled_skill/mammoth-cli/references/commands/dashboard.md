@@ -148,7 +148,7 @@ Expected success: `DashboardCreateBlankResult` in the standard JSON envelope; mu
 
 Run: `mammoth dashboard data draft`. Exact input fields: `mammoth schema get dashboard.data.draft --output json --no-input`.
 
-Example: `mammoth dashboard data draft 123 --input '{"sql": "SELECT region, SUM(revenue) FROM data GROUP BY region"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dashboard data draft 123 --input '{"widget_id": "550e8400-e29b-41d4-a716-446655440000"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `DashboardDataDraftResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -156,7 +156,7 @@ Expected success: `DashboardDataDraftResult` in the standard JSON envelope; muta
 
 Run: `mammoth dashboard data published`. Exact input fields: `mammoth schema get dashboard.data.published --output json --no-input`.
 
-Example: `mammoth dashboard data published 123 --input '{"sql": "SELECT region, SUM(revenue) FROM data GROUP BY region"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dashboard data published 123 --input '{"widget_id": "550e8400-e29b-41d4-a716-446655440000"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `DashboardDataPublishedResult` in the standard JSON envelope; mutation `read`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -460,7 +460,7 @@ Expected success: `DashboardQaSettingsSetResult` in the standard JSON envelope; 
 
 Run: `mammoth dashboard query`. Exact input fields: `mammoth schema get dashboard.query --output json --no-input`.
 
-Example: `mammoth dashboard query 123 --input '{"body": {"params": {"descriptor": {}}}}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dashboard query 123 --input '{"body": {"params": {"descriptor": {"kind": "scalar", "agg": "count"}}}}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `DashboardQueryResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -788,7 +788,7 @@ Expected success: `DashboardTrashResult` in the standard JSON envelope; mutation
 
 Run: `mammoth dashboard update`. Exact input fields: `mammoth schema get dashboard.update --output json --no-input`.
 
-Example: `mammoth dashboard update 123 --input '{"patch": [{"op": "add", "path": "intent", "value": "sample"}]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth dashboard update 123 --input '{"patch": [{"op": "replace", "path": "title", "value": "Renamed dashboard"}]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `DashboardUpdateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

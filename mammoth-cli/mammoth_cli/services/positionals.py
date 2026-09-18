@@ -157,6 +157,14 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     "dashboard.templates.use": (
         PositionalSpec(name="slug", type=str, required=True, help="Template slug."),
     ),
+    # The widget UUID is a WidgetDataSpec field, read from ``--input`` with the
+    # optional filters; only the dashboard is addressed positionally.
+    "dashboard.data.draft": (
+        PositionalSpec(name="dashboard_id", type=int, required=True, help="ID of the dashboard."),
+    ),
+    "dashboard.data.published": (
+        PositionalSpec(name="dashboard_id", type=int, required=True, help="ID of the dashboard."),
+    ),
     "dashboard.tags.merge": (
         PositionalSpec(name="tag_id", type=int, required=True, help="ID of the source tag."),
     ),

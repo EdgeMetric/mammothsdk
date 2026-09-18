@@ -404,7 +404,12 @@ class DashboardsAPI:
         dashboard_id: int,
         patch: _list[DashboardPatchItem],
     ) -> dict[str, Any]:
-        """Update a dashboard via JSON-patch operations.
+        """Update a dashboard with patch operations.
+
+        The patch items look like RFC 6902 JSON Patch but ``path`` is a bare
+        field name from :class:`~mammoth.models.dashboards.DashboardPatchPath`
+        (``"title"``, ``"intent"``, ``"theme"``, ``"pages"``, ``"filters"``),
+        not a JSON pointer: ``"/title"`` is rejected.
 
         Args:
             dashboard_id: ID of the dashboard (must be > 0).
@@ -455,14 +460,16 @@ class DashboardsAPI:
         """Set whether a dashboard is archived.
 
         ``archived=True`` archives the dashboard and ``archived=False``
-        restores it. The API declares no response body schema, so the raw
-        response is returned unchanged.
+        restores it. The API declares no response body schema and the live
+        server answers with a non-object JSON value, so any 2xx JSON body is
+        accepted and returned unchanged instead of being rejected as a
+        response-contract violation on a write that already committed.
         """
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
         if not isinstance(archived, bool):
             raise MammothValidationError("`archived` must be a boolean.")
-        return self._client._request_json(
+        return self._client._request(
             "POST", f"/dashboards/{dashboard_id}/archive", json={"archived": archived}
         )
 
@@ -530,7 +537,9 @@ class DashboardsAPI:
             }
 
         body: dict[str, Any] = {"params": {"auth": auth_dict}}
-        return self._client._request_json("POST", f"/dashboards/{dashboard_id}/share", json=body)
+        # Like ``archive``, the share route declares no response body schema;
+        # accept whatever JSON the server returns for the committed write.
+        return self._client._request("POST", f"/dashboards/{dashboard_id}/share", json=body)
 
     def action(
         self,
@@ -593,36 +602,73 @@ class DashboardsAPI:
         """
         return self._client._request_json("GET", f"/dashboards/url/{url}")
 
-    def get_draft_data(self, dashboard_id: int, sql: str) -> dict[str, Any]:
-        """Get draft data using SQL query.
+    @staticmethod
+    def _widget_data_params(
+        widget_id: str,
+        global_filters: dict[str, Any] | None,
+        drilldown_filters: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        if not isinstance(widget_id, str) or not widget_id.strip():
+            raise MammothValidationError("`widget_id` must be a non-empty string (widget UUID).")
+        params: dict[str, Any] = {"widget_id": widget_id}
+        if global_filters is not None:
+            params["global_filters"] = global_filters
+        if drilldown_filters is not None:
+            params["drilldown_filters"] = drilldown_filters
+        return params
+
+    def get_draft_data(
+        self,
+        dashboard_id: int,
+        widget_id: str,
+        global_filters: dict[str, Any] | None = None,
+        drilldown_filters: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Get one widget's rows from a dashboard's draft (unpublished) state.
+
+        The route is historically named ``GetDraftDataFromSql`` but the API
+        contract takes a ``WidgetDataSpec``: ``{"params": {"widget_id", ...}}``.
+        A top-level ``sql`` body is rejected with HTTP 400 ``params: Field
+        required``.
 
         Args:
             dashboard_id: ID of the dashboard.
-            sql: SQL query to execute against draft data.
+            widget_id: UUID of the widget whose data to fetch.
+            global_filters: Sidebar filters, ``{column: value}``.
+            drilldown_filters: Chart-click filters, ``{column: value}``
+                (always exact match).
 
         Returns:
-            Dict with query results.
+            Dict with a ``data`` list of row dicts.
         """
+        params = self._widget_data_params(widget_id, global_filters, drilldown_filters)
         return self._client._request_json(
-            "POST",
-            f"/dashboards/{dashboard_id}/getDraftData",
-            json={"sql": sql},
+            "POST", f"/dashboards/{dashboard_id}/getDraftData", json={"params": params}
         )
 
-    def get_publish_data(self, dashboard_id: int, sql: str) -> dict[str, Any]:
-        """Get published data using SQL query.
+    def get_publish_data(
+        self,
+        dashboard_id: int,
+        widget_id: str,
+        global_filters: dict[str, Any] | None = None,
+        drilldown_filters: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Get one widget's rows from a dashboard's published state.
+
+        Same ``WidgetDataSpec`` contract as :meth:`get_draft_data`.
 
         Args:
             dashboard_id: ID of the dashboard.
-            sql: SQL query to execute against published data.
+            widget_id: UUID of the widget whose data to fetch.
+            global_filters: Sidebar filters, ``{column: value}``.
+            drilldown_filters: Chart-click filters, ``{column: value}``.
 
         Returns:
-            Dict with query results.
+            Dict with a ``data`` list of row dicts.
         """
+        params = self._widget_data_params(widget_id, global_filters, drilldown_filters)
         return self._client._request_json(
-            "POST",
-            f"/dashboards/{dashboard_id}/getPublishData",
-            json={"sql": sql},
+            "POST", f"/dashboards/{dashboard_id}/getPublishData", json={"params": params}
         )
 
     def cancel_generation(self, dashboard_id: int) -> dict[str, Any]:

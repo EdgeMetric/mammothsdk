@@ -119,7 +119,12 @@ def test_metadata_free_api_failure_is_unknown_not_a_replayable_read() -> None:
 def test_unclassified_mutation_gateway_and_malformed_success_are_unknown() -> None:
     for error in (
         MammothAPIError("gateway", status_code=502, method="PATCH"),
-        MammothAPIError("wrong response shape", status_code=200, method="POST", operation_state="outcome_unknown"),
+        MammothAPIError(
+            "wrong response shape",
+            status_code=200,
+            method="POST",
+            operation_state="outcome_unknown",
+        ),
     ):
         mapped = map_sdk_exception(error)
         assert mapped.code == "outcome_unknown"
@@ -283,3 +288,25 @@ def test_completed_export_local_failure_keeps_delivery_state_and_redownload_hint
     assert mapped.details["local_artifact_state"] == "failed"
     assert mapped.hint == "Re-download the observed artifact; do not recreate the export."
     assert any("job get 919" in command for command in mapped.recovery_commands)
+
+
+def test_pydantic_validation_error_names_the_failing_fields() -> None:
+    # A response that no longer matches the SDK's snapshot model used to
+    # surface as an empty "failed unexpectedly" envelope.
+    from pydantic import BaseModel, ValidationError
+
+    class Probe(BaseModel):
+        tokens: dict[str, str]
+
+    try:
+        Probe.model_validate({"tokens": "***"})
+    except ValidationError as exc:
+        error = map_sdk_exception(exc)
+    else:  # pragma: no cover
+        raise AssertionError("expected a validation failure")
+
+    assert error.code == "api_error"
+    assert error.details["model"] == "Probe"
+    assert error.details["validation_errors"][0]["loc"] == "tokens"
+    assert error.details["validation_errors"][0]["type"] == "dict_type"
+    assert "schema get" in (error.hint or "")

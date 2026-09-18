@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.7.6
+
+### Changed
+
+- `dashboards.get_draft_data()` / `get_publish_data()` take `widget_id` (plus
+  optional `global_filters` / `drilldown_filters`) and send the
+  `WidgetDataSpec` envelope the routes require; the former `sql` body was
+  rejected with HTTP 400.
+
+### Fixed
+
+- `dashboards.archive()` and `share()` accept any 2xx JSON body on their
+  undeclared-schema routes instead of raising a response-contract violation
+  for a write that committed.
+- Generated dashboard wrappers return a 2xx body unchanged when it matches no
+  snapshot model instead of raising `ValidationError`.
+- `dashboards.update()` documents that `path` is a bare field name, not a
+  JSON pointer.
+
 ## v0.7.5
 
 ### Fixed

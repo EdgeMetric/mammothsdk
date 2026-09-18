@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+"""Generate the packaged skill's release capability reference from the matrix.
+
+``docs/release-capability-matrix.json`` is the canonical record of what has
+been exercised on release and with what outcome. This script projects it into
+``references/capabilities.md`` so an agent can tell, per command, whether the
+route is proven, known-blocked, or simply untried, without reading evidence
+files. Regenerate on every release, after the matrix is updated.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+MATRIX = ROOT / "docs" / "release-capability-matrix.json"
+OUTPUT = ROOT / "mammoth_cli" / "bundled_skill" / "mammoth-cli" / "references" / "capabilities.md"
+
+_VERIFIED = {"Full", "Partial"}
+# Remark markers that mean "the route itself answered with an error", as
+# opposed to "no fixture was available" or "out of scope for that sweep".
+_BLOCKER_MARKERS = (
+    "server_error",
+    "backend",
+    "HTTP 400",
+    "HTTP 404",
+    "HTTP 405",
+    "HTTP 409",
+    "HTTP 500",
+    "cli_error",
+    "validation_error",
+    "not_supported",
+)
+
+
+def _family(command_id: str) -> str:
+    return command_id.split(".", 1)[0]
+
+
+def _blocker(remarks: str) -> str | None:
+    if not any(marker in remarks for marker in _BLOCKER_MARKERS):
+        return None
+    # Keep the observation clause only; drop the leading status prose.
+    text = remarks.split("observed", 1)[-1].strip(" :;") if "observed" in remarks else remarks
+    text = text.split(". ", 1)[0].rstrip(".")
+    return text[:180]
+
+
+def _cell(text: object) -> str:
+    return " ".join(str(text).split()).replace("|", "/")
+
+
+def build() -> str:
+    matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
+    rows = [row for row in matrix["rows"] if row.get("canonical_command")]
+    version = max(
+        (str(row.get("evidence_version") or "") for row in rows if row.get("evidence_version")),
+        default="",
+    )
+    families: dict[str, list[dict[str, object]]] = defaultdict(list)
+    for row in rows:
+        families[_family(str(row["canonical_command"]))].append(row)
+
+    verified = sum(1 for row in rows if row["status"] in _VERIFIED)
+    unsupported = sum(1 for row in rows if row["status"] == "Not supported")
+    lines = [
+        "# What is proven on release",
+        "",
+        "Generated from `docs/release-capability-matrix.json`; do not edit by hand.",
+        f"{len(rows)} API operations have a CLI command. {verified} were exercised "
+        f"successfully on release, {unsupported} are not supported there, and the "
+        "rest are untried. Untried is not broken: discover the contract with "
+        "`mammoth schema get COMMAND_ID --output json --no-input`, run it, and "
+        "treat the structured error envelope as the answer.",
+        "",
+        "Status meanings:",
+        "",
+        "- **verified**: one bounded live run on release returned a success "
+        "envelope (single path; variants and error paths are usually untested).",
+        "- **not supported**: the backend refuses the route on release; the note "
+        "says why and what to use instead.",
+        "- **observed blocker**: the last run hit an error; the note quotes it. "
+        "Re-check before relying on the route, and do not retry the same input.",
+        "- **CLI defect fixed, untried since**: the failure was on the CLI side "
+        "and this release repairs it; nobody has re-run the route yet.",
+        "- Commands not listed under a family are untried.",
+        "",
+        "The typed `view transform *` commands all submit through `view.task.add`; "
+        "its row below carries the transformations proven end to end (filter, "
+        "fill-missing, join, pivot with an exported summary). A transformation not "
+        "named there has the same untried status as any other command.",
+        "",
+        "## Coverage by family",
+        "",
+        "| Family | Commands | Verified | Not supported | Untried |",
+        "|---|---|---|---|---|",
+    ]
+    for family in sorted(families, key=lambda name: (-len(families[name]), name)):
+        group = families[family]
+        v = sum(1 for row in group if row["status"] in _VERIFIED)
+        n = sum(1 for row in group if row["status"] == "Not supported")
+        lines.append(f"| `{family}` | {len(group)} | {v} | {n} | {len(group) - v - n} |")
+    lines.append("")
+
+    for family in sorted(families):
+        group = sorted(families[family], key=lambda row: str(row["canonical_command"]))
+        verified_ids = sorted(
+            {str(row["canonical_command"]) for row in group if row["status"] in _VERIFIED}
+        )
+        unsupported_rows = [row for row in group if row["status"] == "Not supported"]
+        blocked: dict[str, str] = {}
+        fixed: dict[str, str] = {}
+        for row in group:
+            if row["status"] in _VERIFIED or row["status"] == "Not supported":
+                continue
+            remarks = str(row.get("remarks") or "")
+            if remarks.startswith("CLI defect fixed in "):
+                prefix_len = len("CLI defect fixed in ")
+                fixed[str(row["canonical_command"])] = remarks.split(";", 1)[0][prefix_len:]
+                continue
+            note = _blocker(remarks)
+            if note:
+                blocked.setdefault(str(row["canonical_command"]), note)
+        if not (verified_ids or unsupported_rows or blocked or fixed):
+            continue
+        lines.append(f"## `{family}`")
+        lines.append("")
+        if verified_ids:
+            lines.append("Verified: " + ", ".join(f"`{cid}`" for cid in verified_ids))
+            lines.append("")
+        if unsupported_rows or blocked or fixed:
+            lines.append("| Command | State | Note |")
+            lines.append("|---|---|---|")
+            for row in unsupported_rows:
+                lines.append(
+                    f"| `{row['canonical_command']}` | not supported | {_cell(row['remarks'])} |"
+                )
+            for cid, note in sorted(blocked.items()):
+                lines.append(f"| `{cid}` | observed blocker | {_cell(note)} |")
+            for cid, note in sorted(fixed.items()):
+                lines.append(f"| `{cid}` | CLI defect fixed, untried since | {_cell(note)} |")
+            lines.append("")
+    lines.append(
+        f"Evidence version: CLI {version}. Details: `docs/capability-evidence/` in the repository."
+    )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = argv if argv is not None else sys.argv[1:]
+    content = build()
+    if "--check" in args:
+        current = OUTPUT.read_text(encoding="utf-8") if OUTPUT.exists() else ""
+        if current != content:
+            print(f"{OUTPUT} is stale; run scripts/build_skill_capabilities.py", file=sys.stderr)
+            return 1
+        return 0
+    OUTPUT.write_text(content, encoding="utf-8")
+    print(f"wrote {OUTPUT}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -2167,7 +2167,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get_draft_data
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.get_draft_data
-  signature: 'get_draft_data(self, dashboard_id: ''int'', sql: ''str'') -> ''dict[str, Any]'''
+  signature: 'get_draft_data(self, dashboard_id: ''int'', widget_id: ''str'', global_filters: ''dict[str, Any] | None'' = None, drilldown_filters: ''dict[str, Any] | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dashboard.data.draft
   alias_of: null
@@ -2179,7 +2179,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.get_publish_data
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.get_publish_data
-  signature: 'get_publish_data(self, dashboard_id: ''int'', sql: ''str'') -> ''dict[str, Any]'''
+  signature: 'get_publish_data(self, dashboard_id: ''int'', widget_id: ''str'', global_filters: ''dict[str, Any] | None'' = None, drilldown_filters: ''dict[str, Any] | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dashboard.data.published
   alias_of: null

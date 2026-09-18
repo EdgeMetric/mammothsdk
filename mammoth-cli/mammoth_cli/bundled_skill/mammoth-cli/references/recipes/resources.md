@@ -16,6 +16,10 @@ mammoth view list DATASET_ID --project PROJECT_ID --output json --no-input
 mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input
 ```
 
+`file upload` takes the local path as its positional argument; there is no
+`--source`/`--file` option. `dataset delete` is asynchronous: re-read
+`dataset list` (the id disappears once the job completes) before reporting.
+
 Use display names from the exact view schema. For settings, folders and other
 families, use `schema find`/`schema get` first, then read back the exact parent
 and resource IDs. For example:

@@ -1,5 +1,60 @@
 # CLI release provenance
 
+## 2.0.14 / SDK 0.7.6
+
+This release closes the CLI-side defects the 2026-09-18 dashboard sweep and
+the Haiku end-to-end run found on release (evidence under
+`docs/capability-evidence/dashboard-sweep-20260918` and
+`docs/capability-evidence/haiku-e2e-20260918`):
+
+- Output redaction erased every key containing `token`, so `dashboard canvas
+  get` returned `style_tokens: "***REDACTED***"` (breaking the documented
+  canvas get → save round-trip with HTTP 400), and `dashboard style derive` /
+  `dashboard style token list` returned nothing usable. Plural design-token
+  keys (`tokens`, `style_tokens`, `styleTokens`) are data now; singular
+  credential tokens (`token`, `access_token`, `accessToken`, `refresh_tokens`)
+  stay redacted.
+- `dashboard archive` reported `outcome_unknown` (exit 7) on an HTTP 200 whose
+  body is a non-object JSON value, although the archive had committed. SDK
+  0.7.6 accepts any 2xx JSON body on that undeclared-schema route (and on
+  `share`); the CLI returns `{dashboard_id, archived, response}`.
+- `dashboard data draft` / `dashboard data published` sent `{"sql": ...}`;
+  the route takes a `WidgetDataSpec` (`{"params": {"widget_id", ...}}`) and
+  answered HTTP 400 `params: Field required`. SDK 0.7.6 takes `widget_id`
+  plus optional `global_filters` / `drilldown_filters`; the CLI input schema
+  and example follow.
+- `dashboard figure-intent`, `dashboard template get` and `dashboard style
+  default get` failed with an empty `ValidationError` envelope because the
+  live response no longer matched the generated snapshot model. Generated
+  wrappers now return an unmatched 2xx body unchanged, and any remaining
+  pydantic failure names the model and the failing fields.
+- Examples that could not run as printed: `dashboard query` (descriptor needs
+  a `kind`; the example is now `{"kind":"scalar","agg":"count"}`) and
+  `dashboard update` (`path` is a bare field name, not a JSON pointer; the
+  example is now a title rename and the SDK docstring says so).
+- Skill recipes: fill a blank with a literal via `set-values` + `IS_EMPTY`
+  (`fill-missing` only propagates neighbours); `filter_type: "REMOVE"` to drop
+  rows; `file upload` takes a positional path; `dataset delete` is
+  asynchronous; canvas get → save round-trip; `dashboard pdf export` /
+  `video export` need a browser-hydrated payload the CLI cannot build.
+
+Not fixed here because they are backend behaviour, recorded in the matrix:
+`dashboard source list` HTTP 500; `dashboard create` retired (HTTP 409
+`4DASH012`, marked Not supported; use `create-blank` / `v3 generate`);
+`dashboard pdf-artifact` reports "Dashboard not found" for a missing job id;
+`dashboard pdf export` requires client-hydrated data (Not supported from the
+CLI). The CLI requires `mammoth-io>=0.7.6,<0.8`, adds no API bindings, and
+makes no capability-status or autonomous-workflow qualification claim.
+
+Published from deterministic local artifacts built from tag `cli-v2.0.14`
+(source commit `SOURCE_COMMIT`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.14-py3-none-any.whl` sha256 `WHEEL_SHA`
+- `mammoth_cli-2.0.14.tar.gz` sha256 `SDIST_SHA`
+
+SDK 0.7.6 (`sdk-v0.7.6`): `mammoth_io-0.7.6-py3-none-any.whl` sha256
+`SDK_WHEEL_SHA`; `mammoth_io-0.7.6.tar.gz` sha256 `SDK_SDIST_SHA`.
+
 ## 2.0.13 / SDK 0.7.5
 
 This release closes the CLI-side defects the 2026-09-18 read-only sweep

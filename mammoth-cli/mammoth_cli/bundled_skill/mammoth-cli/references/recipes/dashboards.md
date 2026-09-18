@@ -32,3 +32,28 @@ mammoth schema find "dashboard" --output json --no-input
 Page/widget schemas vary by release. Read each schema, use returned IDs, and
 verify dashboard source plus draft/published data after every mutation. A
 creation response alone is not proof of a usable published view.
+
+## Canvas, widget data and PDF
+
+Never save an invented canvas. Read it, change it, write it back:
+
+```bash
+mammoth dashboard canvas get DASHBOARD_ID --output json --no-input   # data.canvas incl. style_tokens
+mammoth dashboard canvas save DASHBOARD_ID --input '{"body":{"params":{"canvas":CANVAS_FROM_GET}}}' --output json --no-input
+```
+
+`canvas save` with `{"canvas": {}}` fails (`dataset` and other fields are
+required); the object returned by `canvas get` is the only known-good shape.
+Widget ids for `dashboard data draft` / `dashboard data published` come from
+that canvas: `--input '{"widget_id": "WIDGET_UUID"}'` (optional
+`global_filters` / `drilldown_filters` objects). `dashboard query` needs a
+descriptor with a `kind` (`scalar`, `group`, `rate`, `detail`, `options`,
+`range`); `{"kind":"scalar","agg":"count"}` is the smallest that runs.
+
+`dashboard pdf export` and `dashboard video export` cannot be completed from
+the CLI: the backend requires the browser-hydrated `DashboardData` map
+(pre-rendered widget results) in `params.data` and refuses to rebuild it. Report
+this as a known limitation instead of retrying with `{}`. `dashboard create`
+(legacy engine) is retired on release (HTTP 409 `4DASH012`); use
+`create-blank` or `v3 generate`.
+
