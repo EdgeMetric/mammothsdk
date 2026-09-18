@@ -55,8 +55,8 @@ def test_find_without_project_searches_every_visible_project(
     ]
     assert "list_projects" in fake_service.calls
     assert fake_service.call_log == [
-        (_LIST, {"project_id": 1}),
-        (_LIST, {"project_id": 2}),
+        (_LIST, {"project_id": 1, "limit": 100}),
+        (_LIST, {"project_id": 2, "limit": 100}),
     ]
     assert meta["project_id"] is None
 
@@ -64,15 +64,13 @@ def test_find_without_project_searches_every_visible_project(
 def test_find_with_project_restricts_to_one_project(fake_service: FakeMammothService) -> None:
     fake_service.projects = [{"id": 1, "name": "P1"}, {"id": 2, "name": "P2"}]
     fake_service.responses[_LIST] = {"folders": [{"id": 20, "name": "Reports 2024"}]}
-    result, meta = folder_cmd.folder_find(
-        _inv("folder.find", project=42, extra_args=["report"])
-    )
+    result, meta = folder_cmd.folder_find(_inv("folder.find", project=42, extra_args=["report"]))
     assert result["projects_searched"] == 1
     assert result["matches"] == [
         {"project_id": 42, "project_name": None, "id": 20, "name": "Reports 2024"}
     ]
     assert "list_projects" not in fake_service.calls
-    assert fake_service.call_log == [(_LIST, {"project_id": 42})]
+    assert fake_service.call_log == [(_LIST, {"project_id": 42, "limit": 100})]
     assert meta["project_id"] == 42
 
 

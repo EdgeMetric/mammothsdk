@@ -11,6 +11,7 @@ hashes; stop on ambiguous schemas, authorization errors, or unknown effects.
 
 - [auth and scope](auth-scope.md)
 - [files, datasets, views and settings](resources.md)
+- [datasets stuck in `need_action` after upload](need-action.md)
 - [typed transformations and drafts](transforms.md)
 - [typed ETL discovery](typed-etl-discovery.md)
 - [exports and artifacts](exports.md)

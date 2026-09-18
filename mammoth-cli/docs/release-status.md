@@ -1,5 +1,38 @@
 # CLI release provenance
 
+## 2.0.12 / SDK 0.7.4
+
+This release exists to pick up mammoth-io 0.7.4, which fixes `dataset
+rename`: the SDK sent a `rename_dataset` operation on the plural datasets
+route that the server rejected with HTTP 400 for every caller, including the
+documented CLI example. The SDK now sends the OpenAPI `DatasetPatchOperation`
+(`replace`/`name`) to `PATCH /datasets/{dataset_id}`; the fix was verified live
+on the release environment by creating, renaming, reading back, and deleting a
+throwaway dataset. The CLI requires `mammoth-io>=0.7.4,<0.8`.
+
+The bundled skill gains a `need_action` recipe: an uploaded CSV with
+ambiguous dates stops in `status: need_action` with no views, and an agent
+without guidance handed that to the operator's UI. The recipe shows the
+CLI path observed live on release: `dataset file-settings get` (reports
+`has_ambiguous_dates`), then `dataset file-settings update` echoing the
+detected settings plus `date_format`, then polling `dataset get` until
+`ready`.
+
+Two read-only local commands are new: `dataset find NAME_SUBSTRING` and
+`folder find NAME_SUBSTRING` search every project the credential can see
+(or only `--project`) by case-insensitive name substring and return
+`project_id`, `project_name`, `id`, `name` per match plus
+`projects_searched` and `projects_truncated` (the projects endpoint returns at
+most 100). Both were exercised live on release. The bundled skill also states
+the dataset-to-view hop (`view list DATASET_ID`), that no dataset-level
+union/append transform exists (append is `file upload` with
+`append_to_ds_id`), that `schema find` is local while `dataset list` is
+per-project, and the three response shapes agents most often misread. The
+release adds no API bindings and makes no capability-status or
+autonomous-workflow qualification claim.
+
+Publication hashes are recorded after upload.
+
 ## 2.0.11 / SDK 0.7.3
 
 This CLI-only diagnostics addition makes `doctor` answer "where can this

@@ -103,9 +103,10 @@ def _require_string_positional(invocation: Invocation, name: str) -> str:
     return str(invocation.extra_args[0])
 
 
-# Generous but bounded: a cross-project search must not page forever against a
-# workspace with an unusually large project count.
-_MAX_PROJECTS_SEARCHED = 1000
+# The projects endpoint accepts at most limit=100 and exposes no offset, so a
+# cross-project search can see at most 100 projects; the result says when the
+# list was cut there.
+_MAX_PROJECTS_SEARCHED = 100
 
 
 def folder_find(invocation: Invocation) -> HandlerResult:
@@ -130,8 +131,10 @@ def folder_find(invocation: Invocation) -> HandlerResult:
             if project_id is None:
                 continue
             project_name = project.get("name")
+            # FoldersAPI.list caps at 100 per page and has no list_all; request
+            # the maximum so a project's folders are not silently truncated.
             response = service.call(
-                "mammoth.api.folders.FoldersAPI.list", project_id=project_id
+                "mammoth.api.folders.FoldersAPI.list", project_id=project_id, limit=100
             )
             folders = response.get("folders", []) if isinstance(response, dict) else []
             for folder in folders:
@@ -150,7 +153,12 @@ def folder_find(invocation: Invocation) -> HandlerResult:
             "workspace_id": auth.workspace_id,
             "project_id": invocation.project,
         }
-    return {"matches": matches, "projects_searched": len(projects)}, meta
+    return {
+        "matches": matches,
+        "projects_searched": len(projects),
+        "projects_truncated": invocation.project is None
+        and len(projects) >= _MAX_PROJECTS_SEARCHED,
+    }, meta
 
 
 def folder_list(invocation: Invocation) -> HandlerResult:

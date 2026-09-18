@@ -85,7 +85,7 @@ must be present in the verified manifest before execution.
 The Python SDK remains independently installable with pip:
 
 ```bash
-python -m pip install mammoth-io==0.7.3
+python -m pip install -U mammoth-io
 ```
 
 This SDK command does not install the CLI.

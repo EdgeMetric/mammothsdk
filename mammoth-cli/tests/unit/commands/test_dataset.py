@@ -14,6 +14,7 @@ from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
 _LIST = "mammoth.api.datasets.DatasetsAPI.list"
+_LIST_ALL = "mammoth.api.datasets.DatasetsAPI.list_all"
 _GET = "mammoth.api.datasets.DatasetsAPI.get"
 _DATA = "mammoth.api.datasets.DatasetsAPI.get_data"
 _BATCH_DATA = "mammoth.api.datasets.DatasetsAPI.get_batch_data"
@@ -63,42 +64,41 @@ def test_find_without_project_searches_every_visible_project(
         {"id": 1, "name": "P1"},
         {"id": 2, "name": "P2"},
     ]
-    fake_service.responses[_LIST] = {
+    fake_service.responses[_LIST_ALL] = {
         "datasets": [{"id": 10, "name": "Sales Q1"}, {"id": 11, "name": "Other"}]
     }
     result, meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
     assert result["projects_searched"] == 2
+    assert result["projects_truncated"] is False
     assert result["matches"] == [
         {"project_id": 1, "project_name": "P1", "id": 10, "name": "Sales Q1"},
         {"project_id": 2, "project_name": "P2", "id": 10, "name": "Sales Q1"},
     ]
     assert "list_projects" in fake_service.calls
     assert fake_service.call_log == [
-        (_LIST, {"project_id": 1}),
-        (_LIST, {"project_id": 2}),
+        (_LIST_ALL, {"project_id": 1}),
+        (_LIST_ALL, {"project_id": 2}),
     ]
     assert meta["project_id"] is None
 
 
 def test_find_matches_are_case_insensitive(fake_service: FakeMammothService) -> None:
     fake_service.projects = [{"id": 1, "name": "P1"}]
-    fake_service.responses[_LIST] = {"datasets": [{"id": 10, "name": "SALES Q1"}]}
+    fake_service.responses[_LIST_ALL] = {"datasets": [{"id": 10, "name": "SALES Q1"}]}
     result, _meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
     assert [m["id"] for m in result["matches"]] == [10]
 
 
 def test_find_with_project_restricts_to_one_project(fake_service: FakeMammothService) -> None:
     fake_service.projects = [{"id": 1, "name": "P1"}, {"id": 2, "name": "P2"}]
-    fake_service.responses[_LIST] = {"datasets": [{"id": 10, "name": "Sales Q1"}]}
-    result, meta = dataset_cmd.dataset_find(
-        _inv("dataset.find", project=42, extra_args=["sales"])
-    )
+    fake_service.responses[_LIST_ALL] = {"datasets": [{"id": 10, "name": "Sales Q1"}]}
+    result, meta = dataset_cmd.dataset_find(_inv("dataset.find", project=42, extra_args=["sales"]))
     assert result["projects_searched"] == 1
     assert result["matches"] == [
         {"project_id": 42, "project_name": None, "id": 10, "name": "Sales Q1"}
     ]
     assert "list_projects" not in fake_service.calls
-    assert fake_service.call_log == [(_LIST, {"project_id": 42})]
+    assert fake_service.call_log == [(_LIST_ALL, {"project_id": 42})]
     assert meta["project_id"] == 42
 
 
@@ -319,12 +319,8 @@ def test_create_waits_and_reports_dataset_id(
     # and report the finished dataset id, not the job id the caller would poll.
     fake_service.responses[_CREATE] = {"job_id": 14}
     fake_service.job_result = {"ds_id": 303686}
-    input_file = _write(
-        tmp_path, {"dataset_spec": {"url": "x"}, "ds_creation_type": "weburl"}
-    )
-    data, _ = dataset_cmd.dataset_create(
-        _inv("dataset.create", project=180, input_file=input_file)
-    )
+    input_file = _write(tmp_path, {"dataset_spec": {"url": "x"}, "ds_creation_type": "weburl"})
+    data, _ = dataset_cmd.dataset_create(_inv("dataset.create", project=180, input_file=input_file))
     assert "wait_if_job" in fake_service.calls
     assert data == {"status": "ready", "dataset_id": 303686, "job_id": 14}
 

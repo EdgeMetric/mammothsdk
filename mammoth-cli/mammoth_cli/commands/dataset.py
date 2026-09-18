@@ -133,9 +133,10 @@ def _require_string_positional(invocation: Invocation, name: str) -> str:
     return str(invocation.extra_args[0])
 
 
-# Generous but bounded: a cross-project search must not page forever against a
-# workspace with an unusually large project count.
-_MAX_PROJECTS_SEARCHED = 1000
+# The projects endpoint accepts at most limit=100 and exposes no offset, so a
+# cross-project search can see at most 100 projects; the result says when the
+# list was cut there.
+_MAX_PROJECTS_SEARCHED = 100
 
 
 def dataset_find(invocation: Invocation) -> HandlerResult:
@@ -161,7 +162,7 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
                 continue
             project_name = project.get("name")
             response = service.call(
-                "mammoth.api.datasets.DatasetsAPI.list", project_id=project_id
+                "mammoth.api.datasets.DatasetsAPI.list_all", project_id=project_id
             )
             datasets = response.get("datasets", []) if isinstance(response, dict) else []
             for dataset in datasets:
@@ -180,7 +181,12 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
             "workspace_id": auth.workspace_id,
             "project_id": invocation.project,
         }
-    return {"matches": matches, "projects_searched": len(projects)}, meta
+    return {
+        "matches": matches,
+        "projects_searched": len(projects),
+        "projects_truncated": invocation.project is None
+        and len(projects) >= _MAX_PROJECTS_SEARCHED,
+    }, meta
 
 
 def dataset_list(invocation: Invocation) -> HandlerResult:
