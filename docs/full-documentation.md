@@ -535,6 +535,8 @@
   - [Import errors](#import-errors)
   - [See also](#see-also)
 - [Changelog](#changelog)
+  - [v0.7.9](#v079)
+    - [Fixed](#fixed)
   - [v0.7.8](#v078)
     - [Changed](#changed)
   - [v0.7.7](#v077)
@@ -2476,22 +2478,28 @@ Example::
 
 Add a raw SQL query as a pipeline task (SQL task).
 
-The query runs against the dataview's underlying data. Column
-references should use internal names (e.g. ``column_abc123``).
+The query runs against the dataview's current output. Reference the
+view as the quoted table ``"view:<dataview_id>"`` (or its quoted
+display name, e.g. ``"View 1"``) and columns by display name. An
+unquoted or placeholder table name (``data``, ``__TABLE__``) is
+rejected by the backend; the SQL task replaces the view's columns
+with the query's result, so select everything you still need.
 
 .. note::
 
     Requires the SQL addon to be enabled on the workspace.
 
 Args:
-    query: SQL query string.
+    query: A single SELECT statement.
 
 Returns:
     API response dict.
 
 Example::
 
-    view.add_sql("SELECT *, column_abc * 2 AS doubled FROM __TABLE__")
+    view.add_sql(
+        'SELECT region, SUM(revenue) AS revenue FROM "view:123" GROUP BY region'
+    )
 
 ---
 
@@ -12668,7 +12676,7 @@ sql = view.generate_sql("count employees by department and sort by count descend
 print(sql)
 
 # Add raw SQL
-view.add_sql("SELECT region, SUM(sales) as total FROM data GROUP BY region")
+view.add_sql('SELECT region, SUM(sales) AS total FROM "view:123" GROUP BY region')
 ```
 
 ---
@@ -14111,7 +14119,10 @@ Args:
     project_id: ID of the project (uses client default if not provided).
 
 Returns:
-    List of conditional format rule dicts.
+    List of conditional format rule dicts. The release route returns
+    the rules as a mapping keyed by rule id; each returned dict
+    carries that key as ``rule_id`` (the value
+    :meth:`conditional_format_delete` needs).
 
 ### `conditional_format_update(self, dataset_id: 'int', dataview_id: 'int', rule: 'dict[str, Any]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -18202,6 +18213,22 @@ client = MammothClient(..., timeout=120)  # 2 minutes per request
 
 
 # Changelog
+
+## v0.7.9
+
+### Fixed
+
+- `view.set_values(condition=...)` applied the condition to no row: the
+  payload carried it at task level, which the backend's VERSION 2 `VALUES`
+  form ignores, so every row was overwritten. The condition is now folded
+  into each value item (AND-ed with a value's own condition). Filling blanks
+  with a constant now touches only the blank rows.
+- `dataviews.conditional_format_list()` returned `[]` for a view with rules:
+  the release route answers `{rule_id: rule}`, which was discarded. Rules are
+  returned as a list with `rule_id` on each item.
+- `view.add_sql()` documentation: the view is referenced as the quoted table
+  `"view:<dataview_id>"` (or its quoted display name); `__TABLE__` and other
+  placeholders are rejected by the backend.
 
 ## v0.7.8
 

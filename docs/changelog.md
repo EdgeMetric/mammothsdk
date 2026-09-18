@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.7.9
+
+### Fixed
+
+- `view.set_values(condition=...)` applied the condition to no row: the
+  payload carried it at task level, which the backend's VERSION 2 `VALUES`
+  form ignores, so every row was overwritten. The condition is now folded
+  into each value item (AND-ed with a value's own condition). Filling blanks
+  with a constant now touches only the blank rows.
+- `dataviews.conditional_format_list()` returned `[]` for a view with rules:
+  the release route answers `{rule_id: rule}`, which was discarded. Rules are
+  returned as a list with `rule_id` on each item.
+- `view.add_sql()` documentation: the view is referenced as the quoted table
+  `"view:<dataview_id>"` (or its quoted display name); `__TABLE__` and other
+  placeholders are rejected by the backend.
+
 ## v0.7.8
 
 ### Changed

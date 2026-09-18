@@ -46,8 +46,10 @@ the result.
 - Resolve workspace/project/dataset/view parents from reads; pass observed IDs
   and `--project`. A dataset does not select a default view. Every `view`
   command that changes, exports, or deletes data requires the exact parent
-  `DATASET_ID` (trailing positional or `dataset_id` input field); only reads
-  may omit it and discover the parent. Get it from `mammoth view get VIEW_ID`.
+  `DATASET_ID`: `view transform *` and `view draft *` take it as the
+  `dataset_id` input field, every other `view` command as the trailing
+  positional after `VIEW_ID`; only reads may omit it and discover the parent.
+  Get it from `mammoth view get VIEW_ID`.
 - Uploads and dataset creation return a **dataset** id. Transforms, joins,
   exports, and previews need a **view** id: run `view list DATASET_ID
   --project PROJECT_ID` to get it. See

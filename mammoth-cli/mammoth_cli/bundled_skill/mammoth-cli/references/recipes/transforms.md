@@ -64,6 +64,28 @@ mammoth schema get view.transform.join --output json --no-input
 mammoth view transform join VIEW_ID --project PROJECT_ID --input INPUT_JSON --output json --no-input
 ```
 
+## Aggregate or summarise
+
+For a grouped summary (totals per region, counts per status) use the typed
+`pivot` when the live schema lists it, or a SQL task. A SQL task must be one
+SELECT that names the view as the quoted table `"view:VIEW_ID"` (or its quoted
+display name) with display-name columns; unquoted or placeholder table names
+(`data`, `__TABLE__`) are rejected with "table name ... not found" or "only
+select queries allowed". The result replaces the view's columns, so run it on
+a copy (`view create` with `clone_from`) or as the last step:
+
+```bash
+mammoth schema get view.transform.pivot --output json --no-input
+mammoth view transform add-sql VIEW_ID --project PROJECT_ID \
+  --input '{"dataset_id":DATASET_ID,"query":"SELECT region, SUM(amount) AS total_amount, COUNT(*) AS order_count FROM \"view:VIEW_ID\" GROUP BY region"}' \
+  --output json --no-input
+mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID --output json --no-input
+```
+
+Read the data back after every value-changing step (`view data get`, or
+`view preview`); a task that executed is not proof it changed the rows you
+meant, and a join that matched nothing shows nulls, not a filled default.
+
 Reject malformed fields with the structured error envelope and stop rather than
 guessing names. Verify exact display names, join multiplicity, math values and
 remote task/pipeline readback. Draft submit is not proof all tasks persisted:

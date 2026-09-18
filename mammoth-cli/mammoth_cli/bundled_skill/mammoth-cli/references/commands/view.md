@@ -92,7 +92,7 @@ Expected success: `ViewCheckpointUpdateResult` in the standard JSON envelope; mu
 
 Run: `mammoth view conditional-format create`. Exact input fields: `mammoth schema get view.conditional-format.create --output json --no-input`.
 
-Example: `mammoth view conditional-format create 123 123 --input '{"rule": {"sample_key": "Status"}}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view conditional-format create 123 123 --input '{"rule": {"cf_type": "RULE", "payload": {"FORMAT": {"name": "Flag open orders", "color": "red", "applies_to": "row", "column_ids": "[]"}, "CONDITION": {"OR": [{"column_1": {"CONTAINS": {"VALUE": ["Open"]}}}]}}}}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewConditionalFormatCreateResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -100,7 +100,7 @@ Expected success: `ViewConditionalFormatCreateResult` in the standard JSON envel
 
 Run: `mammoth view conditional-format delete-all`. Exact input fields: `mammoth schema get view.conditional-format.delete-all --output json --no-input`.
 
-Example: `mammoth view conditional-format delete-all 123 123 --input '{"rule_id": "rule-1"}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view conditional-format delete-all 123 123 --input '{"rule_id": "bca0ff33bd6f8ed1"}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
 
 Expected success: `ViewConditionalFormatDeleteAllResult` in the standard JSON envelope; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -668,7 +668,7 @@ Expected success: `ViewTransformAddColumnResult` in the standard JSON envelope; 
 
 Run: `mammoth view transform add-sql`. Exact input fields: `mammoth schema get view.transform.add-sql --output json --no-input`.
 
-Example: `mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) AS revenue FROM \"view:123\" GROUP BY region", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformAddSqlResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

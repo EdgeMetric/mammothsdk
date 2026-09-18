@@ -69,6 +69,29 @@ def test_parent_discovery_miss_is_a_named_not_found_error(
     )
 
 
+def test_parent_discovery_miss_on_the_generic_call_path_is_not_found_too(
+    service: SdkMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # ``view get`` / ``view task list`` dispatch through ``call`` with the
+    # ViewsResource symbol; a deleted view must read as not_found there as
+    # well, not as a generic api_error ValueError.
+    service._client.set_project_id(4301)
+
+    def _miss(view_id: int, dataset_id: int | None = None) -> object:
+        raise ValueError(f"Dataview {view_id} not found in any dataset in project 4301")
+
+    monkeypatch.setattr(service._client.views, "get", _miss)
+    with pytest.raises(CliError) as excinfo:
+        service.call("mammoth.client.ViewsResource.get", view_id=79)
+    assert excinfo.value.code == "resource_not_found"
+    assert excinfo.value.exit_status == 5
+    assert excinfo.value.details == {
+        "view_id": 79,
+        "project_id": 4301,
+        "reason": "Dataview 79 not found in any dataset in project 4301",
+    }
+
+
 @pytest.mark.parametrize(
     ("method", "view_kwarg", "parent_kwarg"),
     [

@@ -420,7 +420,7 @@ sql = view.generate_sql("count employees by department and sort by count descend
 print(sql)
 
 # Add raw SQL
-view.add_sql("SELECT region, SUM(sales) as total FROM data GROUP BY region")
+view.add_sql('SELECT region, SUM(sales) AS total FROM "view:123" GROUP BY region')
 ```
 
 ---

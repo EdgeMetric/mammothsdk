@@ -35,3 +35,9 @@ in the matrix rows by SHA-256) and a `SUMMARY.md`:
 - `reverify-215-20260918`, `admin-read-sweep-20260918`,
   `backend-repro-20260918` — runs on the published 2.0.15: the fixed routes
   re-run, the admin/billing GET routes, and the backend handover.
+- `reverify-216-20260918` — the routes fixed in 2.0.16 re-run on the
+  working tree (conditional-format delete-all verified; `set-values` and
+  `add-sql` probes behind the 2.0.17 / SDK 0.7.9 fixes).
+- `haiku-cold-20260918` — a cold-start Haiku agent installing 2.0.16 from
+  PyPI and running an ETL brief from the bundled skill alone; its report and
+  the triage that led to 2.0.17.

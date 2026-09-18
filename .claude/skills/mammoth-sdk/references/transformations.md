@@ -517,10 +517,12 @@ sql = view.generate_sql("count employees by department")
 
 ### add_sql(query) -> dict
 
-Add a raw SQL query as a pipeline task.
+Add a raw SQL query as a pipeline task. Reference the view as the quoted table
+`"view:<dataview_id>"` (or its quoted display name) and columns by display name;
+placeholder table names are rejected. The result replaces the view's columns.
 
 ```python
-view.add_sql("SELECT department, AVG(base_salary) FROM __THIS__ GROUP BY department")
+view.add_sql('SELECT department, AVG(base_salary) FROM "view:123" GROUP BY department')
 ```
 
 ---

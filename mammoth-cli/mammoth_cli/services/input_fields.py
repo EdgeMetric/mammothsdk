@@ -234,6 +234,11 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
             }
         ]
     },
+    # The SQL task reads the view as the quoted table "view:<id>" (or its
+    # quoted display name); placeholder names such as ``data`` are rejected.
+    "view.transform.add-sql": {
+        "query": 'SELECT region, SUM(revenue) AS revenue FROM "view:123" GROUP BY region'
+    },
     "view.checkpoint.update": {
         "body": {"patches": [{"op": "command", "path": "approve", "value": None}]},
     },

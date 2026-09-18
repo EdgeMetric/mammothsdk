@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.16.
+Generated from the reviewed command manifests for mammoth-cli 2.0.17.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -4019,7 +4019,7 @@ Total commands: 549.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.conditional_format_create`
-- Agent example: `mammoth view conditional-format create 123 123 --input '{"rule": {"sample_key": "Status"}}' --output json --no-input`
+- Agent example: `mammoth view conditional-format create 123 123 --input '{"rule": {"cf_type": "RULE", "payload": {"FORMAT": {"name": "Flag open orders", "color": "red", "applies_to": "row", "column_ids": "[]"}, "CONDITION": {"OR": [{"column_1": {"CONTAINS": {"VALUE": ["Open"]}}}]}}}}' --output json --no-input`
 
 ### `mammoth view conditional-format delete-all`
 
@@ -4031,7 +4031,7 @@ Total commands: 549.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.conditional_format_delete`
-- Agent example: `mammoth view conditional-format delete-all 123 123 --input '{"rule_id": "rule-1"}' --output json --no-input`
+- Agent example: `mammoth view conditional-format delete-all 123 123 --input '{"rule_id": "bca0ff33bd6f8ed1"}' --output json --no-input`
 
 ### `mammoth view conditional-format list`
 
@@ -4858,7 +4858,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.add_sql`
-- Agent example: `mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region", "dataset_id": 456}' --output json --no-input`
+- Agent example: `mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) AS revenue FROM \"view:123\" GROUP BY region", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform ai`
 

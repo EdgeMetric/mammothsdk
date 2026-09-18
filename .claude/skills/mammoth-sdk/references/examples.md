@@ -280,7 +280,7 @@ sql = view.generate_sql("show top 10 products by revenue")
 print(sql)  # "SELECT product, SUM(revenue) FROM ... GROUP BY product ORDER BY ..."
 
 # Add custom SQL
-view.add_sql("SELECT region, SUM(sales) AS total FROM __THIS__ GROUP BY region")
+view.add_sql('SELECT region, SUM(sales) AS total FROM "view:123" GROUP BY region')
 
 # AI-powered column generation
 view.gen_ai(
@@ -398,7 +398,7 @@ except MammothColumnError as e:
     print(f"Available columns: {view.display_names}")
 
 try:
-    view.add_sql("SELECT * FROM __THIS__ WHERE sales > 1000")
+    view.add_sql('SELECT * FROM "view:123" WHERE sales > 1000')
 except MammothAPIError as e:
     print(f"API error: {e}")
 

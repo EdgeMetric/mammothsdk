@@ -129,6 +129,19 @@ class SdkMammothService:
                 hint="Check the command schema with 'mammoth schema get'.",
                 details={"reason": str(exc)},
             ) from exc
+        except ValueError as exc:
+            # ``ViewsResource.get`` and the view-scoped API methods reach the
+            # same project-wide parent discovery as ``call_view``; a miss must
+            # read as not_found here too, not "operation failed unexpectedly".
+            miss = self._discovery_miss_error(exc, kwargs.get("view_id", kwargs.get("dataview_id")))
+            if miss is not None:
+                raise miss from exc
+            raise map_sdk_exception(
+                exc,
+                profile=self._profile,
+                project_id=self._project_id,
+                workspace_id=self._workspace_id,
+            ) from exc
         except Exception as exc:
             raise map_sdk_exception(
                 exc,
@@ -136,6 +149,34 @@ class SdkMammothService:
                 project_id=self._project_id,
                 workspace_id=self._workspace_id,
             ) from exc
+
+    def _discovery_miss_error(self, exc: ValueError, view_id: Any) -> CliError | None:
+        """Map the SDK's bare "not found in any dataset" ValueError to not_found.
+
+        Returns None when ``exc`` is some other ValueError so the caller can
+        apply the generic mapping.
+        """
+        if "not found in any dataset" not in str(exc):
+            return None
+        project = self._client.project_id
+        return CliError(
+            code=CODE_RESOURCE_NOT_FOUND,
+            message=(
+                f"View {view_id} was not found in any dataset of project {project}; "
+                "parent discovery walked every visible dataset and folder."
+            ),
+            exit_status=EXIT_NOT_FOUND,
+            hint=(
+                "Check the project (views live in exactly one project) and pass the "
+                "exact parent DATASET_ID from 'view list DATASET_ID' or a dataset "
+                "read; do not rely on discovery for large projects."
+            ),
+            details={"view_id": view_id, "project_id": project, "reason": str(exc)},
+            recovery_commands=[
+                f"mammoth dataset list --project {project} --output json --no-input",
+                "mammoth dataset find NAME_SUBSTRING --output json --no-input",
+            ],
+        )
 
     @staticmethod
     def _coerce_call_arguments(method: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
@@ -233,27 +274,10 @@ class SdkMammothService:
             # The SDK's project-wide parent discovery reports a miss as a bare
             # ValueError. Name it, and hand back the reads that settle it,
             # instead of flattening it into "operation failed unexpectedly".
-            if "not found in any dataset" not in str(exc):
+            miss = self._discovery_miss_error(exc, view_id)
+            if miss is None:
                 raise map_sdk_exception(exc) from exc
-            project = self._client.project_id
-            raise CliError(
-                code=CODE_RESOURCE_NOT_FOUND,
-                message=(
-                    f"View {view_id} was not found in any dataset of project {project}; "
-                    "parent discovery walked every visible dataset and folder."
-                ),
-                exit_status=EXIT_NOT_FOUND,
-                hint=(
-                    "Check the project (views live in exactly one project) and pass the "
-                    "exact parent DATASET_ID from 'view list DATASET_ID' or a dataset "
-                    "read; do not rely on discovery for large projects."
-                ),
-                details={"view_id": view_id, "project_id": project, "reason": str(exc)},
-                recovery_commands=[
-                    f"mammoth dataset list --project {project} --output json --no-input",
-                    "mammoth dataset find NAME_SUBSTRING --output json --no-input",
-                ],
-            ) from exc
+            raise miss from exc
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
         if method.startswith("_"):

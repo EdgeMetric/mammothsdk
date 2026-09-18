@@ -350,21 +350,27 @@ class AdvancedOpsMixin(ViewHost):
     def add_sql(self, query: str) -> dict[str, Any]:
         """Add a raw SQL query as a pipeline task (SQL task).
 
-        The query runs against the dataview's underlying data. Column
-        references should use internal names (e.g. ``column_abc123``).
+        The query runs against the dataview's current output. Reference the
+        view as the quoted table ``"view:<dataview_id>"`` (or its quoted
+        display name, e.g. ``"View 1"``) and columns by display name. An
+        unquoted or placeholder table name (``data``, ``__TABLE__``) is
+        rejected by the backend; the SQL task replaces the view's columns
+        with the query's result, so select everything you still need.
 
         .. note::
 
             Requires the SQL addon to be enabled on the workspace.
 
         Args:
-            query: SQL query string.
+            query: A single SELECT statement.
 
         Returns:
             API response dict.
 
         Example::
 
-            view.add_sql("SELECT *, column_abc * 2 AS doubled FROM __TABLE__")
+            view.add_sql(
+                'SELECT region, SUM(revenue) AS revenue FROM "view:123" GROUP BY region'
+            )
         """
         return self._add_task(build_sql_params(query))

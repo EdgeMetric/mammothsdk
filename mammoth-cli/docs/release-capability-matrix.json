@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 1,
-    "Partial": 224,
+    "Partial": 226,
     "Not supported": 2,
-    "Unassessed": 301
+    "Unassessed": 299
   },
   "rows": [
     {
@@ -961,8 +961,8 @@
     {
       "capability_id": "REL-049",
       "capability": "delete conditional format",
-      "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.16 (the handler now forwards rule_id from --input (2.0.15 accepted the field but dropped it before the SDK call)); not re-verified live yet. re-verification 2026-09-18 observed blocked_missing_fixture: No conditional-format rule exists to delete (view.conditional-format.create is documented blocked B09; view.conditional-format.list on our fresh view returned []). With rule_id supplied (int and string tried), CLI still rejected client-side before dispatch: {\"error\":{\"code\":\"invalid_arguments\",\"message\":\"conditional_format_delete requires `rule_id`; list rules first.\",\"exception_type\":\"MammothValidationError\"}}. C...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18 (2.0.16 fixes): exit 0 on release with CLI 2.0.17. Fix held: rule_id forwarded; rule created via `view conditional-format create` (HighlightEntry body) was deleted and `conditional-format list` returned [] afterwards. Note: `conditional-format list` returned [] even before the delete on CLI 2.0.16 because SDK 0.7.8 dropped the release {rule_id: rule} mapping; fixed in SDK 0.7.9 (rules returned with rule_id). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteConditionalFormat",
       "method": "DELETE",
@@ -973,14 +973,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
-        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
-        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
-        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
+        "artifact": "docs/capability-evidence/reverify-216-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-216-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.16 fixes plus set-values/add-sql probes",
+        "sha256": "7cdd80c7f3d9aa4db5b789aaea0390fe09606553b4c6bddb47a84f1f6224282a",
         "command_id": "view.conditional-format.delete-all",
-        "exit_status": 2
+        "exit_status": 0
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.17"
     },
     {
       "capability_id": "REL-050",
@@ -4540,7 +4540,7 @@
       "capability_id": "REL-200",
       "capability": "get conditional format",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 exact-parent retained view 46/dataset 29 read succeeded with an empty conditional-format list. One view and single-page boundary; not Full.",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18 (2.0.16 fixes): exit 0 on release with CLI 2.0.17. With SDK 0.7.9 the one existing rule is returned as [{rule_id, cf_type, FORMAT, CONDITION, ...}]; with SDK 0.7.8 the same call returned [] (mapping keyed by rule id was discarded). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetConditionalFormat",
       "method": "GET",
@@ -4551,19 +4551,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "bounded retained-resource read-only evidence",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-200",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-b-pypi-111/conditional-format-list.json",
-            "sha256": "79c1b91938fb462b9165f9379006d661c07682b56ff2aeda8de75cd6a0513962",
-            "size_bytes": 846,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/reverify-216-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-216-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.16 fixes plus set-values/add-sql probes",
+        "sha256": "7cdd80c7f3d9aa4db5b789aaea0390fe09606553b4c6bddb47a84f1f6224282a",
+        "command_id": "view.conditional-format.list",
+        "exit_status": 0
       },
-      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
+      "evidence_version": "2.0.17"
     },
     {
       "capability_id": "REL-201",
@@ -7021,7 +7016,7 @@
       "capability_id": "REL-303",
       "capability": "Update Publish to DB credentials",
       "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.16 (example value is the documented {\"odbc_type\": \"postgres\"} object (a bare string is rejected)); not re-verified live yet. re-verification 2026-09-18 observed backend_error: Fix partially confirmed: path:'credentials' is accepted and dispatched to backend (matches the documented fix note); backend gives precise field-level validation each time rather than a generic error. Attempt 1 (value:'postgres' string): {\"error\":{\"details\":{\"extra\":[{\"key\":\"patch.0.value\",\"message\":\"Input should be a valid dictionary\"}]}}}. Attempt 2 (value:{'postgres':{...creds...}}): {\"error\":{\"details\":{\"extra...",
+      "remarks": "CLI defect fixed in 2.0.16 (example value is the documented {\"odbc_type\": \"postgres\"} object (a bare string is rejected)); not re-verified live yet. re-verification 2026-09-18 (2.0.16 fixes) observed not_rerun: Not re-run: needs a live publish-to-database export to patch, which the release workspace does not have; the 2.0.16 change only corrects the example value shape. Backend response to the corrected shape was recorded in reverify-215-20260918.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdatePublishToDb",
       "method": "PATCH",
@@ -7032,14 +7027,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
-        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
-        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
-        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
+        "artifact": "docs/capability-evidence/reverify-216-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-216-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.16 fixes plus set-values/add-sql probes",
+        "sha256": "7cdd80c7f3d9aa4db5b789aaea0390fe09606553b4c6bddb47a84f1f6224282a",
         "command_id": "view.export.publish-db-update",
-        "exit_status": 1
+        "exit_status": null
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.17"
     },
     {
       "capability_id": "REL-304",
@@ -9917,7 +9912,7 @@
       "capability_id": "REL-445",
       "capability": "Create batch",
       "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.16 (mapping items carry expected_destination_c_type (TEXT|NUMERIC|DATE); the {src: dst} shortcut stamps a default and the example shows the full item); not re-verified live yet. re-verification 2026-09-18 observed backend_error: Fix held on attempt 2: attempt 1 (mapping without expected_destination_c_type) got a clear structured 400 naming the missing fields (proving the CLI now sends the release list-of-{source_c_name,destination_c_name,...} shape rather than an empty api_error): {\"error\":{\"details\":{\"extra\":[{\"key\":\"mapping...0.source_c_id\",\"message\":\"Field required\"},{\"key\":\"mapping...0.expected_destination_c_type\",\"message\":\"Field req...",
+      "remarks": "CLI defect fixed in 2.0.16 (mapping items carry expected_destination_c_type (TEXT|NUMERIC|DATE); the {src: dst} shortcut stamps a default and the example shows the full item); not re-verified live yet. re-verification 2026-09-18 (2.0.16 fixes) observed not_rerun: Not re-run: the 2.0.15 re-verification already showed the release route returns 500 after the mapping passes validation (backend-repro-20260918 HANDOVER); the 2.0.16 change only adds expected_destination_c_type to each mapping item and is covered by unit tests.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateBatch",
       "method": "POST",
@@ -9928,14 +9923,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
-        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
-        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
-        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
+        "artifact": "docs/capability-evidence/reverify-216-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-216-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.16 fixes plus set-values/add-sql probes",
+        "sha256": "7cdd80c7f3d9aa4db5b789aaea0390fe09606553b4c6bddb47a84f1f6224282a",
         "command_id": "batch.create",
-        "exit_status": 7
+        "exit_status": null
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.17"
     },
     {
       "capability_id": "REL-446",
@@ -9993,8 +9988,8 @@
     {
       "capability_id": "REL-448",
       "capability": "create conditional format",
-      "status": "Unassessed",
-      "remarks": "Unassessed; write sweep 2026-09-18 (CLI 2.0.14) observed cli_error: Skill doc (view.md) claims this route is 'fail-closed and must not dispatch a request' (BLOCKED B09 DATAVIEW_INPUT_UNTYPED) -- but live it DOES dispatch: HTTP 400 4GENR007. Attempt 1 rule:{column,operator,value} -> extra=[cf_type Field required, payload Field required]. Attempt 2 rule:{cf_type:cell,payload:{...}} -> extra=[cf_type \"Input should be 'RULE' or 'COLOR_SCALE'\", payload.ColumnSchema.CONDITION Field requ...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; re-verification 2026-09-18 (2.0.16 fixes): exit 0 on release with CLI 2.0.17. HighlightEntry body accepted; response is {rule_id: rule} with COLUMNS_USED resolved. The former generated example ({\"rule\": {\"sample_key\": ...}}) was a placeholder; the example hint now carries this shape. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateConditionalFormat",
       "method": "POST",
@@ -10005,14 +10000,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/reverify-216-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-216-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.16 fixes plus set-values/add-sql probes",
+        "sha256": "7cdd80c7f3d9aa4db5b789aaea0390fe09606553b4c6bddb47a84f1f6224282a",
         "command_id": "view.conditional-format.create",
-        "exit_status": 1
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.17"
     },
     {
       "capability_id": "REL-449",
@@ -10292,7 +10287,7 @@
       "capability_id": "REL-460",
       "capability": "Get task preview",
       "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.16 (example now uses the backend COPY param-template shape: list of {SOURCE, AS{COLUMN,TYPE,INTERNAL_NAME}}, VERSION 2; the former COPY:{} placeholder was rejected with code 720); not re-verified live yet. Backend reproduction 2026-09-18 observed backend: with the corrected shape the preview job is accepted and then fails with '(builtins.TypeError) Object of type datetime is not JSON serializable' while storing the preview response for a view with a DATE column (job 379, project 25).",
+      "remarks": "Unassessed; re-verification 2026-09-18 (2.0.16 fixes) (CLI 2.0.17) observed backend_error: Fix held: the COPY task_spec is accepted and a task_preview job (406) is created; the job then fails backend-side with 'Object of type datetime is not JSON serializable' while persisting the future_requests response. Same failure as job 379 in backend-repro-20260918; the view has a DATE column (dt). Not a CLI defect.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetTaskPreview",
       "method": "POST",
@@ -10303,14 +10298,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/backend-repro-20260918/results.jsonl",
-        "report": "docs/capability-evidence/backend-repro-20260918/HANDOVER.md",
-        "scope": "backend-defect reproduction on release ws 4 with the published CLI 2.0.15 in disposable project 24 (dataset 54 / view 76), each item run once plus one alternative input; fixtures deleted",
-        "sha256": "e9880ab0d06f5dc6ea0b8ccc213c16019459ca5f580082f3e71552ce5e75c4a3",
+        "artifact": "docs/capability-evidence/reverify-216-20260918/results.jsonl",
+        "report": "docs/capability-evidence/reverify-216-20260918/SUMMARY.md",
+        "scope": "re-verification of the 2.0.16 fixes plus set-values/add-sql probes",
+        "sha256": "7cdd80c7f3d9aa4db5b789aaea0390fe09606553b4c6bddb47a84f1f6224282a",
         "command_id": "view.task.preview",
         "exit_status": 1
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.17"
     },
     {
       "capability_id": "REL-461",

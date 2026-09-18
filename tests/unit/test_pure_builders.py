@@ -321,21 +321,50 @@ class TestFilterSet:
             column_types=TYPES,
             name_gen=gen(),
         )
+        # The backend's VERSION 2 VALUES form ignores a task-level CONDITION,
+        # so the global condition is folded into every value: AND-ed with a
+        # value's own condition, and applied alone to an unconditional value.
         assert spec == {
             "SET": {
                 "VALUES": [
                     {
                         "PROVIDER_TYPE": "FIXED",
                         "PROVIDER": "High",
-                        "CONDITION": {"FILTER_TYPE": "SHOW", **built_cond(10000)},
+                        "CONDITION": {
+                            "AND": [built_cond(10000), built_cond()],
+                            "FILTER_TYPE": "SHOW",
+                        },
                     },
-                    {"PROVIDER_TYPE": "FIXED", "PROVIDER": "Low"},
+                    {
+                        "PROVIDER_TYPE": "FIXED",
+                        "PROVIDER": "Low",
+                        "CONDITION": {"FILTER_TYPE": "SHOW", **built_cond()},
+                    },
                 ],
                 "AS": {"COLUMN": "Risk", "TYPE": "TEXT", "INTERNAL_NAME": "gen1"},
             },
             "VERSION": 2,
-            "CONDITION": built_cond(),
         }
+        assert "CONDITION" not in spec
+
+    def test_set_existing_column_global_condition_only_applies_per_value(self) -> None:
+        # The fill-blanks case: one unconditional value plus a task condition.
+        # Emitted at task level the backend would overwrite every row.
+        spec = b.build_set_params(
+            [SetValue("0")],
+            COLS,
+            existing_column="Sales",
+            condition=cond(),
+            column_types=TYPES,
+        )
+        assert spec["SET"]["VALUES"] == [
+            {
+                "PROVIDER_TYPE": "FIXED",
+                "PROVIDER": "0",
+                "CONDITION": {"FILTER_TYPE": "SHOW", **built_cond()},
+            }
+        ]
+        assert "CONDITION" not in spec
 
     def test_set_existing_column_no_global_condition(self) -> None:
         spec = b.build_set_params(

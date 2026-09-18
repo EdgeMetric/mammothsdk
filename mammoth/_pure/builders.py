@@ -250,16 +250,32 @@ def build_set_params(
     column_types: dict[str, str] | None = None,
     name_gen: Callable[[], str] | None = None,
 ) -> dict[str, Any]:
-    """Build a SET (label/insert values) task payload (VERSION 2)."""
+    """Build a SET (label/insert values) task payload (VERSION 2).
+
+    The backend's VERSION 2 ``VALUES`` form evaluates only each value's own
+    ``CONDITION``; a task-level ``CONDITION`` is read for the legacy single
+    ``VALUE`` form alone and is otherwise ignored, so a "global" *condition*
+    is folded into every value item here (AND-ed with the value's own
+    condition when it has one). Emitting it at task level would set every row.
+    """
     _internal_names: list[str] = internal_names or []
+    task_cond = build_condition(condition, col_map, column_types)
     value_items: list[dict[str, Any]] = []
     for v in values:
         item: dict[str, Any] = {"PROVIDER_TYPE": "FIXED", "PROVIDER": v.value}
-        if v.condition is not None:
-            built_cond = build_condition(v.condition, col_map, column_types)
-            if isinstance(built_cond, dict):
-                built_cond["FILTER_TYPE"] = FilterType.SHOW.value
-            item["CONDITION"] = built_cond
+        own_cond = (
+            build_condition(v.condition, col_map, column_types) if v.condition is not None else None
+        )
+        effective: dict[str, Any] | None
+        if own_cond is None:
+            effective = dict(task_cond) if task_cond is not None else None
+        elif task_cond is None:
+            effective = dict(own_cond)
+        else:
+            effective = {"AND": [own_cond, task_cond]}
+        if effective is not None:
+            effective["FILTER_TYPE"] = FilterType.SHOW.value
+            item["CONDITION"] = effective
         value_items.append(item)
 
     set_dict: dict[str, Any] = {"VALUES": value_items}
@@ -268,11 +284,7 @@ def build_set_params(
     elif existing_column:
         set_dict["DESTINATION"] = resolve_column(existing_column, col_map, _internal_names)
 
-    spec: dict[str, Any] = {"SET": set_dict, "VERSION": 2}
-    built = build_condition(condition, col_map, column_types)
-    if built is not None:
-        spec["CONDITION"] = built
-    return spec
+    return {"SET": set_dict, "VERSION": 2}
 
 
 # ---------------------------------------------------------------------------

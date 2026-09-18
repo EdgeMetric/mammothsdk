@@ -923,9 +923,9 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view checkpoint update` [benign_mutation/none] -> mammoth.api.checkpoints.CheckpointsAPI.update
   example: mammoth view checkpoint update 123 123 123 --input '{"body": {"patches": [{"op": "command", "path": "approve", "value": null}]}}' --output json --no-input
 - `mammoth view conditional-format create` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_create
-  example: mammoth view conditional-format create 123 123 --input '{"rule": {"sample_key": "Status"}}' --output json --no-input
+  example: mammoth view conditional-format create 123 123 --input '{"rule": {"cf_type": "RULE", "payload": {"FORMAT": {"name": "Flag open orders", "color": "red", "applies_to": "row", "column_ids": "[]"}, "CONDITION": {"OR": [{"column_1": {"CONTAINS": {"VALUE": ["Open"]}}}]}}}}' --output json --no-input
 - `mammoth view conditional-format delete-all` [destructive/prompt_or_yes] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_delete
-  example: mammoth view conditional-format delete-all 123 123 --input '{"rule_id": "rule-1"}' --output json --no-input
+  example: mammoth view conditional-format delete-all 123 123 --input '{"rule_id": "bca0ff33bd6f8ed1"}' --output json --no-input
 - `mammoth view conditional-format list` [read/none] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_list
   example: mammoth view conditional-format list 123 123 --output json --no-input
 - `mammoth view conditional-format update` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_update
@@ -1064,7 +1064,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view transform add-column` [reversible_pipeline/none] -> mammoth.View.add_column
   example: mammoth view transform add-column 123 --input '{"name": "Revenue report", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform add-sql` [reversible_pipeline/none] -> mammoth.View.add_sql
-  example: mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region", "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) AS revenue FROM \"view:123\" GROUP BY region", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform ai` [reversible_pipeline/none] -> mammoth.View.gen_ai
   example: mammoth view transform ai 123 --input '{"prompt": "Summarize revenue by region", "context_columns": ["Status"], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform bulk-replace` [reversible_pipeline/none] -> mammoth.View.bulk_replace

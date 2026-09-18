@@ -1,5 +1,45 @@
 # CLI release provenance
 
+## 2.0.17 / SDK 0.7.9
+
+This release folds a cold-start end-to-end run by a Claude Haiku agent
+(install from PyPI, learn from the bundled skill alone, clean and join three
+messy CSVs, summarise, export, one dashboard, cleanup; evidence under
+`docs/capability-evidence/haiku-cold-20260918`) and the re-run of the routes
+fixed in 2.0.16 (`reverify-216-20260918`):
+
+- SDK: `set_values(condition=...)` emitted the condition at task level, which
+  the backend's VERSION 2 `VALUES` form ignores, so a "fill blanks with 0"
+  overwrote every row (the Haiku run delivered all-zero amounts and all
+  "Unknown" regions without noticing). The condition is folded into each
+  value item; verified live (only the blank row changed).
+- SDK: `conditional_format_list()` returned `[]` for a view with rules
+  (release answers `{rule_id: rule}`); rules now carry `rule_id`. With that,
+  `view conditional-format delete-all` is verified live.
+- CLI: `file upload` hard-coded `status: "ready"`; a CSV with an ambiguous
+  date column lands in `need_action` with no view. The result now reads each
+  dataset back and points at `dataset file-settings get` when action is
+  needed.
+- CLI: a discovery miss on `view get` / `view task list` (view deleted or in
+  another project) surfaced as `api_error ValueError`; it is `not_found` (exit
+  5) on every path now.
+- CLI: an unknown option that names a real field says so (`--name` on
+  `project create` is positional argument 1; `--dataset-id` on a transform is
+  an `--input` field) instead of only pointing at the schema.
+- Docs/skill: the SQL task references the view as the quoted table
+  `"view:ID"` (or its quoted display name); `FROM data` / `__TABLE__` are
+  rejected by the backend. SKILL.md states the input model (positionals +
+  `--input` + global options, no per-field flags) and which view commands
+  take the parent as a positional versus an input field; the transforms
+  recipe gains an aggregation section and a read-the-data-back rule.
+
+Matrix after this release: 227 verified of 528 (core workflow 187/230), 2
+Not supported, 3 rows "CLI defect fixed in 2.0.16" still awaiting a fixture
+(`batch create`, `view export publish-db-update`) or blocked by the backend
+(`view task preview`). The CLI requires `mammoth-io>=0.7.9,<0.8`, adds no
+API bindings, and makes no capability-status or autonomous-workflow
+qualification claim.
+
 ## 2.0.16 / SDK 0.7.8
 
 This release folds three 2026-09-18 runs on the published 2.0.15 build

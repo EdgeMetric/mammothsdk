@@ -271,7 +271,7 @@ view.gen_ai(
 sql_query = view.generate_sql("count customers by region")
 
 # Add a raw SQL query as a pipeline task
-view.add_sql("SELECT region, COUNT(*) as cnt FROM data GROUP BY region")
+view.add_sql('SELECT region, COUNT(*) AS cnt FROM "view:123" GROUP BY region')
 ```
 
 ### Pipeline Management

@@ -1,7 +1,7 @@
 # What is proven on release
 
 Generated from `docs/release-capability-matrix.json`; do not edit by hand.
-455 API operations have a CLI command. 225 were exercised successfully on release, 2 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID --output json --no-input`, run it, and treat the structured error envelope as the answer.
+455 API operations have a CLI command. 227 were exercised successfully on release, 2 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID --output json --no-input`, run it, and treat the structured error envelope as the answer.
 
 Status meanings:
 
@@ -18,7 +18,7 @@ The typed `view transform *` commands all submit through `view.task.add`; its ro
 | Family | Commands | Verified | Not supported | Untried |
 |---|---|---|---|---|
 | `dashboard` | 104 | 81 | 2 | 21 |
-| `view` | 62 | 50 | 0 | 12 |
+| `view` | 62 | 52 | 0 | 10 |
 | `support` | 45 | 9 | 0 | 36 |
 | `billing` | 23 | 4 | 0 | 19 |
 | `connector` | 22 | 2 | 0 | 20 |
@@ -237,21 +237,19 @@ Verified: `user.get`, `user.preference.get`, `user.preference.update`
 
 ## `view`
 
-Verified: `view.active-user.list`, `view.active-user.mark`, `view.ai.generate-data`, `view.ai.profile`, `view.bulk-delete`, `view.checkpoint.create`, `view.checkpoint.delete`, `view.checkpoint.list`, `view.conditional-format.list`, `view.conditional-format.update`, `view.create`, `view.data-check.create`, `view.data-check.delete`, `view.data-check.get`, `view.data-check.list`, `view.data.get`, `view.data.query`, `view.delete`, `view.derivative.create`, `view.derivative.delete`, `view.derivative.list`, `view.derivative.update`, `view.draft.command`, `view.export.delete`, `view.export.get`, `view.export.list`, `view.export.publish-db`, `view.export.update`, `view.exportable-config.get`, `view.get`, `view.list`, `view.parameter-context`, `view.pipeline.edit`, `view.pipeline.get`, `view.pipeline.items`, `view.pipeline.rerun`, `view.preview`, `view.restore`, `view.task.add`, `view.task.delete`, `view.task.get`, `view.task.list`, `view.task.update`, `view.trash`, `view.version.apply`, `view.version.delete`, `view.version.get`, `view.version.list`, `view.version.update`
+Verified: `view.active-user.list`, `view.active-user.mark`, `view.ai.generate-data`, `view.ai.profile`, `view.bulk-delete`, `view.checkpoint.create`, `view.checkpoint.delete`, `view.checkpoint.list`, `view.conditional-format.create`, `view.conditional-format.delete-all`, `view.conditional-format.list`, `view.conditional-format.update`, `view.create`, `view.data-check.create`, `view.data-check.delete`, `view.data-check.get`, `view.data-check.list`, `view.data.get`, `view.data.query`, `view.delete`, `view.derivative.create`, `view.derivative.delete`, `view.derivative.list`, `view.derivative.update`, `view.draft.command`, `view.export.delete`, `view.export.get`, `view.export.list`, `view.export.publish-db`, `view.export.update`, `view.exportable-config.get`, `view.get`, `view.list`, `view.parameter-context`, `view.pipeline.edit`, `view.pipeline.get`, `view.pipeline.items`, `view.pipeline.rerun`, `view.preview`, `view.restore`, `view.task.add`, `view.task.delete`, `view.task.get`, `view.task.list`, `view.task.update`, `view.trash`, `view.version.apply`, `view.version.delete`, `view.version.get`, `view.version.list`, `view.version.update`
 
 | Command | State | Note |
 |---|---|---|
 | `view.ai.generation-info` | observed blocker | backend: GET /workspaces/4/projects/24/datasets/54/dataviews/76/data/generate -> HTTP 400 5GENR011 NOT_IMPLEMENTED 'Not implemented', request_id:null |
 | `view.checkpoint.get` | observed blocker | backend: GET /workspaces/4/projects/24/datasets/54/dataviews/76/pipeline/checkpoints/2 -> HTTP 500, empty response_body:{}, request_id:null, backend code: none surfaced (generic ap |
 | `view.checkpoint.update` | observed blocker | backend_error: CLI-side fix (payload now carries value:null as required) held: the correctly-shaped request was dispatched and the backend returned HTTP 500 (not a CLI-side crash): |
-| `view.conditional-format.create` | observed blocker | cli_error: Skill doc (view.md) claims this route is 'fail-closed and must not dispatch a request' (BLOCKED B09 DATAVIEW_INPUT_UNTYPED) -- but live it DOES dispatch: HTTP 400 4GENR0 |
 | `view.data-check.update` | observed blocker | backend: PATCH .../pipeline/data-checks/3 -> HTTP 500, empty response_body, request_id:null, code:outcome_unknown |
 | `view.derivative.data` | observed blocker | backend: POST .../derivatives/4/data -> HTTP 500, empty response_body, request_id:null, code:outcome_unknown |
 | `view.export.create` | observed blocker | backend: CLI accepts the request (exit 0, job 358 accepted on POST /dataviews/76/actions), but job get 358 -> status:error, response:{"error":{"message":"'destination'"}} (a raw Py |
 | `view.exportable-config.apply` | observed blocker | cli_error: Schema's own runnable_example (config:{tasks:[]}) fails: job_failed, response:{reason:(quote)dependencies(quote)} -- a raw Python KeyError, not a structured validation m |
-| `view.conditional-format.delete-all` | CLI defect fixed, untried since | 2.0.16 (the handler now forwards rule_id from --input (2.0.15 accepted the field but dropped it before the SDK call)) |
+| `view.task.preview` | observed blocker | backend_error: Fix held: the COPY task_spec is accepted and a task_preview job (406) is created; the job then fails backend-side with 'Object of type datetime is not JSON serializa |
 | `view.export.publish-db-update` | CLI defect fixed, untried since | 2.0.16 (example value is the documented {"odbc_type": "postgres"} object (a bare string is rejected)) |
-| `view.task.preview` | CLI defect fixed, untried since | 2.0.16 (example now uses the backend COPY param-template shape: list of {SOURCE, AS{COLUMN,TYPE,INTERNAL_NAME}}, VERSION 2 |
 
 ## `webhook`
 
