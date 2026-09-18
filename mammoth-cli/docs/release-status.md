@@ -39,6 +39,9 @@ operations without a CLI command and the 44 support/billing write routes
 requires `mammoth-io>=0.7.8,<0.8`, adds no API bindings, and makes no
 capability-status or autonomous-workflow qualification claim.
 
+SDK 0.7.8 (`sdk-v0.7.8`, source commit `2df82ed`): `mammoth_io-0.7.8-py3-none-any.whl` sha256
+`5bd01357df1fbf0d0898434701b52eacf9dc04d333b6fdb6f145516b6ac0d395`; `mammoth_io-0.7.8.tar.gz` sha256 `6c954e0dc7aabdd1346f9b0c3f6b0f26752db6354ecdd94919c3ca3f36fc9230`; digests verified against PyPI.
+
 ## 2.0.15 / SDK 0.7.7
 
 This release closes the CLI-side defects the 2026-09-18 write sweep (79
