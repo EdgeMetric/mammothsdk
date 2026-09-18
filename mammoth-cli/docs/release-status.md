@@ -2,12 +2,26 @@
 
 ## 2.0.4 / SDK 0.7.3
 
-This security maintenance release hardens the explicit file-backed credential
-fallback on POSIX. Every file read, update, and delete now rejects unsafe
-directory or file ownership and permissions, symlinks, non-regular files, and
-file-entry replacement before parsing secrets. It retains
-`mammoth-io>=0.7.3,<0.8`, makes no API-binding or capability-status change,
-and does not qualify autonomous workflows or backend behavior.
+Published from deterministic local artifacts built from tag `cli-v2.0.4`
+(source commit `6714f90`). This security maintenance release hardens the
+explicit file-backed credential fallback on POSIX. Every file read, update,
+and delete now rejects unsafe directory or file ownership and permissions,
+symlinks, non-regular files, and file-entry replacement before parsing
+secrets. It retains `mammoth-io>=0.7.3,<0.8`, makes no API-binding or
+capability-status change, and does not qualify autonomous workflows or backend
+behavior.
+
+PyPI reports the uploaded local artifact hashes:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `e62246975d559246e079c04f118cbafb31678f05ecc1fc04ab7308eb139e89b3` |
+| Source distribution | `eb893be416b7d0c3dfde089550d17068601f939bd506ceb5d64e607973fbd759` |
+
+Focused credential tests (14), Ruff, mypy, lock validation, build, and Twine
+metadata validation passed. A fresh Python 3.14 environment installed the
+exact published wheel, passed `pip check`, reported version 2.0.4, and ran a
+bundled schema command. These checks do not constitute a full-suite or CI run.
 
 ## 2.0.3 / SDK 0.7.3
 
