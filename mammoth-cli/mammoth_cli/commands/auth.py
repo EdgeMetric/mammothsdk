@@ -27,6 +27,7 @@ from mammoth_cli.context.resolver import (
 )
 from mammoth_cli.contracts.auth import LoginRequest
 from mammoth_cli.errors.envelope import (
+    CODE_AUTHENTICATION_FAILED,
     CODE_CONFIRMATION_DECLINED,
     CODE_CONFIRMATION_REQUIRED,
     CODE_INVALID_WORKSPACE_ID,
@@ -135,6 +136,34 @@ def _validate_login_document(document: dict[str, Any]) -> LoginRequest:
         ) from exc
 
 
+def _masked_receipt(value: str) -> str:
+    """Describe a secret without revealing it: its length and last four characters."""
+    if len(value) <= 4:
+        return f"{len(value)} characters"
+    return f"{len(value)} characters, ending in …{value[-4:]}"
+
+
+def _prompt_secret(label: str) -> str:
+    """Prompt for one secret with hidden input, then confirm what was captured.
+
+    A hidden prompt shows nothing while typing, so a paste that silently
+    carried a newline or trailing space, or an empty return, used to surface
+    only later as an opaque 401. Surrounding whitespace is stripped, an empty
+    entry is rejected here, and a masked receipt (length and last four
+    characters, never the value) is printed to stderr as feedback.
+    """
+    value = typer.prompt(label, hide_input=True).strip()
+    if not value:
+        raise CliError(
+            code="login_input_required",
+            message=f"The {label} was empty.",
+            exit_status=EXIT_USAGE,
+            hint=f"Paste the {label} at the hidden prompt; nothing is echoed while you type.",
+        )
+    typer.echo(f"  {label}: {_masked_receipt(value)}", err=True)
+    return str(value)
+
+
 def _prompt_blockers(invocation: Invocation) -> list[str]:
     """Reasons this invocation cannot interactively prompt, in report order.
 
@@ -190,8 +219,8 @@ def _run_login(
         # Two flows, nothing else: a terminal prompts for everything (key,
         # secret, then workspace id), and non-interactive uses --input. The
         # workspace is asked last, after the credentials.
-        api_key = typer.prompt("API key", hide_input=True)
-        api_secret = typer.prompt("API secret", hide_input=True)
+        api_key = _prompt_secret("API key")
+        api_secret = _prompt_secret("API secret")
         effective_workspace = typer.prompt("Workspace id", type=int)
         effective_prefix = server_prefix
     else:
@@ -231,6 +260,32 @@ def _run_login(
     service = service_factory.build_service(resolved_auth, timeout=invocation.timeout)
     try:
         service.check_connection()
+    except CliError as exc:
+        if exc.code == CODE_AUTHENTICATION_FAILED:
+            # Say exactly what was tried, without the secret: the endpoint,
+            # the workspace, and a masked receipt of the key. Credentials are
+            # per environment, and a release key typed at a production login
+            # is the common cause of an otherwise opaque 401.
+            exc.details = {
+                **exc.details,
+                "endpoint_base_url": resolved_base_url,
+                "workspace_id": effective_workspace,
+                # Receipts only (length and last four characters). The output
+                # layer redacts any key that looks like a credential, so these
+                # are named for what they are: descriptions, not values.
+                "credential_receipt": {
+                    "key": _masked_receipt(api_key),
+                    "second_value_length": len(api_secret),
+                },
+            }
+            exc.hint = (
+                f"{resolved_base_url} rejected this key/secret for workspace "
+                f"{effective_workspace}. Credentials are per environment: a key issued on "
+                "one Mammoth server does not authenticate on another. Check the key, the "
+                "secret, the workspace id, and that --server-prefix matches where the key "
+                "was issued."
+            )
+        raise
     finally:
         service.close()
 

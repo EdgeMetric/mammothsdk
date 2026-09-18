@@ -1,6 +1,25 @@
 # CLI release provenance
 
+## 2.0.10 / SDK 0.7.3
+
+This CLI-only interactive-login correction responds to a field report that
+the hidden prompts gave no feedback and a rejected pair gave no clue what
+had been sent. Each hidden entry now strips surrounding whitespace (a pasted
+newline no longer becomes part of the secret), rejects an empty entry before
+any request, and prints a masked receipt to stderr (length and last four
+characters, never the value). A rejected login now reports the endpoint base
+URL, the workspace id, and a credential receipt in `details`, and its hint
+states that credentials are per environment. Values are never echoed; the
+output redactor still masks any credential-shaped field. It retains
+`mammoth-io>=0.7.3,<0.8`, adds no API bindings, and makes no
+capability-status or autonomous-workflow qualification claim.
+
+Publication hashes are recorded after upload.
+
 ## 2.0.9 / SDK 0.7.3
+
+The full non-live suite for the 2.0.9 source later completed with
+3,857 passed, 2 skipped, 7 deselected.
 
 This CLI-only login-persistence and onboarding correction responds to a
 reproduced field report: after a successful `auth login`, `doctor` reported

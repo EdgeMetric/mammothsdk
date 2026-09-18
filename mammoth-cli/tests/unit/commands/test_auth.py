@@ -423,3 +423,69 @@ def test_logout_all_and_profile_are_mutually_exclusive(isolated_cli_config: Path
     assert result.exit_code == 2
     envelope = json.loads(result.stderr)
     assert envelope["error"]["code"] == "invalid_argument_combination"
+
+
+def test_login_prompt_strips_whitespace_and_prints_masked_receipt(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # A hidden paste often carries a trailing newline or space; that must not
+    # reach the backend as part of the secret. The user gets a receipt with
+    # the length and last four characters on stderr, never the value.
+    monkeypatch.setattr(auth_cmd.sys.stdin, "isatty", lambda: True)
+
+    def fake_prompt(text: str, hide_input: bool = False, type: object = None) -> object:
+        if "Workspace" in text:
+            return 4
+        return "  prompted-" + text + "\n"
+
+    monkeypatch.setattr(auth_cmd.typer, "prompt", fake_prompt)
+    invocation = Invocation(command_id="auth.login", output="table", no_input=False)
+    auth_cmd._run_login(invocation, server_prefix=None, storage="file")
+    assert credentials.load_credentials("default") == ("prompted-API key", "prompted-API secret")
+    err = capsys.readouterr().err
+    assert "API key: 16 characters, ending in …" in err
+    assert "prompted-API key" not in err
+    assert "prompted-API secret" not in err
+
+
+def test_login_prompt_rejects_empty_secret_before_any_request(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(auth_cmd.sys.stdin, "isatty", lambda: True)
+    monkeypatch.setattr(auth_cmd.typer, "prompt", lambda *a, **k: "   ")
+    invocation = Invocation(command_id="auth.login", output="table", no_input=False)
+    with pytest.raises(CliError) as excinfo:
+        auth_cmd._run_login(invocation, server_prefix=None, storage="file")
+    assert excinfo.value.code == "login_input_required"
+    assert fake_service.call_log == []
+
+
+def test_login_auth_failure_names_endpoint_workspace_and_masked_key(
+    isolated_cli_config: Path, fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.connection_ok = False
+    doc = _write_login_doc(
+        tmp_path, api_key="release-key-1234", api_secret="s3cr3t", workspace_id=4
+    )
+    runner = make_runner()
+    result = runner.invoke(
+        ["auth", "login", "--input", str(doc), "--storage", "file", "--output", "json"],
+        env={},
+    )
+    assert result.exit_code == 4
+    error = json.loads(result.stderr)["error"]
+    assert error["code"] == "authentication_failed"
+    assert error["details"]["endpoint_base_url"] == "https://app.mammoth.io/api/v2"
+    assert error["details"]["workspace_id"] == 4
+    assert error["details"]["credential_receipt"] == {
+        "key": "16 characters, ending in …1234",
+        "second_value_length": 6,
+    }
+    assert "release-key-1234" not in result.stderr
+    assert "s3cr3t" not in result.stderr
+    assert "per environment" in error["hint"]
