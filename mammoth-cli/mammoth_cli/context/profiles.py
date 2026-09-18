@@ -237,15 +237,22 @@ def get_profile(name: str) -> ProfileRecord | None:
     return _parse_profile(name, table[name])
 
 
-def save_profile(record: ProfileRecord) -> None:
+def save_profile(record: ProfileRecord, *, select: bool = False) -> None:
     """Create or replace one profile's non-secret record.
 
     Args:
         record: The complete profile record to store. Replaces any existing
             record with the same name.
+        select: Also make this profile the selected one, in the same write.
+            Login uses this so the record and the selection pointer can never
+            be persisted separately: a pointer to a profile whose record is
+            missing is exactly the state ``doctor`` reports as
+            ``no profile``.
 
     Raises:
         CliError: ``invalid_profile_name`` for a malformed name.
+        CliError: ``profile_write_failed`` if the record cannot be read back
+            from the file just written.
     """
     validate_profile_name(record.name)
     document = _load_document()
@@ -260,7 +267,18 @@ def save_profile(record: ProfileRecord) -> None:
     if record.project_id is not None:
         entry["project_id"] = record.project_id
     table[record.name] = entry
+    if select:
+        document["selected"] = record.name
     _write_document(document)
+    stored = get_profile(record.name)
+    if stored is None or stored.workspace_id != record.workspace_id:
+        raise CliError(
+            code="profile_write_failed",
+            message=f"Profile '{record.name}' was not persisted to {profiles_path()}.",
+            exit_status=EXIT_USAGE,
+            hint="Check that no other process rewrites the configuration directory, then retry.",
+            details={"path": str(profiles_path())},
+        )
 
 
 def delete_profile(name: str) -> bool:
@@ -313,6 +331,14 @@ def set_selected(name: str) -> None:
     """
     validate_profile_name(name)
     document = _load_document()
+    table = document.get("profiles")
+    if table is None or name not in table:
+        raise CliError(
+            code="profile_not_found",
+            message=f"Profile '{name}' has no stored record, so it cannot be selected.",
+            exit_status=EXIT_USAGE,
+            hint=f"Run 'mammoth auth login --profile {name}' to create it first.",
+        )
     document["selected"] = name
     _write_document(document)
 

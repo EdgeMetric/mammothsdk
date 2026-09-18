@@ -243,7 +243,10 @@ def _run_login(
         server_prefix=effective_prefix,
         project_id=existing.project_id if existing is not None else None,
     )
-    profiles.save_profile(record)
+    # Persist the record and the selection pointer in one write, before the
+    # secret goes to its store: a stored secret with no readable record is the
+    # "credentials present / no profile" state that strands a later doctor run.
+    profiles.save_profile(record, select=True)
     storage_used = credentials.store_credentials(
         profile_name,
         api_key,
@@ -251,7 +254,6 @@ def _run_login(
         storage=cast(credentials.StorageMode, storage),
         interactive=not blockers,
     )
-    profiles.set_selected(profile_name)
 
     data = {
         "profile": profile_name,

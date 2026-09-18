@@ -41,8 +41,9 @@ argv, transcript, checkpoint, or a source file.
 1. **Diagnose the profile first.** Run `mammoth auth status --profile
    PROFILE --output json --no-input`. This is a local presence check, not
    proof that credentials work. If the profile or credentials are missing,
-   stop and tell the operator to run `mammoth auth login --profile PROFILE
-   --server-prefix app` in their own terminal; it uses hidden prompts. Wait,
+   stop and tell the operator to run `mammoth auth login` in their own
+   terminal (add `--server-prefix release` only for release); it uses hidden
+   prompts. Wait,
    then re-check status. Do not ask for the key or secret in chat, and do not
    look for them in environment variables: the CLI does not read them from
    there. Use `--input` only with a protected `0600` file the operator handed

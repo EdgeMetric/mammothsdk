@@ -33,8 +33,8 @@ or secrets in an argument, prompt, transcript, or checkpoint.
    Compare the status response's `endpoint` with the intended environment. If
    the profile or credentials are missing, or the endpoint is for another
    environment, stop and follow [authentication](auth.md): tell the operator
-   the exact `mammoth auth login --profile PROFILE --server-prefix app`
-   command to run in their own terminal, wait for them, then re-check status.
+   to run `mammoth auth login` (production; `--server-prefix release` for
+   release) in their own terminal, wait for them, then re-check status.
    The CLI does not read credentials from environment variables; do not look
    for them there. Never silently reuse or rewrite a mismatched profile,
    invent a profile, ask for credentials in chat, or put secrets in argv.

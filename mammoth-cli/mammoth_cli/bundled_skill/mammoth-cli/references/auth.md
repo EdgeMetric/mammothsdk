@@ -17,15 +17,19 @@ An agent never receives the key or secret. When `auth status` reports a
 missing profile or `has_credentials=false`, stop and hand the login to the
 human operator:
 
-1. Tell the operator the exact command to run in **their own** terminal, with
-   the profile name and the intended server prefix:
+1. Tell the operator the exact command to run in **their own** terminal. For
+   production it is just:
 
    ```bash
-   mammoth auth login --profile PROFILE --server-prefix app
+   mammoth auth login
    ```
 
-   The command prompts for the key and secret with hidden input, then the
-   workspace id, so no secret enters chat, argv, or history.
+   Add `--server-prefix release` only when the task names the release
+   environment, and `--profile NAME` only when the operator wants a profile
+   other than `default`. The command prompts for the key and secret with
+   hidden input, then the workspace id, so no secret enters chat, argv, or
+   history. Credentials are per environment: a release key never
+   authenticates on `app`.
 2. Wait for the operator to confirm, then re-run
    `mammoth auth status --profile PROFILE --output json --no-input` and
    `mammoth doctor --profile PROFILE --output json --no-input`.
@@ -53,8 +57,8 @@ If status reports a missing profile or `has_credentials=false`, run the secure
 login flow, then check status again:
 
 ```bash
-mammoth auth login --profile PROFILE --server-prefix app
-mammoth auth status --profile PROFILE --output json --no-input
+mammoth auth login                       # production; add --profile NAME if not 'default'
+mammoth auth status --output json --no-input
 ```
 
 `auth status` is a local profile/credential-presence check; it does not prove
@@ -76,7 +80,8 @@ targets release.
 
 ## Commands
 ```bash
-mammoth auth login --profile PROFILE --server-prefix app  # hidden prompts
+mammoth auth login                                        # hidden prompts; production
+mammoth auth login --server-prefix release                # release environment
 mammoth auth login --profile PROFILE --input creds.json --storage file --output json --no-input
 mammoth auth status --profile PROFILE --output json --no-input
 mammoth auth logout --profile default --output json --no-input --yes

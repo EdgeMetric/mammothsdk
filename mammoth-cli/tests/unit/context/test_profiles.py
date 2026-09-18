@@ -168,3 +168,38 @@ def test_save_profile_leaves_no_temp_files(isolated_cli_config: Path) -> None:
     profiles.save_profile(profiles.ProfileRecord(name="default", workspace_id=1))
     leftovers = [p for p in isolated_cli_config.iterdir() if p.name.startswith(".profiles-")]
     assert leftovers == []
+
+
+def test_save_profile_with_select_persists_record_and_pointer_in_one_write(
+    isolated_cli_config: Path,
+) -> None:
+    # Login persists the record and the selection together, so the file can
+    # never hold a pointer to a profile whose record is missing.
+    profiles.save_profile(
+        profiles.ProfileRecord(name="release", workspace_id=4, server_prefix="release"),
+        select=True,
+    )
+    text = profiles.profiles_path().read_text(encoding="utf-8")
+    assert 'selected = "release"' in text
+    assert "[profiles.release]" in text
+    stored = profiles.get_profile("release")
+    assert stored is not None and stored.workspace_id == 4
+    assert profiles.get_selected() == "release"
+
+
+def test_set_selected_refuses_a_profile_without_a_record(isolated_cli_config: Path) -> None:
+    with pytest.raises(CliError) as excinfo:
+        profiles.set_selected("ghost")
+    assert excinfo.value.code == "profile_not_found"
+    assert not profiles.profiles_path().exists()
+
+
+def test_save_profile_fails_loudly_when_the_record_does_not_read_back(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # If anything drops the table between write and read-back, login must not
+    # report success over a "credentials present / no profile" state.
+    monkeypatch.setattr(profiles, "get_profile", lambda name: None)
+    with pytest.raises(CliError) as excinfo:
+        profiles.save_profile(profiles.ProfileRecord(name="release", workspace_id=4))
+    assert excinfo.value.code == "profile_write_failed"

@@ -1,5 +1,23 @@
 # CLI release provenance
 
+## 2.0.9 / SDK 0.7.3
+
+This CLI-only login-persistence and onboarding correction responds to a
+reproduced field report: after a successful `auth login`, `doctor` reported
+`credentials present` but `no profile`, because the profile record and the
+selection pointer were persisted in separate writes and the record was lost.
+`auth login` now writes the profile record and the selection pointer in one
+atomic write, before the secret is stored, and reads the record back; if it
+is not readable the command fails with `profile_write_failed` instead of
+reporting success. `set_selected` refuses a profile that has no record
+(`profile_not_found`). The bundled skill and agent guide now give the
+minimal production login (`mammoth auth login`; `--server-prefix release`
+only for release) and state that credentials are per environment. It
+retains `mammoth-io>=0.7.3,<0.8`, adds no API bindings, and makes no
+capability-status or autonomous-workflow qualification claim.
+
+Publication hashes are recorded after upload.
+
 ## 2.0.8 / SDK 0.7.3
 
 This CLI-only safety change closes the P0 from the 2026-09-17 systemic scope
