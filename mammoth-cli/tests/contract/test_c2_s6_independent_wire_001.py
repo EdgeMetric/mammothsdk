@@ -31,6 +31,12 @@ class RecordingClient:
         self.calls.append((method, path, kwargs))
         return {}
 
+    def _request_binary(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
+        # Artifact routes (PNG/PDF/MP4/HTML) go through the binary seam; the
+        # wire oracle only cares about method, path, and query.
+        self.calls.append((method, path, kwargs))
+        return {"content_type": "application/octet-stream", "size_bytes": 0, "sha256": ""}
+
 
 def _fixture() -> dict[str, Any]:
     return json.loads(FIXTURE.read_text(encoding="utf-8"))

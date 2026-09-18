@@ -20,9 +20,10 @@ def _make_api() -> tuple[TemplatesAPI, MagicMock]:
 class TestTemplatesAPIList:
     def test_list(self):
         api, mock_client = _make_api()
-        mock_client._request_json.return_value = {"templates": []}
+        # The route answers with a bare JSON array; the SDK wraps it.
+        mock_client._request_list.return_value = []
         result = api.list()
-        mock_client._request_json.assert_called_once_with("GET", "/workspaces/2/templates")
+        mock_client._request_list.assert_called_once_with("GET", "/workspaces/2/templates")
         assert result == {"templates": []}
 
 

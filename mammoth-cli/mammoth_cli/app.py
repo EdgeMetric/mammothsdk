@@ -319,7 +319,9 @@ class _LeafGroup(TyperGroup):
             # as the callback's positional arguments.
             ctx.allow_interspersed_args = True
             ctx.args = _ClickCommand.parse_args(self, ctx, list(args))
-            ctx._protected_args = []
+            # Click's own attribute for the pending subcommand token (Click
+            # >= 8.2 made it private); not an SDK member.
+            setattr(ctx, "_protected_args", [])  # noqa: B010
         return list(ctx.args)
 
 
