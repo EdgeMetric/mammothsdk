@@ -16,7 +16,21 @@ the manual-dispatch publication policy. It retains `mammoth-io>=0.7.3,<0.8`,
 adds no API bindings or request-execution path, and makes no
 capability-status or autonomous-workflow qualification claim.
 
-Publication hashes are recorded after upload.
+Published from deterministic local artifacts built from tag `cli-v2.0.7`
+(source commit `f4bf6c1`). PyPI reports the uploaded local artifact hashes:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `7b646c52737857ed90b38c4e633cc51f5cc44a1b26567aad8a6b964064780ca6` |
+| Source distribution | `ac976b2e15f8e1aac5ca4cdb6be25d1ad0d1fa165449a180a573bb3c1bf8395b` |
+
+Before upload, the full non-live suite at the release source recorded
+3,846 passed, 2 skipped, 7 deselected, with the only failure being the
+in-flight version-metadata check that passed after reinstalling; Ruff,
+mypy, `twine check`, and the generated-doc check passed. A fresh Python 3.14
+environment installed the exact wheel, passed `pip check`, reported version
+2.0.7, and returned the protected-file example from
+`schema get file.set-password`.
 
 ## 2.0.6 / SDK 0.7.3
 
