@@ -959,17 +959,17 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view derivative update` [benign_mutation/none] -> mammoth.api.derivatives.DerivativesAPI.update
   example: mammoth view derivative update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}]}}' --output json --no-input
 - `mammoth view draft auto-run` [reversible_pipeline/none] -> mammoth.view.View.set_auto_run
-  example: mammoth view draft auto-run 123 --input '{"enabled": true}' --output json --no-input
+  example: mammoth view draft auto-run 123 --input '{"enabled": true, "dataset_id": 456}' --output json --no-input
 - `mammoth view draft command` [benign_mutation/none] -> mammoth.api.pipeline.PipelineAPI.command
-  example: mammoth view draft command 123 --input '{"command": "sample"}' --output json --no-input
+  example: mammoth view draft command 123 --input '{"command": "sample", "dataset_id": 456}' --output json --no-input
 - `mammoth view draft discard` [destructive/prompt_or_yes] -> mammoth.view.View.discard_draft
-  example: mammoth view draft discard 123 --output json --no-input
+  example: mammoth view draft discard 123 --input '{"dataset_id": 456}' --output json --no-input
 - `mammoth view draft enter` [reversible_pipeline/none] -> mammoth.view.View.enter_draft_mode
-  example: mammoth view draft enter 123 --output json --no-input
+  example: mammoth view draft enter 123 --input '{"dataset_id": 456}' --output json --no-input
 - `mammoth view draft status` [read/none] -> mammoth.api.pipeline.PipelineAPI.get_draft_status
   example: mammoth view draft status 123 --output json --no-input
 - `mammoth view draft submit` [reversible_pipeline/none] -> mammoth.view.View.submit_draft
-  example: mammoth view draft submit 123 --output json --no-input
+  example: mammoth view draft submit 123 --input '{"dataset_id": 456}' --output json --no-input
 - `mammoth view export azure-blob` [external_effect/yes_always] -> mammoth.view.ViewExport.to_azure_blob
   example: mammoth view export azure-blob 123 123 --input /private/path/request.json --output json --no-input
 - `mammoth view export bigquery` [external_effect/yes_always] -> mammoth.view.ViewExport.to_bigquery
@@ -1062,65 +1062,65 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view task update 123 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": {}}, "dataset_id": 456}' --output json --no-input
   agent note: illustrative low-level envelope, not a guaranteed executable task; prefer typed view transform commands because task_spec fields are not fully discoverable.
 - `mammoth view transform add-column` [reversible_pipeline/none] -> mammoth.View.add_column
-  example: mammoth view transform add-column 123 --input '{"name": "Revenue report"}' --output json --no-input
+  example: mammoth view transform add-column 123 --input '{"name": "Revenue report", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform add-sql` [reversible_pipeline/none] -> mammoth.View.add_sql
-  example: mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}' --output json --no-input
+  example: mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform ai` [reversible_pipeline/none] -> mammoth.View.gen_ai
-  example: mammoth view transform ai 123 --input '{"prompt": "Summarize revenue by region", "context_columns": ["Status"]}' --output json --no-input
+  example: mammoth view transform ai 123 --input '{"prompt": "Summarize revenue by region", "context_columns": ["Status"], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform bulk-replace` [reversible_pipeline/none] -> mammoth.View.bulk_replace
-  example: mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["sample"], "replace": "sample"}]}' --output json --no-input
+  example: mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["sample"], "replace": "sample"}], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform combine-columns` [reversible_pipeline/none] -> mammoth.View.combine_columns
-  example: mammoth view transform combine-columns 123 --input '{"sources": ["Status"]}' --output json --no-input
+  example: mammoth view transform combine-columns 123 --input '{"sources": ["Status"], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform convert-type` [reversible_pipeline/none] -> mammoth.View.convert_type
-  example: mammoth view transform convert-type 123 --input '{"conversions": [{"column": "Status", "to": "TEXT"}]}' --output json --no-input
+  example: mammoth view transform convert-type 123 --input '{"conversions": [{"column": "Status", "to": "TEXT"}], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform copy-columns` [reversible_pipeline/none] -> mammoth.View.copy_columns
-  example: mammoth view transform copy-columns 123 --input '{"copies": [{"source": "Status"}]}' --output json --no-input
+  example: mammoth view transform copy-columns 123 --input '{"copies": [{"source": "Status"}], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform crosstab` [reversible_pipeline/none] -> mammoth.View.crosstab
-  example: mammoth view transform crosstab 123 --input '{"rows": ["sample"], "pivot_column": "Status", "select": {"function": "SUM"}, "dataset_name": "Revenue report"}' --output json --no-input
+  example: mammoth view transform crosstab 123 --input '{"rows": ["sample"], "pivot_column": "Status", "select": {"function": "SUM"}, "dataset_name": "Revenue report", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform date-diff` [reversible_pipeline/none] -> mammoth.View.date_diff
-  example: mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "sample", "end": "sample"}' --output json --no-input
+  example: mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "sample", "end": "sample", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform delete-columns` [reversible_pipeline/none] -> mammoth.View.delete_columns
-  example: mammoth view transform delete-columns 123 --input '{"columns": ["Status"]}' --output json --no-input
+  example: mammoth view transform delete-columns 123 --input '{"columns": ["Status"], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform discard-duplicates` [reversible_pipeline/none] -> mammoth.View.discard_duplicates
-  example: mammoth view transform discard-duplicates 123 --output json --no-input
+  example: mammoth view transform discard-duplicates 123 --input '{"dataset_id": 456}' --output json --no-input
 - `mammoth view transform extract-date` [reversible_pipeline/none] -> mammoth.View.extract_date
-  example: mammoth view transform extract-date 123 --input '{"column": "Status", "component": "year"}' --output json --no-input
+  example: mammoth view transform extract-date 123 --input '{"column": "Status", "component": "year", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform fill-missing` [reversible_pipeline/none] -> mammoth.View.fill_missing
-  example: mammoth view transform fill-missing 123 --input '{"column": "Status", "direction": "FIRST_VALUE"}' --output json --no-input
+  example: mammoth view transform fill-missing 123 --input '{"column": "Status", "direction": "FIRST_VALUE", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform filter` [reversible_pipeline/none] -> mammoth.View.filter_rows
-  example: mammoth view transform filter 123 --input '{"condition": {"column": "Status", "operator": "EQ", "value": "Active"}}' --output json --no-input
+  example: mammoth view transform filter 123 --input '{"condition": {"column": "Status", "operator": "EQ", "value": "Active"}, "dataset_id": 456}' --output json --no-input
 - `mammoth view transform generate-sql` [reversible_pipeline/none] -> mammoth.View.generate_sql
-  example: mammoth view transform generate-sql 123 --input '{"intent": "Summarize revenue by region"}' --output json --no-input
+  example: mammoth view transform generate-sql 123 --input '{"intent": "Summarize revenue by region", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform increment-date` [reversible_pipeline/none] -> mammoth.View.increment_date
-  example: mammoth view transform increment-date 123 --input '{"column": "Status", "delta": {}}' --output json --no-input
+  example: mammoth view transform increment-date 123 --input '{"column": "Status", "delta": {}, "dataset_id": 456}' --output json --no-input
 - `mammoth view transform join` [reversible_pipeline/none] -> mammoth.View.join
-  example: mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"]}' --output json --no-input
+  example: mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform json-extract` [reversible_pipeline/none] -> mammoth.View.json_extract
-  example: mammoth view transform json-extract 123 --input '{"column": "Status"}' --output json --no-input
+  example: mammoth view transform json-extract 123 --input '{"column": "Status", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform limit-rows` [reversible_pipeline/none] -> mammoth.View.limit_rows
-  example: mammoth view transform limit-rows 123 --input '{"n": 1}' --output json --no-input
+  example: mammoth view transform limit-rows 123 --input '{"n": 1, "dataset_id": 456}' --output json --no-input
 - `mammoth view transform lookup` [reversible_pipeline/none] -> mammoth.View.lookup
-  example: mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample"}' --output json --no-input
+  example: mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform math` [reversible_pipeline/none] -> mammoth.View.math
-  example: mammoth view transform math 123 --input '{"expression": "price * quantity"}' --output json --no-input
+  example: mammoth view transform math 123 --input '{"expression": "price * quantity", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform pivot` [reversible_pipeline/none] -> mammoth.View.pivot
-  example: mammoth view transform pivot 123 --input '{"group_by": ["sample"], "aggregations": [{"column": "Status", "function": "SUM"}]}' --output json --no-input
+  example: mammoth view transform pivot 123 --input '{"group_by": ["sample"], "aggregations": [{"column": "Status", "function": "SUM"}], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform replace` [reversible_pipeline/none] -> mammoth.View.replace_values
-  example: mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "sample", "replace": "sample"}' --output json --no-input
+  example: mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "sample", "replace": "sample", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform set-values` [reversible_pipeline/none] -> mammoth.View.set_values
-  example: mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}]}' --output json --no-input
+  example: mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform small-large` [reversible_pipeline/none] -> mammoth.View.small_large
-  example: mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["Status"]}' --output json --no-input
+  example: mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["Status"], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform split` [reversible_pipeline/none] -> mammoth.View.split_column
-  example: mammoth view transform split 123 --input '{"column": "Status", "delimiter": "sample", "new_columns": [{"name": "Revenue report"}]}' --output json --no-input
+  example: mammoth view transform split 123 --input '{"column": "Status", "delimiter": "sample", "new_columns": [{"name": "Revenue report"}], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform substring` [reversible_pipeline/none] -> mammoth.View.substring
-  example: mammoth view transform substring 123 --input '{"column": "Status"}' --output json --no-input
+  example: mammoth view transform substring 123 --input '{"column": "Status", "dataset_id": 456}' --output json --no-input
 - `mammoth view transform text` [reversible_pipeline/none] -> mammoth.View.text_transform
-  example: mammoth view transform text 123 --input '{"columns": ["Status"]}' --output json --no-input
+  example: mammoth view transform text 123 --input '{"columns": ["Status"], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform unnest` [reversible_pipeline/none] -> mammoth.View.unnest
-  example: mammoth view transform unnest 123 --input '{"columns": ["Status"]}' --output json --no-input
+  example: mammoth view transform unnest 123 --input '{"columns": ["Status"], "dataset_id": 456}' --output json --no-input
 - `mammoth view transform window` [reversible_pipeline/none] -> mammoth.View.window
-  example: mammoth view transform window 123 --input '{"function": "ROW_NUMBER"}' --output json --no-input
+  example: mammoth view transform window 123 --input '{"function": "ROW_NUMBER", "dataset_id": 456}' --output json --no-input
 - `mammoth view trash` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.trash
   example: mammoth view trash 123 123 --output json --no-input
 - `mammoth view update` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.update

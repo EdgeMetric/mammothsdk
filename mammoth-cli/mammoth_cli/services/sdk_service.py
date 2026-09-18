@@ -17,7 +17,9 @@ from mammoth.exceptions import MammothColumnError
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENTS,
+    CODE_RESOURCE_NOT_FOUND,
     CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_NOT_FOUND,
     EXIT_USAGE,
     CliError,
     missing_project_error,
@@ -214,6 +216,31 @@ class SdkMammothService:
                     if dataset_id is None
                     else self._client.views.get(view_id, dataset_id=dataset_id)
                 )
+        except ValueError as exc:
+            # The SDK's project-wide parent discovery reports a miss as a bare
+            # ValueError. Name it, and hand back the reads that settle it,
+            # instead of flattening it into "operation failed unexpectedly".
+            if "not found in any dataset" not in str(exc):
+                raise map_sdk_exception(exc) from exc
+            project = self._client.project_id
+            raise CliError(
+                code=CODE_RESOURCE_NOT_FOUND,
+                message=(
+                    f"View {view_id} was not found in any dataset of project {project}; "
+                    "parent discovery walked every visible dataset and folder."
+                ),
+                exit_status=EXIT_NOT_FOUND,
+                hint=(
+                    "Check the project (views live in exactly one project) and pass the "
+                    "exact parent DATASET_ID from 'view list DATASET_ID' or a dataset "
+                    "read; do not rely on discovery for large projects."
+                ),
+                details={"view_id": view_id, "project_id": project, "reason": str(exc)},
+                recovery_commands=[
+                    f"mammoth dataset list --project {project} --output json --no-input",
+                    "mammoth dataset find NAME_SUBSTRING --output json --no-input",
+                ],
+            ) from exc
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
         if method.startswith("_"):

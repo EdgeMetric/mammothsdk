@@ -30,6 +30,11 @@ def _inv(command_id: str, **overrides: object) -> Invocation:
     return Invocation(command_id=command_id, **overrides)  # type: ignore[arg-type]
 
 
+def _parent(view_id: int) -> ResourceRef:
+    """Exact parent context: non-read view commands refuse project-wide discovery."""
+    return ResourceRef(dataset_id=122, view_id=view_id)
+
+
 def _write(tmp_path: Path, payload: dict[str, Any]) -> str:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps(payload), encoding="utf-8")
@@ -160,8 +165,10 @@ def test_resource_reference_rejects_selected_profile_project_mismatch(
 
 
 def test_draft_enter_calls_view(fake_service: FakeMammothService) -> None:
-    view_ops_cmd.view_draft_enter(_inv("view.draft.enter", extra_args=["3"]))
-    assert fake_service.view_call_log == [(3, "enter_draft_mode", {})]
+    view_ops_cmd.view_draft_enter(
+        _inv("view.draft.enter", extra_args=["3"], resource_ref=_parent(3))
+    )
+    assert fake_service.view_call_log == [(3, "enter_draft_mode", {"dataset_id": 122})]
 
 
 def test_draft_status_reads_server_backed_pipeline(fake_service: FakeMammothService) -> None:
@@ -176,8 +183,10 @@ def test_draft_status_reads_server_backed_pipeline(fake_service: FakeMammothServ
 
 
 def test_draft_submit_calls_view(fake_service: FakeMammothService) -> None:
-    view_ops_cmd.view_draft_submit(_inv("view.draft.submit", extra_args=["3"]))
-    assert fake_service.view_call_log == [(3, "submit_draft", {})]
+    view_ops_cmd.view_draft_submit(
+        _inv("view.draft.submit", extra_args=["3"], resource_ref=_parent(3))
+    )
+    assert fake_service.view_call_log == [(3, "submit_draft", {"dataset_id": 122})]
 
 
 def test_draft_discard_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
@@ -188,8 +197,10 @@ def test_draft_discard_blocked_without_confirmation(fake_service: FakeMammothSer
 
 
 def test_draft_discard_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    view_ops_cmd.view_draft_discard(_inv("view.draft.discard", extra_args=["3"], yes=True))
-    assert fake_service.view_call_log == [(3, "discard_draft", {})]
+    view_ops_cmd.view_draft_discard(
+        _inv("view.draft.discard", extra_args=["3"], resource_ref=_parent(3), yes=True)
+    )
+    assert fake_service.view_call_log == [(3, "discard_draft", {"dataset_id": 122})]
 
 
 def test_draft_auto_run_requires_enabled(fake_service: FakeMammothService) -> None:
@@ -200,8 +211,10 @@ def test_draft_auto_run_requires_enabled(fake_service: FakeMammothService) -> No
 
 def test_draft_auto_run_forwards_enabled(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"enabled": True})
-    view_ops_cmd.view_draft_auto_run(_inv("view.draft.auto-run", extra_args=["3"], input_file=doc))
-    assert fake_service.view_call_log == [(3, "set_auto_run", {"enabled": True})]
+    view_ops_cmd.view_draft_auto_run(
+        _inv("view.draft.auto-run", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
+    )
+    assert fake_service.view_call_log == [(3, "set_auto_run", {"dataset_id": 122, "enabled": True})]
 
 
 # --- view transform * (``service.call_view`` seam) -------------------------
@@ -218,10 +231,10 @@ def test_transform_add_column_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"name": "Col", "column_type": "NUMERIC"})
     view_ops_cmd.view_transform_add_column(
-        _inv("view.transform.add-column", extra_args=["3"], input_file=doc)
+        _inv("view.transform.add-column", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
-        (3, "add_column", {"name": "Col", "column_type": "NUMERIC"})
+        (3, "add_column", {"dataset_id": 122, "name": "Col", "column_type": "NUMERIC"})
     ]
 
 
@@ -234,9 +247,9 @@ def test_transform_add_sql_requires_query(fake_service: FakeMammothService) -> N
 def test_transform_add_sql_forwards_query(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"query": "SELECT 1"})
     view_ops_cmd.view_transform_add_sql(
-        _inv("view.transform.add-sql", extra_args=["3"], input_file=doc)
+        _inv("view.transform.add-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
-    assert fake_service.view_call_log == [(3, "add_sql", {"query": "SELECT 1"})]
+    assert fake_service.view_call_log == [(3, "add_sql", {"dataset_id": 122, "query": "SELECT 1"})]
 
 
 def test_transform_ai_requires_prompt(fake_service: FakeMammothService) -> None:
@@ -256,12 +269,15 @@ def test_transform_ai_forwards_optional(fake_service: FakeMammothService, tmp_pa
             "context_columns_derivation": True,
         },
     )
-    view_ops_cmd.view_transform_ai(_inv("view.transform.ai", extra_args=["3"], input_file=doc))
+    view_ops_cmd.view_transform_ai(
+        _inv("view.transform.ai", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
+    )
     assert fake_service.view_call_log == [
         (
             3,
             "gen_ai",
             {
+                "dataset_id": 122,
                 "prompt": "Summarize",
                 "context_columns": ["a"],
                 "new_column": "AI",
@@ -293,13 +309,16 @@ def test_transform_bulk_replace_forwards_optional(
         },
     )
     view_ops_cmd.view_transform_bulk_replace(
-        _inv("view.transform.bulk-replace", extra_args=["3"], input_file=doc)
+        _inv(
+            "view.transform.bulk-replace", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
     )
     assert fake_service.view_call_log == [
         (
             3,
             "bulk_replace",
             {
+                "dataset_id": 122,
                 "columns": ["a"],
                 "mapping": [{"search": ["x"], "replace": "y"}],
                 "match_case": True,
@@ -322,10 +341,15 @@ def test_transform_combine_columns_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"sources": ["a", "b"], "separator": "-"})
     view_ops_cmd.view_transform_combine_columns(
-        _inv("view.transform.combine-columns", extra_args=["3"], input_file=doc)
+        _inv(
+            "view.transform.combine-columns",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=doc,
+        )
     )
     assert fake_service.view_call_log == [
-        (3, "combine_columns", {"sources": ["a", "b"], "separator": "-"})
+        (3, "combine_columns", {"dataset_id": 122, "sources": ["a", "b"], "separator": "-"})
     ]
 
 
@@ -340,10 +364,12 @@ def test_transform_convert_type_requires_conversions(fake_service: FakeMammothSe
 def test_transform_convert_type_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"conversions": [{"column": "a", "to": "NUMERIC"}]})
     view_ops_cmd.view_transform_convert_type(
-        _inv("view.transform.convert-type", extra_args=["3"], input_file=doc)
+        _inv(
+            "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
     )
     assert fake_service.view_call_log == [
-        (3, "convert_type", {"conversions": [{"column": "a", "to": "NUMERIC"}]})
+        (3, "convert_type", {"dataset_id": 122, "conversions": [{"column": "a", "to": "NUMERIC"}]})
     ]
 
 
@@ -358,10 +384,12 @@ def test_transform_copy_columns_requires_copies(fake_service: FakeMammothService
 def test_transform_copy_columns_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"copies": [{"source": "a", "as_name": "a2"}]})
     view_ops_cmd.view_transform_copy_columns(
-        _inv("view.transform.copy-columns", extra_args=["3"], input_file=doc)
+        _inv(
+            "view.transform.copy-columns", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
     )
     assert fake_service.view_call_log == [
-        (3, "copy_columns", {"copies": [{"source": "a", "as_name": "a2"}]})
+        (3, "copy_columns", {"dataset_id": 122, "copies": [{"source": "a", "as_name": "a2"}]})
     ]
 
 
@@ -385,13 +413,14 @@ def test_transform_crosstab_forwards_optional(
         },
     )
     view_ops_cmd.view_transform_crosstab(
-        _inv("view.transform.crosstab", extra_args=["3"], input_file=doc)
+        _inv("view.transform.crosstab", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
         (
             3,
             "crosstab",
             {
+                "dataset_id": 122,
                 "rows": ["a"],
                 "pivot_column": "b",
                 "select": {"column": "c", "function": "SUM"},
@@ -413,13 +442,13 @@ def test_transform_date_diff_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"component": "DAY", "start": "a", "end": "b", "new_column": "diff"})
     view_ops_cmd.view_transform_date_diff(
-        _inv("view.transform.date-diff", extra_args=["3"], input_file=doc)
+        _inv("view.transform.date-diff", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
         (
             3,
             "date_diff",
-            {"component": "DAY", "start": "a", "end": "b", "new_column": "diff"},
+            {"dataset_id": 122, "component": "DAY", "start": "a", "end": "b", "new_column": "diff"},
         )
     ]
 
@@ -437,16 +466,23 @@ def test_transform_delete_columns_forwards(
 ) -> None:
     doc = _write(tmp_path, {"columns": ["a", "b"]})
     view_ops_cmd.view_transform_delete_columns(
-        _inv("view.transform.delete-columns", extra_args=["3"], input_file=doc)
+        _inv(
+            "view.transform.delete-columns",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=doc,
+        )
     )
-    assert fake_service.view_call_log == [(3, "delete_columns", {"columns": ["a", "b"]})]
+    assert fake_service.view_call_log == [
+        (3, "delete_columns", {"dataset_id": 122, "columns": ["a", "b"]})
+    ]
 
 
 def test_transform_discard_duplicates_no_input(fake_service: FakeMammothService) -> None:
     view_ops_cmd.view_transform_discard_duplicates(
-        _inv("view.transform.discard-duplicates", extra_args=["3"])
+        _inv("view.transform.discard-duplicates", extra_args=["3"], resource_ref=_parent(3))
     )
-    assert fake_service.view_call_log == [(3, "discard_duplicates", {})]
+    assert fake_service.view_call_log == [(3, "discard_duplicates", {"dataset_id": 122})]
 
 
 def test_transform_discard_duplicates_forwards_optional(
@@ -454,9 +490,16 @@ def test_transform_discard_duplicates_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"ignore_columns": ["a"]})
     view_ops_cmd.view_transform_discard_duplicates(
-        _inv("view.transform.discard-duplicates", extra_args=["3"], input_file=doc)
+        _inv(
+            "view.transform.discard-duplicates",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=doc,
+        )
     )
-    assert fake_service.view_call_log == [(3, "discard_duplicates", {"ignore_columns": ["a"]})]
+    assert fake_service.view_call_log == [
+        (3, "discard_duplicates", {"dataset_id": 122, "ignore_columns": ["a"]})
+    ]
 
 
 def test_transform_extract_date_requires_component(fake_service: FakeMammothService) -> None:
@@ -472,10 +515,16 @@ def test_transform_extract_date_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"column": "a", "component": "year", "new_column": "yr"})
     view_ops_cmd.view_transform_extract_date(
-        _inv("view.transform.extract-date", extra_args=["3"], input_file=doc)
+        _inv(
+            "view.transform.extract-date", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
     )
     assert fake_service.view_call_log == [
-        (3, "extract_date", {"column": "a", "component": "year", "new_column": "yr"})
+        (
+            3,
+            "extract_date",
+            {"dataset_id": 122, "column": "a", "component": "year", "new_column": "yr"},
+        )
     ]
 
 
@@ -492,10 +541,16 @@ def test_transform_fill_missing_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"column": "a", "direction": "LAST_VALUE", "partition_by": "b"})
     view_ops_cmd.view_transform_fill_missing(
-        _inv("view.transform.fill-missing", extra_args=["3"], input_file=doc)
+        _inv(
+            "view.transform.fill-missing", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
     )
     assert fake_service.view_call_log == [
-        (3, "fill_missing", {"column": "a", "direction": "LAST_VALUE", "partition_by": "b"})
+        (
+            3,
+            "fill_missing",
+            {"dataset_id": 122, "column": "a", "direction": "LAST_VALUE", "partition_by": "b"},
+        )
     ]
 
 
@@ -516,13 +571,14 @@ def test_transform_filter_forwards_optional(
         },
     )
     view_ops_cmd.view_transform_filter(
-        _inv("view.transform.filter", extra_args=["3"], input_file=doc)
+        _inv("view.transform.filter", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
         (
             3,
             "filter_rows",
             {
+                "dataset_id": 122,
                 "condition": {"column": "a", "operator": "EQ", "value": 1},
                 "filter_type": "REMOVE",
             },
@@ -541,9 +597,13 @@ def test_transform_generate_sql_requires_intent(fake_service: FakeMammothService
 def test_transform_generate_sql_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"intent": "Top customers"})
     view_ops_cmd.view_transform_generate_sql(
-        _inv("view.transform.generate-sql", extra_args=["3"], input_file=doc)
+        _inv(
+            "view.transform.generate-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
     )
-    assert fake_service.view_call_log == [(3, "generate_sql", {"intent": "Top customers"})]
+    assert fake_service.view_call_log == [
+        (3, "generate_sql", {"dataset_id": 122, "intent": "Top customers"})
+    ]
 
 
 def test_transform_increment_date_requires_delta(fake_service: FakeMammothService) -> None:
@@ -559,10 +619,19 @@ def test_transform_increment_date_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"column": "a", "delta": {"days": 1}, "new_column": "a2"})
     view_ops_cmd.view_transform_increment_date(
-        _inv("view.transform.increment-date", extra_args=["3"], input_file=doc)
+        _inv(
+            "view.transform.increment-date",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=doc,
+        )
     )
     assert fake_service.view_call_log == [
-        (3, "increment_date", {"column": "a", "delta": {"days": 1}, "new_column": "a2"})
+        (
+            3,
+            "increment_date",
+            {"dataset_id": 122, "column": "a", "delta": {"days": 1}, "new_column": "a2"},
+        )
     ]
 
 
@@ -583,12 +652,15 @@ def test_transform_join_forwards_optional(fake_service: FakeMammothService, tmp_
             "column_prefix": "f_",
         },
     )
-    view_ops_cmd.view_transform_join(_inv("view.transform.join", extra_args=["3"], input_file=doc))
+    view_ops_cmd.view_transform_join(
+        _inv("view.transform.join", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
+    )
     assert fake_service.view_call_log == [
         (
             3,
             "join",
             {
+                "dataset_id": 122,
                 "foreign_view": 9,
                 "join_type": "LEFT",
                 "on": [{"left": "a", "right": "b"}],
@@ -612,10 +684,12 @@ def test_transform_json_extract_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"column": "a", "keys": ["k1"], "keep_source": True})
     view_ops_cmd.view_transform_json_extract(
-        _inv("view.transform.json-extract", extra_args=["3"], input_file=doc)
+        _inv(
+            "view.transform.json-extract", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
     )
     assert fake_service.view_call_log == [
-        (3, "json_extract", {"column": "a", "keys": ["k1"], "keep_source": True})
+        (3, "json_extract", {"dataset_id": 122, "column": "a", "keys": ["k1"], "keep_source": True})
     ]
 
 
@@ -630,9 +704,11 @@ def test_transform_limit_rows_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"n": 10, "bottom": True})
     view_ops_cmd.view_transform_limit_rows(
-        _inv("view.transform.limit-rows", extra_args=["3"], input_file=doc)
+        _inv("view.transform.limit-rows", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
-    assert fake_service.view_call_log == [(3, "limit_rows", {"n": 10, "bottom": True})]
+    assert fake_service.view_call_log == [
+        (3, "limit_rows", {"dataset_id": 122, "n": 10, "bottom": True})
+    ]
 
 
 def test_transform_lookup_requires_value(fake_service: FakeMammothService) -> None:
@@ -649,13 +725,14 @@ def test_transform_lookup_forwards_optional(
         {"source": "a", "lookup_view_id": 9, "key": "k", "value": "v", "new_column": "nc"},
     )
     view_ops_cmd.view_transform_lookup(
-        _inv("view.transform.lookup", extra_args=["3"], input_file=doc)
+        _inv("view.transform.lookup", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
         (
             3,
             "lookup",
             {
+                "dataset_id": 122,
                 "source": "a",
                 "lookup_view_id": 9,
                 "key": "k",
@@ -674,8 +751,12 @@ def test_transform_math_requires_expression(fake_service: FakeMammothService) ->
 
 def test_transform_math_forwards_optional(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"expression": "a + b", "new_column": "sum"})
-    view_ops_cmd.view_transform_math(_inv("view.transform.math", extra_args=["3"], input_file=doc))
-    assert fake_service.view_call_log == [(3, "math", {"expression": "a + b", "new_column": "sum"})]
+    view_ops_cmd.view_transform_math(
+        _inv("view.transform.math", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
+    )
+    assert fake_service.view_call_log == [
+        (3, "math", {"dataset_id": 122, "expression": "a + b", "new_column": "sum"})
+    ]
 
 
 def test_transform_pivot_requires_aggregations(fake_service: FakeMammothService) -> None:
@@ -696,13 +777,14 @@ def test_transform_pivot_forwards_optional(
         },
     )
     view_ops_cmd.view_transform_pivot(
-        _inv("view.transform.pivot", extra_args=["3"], input_file=doc)
+        _inv("view.transform.pivot", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
         (
             3,
             "pivot",
             {
+                "dataset_id": 122,
                 "group_by": ["a"],
                 "aggregations": [{"column": "b", "function": "SUM"}],
                 "condition": {"column": "a", "operator": "EQ", "value": 1},
@@ -722,13 +804,13 @@ def test_transform_replace_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"columns": ["a"], "find": "x", "replace": "y", "match_words": True})
     view_ops_cmd.view_transform_replace(
-        _inv("view.transform.replace", extra_args=["3"], input_file=doc)
+        _inv("view.transform.replace", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
         (
             3,
             "replace_values",
-            {"columns": ["a"], "find": "x", "replace": "y", "match_words": True},
+            {"dataset_id": 122, "columns": ["a"], "find": "x", "replace": "y", "match_words": True},
         )
     ]
 
@@ -744,13 +826,18 @@ def test_transform_set_values_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"values": [{"value": "x"}], "new_column": "nc", "column_type": "TEXT"})
     view_ops_cmd.view_transform_set_values(
-        _inv("view.transform.set-values", extra_args=["3"], input_file=doc)
+        _inv("view.transform.set-values", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
         (
             3,
             "set_values",
-            {"values": [{"value": "x"}], "new_column": "nc", "column_type": "TEXT"},
+            {
+                "dataset_id": 122,
+                "values": [{"value": "x"}],
+                "new_column": "nc",
+                "column_type": "TEXT",
+            },
         )
     ]
 
@@ -768,10 +855,12 @@ def test_transform_small_large_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"function": "SMALL", "columns": ["a"], "index": 2})
     view_ops_cmd.view_transform_small_large(
-        _inv("view.transform.small-large", extra_args=["3"], input_file=doc)
+        _inv(
+            "view.transform.small-large", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
     )
     assert fake_service.view_call_log == [
-        (3, "small_large", {"function": "SMALL", "columns": ["a"], "index": 2})
+        (3, "small_large", {"dataset_id": 122, "function": "SMALL", "columns": ["a"], "index": 2})
     ]
 
 
@@ -787,13 +876,14 @@ def test_transform_split_forwards(fake_service: FakeMammothService, tmp_path: Pa
         {"column": "a", "delimiter": ",", "new_columns": [{"name": "a1"}, {"name": "a2"}]},
     )
     view_ops_cmd.view_transform_split(
-        _inv("view.transform.split", extra_args=["3"], input_file=doc)
+        _inv("view.transform.split", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
         (
             3,
             "split_column",
             {
+                "dataset_id": 122,
                 "column": "a",
                 "delimiter": ",",
                 "new_columns": [{"name": "a1"}, {"name": "a2"}],
@@ -813,10 +903,10 @@ def test_transform_substring_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"column": "a", "num_char": 3, "direction": "START"})
     view_ops_cmd.view_transform_substring(
-        _inv("view.transform.substring", extra_args=["3"], input_file=doc)
+        _inv("view.transform.substring", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
-        (3, "substring", {"column": "a", "num_char": 3, "direction": "START"})
+        (3, "substring", {"dataset_id": 122, "column": "a", "num_char": 3, "direction": "START"})
     ]
 
 
@@ -845,9 +935,11 @@ def test_transform_text_requires_columns(fake_service: FakeMammothService) -> No
 
 def test_transform_text_forwards_optional(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"columns": ["a"], "case": "UPPER", "trim": True})
-    view_ops_cmd.view_transform_text(_inv("view.transform.text", extra_args=["3"], input_file=doc))
+    view_ops_cmd.view_transform_text(
+        _inv("view.transform.text", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
+    )
     assert fake_service.view_call_log == [
-        (3, "text_transform", {"columns": ["a"], "case": "UPPER", "trim": True})
+        (3, "text_transform", {"dataset_id": 122, "columns": ["a"], "case": "UPPER", "trim": True})
     ]
 
 
@@ -862,9 +954,11 @@ def test_transform_unnest_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"columns": ["a"], "label_column": "L"})
     view_ops_cmd.view_transform_unnest(
-        _inv("view.transform.unnest", extra_args=["3"], input_file=doc)
+        _inv("view.transform.unnest", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
-    assert fake_service.view_call_log == [(3, "unnest", {"columns": ["a"], "label_column": "L"})]
+    assert fake_service.view_call_log == [
+        (3, "unnest", {"dataset_id": 122, "columns": ["a"], "label_column": "L"})
+    ]
 
 
 def test_transform_window_requires_function(fake_service: FakeMammothService) -> None:
@@ -878,8 +972,58 @@ def test_transform_window_forwards_optional(
 ) -> None:
     doc = _write(tmp_path, {"function": "RANK", "partition_by": ["a"], "column": "b"})
     view_ops_cmd.view_transform_window(
-        _inv("view.transform.window", extra_args=["3"], input_file=doc)
+        _inv("view.transform.window", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
-        (3, "window", {"function": "RANK", "partition_by": ["a"], "column": "b"})
+        (3, "window", {"dataset_id": 122, "function": "RANK", "partition_by": ["a"], "column": "b"})
     ]
+
+
+@pytest.mark.parametrize(
+    ("handler", "command_id", "payload"),
+    [
+        (
+            "view_transform_filter",
+            "view.transform.filter",
+            {"condition": {"column": "a", "operator": "LT", "value": 0}, "filter_type": "REMOVE"},
+        ),
+        (
+            "view_transform_math",
+            "view.transform.math",
+            {"expression": "ABS(a)", "existing_column": "a"},
+        ),
+        (
+            "view_transform_join",
+            "view.transform.join",
+            {
+                "foreign_view": 9,
+                "join_type": "OUTER",
+                "on": [{"left": "a", "right": "a"}],
+                "select": [{"column": "b"}],
+            },
+        ),
+        ("view_draft_enter", "view.draft.enter", None),
+    ],
+)
+def test_non_read_view_ops_refuse_parent_discovery(
+    fake_service: FakeMammothService,
+    tmp_path: Path,
+    handler: str,
+    command_id: str,
+    payload: dict[str, Any] | None,
+) -> None:
+    # Without an exact parent the SDK would browse every folder and probe
+    # every dataset in the project; on large projects that path 500s or
+    # misses the view and used to surface as an opaque api_error. Fail
+    # closed before any SDK call and hand back the read that supplies it.
+    overrides: dict[str, Any] = {"extra_args": ["308772"], "project": 4301}
+    if payload is not None:
+        overrides["input_file"] = _write(tmp_path, payload)
+    with pytest.raises(CliError) as excinfo:
+        getattr(view_ops_cmd, handler)(_inv(command_id, **overrides))
+    assert excinfo.value.code == "missing_argument"
+    assert excinfo.value.recovery_commands == [
+        "mammoth view get 308772 --project 4301 --output json --no-input"
+    ]
+    assert fake_service.view_call_log == []
+    assert fake_service.call_log == []

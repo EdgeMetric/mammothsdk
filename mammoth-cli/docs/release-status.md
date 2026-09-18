@@ -18,6 +18,22 @@ CLI path observed live on release: `dataset file-settings get` (reports
 detected settings plus `date_format`, then polling `dataset get` until
 `ready`.
 
+The exact-parent rule now covers every non-read view command. In 2.0.8 it
+was applied to the `view.py` family only; `view transform *` and `view draft
+*` still fell back to the SDK's project-wide parent discovery when
+`dataset_id` was omitted. On a large production project that discovery
+browsed a folder that returned HTTP 500 (surfaced from a join) and, when it
+did not find the view, raised a bare `ValueError` that the CLI flattened into
+`api_error: The Mammoth operation failed unexpectedly` (surfaced from filter
+and math with valid inputs). These commands now fail closed with
+`missing_argument` and the `view get` read that supplies the parent; the
+`dataset_id` input field is admitted for `view draft *` as it already was for
+transforms; every generated transform/draft example carries `dataset_id`;
+and a discovery miss on a read maps to `resource_not_found` with the reason
+and recovery reads instead of the opaque failure. Verified live on release:
+a transform without the parent is refused before any request, and with
+`dataset_id` in `--input` it submits.
+
 Two read-only local commands are new: `dataset find NAME_SUBSTRING` and
 `folder find NAME_SUBSTRING` search every project the credential can see
 (or only `--project`) by case-insensitive name substring and return

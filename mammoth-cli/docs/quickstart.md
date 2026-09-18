@@ -98,10 +98,12 @@ names shown by `view get` or preview metadata:
 ```bash
 mammoth schema get view.transform.math --output json --no-input
 mammoth view transform math VIEW_ID --project PROJECT_ID \
-  --input '{"expression": "Quantity Sold * Unit Price", "new_column": "Revenue"}' \
+  --input '{"dataset_id": DATASET_ID, "expression": "Quantity Sold * Unit Price", "new_column": "Revenue"}' \
   --output json --no-input
 ```
 
+`dataset_id` is the view's exact parent (known from the upload, or from
+`view list DATASET_ID`); transforms require it and never discover it.
 Never substitute backend/internal column identifiers. If a display name is
 missing or ambiguous, refresh the exact view schema and stop before mutation.
 

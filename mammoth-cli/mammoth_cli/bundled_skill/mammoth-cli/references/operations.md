@@ -63,11 +63,12 @@ exact schema; do not use a guessed alias, raw HTTP, local processing, or opaque
 Prefer a typed `view transform <operation>` command. Its schema is the
 discoverable request contract and its result should be verified with a view
 read, preview, pipeline read/items, or the returned job according to
-`wait_policy`:
+`wait_policy`. Every transform and draft mutation carries the exact parent
+`dataset_id` in `--input`; it never falls back to project-wide discovery:
 
 ```bash
 mammoth view transform math VIEW_ID --project PROJECT_ID \
-  --input '{"expression":"Unit Price * Quantity","new_column":"Revenue"}' \
+  --input '{"dataset_id":DATASET_ID,"expression":"Unit Price * Quantity","new_column":"Revenue"}' \
   --output json --no-input
 mammoth view pipeline get VIEW_ID --project PROJECT_ID --output json --no-input
 ```

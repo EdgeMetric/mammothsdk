@@ -183,6 +183,14 @@ def _require_discovery_allowed(invocation: Invocation, view_id: int) -> None:
         return
     project = f" --project {invocation.project}" if invocation.project else ""
     lookup = f"mammoth view get {view_id}{project} --output json --no-input"
+    takes_positional = any(
+        positional.get("name") == "dataset_id" for positional in record.get("positionals", [])
+    )
+    where = (
+        "the trailing DATASET_ID positional or the 'dataset_id' input field"
+        if takes_positional
+        else "the 'dataset_id' field of --input (this command takes no DATASET_ID positional)"
+    )
     raise CliError(
         code=CODE_MISSING_ARGUMENT,
         message=(
@@ -190,10 +198,7 @@ def _require_discovery_allowed(invocation: Invocation, view_id: int) -> None:
             "DATASET_ID; project-wide parent discovery is only performed for reads."
         ),
         exit_status=EXIT_USAGE,
-        hint=(
-            "Read the parent first, then pass it as the trailing DATASET_ID positional "
-            "or the 'dataset_id' input field: " + lookup
-        ),
+        hint=f"Read the parent first ({lookup}), then pass it as {where}.",
         details={"view_id": view_id, "mutation_class": record.get("mutation_class")},
         recovery_commands=[lookup],
     )

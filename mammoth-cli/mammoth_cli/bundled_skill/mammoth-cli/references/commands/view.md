@@ -240,7 +240,7 @@ Expected success: `ViewDerivativeUpdateResult` in the standard JSON envelope; mu
 
 Run: `mammoth view draft auto-run`. Exact input fields: `mammoth schema get view.draft.auto-run --output json --no-input`.
 
-Example: `mammoth view draft auto-run 123 --input '{"enabled": true}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view draft auto-run 123 --input '{"enabled": true, "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewDraftAutoRunResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -248,7 +248,7 @@ Expected success: `ViewDraftAutoRunResult` in the standard JSON envelope; mutati
 
 Run: `mammoth view draft command`. Exact input fields: `mammoth schema get view.draft.command --output json --no-input`.
 
-Example: `mammoth view draft command 123 --input '{"command": "sample"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view draft command 123 --input '{"command": "sample", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewDraftCommandResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -256,7 +256,7 @@ Expected success: `ViewDraftCommandResult` in the standard JSON envelope; mutati
 
 Run: `mammoth view draft discard`. Exact input fields: `mammoth schema get view.draft.discard --output json --no-input`.
 
-Example: `mammoth view draft discard 123 --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view draft discard 123 --input '{"dataset_id": 456}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
 
 Expected success: `ViewDraftDiscardResult` in the standard JSON envelope; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -264,7 +264,7 @@ Expected success: `ViewDraftDiscardResult` in the standard JSON envelope; mutati
 
 Run: `mammoth view draft enter`. Exact input fields: `mammoth schema get view.draft.enter --output json --no-input`.
 
-Example: `mammoth view draft enter 123 --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view draft enter 123 --input '{"dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewDraftEnterResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -280,7 +280,7 @@ Expected success: `ViewDraftStatusResult` in the standard JSON envelope; mutatio
 
 Run: `mammoth view draft submit`. Exact input fields: `mammoth schema get view.draft.submit --output json --no-input`.
 
-Example: `mammoth view draft submit 123 --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view draft submit 123 --input '{"dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewDraftSubmitResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -662,7 +662,7 @@ Expected success: `ViewTaskUpdateResult` in the standard JSON envelope; mutation
 
 Run: `mammoth view transform add-column`. Exact input fields: `mammoth schema get view.transform.add-column --output json --no-input`.
 
-Example: `mammoth view transform add-column 123 --input '{"name": "Revenue report"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform add-column 123 --input '{"name": "Revenue report", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformAddColumnResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -670,7 +670,7 @@ Expected success: `ViewTransformAddColumnResult` in the standard JSON envelope; 
 
 Run: `mammoth view transform add-sql`. Exact input fields: `mammoth schema get view.transform.add-sql --output json --no-input`.
 
-Example: `mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformAddSqlResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -678,7 +678,7 @@ Expected success: `ViewTransformAddSqlResult` in the standard JSON envelope; mut
 
 Run: `mammoth view transform ai`. Exact input fields: `mammoth schema get view.transform.ai --output json --no-input`.
 
-Example: `mammoth view transform ai 123 --input '{"prompt": "Summarize revenue by region", "context_columns": ["Status"]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform ai 123 --input '{"prompt": "Summarize revenue by region", "context_columns": ["Status"], "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformAiResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -686,7 +686,7 @@ Expected success: `ViewTransformAiResult` in the standard JSON envelope; mutatio
 
 Run: `mammoth view transform bulk-replace`. Exact input fields: `mammoth schema get view.transform.bulk-replace --output json --no-input`.
 
-Example: `mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["sample"], "replace": "sample"}]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["sample"], "replace": "sample"}], "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformBulkReplaceResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -694,7 +694,7 @@ Expected success: `ViewTransformBulkReplaceResult` in the standard JSON envelope
 
 Run: `mammoth view transform combine-columns`. Exact input fields: `mammoth schema get view.transform.combine-columns --output json --no-input`.
 
-Example: `mammoth view transform combine-columns 123 --input '{"sources": ["Status"]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform combine-columns 123 --input '{"sources": ["Status"], "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformCombineColumnsResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -702,7 +702,7 @@ Expected success: `ViewTransformCombineColumnsResult` in the standard JSON envel
 
 Run: `mammoth view transform convert-type`. Exact input fields: `mammoth schema get view.transform.convert-type --output json --no-input`.
 
-Example: `mammoth view transform convert-type 123 --input '{"conversions": [{"column": "Status", "to": "TEXT"}]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform convert-type 123 --input '{"conversions": [{"column": "Status", "to": "TEXT"}], "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformConvertTypeResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -710,7 +710,7 @@ Expected success: `ViewTransformConvertTypeResult` in the standard JSON envelope
 
 Run: `mammoth view transform copy-columns`. Exact input fields: `mammoth schema get view.transform.copy-columns --output json --no-input`.
 
-Example: `mammoth view transform copy-columns 123 --input '{"copies": [{"source": "Status"}]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform copy-columns 123 --input '{"copies": [{"source": "Status"}], "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformCopyColumnsResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -718,7 +718,7 @@ Expected success: `ViewTransformCopyColumnsResult` in the standard JSON envelope
 
 Run: `mammoth view transform crosstab`. Exact input fields: `mammoth schema get view.transform.crosstab --output json --no-input`.
 
-Example: `mammoth view transform crosstab 123 --input '{"rows": ["sample"], "pivot_column": "Status", "select": {"function": "SUM"}, "dataset_name": "Revenue report"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform crosstab 123 --input '{"rows": ["sample"], "pivot_column": "Status", "select": {"function": "SUM"}, "dataset_name": "Revenue report", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformCrosstabResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -726,7 +726,7 @@ Expected success: `ViewTransformCrosstabResult` in the standard JSON envelope; m
 
 Run: `mammoth view transform date-diff`. Exact input fields: `mammoth schema get view.transform.date-diff --output json --no-input`.
 
-Example: `mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "sample", "end": "sample"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "sample", "end": "sample", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformDateDiffResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -734,7 +734,7 @@ Expected success: `ViewTransformDateDiffResult` in the standard JSON envelope; m
 
 Run: `mammoth view transform delete-columns`. Exact input fields: `mammoth schema get view.transform.delete-columns --output json --no-input`.
 
-Example: `mammoth view transform delete-columns 123 --input '{"columns": ["Status"]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform delete-columns 123 --input '{"columns": ["Status"], "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformDeleteColumnsResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -742,7 +742,7 @@ Expected success: `ViewTransformDeleteColumnsResult` in the standard JSON envelo
 
 Run: `mammoth view transform discard-duplicates`. Exact input fields: `mammoth schema get view.transform.discard-duplicates --output json --no-input`.
 
-Example: `mammoth view transform discard-duplicates 123 --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform discard-duplicates 123 --input '{"dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformDiscardDuplicatesResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -750,7 +750,7 @@ Expected success: `ViewTransformDiscardDuplicatesResult` in the standard JSON en
 
 Run: `mammoth view transform extract-date`. Exact input fields: `mammoth schema get view.transform.extract-date --output json --no-input`.
 
-Example: `mammoth view transform extract-date 123 --input '{"column": "Status", "component": "year"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform extract-date 123 --input '{"column": "Status", "component": "year", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformExtractDateResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -758,7 +758,7 @@ Expected success: `ViewTransformExtractDateResult` in the standard JSON envelope
 
 Run: `mammoth view transform fill-missing`. Exact input fields: `mammoth schema get view.transform.fill-missing --output json --no-input`.
 
-Example: `mammoth view transform fill-missing 123 --input '{"column": "Status", "direction": "FIRST_VALUE"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform fill-missing 123 --input '{"column": "Status", "direction": "FIRST_VALUE", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformFillMissingResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -766,7 +766,7 @@ Expected success: `ViewTransformFillMissingResult` in the standard JSON envelope
 
 Run: `mammoth view transform filter`. Exact input fields: `mammoth schema get view.transform.filter --output json --no-input`.
 
-Example: `mammoth view transform filter 123 --input '{"condition": {"column": "Status", "operator": "EQ", "value": "Active"}}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform filter 123 --input '{"condition": {"column": "Status", "operator": "EQ", "value": "Active"}, "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformFilterResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -774,7 +774,7 @@ Expected success: `ViewTransformFilterResult` in the standard JSON envelope; mut
 
 Run: `mammoth view transform generate-sql`. Exact input fields: `mammoth schema get view.transform.generate-sql --output json --no-input`.
 
-Example: `mammoth view transform generate-sql 123 --input '{"intent": "Summarize revenue by region"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform generate-sql 123 --input '{"intent": "Summarize revenue by region", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformGenerateSqlResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -782,7 +782,7 @@ Expected success: `ViewTransformGenerateSqlResult` in the standard JSON envelope
 
 Run: `mammoth view transform increment-date`. Exact input fields: `mammoth schema get view.transform.increment-date --output json --no-input`.
 
-Example: `mammoth view transform increment-date 123 --input '{"column": "Status", "delta": {}}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform increment-date 123 --input '{"column": "Status", "delta": {}, "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformIncrementDateResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -790,7 +790,7 @@ Expected success: `ViewTransformIncrementDateResult` in the standard JSON envelo
 
 Run: `mammoth view transform join`. Exact input fields: `mammoth schema get view.transform.join --output json --no-input`.
 
-Example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformJoinResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -798,7 +798,7 @@ Expected success: `ViewTransformJoinResult` in the standard JSON envelope; mutat
 
 Run: `mammoth view transform json-extract`. Exact input fields: `mammoth schema get view.transform.json-extract --output json --no-input`.
 
-Example: `mammoth view transform json-extract 123 --input '{"column": "Status"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform json-extract 123 --input '{"column": "Status", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformJsonExtractResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -806,7 +806,7 @@ Expected success: `ViewTransformJsonExtractResult` in the standard JSON envelope
 
 Run: `mammoth view transform limit-rows`. Exact input fields: `mammoth schema get view.transform.limit-rows --output json --no-input`.
 
-Example: `mammoth view transform limit-rows 123 --input '{"n": 1}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform limit-rows 123 --input '{"n": 1, "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformLimitRowsResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -814,7 +814,7 @@ Expected success: `ViewTransformLimitRowsResult` in the standard JSON envelope; 
 
 Run: `mammoth view transform lookup`. Exact input fields: `mammoth schema get view.transform.lookup --output json --no-input`.
 
-Example: `mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformLookupResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -822,7 +822,7 @@ Expected success: `ViewTransformLookupResult` in the standard JSON envelope; mut
 
 Run: `mammoth view transform math`. Exact input fields: `mammoth schema get view.transform.math --output json --no-input`.
 
-Example: `mammoth view transform math 123 --input '{"expression": "price * quantity"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform math 123 --input '{"expression": "price * quantity", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformMathResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -830,7 +830,7 @@ Expected success: `ViewTransformMathResult` in the standard JSON envelope; mutat
 
 Run: `mammoth view transform pivot`. Exact input fields: `mammoth schema get view.transform.pivot --output json --no-input`.
 
-Example: `mammoth view transform pivot 123 --input '{"group_by": ["sample"], "aggregations": [{"column": "Status", "function": "SUM"}]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform pivot 123 --input '{"group_by": ["sample"], "aggregations": [{"column": "Status", "function": "SUM"}], "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformPivotResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -838,7 +838,7 @@ Expected success: `ViewTransformPivotResult` in the standard JSON envelope; muta
 
 Run: `mammoth view transform replace`. Exact input fields: `mammoth schema get view.transform.replace --output json --no-input`.
 
-Example: `mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "sample", "replace": "sample"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "sample", "replace": "sample", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformReplaceResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -846,7 +846,7 @@ Expected success: `ViewTransformReplaceResult` in the standard JSON envelope; mu
 
 Run: `mammoth view transform set-values`. Exact input fields: `mammoth schema get view.transform.set-values --output json --no-input`.
 
-Example: `mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}], "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformSetValuesResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -854,7 +854,7 @@ Expected success: `ViewTransformSetValuesResult` in the standard JSON envelope; 
 
 Run: `mammoth view transform small-large`. Exact input fields: `mammoth schema get view.transform.small-large --output json --no-input`.
 
-Example: `mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["Status"]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["Status"], "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformSmallLargeResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -862,7 +862,7 @@ Expected success: `ViewTransformSmallLargeResult` in the standard JSON envelope;
 
 Run: `mammoth view transform split`. Exact input fields: `mammoth schema get view.transform.split --output json --no-input`.
 
-Example: `mammoth view transform split 123 --input '{"column": "Status", "delimiter": "sample", "new_columns": [{"name": "Revenue report"}]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform split 123 --input '{"column": "Status", "delimiter": "sample", "new_columns": [{"name": "Revenue report"}], "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformSplitResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -870,7 +870,7 @@ Expected success: `ViewTransformSplitResult` in the standard JSON envelope; muta
 
 Run: `mammoth view transform substring`. Exact input fields: `mammoth schema get view.transform.substring --output json --no-input`.
 
-Example: `mammoth view transform substring 123 --input '{"column": "Status"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform substring 123 --input '{"column": "Status", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformSubstringResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -878,7 +878,7 @@ Expected success: `ViewTransformSubstringResult` in the standard JSON envelope; 
 
 Run: `mammoth view transform text`. Exact input fields: `mammoth schema get view.transform.text --output json --no-input`.
 
-Example: `mammoth view transform text 123 --input '{"columns": ["Status"]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform text 123 --input '{"columns": ["Status"], "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformTextResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -886,7 +886,7 @@ Expected success: `ViewTransformTextResult` in the standard JSON envelope; mutat
 
 Run: `mammoth view transform unnest`. Exact input fields: `mammoth schema get view.transform.unnest --output json --no-input`.
 
-Example: `mammoth view transform unnest 123 --input '{"columns": ["Status"]}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform unnest 123 --input '{"columns": ["Status"], "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformUnnestResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -894,7 +894,7 @@ Expected success: `ViewTransformUnnestResult` in the standard JSON envelope; mut
 
 Run: `mammoth view transform window`. Exact input fields: `mammoth schema get view.transform.window --output json --no-input`.
 
-Example: `mammoth view transform window 123 --input '{"function": "ROW_NUMBER"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth view transform window 123 --input '{"function": "ROW_NUMBER", "dataset_id": 456}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
 
 Expected success: `ViewTransformWindowResult` in the standard JSON envelope; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

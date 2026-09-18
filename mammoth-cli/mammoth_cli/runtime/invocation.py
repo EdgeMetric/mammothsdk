@@ -16,6 +16,7 @@ from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.output.policy import OUTPUT_AUTO, resolve_output
 from mammoth_cli.runtime.input_loader import load_input_document
 from mammoth_cli.runtime.strict import validate_input_fields
+from mammoth_cli.services.input_fields import accepts_resource_dataset
 
 
 class _UninitializedInput:
@@ -148,7 +149,7 @@ class Invocation:
             resource_dataset: Any = None
             has_resource_dataset = (
                 document is not None
-                and self.command_id.startswith("view.transform.")
+                and accepts_resource_dataset(self.command_id)
                 and "dataset_id" in document
             )
             if has_resource_dataset:

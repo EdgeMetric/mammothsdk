@@ -4239,7 +4239,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.view.View.set_auto_run`
-- Agent example: `mammoth view draft auto-run 123 --input '{"enabled": true}' --output json --no-input`
+- Agent example: `mammoth view draft auto-run 123 --input '{"enabled": true, "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view draft command`
 
@@ -4250,7 +4250,7 @@ Total commands: 549.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.pipeline.PipelineAPI.command`
-- Agent example: `mammoth view draft command 123 --input '{"command": "sample"}' --output json --no-input`
+- Agent example: `mammoth view draft command 123 --input '{"command": "sample", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view draft discard`
 
@@ -4261,7 +4261,7 @@ Total commands: 549.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.view.View.discard_draft`
-- Agent example: `mammoth view draft discard 123 --output json --no-input`
+- Agent example: `mammoth view draft discard 123 --input '{"dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view draft enter`
 
@@ -4272,7 +4272,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.view.View.enter_draft_mode`
-- Agent example: `mammoth view draft enter 123 --output json --no-input`
+- Agent example: `mammoth view draft enter 123 --input '{"dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view draft status`
 
@@ -4294,7 +4294,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.view.View.submit_draft`
-- Agent example: `mammoth view draft submit 123 --output json --no-input`
+- Agent example: `mammoth view draft submit 123 --input '{"dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view export azure-blob`
 
@@ -4847,7 +4847,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.add_column`
-- Agent example: `mammoth view transform add-column 123 --input '{"name": "Revenue report"}' --output json --no-input`
+- Agent example: `mammoth view transform add-column 123 --input '{"name": "Revenue report", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform add-sql`
 
@@ -4858,7 +4858,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.add_sql`
-- Agent example: `mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}' --output json --no-input`
+- Agent example: `mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform ai`
 
@@ -4869,7 +4869,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.gen_ai`
-- Agent example: `mammoth view transform ai 123 --input '{"prompt": "Summarize revenue by region", "context_columns": ["Status"]}' --output json --no-input`
+- Agent example: `mammoth view transform ai 123 --input '{"prompt": "Summarize revenue by region", "context_columns": ["Status"], "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform bulk-replace`
 
@@ -4880,7 +4880,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.bulk_replace`
-- Agent example: `mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["sample"], "replace": "sample"}]}' --output json --no-input`
+- Agent example: `mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["sample"], "replace": "sample"}], "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform combine-columns`
 
@@ -4891,7 +4891,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.combine_columns`
-- Agent example: `mammoth view transform combine-columns 123 --input '{"sources": ["Status"]}' --output json --no-input`
+- Agent example: `mammoth view transform combine-columns 123 --input '{"sources": ["Status"], "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform convert-type`
 
@@ -4902,7 +4902,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.convert_type`
-- Agent example: `mammoth view transform convert-type 123 --input '{"conversions": [{"column": "Status", "to": "TEXT"}]}' --output json --no-input`
+- Agent example: `mammoth view transform convert-type 123 --input '{"conversions": [{"column": "Status", "to": "TEXT"}], "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform copy-columns`
 
@@ -4913,7 +4913,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.copy_columns`
-- Agent example: `mammoth view transform copy-columns 123 --input '{"copies": [{"source": "Status"}]}' --output json --no-input`
+- Agent example: `mammoth view transform copy-columns 123 --input '{"copies": [{"source": "Status"}], "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform crosstab`
 
@@ -4924,7 +4924,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.crosstab`
-- Agent example: `mammoth view transform crosstab 123 --input '{"rows": ["sample"], "pivot_column": "Status", "select": {"function": "SUM"}, "dataset_name": "Revenue report"}' --output json --no-input`
+- Agent example: `mammoth view transform crosstab 123 --input '{"rows": ["sample"], "pivot_column": "Status", "select": {"function": "SUM"}, "dataset_name": "Revenue report", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform date-diff`
 
@@ -4935,7 +4935,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.date_diff`
-- Agent example: `mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "sample", "end": "sample"}' --output json --no-input`
+- Agent example: `mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "sample", "end": "sample", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform delete-columns`
 
@@ -4946,7 +4946,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.delete_columns`
-- Agent example: `mammoth view transform delete-columns 123 --input '{"columns": ["Status"]}' --output json --no-input`
+- Agent example: `mammoth view transform delete-columns 123 --input '{"columns": ["Status"], "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform discard-duplicates`
 
@@ -4957,7 +4957,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.discard_duplicates`
-- Agent example: `mammoth view transform discard-duplicates 123 --output json --no-input`
+- Agent example: `mammoth view transform discard-duplicates 123 --input '{"dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform extract-date`
 
@@ -4968,7 +4968,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.extract_date`
-- Agent example: `mammoth view transform extract-date 123 --input '{"column": "Status", "component": "year"}' --output json --no-input`
+- Agent example: `mammoth view transform extract-date 123 --input '{"column": "Status", "component": "year", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform fill-missing`
 
@@ -4979,7 +4979,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.fill_missing`
-- Agent example: `mammoth view transform fill-missing 123 --input '{"column": "Status", "direction": "FIRST_VALUE"}' --output json --no-input`
+- Agent example: `mammoth view transform fill-missing 123 --input '{"column": "Status", "direction": "FIRST_VALUE", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform filter`
 
@@ -4990,7 +4990,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.filter_rows`
-- Agent example: `mammoth view transform filter 123 --input '{"condition": {"column": "Status", "operator": "EQ", "value": "Active"}}' --output json --no-input`
+- Agent example: `mammoth view transform filter 123 --input '{"condition": {"column": "Status", "operator": "EQ", "value": "Active"}, "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform generate-sql`
 
@@ -5001,7 +5001,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.generate_sql`
-- Agent example: `mammoth view transform generate-sql 123 --input '{"intent": "Summarize revenue by region"}' --output json --no-input`
+- Agent example: `mammoth view transform generate-sql 123 --input '{"intent": "Summarize revenue by region", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform increment-date`
 
@@ -5012,7 +5012,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.increment_date`
-- Agent example: `mammoth view transform increment-date 123 --input '{"column": "Status", "delta": {}}' --output json --no-input`
+- Agent example: `mammoth view transform increment-date 123 --input '{"column": "Status", "delta": {}, "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform join`
 
@@ -5023,7 +5023,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.join`
-- Agent example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"]}' --output json --no-input`
+- Agent example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform json-extract`
 
@@ -5034,7 +5034,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.json_extract`
-- Agent example: `mammoth view transform json-extract 123 --input '{"column": "Status"}' --output json --no-input`
+- Agent example: `mammoth view transform json-extract 123 --input '{"column": "Status", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform limit-rows`
 
@@ -5045,7 +5045,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.limit_rows`
-- Agent example: `mammoth view transform limit-rows 123 --input '{"n": 1}' --output json --no-input`
+- Agent example: `mammoth view transform limit-rows 123 --input '{"n": 1, "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform lookup`
 
@@ -5056,7 +5056,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.lookup`
-- Agent example: `mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample"}' --output json --no-input`
+- Agent example: `mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform math`
 
@@ -5067,7 +5067,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.math`
-- Agent example: `mammoth view transform math 123 --input '{"expression": "price * quantity"}' --output json --no-input`
+- Agent example: `mammoth view transform math 123 --input '{"expression": "price * quantity", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform pivot`
 
@@ -5078,7 +5078,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.pivot`
-- Agent example: `mammoth view transform pivot 123 --input '{"group_by": ["sample"], "aggregations": [{"column": "Status", "function": "SUM"}]}' --output json --no-input`
+- Agent example: `mammoth view transform pivot 123 --input '{"group_by": ["sample"], "aggregations": [{"column": "Status", "function": "SUM"}], "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform replace`
 
@@ -5089,7 +5089,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.replace_values`
-- Agent example: `mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "sample", "replace": "sample"}' --output json --no-input`
+- Agent example: `mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "sample", "replace": "sample", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform set-values`
 
@@ -5100,7 +5100,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.set_values`
-- Agent example: `mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}]}' --output json --no-input`
+- Agent example: `mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}], "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform small-large`
 
@@ -5111,7 +5111,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.small_large`
-- Agent example: `mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["Status"]}' --output json --no-input`
+- Agent example: `mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["Status"], "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform split`
 
@@ -5122,7 +5122,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.split_column`
-- Agent example: `mammoth view transform split 123 --input '{"column": "Status", "delimiter": "sample", "new_columns": [{"name": "Revenue report"}]}' --output json --no-input`
+- Agent example: `mammoth view transform split 123 --input '{"column": "Status", "delimiter": "sample", "new_columns": [{"name": "Revenue report"}], "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform substring`
 
@@ -5133,7 +5133,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.substring`
-- Agent example: `mammoth view transform substring 123 --input '{"column": "Status"}' --output json --no-input`
+- Agent example: `mammoth view transform substring 123 --input '{"column": "Status", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform text`
 
@@ -5144,7 +5144,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.text_transform`
-- Agent example: `mammoth view transform text 123 --input '{"columns": ["Status"]}' --output json --no-input`
+- Agent example: `mammoth view transform text 123 --input '{"columns": ["Status"], "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform unnest`
 
@@ -5155,7 +5155,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.unnest`
-- Agent example: `mammoth view transform unnest 123 --input '{"columns": ["Status"]}' --output json --no-input`
+- Agent example: `mammoth view transform unnest 123 --input '{"columns": ["Status"], "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view transform window`
 
@@ -5166,7 +5166,7 @@ Total commands: 549.
 - Mutation class: `reversible_pipeline`
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.window`
-- Agent example: `mammoth view transform window 123 --input '{"function": "ROW_NUMBER"}' --output json --no-input`
+- Agent example: `mammoth view transform window 123 --input '{"function": "ROW_NUMBER", "dataset_id": 456}' --output json --no-input`
 
 ### `mammoth view trash`
 

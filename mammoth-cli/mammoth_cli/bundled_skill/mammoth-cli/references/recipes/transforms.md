@@ -9,6 +9,14 @@ mammoth schema get view.transform.join --output json --no-input
 mammoth view transform OPERATION VIEW_ID --project PROJECT_ID --input INPUT_JSON --output json --no-input
 ```
 
+Every `view transform *` and `view draft *` mutation needs the exact parent
+dataset: put `"dataset_id": DATASET_ID` in `--input` (these commands take no
+DATASET_ID positional). Without it the command fails closed with
+`missing_argument`; it never falls back to project-wide discovery, which on
+large projects browses every folder and can 500 or miss the view. Get the
+parent from `view list DATASET_ID` (you already know it after upload) or
+`view get VIEW_ID` (a read, which may discover it).
+
 Prefer typed operations such as convert-type, fill-missing, replace, join,
 lookup, filter and math only when the live schema
 lists them. For each operation, a successful result should contain a returned
@@ -21,23 +29,23 @@ command manifest; substitute only observed view IDs and display names:
 ```bash
 mammoth schema get view.transform.convert-type --output json --no-input
 mammoth view transform convert-type VIEW_ID --project PROJECT_ID \
-  --input '{"conversions":[{"column":"Amount","to":"NUMERIC"}]}' \
+  --input '{"dataset_id":DATASET_ID,"conversions":[{"column":"Amount","to":"NUMERIC"}]}' \
   --output json --no-input
 mammoth schema get view.transform.math --output json --no-input
 mammoth view transform math VIEW_ID --project PROJECT_ID \
-  --input '{"expression":"GDP / Population","new_column":"GDP per capita"}' \
+  --input '{"dataset_id":DATASET_ID,"expression":"GDP / Population","new_column":"GDP per capita"}' \
   --output json --no-input
 ```
 
 The released catalog exposes typed dedupe through `schema find duplicate` as
-`view.transform.discard-duplicates`. Inspect its optional `ignore_columns` and
-`dataset_id` fields before submitting. For a join, verify both schemas and
+`view.transform.discard-duplicates`. Inspect its optional `ignore_columns`
+field before submitting. For a join, verify both schemas and
 expected multiplicity:
 
 ```bash
 mammoth schema get view.transform.discard-duplicates --output json --no-input
 mammoth view transform discard-duplicates VIEW_ID --project PROJECT_ID \
-  --input '{"ignore_columns":["ID"]}' --output json --no-input
+  --input '{"dataset_id":DATASET_ID,"ignore_columns":["ID"]}' --output json --no-input
 mammoth schema get view.transform.join --output json --no-input
 mammoth view transform join VIEW_ID --project PROJECT_ID --input INPUT_JSON --output json --no-input
 ```

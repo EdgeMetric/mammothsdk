@@ -26,6 +26,7 @@ from mammoth.models.batches import (
 from mammoth_cli.manifest.loader import command_by_id, load_commands
 from mammoth_cli.services.argspec import ArgSpec, FieldSpec, arg_spec
 from mammoth_cli.services.input_fields import (
+    accepts_resource_dataset,
     excluded_input_fields,
     handler_owned_fields,
     is_closed_zero_input,
@@ -639,7 +640,7 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
     # SDK-shaped document, then restores it for the handler/service boundary;
     # expose it in discovery so agents can provide the same safe binding they
     # can already use at runtime.
-    if command_id.startswith("view.transform.") and "dataset_id" not in {
+    if accepts_resource_dataset(command_id) and "dataset_id" not in {
         field.name for field in fields
     }:
         fields += (FieldSpec("dataset_id", required=False, annotation=int | None, default=None),)
@@ -655,7 +656,7 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
     # arguments. Invocation admits this field around normal SDK validation so
     # the service can resolve the exact parent; declaring it as context keeps
     # the subsequent shared bind idempotent after that protected preflight.
-    if command_id.startswith("view.transform."):
+    if accepts_resource_dataset(command_id):
         context_values["dataset_id"] = "dataset_id"
     context = MappingProxyType(context_values)
     extensibility = (

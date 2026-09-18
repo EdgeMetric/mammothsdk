@@ -124,9 +124,26 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
 }
 
 
+#: Command families whose ``--input`` admits the exact parent ``dataset_id`` as
+#: resource identity. It is not a View method argument; the service uses it to
+#: fetch the view from its exact parent instead of project-wide discovery,
+#: which non-read view commands refuse.
+_RESOURCE_DATASET_PREFIXES = ("view.transform.", "view.draft.")
+
+
+def accepts_resource_dataset(command_id: str) -> bool:
+    """Return True when ``dataset_id`` is admitted as resource context for ``command_id``."""
+    return command_id.startswith(_RESOURCE_DATASET_PREFIXES)
+
+
 def example_input_hints(command_id: str) -> dict[str, Any]:
     """Return extra ``--input`` fields to include in the generated example."""
-    return dict(_EXAMPLE_INPUT_HINTS.get(command_id, {}))
+    hints = dict(_EXAMPLE_INPUT_HINTS.get(command_id, {}))
+    if accepts_resource_dataset(command_id) and command_id != "view.draft.status":
+        # Non-read view commands refuse project-wide parent discovery, so a
+        # runnable example must show the exact parent.
+        hints.setdefault("dataset_id", 456)
+    return hints
 
 
 def excluded_input_fields(command_id: str) -> frozenset[str]:

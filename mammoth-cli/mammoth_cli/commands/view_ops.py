@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.view import _require_discovery_allowed
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -132,6 +133,12 @@ def _resolve_exact_dataset_id(
                 exit_status=EXIT_USAGE,
                 hint="Pass DATASET_ID or include dataset_id in --input.",
             )
+        # Transforms, exports and other non-read view commands must not fall
+        # into the SDK's project-wide browse-and-probe discovery: on large
+        # projects it can 500 on a folder or miss the view entirely and
+        # surface as an opaque failure. Fail closed with the read that
+        # supplies the parent.
+        _require_discovery_allowed(invocation, view_id)
         return None
     try:
         values = {int(value) for value in raw_values}
