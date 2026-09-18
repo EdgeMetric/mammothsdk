@@ -11,6 +11,7 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from mammoth_cli.errors.envelope import (
@@ -214,25 +215,64 @@ def file_upload(invocation: Invocation) -> HandlerResult:
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-    # The SDK waits for the upload to finish and returns the created dataset
-    # id(s) as a bare int/list. Wrap it in a labeled result so the output reads
-    # as a finished dataset rather than an anonymous number. When the caller
-    # opts out of waiting (``wait_for_completion: false``) the bare job id is
-    # returned unchanged.
-    if not document.get("wait_for_completion", True):
-        return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
-    return _upload_result(data), _meta(invocation, auth.workspace_id, resolved_project(invocation))
+        # The SDK waits for the upload job and returns the created dataset
+        # id(s) as a bare int/list. When the caller opts out of waiting
+        # (``wait_for_completion: false``) the bare job id is returned unchanged.
+        if not document.get("wait_for_completion", True):
+            return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+        # A finished upload job does not mean a usable dataset: a CSV with an
+        # ambiguous date column lands in ``need_action`` with no view. Report
+        # the status the platform holds for each dataset, not an assumed one.
+        result = _upload_result(data, lambda dataset_id: _dataset_status(service, dataset_id))
+    return result, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
-def _upload_result(value: Any) -> dict[str, Any]:
-    """Shape the SDK upload return (int | list[int] | None) into a labeled result."""
+_DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
+
+
+def _dataset_status(service: Any, dataset_id: int) -> tuple[str, dict[str, Any] | None]:
+    """Read ``(status, status_info)`` for one dataset; ``unknown`` if the read fails."""
+    try:
+        response = service.call(_DATASET_GET_SYMBOL, dataset_id=dataset_id)
+    except CliError:
+        return "unknown", None
+    dataset = response.get("dataset", response) if isinstance(response, dict) else {}
+    status = dataset.get("status") if isinstance(dataset, dict) else None
+    status_info = dataset.get("status_info") if isinstance(dataset, dict) else None
+    return (
+        status if isinstance(status, str) else "unknown",
+        status_info if isinstance(status_info, dict) else None,
+    )
+
+
+def _upload_result(
+    value: Any, read_status: Callable[[int], tuple[str, dict[str, Any] | None]]
+) -> dict[str, Any]:
+    """Shape the SDK upload return (int | list[int] | None) into a labeled result.
+
+    ``status`` is ``ready`` only when every created dataset reads back as
+    ``ready``; otherwise it is the first non-ready status so a caller that
+    checks one field sees the dataset that still needs work. ``datasets``
+    carries the per-dataset status, and a ``need_action`` dataset also gets
+    the recovery route so the caller does not have to know the recipe.
+    """
     if isinstance(value, list):
         ids = [int(v) for v in value]
     elif isinstance(value, int):
         ids = [value]
     else:
         ids = []
-    result: dict[str, Any] = {"status": "ready", "dataset_ids": ids}
+    datasets: list[dict[str, Any]] = []
+    for dataset_id in ids:
+        status, status_info = read_status(dataset_id)
+        entry: dict[str, Any] = {"id": dataset_id, "status": status}
+        if status_info:
+            entry["status_info"] = status_info
+        if status == "need_action":
+            entry["next_command"] = f"mammoth dataset file-settings get {dataset_id}"
+        datasets.append(entry)
+    overall = next((d["status"] for d in datasets if d["status"] != "ready"), "ready")
+    result: dict[str, Any] = {"status": overall, "dataset_ids": ids, "datasets": datasets}
     if len(ids) == 1:
         result["dataset_id"] = ids[0]
     return result

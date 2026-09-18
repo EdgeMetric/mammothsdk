@@ -19,7 +19,9 @@ mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input
 ```
 
 `file upload` takes the local path as its positional argument; there is no
-`--source`/`--file` option. `dataset delete` is asynchronous: re-read
+`--source`/`--file` option. Its result carries the status the platform holds
+for each created dataset: `ready`, or `need_action` with a `next_command`, in
+which case follow [need-action](need-action.md) before looking for a view. `dataset delete` is asynchronous: re-read
 `dataset list` (the id disappears once the job completes) before reporting.
 
 Use display names from the exact view schema. For settings, folders and other

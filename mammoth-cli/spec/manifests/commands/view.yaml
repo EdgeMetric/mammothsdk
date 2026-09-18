@@ -546,8 +546,9 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view conditional-format create VIEW_ID --help
-  agent_example: 'mammoth view conditional-format create 123 123 --input ''{"rule": {"sample_key": "Status"}}''
-    --output json --no-input'
+  agent_example: 'mammoth view conditional-format create 123 123 --input ''{"rule": {"cf_type": "RULE",
+    "payload": {"FORMAT": {"name": "Flag open orders", "color": "red", "applies_to": "row", "column_ids":
+    "[]"}, "CONDITION": {"OR": [{"column_1": {"CONTAINS": {"VALUE": ["Open"]}}}]}}}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-CONDITIONAL-FORMAT-CREATE
   contract_tests:
@@ -597,8 +598,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view conditional-format delete-all VIEW_ID --help
-  agent_example: 'mammoth view conditional-format delete-all 123 123 --input ''{"rule_id": "rule-1"}'' --output
-    json --no-input'
+  agent_example: 'mammoth view conditional-format delete-all 123 123 --input ''{"rule_id": "bca0ff33bd6f8ed1"}''
+    --output json --no-input'
   unit_tests:
   - UT-VIEW-CONDITIONAL-FORMAT-DELETE-ALL
   contract_tests:

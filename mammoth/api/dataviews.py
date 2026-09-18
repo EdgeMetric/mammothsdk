@@ -433,7 +433,10 @@ class DataviewsAPI:
             project_id: ID of the project (uses client default if not provided).
 
         Returns:
-            List of conditional format rule dicts.
+            List of conditional format rule dicts. The release route returns
+            the rules as a mapping keyed by rule id; each returned dict
+            carries that key as ``rule_id`` (the value
+            :meth:`conditional_format_delete` needs).
         """
         ws = workspace_id or self._ws()
         proj = project_id or self._proj()
@@ -441,7 +444,17 @@ class DataviewsAPI:
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional-format",
         )
-        return response.get("rules", response if isinstance(response, _list) else [])
+        if isinstance(response, _list):
+            return response
+        if not isinstance(response, dict):
+            return []
+        if isinstance(response.get("rules"), _list):
+            return response["rules"]
+        return [
+            {"rule_id": rule_id, **rule}
+            for rule_id, rule in response.items()
+            if isinstance(rule, dict) and "cf_type" in rule
+        ]
 
     def conditional_format_create(
         self,

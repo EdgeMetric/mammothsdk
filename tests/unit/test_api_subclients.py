@@ -635,6 +635,29 @@ class TestDataviewsAPI:
             client._request_json, "GET", "/dataviews/42/conditional-format"
         )
 
+    def test_conditional_format_list_unpacks_rule_id_mapping(self, client: MammothClient):
+        # Release returns {rule_id: rule}; the id is what delete needs.
+        client._request_json = MagicMock(
+            return_value={
+                "bca0ff33bd6f8ed1": {"cf_type": "RULE", "enabled": True, "sequence": 0},
+                "1f2e3d4c5b6a7980": {"cf_type": "COLOR_SCALE", "enabled": True, "sequence": 1},
+            }
+        )
+        rules = client.dataviews.conditional_format_list(dataset_id=500, dataview_id=42)
+        assert rules == [
+            {"rule_id": "bca0ff33bd6f8ed1", "cf_type": "RULE", "enabled": True, "sequence": 0},
+            {
+                "rule_id": "1f2e3d4c5b6a7980",
+                "cf_type": "COLOR_SCALE",
+                "enabled": True,
+                "sequence": 1,
+            },
+        ]
+
+    def test_conditional_format_list_empty_mapping(self, client: MammothClient):
+        client._request_json = MagicMock(return_value={})
+        assert client.dataviews.conditional_format_list(dataset_id=500, dataview_id=42) == []
+
     def test_conditional_format_create(self, client: MammothClient):
         client.dataviews.conditional_format_create(
             dataset_id=500, dataview_id=42, rule={"color": "red"}
