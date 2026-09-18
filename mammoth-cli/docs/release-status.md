@@ -15,7 +15,23 @@ instructions are removed from the shipped skill and public docs. It retains
 `mammoth-io>=0.7.3,<0.8`, adds no API bindings or request-execution path, and
 makes no capability-status or autonomous-workflow qualification claim.
 
-Publication hashes are recorded after upload.
+Published from deterministic local artifacts built from tag `cli-v2.0.6`
+(source commit `bd14538`). PyPI reports the uploaded local artifact hashes:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `769d04236c3bf3518fbe8c8731cbb6695891e8c540897baad225e2a803b5360f` |
+| Source distribution | `5921d27dfe5f30ef00e12fba8efdb5cf6631a7dc92a655b13d5af453bfedd8a9` |
+
+Before upload: skill/packaging/README-doc contract tests (87), the
+doc-example, STE, and version tests (711), Ruff on `mammoth_cli/`, mypy, and
+`twine check` passed. A fresh Python 3.14 environment installed the exact
+wheel, passed `pip check`, reported version 2.0.6, and returned
+`has_credentials=false` from `auth status` for an empty home. The full
+non-live suite at the parent commit had four unrelated pre-existing failures
+(manifest example drift in `dataset.update`/`file.set-password`, SDK
+introspection for `JobsAPI.get_job`, and the release-workflow trigger test);
+they are recorded, not fixed, in this release.
 
 ## 2.0.5 / SDK 0.7.3
 
