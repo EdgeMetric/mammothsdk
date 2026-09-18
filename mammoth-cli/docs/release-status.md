@@ -16,7 +16,18 @@ only for release) and state that credentials are per environment. It
 retains `mammoth-io>=0.7.3,<0.8`, adds no API bindings, and makes no
 capability-status or autonomous-workflow qualification claim.
 
-Publication hashes are recorded after upload.
+Published from deterministic local artifacts built from tag `cli-v2.0.9`
+(source commit `6548a67`). PyPI reports the uploaded local artifact hashes:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `b944024049a4e47207a748093fdb1866e23026e43e9edf96cdc08ff16507a3dd` |
+| Source distribution | `887d38a51fa9838b78a26ed0e6281c210efe1bc583b051daa2c87894d47fa056` |
+
+Published at the operator's request before the full non-live suite
+completed; focused auth/context/config/doctor tests (114), skill and doc
+contract tests (716), Ruff, mypy, and `twine check` passed first. The full
+suite result is recorded in the next entry when available.
 
 ## 2.0.8 / SDK 0.7.3
 
