@@ -47,6 +47,61 @@ def _write(tmp_path: Path, payload: dict[str, object]) -> str:
     return str(doc)
 
 
+# -- find -------------------------------------------------------------------
+
+
+def test_find_requires_name_substring(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_find(_inv("dataset.find"))
+    assert excinfo.value.code == "missing_argument"
+
+
+def test_find_without_project_searches_every_visible_project(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.projects = [
+        {"id": 1, "name": "P1"},
+        {"id": 2, "name": "P2"},
+    ]
+    fake_service.responses[_LIST] = {
+        "datasets": [{"id": 10, "name": "Sales Q1"}, {"id": 11, "name": "Other"}]
+    }
+    result, meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
+    assert result["projects_searched"] == 2
+    assert result["matches"] == [
+        {"project_id": 1, "project_name": "P1", "id": 10, "name": "Sales Q1"},
+        {"project_id": 2, "project_name": "P2", "id": 10, "name": "Sales Q1"},
+    ]
+    assert "list_projects" in fake_service.calls
+    assert fake_service.call_log == [
+        (_LIST, {"project_id": 1}),
+        (_LIST, {"project_id": 2}),
+    ]
+    assert meta["project_id"] is None
+
+
+def test_find_matches_are_case_insensitive(fake_service: FakeMammothService) -> None:
+    fake_service.projects = [{"id": 1, "name": "P1"}]
+    fake_service.responses[_LIST] = {"datasets": [{"id": 10, "name": "SALES Q1"}]}
+    result, _meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
+    assert [m["id"] for m in result["matches"]] == [10]
+
+
+def test_find_with_project_restricts_to_one_project(fake_service: FakeMammothService) -> None:
+    fake_service.projects = [{"id": 1, "name": "P1"}, {"id": 2, "name": "P2"}]
+    fake_service.responses[_LIST] = {"datasets": [{"id": 10, "name": "Sales Q1"}]}
+    result, meta = dataset_cmd.dataset_find(
+        _inv("dataset.find", project=42, extra_args=["sales"])
+    )
+    assert result["projects_searched"] == 1
+    assert result["matches"] == [
+        {"project_id": 42, "project_name": None, "id": 10, "name": "Sales Q1"}
+    ]
+    assert "list_projects" not in fake_service.calls
+    assert fake_service.call_log == [(_LIST, {"project_id": 42})]
+    assert meta["project_id"] == 42
+
+
 # -- list -----------------------------------------------------------------
 
 

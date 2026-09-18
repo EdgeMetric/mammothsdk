@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.0.10.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 547.
+Total commands: 549.
 
 ## activity
 
@@ -2323,6 +2323,17 @@ Total commands: 547.
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.file_settings_update`
 - Agent example: `mammoth dataset file-settings update 123 --input '{"delimiter": "sample", "has_header": true, "initial_skip_count": 1, "quotechar": "sample"}' --output json --no-input`
 
+### `mammoth dataset find`
+
+**Arguments**
+
+- `NAME_SUBSTRING` (str, required) — Case-insensitive substring to match against dataset names.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.dataset.find`
+- Agent example: `mammoth dataset find sales --output json --no-input`
+
 ### `mammoth dataset get`
 
 **Arguments**
@@ -2556,6 +2567,17 @@ Total commands: 547.
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.folders.FoldersAPI.delete`
 - Agent example: `mammoth folder delete 123 --output json --no-input`
+
+### `mammoth folder find`
+
+**Arguments**
+
+- `NAME_SUBSTRING` (str, required) — Case-insensitive substring to match against folder names.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.folder.find`
+- Agent example: `mammoth folder find reports --output json --no-input`
 
 ### `mammoth folder get`
 

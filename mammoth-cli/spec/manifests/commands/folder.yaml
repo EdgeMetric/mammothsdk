@@ -115,6 +115,45 @@ commands:
   known_restrictions: Sorted ID-set confirmation, plus exact project ID and phrase DELETE FOLDER CONTENTS
     when removing contents.
   reviewed_by: primary
+- command_id: folder.find
+  command_path: folder find
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: name_substring
+    type: str
+    required: true
+    metavar: NAME_SUBSTRING
+    falls_back_to_field: null
+    help: Case-insensitive substring to match against folder names.
+  options: []
+  sdk_symbol: mammoth_cli.commands.folder.find
+  sdk_conversion: Call mammoth_cli.commands.folder.find with validated request fields.
+  request_model: FolderFindRequest
+  result_model: FolderFindResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local composite over already-covered project/folder list reads.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth folder find NAME_SUBSTRING --help
+  agent_example: mammoth folder find reports --output json --no-input
+  unit_tests:
+  - UT-FOLDER-FIND
+  contract_tests:
+  - CT-FOLDER-FIND-HUMAN
+  - CT-FOLDER-FIND-JSON
+  - CT-FOLDER-FIND-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
 - command_id: folder.get
   command_path: folder get
   disposition: command

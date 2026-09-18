@@ -121,6 +121,68 @@ def _forward_optional(
             kwargs[field] = document[field]
 
 
+def _require_string_positional(invocation: Invocation, name: str) -> str:
+    """Return the first positional as a nonblank string, or raise ``missing_argument``."""
+    if not invocation.extra_args or not str(invocation.extra_args[0]).strip():
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message=f"This command requires a {name} argument.",
+            exit_status=EXIT_USAGE,
+            hint=f"Pass the {name} as a positional argument.",
+        )
+    return str(invocation.extra_args[0])
+
+
+# Generous but bounded: a cross-project search must not page forever against a
+# workspace with an unusually large project count.
+_MAX_PROJECTS_SEARCHED = 1000
+
+
+def dataset_find(invocation: Invocation) -> HandlerResult:
+    """Search dataset names for a substring across every visible project.
+
+    Read-only local composite: lists the projects the credential can see (or
+    just the one named by ``--project``), then lists datasets in each and
+    keeps a case-insensitive substring match. Does not require an active
+    project.
+    """
+    name_substring = _require_string_positional(invocation, "name substring")
+    needle = name_substring.lower()
+    matches: list[dict[str, Any]] = []
+    with open_service(invocation) as (service, auth):
+        if invocation.project is not None:
+            projects: list[dict[str, Any]] = [{"id": invocation.project, "name": None}]
+        else:
+            listing = service.list_projects(limit=_MAX_PROJECTS_SEARCHED)
+            projects = list(listing.get("projects", [])) if isinstance(listing, dict) else []
+        for project in projects:
+            project_id = project.get("id")
+            if project_id is None:
+                continue
+            project_name = project.get("name")
+            response = service.call(
+                "mammoth.api.datasets.DatasetsAPI.list", project_id=project_id
+            )
+            datasets = response.get("datasets", []) if isinstance(response, dict) else []
+            for dataset in datasets:
+                name = dataset.get("name") if isinstance(dataset, dict) else None
+                if isinstance(name, str) and needle in name.lower():
+                    matches.append(
+                        {
+                            "project_id": project_id,
+                            "project_name": project_name,
+                            "id": dataset.get("id"),
+                            "name": name,
+                        }
+                    )
+        meta = {
+            "profile": invocation.profile,
+            "workspace_id": auth.workspace_id,
+            "project_id": invocation.project,
+        }
+    return {"matches": matches, "projects_searched": len(projects)}, meta
+
+
 def dataset_list(invocation: Invocation) -> HandlerResult:
     """List datasets in the active project."""
     project_id = require_project(invocation)
