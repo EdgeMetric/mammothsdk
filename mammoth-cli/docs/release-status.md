@@ -52,6 +52,9 @@ API bindings, and makes no capability-status or autonomous-workflow
 qualification claim. Fixed routes are marked "CLI defect fixed in 2.0.15" in
 the matrix until they are re-run live.
 
+SDK 0.7.7 (`sdk-v0.7.7`, source commit `8a975f3`): `mammoth_io-0.7.7-py3-none-any.whl` sha256
+`b02c0db9a83f2fa96839d499224a9f79590d6d124bea68f145093ca25d19f746`; `mammoth_io-0.7.7.tar.gz` sha256 `673460a5d1888d0c9ab9654ae98647d8d2dd3345631296ed3c1664413c93a23c`; digests verified against PyPI.
+
 ## 2.0.14 / SDK 0.7.6
 
 This release closes the CLI-side defects the 2026-09-18 dashboard sweep and
