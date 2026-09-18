@@ -388,7 +388,7 @@ def test_substring_left_char_position_is_forwarded(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     """LEFT/RIGHT directions use character position, not ``num_char``."""
-    payload = {"column": "S3_TEXT", "direction": "LEFT", "char_position": 2}
+    payload = {"column": "S3_TEXT", "direction": "LEFT", "char_position": 2, "dataset_id": 122}
     view_ops.view_transform_substring(
         _inv("view.transform.substring", extra_args=["501"], input_file=_write(tmp_path, payload))
     )
@@ -399,7 +399,12 @@ def test_substring_regex_without_direction_is_forwarded(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     """Regex extraction remains independent of directional arguments."""
-    payload = {"column": "S3_TEXT", "regex_pattern": "S3_REGEX", "regex_invert": True}
+    payload = {
+        "column": "S3_TEXT",
+        "regex_pattern": "S3_REGEX",
+        "regex_invert": True,
+        "dataset_id": 122,
+    }
     view_ops.view_transform_substring(
         _inv("view.transform.substring", extra_args=["501"], input_file=_write(tmp_path, payload))
     )
@@ -432,8 +437,11 @@ def test_transform_wire_destination_is_exact(
     tmp_path: Path,
 ) -> None:
     handler: Callable[[Invocation], Any] = getattr(view_ops, handler_name)
-    handler(_inv(command_id, extra_args=["501"], input_file=_write(tmp_path, payload)))
-    assert fake_service.view_call_log == [(501, method, payload)]
+    # Callers supply the exact parent in --input; it rides along to the wire
+    # as resource context and is never discovered for a mutation.
+    document = {**payload, "dataset_id": 122}
+    handler(_inv(command_id, extra_args=["501"], input_file=_write(tmp_path, document)))
+    assert fake_service.view_call_log == [(501, method, document)]
 
 
 @pytest.mark.parametrize("command_id,handler_name,method,payload", TRANSFORM_CASES)

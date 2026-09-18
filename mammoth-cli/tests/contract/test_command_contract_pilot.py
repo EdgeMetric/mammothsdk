@@ -74,9 +74,7 @@ def _write(tmp_path: Path, payload: dict[str, Any]) -> str:
 
 def test_zero_input_read_has_no_sdk_keywords(fake_service) -> None:
     dashboard_cmd.dashboard_source_list(_inv("dashboard.source.list"))
-    assert fake_service.call_log == [
-        (ZERO_INPUT_ORACLE["sdk_symbol"], ZERO_INPUT_ORACLE["kwargs"])
-    ]
+    assert fake_service.call_log == [(ZERO_INPUT_ORACLE["sdk_symbol"], ZERO_INPUT_ORACLE["kwargs"])]
 
 
 @pytest.mark.parametrize(
@@ -122,24 +120,22 @@ def test_upload_preserves_positional_or_input_fallback(
 
 def test_math_forwards_condition_and_distinct_optional_values(fake_service, tmp_path: Path) -> None:
     oracle = MATH_CONDITION_ORACLE
-    file = _write(tmp_path, oracle["kwargs"])
+    document = {**oracle["kwargs"], "dataset_id": 122}
+    file = _write(tmp_path, document)
     view_ops_cmd.view_transform_math(
         _inv("view.transform.math", extra_args=["41"], input_file=file)
     )
-    assert fake_service.view_call_log == [
-        (oracle["view_id"], oracle["method"], oracle["kwargs"])
-    ]
+    assert fake_service.view_call_log == [(oracle["view_id"], oracle["method"], document)]
 
 
 def test_foreign_lookup_forwards_new_column_type(fake_service, tmp_path: Path) -> None:
     oracle = FOREIGN_LOOKUP_ORACLE
-    file = _write(tmp_path, oracle["kwargs"])
+    document = {**oracle["kwargs"], "dataset_id": 122}
+    file = _write(tmp_path, document)
     view_ops_cmd.view_transform_lookup(
         _inv("view.transform.lookup", extra_args=["42"], input_file=file)
     )
-    assert fake_service.view_call_log == [
-        (oracle["view_id"], oracle["method"], oracle["kwargs"])
-    ]
+    assert fake_service.view_call_log == [(oracle["view_id"], oracle["method"], document)]
 
 
 def test_async_dashboard_generation_preserves_job_response(fake_service, tmp_path: Path) -> None:

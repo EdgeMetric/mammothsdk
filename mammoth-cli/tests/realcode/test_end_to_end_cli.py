@@ -295,11 +295,8 @@ def test_view_transform_full_stack(
 ) -> None:
     """`view transform bulk-replace` runs argv -> coercion -> real payload."""
     api = _bind_real_service(monkeypatch, real_service, project_id=180)
-    api.on(
-        "GET",
-        r"/browse",
-        body={"resources": [{"id": 180, "children": [{"type": "datasource", "id": 55}]}]},
-    )
+    # No /browse stub: a transform must never discover its parent; the exact
+    # dataset comes from --input and the view is fetched from that parent.
     api.on(
         "GET",
         r"/datasets/55/dataviews/1039$",
@@ -313,7 +310,13 @@ def test_view_transform_full_stack(
 
     doc = tmp_path / "in.json"
     doc.write_text(
-        json.dumps({"columns": ["Item"], "mapping": [{"search": ["a"], "replace": "b"}]}),
+        json.dumps(
+            {
+                "dataset_id": 55,
+                "columns": ["Item"],
+                "mapping": [{"search": ["a"], "replace": "b"}],
+            }
+        ),
         encoding="utf-8",
     )
     result = make_runner().invoke(
