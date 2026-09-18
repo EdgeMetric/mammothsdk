@@ -34,7 +34,7 @@ task records, or command arguments.
 ## Installation
 
 ```bash
-pip install mammoth-io
+pip install -U mammoth-io
 ```
 
 Requires Python 3.12 through 3.14.

@@ -76,7 +76,7 @@ The client adds these headers to every request automatically:
 | `X-API-KEY` | Your API key |
 | `X-API-SECRET` | Your API secret |
 | `X-WORKSPACE-ID` | Your workspace ID |
-| `User-Agent` | `mammoth-io/0.7.3` |
+| `User-Agent` | `mammoth-io/<version>` |
 
 ## Error handling
 

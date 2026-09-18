@@ -344,7 +344,12 @@ class TestDatasetsAPI:
 
     def test_rename(self, client: MammothClient):
         client.datasets.rename(dataset_id=500, name="New Name")
-        assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/datasets")
+        assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/datasets/500")
+        # OpenAPI DatasetPatchRequest for the singular route: one operation,
+        # op=replace, path=name, value=<new name>.
+        assert client._request_json.call_args.kwargs["json"] == {
+            "patch": {"op": "replace", "path": "name", "value": "New Name"}
+        }
 
     def test_delete(self, client: MammothClient):
         client.datasets.delete(dataset_id=500)
@@ -753,10 +758,16 @@ class TestPipelineAPI:
             ("GET", "/workspaces/1/projects/100/datasets/500/dataviews/42/pipeline/items"),
         ]
         assert calls[0].kwargs["params"] == {
-            "fields": "__full", "limit": 1, "offset": 0, "status": "success"
+            "fields": "__full",
+            "limit": 1,
+            "offset": 0,
+            "status": "success",
         }
         assert calls[1].kwargs["params"] == {
-            "fields": "__full", "limit": 1, "offset": 1, "status": "success"
+            "fields": "__full",
+            "limit": 1,
+            "offset": 1,
+            "status": "success",
         }
 
     def test_items_all_rejects_repeated_offset(self, client: MammothClient):
@@ -1390,9 +1401,7 @@ class TestDashboardsAPI:
         client.dashboards.create_blank(
             CreateBlankParams(dataview_id=42, style="presentation", title="Revenue")
         )
-        assert_called_with_method_and_endpoint(
-            client._request_json, "POST", "/dashboards/v3/blank"
-        )
+        assert_called_with_method_and_endpoint(client._request_json, "POST", "/dashboards/v3/blank")
         assert_json_body(
             client._request_json,
             {

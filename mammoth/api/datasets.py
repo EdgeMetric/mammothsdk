@@ -192,30 +192,22 @@ class DatasetsAPI:
         workspace_id: int | None = None,
         project_id: int | None = None,
     ) -> dict[str, Any]:
-        """Update datasets using JSON Patch operations.
+        """Send raw patch operations to the plural ``/datasets`` endpoint.
 
-        The server expects patch operations sent to the plural ``/datasets``
-        endpoint. Each operation must include ``op``, ``path``, and ``value``.
-
-        Supported operations (mapped via ``OP_PATCH_TO_FUNCTION_MAP`` on the
-        backend): ``rename_dataset``, ``update_datasets``, ``delete_datasets``,
-        ``change_ds_column_type``, ``add_columns``, ``remove_columns``,
-        ``rename_column``, ``refresh_data``, ``reattach_connection``.
+        This is a low-level passthrough; the payload is sent as
+        ``{"patch": patch_data}`` without validation. The current OpenAPI
+        contract for this route (``DatasetsPatchOperation``) accepts a single
+        ``{"op": "replace", "path": "name", "value": {"<dataset_id>": "<new
+        name>"}}`` object, so most callers want :meth:`rename` (one dataset)
+        or :meth:`bulk_update` (several datasets) instead.
 
         Args:
-            patch_data: List of patch operations.
+            patch_data: Patch payload, passed through unchanged.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
 
         Returns:
             Dict with update result.
-
-        Example::
-
-            # Rename a dataset
-            client.datasets.update([
-                {"op": "rename_dataset", "path": "/123", "value": {"name": "New Name"}}
-            ])
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
@@ -234,8 +226,9 @@ class DatasetsAPI:
     ) -> dict[str, Any]:
         """Rename a dataset.
 
-        Convenience method wrapping :meth:`update` with a ``rename_dataset``
-        patch operation.
+        Sends ``PATCH /datasets/{dataset_id}`` with the OpenAPI
+        ``DatasetPatchOperation`` ``{"op": "replace", "path": "name",
+        "value": name}``.
 
         Args:
             dataset_id: ID of the dataset to rename.
@@ -246,10 +239,12 @@ class DatasetsAPI:
         Returns:
             Dict with update result.
         """
-        return self.update(
-            [{"op": "rename_dataset", "path": f"/{dataset_id}", "value": {"name": name}}],
-            workspace_id=workspace_id,
-            project_id=project_id,
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}",
+            json={"patch": {"op": "replace", "path": "name", "value": name}},
         )
 
     def delete(
@@ -300,9 +295,7 @@ class DatasetsAPI:
         )
         while True:
             try:
-                current = self.get(
-                    dataset_id, workspace_id=workspace_id, project_id=project_id
-                )
+                current = self.get(dataset_id, workspace_id=workspace_id, project_id=project_id)
             except MammothAPIError as exc:
                 if exc.status_code == 404:
                     return {
@@ -342,8 +335,12 @@ class DatasetsAPI:
     ) -> dict[str, Any]:
         """Update multiple datasets (bulk operation).
 
+        The plural route accepts one ``DatasetsPatchOperation``; to rename
+        several datasets at once pass
+        ``{"op": "replace", "path": "name", "value": {"12": "a", "13": "b"}}``.
+
         Args:
-            patch_data: Patch operation data for multiple datasets.
+            patch_data: One patch operation object, sent as ``{"patch": patch_data}``.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
 

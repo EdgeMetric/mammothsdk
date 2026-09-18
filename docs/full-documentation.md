@@ -306,8 +306,8 @@
 - [Jobs](#jobs)
   - [`JobsAPI`](#jobsapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
-    - [`get_job(self, job_id: 'int', timeout: 'int' = 300) -> 'dict[str, Any]'`](#get_jobself-job_id-int-timeout-int-300---dictstr-any)
-    - [`get_jobs(self, job_ids: 'list[int] | str') -> 'dict[str, Any]'`](#get_jobsself-job_ids-listint-str---dictstr-any)
+    - [`get_job(self, job_id: 'int', timeout: 'float | None' = None) -> 'dict[str, Any]'`](#get_jobself-job_id-int-timeout-float-none-none---dictstr-any)
+    - [`get_jobs(self, job_ids: 'list[int] | str', timeout: 'float | None' = None) -> 'dict[str, Any]'`](#get_jobsself-job_ids-listint-str-timeout-float-none-none---dictstr-any)
     - [`wait_for_job(self, job_id: 'int', timeout: 'float | None' = None, poll_interval: 'float' = 2) -> 'dict[str, Any]'`](#wait_for_jobself-job_id-int-timeout-float-none-none-poll_interval-float-2---dictstr-any)
     - [`wait_for_jobs(self, job_ids: 'list[int] | str', timeout: 'int | None' = None, poll_interval: 'int' = 2) -> 'dict[str, Any]'`](#wait_for_jobsself-job_ids-listint-str-timeout-int-none-none-poll_interval-int-2---dictstr-any)
 - [Dashboards](#dashboards)
@@ -451,6 +451,7 @@
   - [AddonsAPI](#addonsapi)
   - [ReportsAPI](#reportsapi)
   - [AIAPI](#aiapi)
+- [Reference Coverage](#reference-coverage)
 - [End-to-End Workflow](#end-to-end-workflow)
   - [1. Install the SDK](#1-install-the-sdk)
   - [2. Authenticate](#2-authenticate)
@@ -519,6 +520,9 @@
   - [Webhook integration](#webhook-integration)
   - [Scheduled automation](#scheduled-automation)
   - [See also](#see-also)
+- [Owner Journal Broker](#owner-journal-broker)
+  - [Fixed subprocess transport](#fixed-subprocess-transport)
+  - [Unix socket front-end](#unix-socket-front-end)
 - [Troubleshooting](#troubleshooting)
   - [Authentication errors](#authentication-errors)
   - [Column not found](#column-not-found)
@@ -530,7 +534,10 @@
   - [Import errors](#import-errors)
   - [See also](#see-also)
 - [Changelog](#changelog)
+  - [v0.7.4](#v074)
+    - [Fixed](#fixed)
   - [v0.7.3](#v073)
+    - [Security](#security)
   - [v0.7.2](#v072)
   - [v0.7.1](#v071)
   - [v0.7.0](#v070)
@@ -559,7 +566,7 @@
 
 # Mammoth Analytics Python SDK
 
-**Version 0.7.3** | Python 3.12–3.14 | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mammothsdk)
+**Python SDK** | Python 3.12–3.14 | [PyPI](https://pypi.org/project/mammoth-io/) | [GitHub](https://github.com/EdgeMetric/mammothsdk)
 
 The official Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data pipelines, apply transformations, and export results -- all from Python.
 
@@ -637,7 +644,7 @@ view.export.to_csv("output.csv")
 
 ## Version information
 
-- **SDK version**: 0.7.3
+- **SDK version**: see `mammoth.__version__` (the [changelog](#changelog) lists releases)
 - **Python**: 3.12–3.14
 - **API version**: v2
 
@@ -661,13 +668,13 @@ view.export.to_csv("output.csv")
 ## Install from PyPI
 
 ```bash
-pip install mammoth-io==0.7.3
+pip install -U mammoth-io
 ```
 
 Or with Poetry:
 
 ```bash
-poetry add mammoth-io==0.7.3
+poetry add mammoth-io
 ```
 
 ## Dependencies
@@ -747,7 +754,7 @@ Get up and running with the Mammoth Python SDK in five minutes.
 ## 1. Install the SDK
 
 ```bash
-pip install mammoth-io==0.7.3
+pip install -U mammoth-io
 ```
 
 ## 2. Get your API credentials
@@ -998,7 +1005,7 @@ The client adds these headers to every request automatically:
 | `X-API-KEY` | Your API key |
 | `X-API-SECRET` | Your API secret |
 | `X-WORKSPACE-ID` | Your workspace ID |
-| `User-Agent` | `mammoth-io/0.7.3` |
+| `User-Agent` | `mammoth-io/<version>` |
 
 ## Error handling
 
@@ -1035,6 +1042,10 @@ client = MammothClient(api_key=os.getenv("MAMMOTH_API_KEY"), ...)
 **Rotate credentials regularly** -- regenerate API keys periodically and invalidate old ones.
 
 **Do not commit credentials** -- add `.env` and config files with secrets to `.gitignore`.
+
+**Use HTTPS API endpoints** -- the client rejects non-HTTPS API base URLs by
+default. Local HTTP development requires the explicit
+`allow_insecure_loopback_http=True` opt-in and is restricted to loopback hosts.
 
 ## Next steps
 
@@ -1162,8 +1173,9 @@ Args:
     timeout: Request timeout in seconds.
     job_timeout: Job polling timeout in seconds.
     pipeline_timeout: Pipeline readiness polling timeout in seconds.
-    allow_insecure_loopback_http: Permit HTTP only for an explicit loopback
-        development endpoint. Production API credentials must use HTTPS.
+    allow_insecure_loopback_http: Permit HTTP only for an explicit
+        loopback development endpoint. Production API credentials must
+        use HTTPS.
 
 #### `set_project_id(self, project_id: 'int') -> 'None'`
 
@@ -11841,10 +11853,10 @@ The `FilesAPI` manages file uploads, listing, and deletion.
 
 ```python
 # Upload a CSV file
-result = client.files.upload("data.csv", dataset_name="Sales Data")
+result = client.files.upload("data.csv")
 
 # Upload an Excel file
-result = client.files.upload("report.xlsx", dataset_name="Report")
+result = client.files.upload("report.xlsx")
 ```
 
 ---
@@ -13713,8 +13725,12 @@ Args:
 
 Update multiple datasets (bulk operation).
 
+The plural route accepts one ``DatasetsPatchOperation``; to rename
+several datasets at once pass
+``{"op": "replace", "path": "name", "value": {"12": "a", "13": "b"}}``.
+
 Args:
-    patch_data: Patch operation data for multiple datasets.
+    patch_data: One patch operation object, sent as ``{"patch": patch_data}``.
     workspace_id: ID of the workspace (uses client default if not provided).
     project_id: ID of the project (uses client default if not provided).
 
@@ -13916,8 +13932,9 @@ Returns:
 
 Rename a dataset.
 
-Convenience method wrapping :meth:`update` with a ``rename_dataset``
-patch operation.
+Sends ``PATCH /datasets/{dataset_id}`` with the OpenAPI
+``DatasetPatchOperation`` ``{"op": "replace", "path": "name",
+"value": name}``.
 
 Args:
     dataset_id: ID of the dataset to rename.
@@ -13960,30 +13977,22 @@ Raises:
 
 ### `update(self, patch_data: '_list[dict[str, Any]]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
-Update datasets using JSON Patch operations.
+Send raw patch operations to the plural ``/datasets`` endpoint.
 
-The server expects patch operations sent to the plural ``/datasets``
-endpoint. Each operation must include ``op``, ``path``, and ``value``.
-
-Supported operations (mapped via ``OP_PATCH_TO_FUNCTION_MAP`` on the
-backend): ``rename_dataset``, ``update_datasets``, ``delete_datasets``,
-``change_ds_column_type``, ``add_columns``, ``remove_columns``,
-``rename_column``, ``refresh_data``, ``reattach_connection``.
+This is a low-level passthrough; the payload is sent as
+``{"patch": patch_data}`` without validation. The current OpenAPI
+contract for this route (``DatasetsPatchOperation``) accepts a single
+``{"op": "replace", "path": "name", "value": {"<dataset_id>": "<new
+name>"}}`` object, so most callers want :meth:`rename` (one dataset)
+or :meth:`bulk_update` (several datasets) instead.
 
 Args:
-    patch_data: List of patch operations.
+    patch_data: Patch payload, passed through unchanged.
     workspace_id: ID of the workspace (uses client default if not provided).
     project_id: ID of the project (uses client default if not provided).
 
 Returns:
     Dict with update result.
-
-Example::
-
-    # Rename a dataset
-    client.datasets.update([
-        {"op": "rename_dataset", "path": "/123", "value": {"name": "New Name"}}
-    ])
 
 
 ---
@@ -14619,13 +14628,14 @@ Client for interacting with Mammoth Jobs API.
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-### `get_job(self, job_id: 'int', timeout: 'int' = 300) -> 'dict[str, Any]'`
+### `get_job(self, job_id: 'int', timeout: 'float | None' = None) -> 'dict[str, Any]'`
 
 Get job status by ID.
 
 Args:
     job_id: ID of the job to track
-    timeout: Timeout for the request (unused, kept for compatibility)
+    timeout: Maximum time for this observation request.  Waiters pass
+        their remaining polling budget so one request cannot exceed it.
 
 Returns:
     Dict containing job information including status, response, timestamps
@@ -14633,7 +14643,7 @@ Returns:
 Raises:
     MammothAPIError: If the API request fails
 
-### `get_jobs(self, job_ids: 'list[int] | str') -> 'dict[str, Any]'`
+### `get_jobs(self, job_ids: 'list[int] | str', timeout: 'float | None' = None) -> 'dict[str, Any]'`
 
 Track multiple job IDs.
 
@@ -16821,6 +16831,36 @@ Returns:
 ---
 
 
+# SDK API documentation coverage
+
+This page does not claim that the SDK reference is complete. The checked-in
+inventory tool reports every public method declared on `MammothClient`,
+`ViewsResource`, and API client classes, then records either its owning MkDocs
+source page or the explicit `no_owner_page` gap. It does **not** verify that a
+specific method is rendered, visible, or linked by an individual HTML anchor.
+
+Run it from the repository root:
+
+```bash
+python scripts/sdk_docs_inventory.py --output sdk-docs-inventory.json
+```
+
+The report is deterministic and includes its denominator, owner-page mapping
+count, owner-page gap count, and an entry for every symbol. On the current
+source it inventories 432 methods; 250 map to an owning reference page and
+182 have no owning page. Per-method rendered anchors are unassessed for all
+432 methods. These numbers are observations of this revision, not a support or
+qualification claim. CI tests ensure the inventory remains deterministic and
+that gaps stay visible when the public surface changes.
+
+The safe setup, URL parsing, view-list, and file-upload examples are also
+signature-validated in `tests/unit/test_sdk_docs_inventory.py`. That limited
+suite does not exercise remote API calls or prove every rendered code block.
+
+
+---
+
+
 # End-to-End Workflow
 
 This guide walks through a complete Mammoth SDK workflow: install, authenticate, upload data, apply transformations, and export results.
@@ -17813,6 +17853,90 @@ automations = client.automations.list()
 ---
 
 
+# Owner journal broker
+
+`scripts/owner_journal_broker.py` is a small owner-side component, separate
+from the Mammoth CLI and from an agent workspace. It persists a fixed
+workspace/project scope and operation allowlist once, accepts only a
+secret-free intent id, operation, fixed scope, and payload SHA-256 digest, and
+appends an fsynced intent record before invoking an owner-supplied transport
+callback. Credentials and request payloads are deliberately out of scope.
+
+When a callback returns, the broker appends an fsynced receipt containing only
+the outcome and an optional job/resource handle. A repeated intent with a
+receipt returns that receipt without another dispatch. An intent without a
+receipt raises `ReconciliationRequired`; it never automatically replays.
+
+This gives at-most-one dispatch by this broker instance per intent id. It is
+not exactly-once backend execution: a crash after a backend commit and before
+the receipt leaves an ambiguity that requires independent reconciliation or a
+backend-supported idempotency key. An advisory owner-journal lock serializes
+submissions sharing that journal. On Linux it fsyncs the parent directory after
+creating the journal root, policy, or journal file; other platforms do not get
+that directory-entry durability guarantee. The offline tests inject both crash
+boundaries and verify no automatic replay. An intent ID is bound to the full
+secret-free invocation fingerprint, so reusing it with a different operation,
+scope, or payload digest is rejected.
+
+## Fixed subprocess transport
+
+`OwnerSubprocessSender` is the optional owner-side transport for a journal
+broker. It accepts only a broker `Invocation`: its CLI executable and SHA-256
+artifact digest, profile name, private configuration directory, workspace,
+project, operation command, target, resource, input, confirmation decision,
+and time budget are all fixed by `OwnerSubprocessPolicy`. It never accepts an
+agent shell string, arbitrary environment, extra arguments, or destination.
+The only supported commands are complete frozen operations selected by name;
+agent-provided request bodies and external destinations are intentionally
+unsupported in this slice.
+
+The sender verifies the executable digest immediately before execution and
+uses a minimal owner environment. It returns only redacted `ok`, `exit_status`,
+`stdout`, and `stderr` observations (plus broker outcome fields); neither the
+profile configuration nor its secrets enter the journal receipt.
+
+Operations are one-shot by default: once a frozen operation has an intent,
+another intent ID cannot dispatch it. The owner must explicitly mark a known
+read operation repeatable. Fixed inputs are optional, but when used must be
+private owner-controlled files outside the agent workspace with an approved
+SHA-256 that is rechecked immediately before dispatch. Exit status 7 and a
+structured `outcome_unknown` envelope remain `outcome_unknown`; the broker
+does not reinterpret them as safe failures or replay them. Any other nonzero
+result is also `outcome_unknown` unless the original private CLI error envelope
+explicitly establishes `failed`/`not_started` or an authorization/usage-style
+pre-dispatch failure. Classification parses the private stream before applying
+presentation redaction, but does not persist that raw stream.
+
+Output redaction is best-effort presentation hygiene, not credential isolation.
+The journal never stores subprocess stdout or stderr, and protected profile
+contents are kept outside the agent workspace; a production deployment still
+needs an OS/process boundary appropriate to its credential store.
+
+## Unix socket front-end
+
+`OwnerBrokerSocketServer` is a Linux/Unix-only local front-end for a broker and
+frozen sender. Its private owner-controlled directory and socket are mode 0700
+and 0600. A request has exactly four strings: opaque trial handle, opaque
+intent ID, allowlisted operation name, and payload digest. It cannot carry
+argv, a profile/config path, credentials, environment, project/workspace, or
+external destination. Invalid, oversized, malformed, and policy-denied frames
+receive a generic denial response; an idle partial frame receives the same
+response after a bounded receive timeout.
+
+The successful response contains the durable receipt and, only for the initial
+dispatch, a redacted process observation. Repeated receipts do not rerun the
+sender or reconstruct output. Top-level `ok: true` means the broker accepted
+and journaled the request, not that the remote operation succeeded; inspect
+the receipt outcome and observation `ok` separately. Observation stdout/stderr
+are capped with explicit `*_truncated` flags, so they never claim completeness.
+This is not provider attestation, a credential
+vault, or live qualification; deployment still needs peer authentication and
+an appropriate protected-process boundary for its operating system.
+
+
+---
+
+
 # Troubleshooting
 
 Common issues and their solutions.
@@ -17951,6 +18075,13 @@ client = MammothClient(..., timeout=120)  # 2 minutes per request
 
 
 # Changelog
+
+## v0.7.4
+
+### Fixed
+
+- `client.datasets.rename()` uses the singular dataset PATCH route with the
+  documented `replace`/`name` operation; the previous payload returned HTTP 400.
 
 ## v0.7.3
 

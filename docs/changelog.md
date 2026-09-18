@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.7.4
+
+### Fixed
+
+- `client.datasets.rename()` uses the singular dataset PATCH route with the
+  documented `replace`/`name` operation; the previous payload returned HTTP 400.
+
 ## v0.7.3
 
 ### Security

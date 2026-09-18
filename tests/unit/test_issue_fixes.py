@@ -208,15 +208,15 @@ class TestDatasetsUpdate:
         assert args[0][0] == "PATCH"
         assert args[0][1].endswith("/datasets")
 
-    def test_rename_convenience(self, mock_client: MammothClient):
+    def test_rename_uses_singular_endpoint_with_replace_name(self, mock_client: MammothClient):
+        # OpenAPI: PATCH /datasets/{id} with DatasetPatchOperation; the old
+        # plural "rename_dataset" payload was rejected with HTTP 400.
         mock_client.datasets.rename(dataset_id=123, name="New Name")
         mock_client._request_json.assert_called_once()
         args = mock_client._request_json.call_args
-        payload = args[1].get("json") or args[0][2] if len(args[0]) > 2 else None
-        if payload is None:
-            payload = args[1]["json"]
-        assert payload["patch"][0]["op"] == "rename_dataset"
-        assert payload["patch"][0]["path"] == "/123"
+        assert args[0][0] == "PATCH"
+        assert args[0][1].endswith("/datasets/123")
+        assert args[1]["json"] == {"patch": {"op": "replace", "path": "name", "value": "New Name"}}
 
 
 # ── Fix 8: addons.list ──────────────────────────────────
