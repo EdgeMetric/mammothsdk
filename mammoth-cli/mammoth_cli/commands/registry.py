@@ -177,6 +177,7 @@ HANDLERS: dict[str, Handler] = {
     "project.user.remove": project_cmd.project_user_remove,
     "project.user.update": project_cmd.project_user_update,
     # folder family
+    "folder.find": folder_cmd.folder_find,
     "folder.list": folder_cmd.folder_list,
     "folder.get": folder_cmd.folder_get,
     "folder.root": folder_cmd.folder_root,
@@ -208,6 +209,7 @@ HANDLERS: dict[str, Handler] = {
     "workspace.user.update": workspace_cmd.workspace_user_update,
     "workspace.user.update-batch": workspace_cmd.workspace_user_update_batch,
     # dataset family
+    "dataset.find": dataset_cmd.dataset_find,
     "dataset.list": dataset_cmd.dataset_list,
     "dataset.get": dataset_cmd.dataset_get,
     "dataset.batch-data": dataset_cmd.dataset_batch_data,

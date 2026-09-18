@@ -34,6 +34,48 @@ def _inv(command_id: str, **overrides: object) -> Invocation:
     return Invocation(command_id=command_id, **overrides)  # type: ignore[arg-type]
 
 
+def test_find_requires_name_substring(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        folder_cmd.folder_find(_inv("folder.find"))
+    assert excinfo.value.code == "missing_argument"
+
+
+def test_find_without_project_searches_every_visible_project(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.projects = [{"id": 1, "name": "P1"}, {"id": 2, "name": "P2"}]
+    fake_service.responses[_LIST] = {
+        "folders": [{"id": 20, "name": "Reports 2024"}, {"id": 21, "name": "Other"}]
+    }
+    result, meta = folder_cmd.folder_find(_inv("folder.find", extra_args=["report"]))
+    assert result["projects_searched"] == 2
+    assert result["matches"] == [
+        {"project_id": 1, "project_name": "P1", "id": 20, "name": "Reports 2024"},
+        {"project_id": 2, "project_name": "P2", "id": 20, "name": "Reports 2024"},
+    ]
+    assert "list_projects" in fake_service.calls
+    assert fake_service.call_log == [
+        (_LIST, {"project_id": 1}),
+        (_LIST, {"project_id": 2}),
+    ]
+    assert meta["project_id"] is None
+
+
+def test_find_with_project_restricts_to_one_project(fake_service: FakeMammothService) -> None:
+    fake_service.projects = [{"id": 1, "name": "P1"}, {"id": 2, "name": "P2"}]
+    fake_service.responses[_LIST] = {"folders": [{"id": 20, "name": "Reports 2024"}]}
+    result, meta = folder_cmd.folder_find(
+        _inv("folder.find", project=42, extra_args=["report"])
+    )
+    assert result["projects_searched"] == 1
+    assert result["matches"] == [
+        {"project_id": 42, "project_name": None, "id": 20, "name": "Reports 2024"}
+    ]
+    assert "list_projects" not in fake_service.calls
+    assert fake_service.call_log == [(_LIST, {"project_id": 42})]
+    assert meta["project_id"] == 42
+
+
 def test_list_requires_project(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         folder_cmd.folder_list(_inv("folder.list"))

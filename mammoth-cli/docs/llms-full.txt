@@ -525,6 +525,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dataset file-settings undo 123 --output json --no-input
 - `mammoth dataset file-settings update` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.file_settings_update
   example: mammoth dataset file-settings update 123 --input '{"delimiter": "sample", "has_header": true, "initial_skip_count": 1, "quotechar": "sample"}' --output json --no-input
+- `mammoth dataset find` [read/none] -> mammoth_cli.commands.dataset.find
+  example: mammoth dataset find sales --output json --no-input
 - `mammoth dataset get` [read/none] -> mammoth.api.datasets.DatasetsAPI.get
   example: mammoth dataset get 123 --output json --no-input
 - `mammoth dataset list` [read/none] -> mammoth.api.datasets.DatasetsAPI.list
@@ -584,6 +586,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth folder create 'Revenue report' --output json --no-input
 - `mammoth folder delete` [destructive/prompt_or_yes] -> mammoth.api.folders.FoldersAPI.delete
   example: mammoth folder delete 123 --output json --no-input
+- `mammoth folder find` [read/none] -> mammoth_cli.commands.folder.find
+  example: mammoth folder find reports --output json --no-input
 - `mammoth folder get` [read/none] -> mammoth.api.folders.FoldersAPI.get
   example: mammoth folder get 123 --output json --no-input
 - `mammoth folder list` [read/none] -> mammoth.api.folders.FoldersAPI.list

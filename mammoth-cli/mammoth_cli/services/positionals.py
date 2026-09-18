@@ -421,6 +421,28 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="AddTask",
         ),
     ),
+    # ``dataset find``/``folder find`` are bespoke local composite reads with no
+    # backing SDK signature (they search across every project the credential
+    # can see); author the required substring locator here, mirroring
+    # ``schema find``.
+    "dataset.find": (
+        PositionalSpec(
+            name="name_substring",
+            type=str,
+            required=True,
+            help="Case-insensitive substring to match against dataset names.",
+            example_value="sales",
+        ),
+    ),
+    "folder.find": (
+        PositionalSpec(
+            name="name_substring",
+            type=str,
+            required=True,
+            help="Case-insensitive substring to match against folder names.",
+            example_value="reports",
+        ),
+    ),
     # ``folder delete`` takes a single folder id positionally; the handler wraps
     # it into the SDK's ``folder_ids`` list. The signature leads with the
     # required ``folder_ids`` (a ``list[int]``, not a scalar identity), so the
