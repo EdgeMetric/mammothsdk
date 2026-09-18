@@ -21,10 +21,10 @@ commands:
   live_exemption_reason: Account or workspace mutation without a disposable fixture.
   contract_fixture: null
   required_fixture_guard: null
-  secret_fields: []
+  secret_fields:
+  - token
   human_example: mammoth workspace accept-invite --help
-  agent_example: 'mammoth workspace accept-invite --input ''{"token": "replace-with-secret"}'' --output
-    json --no-input'
+  agent_example: mammoth workspace accept-invite --input /private/path/request.json --output json --no-input
   unit_tests:
   - UT-WORKSPACE-ACCEPT-INVITE
   contract_tests:

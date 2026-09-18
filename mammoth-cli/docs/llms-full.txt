@@ -1,6 +1,7 @@
 # mammoth-cli — full reference
 
 Every non-alias command with its mutation class, confirmation policy, backing public SDK symbol, and agent example. Generated deterministically from the command manifests.
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 ## activity
 
@@ -567,7 +568,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth file list` [read/none] -> mammoth.api.files.FilesAPI.list
   example: mammoth file list --output json --no-input
 - `mammoth file set-password` [high_impact/confirm_target] -> mammoth.api.files.FilesAPI.set_password
-  example: mammoth file set-password 123 --input '{"password": "replace-with-secret"}' --output json --no-input
+  example: mammoth file set-password 123 --input /private/path/request.json --output json --no-input
 - `mammoth file update` [benign_mutation/none] -> mammoth.api.files.FilesAPI.update
   example: mammoth file update 123 --input '{"patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "sample"}]}}' --output json --no-input
 - `mammoth file upload` [benign_mutation/none] -> mammoth.api.files.FilesAPI.upload
@@ -876,7 +877,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth user avatar upload` [benign_mutation/none] -> mammoth.api.users.UsersAPI.avatar_upload
   example: mammoth user avatar upload ./sales.csv --output json --no-input
 - `mammoth user change-password` [high_impact/confirm_target] -> mammoth.api.user_profile.UserProfileAPI.change_password
-  example: mammoth user change-password --input '{"current_password": "replace-with-secret", "new_password": "replace-with-secret"}' --output json --no-input
+  example: mammoth user change-password --input /private/path/request.json --output json --no-input
 - `mammoth user delete-account` [high_impact/confirm_target] -> mammoth.api.users.UsersAPI.delete_account
   example: mammoth user delete-account --output json --no-input
 - `mammoth user get` [read/none] -> mammoth.api.user_profile.UserProfileAPI.get
@@ -966,7 +967,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth view draft submit` [reversible_pipeline/none] -> mammoth.view.View.submit_draft
   example: mammoth view draft submit 123 --output json --no-input
 - `mammoth view export azure-blob` [external_effect/yes_always] -> mammoth.view.ViewExport.to_azure_blob
-  example: mammoth view export azure-blob 123 123 --input '{"storage_account_name": "storage-account", "tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret", "container_name": "exports"}' --output json --no-input
+  example: mammoth view export azure-blob 123 123 --input /private/path/request.json --output json --no-input
 - `mammoth view export bigquery` [external_effect/yes_always] -> mammoth.view.ViewExport.to_bigquery
   example: mammoth view export bigquery 123 123 --input '{"selected_profile": {}, "selected_identity": {}, "table": "exports"}' --output json --no-input
 - `mammoth view export create` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.create
@@ -978,11 +979,11 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth view export delete` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.delete
   example: mammoth view export delete 123 123 --output json --no-input
 - `mammoth view export elasticsearch` [external_effect/yes_always] -> mammoth.view.ViewExport.to_elasticsearch
-  example: mammoth view export elasticsearch 123 123 --input '{"host": "elastic.example", "username": "agent", "password": "replace-with-secret", "index": "exports"}' --output json --no-input
+  example: mammoth view export elasticsearch 123 123 --input /private/path/request.json --output json --no-input
 - `mammoth view export email` [external_effect/yes_always] -> mammoth.view.ViewExport.to_email
   example: mammoth view export email 123 123 --input '{"emails": ["recipient@example.com"]}' --output json --no-input
 - `mammoth view export ftp` [external_effect/yes_always] -> mammoth.view.ViewExport.to_ftp
-  example: mammoth view export ftp 123 123 --input '{"domain": "ftp.example", "directory": "/exports", "file": "report.csv", "username": "agent", "password": "replace-with-secret"}' --output json --no-input
+  example: mammoth view export ftp 123 123 --input /private/path/request.json --output json --no-input
 - `mammoth view export get` [read/none] -> mammoth.api.exports.ExportsAPI.get
   example: mammoth view export get 123 123 --output json --no-input
 - `mammoth view export list` [read/none] -> mammoth.api.exports.ExportsAPI.list
@@ -990,29 +991,29 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 - `mammoth view export managed-s3` [external_effect/yes_always] -> mammoth.view.ViewExport.to_s3
   example: mammoth view export managed-s3 123 123 --input '{"file_name": "report.csv"}' --output json --no-input
 - `mammoth view export mssql` [external_effect/yes_always] -> mammoth.view.ViewExport.to_mssql
-  example: mammoth view export mssql 123 123 --input '{"host": "db.example", "port": 1433, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input
+  example: mammoth view export mssql 123 123 --input /private/path/request.json --output json --no-input
 - `mammoth view export mysql` [external_effect/yes_always] -> mammoth.view.ViewExport.to_mysql
-  example: mammoth view export mysql 123 123 --input '{"host": "db.example", "port": 3306, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input
+  example: mammoth view export mysql 123 123 --input /private/path/request.json --output json --no-input
 - `mammoth view export onedrive` [external_effect/yes_always] -> mammoth.view.ViewExport.to_onedrive
-  example: mammoth view export onedrive 123 123 --input '{"tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret", "user_id": "user-id"}' --output json --no-input
+  example: mammoth view export onedrive 123 123 --input /private/path/request.json --output json --no-input
 - `mammoth view export postgres` [external_effect/yes_always] -> mammoth.view.ViewExport.to_postgres
-  example: mammoth view export postgres 123 123 --input '{"host": "db.example", "port": 5432, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input
+  example: mammoth view export postgres 123 123 --input /private/path/request.json --output json --no-input
 - `mammoth view export powerbi` [external_effect/yes_always] -> mammoth.view.ViewExport.to_powerbi
-  example: mammoth view export powerbi 123 123 --input '{"username": "agent", "password": "replace-with-secret", "client_id": "client-id", "dataset": "dataset", "table": "exports"}' --output json --no-input
+  example: mammoth view export powerbi 123 123 --input /private/path/request.json --output json --no-input
 - `mammoth view export publish-db` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.publish_db
   example: mammoth view export publish-db 123 --input '{"odbc_type": "postgres", "target_properties": {"sample_key": "Status"}}' --output json --no-input
 - `mammoth view export publish-db-update` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.publish_db_update
   example: mammoth view export publish-db-update 123 --input '{"patch": [{"sample_key": "Status"}]}' --output json --no-input
 - `mammoth view export redshift` [external_effect/yes_always] -> mammoth.view.ViewExport.to_redshift
-  example: mammoth view export redshift 123 123 --input '{"host": "db.example", "port": 5439, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input
+  example: mammoth view export redshift 123 123 --input /private/path/request.json --output json --no-input
 - `mammoth view export rest` [external_effect/yes_always] -> mammoth.view.ViewExport.to_rest_api
   example: mammoth view export rest 123 123 --input '{"base_url": "https://api.example", "endpoint_path": "/records"}' --output json --no-input
 - `mammoth view export sftp` [external_effect/yes_always] -> mammoth.view.ViewExport.to_sftp
   example: mammoth view export sftp 123 123 --input '{"host": "sftp.example", "username": "agent"}' --output json --no-input
 - `mammoth view export sharepoint` [external_effect/yes_always] -> mammoth.view.ViewExport.to_sharepoint
-  example: mammoth view export sharepoint 123 123 --input '{"tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret", "site_url": "https://sharepoint.example/site"}' --output json --no-input
+  example: mammoth view export sharepoint 123 123 --input /private/path/request.json --output json --no-input
 - `mammoth view export tableau` [external_effect/yes_always] -> mammoth.view.ViewExport.to_tableau
-  example: mammoth view export tableau 123 123 --input '{"server_url": "https://tableau.example", "token_name": "token", "token_secret": "replace-with-secret"}' --output json --no-input
+  example: mammoth view export tableau 123 123 --input /private/path/request.json --output json --no-input
 - `mammoth view export update` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.update
   example: mammoth view export update 123 123 --input '{"patches": [{"sample_key": "Status"}]}' --output json --no-input
 - `mammoth view exportable-config apply` [reversible_pipeline/confirm_target] -> mammoth.api.dataviews.DataviewsAPI.apply_exportable_config
@@ -1187,7 +1188,7 @@ Every non-alias command with its mutation class, confirmation policy, backing pu
 ## workspace
 
 - `mammoth workspace accept-invite` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.accept_invite
-  example: mammoth workspace accept-invite --input '{"token": "replace-with-secret"}' --output json --no-input
+  example: mammoth workspace accept-invite --input /private/path/request.json --output json --no-input
 - `mammoth workspace app-usage` [read/none] -> mammoth.api.workspaces.WorkspacesAPI.app_usage
   example: mammoth workspace app-usage --output json --no-input
 - `mammoth workspace check-expression` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.check_expression

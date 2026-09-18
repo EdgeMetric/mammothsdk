@@ -288,7 +288,9 @@ Expected success: `ViewDraftSubmitResult` in the standard JSON envelope; mutatio
 
 Run: `mammoth view export azure-blob`. Exact input fields: `mammoth schema get view.export.azure-blob --output json --no-input`.
 
-Example: `mammoth view export azure-blob 123 123 --input '{"storage_account_name": "storage-account", "tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret", "container_name": "exports"}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export azure-blob 123 123 --input /private/path/request.json --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Expected success: `ViewExportAzureBlobResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -336,7 +338,9 @@ Expected success: `ViewExportDeleteResult` in the standard JSON envelope; mutati
 
 Run: `mammoth view export elasticsearch`. Exact input fields: `mammoth schema get view.export.elasticsearch --output json --no-input`.
 
-Example: `mammoth view export elasticsearch 123 123 --input '{"host": "elastic.example", "username": "agent", "password": "replace-with-secret", "index": "exports"}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export elasticsearch 123 123 --input /private/path/request.json --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Expected success: `ViewExportElasticsearchResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -352,7 +356,9 @@ Expected success: `ViewExportEmailResult` in the standard JSON envelope; mutatio
 
 Run: `mammoth view export ftp`. Exact input fields: `mammoth schema get view.export.ftp --output json --no-input`.
 
-Example: `mammoth view export ftp 123 123 --input '{"domain": "ftp.example", "directory": "/exports", "file": "report.csv", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export ftp 123 123 --input /private/path/request.json --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Expected success: `ViewExportFtpResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -384,7 +390,9 @@ Expected success: `ViewExportManagedS3Result` in the standard JSON envelope; mut
 
 Run: `mammoth view export mssql`. Exact input fields: `mammoth schema get view.export.mssql --output json --no-input`.
 
-Example: `mammoth view export mssql 123 123 --input '{"host": "db.example", "port": 1433, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export mssql 123 123 --input /private/path/request.json --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Expected success: `ViewExportMssqlResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -392,7 +400,9 @@ Expected success: `ViewExportMssqlResult` in the standard JSON envelope; mutatio
 
 Run: `mammoth view export mysql`. Exact input fields: `mammoth schema get view.export.mysql --output json --no-input`.
 
-Example: `mammoth view export mysql 123 123 --input '{"host": "db.example", "port": 3306, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export mysql 123 123 --input /private/path/request.json --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Expected success: `ViewExportMysqlResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -400,7 +410,9 @@ Expected success: `ViewExportMysqlResult` in the standard JSON envelope; mutatio
 
 Run: `mammoth view export onedrive`. Exact input fields: `mammoth schema get view.export.onedrive --output json --no-input`.
 
-Example: `mammoth view export onedrive 123 123 --input '{"tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret", "user_id": "user-id"}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export onedrive 123 123 --input /private/path/request.json --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Expected success: `ViewExportOnedriveResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -408,7 +420,9 @@ Expected success: `ViewExportOnedriveResult` in the standard JSON envelope; muta
 
 Run: `mammoth view export postgres`. Exact input fields: `mammoth schema get view.export.postgres --output json --no-input`.
 
-Example: `mammoth view export postgres 123 123 --input '{"host": "db.example", "port": 5432, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export postgres 123 123 --input /private/path/request.json --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Expected success: `ViewExportPostgresResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -416,7 +430,9 @@ Expected success: `ViewExportPostgresResult` in the standard JSON envelope; muta
 
 Run: `mammoth view export powerbi`. Exact input fields: `mammoth schema get view.export.powerbi --output json --no-input`.
 
-Example: `mammoth view export powerbi 123 123 --input '{"username": "agent", "password": "replace-with-secret", "client_id": "client-id", "dataset": "dataset", "table": "exports"}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export powerbi 123 123 --input /private/path/request.json --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Expected success: `ViewExportPowerbiResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -440,7 +456,9 @@ Expected success: `ViewExportPublishDbUpdateResult` in the standard JSON envelop
 
 Run: `mammoth view export redshift`. Exact input fields: `mammoth schema get view.export.redshift --output json --no-input`.
 
-Example: `mammoth view export redshift 123 123 --input '{"host": "db.example", "port": 5439, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export redshift 123 123 --input /private/path/request.json --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Expected success: `ViewExportRedshiftResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -464,7 +482,9 @@ Expected success: `ViewExportSftpResult` in the standard JSON envelope; mutation
 
 Run: `mammoth view export sharepoint`. Exact input fields: `mammoth schema get view.export.sharepoint --output json --no-input`.
 
-Example: `mammoth view export sharepoint 123 123 --input '{"tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret", "site_url": "https://sharepoint.example/site"}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export sharepoint 123 123 --input /private/path/request.json --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Expected success: `ViewExportSharepointResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 
@@ -472,7 +492,9 @@ Expected success: `ViewExportSharepointResult` in the standard JSON envelope; mu
 
 Run: `mammoth view export tableau`. Exact input fields: `mammoth schema get view.export.tableau --output json --no-input`.
 
-Example: `mammoth view export tableau 123 123 --input '{"server_url": "https://tableau.example", "token_name": "token", "token_secret": "replace-with-secret"}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export tableau 123 123 --input /private/path/request.json --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Expected success: `ViewExportTableauResult` in the standard JSON envelope; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

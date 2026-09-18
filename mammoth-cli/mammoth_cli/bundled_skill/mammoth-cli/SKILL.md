@@ -5,8 +5,21 @@ description: "Use Mammoth Analytics from a terminal: install or authenticate the
 
 # Mammoth CLI
 
-Use this skill for Mammoth shell work, not for Python SDK integration. Start
-with the installed command contract rather than guessed routes or payloads:
+Use this skill for Mammoth shell work, not for Python SDK integration. Complete
+the authentication preflight below before using the installed command contract;
+never guess routes or payloads:
+
+Before any remote read or write, establish authentication. Ordinary operator
+runs check the selected profile with `mammoth auth status --output json --no-input`;
+if the profile is missing or `has_credentials` is false, stop and complete the
+secure login flow in [authentication](references/auth.md). Then run
+`mammoth doctor --profile PROFILE --output json --no-input` and require a
+successful result before discovering resources or operating on them. A failed
+status, login, or doctor check is a precondition failure—not a reason to try
+the business command anyway. In evaluated or isolated runs, skip all saved
+profile checks and login commands: use only the controller-provided credential
+broker/sidecar check, never mount or read a saved profile, and stop if that
+broker is absent.
 
 ```bash
 mammoth schema find "TASK OR RESOURCE" --output json --no-input

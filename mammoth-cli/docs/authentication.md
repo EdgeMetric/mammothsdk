@@ -2,9 +2,13 @@
 
 [Documentation index](llms.txt)
 
-Every session starts with `mammoth auth login`. The CLI stores a profile and
-reuses it on later commands. Authentication is deliberately explicit: there is
-no environment-variable shortcut and no workspace `-w` login flag.
+The CLI stores a profile and reuses it on later commands. Before a remote read
+or write, inspect the selected profile with `mammoth auth status`. That local
+report establishes only that a profile and credentials are present; `mammoth
+doctor` validates the endpoint and a live authenticated request. If status
+shows no credentials, complete the secure login flow, then require a successful
+doctor result before operating. Authentication is deliberately explicit: there
+is no environment-variable shortcut and no workspace `-w` login flag.
 
 New here? Install first with the [installation guide](installation.md), then
 follow the [quick start](quickstart.md).
@@ -20,6 +24,19 @@ workspace id lives in the same account area.
 One more input is optional. The server prefix names your Mammoth region and
 defaults to `app`. Most users leave it alone. See
 [server prefix and endpoint](#server-prefix-and-endpoint) below.
+
+## Check a profile, then log in if needed
+
+Start with a read-only status check:
+
+```bash
+mammoth auth status --output json --no-input
+```
+
+If the selected profile is missing or has no credentials, log in. A successful
+status alone does not prove the credentials remain usable; run `doctor` after
+login or before work with a saved profile. Do not continue to discovery or a
+business command after a failed status, login, or doctor check.
 
 ## Log in interactively
 
@@ -45,10 +62,20 @@ terminal the CLI needs `--input` instead, as shown below.
 
 ## Log in without a terminal (agents and CI)
 
-An agent or CI job cannot answer hidden prompts. Feed a credentials file instead:
+An agent or CI job cannot answer hidden prompts. On POSIX hosts without an OS
+keyring, have the host's protected secret mechanism provision a private input
+file outside the repository **before** it writes credentials. The mechanism
+must create its owned directory as owner-only (`0700`) and the file as `0600`
+from the outset. Do not write a secret to a normally created file and then run
+`chmod`: another process may have read it already. The path below is a
+placeholder for that host-provisioned file, not a directory that the agent
+should create.
+
+Pass only that file's path, and select file storage explicitly:
 
 ```bash
-mammoth auth login --input creds.json --output json --no-input
+mammoth auth login --input /host-provisioned/credentials.json --storage file \
+  --output json --no-input
 ```
 
 The file holds one JSON document:
@@ -64,19 +91,21 @@ The file holds one JSON document:
 
 The `server_prefix` field is optional. The other three fields are required.
 
-Lock the file down to owner-only before you use it:
+The private file must be owner-only (`0600`) from creation. The CLI rejects a
+group- or world-readable POSIX input file with error code
+`insecure_input_file`; that check is a backstop, not a safe file-creation
+procedure.
 
-```bash
-chmod 0600 creds.json
-```
-
-The CLI rejects a world-readable file with error code `insecure_input_file`. This
-guard keeps a secret off shared disks.
+On Windows, do not use this POSIX file-storage recipe. Use the Windows OS
+keyring or a controller-provided credential broker/sidecar. Evaluated or
+isolated agents likewise use the supplied broker and must not read or mount a
+saved profile.
 
 You can also pipe the document straight from stdin:
 
 ```bash
-cat creds.json | mammoth auth login --input - --input-format json --output json --no-input
+cat /host-provisioned/credentials.json | mammoth auth login --input - \
+  --input-format json --storage file --output json --no-input
 ```
 
 Remove or securely rotate the input file once your runner has stored the
@@ -98,8 +127,10 @@ check leaves your existing state untouched. The command exits `4` with error cod
 
 ## Where secrets live
 
-The CLI stores your secret in the OS keyring. When no keyring exists, it falls
-back to a permission-checked `0600` file that only you can read.
+With `--storage auto`, the CLI uses an OS keyring when one is available. In a
+non-interactive process with no keyring, it fails with `keyring_unavailable`; it
+does not silently select file storage. On a POSIX host, use the protected
+`--storage file` flow above when that explicit fallback is authorized.
 
 The CLI never prints, logs, or returns a secret in any output. Never pass a
 secret as an ordinary command argument. See [safety](safety.md) for the full
@@ -139,9 +170,11 @@ endpoint in use. Add `--check` to test a live authenticated request:
 mammoth auth status --check
 ```
 
-When that check fails, start with `mammoth doctor`; it reports configuration and
-connectivity without displaying secrets. See [troubleshooting](troubleshooting.md)
-for the exit code and recovery path.
+After a successful status or login, run `mammoth doctor`; it reports
+configuration and connectivity without displaying secrets. If status, login, or
+doctor fails, stop and correct the reported precondition before discovery or
+business work. See [troubleshooting](troubleshooting.md) for the exit code and
+recovery path.
 
 Remove a single profile when you no longer need it:
 

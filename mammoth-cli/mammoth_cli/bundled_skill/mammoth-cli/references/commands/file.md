@@ -44,7 +44,9 @@ Expected success: `FileListResult` in the standard JSON envelope; mutation `read
 
 Run: `mammoth file set-password`. Exact input fields: `mammoth schema get file.set-password --output json --no-input`.
 
-Example: `mammoth file set-password 123 --input '{"password": "replace-with-secret"}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth file set-password 123 --input /private/path/request.json --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Expected success: `FileSetPasswordResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `always_wait`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

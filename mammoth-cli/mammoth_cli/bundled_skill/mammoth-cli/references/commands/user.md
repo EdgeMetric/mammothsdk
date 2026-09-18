@@ -20,7 +20,9 @@ Expected success: `UserAvatarUploadResult` in the standard JSON envelope; mutati
 
 Run: `mammoth user change-password`. Exact input fields: `mammoth schema get user.change-password --output json --no-input`.
 
-Example: `mammoth user change-password --input '{"current_password": "replace-with-secret", "new_password": "replace-with-secret"}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth user change-password --input /private/path/request.json --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Expected success: `UserChangePasswordResult` in the standard JSON envelope; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

@@ -1,7 +1,8 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.4.
+Generated from the reviewed command manifests for mammoth-cli 2.0.5.
 Do not edit by hand; run `python scripts/gen_docs.py`.
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Total commands: 547.
 
@@ -2490,7 +2491,7 @@ Total commands: 547.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.files.FilesAPI.set_password`
-- Agent example: `mammoth file set-password 123 --input '{"password": "replace-with-secret"}' --output json --no-input`
+- Agent example: `mammoth file set-password 123 --input /private/path/request.json --output json --no-input`
 
 ### `mammoth file update`
 
@@ -3807,7 +3808,7 @@ Total commands: 547.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.user_profile.UserProfileAPI.change_password`
-- Agent example: `mammoth user change-password --input '{"current_password": "replace-with-secret", "new_password": "replace-with-secret"}' --output json --no-input`
+- Agent example: `mammoth user change-password --input /private/path/request.json --output json --no-input`
 
 ### `mammoth user delete-account`
 
@@ -4283,7 +4284,7 @@ Total commands: 547.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_azure_blob`
-- Agent example: `mammoth view export azure-blob 123 123 --input '{"storage_account_name": "storage-account", "tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret", "container_name": "exports"}' --output json --no-input`
+- Agent example: `mammoth view export azure-blob 123 123 --input /private/path/request.json --output json --no-input`
 
 ### `mammoth view export bigquery`
 
@@ -4353,7 +4354,7 @@ Total commands: 547.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_elasticsearch`
-- Agent example: `mammoth view export elasticsearch 123 123 --input '{"host": "elastic.example", "username": "agent", "password": "replace-with-secret", "index": "exports"}' --output json --no-input`
+- Agent example: `mammoth view export elasticsearch 123 123 --input /private/path/request.json --output json --no-input`
 
 ### `mammoth view export email`
 
@@ -4377,7 +4378,7 @@ Total commands: 547.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_ftp`
-- Agent example: `mammoth view export ftp 123 123 --input '{"domain": "ftp.example", "directory": "/exports", "file": "report.csv", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`
+- Agent example: `mammoth view export ftp 123 123 --input /private/path/request.json --output json --no-input`
 
 ### `mammoth view export get`
 
@@ -4425,7 +4426,7 @@ Total commands: 547.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_mssql`
-- Agent example: `mammoth view export mssql 123 123 --input '{"host": "db.example", "port": 1433, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`
+- Agent example: `mammoth view export mssql 123 123 --input /private/path/request.json --output json --no-input`
 
 ### `mammoth view export mysql`
 
@@ -4437,7 +4438,7 @@ Total commands: 547.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_mysql`
-- Agent example: `mammoth view export mysql 123 123 --input '{"host": "db.example", "port": 3306, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`
+- Agent example: `mammoth view export mysql 123 123 --input /private/path/request.json --output json --no-input`
 
 ### `mammoth view export onedrive`
 
@@ -4449,7 +4450,7 @@ Total commands: 547.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_onedrive`
-- Agent example: `mammoth view export onedrive 123 123 --input '{"tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret", "user_id": "user-id"}' --output json --no-input`
+- Agent example: `mammoth view export onedrive 123 123 --input /private/path/request.json --output json --no-input`
 
 ### `mammoth view export postgres`
 
@@ -4461,7 +4462,7 @@ Total commands: 547.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_postgres`
-- Agent example: `mammoth view export postgres 123 123 --input '{"host": "db.example", "port": 5432, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`
+- Agent example: `mammoth view export postgres 123 123 --input /private/path/request.json --output json --no-input`
 
 ### `mammoth view export powerbi`
 
@@ -4473,7 +4474,7 @@ Total commands: 547.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_powerbi`
-- Agent example: `mammoth view export powerbi 123 123 --input '{"username": "agent", "password": "replace-with-secret", "client_id": "client-id", "dataset": "dataset", "table": "exports"}' --output json --no-input`
+- Agent example: `mammoth view export powerbi 123 123 --input /private/path/request.json --output json --no-input`
 
 ### `mammoth view export publish-db`
 
@@ -4507,7 +4508,7 @@ Total commands: 547.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_redshift`
-- Agent example: `mammoth view export redshift 123 123 --input '{"host": "db.example", "port": 5439, "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}' --output json --no-input`
+- Agent example: `mammoth view export redshift 123 123 --input /private/path/request.json --output json --no-input`
 
 ### `mammoth view export rest`
 
@@ -4543,7 +4544,7 @@ Total commands: 547.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_sharepoint`
-- Agent example: `mammoth view export sharepoint 123 123 --input '{"tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret", "site_url": "https://sharepoint.example/site"}' --output json --no-input`
+- Agent example: `mammoth view export sharepoint 123 123 --input /private/path/request.json --output json --no-input`
 
 ### `mammoth view export tableau`
 
@@ -4555,7 +4556,7 @@ Total commands: 547.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.view.ViewExport.to_tableau`
-- Agent example: `mammoth view export tableau 123 123 --input '{"server_url": "https://tableau.example", "token_name": "token", "token_secret": "replace-with-secret"}' --output json --no-input`
+- Agent example: `mammoth view export tableau 123 123 --input /private/path/request.json --output json --no-input`
 
 ### `mammoth view export update`
 
@@ -5469,7 +5470,7 @@ Total commands: 547.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workspaces.WorkspacesAPI.accept_invite`
-- Agent example: `mammoth workspace accept-invite --input '{"token": "replace-with-secret"}' --output json --no-input`
+- Agent example: `mammoth workspace accept-invite --input /private/path/request.json --output json --no-input`
 
 ### `mammoth workspace app-usage`
 

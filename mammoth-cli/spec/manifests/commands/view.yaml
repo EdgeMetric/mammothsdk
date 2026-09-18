@@ -1655,9 +1655,7 @@ commands:
   secret_fields:
   - client_secret
   human_example: mammoth view export azure-blob VIEW_ID --help
-  agent_example: 'mammoth view export azure-blob 123 123 --input ''{"storage_account_name": "storage-account",
-    "tenant_id": "tenant-id", "client_id": "client-id", "client_secret": "replace-with-secret", "container_name":
-    "exports"}'' --output json --no-input'
+  agent_example: mammoth view export azure-blob 123 123 --input /private/path/request.json --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-AZURE-BLOB
   contract_tests:
@@ -1926,8 +1924,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth view export elasticsearch VIEW_ID --help
-  agent_example: 'mammoth view export elasticsearch 123 123 --input ''{"host": "elastic.example", "username":
-    "agent", "password": "replace-with-secret", "index": "exports"}'' --output json --no-input'
+  agent_example: mammoth view export elasticsearch 123 123 --input /private/path/request.json --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-ELASTICSEARCH
   contract_tests:
@@ -2020,8 +2017,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth view export ftp VIEW_ID --help
-  agent_example: 'mammoth view export ftp 123 123 --input ''{"domain": "ftp.example", "directory": "/exports",
-    "file": "report.csv", "username": "agent", "password": "replace-with-secret"}'' --output json --no-input'
+  agent_example: mammoth view export ftp 123 123 --input /private/path/request.json --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-FTP
   contract_tests:
@@ -2206,9 +2202,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth view export mssql VIEW_ID --help
-  agent_example: 'mammoth view export mssql 123 123 --input ''{"host": "db.example", "port": 1433, "database":
-    "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}'' --output
-    json --no-input'
+  agent_example: mammoth view export mssql 123 123 --input /private/path/request.json --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-MSSQL
   contract_tests:
@@ -2254,9 +2248,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth view export mysql VIEW_ID --help
-  agent_example: 'mammoth view export mysql 123 123 --input ''{"host": "db.example", "port": 3306, "database":
-    "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}'' --output
-    json --no-input'
+  agent_example: mammoth view export mysql 123 123 --input /private/path/request.json --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-MYSQL
   contract_tests:
@@ -2302,8 +2294,7 @@ commands:
   secret_fields:
   - client_secret
   human_example: mammoth view export onedrive VIEW_ID --help
-  agent_example: 'mammoth view export onedrive 123 123 --input ''{"tenant_id": "tenant-id", "client_id":
-    "client-id", "client_secret": "replace-with-secret", "user_id": "user-id"}'' --output json --no-input'
+  agent_example: mammoth view export onedrive 123 123 --input /private/path/request.json --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-ONEDRIVE
   contract_tests:
@@ -2349,9 +2340,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth view export postgres VIEW_ID --help
-  agent_example: 'mammoth view export postgres 123 123 --input ''{"host": "db.example", "port": 5432,
-    "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}''
-    --output json --no-input'
+  agent_example: mammoth view export postgres 123 123 --input /private/path/request.json --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-POSTGRES
   contract_tests:
@@ -2397,8 +2386,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth view export powerbi VIEW_ID --help
-  agent_example: 'mammoth view export powerbi 123 123 --input ''{"username": "agent", "password": "replace-with-secret",
-    "client_id": "client-id", "dataset": "dataset", "table": "exports"}'' --output json --no-input'
+  agent_example: mammoth view export powerbi 123 123 --input /private/path/request.json --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-POWERBI
   contract_tests:
@@ -2527,9 +2515,7 @@ commands:
   secret_fields:
   - password
   human_example: mammoth view export redshift VIEW_ID --help
-  agent_example: 'mammoth view export redshift 123 123 --input ''{"host": "db.example", "port": 5439,
-    "database": "analytics", "table": "exports", "username": "agent", "password": "replace-with-secret"}''
-    --output json --no-input'
+  agent_example: mammoth view export redshift 123 123 --input /private/path/request.json --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-REDSHIFT
   contract_tests:
@@ -2672,9 +2658,7 @@ commands:
   secret_fields:
   - client_secret
   human_example: mammoth view export sharepoint VIEW_ID --help
-  agent_example: 'mammoth view export sharepoint 123 123 --input ''{"tenant_id": "tenant-id", "client_id":
-    "client-id", "client_secret": "replace-with-secret", "site_url": "https://sharepoint.example/site"}''
-    --output json --no-input'
+  agent_example: mammoth view export sharepoint 123 123 --input /private/path/request.json --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-SHAREPOINT
   contract_tests:
@@ -2720,8 +2704,7 @@ commands:
   secret_fields:
   - token_secret
   human_example: mammoth view export tableau VIEW_ID --help
-  agent_example: 'mammoth view export tableau 123 123 --input ''{"server_url": "https://tableau.example",
-    "token_name": "token", "token_secret": "replace-with-secret"}'' --output json --no-input'
+  agent_example: mammoth view export tableau 123 123 --input /private/path/request.json --output json --no-input
   unit_tests:
   - UT-VIEW-EXPORT-TABLEAU
   contract_tests:

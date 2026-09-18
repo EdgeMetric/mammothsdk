@@ -27,9 +27,31 @@ non-evaluated operator use.
    install is required for the agent host, run `mammoth skill install
    --output json --no-input` and verify ownership with `mammoth skill list
    --output json --no-input`.
-3. Use the protected profile/configuration supplied by the user or environment.
-   Run `mammoth doctor --profile PROFILE --output json --no-input`; do not print,
-   echo, or copy its secret-bearing inputs.
+3. Establish authentication before any remote read or write. In an evaluated
+   or isolated run, do not inspect a saved profile and do not run `auth login`:
+   use the controller-provided credential broker/sidecar check. If it is not
+   provided, stop before authenticated actions. The remaining instructions in
+   this step are for ordinary operator runs only. First inspect the selected
+   profile without attempting business work:
+
+   ```bash
+   mammoth auth status --output json --no-input
+   ```
+
+   If the status says the profile or credentials are missing, follow
+   [authentication](auth.md) to log in using a hidden interactive prompt or a
+   protected input file. Never invent a profile, put credentials in chat, or
+   put secrets in argv. After login (or when an existing profile is present),
+   run the connectivity and configuration check and require success:
+
+   ```bash
+   mammoth doctor --profile PROFILE --output json --no-input
+   ```
+
+   Do not print, echo, or copy secret-bearing inputs. A failed status, login,
+   or doctor check stops the task before discovery and business commands. A
+   broker check is the equivalent precondition in evaluated mode; do not add a
+   profile or `--profile` flag to broker-invoked commands.
 4. Discover instead of guessing. Run `mammoth schema list/find/get --output
    json --no-input` for local CLI routes; `mammoth capability list --output
    json --no-input` is an API-binding inventory and can omit typed/local

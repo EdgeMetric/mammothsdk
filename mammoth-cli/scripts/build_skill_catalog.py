@@ -68,6 +68,12 @@ def body(record: dict[str, object]) -> str:
         "--output json --no-input`.\n\n"
         f"Example: `{example}`. {example_note}\n\n"
         + (
+            "Sensitive structured input must come from a private file or pipe; "
+            "never put secrets in literal argv.\n\n"
+            if "--input /private/path/request.json" in example
+            else ""
+        )
+        + (
             f"{outcome}\n\n{details}"
             if fail_closed
             else (
@@ -101,7 +107,8 @@ def render() -> dict[Path, str]:
         "CLI contract, run `mammoth schema get COMMAND_ID --output json --no-input`; "
         "`mammoth capability list` is an API-binding inventory and can omit typed/local CLI "
         "routes. For focused workflows, read the "
-        "[recipes index](recipes/index.md).\n\n"
+        "[recipes index](recipes/index.md). Sensitive structured input must come from a private "
+        "file or pipe; never put secrets in literal argv.\n\n"
         "Load only the applicable domain file:\n\n" + "\n".join(links) + "\n"
     )
     return {path: text.rstrip() + "\n" for path, text in output.items()}

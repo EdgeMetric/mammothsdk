@@ -16,13 +16,17 @@ curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-
 ```
 
 The installer installs the CLI and skill for Codex, Claude Code, and Cursor.
-Confirm the local contract before assigning work:
+Confirm and read the installed guidance before assigning work:
 
 ```bash
 mammoth --version
 mammoth skill list --output json --no-input
-mammoth schema find "export csv" --output json --no-input
+mammoth skill path --output json --no-input
 ```
+
+Read the `SKILL.md` at the installed path reported above. Its cold-start
+instructions are part of the local command contract; do not substitute a
+repository copy or start discovery first.
 
 For an exact release in a controlled evaluation, append `--version X.Y.Z`;
 ordinary host installation needs neither option. See [Installation](installation.md).
@@ -34,22 +38,35 @@ argv, transcript, checkpoint, or a source file.
 
 ## The operating loop
 
-1. **Discover the local contract.** Use `mammoth schema find QUERY` to locate
-   a command and `mammoth schema get COMMAND_ID` before composing a request.
-   `mammoth schema list` is the full CLI inventory. `mammoth capability list`
-   is instead an API-binding inventory and can omit typed or local CLI routes.
-2. **Resolve scope from reads.** Authenticate a named profile, run `mammoth
-   doctor`, then list/get the authorized project, dataset, view, folder, or
-   dashboard. Pass the observed `--project` and parents to every operation.
-   A dataset is not a default view: list its views and select one by returned
-   identity.
-3. **Operate with structured data.** Use `--output json --no-input` and one
+1. **Choose the credential mode, then diagnose it.** In an evaluated or
+   isolated environment, use only the controller-provided credential
+   broker/sidecar. Do **not** run profile-based `auth status`, `auth login`, or
+   `doctor` there: follow the broker's health/readiness procedure instead; if
+   it is absent or fails, stop before authenticated work. For an ordinary
+   operator profile, run `mammoth auth status --profile PROFILE --output json
+   --no-input`. This is a local presence check, not proof that credentials work.
+   If the profile or credentials are missing, use a hidden interactive login or
+   the protected host secret mechanism described in
+   [Authentication](authentication.md); never put a secret in the task, argv,
+   transcript, checkpoint, or source file. Then run `mammoth doctor --profile
+   PROFILE --output json --no-input` and stop on any failed check.
+2. **Discover the local contract.** Only after the ordinary-profile doctor or
+   the broker's required readiness check succeeds, use `mammoth schema find
+   QUERY` to locate a command and `mammoth schema get COMMAND_ID` before
+   composing a request. `mammoth schema list` is the full CLI inventory.
+   `mammoth capability list` is instead an API-binding inventory and can omit
+   typed or local CLI routes.
+3. **Resolve scope from reads.** List/get the authorized project, dataset, view,
+   folder, or dashboard. Pass the observed `--project` and parents to every
+   operation. A dataset is not a default view: list its views and select one by
+   returned identity.
+4. **Operate with structured data.** Use `--output json --no-input` and one
    `--input` document for nested fields. Column inputs and expressions use the
    exact display names returned by the selected view—not backend aliases.
-4. **Verify the stated result.** Read back the resource, job, pipeline task,
+5. **Verify the stated result.** Read back the resource, job, pipeline task,
    dashboard, or exported artifact against the task’s acceptance criteria.
    Exit zero alone does not prove the business outcome.
-5. **Checkpoint or recover.** Keep a nonsecret handoff record after each
+6. **Checkpoint or recover.** Keep a nonsecret handoff record after each
    material verified action. Inspect known jobs and reconcile an
    `outcome_unknown` mutation before a replay, cleanup, or new mutation.
 

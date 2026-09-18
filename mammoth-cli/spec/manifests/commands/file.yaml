@@ -216,10 +216,10 @@ commands:
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
   required_fixture_guard: null
-  secret_fields: []
+  secret_fields:
+  - password
   human_example: mammoth file set-password FILE_ID --help
-  agent_example: 'mammoth file set-password 123 --input ''{"password": "replace-with-secret"}'' --output
-    json --no-input'
+  agent_example: mammoth file set-password 123 --input /private/path/request.json --output json --no-input
   unit_tests:
   - UT-FILE-SET-PASSWORD
   contract_tests:

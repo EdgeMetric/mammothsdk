@@ -24,6 +24,24 @@ mammoth --version
 If `mammoth` is not found after installation, open a new shell so the
 installer's tool bin directory is on your PATH.
 
+## First run: verify the installed guidance, authenticate, then diagnose
+
+The installer also installs the bundled agent skill. Verify it and read the
+installed `SKILL.md` before any discovery or data operation:
+
+```bash
+mammoth skill list --output json --no-input
+mammoth skill path --output json --no-input
+```
+
+Next, inspect the selected profile with `mammoth auth status --output json
+--no-input`. If it has no usable credentials, use the secure login flow in
+[Authentication and project context](authentication.md). After login (or for
+an existing usable profile), run `mammoth doctor --output json --no-input` and
+stop to fix any reported configuration, credential, endpoint, or connectivity
+failure. Only then discover commands and resolve task scope. The full cold-start
+sequence is in [Agent and CI operation](agents.md).
+
 ### Pinning and automation
 
 The bare command intentionally installs the installer’s release-selected
@@ -90,5 +108,5 @@ update` refreshes copies that the installer owns.
 ## Next steps
 
 - [Five-minute quick start](quickstart.md)
-- [Authentication and profiles](authentication.md)
-- [Agent and CI operation](agents.md)
+- [Authentication and project context](authentication.md)
+- [Agent and CI operation](agents.md) (canonical cold-start sequence)

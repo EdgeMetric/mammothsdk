@@ -21,13 +21,37 @@ Copy-paste prompt for a shell-capable agent:
 Install the Mammoth CLI with:
 curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
 
-The installer also installs the bundled agent skill. Verify it with
-mammoth skill list --output json --no-input, locate it with
-mammoth skill path --output json --no-input, and read the installed SKILL.md
-before operating. Discover the installed command surface with
-mammoth capability list and mammoth schema get COMMAND_ID. Resolve the exact
-workspace, project, dataset, and view scope from read results. Never put
-credentials in prompts or command lines. Verify every mutation before
+The installer also installs the bundled agent skill. Before doing any work,
+verify it with `mammoth skill list --output json --no-input`, locate it with
+`mammoth skill path --output json --no-input`, and read the installed
+`SKILL.md`.
+
+Authenticate before discovery or data operations. In an evaluated or isolated
+run with a controller-provided credential broker/sidecar, use that broker's
+readiness check; do not inspect saved profiles, run login, or run doctor, and
+stop if the broker is absent. Otherwise, check the selected profile with
+`mammoth auth status --output json --no-input` (a local presence check, not a
+live access test). If the profile or stored credentials are absent, do not ask for or paste
+secrets into this chat, a prompt, a task record, or a command line. For a human
+at a terminal, run `mammoth auth login` and answer its hidden prompts. For an
+agent or CI on POSIX, use a private owner-only (0600) JSON file outside the
+repository:
+`mammoth auth login --input /private/path/credentials.json --storage file --output json --no-input`.
+On Windows, use the approved OS keyring or credential broker instead; do not
+use a file fallback unless its ACL hardening is approved, and stop if neither
+is available.
+The default server prefix is `app`; use `--server-prefix release` only when
+that endpoint is explicitly intended. Never put API secrets in argv.
+
+In the ordinary shell path, run `mammoth doctor --output json --no-input` and
+stop to fix any reported auth, configuration, endpoint, or connectivity error.
+Discover the installed command surface with `mammoth schema find "TASK OR RESOURCE"
+--output json --no-input`, then inspect a selected command with `mammoth
+schema get COMMAND_ID --output json --no-input`. Use `mammoth capability list
+--output json --no-input` only as API-binding inventory; it can omit typed or
+local CLI routes.
+Resolve the exact workspace, project, dataset, and view scope from read
+results, use returned IDs and display names, and verify every mutation before
 reporting success.
 ```
 
@@ -779,22 +803,35 @@ Open a new shell if needed so the installer-added tool directory is on PATH,
 then run:
 
 ```bash
-mammoth auth login               # prompts for API key, API secret, and workspace id
-mammoth doctor                   # verify the saved profile and endpoint
-mammoth project list             # a table in a terminal, JSON when piped
+mammoth skill list --output json --no-input
+mammoth skill path --output json --no-input
+# Read the installed SKILL.md before operating.
+mammoth auth status --output json --no-input
+# If the profile or stored credentials are absent, human terminal only:
+mammoth auth login
+mammoth doctor --output json --no-input
+mammoth schema find "TASK OR RESOURCE" --output json --no-input
+mammoth schema get COMMAND_ID --output json --no-input
 ```
 
-For promptless work, log in from a protected JSON file with `mammoth auth login
---input creds.json --output json --no-input`; do not put secrets on a command
-line. The installer also installs the bundled agent skill. Start with the
+For an agent or CI on POSIX, use a private owner-only (0600) JSON file outside
+the repository: `mammoth auth login --input /private/path/credentials.json
+--storage file --output json --no-input`. Do not put secrets in chat, prompts,
+or command arguments. On Windows, use the approved OS keyring or credential
+broker instead; do not use a file fallback unless its ACL hardening is approved.
+In an evaluated or isolated run with a controller-provided credential
+broker/sidecar, use that controller-owned readiness check instead of profile
+inspection, login, or doctor, and stop if it is absent. The installer also
+installs the bundled agent skill. Start with the
 [CLI README](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/README.md), which indexes the agent guide, portable
 handoff format, commands, and capability matrix.
 
-The CLI's examples are deliberately nonexhaustive. Use `mammoth capability list`
-and `mammoth schema get COMMAND_ID` for the installed version, and treat a
-timeout or transport failure on a mutation as an unknown outcome until a read
-or job inspection proves what happened. Exit 7 is not a blanket permission to
-replay a write.
+The CLI's examples are deliberately nonexhaustive. Use `mammoth schema find`
+and `mammoth schema get COMMAND_ID` for the complete installed command surface;
+`mammoth capability list` is an API-binding inventory and can omit typed or
+local CLI routes. Treat a timeout or transport failure on a mutation as an
+unknown outcome until a read or job inspection proves what happened. Exit 7 is
+not a blanket permission to replay a write.
 
 ## MCP Server
 

@@ -27074,7 +27074,7 @@
       "capability_id": "file.set-password",
       "cleanup_and_dependencies": "Dependency graph is not recorded by the command map. Track resources returned by this operation, delete only owned resources in reverse dependency order, and verify absence or terminal state.",
       "cli": {
-        "agent_example": "mammoth file set-password 123 --input '{\"password\": \"replace-with-secret\"}' --output json --no-input",
+        "agent_example": "mammoth file set-password 123 --input /private/path/request.json --output json --no-input",
         "alias_of": null,
         "command_path": "file set-password",
         "human_example": "mammoth file set-password FILE_ID --help",
@@ -27118,7 +27118,9 @@
           "status": "not_certified"
         },
         "request_model": "FileSetPasswordRequest",
-        "secret_fields": []
+        "secret_fields": [
+          "password"
+        ]
       },
       "limitations": [
         "Structural routing and manifest presence do not establish backend semantics or production readiness.",
@@ -42298,7 +42300,7 @@
       "capability_id": "user.change-password",
       "cleanup_and_dependencies": "Dependency graph is not recorded by the command map. Track resources returned by this operation, delete only owned resources in reverse dependency order, and verify absence or terminal state.",
       "cli": {
-        "agent_example": "mammoth user change-password --input '{\"current_password\": \"replace-with-secret\", \"new_password\": \"replace-with-secret\"}' --output json --no-input",
+        "agent_example": "mammoth user change-password --input /private/path/request.json --output json --no-input",
         "alias_of": null,
         "command_path": "user change-password",
         "human_example": "mammoth user change-password --help",
@@ -42333,7 +42335,10 @@
           "status": "not_certified"
         },
         "request_model": "UserChangePasswordRequest",
-        "secret_fields": []
+        "secret_fields": [
+          "current_password",
+          "new_password"
+        ]
       },
       "limitations": [
         "Structural routing and manifest presence do not establish backend semantics or production readiness.",
@@ -47800,7 +47805,7 @@
       "capability_id": "view.export.azure-blob",
       "cleanup_and_dependencies": "Dependency graph is not recorded by the command map. Track resources returned by this operation, delete only owned resources in reverse dependency order, and verify absence or terminal state.",
       "cli": {
-        "agent_example": "mammoth view export azure-blob 123 123 --input '{\"storage_account_name\": \"storage-account\", \"tenant_id\": \"tenant-id\", \"client_id\": \"client-id\", \"client_secret\": \"replace-with-secret\", \"container_name\": \"exports\"}' --output json --no-input",
+        "agent_example": "mammoth view export azure-blob 123 123 --input /private/path/request.json --output json --no-input",
         "alias_of": null,
         "command_path": "view export azure-blob",
         "human_example": "mammoth view export azure-blob VIEW_ID --help",
@@ -48581,7 +48586,7 @@
       "capability_id": "view.export.elasticsearch",
       "cleanup_and_dependencies": "Dependency graph is not recorded by the command map. Track resources returned by this operation, delete only owned resources in reverse dependency order, and verify absence or terminal state.",
       "cli": {
-        "agent_example": "mammoth view export elasticsearch 123 123 --input '{\"host\": \"elastic.example\", \"username\": \"agent\", \"password\": \"replace-with-secret\", \"index\": \"exports\"}' --output json --no-input",
+        "agent_example": "mammoth view export elasticsearch 123 123 --input /private/path/request.json --output json --no-input",
         "alias_of": null,
         "command_path": "view export elasticsearch",
         "human_example": "mammoth view export elasticsearch VIEW_ID --help",
@@ -48847,7 +48852,7 @@
       "capability_id": "view.export.ftp",
       "cleanup_and_dependencies": "Dependency graph is not recorded by the command map. Track resources returned by this operation, delete only owned resources in reverse dependency order, and verify absence or terminal state.",
       "cli": {
-        "agent_example": "mammoth view export ftp 123 123 --input '{\"domain\": \"ftp.example\", \"directory\": \"/exports\", \"file\": \"report.csv\", \"username\": \"agent\", \"password\": \"replace-with-secret\"}' --output json --no-input",
+        "agent_example": "mammoth view export ftp 123 123 --input /private/path/request.json --output json --no-input",
         "alias_of": null,
         "command_path": "view export ftp",
         "human_example": "mammoth view export ftp VIEW_ID --help",
@@ -49373,7 +49378,7 @@
       "capability_id": "view.export.mssql",
       "cleanup_and_dependencies": "Dependency graph is not recorded by the command map. Track resources returned by this operation, delete only owned resources in reverse dependency order, and verify absence or terminal state.",
       "cli": {
-        "agent_example": "mammoth view export mssql 123 123 --input '{\"host\": \"db.example\", \"port\": 1433, \"database\": \"analytics\", \"table\": \"exports\", \"username\": \"agent\", \"password\": \"replace-with-secret\"}' --output json --no-input",
+        "agent_example": "mammoth view export mssql 123 123 --input /private/path/request.json --output json --no-input",
         "alias_of": null,
         "command_path": "view export mssql",
         "human_example": "mammoth view export mssql VIEW_ID --help",
@@ -49506,7 +49511,7 @@
       "capability_id": "view.export.mysql",
       "cleanup_and_dependencies": "Dependency graph is not recorded by the command map. Track resources returned by this operation, delete only owned resources in reverse dependency order, and verify absence or terminal state.",
       "cli": {
-        "agent_example": "mammoth view export mysql 123 123 --input '{\"host\": \"db.example\", \"port\": 3306, \"database\": \"analytics\", \"table\": \"exports\", \"username\": \"agent\", \"password\": \"replace-with-secret\"}' --output json --no-input",
+        "agent_example": "mammoth view export mysql 123 123 --input /private/path/request.json --output json --no-input",
         "alias_of": null,
         "command_path": "view export mysql",
         "human_example": "mammoth view export mysql VIEW_ID --help",
@@ -49639,7 +49644,7 @@
       "capability_id": "view.export.onedrive",
       "cleanup_and_dependencies": "Dependency graph is not recorded by the command map. Track resources returned by this operation, delete only owned resources in reverse dependency order, and verify absence or terminal state.",
       "cli": {
-        "agent_example": "mammoth view export onedrive 123 123 --input '{\"tenant_id\": \"tenant-id\", \"client_id\": \"client-id\", \"client_secret\": \"replace-with-secret\", \"user_id\": \"user-id\"}' --output json --no-input",
+        "agent_example": "mammoth view export onedrive 123 123 --input /private/path/request.json --output json --no-input",
         "alias_of": null,
         "command_path": "view export onedrive",
         "human_example": "mammoth view export onedrive VIEW_ID --help",
@@ -49772,7 +49777,7 @@
       "capability_id": "view.export.postgres",
       "cleanup_and_dependencies": "Dependency graph is not recorded by the command map. Track resources returned by this operation, delete only owned resources in reverse dependency order, and verify absence or terminal state.",
       "cli": {
-        "agent_example": "mammoth view export postgres 123 123 --input '{\"host\": \"db.example\", \"port\": 5432, \"database\": \"analytics\", \"table\": \"exports\", \"username\": \"agent\", \"password\": \"replace-with-secret\"}' --output json --no-input",
+        "agent_example": "mammoth view export postgres 123 123 --input /private/path/request.json --output json --no-input",
         "alias_of": null,
         "command_path": "view export postgres",
         "human_example": "mammoth view export postgres VIEW_ID --help",
@@ -49905,7 +49910,7 @@
       "capability_id": "view.export.powerbi",
       "cleanup_and_dependencies": "Dependency graph is not recorded by the command map. Track resources returned by this operation, delete only owned resources in reverse dependency order, and verify absence or terminal state.",
       "cli": {
-        "agent_example": "mammoth view export powerbi 123 123 --input '{\"username\": \"agent\", \"password\": \"replace-with-secret\", \"client_id\": \"client-id\", \"dataset\": \"dataset\", \"table\": \"exports\"}' --output json --no-input",
+        "agent_example": "mammoth view export powerbi 123 123 --input /private/path/request.json --output json --no-input",
         "alias_of": null,
         "command_path": "view export powerbi",
         "human_example": "mammoth view export powerbi VIEW_ID --help",
@@ -50283,7 +50288,7 @@
       "capability_id": "view.export.redshift",
       "cleanup_and_dependencies": "Dependency graph is not recorded by the command map. Track resources returned by this operation, delete only owned resources in reverse dependency order, and verify absence or terminal state.",
       "cli": {
-        "agent_example": "mammoth view export redshift 123 123 --input '{\"host\": \"db.example\", \"port\": 5439, \"database\": \"analytics\", \"table\": \"exports\", \"username\": \"agent\", \"password\": \"replace-with-secret\"}' --output json --no-input",
+        "agent_example": "mammoth view export redshift 123 123 --input /private/path/request.json --output json --no-input",
         "alias_of": null,
         "command_path": "view export redshift",
         "human_example": "mammoth view export redshift VIEW_ID --help",
@@ -50686,7 +50691,7 @@
       "capability_id": "view.export.sharepoint",
       "cleanup_and_dependencies": "Dependency graph is not recorded by the command map. Track resources returned by this operation, delete only owned resources in reverse dependency order, and verify absence or terminal state.",
       "cli": {
-        "agent_example": "mammoth view export sharepoint 123 123 --input '{\"tenant_id\": \"tenant-id\", \"client_id\": \"client-id\", \"client_secret\": \"replace-with-secret\", \"site_url\": \"https://sharepoint.example/site\"}' --output json --no-input",
+        "agent_example": "mammoth view export sharepoint 123 123 --input /private/path/request.json --output json --no-input",
         "alias_of": null,
         "command_path": "view export sharepoint",
         "human_example": "mammoth view export sharepoint VIEW_ID --help",
@@ -50820,7 +50825,7 @@
       "capability_id": "view.export.tableau",
       "cleanup_and_dependencies": "Dependency graph is not recorded by the command map. Track resources returned by this operation, delete only owned resources in reverse dependency order, and verify absence or terminal state.",
       "cli": {
-        "agent_example": "mammoth view export tableau 123 123 --input '{\"server_url\": \"https://tableau.example\", \"token_name\": \"token\", \"token_secret\": \"replace-with-secret\"}' --output json --no-input",
+        "agent_example": "mammoth view export tableau 123 123 --input /private/path/request.json --output json --no-input",
         "alias_of": null,
         "command_path": "view export tableau",
         "human_example": "mammoth view export tableau VIEW_ID --help",
@@ -60544,7 +60549,7 @@
       "capability_id": "workspace.accept-invite",
       "cleanup_and_dependencies": "Dependency graph is not recorded by the command map. Track resources returned by this operation, delete only owned resources in reverse dependency order, and verify absence or terminal state.",
       "cli": {
-        "agent_example": "mammoth workspace accept-invite --input '{\"token\": \"replace-with-secret\"}' --output json --no-input",
+        "agent_example": "mammoth workspace accept-invite --input /private/path/request.json --output json --no-input",
         "alias_of": null,
         "command_path": "workspace accept-invite",
         "human_example": "mammoth workspace accept-invite --help",
@@ -60579,7 +60584,9 @@
           "status": "not_certified"
         },
         "request_model": "WorkspaceAcceptInviteRequest",
-        "secret_fields": []
+        "secret_fields": [
+          "token"
+        ]
       },
       "limitations": [
         "Structural routing and manifest presence do not establish backend semantics or production readiness.",

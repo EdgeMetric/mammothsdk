@@ -132,6 +132,8 @@ def render_commands_md(families: dict[str, list[dict[str, object]]]) -> str:
         "",
         f"Generated from the reviewed command manifests for mammoth-cli {__version__}.",
         "Do not edit by hand; run `python scripts/gen_docs.py`.",
+        "Sensitive structured input must come from a private file or pipe; "
+        "never put secrets in literal argv.",
         "",
         f"Total commands: {sum(len(v) for v in families.values())}.",
         "",
@@ -179,6 +181,8 @@ def render_llms_full_txt(families: dict[str, list[dict[str, object]]]) -> str:
         "Every non-alias command with its mutation class, confirmation policy, "
         "backing public SDK symbol, and agent example. Generated deterministically "
         "from the command manifests.",
+        "Sensitive structured input must come from a private file or pipe; "
+        "never put secrets in literal argv.",
         "",
     ]
     for family, records in families.items():

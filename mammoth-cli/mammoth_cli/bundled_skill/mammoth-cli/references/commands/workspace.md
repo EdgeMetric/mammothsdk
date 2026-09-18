@@ -4,7 +4,9 @@
 
 Run: `mammoth workspace accept-invite`. Exact input fields: `mammoth schema get workspace.accept-invite --output json --no-input`.
 
-Example: `mammoth workspace accept-invite --input '{"token": "replace-with-secret"}' --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+Example: `mammoth workspace accept-invite --input /private/path/request.json --output json --no-input`. Runnable only after resolving schema-required IDs and input from observed reads.
+
+Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Expected success: `WorkspaceAcceptInviteResult` in the standard JSON envelope; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`. On nonzero exit, inspect the JSON error envelope and its `recovery_commands`; do not guess request fields. See [representative envelopes](../machine-output.md) for concrete success/error shapes.
 

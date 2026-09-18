@@ -36,7 +36,6 @@ then confirm it works:
 
 ```bash
 mammoth --version
-mammoth doctor          # checks config, credentials, endpoint, connectivity
 ```
 
 The installer bootstraps its own `uv` tool environment when needed and installs
@@ -45,24 +44,53 @@ X.Y.Z`; the installer has no normal prompts. See
 [Installation](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/installation.md) for that option and the SDK-only pip
 installation path.
 
-## Quick start
+## First run: authenticate, check, then discover
+
+Authentication is the first operational step. In an evaluated or isolated run
+with a controller-provided credential broker/sidecar, use that broker's
+readiness check; do not inspect saved profiles, run login, or run doctor, and
+stop if the broker is absent. In an ordinary shell, check the selected profile;
+this is a local presence check, not a live access test. If the profile or
+stored credentials are absent, log in before running `doctor` or any data command:
 
 ```bash
-mammoth auth login               # prompts for API key, API secret, workspace id
-mammoth doctor                   # confirm credentials resolve and the API answers
-mammoth project list             # a table in a terminal, JSON when piped
-mammoth dataset list --project 180
+mammoth skill list --output json --no-input
+mammoth skill path --output json --no-input
+# Read the installed SKILL.md before operating.
+mammoth auth status --output json --no-input
+# Human terminal only, if profile or stored credentials are absent:
+mammoth auth login
+# Then verify configuration, credentials, endpoint, and connectivity:
+mammoth doctor --output json --no-input
+# Then discover a task-specific route:
+mammoth schema find "TASK OR RESOURCE" --output json --no-input
+mammoth schema get COMMAND_ID --output json --no-input
+# Optional API-binding inventory (not the complete CLI surface):
+mammoth capability list --output json --no-input
 ```
 
-Full walkthrough: [docs/quickstart.md](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/quickstart.md).
-
-The login command has no workspace shortcut flag. For CI or an agent, use a
-protected request document instead:
+For an agent or CI, do not request or paste secrets into chat, prompts, shell
+history, or command arguments. On POSIX, put the required JSON credentials in a
+private owner-only (0600) file outside the repository and pass its path to:
 
 ```bash
-chmod 600 creds.json
-mammoth auth login --input creds.json --output json --no-input
+mammoth auth login --input /private/path/credentials.json --storage file \
+  --output json --no-input
 ```
+
+On Windows, use the approved OS keyring or credential broker instead; do not
+use a file fallback unless its ACL hardening is approved, and stop if neither
+is available.
+
+The default server prefix is `app`; pass `--server-prefix release` only when
+the release endpoint is explicitly intended. See
+[Authentication](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/authentication.md)
+for the required JSON fields and profile behavior. After `doctor` succeeds,
+resolve the exact workspace, project, dataset, and view from read results
+before operating; verify every mutation. Use `schema find`/`schema get` for
+typed and local CLI routes; `capability list` is only an API-binding inventory
+and may omit them. Full walkthrough:
+[docs/quickstart.md](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/quickstart.md).
 
 ## Built for agents and CI
 
@@ -73,11 +101,12 @@ on automatically off a terminal, so an agent needs no special flags:
 mammoth project list | jq '.data'
 ```
 
-To be explicit, pass `--output json --no-input`. Log in without a prompt with a
-permission-checked file:
+To be explicit, pass `--output json --no-input`. Log in without a prompt with
+the private, permission-checked file described above:
 
 ```bash
-mammoth auth login --input creds.json --output json --no-input
+mammoth auth login --input /private/path/credentials.json --storage file \
+  --output json --no-input
 ```
 
 Feed multi-field requests as one document instead of many flags:

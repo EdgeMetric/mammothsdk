@@ -96,10 +96,11 @@ commands:
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
   required_fixture_guard: null
-  secret_fields: []
+  secret_fields:
+  - current_password
+  - new_password
   human_example: mammoth user change-password --help
-  agent_example: 'mammoth user change-password --input ''{"current_password": "replace-with-secret", "new_password":
-    "replace-with-secret"}'' --output json --no-input'
+  agent_example: mammoth user change-password --input /private/path/request.json --output json --no-input
   unit_tests:
   - UT-USER-CHANGE-PASSWORD
   contract_tests:

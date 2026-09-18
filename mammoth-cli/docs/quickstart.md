@@ -12,9 +12,15 @@ Output defaults to `auto`: a terminal gets a readable table, while a pipe or
 redirect gets JSON. The commands below use explicit machine flags where a
 script needs to parse the result.
 
-## 1. Log in and choose scope
+## 1. Authenticate and choose scope
 
 ```bash
+# Verify and read the installed agent skill before operating.
+mammoth skill list --output json --no-input
+mammoth skill path --output json --no-input
+# Check whether the selected profile and stored credentials are present.
+mammoth auth status --output json --no-input
+# Human terminal only, if status shows no usable credentials:
 mammoth auth login
 mammoth doctor --output json --no-input
 mammoth project list --output json --no-input
@@ -26,8 +32,14 @@ Select an authorized project and pass it explicitly on subsequent commands:
 mammoth context project use PROJECT_ID --output json --no-input
 ```
 
-For CI or an agent, use a protected credentials file as described in
-[authentication](authentication.md); do not put secrets in arguments.
+For CI or an agent on POSIX, use a private owner-only (0600) credentials file
+outside the repository with `mammoth auth login --input
+/private/path/credentials.json --storage file --output json --no-input`; see
+[authentication](authentication.md). Do not put secrets in chat, prompts, or
+arguments. On Windows, use an approved OS keyring or credential broker instead.
+In an evaluated or isolated run with a controller-provided credential
+broker/sidecar, use only the controller-owned readiness check: do not inspect a
+profile, log in, or run doctor, and stop if the broker is absent.
 
 ## 2. Create and record a disposable resource
 

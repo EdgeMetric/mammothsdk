@@ -1,5 +1,14 @@
 # CLI release provenance
 
+## 2.0.5 / SDK 0.7.3
+
+This CLI-only documentation and bundled-skill correction makes the secure
+authentication preflight and schema-first command discovery explicit, repairs
+stale release-evidence navigation, and corrects manifest metadata examples for
+secret-bearing input. It retains `mammoth-io>=0.7.3,<0.8`, adds no API bindings
+or API request-execution path, and makes no capability-status or
+autonomous-workflow qualification claim.
+
 ## 2.0.4 / SDK 0.7.3
 
 Published from deterministic local artifacts built from tag `cli-v2.0.4`
@@ -207,7 +216,9 @@ changing its payload cannot create a dashboard. The documented source-list
 route returned HTTP 500 with an empty response body, a known server-variance
 boundary. The CLI preserved each status and server detail in its structured
 error envelope; no permission bypass, retry, or readiness promotion follows.
-See the retained [dashboard fixture evidence](capability-evidence/dashboard-next/).
+The retained release-evidence archive is indexed in
+[capability evidence](capability-evidence/README.md); it does not contain a
+dashboard-specific fixture directory.
 
 The immutable PyPI 1.1.9 description retains its pre-publication README
 snapshot of **7 Partial / 521 Unassessed**. Read the canonical
