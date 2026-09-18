@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 1,
-    "Partial": 94,
-    "Not supported": 0,
-    "Unassessed": 433
+    "Partial": 139,
+    "Not supported": 1,
+    "Unassessed": 387
   },
   "rows": [
     {
@@ -38,8 +38,8 @@
     {
       "capability_id": "REL-002",
       "capability": "Delete a tag from the workspace vocabulary",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: n/a. deleted self-created tag 12 (entity) Single invocation only; no error-path or variant coverage. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDashboardTag",
       "method": "DELETE",
@@ -49,14 +49,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.delete_tag",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.tags.delete",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-003",
       "capability": "Delete a context",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: ok. deleted context 1 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteContext",
       "method": "DELETE",
@@ -66,14 +73,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.context_delete",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.context.delete",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-004",
       "capability": "Delete a signature",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: ok. deleted signature 1 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteSignature",
       "method": "DELETE",
@@ -83,14 +97,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.signature_delete",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.signature.delete",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-005",
       "capability": "Delete a custom style",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: ok. deleted custom style 1 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteCustomStyle",
       "method": "DELETE",
@@ -100,8 +121,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.style_custom_delete",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.style.custom.delete",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-006",
@@ -158,7 +186,7 @@
       "capability_id": "REL-009",
       "capability": "Delete a saved workspace template",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed skipped_out_of_scope: listed explicitly in hard rule 2 (out of scope) or requires a .pbix/.twb file that cannot be provided",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3DeleteTemplate",
       "method": "DELETE",
@@ -168,14 +196,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.template_delete",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.template.delete",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-010",
       "capability": "Delete Dashboard",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: n/a. permanently deleted D2=54 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDashboard",
       "method": "DELETE",
@@ -185,8 +220,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.delete",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.delete",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-011",
@@ -208,8 +250,8 @@
     {
       "capability_id": "REL-012",
       "capability": "Delete a Q&A session (owner only)",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: ok. deleted forked session 2 and original session 1, both ok:true Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3DeleteSession",
       "method": "DELETE",
@@ -219,14 +261,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.qa_session_delete",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.qa.session.delete",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-013",
       "capability": "Delete a comment (author or session owner)",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: session. deleted comment 1 from session 1 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteComment",
       "method": "DELETE",
@@ -236,8 +285,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.qa_comment_delete",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.qa.comment.delete",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-014",
@@ -1305,7 +1361,7 @@
       "capability_id": "REL-073",
       "capability": "List all dashboards",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded release read succeeded in project 3; empty dashboard list observed. No Full claim: no non-empty dashboard fixture or independent wire oracle.",
+      "remarks": "Partial bounded evidence only; Bounded release read succeeded in project 3; empty dashboard list observed. No Full claim: no non-empty dashboard fixture or independent wire oracle. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: list[1]. 1 pre-existing dashboard (id 48) Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListDashboard",
       "method": "GET",
@@ -1316,18 +1372,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-073",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/dashboard-list-next.json",
-            "sha256": "6aeff37e60f168fc69b45911032f574fd5a4d7703c530a7b4fc2202be2aafb30",
-            "size_bytes": 673,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.list",
+        "exit_status": 0
       },
-      "evidence_version": null
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-074",
@@ -1435,7 +1487,7 @@
       "capability_id": "REL-080",
       "capability": "Get Dashboard Sources",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed server_error: see sweep report.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed server_error: HTTP 500 on GET /dashboards/sources; matches documented B04 SERVER_VARIANCE precondition",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDashboardSources",
       "method": "GET",
@@ -1446,20 +1498,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.source.list",
         "exit_status": 1
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-081",
       "capability": "List the workspace tag vocabulary",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty tag list observed. No Full claim: no non-empty fixture. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty tag list observed. No Full claim: no non-empty fixture. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: tags. empty tags list Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListDashboardTags",
       "method": "GET",
@@ -1470,26 +1522,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "workspace 4; empty result",
-        "cli": "1.1.9",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-081",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/capability-next/dashboard-tags-list.json",
-            "sha256": "f7728b0ae1df461faacdeadcc05e91176a3a09959053c5fc628078e5e26b89a7",
-            "size_bytes": 767,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.tags.list",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.9"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-082",
       "capability": "Get Dashboard based on url",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 exact observed URL slug resolved retained dashboard48; bounded single-dashboard read and not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 exact observed URL slug resolved retained dashboard48; bounded single-dashboard read and not Full. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: auto_publish, auto_sync, id, is_publish_pending, is_publish_presentation_pending, is_sync_pending, share, sources, title, url, was_published. works via share-url slug even though was_published=false; dashboards apparently get a slug at creation regardless of publish state Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDashboardByUrl",
       "method": "GET",
@@ -1500,25 +1546,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "observed slug n0ReokM66zUyyEYI3g2mRA; dashboard48",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-082",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json",
-            "sha256": "49c178949e2e79efb3ed9478a0a417845b38d44e2fc97bd2eb4e6fd2f89333ac",
-            "size_bytes": 3133,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.get-by-url",
+        "exit_status": 0
       },
-      "evidence_version": null
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-083",
       "capability": "Published viewer canvas",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed blocked_missing_fixture: HTTP 404 4DASH001 DASHBOARD_NOT_FOUND via url endpoint: D=52 was never actually published (was_published=false); the only publish mechanism is 'dashboard share', which is out of scope per hard rules. No publishable url obtainable.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetCanvasPublished",
       "method": "GET",
@@ -1529,20 +1570,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.published.canvas",
         "exit_status": 5
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-084",
       "capability": "Get dashboard job by id",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed blocked_missing_fixture: no publishable url: the only mechanism to publish a dashboard is 'dashboard share', which is out of scope per hard rules (rule 2). Confirmed via published.canvas/published.share-page that unpublished dashboards 404 on the /dashboards/url/<slug>/* endpoints.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDashboardJob",
       "method": "GET",
@@ -1553,20 +1594,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.job-by-url",
-        "exit_status": 4
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-085",
       "capability": "Published dashboard's link-unfurl OG card (baked PNG)",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed blocked_missing_fixture: no publishable url: the only mechanism to publish a dashboard is 'dashboard share', which is out of scope per hard rules (rule 2). Confirmed via published.canvas/published.share-page that unpublished dashboards 404 on the /dashboards/url/<slug>/* endpoints.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "OgCardByUrl",
       "method": "GET",
@@ -1577,20 +1618,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.published.og-card",
-        "exit_status": 5
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-086",
       "capability": "Download a completed published PDF export",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed blocked_missing_fixture: no publishable url: the only mechanism to publish a dashboard is 'dashboard share', which is out of scope per hard rules (rule 2). Confirmed via published.canvas/published.share-page that unpublished dashboards 404 on the /dashboards/url/<slug>/* endpoints.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPdfArtifactByUrl",
       "method": "GET",
@@ -1601,20 +1642,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.published.pdf-artifact",
-        "exit_status": 5
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-087",
       "capability": "Published dashboard's link-unfurl share page (crawler-facing HTML)",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed blocked_missing_fixture: same as published.canvas: no publishable url obtainable (dashboard share is out of scope)",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SharePageByUrl",
       "method": "GET",
@@ -1625,20 +1666,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.published.share-page",
         "exit_status": 5
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-088",
       "capability": "Stream a published motion-story video (Range-enabled)",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed blocked_missing_fixture: no publishable url: the only mechanism to publish a dashboard is 'dashboard share', which is out of scope per hard rules (rule 2). Confirmed via published.canvas/published.share-page that unpublished dashboards 404 on the /dashboards/url/<slug>/* endpoints.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "VideoByUrl",
       "method": "GET",
@@ -1649,20 +1690,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.published.video-artifact",
-        "exit_status": 5
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-089",
       "capability": "The workspace's contexts",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty context list observed. No Full claim: no non-empty fixture.",
+      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty context list observed. No Full claim: no non-empty fixture. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: contexts. empty contexts list Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListContexts",
       "method": "GET",
@@ -1673,26 +1714,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "workspace 4; empty result",
-        "cli": "1.1.9",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-089",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/capability-next/dashboard-context-list.json",
-            "sha256": "1b9724b1d691e2641dedf2af7cbbf93935d4c34d481969b6f26bbcd3ab5804be",
-            "size_bytes": 777,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.context.list",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.9"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-090",
       "capability": "The workspace's signatures",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty signature list observed. No Full claim: no non-empty fixture.",
+      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty signature list observed. No Full claim: no non-empty fixture. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: signatures. empty signatures list Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListSignatures",
       "method": "GET",
@@ -1703,26 +1738,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "workspace 4; empty result",
-        "cli": "1.1.9",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-090",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/capability-next/dashboard-signature-list.json",
-            "sha256": "ff6e4bfb87ec949b6c8fc84191c869da96a2bec69daae537a7b937b8df807376",
-            "size_bytes": 783,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.signature.list",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.9"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-091",
       "capability": "The workspace's custom styles",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty custom-style list observed. No Full claim: no non-empty fixture.",
+      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; empty custom-style list observed. No Full claim: no non-empty fixture. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: styles. empty custom styles list Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListCustomStyles",
       "method": "GET",
@@ -1733,26 +1762,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "workspace 4; empty result",
-        "cli": "1.1.9",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-091",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/capability-next/dashboard-style-custom-list.json",
-            "sha256": "7cc68c46ad2391d5b9fdc2924a1d49598f6e8f5294b744ee79d54db04b7e98e8",
-            "size_bytes": 792,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.style.custom.list",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.9"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-092",
       "capability": "The workspace default style id",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: client-side ValidationError before any request.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed cli_error: Failed with generic 'ValidationError' exception_type, no HTTP status_code, no backend_code, no response_body, no hint -- same uninformative error envelope pattern as dashboard.figure-intent and dashboard.template.get (3rd occurrence). Command run exactly as documented runnable_example.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDefaultStyle",
       "method": "GET",
@@ -1763,20 +1786,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.style.default.get",
         "exit_status": 1
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-093",
       "capability": "Style presets (stock + custom)",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; 10 stock presets returned. No Full claim: custom preset fixture not observed.",
+      "remarks": "Partial bounded evidence only; Bounded release read succeeded with pinned CLI 1.1.9 in workspace 4; 10 stock presets returned. No Full claim: custom preset fixture not observed. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: presets. returns built-in style presets Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListStylePresets",
       "method": "GET",
@@ -1787,26 +1810,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "workspace 4; 10 returned presets",
-        "cli": "1.1.9",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-093",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/capability-next/dashboard-style-preset-list.json",
-            "sha256": "b8ed7949cec33c68426ff698b0324ff1823a53045557fb40509504cd9f015318",
-            "size_bytes": 9464,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.style.preset.list",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.9"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-094",
       "capability": "Full Style bundle by id (stock or custom)",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 read of observed preset stone returned a redacted token payload. Bounded to one preset and redacted semantics; not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 read of observed preset stone returned a redacted token payload. Bounded to one preset and redacted semantics; not Full. Dashboard sweep 2026-09-18 on release observed cli_error: HTTP 200 but result is tokens='***REDACTED***' -- third confirmed instance of the systemic over-redaction bug (also seen in canvas.get's style_tokens and style.derive's styleTokens), making the command's entire purpose unusable. Additionally, positional help text 'Identifier of the resource' is too vague: a dashboard id (52) produces a misleading 'Dashboard not found' 404 instead of clarifying that a style/preset id is expected..",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetStyleTokens",
       "method": "GET",
@@ -1835,7 +1852,7 @@
       "capability_id": "REL-095",
       "capability": "Data-grounded starting points for the create screen",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 job-backed suggestion read for retained dataview46 reconciled job158 to terminal success with 9 structured suggestions; bounded to one job and not Full. A permitted reread spawned pending job159 with null payload.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 job-backed suggestion read for retained dataview46 reconciled job158 to terminal success with 9 structured suggestions; bounded to one job and not Full. A permitted reread spawned pending job159 with null payload. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: failure_reason, job_id, status_code, suggestions. returned job_id 241, async suggestion generation kicked off; suggestions null pending completion Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardSuggestions",
       "method": "GET",
@@ -1846,25 +1863,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "retained dataview46; job158 success, 9 suggestions; reread job159 unpolled",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-095",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/job-158-followup-111/RESULTS.json",
-            "sha256": "f8a67ba66501d21c8703ffa28f334a0366444f85af37eef02c2461eb65ef3d49",
-            "size_bytes": 1884,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.suggestion.list",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.11-pypi"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-096",
       "capability": "Curated template catalog",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded release read with published CLI 1.1.10 succeeded for the curated template catalog; schema_version 1 and five top-level collections observed. No Full claim: catalog content/fixture lifecycle not qualified.",
+      "remarks": "Partial bounded evidence only; Bounded release read with published CLI 1.1.10 succeeded for the curated template catalog; schema_version 1 and five top-level collections observed. No Full claim: catalog content/fixture lifecycle not qualified. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: formats, functions, industries, templates, use_cases. returns formats/functions/industries/templates catalog Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3ListTemplates",
       "method": "GET",
@@ -1875,26 +1887,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "report": "docs/capability-evidence/historical-release-index.md",
-        "scope": "workspace 4; no ETL resource IDs; CLI 1.1.10",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-096",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-parallel-read-110/README.md",
-            "sha256": "d26db014e8f15061947ab1931618c5a4be41cdea97d5663678005294ee316450",
-            "size_bytes": 933,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-parallel-read-110/RESULTS.md",
-            "sha256": "ae3fa25f34f79611647ed68c67948d398334807bc373f7706ef91bb29c9f7efd",
-            "size_bytes": 2685,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.template.list",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.10"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-097",
@@ -2019,7 +2019,7 @@
       "capability_id": "REL-104",
       "capability": "Fit-score the whole catalog against one dataset",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: dataview_id, fits. Single read only; no fixture variants, error envelopes, or write paths assessed.",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: dataview_id, fits. Single read only; no fixture variants, error envelopes, or write paths assessed. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: dataview_id, fits. returned fit scores for curated templates against dataview 45 (all 'poor' grade, expected -- reference dataset doesn't resemble sales data) Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "FitTemplates",
       "method": "GET",
@@ -2030,14 +2030,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.template.fit",
         "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-105",
@@ -2060,7 +2060,7 @@
       "capability_id": "REL-106",
       "capability": "One template's metadata + self-fit recipe",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: client-side ValidationError on a real template id.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed cli_error: Failed with generic 'ValidationError' exception_type, no HTTP status_code, no backend_code, no response_body, no hint -- same uninformative error envelope pattern as dashboard.figure-intent. Used a real template id (sales-performance) taken from dashboard.template.list's own catalog.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3GetTemplate",
       "method": "GET",
@@ -2071,20 +2071,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.template.get",
         "exit_status": 1
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-107",
       "capability": "Get Dashboard",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 read-only dashboard get on retained dashboard48 returned a bounded structural object; one retained scope does not establish Full support.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 read-only dashboard get on retained dashboard48 returned a bounded structural object; one retained scope does not establish Full support. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: auto_publish, auto_sync, id, is_publish_pending, is_publish_presentation_pending, is_sync_pending, share, sources, title, url, was_published. D=52 fetched; has share url slug SWMLZrPqlcwVkralQQpxvQ despite was_published=false Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDashboard",
       "method": "GET",
@@ -2095,25 +2095,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "one retained dashboard48; published PyPI CLI 1.1.11 / SDK 0.7.1; read-only",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-107",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-110/dashboard-get-48-pypi-111.json",
-            "sha256": "981b449ca4b9fcb28cc073ec2a54d5c8cc1820088adcb3557e9b73ffeb812c1d",
-            "size_bytes": 2139,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.get",
+        "exit_status": 0
       },
-      "evidence_version": null
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-108",
       "capability": "Get Dashboard Analytics",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: average_time_spent_seconds, current_concurrent_viewers, total_views, viewed_by. Single read only; no fixture variants, error envelopes, or write paths assessed.",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: average_time_spent_seconds, current_concurrent_viewers, total_views, viewed_by. Single read only; no fixture variants, error envelopes, or write paths assessed. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: average_time_spent_seconds, current_concurrent_viewers, total_views, viewed_by. zero views, no viewers Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetDashboardAnalytics",
       "method": "GET",
@@ -2124,20 +2119,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.analytics",
         "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-109",
       "capability": "Editor canvas (draft)",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 draft canvas read succeeded for retained dashboard 48. One dashboard only; not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 draft canvas read succeeded for retained dashboard 48. One dashboard only; not Full. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: canvas, dashboard_id, meta, plan, specs. returned canvas JSON for D=52 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetCanvasDraft",
       "method": "GET",
@@ -2148,25 +2143,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "bounded retained-resource read-only evidence",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-109",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/batch-a-dashboard-111/RESULTS.json",
-            "sha256": "abeea3b81366a5f4bb328cb0c28dffdec400897aa00e85420386eab2dc4b6c53",
-            "size_bytes": 2886,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.canvas.get",
+        "exit_status": 0
       },
-      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-110",
       "capability": "Editor chat transcript",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 chat-history read for retained dashboard48 returned empty history with sequence1; bounded and not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 chat-history read for retained dashboard48 returned empty history with sequence1; bounded and not Full. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: history_index, messages, sequence. no chat messages yet Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3ChatHistory",
       "method": "GET",
@@ -2177,19 +2167,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "dashboard48; messages empty, sequence1",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-110",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json",
-            "sha256": "49c178949e2e79efb3ed9478a0a417845b38d44e2fc97bd2eb4e6fd2f89333ac",
-            "size_bytes": 3133,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.chat.history",
+        "exit_status": 0
       },
-      "evidence_version": null
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-111",
@@ -2246,7 +2231,7 @@
       "capability_id": "REL-114",
       "capability": "Dashboard card thumbnail (draft or published PNG)",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: HTTP 200 with a non-JSON body (image); CLI force-parses JSON.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed cli_error: Backend returned HTTP 200 (status_code embedded in error details) but CLI raised JSONDecodeError trying to parse the response (og-card likely returns a binary image, not JSON) -- CLI failed to handle a 200 response correctly.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "OgCard",
       "method": "GET",
@@ -2257,20 +2242,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.og-card",
         "exit_status": 1
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-115",
       "capability": "Download a completed draft PDF export",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed blocked_missing_fixture: No real pdf export job_id obtainable (dashboard.pdf.export is itself blocked_missing_fixture). Fabricated job_id returns HTTP 404 backend_code 4DASH001 with message 'Dashboard not found or you don't have access to it' -- MISLEADING: the dashboard (52) does exist and is accessible; the actual problem is the job id, not the dashboard. Backend defect: wrong-resource error message.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPdfArtifact",
       "method": "GET",
@@ -2281,14 +2266,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.pdf-artifact",
         "exit_status": 5
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-116",
@@ -2328,7 +2313,7 @@
       "capability_id": "REL-118",
       "capability": "List Q&A sessions",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 Q&A session-list read succeeded for retained dashboard 48 with empty mine/shared lists. One dashboard only; not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 Q&A session-list read succeeded for retained dashboard 48 with empty mine/shared lists. One dashboard only; not Full. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: mine, shared. 1 own session listed under 'mine' Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3ListSessions",
       "method": "GET",
@@ -2339,25 +2324,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "bounded retained-resource read-only evidence",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-118",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/batch-a-dashboard-111/RESULTS.json",
-            "sha256": "abeea3b81366a5f4bb328cb0c28dffdec400897aa00e85420386eab2dc4b6c53",
-            "size_bytes": 2886,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.qa.session.list",
+        "exit_status": 0
       },
-      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-119",
       "capability": "Read a Q&A session (replayable — carries baked answers)",
-      "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: session. fetched session 1 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetSession",
       "method": "GET",
@@ -2368,20 +2348,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.qa.session.get",
-        "exit_status": null
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-120",
       "capability": "This dashboard's Q&A settings",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 Q&A settings read succeeded for retained dashboard 48. One dashboard only; not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 Q&A settings read succeeded for retained dashboard 48. One dashboard only; not Full. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: allow_viewer_qa, can_manage, public_link. returned allow_viewer_qa/can_manage/public_link Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3GetQaSettings",
       "method": "GET",
@@ -2392,25 +2372,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "bounded retained-resource read-only evidence",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-120",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/batch-a-dashboard-111/RESULTS.json",
-            "sha256": "abeea3b81366a5f4bb328cb0c28dffdec400897aa00e85420386eab2dc4b6c53",
-            "size_bytes": 2886,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.qa.settings.get",
+        "exit_status": 0
       },
-      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-121",
       "capability": "List RLS viewer assignments",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 RLS assignment read for retained dashboard48 returned disabled empty state; bounded and not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 RLS assignment read for retained dashboard48 returned disabled empty state; bounded and not Full. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: assignments, enabled, filter_column. RLS not enabled, no assignments Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListRlsAssignments",
       "method": "GET",
@@ -2421,25 +2396,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "dashboard48; assignments empty, enabled false",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-121",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json",
-            "sha256": "49c178949e2e79efb3ed9478a0a417845b38d44e2fc97bd2eb4e6fd2f89333ac",
-            "size_bytes": 3133,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.rls.assignment.list",
+        "exit_status": 0
       },
-      "evidence_version": null
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-122",
       "capability": "Candidate columns for the RLS filter",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 RLS column read for retained dashboard48 returned 9 display columns; bounded and not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 RLS column read for retained dashboard48 returned 9 display columns; bounded and not Full. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: columns. returned 4 columns Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetRlsColumns",
       "method": "GET",
@@ -2450,25 +2420,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "dashboard48; 9 display columns",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-122",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json",
-            "sha256": "49c178949e2e79efb3ed9478a0a417845b38d44e2fc97bd2eb4e6fd2f89333ac",
-            "size_bytes": 3133,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.rls.column.list",
+        "exit_status": 0
       },
-      "evidence_version": null
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-123",
       "capability": "Distinct values for an RLS filter column",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 RLS value read using observed display column Entity returned 205 values; bounded and not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 RLS value read using observed display column Entity returned 205 values; bounded and not Full. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: column, total, values. returned 269 distinct Entity values Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetRlsDistinctValues",
       "method": "GET",
@@ -2479,19 +2444,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "dashboard48; Entity column, 205 values",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-123",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json",
-            "sha256": "49c178949e2e79efb3ed9478a0a417845b38d44e2fc97bd2eb4e6fd2f89333ac",
-            "size_bytes": 3133,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.rls.value.list",
+        "exit_status": 0
       },
-      "evidence_version": null
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-124",
@@ -2531,7 +2491,7 @@
       "capability_id": "REL-126",
       "capability": "Motion-story video export state (never kicks a render)",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 video-state read for retained dashboard48 returned status none and stale false; bounded and not Full.",
+      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 video-state read for retained dashboard48 returned status none and stale false; bounded and not Full. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: stale, status. status none, stale false Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetVideoState",
       "method": "GET",
@@ -2542,19 +2502,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "dashboard48; status none, stale false",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-126",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/batch-e-dashboard-111/RESULTS-TRANSCRIPT.json",
-            "sha256": "49c178949e2e79efb3ed9478a0a417845b38d44e2fc97bd2eb4e6fd2f89333ac",
-            "size_bytes": 3133,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.video-state",
+        "exit_status": 0
       },
-      "evidence_version": null
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-127",
@@ -6043,8 +5998,8 @@
     {
       "capability_id": "REL-268",
       "capability": "Rename a tag",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: id, merged_into, name. renamed tag 13 (created by this run's dashboard.tags.set) successfully Single invocation only; no error-path or variant coverage. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "RenameDashboardTag",
       "method": "PATCH",
@@ -6054,8 +6009,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.rename_tag",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.tags.rename",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-269",
@@ -6078,7 +6040,7 @@
       "capability_id": "REL-270",
       "capability": "Rename a saved workspace template",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed skipped_out_of_scope: listed explicitly in hard rule 2 (out of scope) or requires a .pbix/.twb file that cannot be provided",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "RenameTemplate",
       "method": "PATCH",
@@ -6088,14 +6050,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.template_rename",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.template.rename",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-271",
       "capability": "Edit Dashboard",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: message. renamed D=52 successfully. NOTE: first attempt using RFC6902-style path '/title' failed with invalid_input_field_type; correct path is bare enum word 'title' (enum: intent,title,theme,pages,filters) despite command being described as 'Apply a JSON Patch' Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "EditDashboard",
       "method": "PATCH",
@@ -6105,8 +6074,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.update",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.update",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-272",
@@ -7048,8 +7024,8 @@
     {
       "capability_id": "REL-326",
       "capability": "Generate Dashboard",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Not supported",
+      "remarks": "Not supported on release: backend returns HTTP 409 4DASH012 DASHBOARD_LEGACY_CREATION_RETIRED (legacy dashboard creation retired). Use dashboard.create-blank or dashboard.v3.generate. Dashboard sweep 2026-09-18, CLI 2.0.12.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GenerateDashboard",
       "method": "POST",
@@ -7059,14 +7035,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.create",
+        "exit_status": 6
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-327",
       "capability": "Merge one tag into another",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: id, merged_into, name. merged self-created tag 13 into self-created tag 11 (population); no pre-existing tag touched Single invocation only; no error-path or variant coverage. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "MergeDashboardTags",
       "method": "POST",
@@ -7076,14 +7059,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.merge_tag",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.tags.merge",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-328",
       "capability": "Descriptor data for a published dashboard",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed blocked_missing_fixture: no publishable url: the only mechanism to publish a dashboard is 'dashboard share', which is out of scope per hard rules (rule 2). Confirmed via published.canvas/published.share-page that unpublished dashboards 404 on the /dashboards/url/<slug>/* endpoints.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DescriptorDataByUrl",
       "method": "POST",
@@ -7093,14 +7083,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.published_data",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.published.data",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-329",
       "capability": "Get published data from given SQL query",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed blocked_missing_fixture: no publishable url: the only mechanism to publish a dashboard is 'dashboard share', which is out of scope per hard rules (rule 2). Confirmed via published.canvas/published.share-page that unpublished dashboards 404 on the /dashboards/url/<slug>/* endpoints.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPublishDataFromSqlByUrl",
       "method": "POST",
@@ -7110,14 +7107,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.published_data_by_url",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.published-data-by-url",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-330",
       "capability": "Kick a published-dashboard PDF export",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed blocked_missing_fixture: no publishable url: the only mechanism to publish a dashboard is 'dashboard share', which is out of scope per hard rules (rule 2). Confirmed via published.canvas/published.share-page that unpublished dashboards 404 on the /dashboards/url/<slug>/* endpoints.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ExportPdfByUrl",
       "method": "POST",
@@ -7127,8 +7131,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.published_pdf_export",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.published.pdf.export",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-331",
@@ -7168,7 +7179,7 @@
       "capability_id": "REL-333",
       "capability": "Kick a motion-story video export (published view)",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed blocked_missing_fixture: no publishable url: the only mechanism to publish a dashboard is 'dashboard share', which is out of scope per hard rules (rule 2). Confirmed via published.canvas/published.share-page that unpublished dashboards 404 on the /dashboards/url/<slug>/* endpoints.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ExportVideoByUrl",
       "method": "POST",
@@ -7178,14 +7189,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.published_video_export",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.published.video.export",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-334",
       "capability": "Bulk widget data for a published dashboard",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed blocked_missing_fixture: no publishable url: the only mechanism to publish a dashboard is 'dashboard share', which is out of scope per hard rules (rule 2). Confirmed via published.canvas/published.share-page that unpublished dashboards 404 on the /dashboards/url/<slug>/* endpoints.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "BulkWidgetDataByUrl",
       "method": "POST",
@@ -7195,14 +7213,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.widget_data_by_url",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.widget-data-by-url",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-335",
       "capability": "Create an empty v3 dashboard",
-      "status": "Unassessed",
-      "remarks": "CLI 1.1.10 typed binding verified in clean cli-v1.1.10 command manifest; live behavior remains Unassessed pending safe fixture/evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: id, sequence. created dashboard D=52 from dataview 45 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateBlankDashboard",
       "method": "POST",
@@ -7212,14 +7237,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.create_blank",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": "1.1.10"
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.create-blank",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-336",
       "capability": "Create a context",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: context. created context id=1 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateContext",
       "method": "POST",
@@ -7229,14 +7261,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.context_create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.context.create",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-337",
       "capability": "Read a context file into slot suggestions",
-      "status": "Unassessed",
-      "remarks": "CLI 1.1.10 typed binding verified in clean cli-v1.1.10 command manifest; live behavior remains Unassessed pending safe fixture/evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: condensed, figureHeavy, file, rejected, shape, skipped, suggestions. extracted suggestions from raw text Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ExtractContext",
       "method": "POST",
@@ -7246,14 +7285,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.extract_context",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": "1.1.10"
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.context.extract",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-338",
       "capability": "Read an example report into an editable spec",
-      "status": "Unassessed",
-      "remarks": "CLI 1.1.10 typed binding verified in clean cli-v1.1.10 command manifest; live behavior remains Unassessed pending safe fixture/evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: brand, countable, measures, palette, rejected, scopes, source, spec. extracted measures/countable columns from dataview 45; rejected.reason=unreadable (no real doc content, expected for synthetic input) Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ExtractExemplar",
       "method": "POST",
@@ -7263,14 +7309,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.extract_exemplar",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": "1.1.10"
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.exemplar.extract",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-339",
       "capability": "Generate a v3 dashboard",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: bake_ok, canvas, data_job_id, id, message, sequence, tags, title, url. created dashboard id=53 via AI generation; not quota-gated; bake_ok=true Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GenerateDashboardV3",
       "method": "POST",
@@ -7280,14 +7333,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.v3_generate",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.v3.generate",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-340",
       "capability": "Turn an uploaded workbook into a dataset to build on",
       "status": "Unassessed",
-      "remarks": "CLI 1.1.10 typed binding verified in clean cli-v1.1.10 command manifest; live behavior remains Unassessed pending safe fixture/evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed skipped_out_of_scope: listed explicitly in hard rule 2 (out of scope) or requires a .pbix/.twb file that cannot be provided",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ImportWorkbookDataset",
       "method": "POST",
@@ -7297,14 +7357,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.import_workbook",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": "1.1.10"
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.import-workbook",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-341",
       "capability": "Read a Power BI file before importing it",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed skipped_out_of_scope: listed explicitly in hard rule 2 (out of scope) or requires a .pbix/.twb file that cannot be provided",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AssessPbix",
       "method": "POST",
@@ -7315,20 +7382,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.assess-pbix",
-        "exit_status": null
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-342",
       "capability": "Create a signature",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: signature. created signature id=1 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateSignature",
       "method": "POST",
@@ -7338,14 +7405,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.signature_create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.signature.create",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-343",
       "capability": "Create a custom style",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: style. created custom style id=1 with full unredacted colors/font/viz (no tokens field passed) Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateCustomStyle",
       "method": "POST",
@@ -7355,14 +7429,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.style_custom_create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.style.custom.create",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-344",
       "capability": "Derive a full Style bundle from signals",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed cli_error: HTTP 200 but the ENTIRE result payload is the literal string styleTokens='***REDACTED***' -- the CLI's own output redaction masks the one field this command exists to produce, making the command's result completely unusable despite a successful call. Systemic CLI over-redaction bug, same pattern seen in dashboard.canvas.get (style_tokens) and dashboard.style.custom.create's schema default.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeriveStyle",
       "method": "POST",
@@ -7372,14 +7453,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.style_derive",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.style.derive",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-345",
       "capability": "Kick a brand extraction from a URL",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: screenshot, signals. captured screenshot + extracted brand signals (accents/font/ground/primary), no redaction here Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ExtractBrand",
       "method": "POST",
@@ -7389,14 +7477,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.style_extract_brand",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.style.extract-brand",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-346",
       "capability": "Save a dashboard as a workspace template",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed skipped_out_of_scope: listed explicitly in hard rule 2 (out of scope) or requires a .pbix/.twb file that cannot be provided",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SaveTemplate",
       "method": "POST",
@@ -7406,8 +7501,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.template_create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.template.create",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-347",
@@ -7498,7 +7600,7 @@
       "capability_id": "REL-352",
       "capability": "Apply a template to a target dataset",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed skipped_out_of_scope: listed explicitly in hard rule 2 (out of scope) or requires a .pbix/.twb file that cannot be provided",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ApplyTemplate",
       "method": "POST",
@@ -7508,14 +7610,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.template_apply",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.template.apply",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-353",
       "capability": "Take the template this workspace signed up for",
-      "status": "Unassessed",
-      "remarks": "CLI 1.1.10 typed binding verified in clean cli-v1.1.10 command manifest; live behavior remains Unassessed pending safe fixture/evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: slug. slug null -- no pending template session for this project Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3TakePendingTemplate",
       "method": "POST",
@@ -7525,14 +7634,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.take_pending_template",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": "1.1.10"
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.templates.pending",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-354",
       "capability": "Preview a template mapping applied to a target dataset",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: canvas, fidelity, mapping, meta, plan, specs, target_fields. previewed D=52's canvas retargeted to dataview 47 (life expectancy dataset) Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "PreviewTemplate",
       "method": "POST",
@@ -7542,14 +7658,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.template_preview",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.template.preview",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-355",
       "capability": "Propose a template mapping onto a target dataset",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: fidelity, mapping, target_fields. resolved mapping from D=52's current dataview (46, GDP after swap-data) to target dataview 47 (life expectancy) Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ResolveTemplateMapping",
       "method": "POST",
@@ -7559,14 +7682,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.template_resolve_mapping",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.template.resolve-mapping",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-356",
       "capability": "Take a template on its own sample data",
       "status": "Unassessed",
-      "remarks": "CLI 1.1.10 typed binding verified in clean cli-v1.1.10 command manifest; live behavior remains Unassessed pending safe fixture/evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed skipped_out_of_scope: listed explicitly in hard rule 2 (out of scope) or requires a .pbix/.twb file that cannot be provided",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UseTemplate",
       "method": "POST",
@@ -7576,14 +7706,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.use_template",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": "1.1.10"
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.templates.use",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-357",
       "capability": "Read a Tableau workbook before importing it",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed skipped_out_of_scope: listed explicitly in hard rule 2 (out of scope) or requires a .pbix/.twb file that cannot be provided",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AssessTwb",
       "method": "POST",
@@ -7594,20 +7731,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.assess-twb",
-        "exit_status": null
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-358",
       "capability": "Duplicate a v3 dashboard",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: id. duplicated D=52 -> D2=54 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DuplicateDashboard",
       "method": "POST",
@@ -7617,14 +7754,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.duplicate",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.duplicate",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-359",
       "capability": "Re-point a v3 dashboard at a different dataset",
-      "status": "Unassessed",
-      "remarks": "CLI 1.1.10 typed binding verified in clean cli-v1.1.10 command manifest; live behavior remains Unassessed pending safe fixture/evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: bake_ok, fidelity, id, sequence. swapped D=52 from dataview 45 (population) to dataview 46 (GDP), both Terra OWID reference views with similar schema; fidelity: 1 mapped, 1 dropped, not blocked Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SwapDashboardData",
       "method": "POST",
@@ -7634,14 +7778,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.swap_data",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": "1.1.10"
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.swap-data",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-360",
       "capability": "Dashboard action",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed skipped_out_of_scope: listed explicitly in hard rule 2 (out of scope) or requires a .pbix/.twb file that cannot be provided",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardAction",
       "method": "POST",
@@ -7651,14 +7802,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.action",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.action",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-361",
       "capability": "Archive or unarchive a dashboard",
       "status": "Unassessed",
-      "remarks": "CLI 1.1.10 typed binding verified in clean cli-v1.1.10 command manifest; live behavior remains Unassessed pending safe fixture/evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed cli_error: Exit 7 'outcome_unknown', HTTP 200, CLI could not confirm the outcome and told the user 'Do not replay this operation'. VERIFIED via dashboard list immediately after: D2=54 archived=True -- the mutation actually succeeded. CLI incorrectly reported an unconfirmed/uncertain outcome for an operation that demonstrably completed successfully on a 200 response.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ArchiveDashboard",
       "method": "POST",
@@ -7668,14 +7826,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.archive",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": "1.1.10"
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.archive",
+        "exit_status": 7
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-362",
       "capability": "Cancel in-flight dashboard generation",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: message. returned 'Cancel requested' even though no generation was in flight Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CancelDashboardGeneration",
       "method": "POST",
@@ -7685,14 +7850,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.cancel_generation",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.cancel-generation",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-363",
       "capability": "Undo / redo / revert the canvas to a target version",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: bake_ok, canvas, history_index, sequence. restored to sequence 1, bake_ok=false, canvas returned Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "RestoreCanvas",
       "method": "POST",
@@ -7702,14 +7874,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.canvas_restore",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.canvas.restore",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-364",
       "capability": "One chat-edit turn",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: bake_ok, canvas, changed, layout_intent, message, options, sequence, version_before. AI chat edit applied display_title=Sweep Test; not AI-quota-gated Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ChatEdit",
       "method": "POST",
@@ -7719,14 +7898,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.chat_edit",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.chat.edit",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-365",
       "capability": "Descriptor data — future-request",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: completed, expected, results. endpoint works on v3 engine; returned structured per-id error (404 unknown descriptor id) for a fabricated descriptor id since no real descriptor id was discoverable via CLI reads Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DescriptorData",
       "method": "POST",
@@ -7736,8 +7922,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.descriptor_data",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.descriptor-data",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-366",
@@ -7777,7 +7970,7 @@
       "capability_id": "REL-368",
       "capability": "Resolve an AI-add figure from an intent",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed cli_error: Failed with generic 'ValidationError' exception_type, no HTTP status_code, no backend_code, no endpoint, no response_body, no hint -- misleading/uninformative error envelope for a request that exactly matches the documented input_schema. Root field(s) at fault are unknown.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "FigureIntent",
       "method": "POST",
@@ -7787,14 +7980,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.figure_intent",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.figure-intent",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-369",
       "capability": "Get draft data from given SQL query",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: required sql has no CLI flag.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed cli_error: HTTP 400 4GENR007 VALIDATION_ERROR: backend says 'params' field required, but the CLI schema's input_schema/runnable_example send {\"sql\": ...} at top level with no 'params' wrapper. Documented example does not run as printed.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDraftDataFromSql",
       "method": "POST",
@@ -7805,20 +8005,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.data.draft",
-        "exit_status": 2
+        "exit_status": 1
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-370",
       "capability": "Get published data from given SQL query",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: required sql has no CLI flag.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed cli_error: HTTP 400 4GENR007 VALIDATION_ERROR: same params-wrapper mismatch as dashboard.data.draft; documented example does not run as printed.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPublishDataFromSql",
       "method": "POST",
@@ -7829,20 +8029,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
         "command_id": "dashboard.data.published",
-        "exit_status": 2
+        "exit_status": 1
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-371",
       "capability": "Add pages structurally (no LLM turn)",
-      "status": "Unassessed",
-      "remarks": "CLI 1.1.10 typed binding verified in clean cli-v1.1.10 command manifest; live behavior remains Unassessed pending safe fixture/evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: added_page_ids, bake_job_id, message, sequence. added page p2 to D=52 after supplying --yes --confirm 52 (first attempt without confirmation correctly returned confirmation_required, exit 2) Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AddPages",
       "method": "POST",
@@ -7852,14 +8052,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.add_pages",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": "1.1.10"
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.pages.add",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-372",
       "capability": "Kick a draft-dashboard PDF export",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed blocked_missing_fixture: HTTP 400 4GENR001: backend requires params.data to be the full client-hydrated DashboardData map (data.pages) with pre-rendered widget results; server only stores query descriptors and cannot rebuild it server-side. This hydrated blob can only be produced by a browser that has actually rendered the dashboard, not obtainable via CLI reads. Missing field: data.pages (hydrated per-widget results).",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ExportPdf",
       "method": "POST",
@@ -7869,14 +8076,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.pdf_export",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.pdf.export",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-373",
       "capability": "Compose a new page from an intent",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: composed, message, page, preview. returned a proposed executive_overview page plan Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "PlanPage",
       "method": "POST",
@@ -7886,14 +8100,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.page_plan",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.page.plan",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-374",
       "capability": "Create a Q&A session",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: session. created qa session id=1 on D=52 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateSession",
       "method": "POST",
@@ -7903,14 +8124,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.qa_session_create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.qa.session.create",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-375",
       "capability": "One Q&A ask turn (async)",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: answer. AI answered with kpi block and narrative text; not quota-gated Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "Ask",
       "method": "POST",
@@ -7920,14 +8148,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.qa_ask",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.qa.ask",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-376",
       "capability": "Comment on a shared Q&A session",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: session. created comment id=1 on session 1 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3AddComment",
       "method": "POST",
@@ -7937,14 +8172,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.qa_comment_create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.qa.comment.create",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-377",
       "capability": "Fork a shared Q&A session into a private copy",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: session. forked session 1 -> new session id=2 with copied messages Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ForkSession",
       "method": "POST",
@@ -7954,14 +8196,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.qa_session_fork",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.qa.session.fork",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-378",
       "capability": "Rate an assistant answer (up/down; null clears)",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: session. recorded thumbs-up feedback on message id=2 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3QaFeedback",
       "method": "POST",
@@ -7971,14 +8220,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.qa_feedback",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.qa.feedback",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-379",
       "capability": "Editor ad-hoc descriptor query",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed cli_error: HTTP 400 4GENR001: the CLI's own documented runnable_example ({\"descriptor\": {}}) fails backend validation -- descriptor is a discriminated union on 'kind' (group/scalar/rate/detail/options/range) but the schema's input_schema only shows 'descriptor: object, additionalProperties true' with no discriminator guidance and the example is the empty object. Example does not run as printed; true descriptor shape is undocumented by 'schema get'.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AdhocQuery",
       "method": "POST",
@@ -7988,14 +8244,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.query",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.query",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-380",
       "capability": "Restore dashboard from trash",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: n/a. returned {} (success) but D2=54 was archived, not trashed -- verified via dashboard list that archived state was unchanged afterward (still archived=True). 'restore' is a no-op on a non-trashed dashboard rather than erroring. Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "RestoreDashboard",
       "method": "POST",
@@ -8005,14 +8268,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.restore",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.restore",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-381",
       "capability": "Share Dashboard",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed skipped_out_of_scope: listed explicitly in hard rule 2 (out of scope) or requires a .pbix/.twb file that cannot be provided",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ShareDashboard",
       "method": "POST",
@@ -8022,14 +8292,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.share",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.share",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-382",
       "capability": "Move dashboard to trash",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: n/a. trashed D2=54; confirmed via dashboard list -- 54 no longer appears in the active list Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "TrashDashboard",
       "method": "POST",
@@ -8039,14 +8316,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.trash",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.trash",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-383",
       "capability": "Kick a motion-story video export",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed validation_error: HTTP 400 4GENR001: 'publish the dashboard before exporting a video' -- clear, actionable message. Needs a published dashboard; investigating publish path next.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ExportVideo",
       "method": "POST",
@@ -8056,14 +8340,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.video_export",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.video.export",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-384",
       "capability": "Bulk widget data — future-request",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed blocked_missing_fixture: HTTP 409 4DASH004 DASHBOARD_WRONG_ENGINE: widget-data is a legacy-engine-only endpoint. All obtainable dashboards are v3 (dashboard.create, which makes legacy dashboards, is retired -- 4DASH012), so no legacy-engine dashboard fixture is obtainable to exercise this command. Missing field: a legacy-engine dashboard id.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "BulkWidgetData",
       "method": "POST",
@@ -8073,8 +8364,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.widget_data",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.widget-data",
+        "exit_status": 6
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-385",
@@ -10383,8 +10681,8 @@
     {
       "capability_id": "REL-507",
       "capability": "Update a context",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: context. renamed context 1 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdateContext",
       "method": "PUT",
@@ -10394,14 +10692,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.context_update",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.context.update",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-508",
       "capability": "Update a signature",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: signature. renamed signature 1 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdateSignature",
       "method": "PUT",
@@ -10411,14 +10716,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.signature_update",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.signature.update",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-509",
       "capability": "Update a custom style",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: style. renamed custom style 1 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdateCustomStyle",
       "method": "PUT",
@@ -10428,14 +10740,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.style_custom_update",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.style.custom.update",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-510",
       "capability": "Set the workspace default style id",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed skipped_out_of_scope: listed explicitly in hard rule 2 (out of scope) or requires a .pbix/.twb file that cannot be provided",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SetDefaultStyle",
       "method": "PUT",
@@ -10445,8 +10764,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.style_default_set",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.style.default.set",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-511",
@@ -10486,7 +10812,7 @@
       "capability_id": "REL-513",
       "capability": "Save the canvas (append a draft version)",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; dashboard sweep 2026-09-18 on release observed cli_error: HTTP 400 4GENR001: canvas-get returns style_tokens as literal string '***REDACTED***' (not a dict); round-tripping that value into canvas save is rejected by backend pydantic validation (CanvasV3.style_tokens must be dict). Confirmed root cause: stripping style_tokens from the payload before resubmission succeeds (200, bake_job_id returned). CLI/backend over-redacts a field that is required for the documented get->save round trip.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SaveCanvas",
       "method": "PUT",
@@ -10496,8 +10822,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.canvas_save",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.canvas.save",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-514",
@@ -10519,8 +10852,8 @@
     {
       "capability_id": "REL-515",
       "capability": "Rename a Q&A session (owner only)",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: session. renamed session 1 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "RenameSession",
       "method": "PUT",
@@ -10530,14 +10863,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.qa_session_rename",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.qa.session.rename",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-516",
       "capability": "Share/unshare a Q&A session (owner only)",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: session. set visibility=shared Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3SetVisibility",
       "method": "PUT",
@@ -10547,14 +10887,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.qa_session_set_visibility",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.qa.session.set-visibility",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-517",
       "capability": "Update this dashboard's Q&A settings (editors only)",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: allow_viewer_qa, can_manage, public_link. set allow_viewer_qa=true Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3SetQaSettings",
       "method": "PUT",
@@ -10564,14 +10911,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.qa_settings_set",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.qa.settings.set",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-518",
       "capability": "Replace RLS viewer assignments",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: message. set RLS assignment for own account restricted to Entity=India on D=52 Single invocation only; no error-path or variant coverage.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SetRlsAssignments",
       "method": "PUT",
@@ -10581,14 +10935,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.rls_assignment_set",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.rls.assignment.set",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-519",
       "capability": "Set a dashboard's tags",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified. Current checkout binding is committed structural mapping; release behavior remains unverified.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: tags. set tag sweep-tag-alpha on D=52 Single invocation only; no error-path or variant coverage. Current checkout binding is committed structural mapping; release behavior remains unverified.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SetDashboardTags",
       "method": "PUT",
@@ -10598,8 +10959,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.set_tags",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
+        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
+        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "command_id": "dashboard.tags.set",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.12"
     },
     {
       "capability_id": "REL-520",
