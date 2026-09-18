@@ -9,6 +9,14 @@ secret-bearing input. It retains `mammoth-io>=0.7.3,<0.8`, adds no API bindings
 or API request-execution path, and makes no capability-status or
 autonomous-workflow qualification claim.
 
+Published from deterministic local artifacts built from tag `cli-v2.0.5`
+(source commit `2a62d1c`). PyPI reports the uploaded local artifact hashes:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `6f20d4329d5e2f1d879fc9a3c2c394c840e63f6e1994a312e1308470a069539c` |
+| Source distribution | `f3b23b9c1efa68a096d8fd38484099af5293fed86c419e0d966d8169b7cddb95` |
+
 ## 2.0.4 / SDK 0.7.3
 
 Published from deterministic local artifacts built from tag `cli-v2.0.4`
