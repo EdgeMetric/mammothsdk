@@ -5,24 +5,31 @@ Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data 
 [![PyPI](https://img.shields.io/pypi/v/mammoth-io)](https://pypi.org/project/mammoth-io/)
 [![Python](https://img.shields.io/pypi/pyversions/mammoth-io)](https://pypi.org/project/mammoth-io/)
 
-> **Prefer the terminal?** This repository also ships **`mammoth-cli`**, a
-> command-line interface for people, scripts, and schema-driven agent runs.
-> Install the CLI without a preinstalled Python tool manager:
->
-> ```bash
-> curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
-> ```
->
-> See the full [mammoth-cli guide](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/README.md).
->
-> Copy-paste prompt for a shell-capable agent: Install the Mammoth CLI with
-> `curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash`.
-> The installer also installs the bundled agent skill. Verify it with
-> `mammoth skill list --output json --no-input`; locate it with `mammoth skill
-> path --output json --no-input`, read the installed `SKILL.md`, and use
-> `mammoth capability list` plus `mammoth schema get COMMAND_ID` before
-> operating. Resolve scope from reads, never put credentials in prompts or
-> command lines, and verify mutations before reporting success.
+**Prefer the terminal?** This repository also ships **`mammoth-cli`**, a
+command-line interface for people, scripts, and schema-driven agent runs.
+Install the CLI without a preinstalled Python tool manager:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
+```
+
+See the full [mammoth-cli guide](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/README.md).
+
+Copy-paste prompt for a shell-capable agent:
+
+```text
+Install the Mammoth CLI with:
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
+
+The installer also installs the bundled agent skill. Verify it with
+mammoth skill list --output json --no-input, locate it with
+mammoth skill path --output json --no-input, and read the installed SKILL.md
+before operating. Discover the installed command surface with
+mammoth capability list and mammoth schema get COMMAND_ID. Resolve the exact
+workspace, project, dataset, and view scope from read results. Never put
+credentials in prompts or command lines. Verify every mutation before
+reporting success.
+```
 
 ## Installation
 
