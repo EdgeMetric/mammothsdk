@@ -52,6 +52,12 @@ API bindings, and makes no capability-status or autonomous-workflow
 qualification claim. Fixed routes are marked "CLI defect fixed in 2.0.15" in
 the matrix until they are re-run live.
 
+Published from deterministic local artifacts built from tag `cli-v2.0.15`
+(source commit `c195446`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.15-py3-none-any.whl` sha256 `6ec05a2c42d713690d8cd2f31dc5ecb990771dda135d4318539c286f3e91a217`
+- `mammoth_cli-2.0.15.tar.gz` sha256 `aab8980167629dee27646e149227dbbfdb21a2c3bc1de680910493f62e6a8a57`
+
 SDK 0.7.7 (`sdk-v0.7.7`, source commit `8a975f3`): `mammoth_io-0.7.7-py3-none-any.whl` sha256
 `b02c0db9a83f2fa96839d499224a9f79590d6d124bea68f145093ca25d19f746`; `mammoth_io-0.7.7.tar.gz` sha256 `673460a5d1888d0c9ab9654ae98647d8d2dd3345631296ed3c1664413c93a23c`; digests verified against PyPI.
 
