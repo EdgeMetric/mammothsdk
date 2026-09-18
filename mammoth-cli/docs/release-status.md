@@ -40,6 +40,15 @@ Not supported, 3 rows "CLI defect fixed in 2.0.16" still awaiting a fixture
 API bindings, and makes no capability-status or autonomous-workflow
 qualification claim.
 
+Published from deterministic local artifacts built from tag `cli-v2.0.17`
+(source commit `be5da61`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.17-py3-none-any.whl` sha256 `9b7a2e0644d505965d98caaa81f594ddaa73ce1097dbf3d53bd61d3e996c7005`
+- `mammoth_cli-2.0.17.tar.gz` sha256 `15259b6fa2880b5d16c756ece93de322a50cacee6b65e2d5a1d5da48f0da04b8`
+
+SDK 0.7.9 (`sdk-v0.7.9`, source commit `e3cd46a`): `mammoth_io-0.7.9-py3-none-any.whl` sha256
+`e51008949e82685605493892a716bc9008924b8067caf63b38d90148136817e3`; `mammoth_io-0.7.9.tar.gz` sha256 `e8b63413dbe5320ff6f9a2040ab0b68eef87a04bd9c7f1c8fdf8e5dd8101285d`; digests verified against PyPI.
+
 ## 2.0.16 / SDK 0.7.8
 
 This release folds three 2026-09-18 runs on the published 2.0.15 build
