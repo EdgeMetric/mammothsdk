@@ -1,5 +1,25 @@
 # CLI release provenance
 
+## 2.0.8 / SDK 0.7.3
+
+This CLI-only safety change closes the P0 from the 2026-09-17 systemic scope
+audit. Thirty-nine `view` commands that change, export, or delete data
+(16 benign mutations, 16 external-effect exports, 6 destructive commands, and
+`view.exportable-config.apply`) previously accepted an omitted `DATASET_ID`
+and fell back to the project-wide browse-and-probe parent resolver before
+acting. They now fail closed with `missing_argument` (exit 2) and a
+`recovery_commands` entry naming the `view get` read that supplies the
+parent; `view.delete` fails with `resource_identity_required`. The
+seventeen read commands keep parent discovery. The `DATASET_ID` help text
+and generated reference say so for every affected command, and the bundled
+skill and agent guide state the rule. Typed `view transform` commands keep
+their existing SDK-side resolution when the parent is omitted; that path is
+reversible and is unchanged in this release. It retains
+`mammoth-io>=0.7.3,<0.8`, adds no API bindings, and makes no
+capability-status or autonomous-workflow qualification claim.
+
+Publication hashes are recorded after upload.
+
 ## 2.0.7 / SDK 0.7.3
 
 This CLI-only discovery-contract correction makes `schema get` and the

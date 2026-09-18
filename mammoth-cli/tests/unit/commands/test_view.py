@@ -559,6 +559,39 @@ def test_checkpoint_get_resolves_dataset_from_view_when_omitted(
     ]
 
 
+@pytest.mark.parametrize(
+    ("handler", "command_id", "extra_args"),
+    [
+        (view_cmd.view_trash, "view.trash", ["7"]),
+        (view_cmd.view_derivative_delete, "view.derivative.delete", ["7", "3"]),
+        (view_cmd.view_active_user_mark, "view.active-user.mark", ["7"]),
+    ],
+)
+def test_non_read_commands_refuse_parent_discovery(
+    fake_service: FakeMammothService, handler, command_id: str, extra_args: list[str]
+) -> None:
+    # Only reads may fall back to the project-wide browse-and-probe resolver.
+    # A mutation, export, or delete without the exact parent fails closed
+    # before the resolver or the SDK is called, and names the read to run.
+    fake_service.responses[_FIND_DATASET] = 9
+    with pytest.raises(CliError) as excinfo:
+        handler(_inv(command_id, project=180, extra_args=extra_args, yes=True))
+    error = excinfo.value
+    assert error.code == "missing_argument"
+    assert error.exit_status == 2
+    assert error.recovery_commands == ["mammoth view get 7 --project 180 --output json --no-input"]
+    assert fake_service.call_log == []
+
+
+def test_non_read_command_with_exact_parent_skips_discovery(
+    fake_service: FakeMammothService,
+) -> None:
+    view_cmd.view_trash(_inv("view.trash", project=180, extra_args=["7", "9"]))
+    assert fake_service.call_log == [
+        (_TRASH, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
+    ]
+
+
 def test_conditional_format_create_requires_rule(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         view_cmd.view_conditional_format_create(

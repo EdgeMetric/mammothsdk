@@ -852,10 +852,46 @@ def positionals_for(command_id: str, sdk_symbol: str | None) -> tuple[Positional
         signature derivation, else an empty tuple).
     """
     if command_id in POSITIONAL_OVERRIDES:
-        return POSITIONAL_OVERRIDES[command_id]
+        return _with_exact_parent_help(command_id, POSITIONAL_OVERRIDES[command_id])
     if not sdk_symbol:
         return ()
-    return derive_positionals(command_id, sdk_symbol)
+    return _with_exact_parent_help(command_id, derive_positionals(command_id, sdk_symbol))
+
+
+EXACT_PARENT_HELP = (
+    "Exact parent dataset ID. Required for this command: pass it here or as the "
+    "'dataset_id' input field; only read commands may omit it and discover the parent."
+)
+
+
+def _with_exact_parent_help(
+    command_id: str, specs: tuple[PositionalSpec, ...]
+) -> tuple[PositionalSpec, ...]:
+    """Tell the truth about an optional ``dataset_id`` on a non-read command.
+
+    The parse shape stays optional (the field may also arrive via ``--input``),
+    but the handler refuses project-wide parent discovery before a mutation,
+    export, or delete, so the help must say the parent is required there.
+    """
+    record = command_by_id(command_id)
+    if record is None or record.get("mutation_class", "read") == "read":
+        return specs
+    return tuple(
+        (
+            PositionalSpec(
+                name=spec.name,
+                type=spec.type,
+                required=spec.required,
+                help=EXACT_PARENT_HELP,
+                falls_back_to_field=spec.falls_back_to_field,
+                fills_sdk_param=spec.fills_sdk_param,
+                example_value=spec.example_value,
+            )
+            if spec.name == "dataset_id" and not spec.required and spec.falls_back_to_field
+            else spec
+        )
+        for spec in specs
+    )
 
 
 def _symbol_for(command_id: str) -> str | None:

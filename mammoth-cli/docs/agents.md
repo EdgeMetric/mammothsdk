@@ -52,6 +52,9 @@ argv, transcript, checkpoint, or a source file.
    production uses `app`; `release` is allowed only when explicitly intended.
    If it does not match, stop and select or create a separate correctly
    configured profile; do not diagnose or operate through the mismatched one.
+   Every `view` command that changes, exports, or deletes data requires the
+   exact parent `DATASET_ID`; only reads may omit it. Read it with
+   `mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input`.
 2. **Discover the local contract.** Only after doctor succeeds, use `mammoth schema find
    QUERY` to locate a command and `mammoth schema get COMMAND_ID` before
    composing a request. `mammoth schema list` is the full CLI inventory.

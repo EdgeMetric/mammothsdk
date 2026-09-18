@@ -164,7 +164,39 @@ def _resolve_dataset_id(
     field = document.get(_DATASET_ID_FIELD)
     if field is not None:
         return int(field)
+    _require_discovery_allowed(invocation, view_id)
     return int(service.call(_FIND_DATASET_SYMBOL, dataview_id=view_id))
+
+
+def _require_discovery_allowed(invocation: Invocation, view_id: int) -> None:
+    """Refuse project-wide parent discovery before anything but a read.
+
+    Omitting the parent sends the resolver on a browse-and-probe walk over
+    every dataset in the project. For a read that is a convenience; before a
+    mutation, an export, or a delete it means the target is chosen by a
+    probe whose first denied dataset can end the search on the wrong parent.
+    Those commands therefore require the exact parent, and fail closed here
+    with the read that supplies it.
+    """
+    record = command_by_id(invocation.command_id) or {}
+    if record.get("mutation_class", "read") == "read":
+        return
+    project = f" --project {invocation.project}" if invocation.project else ""
+    lookup = f"mammoth view get {view_id}{project} --output json --no-input"
+    raise CliError(
+        code=CODE_MISSING_ARGUMENT,
+        message=(
+            "This command changes or exports data, so it requires the exact parent "
+            "DATASET_ID; project-wide parent discovery is only performed for reads."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            "Read the parent first, then pass it as the trailing DATASET_ID positional "
+            "or the 'dataset_id' input field: " + lookup
+        ),
+        details={"view_id": view_id, "mutation_class": record.get("mutation_class")},
+        recovery_commands=[lookup],
+    )
 
 
 def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> dict[str, Any]:

@@ -301,18 +301,16 @@ def view_get(invocation: Invocation) -> HandlerResult:
 def view_delete(invocation: Invocation) -> HandlerResult:
     """Permanently delete one view by id. Prompt or ``--yes`` required.
 
-    ``dataset_id`` may be supplied as the trailing positional, in structured
-    input, or by a typed resource reference.  When present it is forwarded to
-    the SDK so deletion uses exactly that parent endpoint and never performs a
-    workspace-wide parent probe.
+    ``dataset_id`` is required: the trailing positional, the structured input
+    field, or a typed resource reference must name the exact parent. It is
+    forwarded to the SDK so deletion uses exactly that parent endpoint and
+    never performs a project-wide parent probe before a destructive call.
     """
     view_id = _view_id(invocation)
     enforce_confirmation(invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete view {view_id}")
     document = invocation.load_input() or {}
-    dataset_id = _resolve_exact_dataset_id(invocation, view_id, document)
-    context: dict[str, Any] = {"view_id": view_id}
-    if dataset_id is not None:
-        context["dataset_id"] = dataset_id
+    dataset_id = _resolve_exact_dataset_id(invocation, view_id, document, required=True)
+    context: dict[str, Any] = {"view_id": view_id, "dataset_id": dataset_id}
     kwargs = bind_command_inputs(invocation.command_id, document, **context)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)

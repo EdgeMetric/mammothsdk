@@ -64,7 +64,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.mark_active
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.mark_active with validated request fields.
@@ -272,7 +273,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.create
   sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.create with validated request fields.
@@ -325,7 +327,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.delete
   sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.delete with validated request fields.
@@ -475,7 +478,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.checkpoints.CheckpointsAPI.update
   sdk_conversion: Call mammoth.api.checkpoints.CheckpointsAPI.update with validated request fields.
@@ -522,7 +526,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_create
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_create with validated request
@@ -571,7 +576,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_delete
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_delete with validated request
@@ -665,7 +671,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_update
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_update with validated request
@@ -753,7 +760,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.data_checks.DataChecksAPI.create
   sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.create with validated request fields.
@@ -807,7 +815,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.data_checks.DataChecksAPI.delete
   sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.delete with validated request fields.
@@ -957,7 +966,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.data_checks.DataChecksAPI.update
   sdk_conversion: Call mammoth.api.data_checks.DataChecksAPI.update with validated request fields.
@@ -1097,7 +1107,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; or pass it via the 'dataset_id' input field.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.client.ViewsResource.delete
   sdk_conversion: Call mammoth.client.ViewsResource.delete with validated request fields.
@@ -1144,7 +1155,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.derivatives.DerivativesAPI.create
   sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.create with validated request fields.
@@ -1198,7 +1210,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.derivatives.DerivativesAPI.data
   sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.data with validated request fields.
@@ -1251,7 +1264,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.derivatives.DerivativesAPI.delete
   sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.delete with validated request fields.
@@ -1349,7 +1363,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.derivatives.DerivativesAPI.update
   sdk_conversion: Call mammoth.api.derivatives.DerivativesAPI.update with validated request fields.
@@ -1637,7 +1652,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_azure_blob
   sdk_conversion: Call mammoth.view.ViewExport.to_azure_blob with validated request fields.
@@ -1683,7 +1699,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_bigquery
   sdk_conversion: Call mammoth.view.ViewExport.to_bigquery with validated request fields.
@@ -1813,7 +1830,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_dataset
   sdk_conversion: Call mammoth.view.ViewExport.to_dataset with validated request fields.
@@ -1906,7 +1924,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_elasticsearch
   sdk_conversion: Call mammoth.view.ViewExport.to_elasticsearch with validated request fields.
@@ -1952,7 +1971,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_email
   sdk_conversion: Call mammoth.view.ViewExport.to_email with validated request fields.
@@ -1999,7 +2019,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_ftp
   sdk_conversion: Call mammoth.view.ViewExport.to_ftp with validated request fields.
@@ -2137,7 +2158,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_s3
   sdk_conversion: Call mammoth.view.ViewExport.to_s3 with validated request fields.
@@ -2184,7 +2206,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_mssql
   sdk_conversion: Call mammoth.view.ViewExport.to_mssql with validated request fields.
@@ -2230,7 +2253,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_mysql
   sdk_conversion: Call mammoth.view.ViewExport.to_mysql with validated request fields.
@@ -2276,7 +2300,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_onedrive
   sdk_conversion: Call mammoth.view.ViewExport.to_onedrive with validated request fields.
@@ -2322,7 +2347,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_postgres
   sdk_conversion: Call mammoth.view.ViewExport.to_postgres with validated request fields.
@@ -2368,7 +2394,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_powerbi
   sdk_conversion: Call mammoth.view.ViewExport.to_powerbi with validated request fields.
@@ -2497,7 +2524,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_redshift
   sdk_conversion: Call mammoth.view.ViewExport.to_redshift with validated request fields.
@@ -2543,7 +2571,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_rest_api
   sdk_conversion: Call mammoth.view.ViewExport.to_rest_api with validated request fields.
@@ -2591,7 +2620,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_sftp
   sdk_conversion: Call mammoth.view.ViewExport.to_sftp with validated request fields.
@@ -2640,7 +2670,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_sharepoint
   sdk_conversion: Call mammoth.view.ViewExport.to_sharepoint with validated request fields.
@@ -2686,7 +2717,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the parent dataset; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.view.ViewExport.to_tableau
   sdk_conversion: Call mammoth.view.ViewExport.to_tableau with validated request fields.
@@ -2779,7 +2811,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: Optional parent dataset ID; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.apply_exportable_config
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.apply_exportable_config with validated request
@@ -3299,7 +3332,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.restore
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.restore with validated request fields.
@@ -4850,7 +4884,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.trash
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.trash with validated request fields.
@@ -4896,7 +4931,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.dataviews.DataviewsAPI.update
   sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.update with validated request fields.
@@ -4949,7 +4985,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.apply
   sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.apply with validated request
@@ -5002,7 +5039,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.delete
   sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.delete with validated request
@@ -5153,7 +5191,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: dataset_id
-    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
   options: []
   sdk_symbol: mammoth.api.pipeline_versions.PipelineVersionsAPI.update
   sdk_conversion: Call mammoth.api.pipeline_versions.PipelineVersionsAPI.update with validated request

@@ -69,9 +69,13 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
     assert fake_service.call_log == []
 
 
-def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7"], yes=True))
-    assert fake_service.call_log == [(_DELETE, {"view_id": 7})]
+def test_delete_refuses_parent_discovery(fake_service: FakeMammothService) -> None:
+    # A destructive call never falls back to the project-wide parent probe:
+    # with no exact parent it fails closed before any SDK call.
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7"], yes=True))
+    assert excinfo.value.code == "resource_identity_required"
+    assert fake_service.call_log == []
 
 
 def test_delete_forwards_exact_parent_positional(fake_service: FakeMammothService) -> None:

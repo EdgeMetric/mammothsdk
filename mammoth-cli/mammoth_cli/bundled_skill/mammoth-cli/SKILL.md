@@ -39,7 +39,10 @@ the result.
 ## Working rules
 
 - Resolve workspace/project/dataset/view parents from reads; pass observed IDs
-  and `--project`. A dataset does not select a default view.
+  and `--project`. A dataset does not select a default view. Every `view`
+  command that changes, exports, or deletes data requires the exact parent
+  `DATASET_ID` (trailing positional or `dataset_id` input field); only reads
+  may omit it and discover the parent. Get it from `mammoth view get VIEW_ID`.
 - Use exact view-schema **display names** in expressions and column inputs,
   never backend aliases.
 - Inspect the result after a mutation. A timeout, exit 7, or interruption does

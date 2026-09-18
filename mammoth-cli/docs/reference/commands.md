@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.7.
+Generated from the reviewed command manifests for mammoth-cli 2.0.8.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -3873,7 +3873,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -3929,7 +3929,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -3942,7 +3942,7 @@ Total commands: 547.
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
 - `CHECKPOINT_ID` (int, required) — ID of the checkpoint.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
@@ -3980,7 +3980,7 @@ Total commands: 547.
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
 - `CHECKPOINT_ID` (int, required) — ID of the checkpoint.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -3992,7 +3992,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4004,7 +4004,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
@@ -4028,7 +4028,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4075,7 +4075,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4088,7 +4088,7 @@ Total commands: 547.
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
 - `DATA_CHECK_ID` (int, required) — ID of the data check.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
@@ -4126,7 +4126,7 @@ Total commands: 547.
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
 - `DATA_CHECK_ID` (int, required) — ID of the data check.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4138,7 +4138,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; or pass it via the 'dataset_id' input field.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
@@ -4150,7 +4150,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4163,7 +4163,7 @@ Total commands: 547.
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
 - `DERIVATIVE_ID` (int, required) — ID of the derivative.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4176,7 +4176,7 @@ Total commands: 547.
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
 - `DERIVATIVE_ID` (int, required) — ID of the derivative.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
@@ -4201,7 +4201,7 @@ Total commands: 547.
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
 - `DERIVATIVE_ID` (int, required) — ID of the derivative.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4279,7 +4279,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4291,7 +4291,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4325,7 +4325,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -4349,7 +4349,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4361,7 +4361,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4373,7 +4373,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4409,7 +4409,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4421,7 +4421,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4433,7 +4433,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4445,7 +4445,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4457,7 +4457,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4469,7 +4469,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4503,7 +4503,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4515,7 +4515,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4527,7 +4527,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4539,7 +4539,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4551,7 +4551,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to export.
-- `DATASET_ID` (int, optional) — ID of the parent dataset; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
@@ -4575,7 +4575,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the dataview.
-- `DATASET_ID` (int, optional) — Optional parent dataset ID; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `reversible_pipeline`
 - Confirmation: `confirm_target`
@@ -4713,7 +4713,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -5151,7 +5151,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -5163,7 +5163,7 @@ Total commands: 547.
 **Arguments**
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -5181,7 +5181,7 @@ Total commands: 547.
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
 - `VERSION_ID` (int, required) — ID of the pipeline version.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
@@ -5194,7 +5194,7 @@ Total commands: 547.
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
 - `VERSION_ID` (int, required) — ID of the pipeline version.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
@@ -5232,7 +5232,7 @@ Total commands: 547.
 
 - `VIEW_ID` (int, required) — ID of the view to act on.
 - `VERSION_ID` (int, required) — ID of the pipeline version.
-- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
