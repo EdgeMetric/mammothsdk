@@ -13,7 +13,16 @@ Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Build data 
 > curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
 > ```
 >
-> See the full [mammoth-cli guide](mammoth-cli/README.md).
+> See the full [mammoth-cli guide](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/README.md).
+>
+> Copy-paste prompt for a shell-capable agent: Install the Mammoth CLI with
+> `curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash`.
+> The installer also installs the bundled agent skill. Verify it with
+> `mammoth skill list --output json --no-input`; locate it with `mammoth skill
+> path --output json --no-input`, read the installed `SKILL.md`, and use
+> `mammoth capability list` plus `mammoth schema get COMMAND_ID` before
+> operating. Resolve scope from reads, never put credentials in prompts or
+> command lines, and verify mutations before reporting success.
 
 ## Installation
 
@@ -771,7 +780,7 @@ mammoth project list             # a table in a terminal, JSON when piped
 For promptless work, log in from a protected JSON file with `mammoth auth login
 --input creds.json --output json --no-input`; do not put secrets on a command
 line. The installer also installs the bundled agent skill. Start with the
-[CLI README](mammoth-cli/README.md), which indexes the agent guide, portable
+[CLI README](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/README.md), which indexes the agent guide, portable
 handoff format, commands, and capability matrix.
 
 The CLI's examples are deliberately nonexhaustive. Use `mammoth capability list`
