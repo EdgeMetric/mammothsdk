@@ -72,6 +72,11 @@ present and its endpoint matches, verify the live connection:
 mammoth doctor --profile PROFILE --output json --no-input
 ```
 
+`doctor` also lists the projects the credential can see (`projects` check)
+and verifies that `--project` or the selected project is one of them
+(`project_context` check). Pick the project id from that list; the API does
+not expose write permission, so the first write is what proves it.
+
 Do not continue to schema discovery or business operations after an
 authentication or doctor failure. The `app` server prefix is the production
 default; release or other environment credentials do not imply authorization

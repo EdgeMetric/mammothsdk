@@ -111,6 +111,16 @@ def _safe_connection_diagnostics(error: CliError, *, debug: bool) -> dict[str, A
     return result
 
 
+_PROJECT_LIMIT = 20
+
+
+def _visible_projects(service: Any) -> list[dict[str, Any]]:
+    """Return the projects this credential can list, or an empty list."""
+    response = service.list_projects(limit=_PROJECT_LIMIT + 1)
+    projects = response.get("projects", []) if isinstance(response, dict) else []
+    return [p for p in projects if isinstance(p, dict)]
+
+
 def doctor(invocation: Invocation) -> HandlerResult:
     """Run environment and connectivity diagnostics.
 
@@ -168,10 +178,12 @@ def doctor(invocation: Invocation) -> HandlerResult:
 
     connection_ok = False
     connection_detail = "not attempted"
+    projects: list[dict[str, Any]] | None = None
     if auth_ok:
         try:
             with open_service(invocation) as (service, _auth):
                 service.check_connection()
+                projects = _visible_projects(service)
             connection_ok = True
             connection_detail = "authenticated request succeeded"
         except CliError as error:
@@ -185,11 +197,56 @@ def doctor(invocation: Invocation) -> HandlerResult:
     if not auth_ok:
         checks.append(_check("connection", connection_ok, connection_detail))
 
+    # Authentication proves an identity, not a place to work. Report the
+    # projects this credential can see and whether the selected project is
+    # one of them. The API exposes no role or permission data, so write
+    # access is claimed by nobody here: the first write reports it.
+    selected_project = resolved_project(invocation)
+    if projects is not None:
+        visible_ids = [p.get("id") for p in projects]
+        checks.append(
+            {
+                **_check(
+                    "projects",
+                    bool(projects),
+                    (
+                        f"{len(projects)} project(s) visible in workspace"
+                        if projects
+                        else "no projects visible to this credential in the workspace"
+                    ),
+                ),
+                "projects": [
+                    {"id": p.get("id"), "name": p.get("name")} for p in projects[:_PROJECT_LIMIT]
+                ],
+                "truncated": len(projects) > _PROJECT_LIMIT,
+            }
+        )
+        if selected_project is None:
+            # Not a failure: every command accepts --project explicitly. It is
+            # reported so an agent knows it still has to choose one.
+            project_ok = True
+            project_detail = "no project selected; pass --project per command or set one"
+        elif selected_project in visible_ids:
+            project_ok, project_detail = True, f"project {selected_project} is visible"
+        else:
+            project_ok = False
+            project_detail = f"project {selected_project} is not among the visible projects"
+        checks.append(
+            {
+                **_check("project_context", project_ok, project_detail),
+                "project_id": selected_project,
+                "write_access": "not verifiable from the API; the first write reports it",
+            }
+        )
+
     recommendations: list[str] = []
     if record is None or not credentials.has_credentials(profile_name):
         login_profile = f" --profile {shlex.quote(profile_name)}" if profile_name else ""
         recommendations.append(f"mammoth auth login{login_profile}")
-    elif resolved_project(invocation) is None:
+    elif selected_project is None or (
+        projects is not None and selected_project not in [p.get("id") for p in projects]
+    ):
+        recommendations.append("mammoth project list --output json --no-input")
         recommendations.append("mammoth context project use PROJECT_ID")
     if not connection_ok and auth_ok and not invocation.debug:
         debug_profile = f" --profile {shlex.quote(profile_name)}" if profile_name else ""

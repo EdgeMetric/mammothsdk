@@ -13,6 +13,7 @@ from mammoth_cli.context import credentials, profiles
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.mapping import map_sdk_exception
+from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
 
@@ -158,3 +159,42 @@ def test_completion_install_writes_snippet_idempotently(
     second, _ = completion_cmd.completion_install(_inv("completion.install", extra_args=["bash"]))
     assert second["added"] is False
     assert Path(second["path"]).read_text(encoding="utf-8").count("_MAMMOTH_COMPLETE") == 1
+
+
+def test_doctor_reports_visible_projects_and_selected_project(
+    isolated_cli_config: Path, fake_service: FakeMammothService
+) -> None:
+    # Authentication proves an identity, not a place to work: doctor lists
+    # the projects the credential can see and checks the selected one is
+    # among them. It never claims write access, which the API cannot expose.
+    login_default_profile()
+    fake_service.projects = [{"id": 3, "name": "API Tests_project"}, {"id": 8, "name": "Other"}]
+
+    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    checks = {c["name"]: c for c in data["checks"]}
+    assert checks["projects"]["ok"] is True
+    assert checks["projects"]["projects"] == [
+        {"id": 3, "name": "API Tests_project"},
+        {"id": 8, "name": "Other"},
+    ]
+    assert checks["project_context"]["ok"] is True  # none selected is not a failure
+    assert "no project selected" in checks["project_context"]["detail"]
+    assert "not verifiable" in checks["project_context"]["write_access"]
+    assert "mammoth context project use PROJECT_ID" in data["recommendations"]
+
+    data, _meta = doctor_cmd.doctor(_inv("doctor", project=3))
+    checks = {c["name"]: c for c in data["checks"]}
+    assert checks["project_context"] == {
+        "name": "project_context",
+        "ok": True,
+        "detail": "project 3 is visible",
+        "project_id": 3,
+        "write_access": "not verifiable from the API; the first write reports it",
+    }
+    assert data["ok"] is True
+
+    data, _meta = doctor_cmd.doctor(_inv("doctor", project=99))
+    checks = {c["name"]: c for c in data["checks"]}
+    assert checks["project_context"]["ok"] is False
+    assert data["ok"] is False
+    assert "mammoth project list --output json --no-input" in data["recommendations"]

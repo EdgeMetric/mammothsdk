@@ -1,5 +1,21 @@
 # CLI release provenance
 
+## 2.0.11 / SDK 0.7.3
+
+This CLI-only diagnostics addition makes `doctor` answer "where can this
+credential work", not only "does it authenticate". After the connection
+check it reports a `projects` check listing the projects visible in the
+workspace (id and name, first 20) and a `project_context` check stating
+whether `--project` or the selected project is among them; a selected
+project outside that list fails the run and recommends `project list`. No
+selected project is reported but is not a failure, because every command
+accepts `--project`. The API exposes no role or permission data, so the
+check states that write access is not verifiable and is proven by the
+first write. It retains `mammoth-io>=0.7.3,<0.8`, adds no API bindings, and
+makes no capability-status or autonomous-workflow qualification claim.
+
+Publication hashes are recorded after upload.
+
 ## 2.0.10 / SDK 0.7.3
 
 This CLI-only interactive-login correction responds to a field report that
