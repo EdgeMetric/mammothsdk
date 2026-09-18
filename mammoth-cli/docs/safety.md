@@ -75,7 +75,7 @@ when available, but does not prove that a remote operation was cancelled.
 Classify resources before creating or deleting them:
 
 - **Temporary:** disposable scratch resources; delete only after readback and explicit cleanup authorization.
-- **Intermediate:** child views, batches, tasks, or jobs needed to verify a result; retain until dependents are verified, then clean children before parents when authorized.
+- **Intermediate:** child views, batches, tasks, or jobs that verify a result. Retain them until dependents are verified; then, when authorized, clean children before parents.
 - **Retained deliverable:** the dataset, view, dashboard, or export artifact requested by the user; preserve it for handoff.
 - **Protected:** pre-existing, shared, production, or baseline resources; never delete without authorization naming the exact target.
 

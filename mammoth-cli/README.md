@@ -46,12 +46,11 @@ installation path.
 
 ## First run: authenticate, check, then discover
 
-Authentication is the first operational step. In an evaluated or isolated run
-with a controller-provided credential broker/sidecar, use that broker's
-readiness check; do not inspect saved profiles, run login, or run doctor, and
-stop if the broker is absent. In an ordinary shell, check the selected profile;
+Authentication is the first operational step. Check the selected profile;
 this is a local presence check, not a live access test. If the profile or
-stored credentials are absent, log in before running `doctor` or any data command:
+stored credentials are absent, log in before running `doctor` or any data
+command. An agent does this by asking the operator to run the login below in
+their own terminal; the CLI never reads credentials from environment variables:
 
 ```bash
 mammoth skill list --output json --no-input
@@ -80,9 +79,8 @@ mammoth auth login --input /private/path/credentials.json --storage file \
   --output json --no-input
 ```
 
-On Windows, use the approved OS keyring or credential broker instead; do not
-use a file fallback unless its ACL hardening is approved, and stop if neither
-is available.
+On Windows, use the approved OS keyring instead; do not use a file fallback
+unless its ACL hardening is approved, and stop if it is not available.
 
 The default server prefix is `app`; pass `--server-prefix release` only when
 the release endpoint is explicitly intended. Compare the endpoint reported by

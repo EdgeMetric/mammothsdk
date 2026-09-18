@@ -42,10 +42,9 @@ For CI or an agent on POSIX, use a private owner-only (0600) credentials file
 outside the repository with `mammoth auth login --input
 /private/path/credentials.json --storage file --output json --no-input`; see
 [authentication](authentication.md). Do not put secrets in chat, prompts, or
-arguments. On Windows, use an approved OS keyring or credential broker instead.
-In an evaluated or isolated run with a controller-provided credential
-broker/sidecar, use only the controller-owned readiness check: do not inspect a
-profile, log in, or run doctor, and stop if the broker is absent.
+arguments. On Windows, use an approved OS keyring instead. An agent that finds
+no credentials asks the operator to run the hidden-prompt login in their own
+terminal; the CLI does not read credentials from environment variables.
 
 ## 2. Create and record a disposable resource
 

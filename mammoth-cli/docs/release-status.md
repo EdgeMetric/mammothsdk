@@ -1,5 +1,22 @@
 # CLI release provenance
 
+## 2.0.6 / SDK 0.7.3
+
+This CLI-only bundled-skill and documentation correction closes the agent
+credential hand-off gap. A fresh agent given the onboarding prompt found no
+sanctioned way to obtain credentials from its operator, so it invented one
+("environment credentials", which the CLI never reads). The skill, the
+`agents`/`authentication`/`quickstart` guides, and the copy-paste onboarding
+prompt now instruct an agent to stop, hand the operator the exact
+hidden-prompt `mammoth auth login` command to run in their own terminal, and
+wait; they state that the CLI reads credentials only from the current login or
+the selected profile store. The evaluation-harness "controller broker/sidecar"
+instructions are removed from the shipped skill and public docs. It retains
+`mammoth-io>=0.7.3,<0.8`, adds no API bindings or request-execution path, and
+makes no capability-status or autonomous-workflow qualification claim.
+
+Publication hashes are recorded after upload.
+
 ## 2.0.5 / SDK 0.7.3
 
 This CLI-only documentation and bundled-skill correction makes the secure

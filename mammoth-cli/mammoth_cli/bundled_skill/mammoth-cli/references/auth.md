@@ -7,6 +7,32 @@ prefix (default `app`, resolving to `https://app.mammoth.io/api/v2`).
 1. Explicit login handed to the current command (secure prompt or `--input`).
 2. The selected or `--profile` profile's saved credentials.
 
+There is no third source. The CLI and SDK do not read credentials from
+environment variables, and an agent must not search the environment, shell
+history, or unrelated files for them.
+
+## How an agent obtains credentials
+
+An agent never receives the key or secret. When `auth status` reports a
+missing profile or `has_credentials=false`, stop and hand the login to the
+human operator:
+
+1. Tell the operator the exact command to run in **their own** terminal, with
+   the profile name and the intended server prefix:
+
+   ```bash
+   mammoth auth login --profile PROFILE --server-prefix app
+   ```
+
+   The command prompts for the key and secret with hidden input, then the
+   workspace id, so no secret enters chat, argv, or history.
+2. Wait for the operator to confirm, then re-run
+   `mammoth auth status --profile PROFILE --output json --no-input` and
+   `mammoth doctor --profile PROFILE --output json --no-input`.
+3. Do not ask the operator to paste the key or secret into chat. Do not run
+   `auth login` yourself, with or without `--input`, unless the operator has
+   explicitly given you a protected `0600` credential file path to use.
+
 The only supported configuration is the API key, API secret, workspace id, and
 an optional one-label server prefix (default `app`). There is no base-url
 override.
@@ -48,11 +74,6 @@ default; release or other environment credentials do not imply authorization
 for `app`, and a release profile is not appropriate unless the task explicitly
 targets release.
 
-For an evaluated or isolated agent, do not run these profile commands: use the
-controller-provided credential broker/sidecar check instead. Never mount or
-read a saved profile. If no broker is provided, stop before authenticated
-actions.
-
 ## Commands
 ```bash
 mammoth auth login --profile PROFILE --server-prefix app  # hidden prompts
@@ -73,8 +94,8 @@ logs. For headless POSIX work, create the JSON file outside the repository, set
 its permissions to `0600`, and pass only its path. With a protected POSIX file,
 specify `--storage file` explicitly; `--storage auto` can require an available
 OS keyring and is not a reliable headless fallback. On Windows, do not use the
-file backend as a secret store; use the OS keyring, a controller broker, or
-stop and obtain a supported secure store. Remove any input file after the
+file backend as a secret store; use the OS keyring or stop and obtain a
+supported secure store. Remove any input file after the
 profile is stored.
 
 `creds.json` is a `0600` JSON file: `{"api_key": "...", "api_secret": "...",
@@ -84,8 +105,3 @@ also pipe it with `--input - --input-format json`.
 Secrets live in the OS keyring (or an explicitly selected `0600` file
 fallback). They are never printed, logged, or included in any envelope. Never
 pass a secret as a plain argument; use the hidden prompt or `--input`.
-
-For evaluated or isolated agents, authentication remains controller-owned: use
-the provided credential broker/sidecar instead of `auth login` and never mount
-or read a saved profile. If no broker is provided, stop before authenticated
-actions and report the precondition failure.

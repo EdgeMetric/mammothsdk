@@ -5,12 +5,6 @@ task and has no repository or prior chat context. The user supplies the intent,
 authorized scope, and (when needed) a protected profile. Never put credentials
 or secrets in an argument, prompt, transcript, or checkpoint.
 
-For an evaluated or isolated agent, follow the controller-provided credential
-broker/sidecar instead of using a saved profile. Never mount or read the saved
-profile in that shell. If the broker/sidecar is not provided, stop before any
-authenticated action. The profile workflow below remains for ordinary,
-non-evaluated operator use.
-
 1. Check whether `mammoth` is available. If it is absent, install the CLI and
    bundled skill with the supported host installer:
 
@@ -27,12 +21,8 @@ non-evaluated operator use.
    install is required for the agent host, run `mammoth skill install
    --output json --no-input` and verify ownership with `mammoth skill list
    --output json --no-input`.
-3. Establish authentication before any remote read or write. In an evaluated
-   or isolated run, do not inspect a saved profile and do not run `auth login`:
-   use the controller-provided credential broker/sidecar check. If it is not
-   provided, stop before authenticated actions. The remaining instructions in
-   this step are for ordinary operator runs only. Determine the intended
-   environment from the task first: production defaults to the `app` endpoint;
+3. Establish authentication before any remote read or write. Determine the
+   intended environment from the task first: production defaults to the `app` endpoint;
    use `release` only when the task explicitly names release. Then inspect the
    selected profile without attempting business work:
 
@@ -42,10 +32,13 @@ non-evaluated operator use.
 
    Compare the status response's `endpoint` with the intended environment. If
    the profile or credentials are missing, or the endpoint is for another
-   environment, stop and follow [authentication](auth.md) to select or log in
-   to the explicitly intended profile. Never silently reuse or rewrite a
-   mismatched profile, invent a profile, put credentials in chat, or put
-   secrets in argv. After login (or when an existing, matching profile is
+   environment, stop and follow [authentication](auth.md): tell the operator
+   the exact `mammoth auth login --profile PROFILE --server-prefix app`
+   command to run in their own terminal, wait for them, then re-check status.
+   The CLI does not read credentials from environment variables; do not look
+   for them there. Never silently reuse or rewrite a mismatched profile,
+   invent a profile, ask for credentials in chat, or put secrets in argv.
+   After the operator has logged in (or when an existing, matching profile is
    present), run the connectivity and configuration check and require success:
 
    ```bash
@@ -53,9 +46,7 @@ non-evaluated operator use.
    ```
 
    Do not print, echo, or copy secret-bearing inputs. A failed status, login,
-   or doctor check stops the task before discovery and business commands. A
-   broker check is the equivalent precondition in evaluated mode; do not add a
-   profile or `--profile` flag to broker-invoked commands.
+   or doctor check stops the task before discovery and business commands.
 4. Discover instead of guessing. Run `mammoth schema list/find/get --output
    json --no-input` for local CLI routes; `mammoth capability list --output
    json --no-input` is an API-binding inventory and can omit typed/local

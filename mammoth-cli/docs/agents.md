@@ -38,24 +38,21 @@ argv, transcript, checkpoint, or a source file.
 
 ## The operating loop
 
-1. **Choose the credential mode, then diagnose it.** In an evaluated or
-   isolated environment, use only the controller-provided credential
-   broker/sidecar. Do **not** run profile-based `auth status`, `auth login`, or
-   `doctor` there: follow the broker's health/readiness procedure instead; if
-   it is absent or fails, stop before authenticated work. For an ordinary
-   operator profile, run `mammoth auth status --profile PROFILE --output json
-   --no-input`. This is a local presence check, not proof that credentials work.
-   If the profile or credentials are missing, use a hidden interactive login or
-   the protected host secret mechanism described in
-   [Authentication](authentication.md); never put a secret in the task, argv,
-   transcript, checkpoint, or source file. Then run `mammoth doctor --profile
+1. **Diagnose the profile first.** Run `mammoth auth status --profile
+   PROFILE --output json --no-input`. This is a local presence check, not
+   proof that credentials work. If the profile or credentials are missing,
+   stop and tell the operator to run `mammoth auth login --profile PROFILE
+   --server-prefix app` in their own terminal; it uses hidden prompts. Wait,
+   then re-check status. Do not ask for the key or secret in chat, and do not
+   look for them in environment variables: the CLI does not read them from
+   there. Use `--input` only with a protected `0600` file the operator handed
+   you; see [Authentication](authentication.md). Then run `mammoth doctor --profile
    PROFILE --output json --no-input` and stop on any failed check. Before
    doctor, compare the endpoint in `auth status` with the intended target:
    production uses `app`; `release` is allowed only when explicitly intended.
    If it does not match, stop and select or create a separate correctly
    configured profile; do not diagnose or operate through the mismatched one.
-2. **Discover the local contract.** Only after the ordinary-profile doctor or
-   the broker's required readiness check succeeds, use `mammoth schema find
+2. **Discover the local contract.** Only after doctor succeeds, use `mammoth schema find
    QUERY` to locate a command and `mammoth schema get COMMAND_ID` before
    composing a request. `mammoth schema list` is the full CLI inventory.
    `mammoth capability list` is instead an API-binding inventory and can omit

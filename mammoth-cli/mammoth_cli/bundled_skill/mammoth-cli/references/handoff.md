@@ -4,11 +4,10 @@ Use a nonsecret JSON checkpoint when another agent or session must continue.
 This is a record, not a resume subcommand. The receiving agent chooses
 its own plan only after fresh reads.
 
-For evaluated/isolated agents, authentication remains controller-owned: use
-the provided broker/sidecar and never mount or read a saved profile. If that
-broker is absent, stop before authenticated actions. Ordinary operator
-handoffs may reference the authorized profile name, but must not copy its path
-or contents into the checkpoint.
+A handoff may reference the authorized profile name, but must not copy its
+path or contents into the checkpoint. The receiving agent re-checks
+`auth status` and `doctor`; if credentials are missing on its host, the
+operator logs in from their own terminal as described in [auth](auth.md).
 
 ## Required record
 
@@ -48,10 +47,6 @@ mammoth doctor --profile PROFILE --output json --no-input
 mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input
 mammoth job get JOB_ID --output json --no-input
 ```
-
-The commands above are ordinary operator examples; an evaluated/isolated agent
-must use the controller broker/sidecar instead of `--profile` and must stop if
-that broker is absent.
 
 The required fields and receiving procedure above are self-contained for a
 cold-start agent; no repository checkout or unshipped document is required.

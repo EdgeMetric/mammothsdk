@@ -20,9 +20,11 @@ rewrite a profile from another environment. Then run `mammoth doctor
 --profile PROFILE --output json --no-input` and require success before
 discovering resources or operating on them. A failed status, login, or doctor
 check is a precondition failure—not a reason to try the business command
-anyway. In evaluated or isolated runs, skip all saved profile checks and login
-commands: use only the controller-provided credential broker/sidecar check,
-never mount or read a saved profile, and stop if that broker is absent.
+anyway. If no matching profile has credentials, the operator must run
+`mammoth auth login` themselves in their own terminal: tell them the exact
+command, wait, then re-check `auth status`. Never ask for the key or secret
+in chat, never read them from environment variables or files you were not
+given, and never run `auth login` on the operator's behalf.
 
 ```bash
 mammoth schema find "TASK OR RESOURCE" --output json --no-input

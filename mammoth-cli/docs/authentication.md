@@ -103,9 +103,13 @@ group- or world-readable POSIX input file with error code
 procedure.
 
 On Windows, do not use this POSIX file-storage recipe. Use the Windows OS
-keyring or a controller-provided credential broker/sidecar. Evaluated or
-isolated agents likewise use the supplied broker and must not read or mount a
-saved profile.
+keyring.
+
+The CLI reads credentials from exactly two places: the login handed to the
+current command, or the selected profile's secure store. It never reads them
+from environment variables. An agent that finds no credentials must stop and
+ask the operator to run the hidden-prompt `mammoth auth login` in their own
+terminal, not ask for the key or secret in chat.
 
 You can also pipe the document straight from stdin:
 

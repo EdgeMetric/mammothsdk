@@ -24,8 +24,11 @@ curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-
 Find and read the bundled `SKILL.md` with `mammoth skill path`. Follow that
 skill to authenticate for the intended endpoint (`app` for production), verify
 the profile endpoint matches it, and run `mammoth doctor`. Do not reuse a
-mismatched release profile. Once it passes, use the skill to complete my task.
-Never put secrets in chat, prompts, task records, or command arguments.
+mismatched release profile. If no credentials are stored, stop and tell me the
+exact `mammoth auth login` command to run in my own terminal, then wait for
+me; the CLI does not read credentials from environment variables. Once doctor
+passes, use the skill to complete my task. Never put secrets in chat, prompts,
+task records, or command arguments.
 ```
 
 ## Installation
@@ -790,16 +793,15 @@ mammoth schema get COMMAND_ID --output json --no-input
 For an agent or CI on POSIX, use a private owner-only (0600) JSON file outside
 the repository: `mammoth auth login --input /private/path/credentials.json
 --storage file --output json --no-input`. Do not put secrets in chat, prompts,
-or command arguments. On Windows, use the approved OS keyring or credential
-broker instead; do not use a file fallback unless its ACL hardening is approved.
-In an evaluated or isolated run with a controller-provided credential
-broker/sidecar, use that controller-owned readiness check instead of profile
-inspection, login, or doctor, and stop if it is absent. The installer also
+or command arguments. On Windows, use the approved OS keyring instead; do not
+use a file fallback unless its ACL hardening is approved. An agent that finds
+no credentials asks the operator to run the hidden-prompt login in their own
+terminal; the CLI does not read credentials from environment variables. The installer also
 installs the bundled agent skill. Start with the
 [CLI README](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/README.md), which indexes the agent guide, portable
 handoff format, commands, and capability matrix.
 
-The CLI's examples are deliberately nonexhaustive. Use `mammoth schema find`
+The CLI's examples are deliberately nonexhaustive. Use `mammoth schema find QUERY`
 and `mammoth schema get COMMAND_ID` for the complete installed command surface;
 `mammoth capability list` is an API-binding inventory and can omit typed or
 local CLI routes. Treat a timeout or transport failure on a mutation as an
