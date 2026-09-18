@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 1,
-    "Partial": 70,
+    "Partial": 94,
     "Not supported": 0,
-    "Unassessed": 457
+    "Unassessed": 433
   },
   "rows": [
     {
@@ -1232,8 +1232,8 @@
     {
       "capability_id": "REL-070",
       "capability": "List current user's agent sessions",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: sessions. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListAgentSessions",
       "method": "GET",
@@ -1243,14 +1243,21 @@
       "sdk_symbol": "mammoth.api.agents.AgentsAPI.session_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "agent.session.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-071",
       "capability": "Read messages for one agent session",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetAgentSessionMessages",
       "method": "GET",
@@ -1260,14 +1267,21 @@
       "sdk_symbol": "mammoth.api.agents.AgentsAPI.session_messages",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "agent.session.messages",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-072",
       "capability": "Browse and discover resources",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed server_error: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "BrowseResources",
       "method": "GET",
@@ -1277,8 +1291,15 @@
       "sdk_symbol": "mammoth.api.browse.BrowseAPI.root",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "browse.root",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-073",
@@ -1414,7 +1435,7 @@
       "capability_id": "REL-080",
       "capability": "Get Dashboard Sources",
       "status": "Unassessed",
-      "remarks": "Bounded release call reached the endpoint but returned structured HTTP 500 API error; exact envelope retained. This does not establish capability support.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed server_error: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDashboardSources",
       "method": "GET",
@@ -1425,18 +1446,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-080",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/dashboard-source-list-next.json",
-            "sha256": "1698dea8288b644e491d858ba7cdd2745114e7d8c8d79415d3a289a3c939feb8",
-            "size_bytes": 1067,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.source.list",
+        "exit_status": 1
       },
-      "evidence_version": null
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-081",
@@ -1501,7 +1518,7 @@
       "capability_id": "REL-083",
       "capability": "Published viewer canvas",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetCanvasPublished",
       "method": "GET",
@@ -1511,14 +1528,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.published_canvas",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.published.canvas",
+        "exit_status": 5
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-084",
       "capability": "Get dashboard job by id",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDashboardJob",
       "method": "GET",
@@ -1528,14 +1552,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.job_by_url",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.job-by-url",
+        "exit_status": 4
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-085",
       "capability": "Published dashboard's link-unfurl OG card (baked PNG)",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "OgCardByUrl",
       "method": "GET",
@@ -1545,14 +1576,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.published_og_card",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.published.og-card",
+        "exit_status": 5
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-086",
       "capability": "Download a completed published PDF export",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPdfArtifactByUrl",
       "method": "GET",
@@ -1562,14 +1600,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.published_pdf_artifact",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.published.pdf-artifact",
+        "exit_status": 5
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-087",
       "capability": "Published dashboard's link-unfurl share page (crawler-facing HTML)",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SharePageByUrl",
       "method": "GET",
@@ -1579,14 +1624,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.published_share_page",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.published.share-page",
+        "exit_status": 5
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-088",
       "capability": "Stream a published motion-story video (Range-enabled)",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "VideoByUrl",
       "method": "GET",
@@ -1596,8 +1648,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.published_video_artifact",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.published.video-artifact",
+        "exit_status": 5
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-089",
@@ -1693,7 +1752,7 @@
       "capability_id": "REL-092",
       "capability": "The workspace default style id",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: client-side ValidationError before any request.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDefaultStyle",
       "method": "GET",
@@ -1703,8 +1762,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.style_default_get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.style.default.get",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-093",
@@ -1952,8 +2018,8 @@
     {
       "capability_id": "REL-104",
       "capability": "Fit-score the whole catalog against one dataset",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: dataview_id, fits. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "FitTemplates",
       "method": "GET",
@@ -1963,8 +2029,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.template_fit",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.template.fit",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-105",
@@ -1987,7 +2060,7 @@
       "capability_id": "REL-106",
       "capability": "One template's metadata + self-fit recipe",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: client-side ValidationError on a real template id.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3GetTemplate",
       "method": "GET",
@@ -1997,8 +2070,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.template_get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.template.get",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-107",
@@ -2032,8 +2112,8 @@
     {
       "capability_id": "REL-108",
       "capability": "Get Dashboard Analytics",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: average_time_spent_seconds, current_concurrent_viewers, total_views, viewed_by. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetDashboardAnalytics",
       "method": "GET",
@@ -2043,8 +2123,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.get_analytics",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.analytics",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-109",
@@ -2159,7 +2246,7 @@
       "capability_id": "REL-114",
       "capability": "Dashboard card thumbnail (draft or published PNG)",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: HTTP 200 with a non-JSON body (image); CLI force-parses JSON.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "OgCard",
       "method": "GET",
@@ -2169,14 +2256,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.og_card",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.og-card",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-115",
       "capability": "Download a completed draft PDF export",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPdfArtifact",
       "method": "GET",
@@ -2186,8 +2280,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.pdf_artifact",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.pdf-artifact",
+        "exit_status": 5
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-116",
@@ -2256,7 +2357,7 @@
       "capability_id": "REL-119",
       "capability": "Read a Q&A session (replayable — carries baked answers)",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetSession",
       "method": "GET",
@@ -2266,8 +2367,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.qa_session_get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.qa.session.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-120",
@@ -2451,8 +2559,8 @@
     {
       "capability_id": "REL-127",
       "capability": "List data apps",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: data_apps. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListDataApps",
       "method": "GET",
@@ -2462,14 +2570,21 @@
       "sdk_symbol": "mammoth.api.data_apps.DataAppsAPI.list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "data-app.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-128",
       "capability": "Get data app metadata",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetDataAppDetails",
       "method": "GET",
@@ -2479,14 +2594,21 @@
       "sdk_symbol": "mammoth.api.data_apps.DataAppsAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "data-app.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-129",
       "capability": "Resume the most recent in-flight upload for this data app",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetDataAppActiveJob",
       "method": "GET",
@@ -2496,14 +2618,21 @@
       "sdk_symbol": "mammoth.api.data_apps.DataAppsAPI.active_job",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "data-app.active-job",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-130",
       "capability": "Poll an upload job scoped to a data app",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetDataAppJob",
       "method": "GET",
@@ -2513,14 +2642,21 @@
       "sdk_symbol": "mammoth.api.data_apps.DataAppsAPI.job",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "data-app.job",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-131",
       "capability": "Get pipeline changes for data app",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetPipelineChanges",
       "method": "GET",
@@ -2530,14 +2666,21 @@
       "sdk_symbol": "mammoth.api.data_apps.DataAppsAPI.pipeline_changes",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "data-app.pipeline-changes",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-132",
       "capability": "List users the data app is shared with",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListSharedUsers",
       "method": "GET",
@@ -2547,8 +2690,15 @@
       "sdk_symbol": "mammoth.api.data_apps.DataAppsAPI.user_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "data-app.user.list",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-133",
@@ -2628,8 +2778,8 @@
     {
       "capability_id": "REL-136",
       "capability": "List notifications",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: notifications. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetAllNotifications",
       "method": "GET",
@@ -2639,8 +2789,15 @@
       "sdk_symbol": "mammoth.api.notifications.NotificationsAPI.list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "notification.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-137",
@@ -2681,8 +2838,8 @@
     {
       "capability_id": "REL-138",
       "capability": "Get list of reports",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: limit, next, offset, reports. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetReports",
       "method": "GET",
@@ -2692,14 +2849,21 @@
       "sdk_symbol": "mammoth.api.reports.ReportsAPI.list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "report.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-139",
       "capability": "Get request user details",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: created_at, email, first_name, id, last_app_activity_at, last_login_date, last_login_from_ip, last_name, profile_link, updated_at. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetUserDetails",
       "method": "GET",
@@ -2709,8 +2873,15 @@
       "sdk_symbol": "mammoth.api.user_profile.UserProfileAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "user.get",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-140",
@@ -2987,8 +3158,8 @@
     {
       "capability_id": "REL-156",
       "capability": "Get workspaces",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: limit, next, offset, workspaces. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetWorkspaces",
       "method": "GET",
@@ -2998,14 +3169,21 @@
       "sdk_symbol": "mammoth.api.workspace.WorkspaceAPI.list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "workspace.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-157",
       "capability": "Get workspace details",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: created_at, id, last_accessed, name, path, status, updated_at, url. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetWorkspace",
       "method": "GET",
@@ -3015,14 +3193,21 @@
       "sdk_symbol": "mammoth.api.workspace.WorkspaceAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "workspace.get",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-158",
       "capability": "Get Active Connectors",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: l, i, s, t, [, 0, ]. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetActiveConnectors",
       "method": "GET",
@@ -3032,14 +3217,21 @@
       "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.active_connectors",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "connector.active",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-159",
       "capability": "Get app usage details",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: workspace. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetAppUsage",
       "method": "GET",
@@ -3049,14 +3241,21 @@
       "sdk_symbol": "mammoth.api.workspaces.WorkspacesAPI.app_usage",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "workspace.app-usage",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-160",
       "capability": "Browse and discover workspace resources",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: limit, next, offset, resources. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "BrowseWorkspaceWorkspaces",
       "method": "GET",
@@ -3066,8 +3265,15 @@
       "sdk_symbol": "mammoth.api.browse.BrowseAPI.workspace_resources",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "browse.workspace",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-161",
@@ -3090,7 +3296,7 @@
       "capability_id": "REL-162",
       "capability": "Get list of client apps",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed authorization_error: HTTP 403 'Cannot access this API with API-tokens' (expected auth scoping).",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListApps",
       "method": "GET",
@@ -3100,14 +3306,21 @@
       "sdk_symbol": "mammoth.api.clientapps.ClientAppsAPI.list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "client-app.list",
+        "exit_status": 4
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-163",
       "capability": "Get client app details",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "AppDetails",
       "method": "GET",
@@ -3117,14 +3330,21 @@
       "sdk_symbol": "mammoth.api.clientapps.ClientAppsAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "client-app.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-164",
       "capability": "List connectors",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: l, i, s, t, [, 4, 2, ]. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListWorkspaceConnectors",
       "method": "GET",
@@ -3134,14 +3354,21 @@
       "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "connector.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-165",
       "capability": "Get connector details",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed validation_error: HTTP 400 'Invalid connector key' for a key returned by connector.list.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetConnector",
       "method": "GET",
@@ -3151,8 +3378,15 @@
       "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "connector.get",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-166",
@@ -3175,7 +3409,7 @@
       "capability_id": "REL-167",
       "capability": "Get external keys of the given Workspace ID",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: not_authenticated although the same session authenticated elsewhere.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetKeysByWorkspaceId",
       "method": "GET",
@@ -3185,14 +3419,21 @@
       "sdk_symbol": "mammoth.api.external_keys.ExternalKeysAPI.list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "external-key.list",
+        "exit_status": 4
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-168",
       "capability": "Get the given external key",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetExternalKey",
       "method": "GET",
@@ -3202,8 +3443,15 @@
       "sdk_symbol": "mammoth.api.external_keys.ExternalKeysAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "external-key.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-169",
@@ -3225,8 +3473,8 @@
     {
       "capability_id": "REL-170",
       "capability": "List parameters",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: items, limit, next, offset, total_count. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListParameters",
       "method": "GET",
@@ -3236,14 +3484,21 @@
       "sdk_symbol": "mammoth.api.parameters.ParametersAPI.list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "parameter.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-171",
       "capability": "List parameter groups",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: items, limit, next, offset, total_count. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListGroups",
       "method": "GET",
@@ -3253,14 +3508,21 @@
       "sdk_symbol": "mammoth.api.parameters.ParametersAPI.group_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "parameter.group.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-172",
       "capability": "Get parameter detail",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetParameterDetail",
       "method": "GET",
@@ -3270,14 +3532,21 @@
       "sdk_symbol": "mammoth.api.parameters.ParametersAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "parameter.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-173",
       "capability": "Get parameter dependencies",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetParameterDependencies",
       "method": "GET",
@@ -3287,8 +3556,15 @@
       "sdk_symbol": "mammoth.api.parameters.ParametersAPI.dependencies",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "parameter.dependencies",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-174",
@@ -3339,7 +3615,7 @@
       "capability_id": "REL-175",
       "capability": "Get chat history for a connection created via AI chat",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetChatHistory",
       "method": "GET",
@@ -3349,8 +3625,15 @@
       "sdk_symbol": "mammoth.api.connector_ai.ConnectorAIAPI.history",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "connector.ai.history",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-176",
@@ -3373,7 +3656,7 @@
       "capability_id": "REL-177",
       "capability": "List recent AI chat sessions for the current user",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: backend returned HTTP 200 but the CLI raised api_error (envelope mismatch).",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListSessions",
       "method": "GET",
@@ -3383,14 +3666,21 @@
       "sdk_symbol": "mammoth.api.connector_ai.ConnectorAIAPI.session_list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "connector.ai.session.list",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-178",
       "capability": "Get display messages for a chat session",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetSessionMessages",
       "method": "GET",
@@ -3400,8 +3690,15 @@
       "sdk_symbol": "mammoth.api.connector_ai.ConnectorAIAPI.session_messages",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "connector.ai.session.messages",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-179",
@@ -3492,7 +3789,7 @@
       "capability_id": "REL-181",
       "capability": "Get automation data",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetAutomation",
       "method": "GET",
@@ -3502,8 +3799,15 @@
       "sdk_symbol": "mammoth.api.automations.AutomationsAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "automation.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-182",
@@ -3583,7 +3887,7 @@
       "capability_id": "REL-184",
       "capability": "List Connections",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed server_error: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListConnections",
       "method": "GET",
@@ -3593,14 +3897,21 @@
       "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.list_connections",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "connector.connection.list",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-185",
       "capability": "Get Connection",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetConnection",
       "method": "GET",
@@ -3610,14 +3921,21 @@
       "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.get_connection",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "connector.connection.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-186",
       "capability": "Get status",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetChatStatus",
       "method": "GET",
@@ -3627,14 +3945,21 @@
       "sdk_symbol": "mammoth.api.ai.AIAPI.status",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "connector.query.status",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-187",
       "capability": "List ds configs",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListDsConfigs",
       "method": "GET",
@@ -3644,14 +3969,21 @@
       "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.list_ds_configs",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "connector.ds-config.list",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-188",
       "capability": "Get ds config details",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetDsConfig",
       "method": "GET",
@@ -3661,14 +3993,21 @@
       "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.get_ds_config",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "connector.ds-config.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-189",
       "capability": "Get Publish Credentials",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: requires odbc_type, not discoverable read-only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPublishCredentials",
       "method": "GET",
@@ -3678,8 +4017,15 @@
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.publish_credentials",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "project.publish-credentials",
+        "exit_status": 2
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-190",
@@ -4082,7 +4428,7 @@
       "capability_id": "REL-202",
       "capability": "Get validation information",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed validation_error: HTTP 400 with message 'Not implemented'.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetValidationInfo",
       "method": "GET",
@@ -4092,8 +4438,15 @@
       "sdk_symbol": "mammoth.api.ai.AIAPI.get_data_gen_info",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "view.ai.generation-info",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-203",
@@ -4254,7 +4607,7 @@
       "capability_id": "REL-208",
       "capability": "Get the given dataview pipeline checkpoint",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineCheckpoint",
       "method": "GET",
@@ -4264,8 +4617,15 @@
       "sdk_symbol": "mammoth.api.checkpoints.CheckpointsAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "view.checkpoint.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-209",
@@ -4300,7 +4660,7 @@
       "capability_id": "REL-210",
       "capability": "Get the given dataview pipeline data check",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineDataCheck",
       "method": "GET",
@@ -4310,8 +4670,15 @@
       "sdk_symbol": "mammoth.api.data_checks.DataChecksAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "view.data-check.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-211",
@@ -4346,7 +4713,7 @@
       "capability_id": "REL-212",
       "capability": "Get dataview pipeline export information",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineExport",
       "method": "GET",
@@ -4356,8 +4723,15 @@
       "sdk_symbol": "mammoth.api.exports.ExportsAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "view.export.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-213",
@@ -4752,7 +5126,7 @@
       "capability_id": "REL-225",
       "capability": "Browse and discover folder resources",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: rejects folder id 0 although folder.root reports id 0 as the root.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "BrowseFolderFolders",
       "method": "GET",
@@ -4762,8 +5136,15 @@
       "sdk_symbol": "mammoth.api.browse.BrowseAPI.folder_resources",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "browse.folder",
+        "exit_status": 2
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-226",
@@ -4797,7 +5178,7 @@
       "capability_id": "REL-227",
       "capability": "Get resource dependencies",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: required resource_ids has no CLI flag.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetResourceDependencies",
       "method": "GET",
@@ -4807,8 +5188,15 @@
       "sdk_symbol": "mammoth.api.projects.ProjectsAPI.resource_dependencies",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "project.resource-dependencies",
+        "exit_status": 2
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-228",
@@ -4893,7 +5281,7 @@
       "capability_id": "REL-232",
       "capability": "Get list of schedules",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed validation_error: HTTP 400 with message 'Not implemented'.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListSchedules",
       "method": "GET",
@@ -4903,14 +5291,21 @@
       "sdk_symbol": "mammoth.api.schedules.SchedulesAPI.list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "schedule.list",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-233",
       "capability": "Get schedule data",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetSchedule",
       "method": "GET",
@@ -4920,8 +5315,15 @@
       "sdk_symbol": "mammoth.api.schedules.SchedulesAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "schedule.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-234",
@@ -4957,7 +5359,7 @@
       "capability_id": "REL-235",
       "capability": "List webhooks",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: api_error with no HTTP status recorded.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListWebhooks",
       "method": "GET",
@@ -4967,14 +5369,21 @@
       "sdk_symbol": "mammoth.api.webhooks.WebhooksAPI.list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "webhook.list",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-236",
       "capability": "Get webhook details",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetWebhookDetails",
       "method": "GET",
@@ -4984,14 +5393,21 @@
       "sdk_symbol": "mammoth.api.webhooks.WebhooksAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "webhook.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-237",
       "capability": "List workflows",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: l, i, s, t, [, 0, ]. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListWorkflows",
       "method": "GET",
@@ -5001,14 +5417,21 @@
       "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "workflow.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-238",
       "capability": "Get project workflow graph",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: cli_navigation, datasets, dataviews, skeleton_workflows, workflows. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetProjectWorkflowGraph",
       "method": "GET",
@@ -5018,14 +5441,21 @@
       "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.graph",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "workflow.graph",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-239",
       "capability": "List workspace datasets",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: l, i, s, t, [, 6, ]. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListWorkspaceDatasets",
       "method": "GET",
@@ -5035,14 +5465,21 @@
       "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.workspace_datasets",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "workflow.workspace-datasets",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-240",
       "capability": "List workspace exports",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: l, i, s, t, [, 0, ]. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListWorkspaceExports",
       "method": "GET",
@@ -5052,14 +5489,21 @@
       "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.workspace_exports",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "workflow.workspace-exports",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-241",
       "capability": "List workspace sources",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: l, i, s, t, [, 0, ]. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListWorkspaceSources",
       "method": "GET",
@@ -5069,14 +5513,21 @@
       "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.workspace_sources",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "workflow.workspace-sources",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-242",
       "capability": "Get a workflow",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetWorkflow",
       "method": "GET",
@@ -5086,8 +5537,15 @@
       "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "workflow.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-243",
@@ -5109,8 +5567,8 @@
     {
       "capability_id": "REL-244",
       "capability": "List snippets",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: items, limit, next, offset, total_count. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListSnippets",
       "method": "GET",
@@ -5120,14 +5578,21 @@
       "sdk_symbol": "mammoth.api.snippets.SnippetsAPI.list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "snippet.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-245",
       "capability": "Get snippet detail",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetSnippetDetail",
       "method": "GET",
@@ -5137,14 +5602,21 @@
       "sdk_symbol": "mammoth.api.snippets.SnippetsAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "snippet.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-246",
       "capability": "Get snippet dependencies",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetSnippetDependencies",
       "method": "GET",
@@ -5154,8 +5626,15 @@
       "sdk_symbol": "mammoth.api.snippets.SnippetsAPI.dependencies",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "snippet.dependencies",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-247",
@@ -5196,8 +5675,8 @@
     {
       "capability_id": "REL-248",
       "capability": "Get storage breakdown",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: items, limit, next, offset, total_count. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetStorageBreakdown",
       "method": "GET",
@@ -5207,8 +5686,15 @@
       "sdk_symbol": "mammoth.api.workspaces.WorkspacesAPI.storage_breakdown",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "workspace.storage-breakdown",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-249",
@@ -5384,7 +5870,7 @@
       "capability_id": "REL-259",
       "capability": "List workflow templates",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: backend returned HTTP 200 but the CLI raised api_error (envelope mismatch).",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListTemplates",
       "method": "GET",
@@ -5394,14 +5880,21 @@
       "sdk_symbol": "mammoth.api.templates.TemplatesAPI.list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "template.list",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-260",
       "capability": "Get a workflow template",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetTemplate",
       "method": "GET",
@@ -5411,14 +5904,21 @@
       "sdk_symbol": "mammoth.api.templates.TemplatesAPI.get",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "template.get",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-261",
       "capability": "Get users in workspace",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: l, i, s, t, [, 5, ]. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetUsersInWorkspace",
       "method": "GET",
@@ -5428,8 +5928,15 @@
       "sdk_symbol": "mammoth.api.workspace.WorkspaceAPI.list_users",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "workspace.user.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-262",
@@ -6797,7 +7304,7 @@
       "capability_id": "REL-341",
       "capability": "Read a Power BI file before importing it",
       "status": "Unassessed",
-      "remarks": "CLI 1.1.10 typed binding verified in clean cli-v1.1.10 command manifest; live behavior remains Unassessed pending safe fixture/evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AssessPbix",
       "method": "POST",
@@ -6807,8 +7314,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.assess_pbix",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": "1.1.10"
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.assess-pbix",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-342",
@@ -7069,7 +7583,7 @@
       "capability_id": "REL-357",
       "capability": "Read a Tableau workbook before importing it",
       "status": "Unassessed",
-      "remarks": "CLI 1.1.10 typed binding verified in clean cli-v1.1.10 command manifest; live behavior remains Unassessed pending safe fixture/evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AssessTwb",
       "method": "POST",
@@ -7079,8 +7593,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.assess_twb",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": "1.1.10"
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.assess-twb",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-358",
@@ -7273,7 +7794,7 @@
       "capability_id": "REL-369",
       "capability": "Get draft data from given SQL query",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: required sql has no CLI flag.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDraftDataFromSql",
       "method": "POST",
@@ -7283,14 +7804,21 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.get_draft_data",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.data.draft",
+        "exit_status": 2
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-370",
       "capability": "Get published data from given SQL query",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: required sql has no CLI flag.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPublishDataFromSql",
       "method": "POST",
@@ -7300,8 +7828,15 @@
       "sdk_symbol": "mammoth.api.dashboards.DashboardsAPI.get_publish_data",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "dashboard.data.published",
+        "exit_status": 2
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-371",
@@ -8020,8 +8555,8 @@
     {
       "capability_id": "REL-413",
       "capability": "Get requested activity logs",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: activity_logs, limit, next, offset. Single read only; no fixture variants, error envelopes, or write paths assessed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetActivityLogs",
       "method": "POST",
@@ -8031,14 +8566,21 @@
       "sdk_symbol": "mammoth.api.activity_logs.ActivityLogsAPI.list",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "activity.list",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-414",
       "capability": "Export activity logs",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed server_error: see sweep report.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ExportActivityLogs",
       "method": "POST",
@@ -8048,8 +8590,15 @@
       "sdk_symbol": "mammoth.api.activity_logs.ActivityLogsAPI.export",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "activity.export",
+        "exit_status": 7
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-415",
@@ -8497,7 +9046,7 @@
       "capability_id": "REL-441",
       "capability": "Generate query",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetQuerySuggestion",
       "method": "POST",
@@ -8507,8 +9056,15 @@
       "sdk_symbol": "mammoth.api.ai.AIAPI.query_gen",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "connector.query.generate",
+        "exit_status": null
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-442",
@@ -8892,7 +9448,7 @@
       "capability_id": "REL-460",
       "capability": "Get task preview",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetTaskPreview",
       "method": "POST",
@@ -8902,8 +9458,15 @@
       "sdk_symbol": "mammoth.api.pipeline.PipelineAPI.preview_task",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "view.task.preview",
+        "exit_status": 2
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-461",
@@ -9297,7 +9860,7 @@
       "capability_id": "REL-477",
       "capability": "Generate SQL query based on intent",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed validation_error: HTTP 400 Validation error.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GenerateSql",
       "method": "POST",
@@ -9307,8 +9870,15 @@
       "sdk_symbol": "mammoth.api.ai.AIAPI.generate_sql",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "ai.sql.generate",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-478",
@@ -9365,7 +9935,7 @@
       "capability_id": "REL-481",
       "capability": "Generate AI-based Suggestions for Dataview",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed validation_error: HTTP 400 Validation error.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AiSuggestions",
       "method": "POST",
@@ -9375,8 +9945,15 @@
       "sdk_symbol": "mammoth.api.ai.AIAPI.get_suggestions",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
+        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
+        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
+        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "command_id": "ai.suggestion.list",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.11"
     },
     {
       "capability_id": "REL-482",

@@ -49,7 +49,18 @@ per-project, and the three response shapes agents most often misread. The
 release adds no API bindings and makes no capability-status or
 autonomous-workflow qualification claim.
 
-Publication hashes are recorded after upload.
+Published from deterministic local artifacts built from tag `cli-v2.0.12`
+(source commit `a4175d5`). PyPI reports the uploaded local artifact hashes:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `b42434869c55593c44d45d1f3c01bea2628fe4ee3e837a13f193f12884f073c7` |
+| Source distribution | `206fcd4881abe2e5438d2be3011382671b0df204341fd15ba8c9ff42443fe7d1` |
+
+Before upload, the full non-live suite at the release source recorded
+3,884 passed, 2 skipped, 7 deselected; Ruff, mypy, and `twine check` passed.
+The read-only capability sweep evidence (`docs/capability-evidence/read-sweep-20260918`)
+and matrix update were committed after this tag and ship with the next release.
 
 ## 2.0.11 / SDK 0.7.3
 
