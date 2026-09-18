@@ -14,7 +14,17 @@ output redactor still masks any credential-shaped field. It retains
 `mammoth-io>=0.7.3,<0.8`, adds no API bindings, and makes no
 capability-status or autonomous-workflow qualification claim.
 
-Publication hashes are recorded after upload.
+Published from deterministic local artifacts built from tag `cli-v2.0.10`
+(source commit `052445a`). PyPI reports the uploaded local artifact hashes:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `a1c9faeee9e6ea4cd6ab097b0c220c5c49053633e3319800f0a6b4ec3be64fdf` |
+| Source distribution | `ac52c6a8a11a9916d5cd60c0471fee7f4ced2759900b28c31202f8cc16a21812` |
+
+Before upload, the full non-live suite at the release source recorded
+3,860 passed, 2 skipped, 7 deselected; Ruff, mypy, `twine check`, and the
+generated-doc check passed.
 
 ## 2.0.9 / SDK 0.7.3
 
