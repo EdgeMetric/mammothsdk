@@ -18,7 +18,19 @@ reversible and is unchanged in this release. It retains
 `mammoth-io>=0.7.3,<0.8`, adds no API bindings, and makes no
 capability-status or autonomous-workflow qualification claim.
 
-Publication hashes are recorded after upload.
+Published from deterministic local artifacts built from tag `cli-v2.0.8`
+(source commit `1fa4ec0`). PyPI reports the uploaded local artifact hashes:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Wheel | `c8d08c1ab4fe228d80ff20dbbb0b8265f4cd6815693b039235304894c90c44f9` |
+| Source distribution | `e20bc5c80de52ec3e813baf23435b5ba711ea52e7ab4b49b6560ea5a29015143` |
+
+Before upload, the full non-live suite at the release source recorded
+3,852 passed, 2 skipped, 7 deselected; Ruff on `mammoth_cli/`, mypy,
+`twine check`, and the generated-doc check passed. A fresh Python 3.14
+environment installed the exact wheel, passed `pip check`, reported version
+2.0.8, and returned the required-parent help from `schema get view.trash`.
 
 ## 2.0.7 / SDK 0.7.3
 
