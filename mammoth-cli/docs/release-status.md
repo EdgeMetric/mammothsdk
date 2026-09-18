@@ -47,13 +47,13 @@ CLI). The CLI requires `mammoth-io>=0.7.6,<0.8`, adds no API bindings, and
 makes no capability-status or autonomous-workflow qualification claim.
 
 Published from deterministic local artifacts built from tag `cli-v2.0.14`
-(source commit `SOURCE_COMMIT`). PyPI reports the uploaded local artifact hashes:
+(source commit `83d16ff`). PyPI reports the uploaded local artifact hashes:
 
-- `mammoth_cli-2.0.14-py3-none-any.whl` sha256 `WHEEL_SHA`
-- `mammoth_cli-2.0.14.tar.gz` sha256 `SDIST_SHA`
+- `mammoth_cli-2.0.14-py3-none-any.whl` sha256 `6ad14c8d69ea1046a709152b9f598f91b9e58737b1f8c4d070e0cc1ab9b02467`
+- `mammoth_cli-2.0.14.tar.gz` sha256 `c3a60cec295a8032f5ca9e4e71a5b9ebcbd21dbfce4be8c8cf602f921fcf50ff`
 
 SDK 0.7.6 (`sdk-v0.7.6`): `mammoth_io-0.7.6-py3-none-any.whl` sha256
-`SDK_WHEEL_SHA`; `mammoth_io-0.7.6.tar.gz` sha256 `SDK_SDIST_SHA`.
+`9c4a523b8657c5faeb64282912816597ebbb24c357f2189512cd5507960c5945`; `mammoth_io-0.7.6.tar.gz` sha256 `8288c20278254b0ae7adbc8de1a7b1e072f430622c200aed762d654fe9669961`.
 
 ## 2.0.13 / SDK 0.7.5
 
