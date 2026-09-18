@@ -38,6 +38,11 @@ the result.
 
 ## Working rules
 
+- Every command takes its resource ids as positionals, its request fields as
+  one `--input` JSON document, plus the shared global options (`--project`,
+  `--profile`, `--output`, `--no-input`, `--yes`, `--confirm`, timeouts).
+  There are no per-field flags: `project create NAME`, not `project create
+  --name NAME`. `schema get COMMAND_ID` lists the positionals and input fields.
 - Resolve workspace/project/dataset/view parents from reads; pass observed IDs
   and `--project`. A dataset does not select a default view. Every `view`
   command that changes, exports, or deletes data requires the exact parent

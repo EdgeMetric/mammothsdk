@@ -6,9 +6,11 @@ id instead. Run `view list DATASET_ID --project PROJECT_ID` to get it. Do not
 dig through `dataset get` and its `dependencies` field for a view id; `view
 list` is the supported route.
 
-Discover exact contracts, then upload and read back explicit parents:
+Discover exact contracts, then upload and read back explicit parents. A new
+project takes its name as the positional argument:
 
 ```bash
+mammoth project create 'PROJECT NAME' --output json --no-input
 mammoth schema get file.upload --output json --no-input
 mammoth file upload ./SOURCE.csv --project PROJECT_ID --output json --no-input
 mammoth dataset list --project PROJECT_ID --output json --no-input

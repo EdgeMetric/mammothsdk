@@ -51,6 +51,31 @@ def test_unknown_option_is_still_rejected_before_the_positional_count_check() ->
     with pytest.raises(CliError) as excinfo:
         validate_extra_args(_BULK_REPLACE, ["1039", "--nope"])
     assert excinfo.value.code == "unknown_option"
+    assert excinfo.value.hint == "Check the command schema with 'mammoth schema get'."
+
+
+def test_option_that_names_a_positional_is_pointed_at_the_positional_form() -> None:
+    """``--name`` on ``project create`` is a guess at the positional ``name``."""
+    with pytest.raises(CliError) as excinfo:
+        validate_extra_args("project.create", ["--name", "Revenue"])
+    assert excinfo.value.code == "unknown_option"
+    assert excinfo.value.hint == (
+        "'name' is positional argument 1 of 'project create', not an option: "
+        "mammoth project create NAME."
+    )
+    assert excinfo.value.details == {"option": "--name", "positional": "name"}
+
+
+def test_option_that_names_an_input_field_is_pointed_at_input() -> None:
+    """``--dataset-id=456`` names the dual-sourced ``dataset_id`` input field."""
+    with pytest.raises(CliError) as excinfo:
+        validate_extra_args(_BULK_REPLACE, ["1039", "--dataset-id=456"])
+    assert excinfo.value.code == "unknown_option"
+    assert excinfo.value.hint == (
+        "'dataset_id' is an --input field of 'view transform bulk-replace', not an "
+        "option: pass --input '{\"dataset_id\": VALUE}' after the positional arguments."
+    )
+    assert excinfo.value.details == {"option": "--dataset-id=456", "input_field": "dataset_id"}
 
 
 # --- R6: --input field values are validated/coerced to their real type ----

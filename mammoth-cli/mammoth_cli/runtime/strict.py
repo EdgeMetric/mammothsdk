@@ -60,6 +60,36 @@ CODE_INVALID_INPUT_FIELD_TYPE = "invalid_input_field_type"
 _TRUE_STRINGS = frozenset({"true", "1", "yes", "y", "on"})
 _FALSE_STRINGS = frozenset({"false", "0", "no", "n", "off"})
 
+def _unknown_option_hint(command_id: str, token: str) -> tuple[str, dict[str, Any]]:
+    """Name the accepted form when an unknown ``--option`` matches a real field.
+
+    Generic leaves take no per-field options, so ``--name`` on ``project
+    create`` is a guess at the positional ``name`` and ``--dataset-id`` on a
+    view command is a guess at the ``dataset_id`` input field. Saying which
+    lets a caller fix the call without a schema round-trip.
+    """
+    guessed = token.lstrip(_OPTION_PREFIX).split("=", 1)[0].replace("-", "_")
+    command = command_id.replace(".", " ")
+    if guessed:
+        for position, spec in enumerate(resolve_positionals(command_id)):
+            if spec.name == guessed:
+                return (
+                    f"'{guessed}' is positional argument {position + 1} of '{command}', "
+                    f"not an option: mammoth {command} {guessed.upper()}.",
+                    {"positional": guessed},
+                )
+        contract = resolve_command_contract(command_id)
+        if contract is not None and any(
+            field.name == guessed for field in contract.accepted_fields
+        ):
+            return (
+                f"'{guessed}' is an --input field of '{command}', not an option: "
+                f"pass --input '{{\"{guessed}\": VALUE}}' after the positional arguments.",
+                {"input_field": guessed},
+            )
+    return "Check the command schema with 'mammoth schema get'.", {}
+
+
 def validate_extra_args(command_id: str, extra_args: Iterable[str]) -> None:
     """Reject unrecognized options and surplus positional tokens.
 
@@ -79,12 +109,13 @@ def validate_extra_args(command_id: str, extra_args: Iterable[str]) -> None:
     tokens = list(extra_args)
     for token in tokens:
         if token.startswith(_OPTION_PREFIX) and token != _OPTION_PREFIX:
+            hint, hint_details = _unknown_option_hint(command_id, token)
             raise CliError(
                 code=CODE_UNKNOWN_OPTION,
                 message=f"Unknown option '{token}' for '{command_id.replace('.', ' ')}'.",
                 exit_status=EXIT_USAGE,
-                hint="Check the command schema with 'mammoth schema get'.",
-                details={"option": token},
+                hint=hint,
+                details={"option": token, **hint_details},
             )
 
     max_positionals = len(resolve_positionals(command_id))
