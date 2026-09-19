@@ -19,6 +19,15 @@ past the first hundred projects and refused to create in that case.
   and the agents guide as the recommended handover.
 - The CLI requires `mammoth-io>=0.7.11,<0.8`. No other change from 2.0.19.
 
+Published from deterministic local artifacts built from tag `cli-v2.0.20`
+(source commit `9d525d1`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.20-py3-none-any.whl` sha256 `783fa80615502070da906d584d0716024d21ff9c5f88640d4824d7d0cff08db1`
+- `mammoth_cli-2.0.20.tar.gz` sha256 `81dc62d4c9006173da9a07ce32342ae8c45f99bef129c597d50b9d55fa54d371`
+
+SDK 0.7.11 (`sdk-v0.7.11`, source commit `07ca71a`): `mammoth_io-0.7.11-py3-none-any.whl` sha256
+`a0659854b869cceaded7da3b1a4da24c3fd03b97bf1e05d44dc0ba0894ec1831`; `mammoth_io-0.7.11.tar.gz` sha256 `db7387c8890e006796ceb6fa93ff75b191ada5b7caa5e2f80a291da68d4bdc44`; digests verified against PyPI.
+
 ## 2.0.19 / SDK 0.7.10
 
 This release turns the 2026-09-19 evidence into contract: what an agent can
