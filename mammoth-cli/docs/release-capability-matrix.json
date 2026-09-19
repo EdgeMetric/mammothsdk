@@ -670,7 +670,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "parameter.delete",
         "exit_status": 0
       },
@@ -718,7 +718,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "project.delete",
         "exit_status": 0
       },
@@ -759,7 +759,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "automation.delete",
         "exit_status": 0
       },
@@ -858,7 +858,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "dataset.delete",
         "exit_status": 0
       },
@@ -906,7 +906,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "batch.delete",
         "exit_status": 0
       },
@@ -1002,7 +1002,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.derivative.delete",
         "exit_status": 0
       },
@@ -1026,7 +1026,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.checkpoint.delete",
         "exit_status": 0
       },
@@ -1050,7 +1050,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.data-check.delete",
         "exit_status": 0
       },
@@ -1319,7 +1319,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "webhook.delete",
         "exit_status": 0
       },
@@ -1343,7 +1343,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "workflow.delete",
         "exit_status": 0
       },
@@ -1367,7 +1367,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "snippet.delete",
         "exit_status": 0
       },
@@ -1408,7 +1408,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "template.delete",
         "exit_status": 0
       },
@@ -1514,7 +1514,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "browse.root",
         "exit_status": 1
       },
@@ -2911,7 +2911,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "notification.list",
         "exit_status": 0
       },
@@ -2971,7 +2971,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "report.list",
         "exit_status": 0
       },
@@ -2981,7 +2981,7 @@
       "capability_id": "REL-139",
       "capability": "Get request user details",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Returned current user's profile (apitests@mammoth.io). Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Returned current user's profile (<api user>). Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetUserDetails",
       "method": "GET",
@@ -2995,7 +2995,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "user.get",
         "exit_status": 0
       },
@@ -3406,7 +3406,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "workspace.get",
         "exit_status": 0
       },
@@ -3478,7 +3478,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "browse.workspace",
         "exit_status": 0
       },
@@ -3574,7 +3574,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "connector.list",
         "exit_status": 0
       },
@@ -3598,7 +3598,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "connector.get",
         "exit_status": 1
       },
@@ -3639,7 +3639,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "external-key.list",
         "exit_status": 0
       },
@@ -3704,7 +3704,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "parameter.list",
         "exit_status": 0
       },
@@ -3752,7 +3752,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "parameter.get",
         "exit_status": 0
       },
@@ -3776,7 +3776,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "parameter.dependencies",
         "exit_status": 0
       },
@@ -3800,7 +3800,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "project.list",
         "exit_status": 0
       },
@@ -3865,7 +3865,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "connector.ai.session.list",
         "exit_status": 0
       },
@@ -3959,7 +3959,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "automation.list",
         "exit_status": 0
       },
@@ -3983,7 +3983,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "automation.get",
         "exit_status": 1
       },
@@ -4007,7 +4007,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "browse.project",
         "exit_status": 1
       },
@@ -4231,7 +4231,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "dataset.list",
         "exit_status": 0
       },
@@ -4279,7 +4279,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "batch.list",
         "exit_status": 0
       },
@@ -4303,7 +4303,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "batch.get",
         "exit_status": 0
       },
@@ -4385,7 +4385,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.list",
         "exit_status": 0
       },
@@ -4584,7 +4584,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.exportable-config.get",
         "exit_status": 0
       },
@@ -4661,7 +4661,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.checkpoint.list",
         "exit_status": 0
       },
@@ -4685,7 +4685,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.checkpoint.get",
         "exit_status": 0
       },
@@ -4738,7 +4738,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.data-check.get",
         "exit_status": 0
       },
@@ -4989,7 +4989,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "dataset.file-settings.get",
         "exit_status": 0
       },
@@ -5317,7 +5317,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "schedule.list",
         "exit_status": 1
       },
@@ -5395,7 +5395,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "webhook.list",
         "exit_status": 0
       },
@@ -5419,7 +5419,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "webhook.get",
         "exit_status": 0
       },
@@ -5443,7 +5443,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "workflow.list",
         "exit_status": 0
       },
@@ -5563,7 +5563,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "workflow.get",
         "exit_status": 0
       },
@@ -5604,7 +5604,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "snippet.list",
         "exit_status": 0
       },
@@ -5628,7 +5628,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "snippet.get",
         "exit_status": 0
       },
@@ -5652,7 +5652,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "snippet.dependencies",
         "exit_status": 0
       },
@@ -5976,7 +5976,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "template.list",
         "exit_status": 0
       },
@@ -6000,7 +6000,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "template.get",
         "exit_status": 0
       },
@@ -6450,7 +6450,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "parameter.update",
         "exit_status": 0
       },
@@ -6539,7 +6539,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "automation.update",
         "exit_status": 2
       },
@@ -6597,7 +6597,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "dataset.bulk-update",
         "exit_status": 1
       },
@@ -6765,7 +6765,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.checkpoint.update",
         "exit_status": 0
       },
@@ -6789,7 +6789,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.data-check.update",
         "exit_status": 7
       },
@@ -7075,7 +7075,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "webhook.update",
         "exit_status": 0
       },
@@ -7099,7 +7099,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "workflow.update",
         "exit_status": 0
       },
@@ -7191,7 +7191,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "snippet.update",
         "exit_status": 0
       },
@@ -7256,7 +7256,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "template.update",
         "exit_status": 0
       },
@@ -9194,7 +9194,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "activity.list",
         "exit_status": 0
       },
@@ -9344,7 +9344,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "external-key.create",
         "exit_status": 1
       },
@@ -9419,7 +9419,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "parameter.create",
         "exit_status": 0
       },
@@ -9528,7 +9528,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "project.create",
         "exit_status": 0
       },
@@ -9637,7 +9637,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "automation.create",
         "exit_status": 0
       },
@@ -9830,7 +9830,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "batch.create",
         "exit_status": 7
       },
@@ -9998,7 +9998,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.derivative.create",
         "exit_status": 0
       },
@@ -10022,7 +10022,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.derivative.data",
         "exit_status": 7
       },
@@ -10070,7 +10070,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.exportable-config.apply",
         "exit_status": 0
       },
@@ -10094,7 +10094,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.checkpoint.create",
         "exit_status": 0
       },
@@ -10118,7 +10118,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.data-check.create",
         "exit_status": 0
       },
@@ -10190,7 +10190,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "view.task.preview",
         "exit_status": 0
       },
@@ -10369,7 +10369,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "dataset.file-settings.update",
         "exit_status": 0
       },
@@ -10583,7 +10583,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "schedule.create",
         "exit_status": 7
       },
@@ -10799,7 +10799,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "webhook.create",
         "exit_status": 0
       },
@@ -10823,7 +10823,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "workflow.create",
         "exit_status": 0
       },
@@ -10915,7 +10915,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "snippet.create",
         "exit_status": 0
       },
@@ -11160,7 +11160,7 @@
         "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
         "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
         "scope": "fixture-lifecycle-sweep",
-        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
         "command_id": "template.create",
         "exit_status": 0
       },

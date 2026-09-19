@@ -52,7 +52,7 @@ Example: `mammoth user get --output json --no-input`. Placeholders are illustrat
 
 Result: `UserGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Returned current user's profile (apitests@mammoth.io). Single invocation only.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Returned current user's profile (<api user>). Single invocation only.
 
 ### `user.preference.get`
 
