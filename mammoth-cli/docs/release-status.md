@@ -45,6 +45,14 @@ degraded; 16 MB accepted as job 667, still `processing` when the probe
 stopped). During the probe the release upload path stopped answering even a
 50-row CSV; reads were unaffected. Matrix unchanged at 258 verified of 528.
 
+Published from deterministic local artifacts built from tag `cli-v2.0.19`
+(source commit `5083a53`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.19-py3-none-any.whl` sha256 `574c55663a79acb71b904a7d53ab557d0cf10fdb0de2305ed9f13eb4b30e0643`
+- `mammoth_cli-2.0.19.tar.gz` sha256 `a50f197edbd0e5e025b4c6bfd5d557a3a0d80ea713da695e6b2d59a46bb0f57f`
+
+SDK unchanged at 0.7.10 (`sdk-v0.7.10`); digests verified against PyPI.
+
 ## 2.0.18 / SDK 0.7.10
 
 This release adds an always-on local run log, folds the 2026-09-18 skill
