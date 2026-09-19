@@ -72,7 +72,8 @@ Returns **raw dicts**, not rich objects. `list()` returns a response envelope â€
 
 ```python
 resp = client.projects.list()                               # {"projects": [...], "offset": 0, ...}
-projects = resp["projects"]                                 # plain list of dicts
+projects = resp["projects"]                                 # plain list of dicts (one page, max 100)
+everything = client.projects.list_all()                     # all pages; limit>100 is a backend error
 for p in projects:
     print(p["id"], p["name"])                               # dict access, NOT p.id / p.name
 

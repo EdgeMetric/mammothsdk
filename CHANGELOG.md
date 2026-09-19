@@ -4,6 +4,15 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.11]
+
+### Added
+
+- `ProjectsAPI.list` takes a server-side `offset`; `ProjectsAPI.list_all`
+  walks the route's 100-row pages (`limit` above 100 is rejected by the
+  backend with `4GENR007`). `ProjectsAPI.get(project="name")` now searches
+  every page instead of the first 100 projects.
+
 ## [0.7.5]
 
 ### Fixed

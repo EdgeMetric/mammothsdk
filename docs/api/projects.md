@@ -5,8 +5,12 @@ The `ProjectsAPI` manages projects within a workspace. Projects are siloed areas
 **Access**: `client.projects`
 
 ```python
-# List all projects
+# List projects (one page; the route caps limit at 100)
 projects = client.projects.list()
+page_two = client.projects.list(offset=100)
+
+# Every project across pages
+all_projects = client.projects.list_all()
 
 # Get a specific project
 project = client.projects.get(project_id=10)

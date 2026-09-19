@@ -2949,3 +2949,58 @@ class TestUrlScopedJobWait:
         assert client.wait_if_job({"job_id": 311}, timeout=5, fetch=fetch) == {"value": 58824}
         assert seen == [311]
         client._request_json.assert_not_called()
+
+
+class TestProjectsPagination:
+    """The projects route caps ``limit`` at 100; ``list_all`` walks the pages."""
+
+    @staticmethod
+    def _page(start: int, count: int, next_token: str) -> dict:
+        return {
+            "projects": [{"id": i, "name": f"p{i}"} for i in range(start, start + count)],
+            "limit": 100,
+            "offset": start,
+            "next": next_token,
+        }
+
+    def test_list_sends_offset_only_when_nonzero(self, client: MammothClient):
+        client.projects.list(limit=50)
+        assert client._request_json.call_args.kwargs["params"] == {
+            "fields": "id,name",
+            "limit": 50,
+        }
+        client._request_json.reset_mock()
+        client.projects.list(limit=50, offset=50)
+        assert client._request_json.call_args.kwargs["params"] == {
+            "fields": "id,name",
+            "limit": 50,
+            "offset": 50,
+        }
+
+    def test_list_all_follows_full_pages(self, client: MammothClient):
+        client._request_json.side_effect = [
+            self._page(0, 100, "?offset=100"),
+            self._page(100, 100, "?offset=200"),
+            self._page(200, 7, ""),
+        ]
+        projects = client.projects.list_all()
+        assert len(projects) == 207
+        assert [
+            c.kwargs["params"].get("offset", 0) for c in client._request_json.call_args_list
+        ] == [
+            0,
+            100,
+            200,
+        ]
+
+    def test_list_all_stops_when_the_server_ignores_offset(self, client: MammothClient):
+        client._request_json.side_effect = [self._page(0, 100, ""), self._page(0, 100, "")]
+        projects = client.projects.list_all()
+        assert len(projects) == 100
+        assert client._request_json.call_count == 2
+
+    def test_get_by_name_sees_past_the_first_page(self, client: MammothClient):
+        second = self._page(100, 1, "")
+        second["projects"] = [{"id": 100, "name": "From Claude"}]
+        client._request_json.side_effect = [self._page(0, 100, "?offset=100"), second]
+        assert client.projects.get(project="From Claude") == {"id": 100, "name": "From Claude"}

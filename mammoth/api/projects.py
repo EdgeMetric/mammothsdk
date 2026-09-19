@@ -16,6 +16,9 @@ if TYPE_CHECKING:
 
 _list = list  # Alias to avoid shadowing by method name
 
+#: Largest ``limit`` the projects route accepts (``4GENR007`` above it).
+MAX_PAGE_SIZE = 100
+
 ERR_PROJECT_ID_POSITIVE = "`project_id` must be a positive integer, got {0}."
 ERR_USER_OR_INVITE_ID_REQUIRED = (
     "Exactly one of `user_id` or `invite_id` must be provided, got user_id={0!r}, "
@@ -44,19 +47,52 @@ class ProjectsAPI:
         self,
         workspace_id: int | None = None,
         limit: int = 100,
+        offset: int = 0,
     ) -> dict[str, Any]:
-        """List all projects in a workspace.
+        """List one page of projects in a workspace.
+
+        The backend caps ``limit`` at :data:`MAX_PAGE_SIZE` (100) and rejects
+        larger values with a validation error; use :meth:`list_all` to walk
+        every page.
 
         Args:
             workspace_id: ID of the workspace (uses client default if not provided).
-            limit: Maximum number of results (default 100).
+            limit: Maximum number of results (default and maximum 100).
+            offset: Number of leading projects to skip (server-side).
 
         Returns:
-            Dict containing projects list with id and name.
+            Dict containing projects list with id and name, plus ``limit``,
+            ``offset`` and ``next`` (empty when this is the last page).
         """
         ws = workspace_id or self._ws()
-        params = {"fields": "id,name", "limit": limit}
+        params: dict[str, Any] = {"fields": "id,name", "limit": limit}
+        if offset:
+            params["offset"] = offset
         return self._client._request_json("GET", f"/workspaces/{ws}/projects", params=params)
+
+    def list_all(self, workspace_id: int | None = None) -> _list[dict[str, Any]]:
+        """Return every project in the workspace, following the 100-row pages.
+
+        Args:
+            workspace_id: ID of the workspace (uses client default if not provided).
+
+        Returns:
+            List of ``{"id", "name"}`` dicts across all pages.
+        """
+        projects: _list[dict[str, Any]] = []
+        seen: set[Any] = set()
+        offset = 0
+        while True:
+            page = self.list(workspace_id=workspace_id, limit=MAX_PAGE_SIZE, offset=offset)
+            batch = page.get("projects", []) if isinstance(page, dict) else []
+            fresh = [p for p in batch if p.get("id") not in seen]
+            seen.update(p.get("id") for p in fresh)
+            projects.extend(fresh)
+            # A short page is the last one; a page with nothing new means the
+            # server ignored the offset, so stop rather than loop.
+            if len(batch) < MAX_PAGE_SIZE or not fresh:
+                return projects
+            offset += len(batch)
 
     def get(
         self,
@@ -80,8 +116,7 @@ class ProjectsAPI:
         Raises:
             ValueError: If project not found or multiple projects without specification.
         """
-        projects_response = self.list(workspace_id=workspace_id)
-        projects = projects_response.get("projects", [])
+        projects = self.list_all(workspace_id=workspace_id)
 
         if not projects:
             raise ValueError("No projects found in workspace")
