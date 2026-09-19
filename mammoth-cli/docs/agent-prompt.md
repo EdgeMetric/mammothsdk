@@ -10,6 +10,8 @@ bundled skill is read from disk with `cat`, so the prompt works even when the
 agent's skill directory is not wired up.
 
 Fill the three placeholders (`TASK`, `PROFILE`, `PROJECT NAME`), then paste.
+A ten-line version of the same prompt sits in the repository README for
+quick handovers; this page is the full form.
 
 ---
 

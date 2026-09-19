@@ -15,20 +15,21 @@ curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-
 
 See the full [mammoth-cli guide](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/README.md).
 
-Copy-paste prompt for a shell-capable agent:
+Copy-paste prompt for a shell-capable agent (fill `PROFILE`, `PROJECT NAME`
+and `TASK`; the long form with the reasoning is in
+[docs/agent-prompt.md](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-prompt.md)):
 
 ```text
-Install the Mammoth CLI with:
+Use Mammoth Analytics only through the `mammoth` CLI in bash, every call with
+`--output json --no-input`. Install if missing:
 curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
-
-Find and read the bundled `SKILL.md` with `mammoth skill path`. Follow that
-skill to authenticate for the intended endpoint (`app` for production), verify
-the profile endpoint matches it, and run `mammoth doctor`. Do not reuse a
-mismatched release profile. If no credentials are stored, stop and tell me the
-exact `mammoth auth login` command to run in my own terminal, then wait for
-me; the CLI does not read credentials from environment variables. Once doctor
-passes, use the skill to complete my task. Never put secrets in chat, prompts,
-task records, or command arguments.
+Then `cat` the SKILL.md at `mammoth skill path` (data.canonical) and follow it.
+Run `mammoth auth status --profile PROFILE`; if it has no credentials, stop and
+tell me the exact `mammoth auth login` command to run in my own terminal, then
+wait — never ask for, read, or pass a key or secret yourself. Require `mammoth
+doctor` to pass. Work inside `mammoth project ensure 'PROJECT NAME'` unless I
+name a project; take ids only from reads; `schema get COMMAND_ID` before a new
+command; read results back before reporting. TASK: ...
 ```
 
 ## Installation

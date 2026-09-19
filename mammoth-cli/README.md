@@ -170,6 +170,23 @@ putting credentials into the handoff.
 
 ## Give your coding agent the CLI playbook
 
+The shortest handover is a prompt. Fill `PROFILE`, `PROJECT NAME` and `TASK`
+and paste it into any agent with a bash tool; the long form is
+[docs/agent-prompt.md](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-prompt.md).
+
+```text
+Use Mammoth Analytics only through the `mammoth` CLI in bash, every call with
+`--output json --no-input`. Install if missing:
+curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
+Then `cat` the SKILL.md at `mammoth skill path` (data.canonical) and follow it.
+Run `mammoth auth status --profile PROFILE`; if it has no credentials, stop and
+tell me the exact `mammoth auth login` command to run in my own terminal, then
+wait — never ask for, read, or pass a key or secret yourself. Require `mammoth
+doctor` to pass. Work inside `mammoth project ensure 'PROJECT NAME'` unless I
+name a project; take ids only from reads; `schema get COMMAND_ID` before a new
+command; read results back before reporting. TASK: ...
+```
+
 The bundled skill describes authentication, discovery, structured input, job
 handling, and confirmations. Install it for the supported coding-agent tools:
 
