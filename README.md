@@ -20,8 +20,8 @@ and `TASK`; the long form with the reasoning is in
 [docs/agent-prompt.md](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-prompt.md)):
 
 ```text
-Use Mammoth Analytics only through the `mammoth` CLI in bash, every call with
-`--output json --no-input`. Install if missing:
+Use Mammoth Analytics only through the `mammoth` CLI in bash; run
+`export MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once. Install if missing:
 curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
 Then `cat` the SKILL.md at `mammoth skill path` (data.canonical) and follow it.
 Run `mammoth auth status --profile PROFILE`; if it has no credentials, stop and
@@ -781,20 +781,20 @@ Open a new shell if needed so the installer-added tool directory is on PATH,
 then run:
 
 ```bash
-mammoth skill list --output json --no-input
-mammoth skill path --output json --no-input
+mammoth skill list
+mammoth skill path
 # Read the installed SKILL.md before operating.
-mammoth auth status --output json --no-input
+mammoth auth status
 # If the profile or stored credentials are absent, human terminal only:
 mammoth auth login
-mammoth doctor --output json --no-input
-mammoth schema find "TASK OR RESOURCE" --output json --no-input
-mammoth schema get COMMAND_ID --output json --no-input
+mammoth doctor
+mammoth schema find "TASK OR RESOURCE"
+mammoth schema get COMMAND_ID
 ```
 
 For an agent or CI on POSIX, use a private owner-only (0600) JSON file outside
 the repository: `mammoth auth login --input /private/path/credentials.json
---storage file --output json --no-input`. Do not put secrets in chat, prompts,
+--storage file`. Do not put secrets in chat, prompts,
 or command arguments. On Windows, use the approved OS keyring instead; do not
 use a file fallback unless its ACL hardening is approved. An agent that finds
 no credentials asks the operator to run the hidden-prompt login in their own

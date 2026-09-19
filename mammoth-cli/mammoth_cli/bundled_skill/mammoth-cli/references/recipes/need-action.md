@@ -11,9 +11,9 @@ US or UK). `dataset file-settings get` then reports `has_ambiguous_dates: true`
 and `date_format: null`.
 
 ```bash
-mammoth dataset get DATASET_ID --project PROJECT_ID --output json --no-input
-mammoth dataset file-settings get DATASET_ID --project PROJECT_ID --output json --no-input
-mammoth schema get dataset.file-settings.update --output json --no-input
+mammoth dataset get DATASET_ID --project PROJECT_ID
+mammoth dataset file-settings get DATASET_ID --project PROJECT_ID
+mammoth schema get dataset.file-settings.update
 ```
 
 Read the detected `delimiter`, `has_header`, `initial_skip_count`, and
@@ -26,7 +26,7 @@ operator only when neither does.
 ```bash
 mammoth dataset file-settings update DATASET_ID --project PROJECT_ID \
   --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\"", "date_format": "US"}' \
-  --output json --no-input
+ 
 ```
 
 The response is a job (`operation: "understand_csv"`). Poll `dataset get`

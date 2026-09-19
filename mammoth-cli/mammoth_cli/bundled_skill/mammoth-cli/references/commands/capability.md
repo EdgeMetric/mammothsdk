@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `capability.find`
 
-Run: `mammoth capability find`. Exact input fields: `mammoth schema get capability.find --output json --no-input`.
+Run: `mammoth capability find`. Exact input fields: `mammoth schema get capability.find`.
 
-Example: `mammoth capability find 'show projects' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth capability find 'show projects'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `CapabilityFindResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: untried; no live run recorded.
 
 ### `capability.get`
 
-Run: `mammoth capability get`. Exact input fields: `mammoth schema get capability.get --output json --no-input`.
+Run: `mammoth capability get`. Exact input fields: `mammoth schema get capability.get`.
 
-Example: `mammoth capability get AddTask --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth capability get AddTask`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `CapabilityGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -24,9 +24,9 @@ Status on release: untried; no live run recorded.
 
 ### `capability.list`
 
-Run: `mammoth capability list`. Exact input fields: `mammoth schema get capability.list --output json --no-input`.
+Run: `mammoth capability list`. Exact input fields: `mammoth schema get capability.list`.
 
-Example: `mammoth capability list --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth capability list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `CapabilityListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

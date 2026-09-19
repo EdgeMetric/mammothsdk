@@ -165,7 +165,9 @@ def doctor(invocation: Invocation) -> HandlerResult:
     )
 
     latest = updates.latest_from_pypi()
-    if latest is None:
+    if not updates.enabled():
+        version_detail = f"{__version__} installed; update check disabled ({updates.DISABLE_ENV})"
+    elif latest is None:
         version_detail = f"{__version__} installed; PyPI not reachable to compare"
     elif updates.is_newer(latest):
         version_detail = f"{__version__} installed; {latest} available: {updates.UPGRADE_COMMAND}"
@@ -270,11 +272,11 @@ def doctor(invocation: Invocation) -> HandlerResult:
     elif selected_project is None or (
         projects is not None and selected_project not in [p.get("id") for p in projects]
     ):
-        recommendations.append("mammoth project list --output json --no-input")
+        recommendations.append("mammoth project list")
         recommendations.append("mammoth context project use PROJECT_ID")
     if not connection_ok and auth_ok and not invocation.debug:
         debug_profile = f" --profile {shlex.quote(profile_name)}" if profile_name else ""
-        recommendations.append(f"mammoth doctor --debug{debug_profile} --output json --no-input")
+        recommendations.append(f"mammoth doctor --debug{debug_profile}")
 
     data = {
         "cli_version": __version__,

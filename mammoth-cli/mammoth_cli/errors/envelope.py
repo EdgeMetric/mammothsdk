@@ -100,8 +100,8 @@ def missing_project_error() -> CliError:
         exit_status=EXIT_USAGE,
         hint="Set an active project or pass --project.",
         recovery_commands=[
-            "mammoth project list --output json --no-input",
-            "mammoth context project use PROJECT_ID --output json --no-input",
+            "mammoth project list",
+            "mammoth context project use PROJECT_ID",
         ],
     )
 
@@ -121,8 +121,8 @@ def timeout_error(*, job_id: str | None = None, command: str = "job") -> CliErro
     recovery: list[str] = []
     if job_id is not None:
         details["job_id"] = job_id
-        recovery.append(f"mammoth {command} wait {job_id} --output json --no-input")
-        recovery.append(f"mammoth {command} get {job_id} --output json --no-input")
+        recovery.append(f"mammoth {command} wait {job_id}")
+        recovery.append(f"mammoth {command} get {job_id}")
     return CliError(
         code="timeout",
         message="The operation did not finish before the timeout.",
@@ -161,21 +161,15 @@ def interrupted_error(
             ids = ",".join(str(item) for item in job_id)
             recovery.extend(
                 [
-                    (
-                        f"mammoth job get-many --input '{{\"job_ids\": [{ids}]}}' "
-                        "--output json --no-input"
-                    ),
-                    (
-                        f"mammoth job wait-many --input '{{\"job_ids\": [{ids}]}}' "
-                        "--output json --no-input"
-                    ),
+                    f"mammoth job get-many --input '{{\"job_ids\": [{ids}]}}'",
+                    f"mammoth job wait-many --input '{{\"job_ids\": [{ids}]}}'",
                 ]
             )
         else:
             recovery.extend(
                 [
-                    f"mammoth job get {job_id} --output json --no-input",
-                    f"mammoth job wait {job_id} --output json --no-input",
+                    f"mammoth job get {job_id}",
+                    f"mammoth job wait {job_id}",
                 ]
             )
     return CliError(

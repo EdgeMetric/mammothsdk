@@ -30,7 +30,7 @@ defaults to `app`. Most users leave it alone. See
 Start with a read-only status check:
 
 ```bash
-mammoth auth status --output json --no-input
+mammoth auth status
 ```
 
 Compare the status report's endpoint with the intended target before running
@@ -81,7 +81,7 @@ Pass only that file's path, and select file storage explicitly:
 
 ```bash
 mammoth auth login --input /host-provisioned/credentials.json --storage file \
-  --output json --no-input
+ 
 ```
 
 The file holds one JSON document:
@@ -115,7 +115,7 @@ You can also pipe the document straight from stdin:
 
 ```bash
 cat /host-provisioned/credentials.json | mammoth auth login --input - \
-  --input-format json --storage file --output json --no-input
+  --input-format json --storage file
 ```
 
 Remove or securely rotate the input file once your runner has stored the

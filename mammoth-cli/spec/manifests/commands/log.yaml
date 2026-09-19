@@ -22,7 +22,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth log path --help
-  agent_example: mammoth log path --output json --no-input
+  agent_example: mammoth log path
   unit_tests:
   - UT-LOG-PATH
   contract_tests:
@@ -55,7 +55,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth log tail --help
-  agent_example: 'mammoth log tail --input ''{"errors_only": true, "limit": 20}'' --output json --no-input'
+  agent_example: 'mammoth log tail --input ''{"errors_only": true, "limit": 20}'''
   unit_tests:
   - UT-LOG-TAIL
   contract_tests:

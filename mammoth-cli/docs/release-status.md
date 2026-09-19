@@ -1,5 +1,48 @@
 # CLI release provenance
 
+## 2.0.21 / SDK 0.7.11
+
+Ergonomics. The agent runs seldom-changing choices once and every call after
+that is short; output costs as few tokens as the answer needs. SDK unchanged
+(`mammoth-io>=0.7.11,<0.8`).
+
+- Output: JSON is one compact line when stdout is a pipe or file and indented
+  on a terminal (`MAMMOTH_JSON_PRETTY=1|0` overrides). `meta` carries only
+  keys with a value; `pagination` and `update_available` appear when set
+  instead of as `null` on every envelope.
+- Session defaults: `MAMMOTH_PROFILE`, `MAMMOTH_PROJECT`, `MAMMOTH_OUTPUT`,
+  `MAMMOTH_NO_INPUT` stand in for the flags of the same name. Profile settings
+  saved with `config set` (`output`, `timeout`, `job_timeout`,
+  `pipeline_timeout`) are now applied to a run, as documented; before 2.0.21
+  they were stored and ignored. Flag beats environment beats profile.
+- `project ensure NAME` saves the project as the profile's active project
+  (`data.active`), so `--project` is not repeated on every call.
+- View commands: the CLI remembers which dataset each view belongs to
+  (`view list`, `view get`, and any resolved call feed a small local cache
+  under the config directory; `MAMMOTH_PARENT_CACHE` relocates it), so
+  `view transform ...`, `view data get`, `view export ...` take the view id
+  alone once the parent has been seen. The discovery walk remains the
+  fallback.
+- Waiting commands (transform, export, upload, job wait, ...) default to a
+  300 s job budget; reads keep the request timeout. `--timeout` still wins.
+- `schema list` returns a family index (`{family: [command ids]}`, ~1.5 KB
+  instead of ~3 MB); `schema list FAMILY` lists one family's summaries;
+  `--input '{"full": true}'` returns the old document. `schema get` returns
+  the brief form (positionals, input fields, restrictions, example) and
+  `--input '{"full": true}'` the JSON Schema. `--help` on any leaf lists its
+  input fields with types.
+- `view data get` returns at most 50 rows (`limit`; `0` for all) and reports
+  `rows_returned`, `rows_total_in_page`, `truncated`; it forwards `sequence`,
+  `timeout` and `poll_interval`.
+- Every example, hint, recovery command and doc drops `--output json
+  --no-input`; contract tests now reject those flags instead of requiring
+  them. `SKILL.md` and `recipes/end-to-end.md` are rewritten around the
+  short flow (doctor → project ensure → upload → view list → transform → data
+  get), and `docs/agent-prompt.md` exports the two session defaults once.
+- Errors: HTTP 502/504 (and 408/425) on a read map to `retryable_error`
+  (exit 7) like 503; the same status on a write stays `outcome_unknown`.
+  `doctor` distinguishes a disabled update check from an unreachable PyPI.
+
 ## 2.0.20 / SDK 0.7.11
 
 A follow-up to 2.0.19 for one thing the live run showed: the projects route

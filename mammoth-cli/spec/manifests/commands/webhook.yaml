@@ -29,7 +29,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth webhook create --help
-  agent_example: mammoth webhook create 'Revenue report' --output json --no-input
+  agent_example: mammoth webhook create 'Revenue report'
   unit_tests:
   - UT-WEBHOOK-CREATE
   contract_tests:
@@ -69,7 +69,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth webhook delete WEBHOOK_ID --help
-  agent_example: mammoth webhook delete 123 --output json --no-input
+  agent_example: mammoth webhook delete 123
   unit_tests:
   - UT-WEBHOOK-DELETE
   contract_tests:
@@ -109,7 +109,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth webhook get WEBHOOK_ID --help
-  agent_example: mammoth webhook get 123 --output json --no-input
+  agent_example: mammoth webhook get 123
   unit_tests:
   - UT-WEBHOOK-GET
   contract_tests:
@@ -143,7 +143,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth webhook list --help
-  agent_example: mammoth webhook list --output json --no-input
+  agent_example: mammoth webhook list
   unit_tests:
   - UT-WEBHOOK-LIST
   contract_tests:
@@ -178,7 +178,7 @@ commands:
   secret_fields: []
   human_example: mammoth webhook send --help
   agent_example: 'mammoth webhook send --input ''{"webhook_uri": "https://example.com/data.csv", "data":
-    {"sample_key": "Status"}}'' --output json --no-input'
+    {"sample_key": "Status"}}'''
   unit_tests:
   - UT-WEBHOOK-SEND
   contract_tests:
@@ -213,8 +213,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth webhook send-get --help
-  agent_example: 'mammoth webhook send-get --input ''{"webhook_uri": "https://example.com/data.csv"}''
-    --output json --no-input'
+  agent_example: 'mammoth webhook send-get --input ''{"webhook_uri": "https://example.com/data.csv"}'''
   unit_tests:
   - UT-WEBHOOK-SEND-GET
   contract_tests:
@@ -255,7 +254,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth webhook update WEBHOOK_ID --help
-  agent_example: mammoth webhook update 123 --output json --no-input
+  agent_example: mammoth webhook update 123
   unit_tests:
   - UT-WEBHOOK-UPDATE
   contract_tests:

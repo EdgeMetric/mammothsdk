@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `template.create`
 
-Run: `mammoth template create`. Exact input fields: `mammoth schema get template.create --output json --no-input`.
+Run: `mammoth template create`. Exact input fields: `mammoth schema get template.create`.
 
-Example: `mammoth template create --input '{"body": {"name": "Revenue report"}}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth template create --input '{"body": {"name": "Revenue report"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `TemplateCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `template.delete`
 
-Run: `mammoth template delete`. Exact input fields: `mammoth schema get template.delete --output json --no-input`.
+Run: `mammoth template delete`. Exact input fields: `mammoth schema get template.delete`.
 
-Example: `mammoth template delete 123 --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth template delete 123`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `TemplateDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -24,9 +24,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `template.get`
 
-Run: `mammoth template get`. Exact input fields: `mammoth schema get template.get --output json --no-input`.
+Run: `mammoth template get`. Exact input fields: `mammoth schema get template.get`.
 
-Example: `mammoth template get 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth template get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `TemplateGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -34,9 +34,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `template.list`
 
-Run: `mammoth template list`. Exact input fields: `mammoth schema get template.list --output json --no-input`.
+Run: `mammoth template list`. Exact input fields: `mammoth schema get template.list`.
 
-Example: `mammoth template list --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth template list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `TemplateListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -44,9 +44,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `template.update`
 
-Run: `mammoth template update`. Exact input fields: `mammoth schema get template.update --output json --no-input`.
+Run: `mammoth template update`. Exact input fields: `mammoth schema get template.update`.
 
-Example: `mammoth template update 123 --input '{"body": {"name": "Revenue report"}}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth template update 123 --input '{"body": {"name": "Revenue report"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `TemplateUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

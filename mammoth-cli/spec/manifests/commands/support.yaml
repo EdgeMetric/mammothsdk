@@ -36,7 +36,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support connector-profile add-connector PROFILE_ID CONNECTOR_ID --help
-  agent_example: mammoth support connector-profile add-connector 123 123 --output json --no-input
+  agent_example: mammoth support connector-profile add-connector 123 123
   unit_tests:
   - UT-SUPPORT-CONNECTOR-PROFILE-ADD-CONNECTOR
   contract_tests:
@@ -77,7 +77,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support connector-profile create --help
-  agent_example: mammoth support connector-profile create 'Revenue report' --output json --no-input
+  agent_example: mammoth support connector-profile create 'Revenue report'
   unit_tests:
   - UT-SUPPORT-CONNECTOR-PROFILE-CREATE
   contract_tests:
@@ -118,7 +118,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support connector-profile delete PROFILE_ID --help
-  agent_example: mammoth support connector-profile delete 123 --output json --no-input
+  agent_example: mammoth support connector-profile delete 123
   unit_tests:
   - UT-SUPPORT-CONNECTOR-PROFILE-DELETE
   contract_tests:
@@ -152,7 +152,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support connector-profile list --help
-  agent_example: mammoth support connector-profile list --output json --no-input
+  agent_example: mammoth support connector-profile list
   unit_tests:
   - UT-SUPPORT-CONNECTOR-PROFILE-LIST
   contract_tests:
@@ -193,7 +193,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support connector-profile update PROFILE_ID --help
-  agent_example: mammoth support connector-profile update 123 --output json --no-input
+  agent_example: mammoth support connector-profile update 123
   unit_tests:
   - UT-SUPPORT-CONNECTOR-PROFILE-UPDATE
   contract_tests:
@@ -233,7 +233,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support connector create --help
-  agent_example: mammoth support connector create 'Revenue report' --output json --no-input
+  agent_example: mammoth support connector create 'Revenue report'
   unit_tests:
   - UT-SUPPORT-CONNECTOR-CREATE
   contract_tests:
@@ -273,7 +273,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support connector delete CONNECTOR_ID --help
-  agent_example: mammoth support connector delete 123 --output json --no-input
+  agent_example: mammoth support connector delete 123
   unit_tests:
   - UT-SUPPORT-CONNECTOR-DELETE
   contract_tests:
@@ -307,7 +307,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support connector list --help
-  agent_example: mammoth support connector list --output json --no-input
+  agent_example: mammoth support connector list
   unit_tests:
   - UT-SUPPORT-CONNECTOR-LIST
   contract_tests:
@@ -347,7 +347,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support connector update CONNECTOR_ID --help
-  agent_example: mammoth support connector update 123 --output json --no-input
+  agent_example: mammoth support connector update 123
   unit_tests:
   - UT-SUPPORT-CONNECTOR-UPDATE
   contract_tests:
@@ -394,7 +394,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support feature-profile add-feature PROFILE_ID FEATURE_ID --help
-  agent_example: mammoth support feature-profile add-feature 123 123 --output json --no-input
+  agent_example: mammoth support feature-profile add-feature 123 123
   unit_tests:
   - UT-SUPPORT-FEATURE-PROFILE-ADD-FEATURE
   contract_tests:
@@ -434,7 +434,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support feature-profile create --help
-  agent_example: mammoth support feature-profile create 'Revenue report' --output json --no-input
+  agent_example: mammoth support feature-profile create 'Revenue report'
   unit_tests:
   - UT-SUPPORT-FEATURE-PROFILE-CREATE
   contract_tests:
@@ -474,7 +474,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support feature-profile delete PROFILE_ID --help
-  agent_example: mammoth support feature-profile delete 123 --output json --no-input
+  agent_example: mammoth support feature-profile delete 123
   unit_tests:
   - UT-SUPPORT-FEATURE-PROFILE-DELETE
   contract_tests:
@@ -508,7 +508,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support feature-profile list --help
-  agent_example: mammoth support feature-profile list --output json --no-input
+  agent_example: mammoth support feature-profile list
   unit_tests:
   - UT-SUPPORT-FEATURE-PROFILE-LIST
   contract_tests:
@@ -548,7 +548,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support feature-profile update PROFILE_ID --help
-  agent_example: mammoth support feature-profile update 123 --output json --no-input
+  agent_example: mammoth support feature-profile update 123
   unit_tests:
   - UT-SUPPORT-FEATURE-PROFILE-UPDATE
   contract_tests:
@@ -588,7 +588,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support feature create --help
-  agent_example: mammoth support feature create 'Revenue report' --output json --no-input
+  agent_example: mammoth support feature create 'Revenue report'
   unit_tests:
   - UT-SUPPORT-FEATURE-CREATE
   contract_tests:
@@ -628,7 +628,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support feature delete FEATURE_ID --help
-  agent_example: mammoth support feature delete 123 --output json --no-input
+  agent_example: mammoth support feature delete 123
   unit_tests:
   - UT-SUPPORT-FEATURE-DELETE
   contract_tests:
@@ -662,7 +662,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support feature list --help
-  agent_example: mammoth support feature list --output json --no-input
+  agent_example: mammoth support feature list
   unit_tests:
   - UT-SUPPORT-FEATURE-LIST
   contract_tests:
@@ -702,7 +702,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support feature update FEATURE_ID --help
-  agent_example: mammoth support feature update 123 --output json --no-input
+  agent_example: mammoth support feature update 123
   unit_tests:
   - UT-SUPPORT-FEATURE-UPDATE
   contract_tests:
@@ -748,7 +748,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support ownership transfer WORKSPACE_ID USER_ID --help
-  agent_example: mammoth support ownership transfer 123 123 --output json --no-input
+  agent_example: mammoth support ownership transfer 123 123
   unit_tests:
   - UT-SUPPORT-OWNERSHIP-TRANSFER
   contract_tests:
@@ -788,7 +788,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan archive PLAN_ID --help
-  agent_example: mammoth support plan archive 123 --output json --no-input
+  agent_example: mammoth support plan archive 123
   unit_tests:
   - UT-SUPPORT-PLAN-ARCHIVE
   contract_tests:
@@ -822,7 +822,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan chargebee-list --help
-  agent_example: mammoth support plan chargebee-list --output json --no-input
+  agent_example: mammoth support plan chargebee-list
   unit_tests:
   - UT-SUPPORT-PLAN-CHARGEBEE-LIST
   contract_tests:
@@ -863,7 +863,7 @@ commands:
   secret_fields: []
   human_example: mammoth support plan create --help
   agent_example: 'mammoth support plan create ''Revenue report'' --input ''{"monthly_price": 1.0, "is_self_serve":
-    true}'' --output json --no-input'
+    true}'''
   unit_tests:
   - UT-SUPPORT-PLAN-CREATE
   contract_tests:
@@ -903,7 +903,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan delete PLAN_ID --help
-  agent_example: mammoth support plan delete 123 --output json --no-input
+  agent_example: mammoth support plan delete 123
   unit_tests:
   - UT-SUPPORT-PLAN-DELETE
   contract_tests:
@@ -943,7 +943,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan get PLAN_ID --help
-  agent_example: mammoth support plan get 123 --output json --no-input
+  agent_example: mammoth support plan get 123
   unit_tests:
   - UT-SUPPORT-PLAN-GET
   contract_tests:
@@ -977,7 +977,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan list --help
-  agent_example: mammoth support plan list --output json --no-input
+  agent_example: mammoth support plan list
   unit_tests:
   - UT-SUPPORT-PLAN-LIST
   contract_tests:
@@ -1011,7 +1011,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan self-serve-list --help
-  agent_example: mammoth support plan self-serve-list --output json --no-input
+  agent_example: mammoth support plan self-serve-list
   unit_tests:
   - UT-SUPPORT-PLAN-SELF-SERVE-LIST
   contract_tests:
@@ -1051,7 +1051,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan update PLAN_ID --help
-  agent_example: mammoth support plan update 123 --output json --no-input
+  agent_example: mammoth support plan update 123
   unit_tests:
   - UT-SUPPORT-PLAN-UPDATE
   contract_tests:
@@ -1093,7 +1093,7 @@ commands:
   secret_fields: []
   human_example: mammoth support plan update-storage-tiers PLAN_ID --help
   agent_example: 'mammoth support plan update-storage-tiers 123 --input ''{"storage_tiers": [{"sample_key":
-    "Status"}]}'' --output json --no-input'
+    "Status"}]}'''
   unit_tests:
   - UT-SUPPORT-PLAN-UPDATE-STORAGE-TIERS
   contract_tests:
@@ -1139,7 +1139,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support subscription create WORKSPACE_ID PLAN_ID --help
-  agent_example: mammoth support subscription create 123 resource-123 --output json --no-input
+  agent_example: mammoth support subscription create 123 resource-123
   unit_tests:
   - UT-SUPPORT-SUBSCRIPTION-CREATE
   contract_tests:
@@ -1179,7 +1179,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support subscription get WORKSPACE_ID --help
-  agent_example: mammoth support subscription get 123 --output json --no-input
+  agent_example: mammoth support subscription get 123
   unit_tests:
   - UT-SUPPORT-SUBSCRIPTION-GET
   contract_tests:
@@ -1225,7 +1225,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support subscription update WORKSPACE_ID SUBSCRIPTION_ID --help
-  agent_example: mammoth support subscription update 123 resource-123 --output json --no-input
+  agent_example: mammoth support subscription update 123 resource-123
   unit_tests:
   - UT-SUPPORT-SUBSCRIPTION-UPDATE
   contract_tests:
@@ -1259,7 +1259,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support user list-all --help
-  agent_example: mammoth support user list-all --output json --no-input
+  agent_example: mammoth support user list-all
   unit_tests:
   - UT-SUPPORT-USER-LIST-ALL
   contract_tests:
@@ -1299,8 +1299,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support user register --help
-  agent_example: 'mammoth support user register analyst@example.com --input ''{"first_name": "Revenue
-    report", "last_name": "Revenue report", "verified": true}'' --output json --no-input'
+  agent_example: 'mammoth support user register analyst@example.com --input ''{"first_name": "Revenue report",
+    "last_name": "Revenue report", "verified": true}'''
   unit_tests:
   - UT-SUPPORT-USER-REGISTER
   contract_tests:
@@ -1340,8 +1340,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support user update --help
-  agent_example: 'mammoth support user update analyst@example.com --input ''{"verified": true}'' --output
-    json --no-input'
+  agent_example: 'mammoth support user update analyst@example.com --input ''{"verified": true}'''
   unit_tests:
   - UT-SUPPORT-USER-UPDATE
   contract_tests:
@@ -1382,7 +1381,7 @@ commands:
   secret_fields: []
   human_example: mammoth support workspace create --help
   agent_example: 'mammoth support workspace create ''Revenue report'' --input ''{"user_email": "analyst@example.com",
-    "payment_frequency": "sample"}'' --output json --no-input'
+    "payment_frequency": "sample"}'''
   unit_tests:
   - UT-SUPPORT-WORKSPACE-CREATE
   contract_tests:
@@ -1422,7 +1421,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support workspace delete WORKSPACE_ID --help
-  agent_example: mammoth support workspace delete 123 --output json --no-input
+  agent_example: mammoth support workspace delete 123
   unit_tests:
   - UT-SUPPORT-WORKSPACE-DELETE
   contract_tests:
@@ -1462,7 +1461,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support workspace get WORKSPACE_ID --help
-  agent_example: mammoth support workspace get 123 --output json --no-input
+  agent_example: mammoth support workspace get 123
   unit_tests:
   - UT-SUPPORT-WORKSPACE-GET
   contract_tests:
@@ -1496,7 +1495,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support workspace list --help
-  agent_example: mammoth support workspace list --output json --no-input
+  agent_example: mammoth support workspace list
   unit_tests:
   - UT-SUPPORT-WORKSPACE-LIST
   contract_tests:
@@ -1537,7 +1536,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support workspace restore-access WORKSPACE_ID --help
-  agent_example: mammoth support workspace restore-access 123 --output json --no-input
+  agent_example: mammoth support workspace restore-access 123
   unit_tests:
   - UT-SUPPORT-WORKSPACE-RESTORE-ACCESS
   contract_tests:
@@ -1578,7 +1577,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support workspace suspend-access WORKSPACE_ID --help
-  agent_example: mammoth support workspace suspend-access 123 --output json --no-input
+  agent_example: mammoth support workspace suspend-access 123
   unit_tests:
   - UT-SUPPORT-WORKSPACE-SUSPEND-ACCESS
   contract_tests:
@@ -1619,7 +1618,7 @@ commands:
   secret_fields: []
   human_example: mammoth support workspace update WORKSPACE_ID --help
   agent_example: 'mammoth support workspace update 123 --input ''{"name": "Revenue report", "payment_frequency":
-    "sample", "plan_id": 1}'' --output json --no-input'
+    "sample", "plan_id": 1}'''
   unit_tests:
   - UT-SUPPORT-WORKSPACE-UPDATE
   contract_tests:
@@ -1660,7 +1659,7 @@ commands:
   secret_fields: []
   human_example: mammoth support workspace user add WORKSPACE_ID --help
   agent_example: 'mammoth support workspace user add 123 --input ''{"email": "analyst@example.com", "role":
-    "sample"}'' --output json --no-input'
+    "sample"}'''
   unit_tests:
   - UT-SUPPORT-WORKSPACE-USER-ADD
   contract_tests:
@@ -1700,7 +1699,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support workspace user list WORKSPACE_ID --help
-  agent_example: mammoth support workspace user list 123 --output json --no-input
+  agent_example: mammoth support workspace user list 123
   unit_tests:
   - UT-SUPPORT-WORKSPACE-USER-LIST
   contract_tests:
@@ -1746,7 +1745,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support workspace user remove WORKSPACE_ID USER_ID --help
-  agent_example: mammoth support workspace user remove 123 123 --output json --no-input
+  agent_example: mammoth support workspace user remove 123 123
   unit_tests:
   - UT-SUPPORT-WORKSPACE-USER-REMOVE
   contract_tests:
@@ -1792,8 +1791,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support workspace user transfer WORKSPACE_ID USER_ID --help
-  agent_example: 'mammoth support workspace user transfer 123 123 --input ''{"role": "sample"}'' --output
-    json --no-input'
+  agent_example: 'mammoth support workspace user transfer 123 123 --input ''{"role": "sample"}'''
   unit_tests:
   - UT-SUPPORT-WORKSPACE-USER-TRANSFER
   contract_tests:

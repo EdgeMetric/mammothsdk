@@ -382,7 +382,30 @@ def test_data_get_relabels_and_drops_system_columns(
         "data": [{"column_1": "A", "column_2": "10", "hash": "deadbeef"}]
     }
     data, _ = view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
-    assert data == {"data": [{"store": "A", "revenue": "10"}]}
+    assert data == {
+        "data": [{"store": "A", "revenue": "10"}],
+        "rows_returned": 1,
+        "rows_total_in_page": 1,
+        "truncated": False,
+    }
+
+
+def test_data_get_trims_rows_to_the_limit(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {
+        "metadata": [{"internal_name": "column_1", "display_name": "n"}]
+    }
+    fake_service.responses[_DATA_GET] = {"data": [{"column_1": i} for i in range(120)]}
+    data, _ = view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
+    assert (data["rows_returned"], data["rows_total_in_page"], data["truncated"]) == (50, 120, True)
+    assert len(data["data"]) == 50
+
+    doc = _doc(tmp_path, {"limit": 0, "sequence": 3})
+    data, _ = view_cmd.view_data_get(
+        _inv("view.data.get", project=180, extra_args=["7", "9"], input_file=doc)
+    )
+    assert len(data["data"]) == 120 and data["truncated"] is False
+    data_calls = [kwargs for symbol, kwargs in fake_service.call_log if symbol == _DATA_GET]
+    assert data_calls[-1]["sequence"] == 3
 
 
 def test_data_query_passes_ids(fake_service: FakeMammothService) -> None:
@@ -601,7 +624,7 @@ def test_non_read_commands_refuse_parent_discovery(
     error = excinfo.value
     assert error.code == "missing_argument"
     assert error.exit_status == 2
-    assert error.recovery_commands == ["mammoth view get 7 --project 180 --output json --no-input"]
+    assert error.recovery_commands == ["mammoth view get 7 --project 180"]
     assert fake_service.call_log == []
 
 

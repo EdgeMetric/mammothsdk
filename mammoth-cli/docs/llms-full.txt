@@ -6,1237 +6,1237 @@ Sensitive structured input must come from a private file or pipe; never put secr
 ## activity
 
 - `mammoth activity export` [read/none] -> mammoth.api.activity_logs.ActivityLogsAPI.export
-  example: mammoth activity export --output json --no-input
+  example: mammoth activity export
 - `mammoth activity list` [read/none] -> mammoth.api.activity_logs.ActivityLogsAPI.list
-  example: mammoth activity list --output json --no-input
+  example: mammoth activity list
 
 ## addon
 
 - `mammoth addon connector add` [high_impact/confirm_target] -> mammoth.api.addons.AddonsAPI.add_connector
-  example: mammoth addon connector add --input '{"connector_id": 42}' --output json --no-input
+  example: mammoth addon connector add --input '{"connector_id": 42}'
 - `mammoth addon connector remove` [high_impact/confirm_target] -> mammoth.api.addons.AddonsAPI.remove_connector
-  example: mammoth addon connector remove --input '{"connector_id": 42}' --output json --no-input
+  example: mammoth addon connector remove --input '{"connector_id": 42}'
 - `mammoth addon list` [read/none] -> mammoth.api.addons.AddonsAPI.list
-  example: mammoth addon list --output json --no-input
+  example: mammoth addon list
 - `mammoth addon storage add` [high_impact/confirm_target] -> mammoth.api.addons.AddonsAPI.add_storage
-  example: mammoth addon storage add --input '{"additional_storage_gb": 1}' --output json --no-input
+  example: mammoth addon storage add --input '{"additional_storage_gb": 1}'
 - `mammoth addon storage remove` [high_impact/confirm_target] -> mammoth.api.addons.AddonsAPI.remove_storage
-  example: mammoth addon storage remove --input '{"removal_storage_gb": 1}' --output json --no-input
+  example: mammoth addon storage remove --input '{"removal_storage_gb": 1}'
 - `mammoth addon user add` [high_impact/confirm_target] -> mammoth.api.addons.AddonsAPI.add_users
-  example: mammoth addon user add --output json --no-input
+  example: mammoth addon user add
 - `mammoth addon user remove` [high_impact/confirm_target] -> mammoth.api.addons.AddonsAPI.remove_users
-  example: mammoth addon user remove --input '{"user_count": 1}' --output json --no-input
+  example: mammoth addon user remove --input '{"user_count": 1}'
 
 ## agent
 
 - `mammoth agent chat` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.chat
-  example: mammoth agent chat --input '{"message": "Summarize revenue by region", "scope": {"sample_key": "Status"}}' --output json --no-input
+  example: mammoth agent chat --input '{"message": "Summarize revenue by region", "scope": {"sample_key": "Status"}}'
 - `mammoth agent session delete` [destructive/prompt_or_yes] -> mammoth.api.agents.AgentsAPI.session_delete
-  example: mammoth agent session delete resource-123 --output json --no-input
+  example: mammoth agent session delete resource-123
 - `mammoth agent session list` [read/none] -> mammoth.api.agents.AgentsAPI.session_list
-  example: mammoth agent session list --output json --no-input
+  example: mammoth agent session list
 - `mammoth agent session messages` [read/none] -> mammoth.api.agents.AgentsAPI.session_messages
-  example: mammoth agent session messages resource-123 --output json --no-input
+  example: mammoth agent session messages resource-123
 - `mammoth agent session set-visibility` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.session_set_visibility
-  example: mammoth agent session set-visibility resource-123 --input '{"visibility": "sample"}' --output json --no-input
+  example: mammoth agent session set-visibility resource-123 --input '{"visibility": "sample"}'
 
 ## ai
 
 - `mammoth ai condition generate` [benign_mutation/none] -> mammoth.api.ai.AIAPI.condition_generate
-  example: mammoth ai condition generate 123 --input '{"intent": "Summarize revenue by region"}' --output json --no-input
+  example: mammoth ai condition generate 123 --input '{"intent": "Summarize revenue by region"}'
 - `mammoth ai expression generate` [benign_mutation/none] -> mammoth.api.ai.AIAPI.expression_generate
-  example: mammoth ai expression generate 123 --input '{"intent": "Summarize revenue by region", "mode": "sample"}' --output json --no-input
+  example: mammoth ai expression generate 123 --input '{"intent": "Summarize revenue by region", "mode": "sample"}'
 - `mammoth ai retention condition` [benign_mutation/none] -> mammoth.api.ai.AIAPI.retention_condition
-  example: mammoth ai retention condition 123 --input '{"mode": "generate", "intent": "completed payments older than 90 days"}' --output json --no-input --project 456
+  example: mammoth ai retention condition 123 --input '{"mode": "generate", "intent": "completed payments older than 90 days"}' --project 456
 - `mammoth ai sql generate` [read/none] -> mammoth.api.ai.AIAPI.generate_sql
-  example: mammoth ai sql generate 'Summarize revenue by region' --input '{"dataset_id": 456}' --output json --no-input
+  example: mammoth ai sql generate 'Summarize revenue by region' --input '{"dataset_id": 456}'
 - `mammoth ai suggestion list` [read/none] -> mammoth.api.ai.AIAPI.get_suggestions
-  example: mammoth ai suggestion list --input '{"suggestion_type": "generate_task", "params": {"prompt": "Filter rows where Price > 100"}, "dataset_id": 456, "dataview_id": 123}' --output json --no-input
+  example: mammoth ai suggestion list --input '{"suggestion_type": "generate_task", "params": {"prompt": "Filter rows where Price > 100"}, "dataset_id": 456, "dataview_id": 123}'
 
 ## annotation
 
 - `mammoth annotation comment add` [benign_mutation/none] -> mammoth.api.annotations.AnnotationsAPI.comment_add
-  example: mammoth annotation comment add 123 --input '{"body": "sample"}' --output json --no-input
+  example: mammoth annotation comment add 123 --input '{"body": "sample"}'
 - `mammoth annotation create` [benign_mutation/none] -> mammoth.api.annotations.AnnotationsAPI.create
-  example: mammoth annotation create --input '{"target_type": "sample", "target_id": 1, "body": "sample"}' --output json --no-input
+  example: mammoth annotation create --input '{"target_type": "sample", "target_id": 1, "body": "sample"}'
 - `mammoth annotation delete` [destructive/prompt_or_yes] -> mammoth.api.annotations.AnnotationsAPI.delete
-  example: mammoth annotation delete 123 --output json --no-input
+  example: mammoth annotation delete 123
 - `mammoth annotation list` [read/none] -> mammoth.api.annotations.AnnotationsAPI.list
-  example: mammoth annotation list --output json --no-input
+  example: mammoth annotation list
 - `mammoth annotation update` [benign_mutation/none] -> mammoth.api.annotations.AnnotationsAPI.update
-  example: mammoth annotation update 123 --input '{"status": "sample"}' --output json --no-input
+  example: mammoth annotation update 123 --input '{"status": "sample"}'
 
 ## auth
 
 - `mammoth auth login` [benign_mutation/none] -> mammoth_cli.context.auth.login
-  example: mammoth auth login --output json --no-input
+  example: mammoth auth login
 - `mammoth auth logout` [benign_mutation/none] -> mammoth_cli.context.auth.logout
-  example: mammoth auth logout --output json --no-input
+  example: mammoth auth logout
 - `mammoth auth status` [read/none] -> mammoth_cli.context.auth.status
-  example: mammoth auth status --output json --no-input
+  example: mammoth auth status
 
 ## automation
 
 - `mammoth automation create` [external_effect/yes_always] -> mammoth.api.automations.AutomationsAPI.create
-  example: mammoth automation create 'Revenue report' --input '{"description": "sample", "tasks": [{"task_type": "run_data_retrieval"}]}' --output json --no-input
+  example: mammoth automation create 'Revenue report' --input '{"description": "sample", "tasks": [{"task_type": "run_data_retrieval"}]}'
 - `mammoth automation delete` [destructive/prompt_or_yes] -> mammoth.api.automations.AutomationsAPI.delete
-  example: mammoth automation delete 123 --output json --no-input
+  example: mammoth automation delete 123
 - `mammoth automation get` [read/none] -> mammoth.api.automations.AutomationsAPI.get
-  example: mammoth automation get 123 --output json --no-input
+  example: mammoth automation get 123
 - `mammoth automation list` [read/none] -> mammoth.api.automations.AutomationsAPI.list
-  example: mammoth automation list --output json --no-input
+  example: mammoth automation list
 - `mammoth automation restore` [benign_mutation/none] -> mammoth.api.automations.AutomationsAPI.restore
-  example: mammoth automation restore 123 --output json --no-input
+  example: mammoth automation restore 123
 - `mammoth automation trash` [benign_mutation/none] -> mammoth.api.automations.AutomationsAPI.trash
-  example: mammoth automation trash 123 --output json --no-input
+  example: mammoth automation trash 123
 - `mammoth automation update` [external_effect/yes_always] -> mammoth.api.automations.AutomationsAPI.update
-  example: mammoth automation update 123 --input '{"patch": [{"op": "replace", "path": "details", "value": "sample"}]}' --output json --no-input
+  example: mammoth automation update 123 --input '{"patch": [{"op": "replace", "path": "details", "value": "sample"}]}'
 
 ## batch
 
 - `mammoth batch bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.batches.BatchesAPI.bulk_delete
-  example: mammoth batch bulk-delete 123 --output json --no-input
+  example: mammoth batch bulk-delete 123
 - `mammoth batch create` [benign_mutation/none] -> mammoth.api.batches.BatchesAPI.create
-  example: mammoth batch create 123 123 --input '{"mapping": [{"source_c_name": "column_1", "destination_c_name": "column_1", "expected_destination_c_type": "TEXT"}]}' --output json --no-input
+  example: mammoth batch create 123 123 --input '{"mapping": [{"source_c_name": "column_1", "destination_c_name": "column_1", "expected_destination_c_type": "TEXT"}]}'
 - `mammoth batch create-spec` [benign_mutation/none] -> mammoth.api.batches.BatchesAPI.create_spec
-  example: mammoth batch create-spec 123 --input '{"file_id": 94}' --output json --no-input
+  example: mammoth batch create-spec 123 --input '{"file_id": 94}'
 - `mammoth batch delete` [destructive/prompt_or_yes] -> mammoth.api.batches.BatchesAPI.delete
-  example: mammoth batch delete 123 123 --output json --no-input
+  example: mammoth batch delete 123 123
 - `mammoth batch get` [read/none] -> mammoth.api.batches.BatchesAPI.get
-  example: mammoth batch get 123 123 --output json --no-input
+  example: mammoth batch get 123 123
 - `mammoth batch list` [read/none] -> mammoth.api.batches.BatchesAPI.list
-  example: mammoth batch list 123 --output json --no-input
+  example: mammoth batch list 123
 - `mammoth batch update` [benign_mutation/none] -> mammoth.api.batches.BatchesAPI.update
-  example: mammoth batch update 123 --input '{"patch": [{"sample_key": "Status"}]}' --output json --no-input
+  example: mammoth batch update 123 --input '{"patch": [{"sample_key": "Status"}]}'
 
 ## billing
 
 - `mammoth billing chargebee-plan` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.chargebee_plan
-  example: mammoth billing chargebee-plan --output json --no-input
+  example: mammoth billing chargebee-plan
 - `mammoth billing hosted-page` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.hosted_page
-  example: mammoth billing hosted-page sample --output json --no-input
+  example: mammoth billing hosted-page sample
 - `mammoth billing invoice charge` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.invoice_charge
-  example: mammoth billing invoice charge --output json --no-input
+  example: mammoth billing invoice charge
 - `mammoth billing invoice get` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.invoice_get
-  example: mammoth billing invoice get 123 --output json --no-input
+  example: mammoth billing invoice get 123
 - `mammoth billing invoice list` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.invoice_list
-  example: mammoth billing invoice list --output json --no-input
+  example: mammoth billing invoice list
 - `mammoth billing stripe cancel` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_cancel
-  example: mammoth billing stripe cancel --output json --no-input
+  example: mammoth billing stripe cancel
 - `mammoth billing stripe checkout-url` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_checkout_url
-  example: mammoth billing stripe checkout-url --input '{"success_url": "https://example.com/data.csv", "cancel_url": "https://example.com/data.csv"}' --output json --no-input
+  example: mammoth billing stripe checkout-url --input '{"success_url": "https://example.com/data.csv", "cancel_url": "https://example.com/data.csv"}'
 - `mammoth billing stripe create` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_create
-  example: mammoth billing stripe create 123 --output json --no-input
+  example: mammoth billing stripe create 123
 - `mammoth billing stripe end-trial` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_end_trial
-  example: mammoth billing stripe end-trial --output json --no-input
+  example: mammoth billing stripe end-trial
 - `mammoth billing stripe get` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_get
-  example: mammoth billing stripe get --output json --no-input
+  example: mammoth billing stripe get
 - `mammoth billing stripe history` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_history
-  example: mammoth billing stripe history --output json --no-input
+  example: mammoth billing stripe history
 - `mammoth billing stripe payment-method delete` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_payment_method_delete
-  example: mammoth billing stripe payment-method delete resource-123 --output json --no-input
+  example: mammoth billing stripe payment-method delete resource-123
 - `mammoth billing stripe payment-method list` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_payment_method_list
-  example: mammoth billing stripe payment-method list --output json --no-input
+  example: mammoth billing stripe payment-method list
 - `mammoth billing stripe payment-method set-default` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_payment_method_set_default
-  example: mammoth billing stripe payment-method set-default resource-123 --output json --no-input
+  example: mammoth billing stripe payment-method set-default resource-123
 - `mammoth billing stripe portal-url` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_portal_url
-  example: mammoth billing stripe portal-url --output json --no-input
+  example: mammoth billing stripe portal-url
 - `mammoth billing stripe preview-invoice` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_preview_invoice
-  example: mammoth billing stripe preview-invoice --output json --no-input
+  example: mammoth billing stripe preview-invoice
 - `mammoth billing stripe retry-payment` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_retry_payment
-  example: mammoth billing stripe retry-payment --output json --no-input
+  example: mammoth billing stripe retry-payment
 - `mammoth billing stripe status` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_status
-  example: mammoth billing stripe status --output json --no-input
+  example: mammoth billing stripe status
 - `mammoth billing stripe sync` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_sync
-  example: mammoth billing stripe sync --output json --no-input
+  example: mammoth billing stripe sync
 - `mammoth billing stripe upcoming-invoice` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_upcoming_invoice
-  example: mammoth billing stripe upcoming-invoice --output json --no-input
+  example: mammoth billing stripe upcoming-invoice
 - `mammoth billing stripe usage` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_usage
-  example: mammoth billing stripe usage --output json --no-input
+  example: mammoth billing stripe usage
 - `mammoth billing subscription get` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.subscription_get
-  example: mammoth billing subscription get --output json --no-input
+  example: mammoth billing subscription get
 - `mammoth billing subscription update` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.subscription_update
-  example: mammoth billing subscription update --input '{"patch": [{"sample_key": "Status"}]}' --output json --no-input
+  example: mammoth billing subscription update --input '{"patch": [{"sample_key": "Status"}]}'
 
 ## browse
 
 - `mammoth browse folder` [read/none] -> mammoth.api.browse.BrowseAPI.folder_resources
-  example: mammoth browse folder 123 --output json --no-input
+  example: mammoth browse folder 123
 - `mammoth browse project` [read/none] -> mammoth.api.projects.ProjectsAPI.browse
-  example: mammoth browse project --output json --no-input
+  example: mammoth browse project
 - `mammoth browse root` [read/none] -> mammoth.api.browse.BrowseAPI.root
-  example: mammoth browse root --output json --no-input
+  example: mammoth browse root
 - `mammoth browse workspace` [read/none] -> mammoth.api.browse.BrowseAPI.workspace_resources
-  example: mammoth browse workspace --output json --no-input
+  example: mammoth browse workspace
 
 ## capability
 
 - `mammoth capability find` [read/none] -> mammoth_cli.commands.capability.find_capabilities
-  example: mammoth capability find 'show projects' --output json --no-input
+  example: mammoth capability find 'show projects'
 - `mammoth capability get` [read/none] -> mammoth_cli.commands.capability.get
-  example: mammoth capability get AddTask --output json --no-input
+  example: mammoth capability get AddTask
 - `mammoth capability list` [read/none] -> mammoth_cli.commands.capability.list_
-  example: mammoth capability list --output json --no-input
+  example: mammoth capability list
 
 ## client-app
 
 - `mammoth client-app create` [high_impact/confirm_target] -> mammoth.api.clientapps.ClientAppsAPI.create
-  example: mammoth client-app create 'Revenue report' --output json --no-input
+  example: mammoth client-app create 'Revenue report'
 - `mammoth client-app delete` [destructive/prompt_or_yes] -> mammoth.api.clientapps.ClientAppsAPI.delete
-  example: mammoth client-app delete sample --output json --no-input
+  example: mammoth client-app delete sample
 - `mammoth client-app get` [read/none] -> mammoth.api.clientapps.ClientAppsAPI.get
-  example: mammoth client-app get sample --output json --no-input
+  example: mammoth client-app get sample
 - `mammoth client-app list` [read/none] -> mammoth.api.clientapps.ClientAppsAPI.list
-  example: mammoth client-app list --output json --no-input
+  example: mammoth client-app list
 - `mammoth client-app update` [high_impact/confirm_target] -> mammoth.api.clientapps.ClientAppsAPI.update
-  example: mammoth client-app update sample --input '{"patch_request": {"patch": [{"op": "replace", "path": "role"}]}}' --output json --no-input
+  example: mammoth client-app update sample --input '{"patch_request": {"patch": [{"op": "replace", "path": "role"}]}}'
 
 ## completion
 
 - `mammoth completion install` [benign_mutation/none] -> mammoth_cli.commands.completion.install
-  example: mammoth completion install bash --output json --no-input
+  example: mammoth completion install bash
 - `mammoth completion show` [read/none] -> mammoth_cli.commands.completion.show
-  example: mammoth completion show bash --output json --no-input
+  example: mammoth completion show bash
 
 ## config
 
 - `mammoth config get` [read/none] -> mammoth_cli.context.config.get
-  example: mammoth config get output --output json --no-input
+  example: mammoth config get output
 - `mammoth config list` [read/none] -> mammoth_cli.context.config.list
-  example: mammoth config list --output json --no-input
+  example: mammoth config list
 - `mammoth config path` [read/none] -> mammoth_cli.context.config.path
-  example: mammoth config path --output json --no-input
+  example: mammoth config path
 - `mammoth config set` [benign_mutation/none] -> mammoth_cli.context.config.set
-  example: mammoth config set output text --output json --no-input
+  example: mammoth config set output text
 
 ## connector
 
 - `mammoth connector active` [read/none] -> mammoth.api.connectors.ConnectorsAPI.active_connectors
-  example: mammoth connector active --output json --no-input
+  example: mammoth connector active
 - `mammoth connector ai chat` [benign_mutation/none] -> mammoth.api.connector_ai.ConnectorAIAPI.chat
-  example: mammoth connector ai chat --input '{"body": {"messages": [{"content": "sample", "role": "user"}]}}' --output json --no-input
+  example: mammoth connector ai chat --input '{"body": {"messages": [{"content": "sample", "role": "user"}]}}'
 - `mammoth connector ai history` [read/none] -> mammoth.api.connector_ai.ConnectorAIAPI.history
-  example: mammoth connector ai history sample --output json --no-input
+  example: mammoth connector ai history sample
 - `mammoth connector ai session list` [read/none] -> mammoth.api.connector_ai.ConnectorAIAPI.session_list
-  example: mammoth connector ai session list --output json --no-input
+  example: mammoth connector ai session list
 - `mammoth connector ai session messages` [read/none] -> mammoth.api.connector_ai.ConnectorAIAPI.session_messages
-  example: mammoth connector ai session messages 123 --output json --no-input
+  example: mammoth connector ai session messages 123
 - `mammoth connector ai submit-column-selection` [benign_mutation/none] -> mammoth.api.connector_ai.ConnectorAIAPI.submit_column_selection
-  example: mammoth connector ai submit-column-selection --input '{"body": {"selected_columns": ["Status"], "session_id": "resource-123"}}' --output json --no-input
+  example: mammoth connector ai submit-column-selection --input '{"body": {"selected_columns": ["Status"], "session_id": "resource-123"}}'
 - `mammoth connector ai submit-credentials` [benign_mutation/none] -> mammoth.api.connector_ai.ConnectorAIAPI.submit_credentials
-  example: mammoth connector ai submit-credentials --input '{"body": {"credentials": {}, "session_id": "resource-123"}}' --output json --no-input
+  example: mammoth connector ai submit-credentials --input '{"body": {"credentials": {}, "session_id": "resource-123"}}'
 - `mammoth connector connection create` [external_effect/yes_always] -> mammoth.api.connectors.ConnectorsAPI.create_connection
-  example: mammoth connector connection create sample --input '{"config": {"sample_key": "Status"}}' --output json --no-input
+  example: mammoth connector connection create sample --input '{"config": {"sample_key": "Status"}}'
 - `mammoth connector connection delete` [destructive/prompt_or_yes] -> mammoth.api.connectors.ConnectorsAPI.delete_connection
-  example: mammoth connector connection delete sample sample --output json --no-input
+  example: mammoth connector connection delete sample sample
 - `mammoth connector connection get` [read/none] -> mammoth.api.connectors.ConnectorsAPI.get_connection
-  example: mammoth connector connection get sample sample --output json --no-input
+  example: mammoth connector connection get sample sample
 - `mammoth connector connection list` [read/none] -> mammoth.api.connectors.ConnectorsAPI.list_connections
-  example: mammoth connector connection list sample --output json --no-input
+  example: mammoth connector connection list sample
 - `mammoth connector connection update` [external_effect/yes_always] -> mammoth.api.connectors.ConnectorsAPI.update_connection
-  example: mammoth connector connection update sample sample --input '{"credentials": {"sample_key": "Status"}}' --output json --no-input
+  example: mammoth connector connection update sample sample --input '{"credentials": {"sample_key": "Status"}}'
 - `mammoth connector ds-config create` [external_effect/yes_always] -> mammoth.api.connectors.ConnectorsAPI.create_ds_config
-  example: mammoth connector ds-config create sample sample --output json --no-input
+  example: mammoth connector ds-config create sample sample
 - `mammoth connector ds-config delete` [destructive/prompt_or_yes] -> mammoth.api.connectors.ConnectorsAPI.delete_ds_config
-  example: mammoth connector ds-config delete sample sample sample --output json --no-input
+  example: mammoth connector ds-config delete sample sample sample
 - `mammoth connector ds-config delete-all` [destructive/prompt_or_yes] -> mammoth.api.connectors.ConnectorsAPI.ds_config_delete_all
-  example: mammoth connector ds-config delete-all sample sample --input '{"config_ids": ["resource-123"]}' --output json --no-input
+  example: mammoth connector ds-config delete-all sample sample --input '{"config_ids": ["resource-123"]}'
 - `mammoth connector ds-config get` [read/none] -> mammoth.api.connectors.ConnectorsAPI.get_ds_config
-  example: mammoth connector ds-config get sample sample sample --output json --no-input
+  example: mammoth connector ds-config get sample sample sample
 - `mammoth connector ds-config list` [read/none] -> mammoth.api.connectors.ConnectorsAPI.list_ds_configs
-  example: mammoth connector ds-config list sample sample --output json --no-input
+  example: mammoth connector ds-config list sample sample
 - `mammoth connector ds-config update` [external_effect/yes_always] -> mammoth.api.connectors.ConnectorsAPI.update_ds_config
-  example: mammoth connector ds-config update sample sample sample --input '{"patch": [{"op": "replace", "path": "query", "value": "sample"}]}' --output json --no-input
+  example: mammoth connector ds-config update sample sample sample --input '{"patch": [{"op": "replace", "path": "query", "value": "sample"}]}'
 - `mammoth connector get` [read/none] -> mammoth.api.connectors.ConnectorsAPI.get
-  example: mammoth connector get sample --output json --no-input
+  example: mammoth connector get sample
 - `mammoth connector list` [read/none] -> mammoth.api.connectors.ConnectorsAPI.list
-  example: mammoth connector list --output json --no-input
+  example: mammoth connector list
 - `mammoth connector query generate` [read/none] -> mammoth.api.ai.AIAPI.query_gen
-  example: mammoth connector query generate sample sample --input '{"query": "Total sales for January"}' --output json --no-input
+  example: mammoth connector query generate sample sample --input '{"query": "Total sales for January"}'
 - `mammoth connector query status` [read/none] -> mammoth.api.ai.AIAPI.status
-  example: mammoth connector query status sample sample --output json --no-input
+  example: mammoth connector query status sample sample
 
 ## context
 
 - `mammoth context project clear` [benign_mutation/none] -> mammoth_cli.context.project.clear
-  example: mammoth context project clear --output json --no-input
+  example: mammoth context project clear
 - `mammoth context project status` [read/none] -> mammoth_cli.context.project.status
-  example: mammoth context project status --output json --no-input
+  example: mammoth context project status
 - `mammoth context project use` [benign_mutation/none] -> mammoth_cli.context.project.use
-  example: mammoth context project use 123 --output json --no-input
+  example: mammoth context project use 123
 
 ## dashboard
 
 - `mammoth dashboard action` [external_effect/yes_always] -> mammoth.api.dashboards.DashboardsAPI.action
-  example: mammoth dashboard action 123 --input '{"action": "sync"}' --output json --no-input
+  example: mammoth dashboard action 123 --input '{"action": "sync"}'
 - `mammoth dashboard analytics` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_analytics
-  example: mammoth dashboard analytics 123 --output json --no-input
+  example: mammoth dashboard analytics 123
 - `mammoth dashboard archive` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.archive
-  example: mammoth dashboard archive 123 --input '{"archived": true}' --output json --no-input --yes --confirm 123
+  example: mammoth dashboard archive 123 --input '{"archived": true}' --yes --confirm 123
 - `mammoth dashboard assess-pbix` [read/none] -> mammoth.api.dashboards.DashboardsAPI.assess_pbix
-  example: mammoth dashboard assess-pbix sample.pbix --output json --no-input
+  example: mammoth dashboard assess-pbix sample.pbix
 - `mammoth dashboard assess-twb` [read/none] -> mammoth.api.dashboards.DashboardsAPI.assess_twb
-  example: mammoth dashboard assess-twb sample.twb --output json --no-input
+  example: mammoth dashboard assess-twb sample.twb
 - `mammoth dashboard cancel-generation` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.cancel_generation
-  example: mammoth dashboard cancel-generation 123 --output json --no-input
+  example: mammoth dashboard cancel-generation 123
 - `mammoth dashboard canvas get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.canvas_get
-  example: mammoth dashboard canvas get 123 --output json --no-input
+  example: mammoth dashboard canvas get 123
 - `mammoth dashboard canvas restore` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.canvas_restore
-  example: mammoth dashboard canvas restore 123 --input '{"body": {"params": {"target_sequence": 1}}}' --output json --no-input
+  example: mammoth dashboard canvas restore 123 --input '{"body": {"params": {"target_sequence": 1}}}'
 - `mammoth dashboard canvas save` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.canvas_save
-  example: mammoth dashboard canvas save 123 --input '{"body": {"params": {"canvas": {}}}}' --output json --no-input
+  example: mammoth dashboard canvas save 123 --input '{"body": {"params": {"canvas": {}}}}'
 - `mammoth dashboard chat edit` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.chat_edit
-  example: mammoth dashboard chat edit 123 --input '{"body": {"params": {"prompt": "Summarize revenue by region"}}}' --output json --no-input
+  example: mammoth dashboard chat edit 123 --input '{"body": {"params": {"prompt": "Summarize revenue by region"}}}'
 - `mammoth dashboard chat history` [read/none] -> mammoth.api.dashboards.DashboardsAPI.chat_history
-  example: mammoth dashboard chat history 123 --output json --no-input
+  example: mammoth dashboard chat history 123
 - `mammoth dashboard context create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.context_create
-  example: mammoth dashboard context create --input '{"body": {"params": {"name": "Revenue report"}}}' --output json --no-input
+  example: mammoth dashboard context create --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard context delete` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.context_delete
-  example: mammoth dashboard context delete resource-123 --output json --no-input
+  example: mammoth dashboard context delete resource-123
 - `mammoth dashboard context extract` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.extract_context
-  example: mammoth dashboard context extract --input '{"body": {"params": {"name": "Revenue report"}}}' --output json --no-input
+  example: mammoth dashboard context extract --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard context list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.context_list
-  example: mammoth dashboard context list --output json --no-input
+  example: mammoth dashboard context list
 - `mammoth dashboard context update` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.context_update
-  example: mammoth dashboard context update resource-123 --input '{"body": {"params": {"name": "Revenue report"}}}' --output json --no-input
+  example: mammoth dashboard context update resource-123 --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.create
-  example: mammoth dashboard create 'Summarize revenue by region' --input '{"source": [1]}' --output json --no-input
+  example: mammoth dashboard create 'Summarize revenue by region' --input '{"source": [1]}'
 - `mammoth dashboard create-blank` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.create_blank
-  example: mammoth dashboard create-blank --input '{"params": {"dataview_id": 1}}' --output json --no-input --yes
+  example: mammoth dashboard create-blank --input '{"params": {"dataview_id": 1}}' --yes
 - `mammoth dashboard data draft` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_draft_data
-  example: mammoth dashboard data draft 123 --input '{"widget_id": "550e8400-e29b-41d4-a716-446655440000"}' --output json --no-input
+  example: mammoth dashboard data draft 123 --input '{"widget_id": "550e8400-e29b-41d4-a716-446655440000"}'
 - `mammoth dashboard data published` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_publish_data
-  example: mammoth dashboard data published 123 --input '{"widget_id": "550e8400-e29b-41d4-a716-446655440000"}' --output json --no-input
+  example: mammoth dashboard data published 123 --input '{"widget_id": "550e8400-e29b-41d4-a716-446655440000"}'
 - `mammoth dashboard delete` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.delete
-  example: mammoth dashboard delete 123 --output json --no-input
+  example: mammoth dashboard delete 123
 - `mammoth dashboard descriptor-data` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.descriptor_data
-  example: mammoth dashboard descriptor-data 123 --input '{"body": {"params": {"descriptor_ids": ["resource-123"]}}}' --output json --no-input
+  example: mammoth dashboard descriptor-data 123 --input '{"body": {"params": {"descriptor_ids": ["resource-123"]}}}'
 - `mammoth dashboard duplicate` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.duplicate
-  example: mammoth dashboard duplicate 123 --output json --no-input
+  example: mammoth dashboard duplicate 123
 - `mammoth dashboard exemplar extract` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.extract_exemplar
-  example: mammoth dashboard exemplar extract --input '{"body": {"params": {"name": "Revenue report"}}}' --output json --no-input
+  example: mammoth dashboard exemplar extract --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard figure-intent` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.figure_intent
-  example: mammoth dashboard figure-intent 123 --input '{"body": {"params": {"intent": "Summarize revenue by region"}}}' --output json --no-input
+  example: mammoth dashboard figure-intent 123 --input '{"body": {"params": {"intent": "Summarize revenue by region"}}}'
 - `mammoth dashboard get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get
-  example: mammoth dashboard get 123 --output json --no-input
+  example: mammoth dashboard get 123
 - `mammoth dashboard get-by-url` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_by_url
-  example: mammoth dashboard get-by-url https://example.com/data.csv --output json --no-input
+  example: mammoth dashboard get-by-url https://example.com/data.csv
 - `mammoth dashboard import-workbook` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.import_workbook
-  example: mammoth dashboard import-workbook sample.twbx --project 456 --yes --confirm 456 --output json --no-input
+  example: mammoth dashboard import-workbook sample.twbx --project 456 --yes --confirm 456
 - `mammoth dashboard job-by-url` [read/none] -> mammoth.api.dashboards.DashboardsAPI.job_by_url
-  example: mammoth dashboard job-by-url https://example.com/data.csv 123 --output json --no-input
+  example: mammoth dashboard job-by-url https://example.com/data.csv 123
 - `mammoth dashboard list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.list
-  example: mammoth dashboard list --output json --no-input
+  example: mammoth dashboard list
 - `mammoth dashboard og-card` [read/none] -> mammoth.api.dashboards.DashboardsAPI.og_card
-  example: mammoth dashboard og-card 123 --output json --no-input
+  example: mammoth dashboard og-card 123
 - `mammoth dashboard page plan` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.page_plan
-  example: mammoth dashboard page plan 123 --input '{"body": {"params": {"intent": "Summarize revenue by region"}}}' --output json --no-input
+  example: mammoth dashboard page plan 123 --input '{"body": {"params": {"intent": "Summarize revenue by region"}}}'
 - `mammoth dashboard pages add` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.add_pages
-  example: mammoth dashboard pages add 123 --input '{"body": {"params": {"pages": [{}]}}}' --output json --no-input
+  example: mammoth dashboard pages add 123 --input '{"body": {"params": {"pages": [{}]}}}'
 - `mammoth dashboard pdf export` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.pdf_export
-  example: mammoth dashboard pdf export 123 --input '{"body": {"params": {"data": {}}}}' --output json --no-input
+  example: mammoth dashboard pdf export 123 --input '{"body": {"params": {"data": {}}}}'
 - `mammoth dashboard pdf-artifact` [read/none] -> mammoth.api.dashboards.DashboardsAPI.pdf_artifact
-  example: mammoth dashboard pdf-artifact 123 123 --output json --no-input
+  example: mammoth dashboard pdf-artifact 123 123
 - `mammoth dashboard published canvas` [read/none] -> mammoth.api.dashboards.DashboardsAPI.published_canvas
-  example: mammoth dashboard published canvas https://example.com/data.csv --output json --no-input
+  example: mammoth dashboard published canvas https://example.com/data.csv
 - `mammoth dashboard published data` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.published_data
-  example: mammoth dashboard published data https://example.com/data.csv --input '{"body": {"params": {"descriptor_ids": ["resource-123"]}}}' --output json --no-input
+  example: mammoth dashboard published data https://example.com/data.csv --input '{"body": {"params": {"descriptor_ids": ["resource-123"]}}}'
 - `mammoth dashboard published og-card` [read/none] -> mammoth.api.dashboards.DashboardsAPI.published_og_card
-  example: mammoth dashboard published og-card https://example.com/data.csv --output json --no-input
+  example: mammoth dashboard published og-card https://example.com/data.csv
 - `mammoth dashboard published pdf export` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.published_pdf_export
-  example: mammoth dashboard published pdf export https://example.com/data.csv --input '{"body": {"params": {"data": {}}}}' --output json --no-input
+  example: mammoth dashboard published pdf export https://example.com/data.csv --input '{"body": {"params": {"data": {}}}}'
 - `mammoth dashboard published pdf-artifact` [read/none] -> mammoth.api.dashboards.DashboardsAPI.published_pdf_artifact
-  example: mammoth dashboard published pdf-artifact https://example.com/data.csv 123 --output json --no-input
+  example: mammoth dashboard published pdf-artifact https://example.com/data.csv 123
 - `mammoth dashboard published share-page` [read/none] -> mammoth.api.dashboards.DashboardsAPI.published_share_page
-  example: mammoth dashboard published share-page https://example.com/data.csv --output json --no-input
+  example: mammoth dashboard published share-page https://example.com/data.csv
 - `mammoth dashboard published video export` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.published_video_export
-  example: mammoth dashboard published video export https://example.com/data.csv --output json --no-input
+  example: mammoth dashboard published video export https://example.com/data.csv
 - `mammoth dashboard published video-artifact` [read/none] -> mammoth.api.dashboards.DashboardsAPI.published_video_artifact
-  example: mammoth dashboard published video-artifact https://example.com/data.csv --output json --no-input
+  example: mammoth dashboard published video-artifact https://example.com/data.csv
 - `mammoth dashboard published-data-by-url` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.published_data_by_url
-  example: mammoth dashboard published-data-by-url https://example.com/data.csv --input '{"body": {"params": {"widget_id": "00000000-0000-4000-8000-000000000001"}}}' --output json --no-input
+  example: mammoth dashboard published-data-by-url https://example.com/data.csv --input '{"body": {"params": {"widget_id": "00000000-0000-4000-8000-000000000001"}}}'
 - `mammoth dashboard qa ask` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.qa_ask
-  example: mammoth dashboard qa ask 123 123 --input '{"body": {"params": {"question": "Summarize revenue by region"}}}' --output json --no-input
+  example: mammoth dashboard qa ask 123 123 --input '{"body": {"params": {"question": "Summarize revenue by region"}}}'
 - `mammoth dashboard qa comment create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.qa_comment_create
-  example: mammoth dashboard qa comment create 123 123 --input '{"body": {"params": {"body": "sample"}}}' --output json --no-input
+  example: mammoth dashboard qa comment create 123 123 --input '{"body": {"params": {"body": "sample"}}}'
 - `mammoth dashboard qa comment delete` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.qa_comment_delete
-  example: mammoth dashboard qa comment delete 123 123 123 --output json --no-input
+  example: mammoth dashboard qa comment delete 123 123 123
 - `mammoth dashboard qa feedback` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.qa_feedback
-  example: mammoth dashboard qa feedback 123 123 123 --input '{"body": {"params": {"rating": "up"}}}' --output json --no-input
+  example: mammoth dashboard qa feedback 123 123 123 --input '{"body": {"params": {"rating": "up"}}}'
 - `mammoth dashboard qa session create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.qa_session_create
-  example: mammoth dashboard qa session create 123 --input '{"body": {"params": {"title": "Revenue report"}}}' --output json --no-input
+  example: mammoth dashboard qa session create 123 --input '{"body": {"params": {"title": "Revenue report"}}}'
 - `mammoth dashboard qa session delete` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.qa_session_delete
-  example: mammoth dashboard qa session delete 123 123 --output json --no-input
+  example: mammoth dashboard qa session delete 123 123
 - `mammoth dashboard qa session fork` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.qa_session_fork
-  example: mammoth dashboard qa session fork 123 123 --output json --no-input
+  example: mammoth dashboard qa session fork 123 123
 - `mammoth dashboard qa session get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.qa_session_get
-  example: mammoth dashboard qa session get 123 123 --output json --no-input
+  example: mammoth dashboard qa session get 123 123
 - `mammoth dashboard qa session list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.qa_session_list
-  example: mammoth dashboard qa session list 123 --output json --no-input
+  example: mammoth dashboard qa session list 123
 - `mammoth dashboard qa session rename` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.qa_session_rename
-  example: mammoth dashboard qa session rename 123 123 --input '{"body": {"params": {"title": "Revenue report"}}}' --output json --no-input
+  example: mammoth dashboard qa session rename 123 123 --input '{"body": {"params": {"title": "Revenue report"}}}'
 - `mammoth dashboard qa session set-visibility` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.qa_session_set_visibility
-  example: mammoth dashboard qa session set-visibility 123 123 --input '{"body": {"params": {"visibility": "sample"}}}' --output json --no-input
+  example: mammoth dashboard qa session set-visibility 123 123 --input '{"body": {"params": {"visibility": "sample"}}}'
 - `mammoth dashboard qa settings get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.qa_settings_get
-  example: mammoth dashboard qa settings get 123 --output json --no-input
+  example: mammoth dashboard qa settings get 123
 - `mammoth dashboard qa settings set` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.qa_settings_set
-  example: mammoth dashboard qa settings set 123 --input '{"body": {"params": {"allow_viewer_qa": true}}}' --output json --no-input
+  example: mammoth dashboard qa settings set 123 --input '{"body": {"params": {"allow_viewer_qa": true}}}'
 - `mammoth dashboard query` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.query
-  example: mammoth dashboard query 123 --input '{"body": {"params": {"descriptor": {"kind": "scalar", "agg": "count"}}}}' --output json --no-input
+  example: mammoth dashboard query 123 --input '{"body": {"params": {"descriptor": {"kind": "scalar", "agg": "count"}}}}'
 - `mammoth dashboard restore` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.restore
-  example: mammoth dashboard restore 123 --output json --no-input
+  example: mammoth dashboard restore 123
 - `mammoth dashboard rls assignment list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.rls_assignment_list
-  example: mammoth dashboard rls assignment list 123 --output json --no-input
+  example: mammoth dashboard rls assignment list 123
 - `mammoth dashboard rls assignment set` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.rls_assignment_set
-  example: mammoth dashboard rls assignment set 123 --input '{"body": {"params": {"assignments": [{"email": "analyst@example.com"}]}}}' --output json --no-input
+  example: mammoth dashboard rls assignment set 123 --input '{"body": {"params": {"assignments": [{"email": "analyst@example.com"}]}}}'
 - `mammoth dashboard rls column list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.rls_column_list
-  example: mammoth dashboard rls column list 123 --output json --no-input
+  example: mammoth dashboard rls column list 123
 - `mammoth dashboard rls value list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.rls_value_list
-  example: mammoth dashboard rls value list 123 --input '{"column": "Status"}' --output json --no-input
+  example: mammoth dashboard rls value list 123 --input '{"column": "Status"}'
 - `mammoth dashboard share` [external_effect/yes_always] -> mammoth.api.dashboards.DashboardsAPI.share
-  example: mammoth dashboard share 123 --input '{"type_of_auth": "mammoth"}' --output json --no-input
+  example: mammoth dashboard share 123 --input '{"type_of_auth": "mammoth"}'
 - `mammoth dashboard signature create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.signature_create
-  example: mammoth dashboard signature create --input '{"body": {"params": {"name": "Revenue report"}}}' --output json --no-input
+  example: mammoth dashboard signature create --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard signature delete` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.signature_delete
-  example: mammoth dashboard signature delete resource-123 --output json --no-input
+  example: mammoth dashboard signature delete resource-123
 - `mammoth dashboard signature list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.signature_list
-  example: mammoth dashboard signature list --output json --no-input
+  example: mammoth dashboard signature list
 - `mammoth dashboard signature update` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.signature_update
-  example: mammoth dashboard signature update resource-123 --input '{"body": {"params": {"name": "Revenue report"}}}' --output json --no-input
+  example: mammoth dashboard signature update resource-123 --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard source list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_sources
-  example: mammoth dashboard source list --output json --no-input
+  example: mammoth dashboard source list
 - `mammoth dashboard style custom create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.style_custom_create
-  example: mammoth dashboard style custom create --input '{"body": {"params": {"signals": {}}}}' --output json --no-input
+  example: mammoth dashboard style custom create --input '{"body": {"params": {"signals": {}}}}'
 - `mammoth dashboard style custom delete` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.style_custom_delete
-  example: mammoth dashboard style custom delete resource-123 --output json --no-input
+  example: mammoth dashboard style custom delete resource-123
 - `mammoth dashboard style custom list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.style_custom_list
-  example: mammoth dashboard style custom list --output json --no-input
+  example: mammoth dashboard style custom list
 - `mammoth dashboard style custom update` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.style_custom_update
-  example: mammoth dashboard style custom update resource-123 --input '{"body": {"params": {"signals": {}}}}' --output json --no-input
+  example: mammoth dashboard style custom update resource-123 --input '{"body": {"params": {"signals": {}}}}'
 - `mammoth dashboard style default get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.style_default_get
-  example: mammoth dashboard style default get --output json --no-input
+  example: mammoth dashboard style default get
 - `mammoth dashboard style default set` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.style_default_set
-  example: mammoth dashboard style default set --input '{"body": {"params": {"styleId": "sample"}}}' --output json --no-input
+  example: mammoth dashboard style default set --input '{"body": {"params": {"styleId": "sample"}}}'
 - `mammoth dashboard style derive` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.style_derive
-  example: mammoth dashboard style derive --input '{"body": {"params": {"signals": {}}}}' --output json --no-input
+  example: mammoth dashboard style derive --input '{"body": {"params": {"signals": {}}}}'
 - `mammoth dashboard style extract-brand` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.style_extract_brand
-  example: mammoth dashboard style extract-brand --input '{"body": {"params": {"url": "https://example.com/data.csv"}}}' --output json --no-input
+  example: mammoth dashboard style extract-brand --input '{"body": {"params": {"url": "https://example.com/data.csv"}}}'
 - `mammoth dashboard style preset list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.style_preset_list
-  example: mammoth dashboard style preset list --output json --no-input
+  example: mammoth dashboard style preset list
 - `mammoth dashboard style token list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.style_token_list
-  example: mammoth dashboard style token list resource-123 --output json --no-input
+  example: mammoth dashboard style token list resource-123
 - `mammoth dashboard suggestion list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.suggestion_list
-  example: mammoth dashboard suggestion list 123 --output json --no-input
+  example: mammoth dashboard suggestion list 123
 - `mammoth dashboard swap-data` [benign_mutation/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.swap_data
-  example: mammoth dashboard swap-data 123 --input '{"body": {"params": {"dataview_id": 1}}}' --output json --no-input
+  example: mammoth dashboard swap-data 123 --input '{"body": {"params": {"dataview_id": 1}}}'
 - `mammoth dashboard tags delete` [destructive/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.delete_tag
-  example: mammoth dashboard tags delete 123 --output json --no-input --yes --confirm 123
+  example: mammoth dashboard tags delete 123 --yes --confirm 123
 - `mammoth dashboard tags list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.list_tags
-  example: mammoth dashboard tags list --output json --no-input
+  example: mammoth dashboard tags list
 - `mammoth dashboard tags merge` [destructive/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.merge_tag
-  example: mammoth dashboard tags merge 123 --input '{"target_id": 456}' --output json --no-input --yes --confirm 123
+  example: mammoth dashboard tags merge 123 --input '{"target_id": 456}' --yes --confirm 123
 - `mammoth dashboard tags rename` [benign_mutation/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.rename_tag
-  example: mammoth dashboard tags rename 123 --input '{"name": "Revenue"}' --output json --no-input --yes --confirm 123
+  example: mammoth dashboard tags rename 123 --input '{"name": "Revenue"}' --yes --confirm 123
 - `mammoth dashboard tags set` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.set_tags
-  example: mammoth dashboard tags set 123 --input '{"tags": ["Revenue"]}' --output json --no-input --yes --confirm 123
+  example: mammoth dashboard tags set 123 --input '{"tags": ["Revenue"]}' --yes --confirm 123
 - `mammoth dashboard template apply` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.template_apply
-  example: mammoth dashboard template apply --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}' --output json --no-input
+  example: mammoth dashboard template apply --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'
 - `mammoth dashboard template create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.template_create
-  example: mammoth dashboard template create --input '{"body": {"params": {"dashboard_id": 1, "title": "Revenue report"}}}' --output json --no-input
+  example: mammoth dashboard template create --input '{"body": {"params": {"dashboard_id": 1, "title": "Revenue report"}}}'
 - `mammoth dashboard template delete` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.template_delete
-  example: mammoth dashboard template delete resource-123 --output json --no-input
+  example: mammoth dashboard template delete resource-123
 - `mammoth dashboard template fit` [read/none] -> mammoth.api.dashboards.DashboardsAPI.template_fit
-  example: mammoth dashboard template fit 123 --output json --no-input
+  example: mammoth dashboard template fit 123
 - `mammoth dashboard template get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.template_get
-  example: mammoth dashboard template get resource-123 --output json --no-input
+  example: mammoth dashboard template get resource-123
 - `mammoth dashboard template list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.template_list
-  example: mammoth dashboard template list --output json --no-input
+  example: mammoth dashboard template list
 - `mammoth dashboard template preview` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.template_preview
-  example: mammoth dashboard template preview --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}' --output json --no-input
+  example: mammoth dashboard template preview --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'
 - `mammoth dashboard template rename` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.template_rename
-  example: mammoth dashboard template rename resource-123 --input '{"body": {"params": {"title": "Revenue report"}}}' --output json --no-input
+  example: mammoth dashboard template rename resource-123 --input '{"body": {"params": {"title": "Revenue report"}}}'
 - `mammoth dashboard template resolve-mapping` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.template_resolve_mapping
-  example: mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}' --output json --no-input
+  example: mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'
 - `mammoth dashboard templates pending` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.take_pending_template
-  example: mammoth dashboard templates pending --output json --no-input
+  example: mammoth dashboard templates pending
 - `mammoth dashboard templates use` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.use_template
-  example: mammoth dashboard templates use sample --input '{"body": {"params": {"project_id": 1}}}' --output json --no-input
+  example: mammoth dashboard templates use sample --input '{"body": {"params": {"project_id": 1}}}'
 - `mammoth dashboard trash` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.trash
-  example: mammoth dashboard trash 123 --output json --no-input
+  example: mammoth dashboard trash 123
 - `mammoth dashboard update` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.update
-  example: mammoth dashboard update 123 --input '{"patch": [{"op": "replace", "path": "title", "value": "Renamed dashboard"}]}' --output json --no-input
+  example: mammoth dashboard update 123 --input '{"patch": [{"op": "replace", "path": "title", "value": "Renamed dashboard"}]}'
 - `mammoth dashboard v3 generate` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.v3_generate
-  example: mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "Summarize revenue by region", "dataview_id": 1}}}' --output json --no-input
+  example: mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "Summarize revenue by region", "dataview_id": 1}}}'
 - `mammoth dashboard video export` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.video_export
-  example: mammoth dashboard video export 123 --output json --no-input
+  example: mammoth dashboard video export 123
 - `mammoth dashboard video-state` [read/none] -> mammoth.api.dashboards.DashboardsAPI.video_state
-  example: mammoth dashboard video-state 123 --output json --no-input
+  example: mammoth dashboard video-state 123
 - `mammoth dashboard widget-data` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.widget_data
-  example: mammoth dashboard widget-data 123 --input '{"body": {"params": {"widgets": [{"widget_id": "00000000-0000-4000-8000-000000000001"}]}}}' --output json --no-input
+  example: mammoth dashboard widget-data 123 --input '{"body": {"params": {"widgets": [{"widget_id": "00000000-0000-4000-8000-000000000001"}]}}}'
 - `mammoth dashboard widget-data-by-url` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.widget_data_by_url
-  example: mammoth dashboard widget-data-by-url https://example.com/data.csv --input '{"body": {"params": {"widgets": [{"widget_id": "00000000-0000-4000-8000-000000000001"}]}}}' --output json --no-input
+  example: mammoth dashboard widget-data-by-url https://example.com/data.csv --input '{"body": {"params": {"widgets": [{"widget_id": "00000000-0000-4000-8000-000000000001"}]}}}'
 
 ## data-app
 
 - `mammoth data-app active-job` [read/none] -> mammoth.api.data_apps.DataAppsAPI.active_job
-  example: mammoth data-app active-job 123 --output json --no-input
+  example: mammoth data-app active-job 123
 - `mammoth data-app create` [benign_mutation/none] -> mammoth.api.data_apps.DataAppsAPI.create
-  example: mammoth data-app create --input '{"body": {"automation_id": 1, "dashboard_ids": [1], "name": "Revenue report", "project_id": 1}}' --output json --no-input
+  example: mammoth data-app create --input '{"body": {"automation_id": 1, "dashboard_ids": [1], "name": "Revenue report", "project_id": 1}}'
 - `mammoth data-app delete` [destructive/prompt_or_yes] -> mammoth.api.data_apps.DataAppsAPI.delete
-  example: mammoth data-app delete 123 --output json --no-input
+  example: mammoth data-app delete 123
 - `mammoth data-app get` [read/none] -> mammoth.api.data_apps.DataAppsAPI.get
-  example: mammoth data-app get 123 --output json --no-input
+  example: mammoth data-app get 123
 - `mammoth data-app job` [read/none] -> mammoth.api.data_apps.DataAppsAPI.job
-  example: mammoth data-app job 123 123 --output json --no-input
+  example: mammoth data-app job 123 123
 - `mammoth data-app list` [read/none] -> mammoth.api.data_apps.DataAppsAPI.list
-  example: mammoth data-app list --output json --no-input
+  example: mammoth data-app list
 - `mammoth data-app pipeline-changes` [read/none] -> mammoth.api.data_apps.DataAppsAPI.pipeline_changes
-  example: mammoth data-app pipeline-changes 123 --output json --no-input
+  example: mammoth data-app pipeline-changes 123
 - `mammoth data-app share` [external_effect/yes_always] -> mammoth.api.data_apps.DataAppsAPI.share
-  example: mammoth data-app share 123 --input '{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}' --output json --no-input --yes
+  example: mammoth data-app share 123 --input '{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}' --yes
 - `mammoth data-app update` [benign_mutation/none] -> mammoth.api.data_apps.DataAppsAPI.update
-  example: mammoth data-app update 123 --input '{"body": {"params": {"name": "Revenue report"}}}' --output json --no-input
+  example: mammoth data-app update 123 --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth data-app upload` [benign_mutation/none] -> mammoth.api.data_apps.DataAppsAPI.upload
-  example: mammoth data-app upload 123 ./sales.csv --output json --no-input
+  example: mammoth data-app upload 123 ./sales.csv
 - `mammoth data-app user list` [read/none] -> mammoth.api.data_apps.DataAppsAPI.user_list
-  example: mammoth data-app user list 123 --output json --no-input
+  example: mammoth data-app user list 123
 - `mammoth data-app user remove` [destructive/prompt_or_yes] -> mammoth.api.data_apps.DataAppsAPI.user_remove
-  example: mammoth data-app user remove 123 analyst@example.com --output json --no-input
+  example: mammoth data-app user remove 123 analyst@example.com
 
 ## dataset
 
 - `mammoth dataset batch-data` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_batch_data
-  example: mammoth dataset batch-data 123 123 --output json --no-input
+  example: mammoth dataset batch-data 123 123
 - `mammoth dataset bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.bulk_delete
-  example: mammoth dataset bulk-delete --input '{"dataset_ids": [456, 457]}' --output json --no-input
+  example: mammoth dataset bulk-delete --input '{"dataset_ids": [456, 457]}'
 - `mammoth dataset bulk-update` [high_impact/confirm_target] -> mammoth.api.datasets.DatasetsAPI.bulk_update
-  example: mammoth dataset bulk-update --input '{"patch_data": {"sample_key": "Status"}}' --output json --no-input
+  example: mammoth dataset bulk-update --input '{"patch_data": {"sample_key": "Status"}}'
 - `mammoth dataset create` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.create
-  example: mammoth dataset create --input '{"dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"}, "ds_creation_type": "weburl"}' --output json --no-input
+  example: mammoth dataset create --input '{"dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"}, "ds_creation_type": "weburl"}'
 - `mammoth dataset create-from-pdf` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.create_from_pdf
-  example: mammoth dataset create-from-pdf 123 --input '{"file_name": "./sales.csv"}' --output json --no-input
+  example: mammoth dataset create-from-pdf 123 --input '{"file_name": "./sales.csv"}'
 - `mammoth dataset data` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_data
-  example: mammoth dataset data 123 --output json --no-input
+  example: mammoth dataset data 123
 - `mammoth dataset delete` [destructive/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.delete
-  example: mammoth dataset delete 123 --output json --no-input
+  example: mammoth dataset delete 123
 - `mammoth dataset file-settings get` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_file_settings
-  example: mammoth dataset file-settings get 123 --output json --no-input
+  example: mammoth dataset file-settings get 123
 - `mammoth dataset file-settings undo` [destructive/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.file_settings_undo
-  example: mammoth dataset file-settings undo 123 --output json --no-input
+  example: mammoth dataset file-settings undo 123
 - `mammoth dataset file-settings update` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.file_settings_update
-  example: mammoth dataset file-settings update 123 --input '{"delimiter": "sample", "has_header": true, "initial_skip_count": 1, "quotechar": "sample"}' --output json --no-input
+  example: mammoth dataset file-settings update 123 --input '{"delimiter": "sample", "has_header": true, "initial_skip_count": 1, "quotechar": "sample"}'
 - `mammoth dataset find` [read/none] -> mammoth_cli.commands.dataset.find
-  example: mammoth dataset find sales --output json --no-input
+  example: mammoth dataset find sales
 - `mammoth dataset get` [read/none] -> mammoth.api.datasets.DatasetsAPI.get
-  example: mammoth dataset get 123 --output json --no-input
+  example: mammoth dataset get 123
 - `mammoth dataset list` [read/none] -> mammoth.api.datasets.DatasetsAPI.list
-  example: mammoth dataset list --output json --no-input
+  example: mammoth dataset list
 - `mammoth dataset rename` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.rename
-  example: mammoth dataset rename 123 --input '{"name": "Revenue report"}' --output json --no-input
+  example: mammoth dataset rename 123 --input '{"name": "Revenue report"}'
 - `mammoth dataset restore` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.restore
-  example: mammoth dataset restore 123 --output json --no-input
+  example: mammoth dataset restore 123
 - `mammoth dataset trash` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.trash
-  example: mammoth dataset trash 123 --output json --no-input
+  example: mammoth dataset trash 123
 - `mammoth dataset update` [high_impact/confirm_target] -> mammoth.api.datasets.DatasetsAPI.update
-  example: mammoth schema get dataset.update --output json --no-input
+  example: mammoth dataset update --input '{"patch_data": [{"sample_key": "Status"}]}'
   agent note: raw patch input is intentionally blocked; use a separately typed command or return unsupported_contract.
 
 ## doctor
 
 - `mammoth doctor` [read/none] -> mammoth_cli.commands.doctor.run
-  example: mammoth doctor --output json --no-input
+  example: mammoth doctor
 
 ## external-key
 
 - `mammoth external-key create` [high_impact/confirm_target] -> mammoth.api.external_keys.ExternalKeysAPI.create
-  example: mammoth external-key create --input '{"key_type": "open_ai", "key_name": "Revenue report", "secure_key": "sample"}' --output json --no-input
+  example: mammoth external-key create --input '{"key_type": "open_ai", "key_name": "Revenue report", "secure_key": "sample"}'
 - `mammoth external-key delete` [destructive/prompt_or_yes] -> mammoth.api.external_keys.ExternalKeysAPI.delete
-  example: mammoth external-key delete 123 --output json --no-input
+  example: mammoth external-key delete 123
 - `mammoth external-key get` [read/none] -> mammoth.api.external_keys.ExternalKeysAPI.get
-  example: mammoth external-key get 123 --output json --no-input
+  example: mammoth external-key get 123
 - `mammoth external-key list` [read/none] -> mammoth.api.external_keys.ExternalKeysAPI.list
-  example: mammoth external-key list --output json --no-input
+  example: mammoth external-key list
 
 ## file
 
 - `mammoth file bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.files.FilesAPI.bulk_delete
-  example: mammoth file bulk-delete --input '{"file_ids": [1]}' --output json --no-input
+  example: mammoth file bulk-delete --input '{"file_ids": [1]}'
 - `mammoth file delete` [destructive/prompt_or_yes] -> mammoth.api.files.FilesAPI.delete
-  example: mammoth file delete 123 --output json --no-input
+  example: mammoth file delete 123
 - `mammoth file extract-sheets` [benign_mutation/none] -> mammoth.api.files.FilesAPI.extract_sheets
-  example: mammoth file extract-sheets 123 --input '{"sheets": ["sample"]}' --output json --no-input
+  example: mammoth file extract-sheets 123 --input '{"sheets": ["sample"]}'
 - `mammoth file get` [read/none] -> mammoth.api.files.FilesAPI.get
-  example: mammoth file get 123 --output json --no-input
+  example: mammoth file get 123
 - `mammoth file list` [read/none] -> mammoth.api.files.FilesAPI.list
-  example: mammoth file list --output json --no-input
+  example: mammoth file list
 - `mammoth file set-password` [high_impact/confirm_target] -> mammoth.api.files.FilesAPI.set_password
-  example: mammoth file set-password 123 --input /private/path/request.json --output json --no-input
+  example: mammoth file set-password 123 --input /private/path/request.json
 - `mammoth file update` [benign_mutation/none] -> mammoth.api.files.FilesAPI.update
-  example: mammoth file update 123 --input '{"patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "sample"}]}}' --output json --no-input
+  example: mammoth file update 123 --input '{"patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "sample"}]}}'
 - `mammoth file upload` [benign_mutation/none] -> mammoth.api.files.FilesAPI.upload
-  example: mammoth file upload ./sales.csv --output json --no-input
+  example: mammoth file upload ./sales.csv
 - `mammoth file upload-folder` [benign_mutation/none] -> mammoth.api.files.FilesAPI.upload_folder
-  example: mammoth file upload-folder ./sales.csv --output json --no-input
+  example: mammoth file upload-folder ./sales.csv
 
 ## folder
 
 - `mammoth folder bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.folders.FoldersAPI.bulk_delete
-  example: mammoth folder bulk-delete --output json --no-input
+  example: mammoth folder bulk-delete
 - `mammoth folder create` [benign_mutation/none] -> mammoth.api.folders.FoldersAPI.create
-  example: mammoth folder create 'Revenue report' --output json --no-input
+  example: mammoth folder create 'Revenue report'
 - `mammoth folder delete` [destructive/prompt_or_yes] -> mammoth.api.folders.FoldersAPI.delete
-  example: mammoth folder delete 123 --output json --no-input
+  example: mammoth folder delete 123
 - `mammoth folder find` [read/none] -> mammoth_cli.commands.folder.find
-  example: mammoth folder find reports --output json --no-input
+  example: mammoth folder find reports
 - `mammoth folder get` [read/none] -> mammoth.api.folders.FoldersAPI.get
-  example: mammoth folder get 123 --output json --no-input
+  example: mammoth folder get 123
 - `mammoth folder list` [read/none] -> mammoth.api.folders.FoldersAPI.list
-  example: mammoth folder list --output json --no-input
+  example: mammoth folder list
 - `mammoth folder move` [benign_mutation/none] -> mammoth.api.folders.FoldersAPI.move
-  example: mammoth folder move --input '{"resource_ids": [8024], "target_folder_resource_id": "root"}' --output json --no-input
+  example: mammoth folder move --input '{"resource_ids": [8024], "target_folder_resource_id": "root"}'
 - `mammoth folder root` [read/none] -> mammoth.api.folders.FoldersAPI.get_project_root
-  example: mammoth folder root --output json --no-input
+  example: mammoth folder root
 - `mammoth folder trash` [benign_mutation/none] -> mammoth.api.folders.FoldersAPI.trash
-  example: mammoth folder trash 123 --output json --no-input
+  example: mammoth folder trash 123
 - `mammoth folder update` [benign_mutation/none] -> mammoth.api.folders.FoldersAPI.update
-  example: mammoth folder update 123 --input '{"name": "Revenue report"}' --output json --no-input
+  example: mammoth folder update 123 --input '{"name": "Revenue report"}'
 
 ## job
 
 - `mammoth job get` [read/none] -> mammoth.api.jobs.JobsAPI.get_job
-  example: mammoth job get 123 --output json --no-input
+  example: mammoth job get 123
 - `mammoth job get-many` [read/none] -> mammoth.api.jobs.JobsAPI.get_jobs
-  example: mammoth job get-many --input '{"job_ids": [1]}' --output json --no-input
+  example: mammoth job get-many --input '{"job_ids": [1]}'
 - `mammoth job wait` [read/none] -> mammoth.api.jobs.JobsAPI.wait_for_job
-  example: mammoth job wait 123 --output json --no-input
+  example: mammoth job wait 123
 - `mammoth job wait-many` [read/none] -> mammoth.api.jobs.JobsAPI.wait_for_jobs
-  example: mammoth job wait-many --input '{"job_ids": [1]}' --output json --no-input
+  example: mammoth job wait-many --input '{"job_ids": [1]}'
 
 ## log
 
 - `mammoth log path` [read/none] -> mammoth_cli.runtime.runlog.log_path
-  example: mammoth log path --output json --no-input
+  example: mammoth log path
 - `mammoth log tail` [read/none] -> mammoth_cli.runtime.runlog.read_records
-  example: mammoth log tail --input '{"errors_only": true, "limit": 20}' --output json --no-input
+  example: mammoth log tail --input '{"errors_only": true, "limit": 20}'
 
 ## notification
 
 - `mammoth notification delete` [destructive/prompt_or_yes] -> mammoth.api.notifications.NotificationsAPI.delete
-  example: mammoth notification delete 123 --output json --no-input
+  example: mammoth notification delete 123
 - `mammoth notification delete-batch` [destructive/prompt_or_yes] -> mammoth.api.notifications.NotificationsAPI.delete_batch
-  example: mammoth notification delete-batch --output json --no-input
+  example: mammoth notification delete-batch
 - `mammoth notification list` [read/none] -> mammoth.api.notifications.NotificationsAPI.list
-  example: mammoth notification list --output json --no-input
+  example: mammoth notification list
 - `mammoth notification update` [benign_mutation/none] -> mammoth.api.notifications.NotificationsAPI.update
-  example: mammoth notification update 123 --input '{"patch": [{"sample_key": "Status"}]}' --output json --no-input
+  example: mammoth notification update 123 --input '{"patch": [{"sample_key": "Status"}]}'
 - `mammoth notification update-batch` [benign_mutation/none] -> mammoth.api.notifications.NotificationsAPI.update_batch
-  example: mammoth notification update-batch --input '{"patch": [{"sample_key": "Status"}]}' --output json --no-input
+  example: mammoth notification update-batch --input '{"patch": [{"sample_key": "Status"}]}'
 
 ## parameter
 
 - `mammoth parameter create` [benign_mutation/none] -> mammoth.api.parameters.ParametersAPI.create
-  example: mammoth parameter create 'Revenue report' --input '{"param_type": "sample", "value": "sample"}' --output json --no-input
+  example: mammoth parameter create 'Revenue report' --input '{"param_type": "sample", "value": "sample"}'
 - `mammoth parameter delete` [destructive/prompt_or_yes] -> mammoth.api.parameters.ParametersAPI.delete
-  example: mammoth parameter delete 123 --output json --no-input
+  example: mammoth parameter delete 123
 - `mammoth parameter dependencies` [read/none] -> mammoth.api.parameters.ParametersAPI.dependencies
-  example: mammoth parameter dependencies 123 --output json --no-input
+  example: mammoth parameter dependencies 123
 - `mammoth parameter duplicate` [benign_mutation/none] -> mammoth.api.parameters.ParametersAPI.duplicate
-  example: mammoth parameter duplicate 123 --output json --no-input
+  example: mammoth parameter duplicate 123
 - `mammoth parameter get` [read/none] -> mammoth.api.parameters.ParametersAPI.get
-  example: mammoth parameter get 123 --output json --no-input
+  example: mammoth parameter get 123
 - `mammoth parameter group create` [benign_mutation/none] -> mammoth.api.parameters.ParametersAPI.group_create
-  example: mammoth parameter group create 'Revenue report' --output json --no-input
+  example: mammoth parameter group create 'Revenue report'
 - `mammoth parameter group delete` [destructive/prompt_or_yes] -> mammoth.api.parameters.ParametersAPI.group_delete
-  example: mammoth parameter group delete 123 --output json --no-input
+  example: mammoth parameter group delete 123
 - `mammoth parameter group list` [read/none] -> mammoth.api.parameters.ParametersAPI.group_list
-  example: mammoth parameter group list --output json --no-input
+  example: mammoth parameter group list
 - `mammoth parameter group reorder` [benign_mutation/none] -> mammoth.api.parameters.ParametersAPI.group_reorder
-  example: mammoth parameter group reorder --input '{"order": [1]}' --output json --no-input
+  example: mammoth parameter group reorder --input '{"order": [1]}'
 - `mammoth parameter group update` [benign_mutation/none] -> mammoth.api.parameters.ParametersAPI.group_update
-  example: mammoth parameter group update 123 --output json --no-input
+  example: mammoth parameter group update 123
 - `mammoth parameter list` [read/none] -> mammoth.api.parameters.ParametersAPI.list
-  example: mammoth parameter list --output json --no-input
+  example: mammoth parameter list
 - `mammoth parameter rerun` [benign_mutation/none] -> mammoth.api.parameters.ParametersAPI.rerun
-  example: mammoth parameter rerun 123 --output json --no-input
+  example: mammoth parameter rerun 123
 - `mammoth parameter rerun-all-stale` [benign_mutation/none] -> mammoth.api.parameters.ParametersAPI.rerun_all_stale
-  example: mammoth parameter rerun-all-stale --output json --no-input
+  example: mammoth parameter rerun-all-stale
 - `mammoth parameter update` [benign_mutation/none] -> mammoth.api.parameters.ParametersAPI.update
-  example: mammoth parameter update 123 --output json --no-input
+  example: mammoth parameter update 123
 
 ## project
 
 - `mammoth project bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.projects.ProjectsAPI.bulk_delete
-  example: mammoth project bulk-delete --input '{"project_ids": [1]}' --output json --no-input
+  example: mammoth project bulk-delete --input '{"project_ids": [1]}'
 - `mammoth project bulk-update` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.bulk_update
-  example: mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}' --output json --no-input
+  example: mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}'
 - `mammoth project checkpoint list` [read/none] -> mammoth.api.projects.ProjectsAPI.checkpoint_list
-  example: mammoth project checkpoint list 123 --output json --no-input
+  example: mammoth project checkpoint list 123
 - `mammoth project create` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.create
-  example: mammoth project create 'Revenue report' --output json --no-input
+  example: mammoth project create 'Revenue report'
 - `mammoth project data-check list` [read/none] -> mammoth.api.projects.ProjectsAPI.data_check_list
-  example: mammoth project data-check list 123 --output json --no-input
+  example: mammoth project data-check list 123
 - `mammoth project delete` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.delete
-  example: mammoth project delete 123 --output json --no-input
+  example: mammoth project delete 123
 - `mammoth project ensure` [benign_mutation/none] -> mammoth_cli.commands.project.project_ensure
-  example: mammoth project ensure 'Revenue report' --output json --no-input
+  example: mammoth project ensure 'Revenue report'
 - `mammoth project get` [read/none] -> mammoth.api.projects.ProjectsAPI.get
-  example: mammoth project get 123 --output json --no-input
+  example: mammoth project get 123
 - `mammoth project list` [read/none] -> mammoth.api.projects.ProjectsAPI.list
-  example: mammoth project list --output json --no-input
+  example: mammoth project list
 - `mammoth project pending-changes` [read/none] -> mammoth.api.projects.ProjectsAPI.pending_changes
-  example: mammoth project pending-changes 123 --output json --no-input
+  example: mammoth project pending-changes 123
 - `mammoth project publish-credentials` [read/none] -> mammoth.api.projects.ProjectsAPI.publish_credentials
-  example: mammoth project publish-credentials 123 --input '{"odbc_type": "postgres"}' --output json --no-input
+  example: mammoth project publish-credentials 123 --input '{"odbc_type": "postgres"}'
 - `mammoth project resource-dependencies` [read/none] -> mammoth.api.projects.ProjectsAPI.resource_dependencies
-  example: mammoth project resource-dependencies 123 --input '{"resource_ids": [456]}' --output json --no-input
+  example: mammoth project resource-dependencies 123 --input '{"resource_ids": [456]}'
 - `mammoth project resource-dependencies update` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.resource_dependencies_update
-  example: mammoth project resource-dependencies update 123 --input '{"patches": [{"op": "replace", "path": "data_sync", "value": {"context_type": "dataview", "context_id": 1}}]}' --output json --no-input --yes --confirm 123
+  example: mammoth project resource-dependencies update 123 --input '{"patches": [{"op": "replace", "path": "data_sync", "value": {"context_type": "dataview", "context_id": 1}}]}' --yes --confirm 123
 - `mammoth project resource-status` [read/none] -> mammoth.api.projects.ProjectsAPI.resource_status
-  example: mammoth project resource-status 123 --output json --no-input
+  example: mammoth project resource-status 123
 - `mammoth project sample-flow` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.sample_flow
-  example: mammoth project sample-flow 123 --output json --no-input
+  example: mammoth project sample-flow 123
 - `mammoth project update` [benign_mutation/none] -> mammoth.api.projects.ProjectsAPI.update
-  example: mammoth project update 123 --input '{"name": "Renamed project"}' --output json --no-input
+  example: mammoth project update 123 --input '{"name": "Renamed project"}'
 - `mammoth project user add` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.add_users
-  example: mammoth project user add 123 --input '{"user_ids": [123], "role": "project_analyst"}' --output json --no-input
+  example: mammoth project user add 123 --input '{"user_ids": [123], "role": "project_analyst"}'
 - `mammoth project user remove` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.remove_users
-  example: mammoth project user remove 123 --input '{"user_ids": ["resource-123"]}' --output json --no-input
+  example: mammoth project user remove 123 --input '{"user_ids": ["resource-123"]}'
 - `mammoth project user update` [high_impact/yes_always] -> mammoth.api.projects.ProjectsAPI.user_update
-  example: mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --output json --no-input --yes
+  example: mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --yes
 
 ## report
 
 - `mammoth report list` [read/none] -> mammoth.api.reports.ReportsAPI.list
-  example: mammoth report list --output json --no-input
+  example: mammoth report list
 
 ## schedule
 
 - `mammoth schedule create` [external_effect/yes_always] -> mammoth.api.schedules.SchedulesAPI.create
-  example: mammoth schedule create --input '{"spec": {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}}}' --output json --no-input
+  example: mammoth schedule create --input '{"spec": {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}}}'
 - `mammoth schedule delete` [destructive/prompt_or_yes] -> mammoth.api.schedules.SchedulesAPI.delete
-  example: mammoth schedule delete 123 --output json --no-input
+  example: mammoth schedule delete 123
 - `mammoth schedule get` [read/none] -> mammoth.api.schedules.SchedulesAPI.get
-  example: mammoth schedule get 123 --output json --no-input
+  example: mammoth schedule get 123
 - `mammoth schedule list` [read/none] -> mammoth.api.schedules.SchedulesAPI.list
-  example: mammoth schedule list --output json --no-input
+  example: mammoth schedule list
 - `mammoth schedule update` [external_effect/yes_always] -> mammoth.api.schedules.SchedulesAPI.update
-  example: mammoth schedule update 123 --input '{"patch": [{"op": "replace", "path": "rrule", "value": {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}, "work_items": [{"name": "pull_cloud_data", "execution_params": {"schedule_type": "moment", "first_pull_at": "now", "on_refresh_action": "replace"}, "args": [1]}]}}]}' --output json --no-input
+  example: mammoth schedule update 123 --input '{"patch": [{"op": "replace", "path": "rrule", "value": {"rrule": {"frequency": "minutely", "start": "2026-01-01T00:00:00Z"}, "work_items": [{"name": "pull_cloud_data", "execution_params": {"schedule_type": "moment", "first_pull_at": "now", "on_refresh_action": "replace"}, "args": [1]}]}}]}'
 
 ## schema
 
 - `mammoth schema find` [read/none] -> mammoth_cli.commands.schema.find
-  example: mammoth schema find 'view transform' --output json --no-input
+  example: mammoth schema find 'view transform'
 - `mammoth schema get` [read/none] -> mammoth_cli.commands.schema.get
-  example: mammoth schema get view.transform.bulk-replace --output json --no-input
+  example: mammoth schema get view.transform.bulk-replace
 - `mammoth schema list` [read/none] -> mammoth_cli.commands.schema.list_
-  example: mammoth schema list --output json --no-input
+  example: mammoth schema list view
 
 ## skill
 
 - `mammoth skill install` [benign_mutation/none] -> mammoth_cli.skills.installer.install
-  example: mammoth skill install --output json --no-input
+  example: mammoth skill install
 - `mammoth skill list` [read/none] -> mammoth_cli.skills.installer.list_
-  example: mammoth skill list --output json --no-input
+  example: mammoth skill list
 - `mammoth skill path` [read/none] -> mammoth_cli.skills.installer.path
-  example: mammoth skill path --output json --no-input
+  example: mammoth skill path
 - `mammoth skill uninstall` [benign_mutation/none] -> mammoth_cli.skills.installer.uninstall
-  example: mammoth skill uninstall --output json --no-input
+  example: mammoth skill uninstall
 - `mammoth skill update` [benign_mutation/none] -> mammoth_cli.skills.installer.update
-  example: mammoth skill update --output json --no-input
+  example: mammoth skill update
 
 ## snippet
 
 - `mammoth snippet create` [benign_mutation/none] -> mammoth.api.snippets.SnippetsAPI.create
-  example: mammoth snippet create 'Revenue report' --input '{"code": "sample", "language": "sample"}' --output json --no-input
+  example: mammoth snippet create 'Revenue report' --input '{"code": "sample", "language": "sample"}'
 - `mammoth snippet delete` [destructive/prompt_or_yes] -> mammoth.api.snippets.SnippetsAPI.delete
-  example: mammoth snippet delete 123 --output json --no-input
+  example: mammoth snippet delete 123
 - `mammoth snippet dependencies` [read/none] -> mammoth.api.snippets.SnippetsAPI.dependencies
-  example: mammoth snippet dependencies 123 --output json --no-input
+  example: mammoth snippet dependencies 123
 - `mammoth snippet duplicate` [benign_mutation/none] -> mammoth.api.snippets.SnippetsAPI.duplicate
-  example: mammoth snippet duplicate 123 --output json --no-input
+  example: mammoth snippet duplicate 123
 - `mammoth snippet get` [read/none] -> mammoth.api.snippets.SnippetsAPI.get
-  example: mammoth snippet get 123 --output json --no-input
+  example: mammoth snippet get 123
 - `mammoth snippet list` [read/none] -> mammoth.api.snippets.SnippetsAPI.list
-  example: mammoth snippet list --output json --no-input
+  example: mammoth snippet list
 - `mammoth snippet rerun` [benign_mutation/none] -> mammoth.api.snippets.SnippetsAPI.rerun
-  example: mammoth snippet rerun 123 --output json --no-input
+  example: mammoth snippet rerun 123
 - `mammoth snippet update` [benign_mutation/none] -> mammoth.api.snippets.SnippetsAPI.update
-  example: mammoth snippet update 123 --output json --no-input
+  example: mammoth snippet update 123
 
 ## support
 
 - `mammoth support connector create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_create
-  example: mammoth support connector create 'Revenue report' --output json --no-input
+  example: mammoth support connector create 'Revenue report'
 - `mammoth support connector delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_delete
-  example: mammoth support connector delete 123 --output json --no-input
+  example: mammoth support connector delete 123
 - `mammoth support connector list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_list
-  example: mammoth support connector list --output json --no-input
+  example: mammoth support connector list
 - `mammoth support connector update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_update
-  example: mammoth support connector update 123 --output json --no-input
+  example: mammoth support connector update 123
 - `mammoth support connector-profile add-connector` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_profile_add_connector
-  example: mammoth support connector-profile add-connector 123 123 --output json --no-input
+  example: mammoth support connector-profile add-connector 123 123
 - `mammoth support connector-profile create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_profile_create
-  example: mammoth support connector-profile create 'Revenue report' --output json --no-input
+  example: mammoth support connector-profile create 'Revenue report'
 - `mammoth support connector-profile delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_profile_delete
-  example: mammoth support connector-profile delete 123 --output json --no-input
+  example: mammoth support connector-profile delete 123
 - `mammoth support connector-profile list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_profile_list
-  example: mammoth support connector-profile list --output json --no-input
+  example: mammoth support connector-profile list
 - `mammoth support connector-profile update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.connector_profile_update
-  example: mammoth support connector-profile update 123 --output json --no-input
+  example: mammoth support connector-profile update 123
 - `mammoth support feature create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_create
-  example: mammoth support feature create 'Revenue report' --output json --no-input
+  example: mammoth support feature create 'Revenue report'
 - `mammoth support feature delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_delete
-  example: mammoth support feature delete 123 --output json --no-input
+  example: mammoth support feature delete 123
 - `mammoth support feature list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_list
-  example: mammoth support feature list --output json --no-input
+  example: mammoth support feature list
 - `mammoth support feature update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_update
-  example: mammoth support feature update 123 --output json --no-input
+  example: mammoth support feature update 123
 - `mammoth support feature-profile add-feature` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_profile_add_feature
-  example: mammoth support feature-profile add-feature 123 123 --output json --no-input
+  example: mammoth support feature-profile add-feature 123 123
 - `mammoth support feature-profile create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_profile_create
-  example: mammoth support feature-profile create 'Revenue report' --output json --no-input
+  example: mammoth support feature-profile create 'Revenue report'
 - `mammoth support feature-profile delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_profile_delete
-  example: mammoth support feature-profile delete 123 --output json --no-input
+  example: mammoth support feature-profile delete 123
 - `mammoth support feature-profile list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_profile_list
-  example: mammoth support feature-profile list --output json --no-input
+  example: mammoth support feature-profile list
 - `mammoth support feature-profile update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.feature_profile_update
-  example: mammoth support feature-profile update 123 --output json --no-input
+  example: mammoth support feature-profile update 123
 - `mammoth support ownership transfer` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.ownership_transfer
-  example: mammoth support ownership transfer 123 123 --output json --no-input
+  example: mammoth support ownership transfer 123 123
 - `mammoth support plan archive` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_archive
-  example: mammoth support plan archive 123 --output json --no-input
+  example: mammoth support plan archive 123
 - `mammoth support plan chargebee-list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_chargebee_list
-  example: mammoth support plan chargebee-list --output json --no-input
+  example: mammoth support plan chargebee-list
 - `mammoth support plan create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_create
-  example: mammoth support plan create 'Revenue report' --input '{"monthly_price": 1.0, "is_self_serve": true}' --output json --no-input
+  example: mammoth support plan create 'Revenue report' --input '{"monthly_price": 1.0, "is_self_serve": true}'
 - `mammoth support plan delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_delete
-  example: mammoth support plan delete 123 --output json --no-input
+  example: mammoth support plan delete 123
 - `mammoth support plan get` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_get
-  example: mammoth support plan get 123 --output json --no-input
+  example: mammoth support plan get 123
 - `mammoth support plan list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_list
-  example: mammoth support plan list --output json --no-input
+  example: mammoth support plan list
 - `mammoth support plan self-serve-list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_self_serve_list
-  example: mammoth support plan self-serve-list --output json --no-input
+  example: mammoth support plan self-serve-list
 - `mammoth support plan update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_update
-  example: mammoth support plan update 123 --output json --no-input
+  example: mammoth support plan update 123
 - `mammoth support plan update-storage-tiers` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_update_storage_tiers
-  example: mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"sample_key": "Status"}]}' --output json --no-input
+  example: mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"sample_key": "Status"}]}'
 - `mammoth support subscription create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.subscription_create
-  example: mammoth support subscription create 123 resource-123 --output json --no-input
+  example: mammoth support subscription create 123 resource-123
 - `mammoth support subscription get` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.subscription_get
-  example: mammoth support subscription get 123 --output json --no-input
+  example: mammoth support subscription get 123
 - `mammoth support subscription update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.subscription_update
-  example: mammoth support subscription update 123 resource-123 --output json --no-input
+  example: mammoth support subscription update 123 resource-123
 - `mammoth support user list-all` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.user_list_all
-  example: mammoth support user list-all --output json --no-input
+  example: mammoth support user list-all
 - `mammoth support user register` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.user_register
-  example: mammoth support user register analyst@example.com --input '{"first_name": "Revenue report", "last_name": "Revenue report", "verified": true}' --output json --no-input
+  example: mammoth support user register analyst@example.com --input '{"first_name": "Revenue report", "last_name": "Revenue report", "verified": true}'
 - `mammoth support user update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.user_update
-  example: mammoth support user update analyst@example.com --input '{"verified": true}' --output json --no-input
+  example: mammoth support user update analyst@example.com --input '{"verified": true}'
 - `mammoth support workspace create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_create
-  example: mammoth support workspace create 'Revenue report' --input '{"user_email": "analyst@example.com", "payment_frequency": "sample"}' --output json --no-input
+  example: mammoth support workspace create 'Revenue report' --input '{"user_email": "analyst@example.com", "payment_frequency": "sample"}'
 - `mammoth support workspace delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_delete
-  example: mammoth support workspace delete 123 --output json --no-input
+  example: mammoth support workspace delete 123
 - `mammoth support workspace get` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_get
-  example: mammoth support workspace get 123 --output json --no-input
+  example: mammoth support workspace get 123
 - `mammoth support workspace list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_list
-  example: mammoth support workspace list --output json --no-input
+  example: mammoth support workspace list
 - `mammoth support workspace restore-access` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_restore_access
-  example: mammoth support workspace restore-access 123 --output json --no-input
+  example: mammoth support workspace restore-access 123
 - `mammoth support workspace suspend-access` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_suspend_access
-  example: mammoth support workspace suspend-access 123 --output json --no-input
+  example: mammoth support workspace suspend-access 123
 - `mammoth support workspace update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_update
-  example: mammoth support workspace update 123 --input '{"name": "Revenue report", "payment_frequency": "sample", "plan_id": 1}' --output json --no-input
+  example: mammoth support workspace update 123 --input '{"name": "Revenue report", "payment_frequency": "sample", "plan_id": 1}'
 - `mammoth support workspace user add` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_user_add
-  example: mammoth support workspace user add 123 --input '{"email": "analyst@example.com", "role": "sample"}' --output json --no-input
+  example: mammoth support workspace user add 123 --input '{"email": "analyst@example.com", "role": "sample"}'
 - `mammoth support workspace user list` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_user_list
-  example: mammoth support workspace user list 123 --output json --no-input
+  example: mammoth support workspace user list 123
 - `mammoth support workspace user remove` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_user_remove
-  example: mammoth support workspace user remove 123 123 --output json --no-input
+  example: mammoth support workspace user remove 123 123
 - `mammoth support workspace user transfer` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_user_transfer
-  example: mammoth support workspace user transfer 123 123 --input '{"role": "sample"}' --output json --no-input
+  example: mammoth support workspace user transfer 123 123 --input '{"role": "sample"}'
 
 ## template
 
 - `mammoth template create` [benign_mutation/none] -> mammoth.api.templates.TemplatesAPI.create
-  example: mammoth template create --input '{"body": {"name": "Revenue report"}}' --output json --no-input
+  example: mammoth template create --input '{"body": {"name": "Revenue report"}}'
 - `mammoth template delete` [destructive/prompt_or_yes] -> mammoth.api.templates.TemplatesAPI.delete
-  example: mammoth template delete 123 --output json --no-input
+  example: mammoth template delete 123
 - `mammoth template get` [read/none] -> mammoth.api.templates.TemplatesAPI.get
-  example: mammoth template get 123 --output json --no-input
+  example: mammoth template get 123
 - `mammoth template list` [read/none] -> mammoth.api.templates.TemplatesAPI.list
-  example: mammoth template list --output json --no-input
+  example: mammoth template list
 - `mammoth template update` [benign_mutation/none] -> mammoth.api.templates.TemplatesAPI.update
-  example: mammoth template update 123 --input '{"body": {"name": "Revenue report"}}' --output json --no-input
+  example: mammoth template update 123 --input '{"body": {"name": "Revenue report"}}'
 
 ## trash
 
 - `mammoth trash add` [benign_mutation/none] -> mammoth.api.trash.TrashAPI.add
-  example: mammoth trash add --input '{"items": [{"sample_key": "Status"}]}' --output json --no-input
+  example: mammoth trash add --input '{"items": [{"sample_key": "Status"}]}'
 - `mammoth trash list` [read/none] -> mammoth.api.trash.TrashAPI.list
-  example: mammoth trash list --output json --no-input
+  example: mammoth trash list
 - `mammoth trash restore` [benign_mutation/none] -> mammoth.api.trash.TrashAPI.restore
-  example: mammoth trash restore --input '{"items": [{"sample_key": "Status"}]}' --output json --no-input
+  example: mammoth trash restore --input '{"items": [{"sample_key": "Status"}]}'
 
 ## upgrade
 
 - `mammoth upgrade` [external_effect/prompt_or_yes] -> mammoth_cli.commands.upgrade.run
-  example: mammoth upgrade --output json --no-input
+  example: mammoth upgrade
 
 ## user
 
 - `mammoth user avatar delete` [destructive/prompt_or_yes] -> mammoth.api.users.UsersAPI.avatar_delete
-  example: mammoth user avatar delete --output json --no-input
+  example: mammoth user avatar delete
 - `mammoth user avatar upload` [benign_mutation/none] -> mammoth.api.users.UsersAPI.avatar_upload
-  example: mammoth user avatar upload ./sales.csv --output json --no-input
+  example: mammoth user avatar upload ./sales.csv
 - `mammoth user change-password` [high_impact/confirm_target] -> mammoth.api.user_profile.UserProfileAPI.change_password
-  example: mammoth user change-password --input /private/path/request.json --output json --no-input
+  example: mammoth user change-password --input /private/path/request.json
 - `mammoth user delete-account` [high_impact/confirm_target] -> mammoth.api.users.UsersAPI.delete_account
-  example: mammoth user delete-account --output json --no-input
+  example: mammoth user delete-account
 - `mammoth user get` [read/none] -> mammoth.api.user_profile.UserProfileAPI.get
-  example: mammoth user get --output json --no-input
+  example: mammoth user get
 - `mammoth user preference get` [read/none] -> mammoth.api.user_profile.UserProfileAPI.get_preferences
-  example: mammoth user preference get --output json --no-input
+  example: mammoth user preference get
 - `mammoth user preference update` [benign_mutation/none] -> mammoth.api.user_profile.UserProfileAPI.update_preferences
-  example: mammoth user preference update --input '{"patch": [{"op": "replace", "path": "GLOBAL.PREFERENCES.TOP_TABS", "value": []}]}' --output json --no-input
+  example: mammoth user preference update --input '{"patch": [{"op": "replace", "path": "GLOBAL.PREFERENCES.TOP_TABS", "value": []}]}'
 - `mammoth user update` [high_impact/confirm_target] -> mammoth.api.user_profile.UserProfileAPI.update
-  example: mammoth user update --output json --no-input
+  example: mammoth user update
 
 ## version
 
 - `mammoth version` [read/none] -> mammoth_cli.commands.meta.version
-  example: mammoth version --output json --no-input
+  example: mammoth version
 
 ## view
 
 - `mammoth view active-user list` [read/none] -> mammoth.api.dataviews.DataviewsAPI.active_users
-  example: mammoth view active-user list 123 123 --output json --no-input
+  example: mammoth view active-user list 123 123
 - `mammoth view active-user mark` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.mark_active
-  example: mammoth view active-user mark 123 123 --output json --no-input
+  example: mammoth view active-user mark 123 123
 - `mammoth view ai generate-data` [benign_mutation/none] -> mammoth.api.ai.AIAPI.generate_data
-  example: mammoth view ai generate-data 123 --input '{"prompt": "Summarize revenue by region"}' --output json --no-input
+  example: mammoth view ai generate-data 123 --input '{"prompt": "Summarize revenue by region"}'
 - `mammoth view ai generation-info` [read/none] -> mammoth.api.ai.AIAPI.get_data_gen_info
-  example: mammoth view ai generation-info 123 --output json --no-input
+  example: mammoth view ai generation-info 123
 - `mammoth view ai profile` [benign_mutation/none] -> mammoth.api.ai.AIAPI.generate_profile
-  example: mammoth view ai profile 123 --input '{"dataset_id": 456, "action": "insights"}' --output json --no-input
+  example: mammoth view ai profile 123 --input '{"dataset_id": 456, "action": "insights"}'
 - `mammoth view bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.dataviews.DataviewsAPI.bulk_delete
-  example: mammoth view bulk-delete 123 --input '{"dataview_ids": [1]}' --output json --no-input
+  example: mammoth view bulk-delete 123 --input '{"dataview_ids": [1]}'
 - `mammoth view checkpoint create` [benign_mutation/none] -> mammoth.api.checkpoints.CheckpointsAPI.create
-  example: mammoth view checkpoint create 123 123 --input '{"body": {"checkpoint_name": "Revenue report", "checkpoint_type": "alert", "pinned_to_end": true}}' --output json --no-input
+  example: mammoth view checkpoint create 123 123 --input '{"body": {"checkpoint_name": "Revenue report", "checkpoint_type": "alert", "pinned_to_end": true}}'
 - `mammoth view checkpoint delete` [destructive/prompt_or_yes] -> mammoth.api.checkpoints.CheckpointsAPI.delete
-  example: mammoth view checkpoint delete 123 123 123 --output json --no-input
+  example: mammoth view checkpoint delete 123 123 123
 - `mammoth view checkpoint get` [read/none] -> mammoth.api.checkpoints.CheckpointsAPI.get
-  example: mammoth view checkpoint get 123 123 123 --output json --no-input
+  example: mammoth view checkpoint get 123 123 123
 - `mammoth view checkpoint list` [read/none] -> mammoth.api.checkpoints.CheckpointsAPI.list
-  example: mammoth view checkpoint list 123 123 --output json --no-input
+  example: mammoth view checkpoint list 123 123
 - `mammoth view checkpoint update` [benign_mutation/none] -> mammoth.api.checkpoints.CheckpointsAPI.update
-  example: mammoth view checkpoint update 123 123 123 --input '{"body": {"patches": [{"op": "command", "path": "approve", "value": null}]}}' --output json --no-input
+  example: mammoth view checkpoint update 123 123 123 --input '{"body": {"patches": [{"op": "command", "path": "approve", "value": null}]}}'
 - `mammoth view conditional-format create` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_create
-  example: mammoth view conditional-format create 123 123 --input '{"rule": {"cf_type": "RULE", "payload": {"FORMAT": {"name": "Flag open orders", "color": "red", "applies_to": "row", "column_ids": "[]"}, "CONDITION": {"OR": [{"column_1": {"CONTAINS": {"VALUE": ["Open"]}}}]}}}}' --output json --no-input
+  example: mammoth view conditional-format create 123 123 --input '{"rule": {"cf_type": "RULE", "payload": {"FORMAT": {"name": "Flag open orders", "color": "red", "applies_to": "row", "column_ids": "[]"}, "CONDITION": {"OR": [{"column_1": {"CONTAINS": {"VALUE": ["Open"]}}}]}}}}'
 - `mammoth view conditional-format delete-all` [destructive/prompt_or_yes] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_delete
-  example: mammoth view conditional-format delete-all 123 123 --input '{"rule_id": "bca0ff33bd6f8ed1"}' --output json --no-input
+  example: mammoth view conditional-format delete-all 123 123 --input '{"rule_id": "bca0ff33bd6f8ed1"}'
 - `mammoth view conditional-format list` [read/none] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_list
-  example: mammoth view conditional-format list 123 123 --output json --no-input
+  example: mammoth view conditional-format list 123 123
 - `mammoth view conditional-format update` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_update
-  example: mammoth view conditional-format update 123 123 --input '{"rule": {"sample_key": "Status"}}' --output json --no-input
+  example: mammoth view conditional-format update 123 123 --input '{"rule": {"sample_key": "Status"}}'
 - `mammoth view create` [benign_mutation/none] -> mammoth.client.ViewsResource.create
-  example: mammoth view create 123 --output json --no-input
+  example: mammoth view create 123
 - `mammoth view data get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.get_data
-  example: mammoth view data get 123 123 --output json --no-input
+  example: mammoth view data get 123 123
 - `mammoth view data query` [read/none] -> mammoth.api.dataviews.DataviewsAPI.query_data
-  example: mammoth view data query 123 123 --output json --no-input
+  example: mammoth view data query 123 123
 - `mammoth view data-check create` [benign_mutation/none] -> mammoth.api.data_checks.DataChecksAPI.create
-  example: mammoth view data-check create 123 123 --input '{"body": {"checks": [{"check_type": "null_percentage", "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report"}}' --output json --no-input
+  example: mammoth view data-check create 123 123 --input '{"body": {"checks": [{"check_type": "null_percentage", "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report"}}'
 - `mammoth view data-check delete` [destructive/prompt_or_yes] -> mammoth.api.data_checks.DataChecksAPI.delete
-  example: mammoth view data-check delete 123 123 123 --output json --no-input
+  example: mammoth view data-check delete 123 123 123
 - `mammoth view data-check get` [read/none] -> mammoth.api.data_checks.DataChecksAPI.get
-  example: mammoth view data-check get 123 123 123 --output json --no-input
+  example: mammoth view data-check get 123 123 123
 - `mammoth view data-check list` [read/none] -> mammoth.api.data_checks.DataChecksAPI.list
-  example: mammoth view data-check list 123 123 --output json --no-input
+  example: mammoth view data-check list 123 123
 - `mammoth view data-check update` [benign_mutation/none] -> mammoth.api.data_checks.DataChecksAPI.update
-  example: mammoth view data-check update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "enable"}]}}' --output json --no-input
+  example: mammoth view data-check update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "enable"}]}}'
 - `mammoth view delete` [destructive/prompt_or_yes] -> mammoth.client.ViewsResource.delete
-  example: mammoth view delete 123 123 --output json --no-input
+  example: mammoth view delete 123 123
 - `mammoth view derivative create` [benign_mutation/none] -> mammoth.api.derivatives.DerivativesAPI.create
-  example: mammoth view derivative create 123 123 --input '{"body": {"param": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}}' --output json --no-input
+  example: mammoth view derivative create 123 123 --input '{"body": {"param": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}}'
 - `mammoth view derivative data` [benign_mutation/none] -> mammoth.api.derivatives.DerivativesAPI.data
-  example: mammoth view derivative data 123 123 123 --input '{"body": {"condition": {"FILTER_TYPE": "SHOW"}}}' --output json --no-input
+  example: mammoth view derivative data 123 123 123 --input '{"body": {"condition": {"FILTER_TYPE": "SHOW"}}}'
 - `mammoth view derivative delete` [destructive/prompt_or_yes] -> mammoth.api.derivatives.DerivativesAPI.delete
-  example: mammoth view derivative delete 123 123 123 --output json --no-input
+  example: mammoth view derivative delete 123 123 123
 - `mammoth view derivative list` [read/none] -> mammoth.api.derivatives.DerivativesAPI.list
-  example: mammoth view derivative list 123 123 --output json --no-input
+  example: mammoth view derivative list 123 123
 - `mammoth view derivative update` [benign_mutation/none] -> mammoth.api.derivatives.DerivativesAPI.update
-  example: mammoth view derivative update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}]}}' --output json --no-input
+  example: mammoth view derivative update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "param", "value": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}]}}'
 - `mammoth view draft auto-run` [reversible_pipeline/none] -> mammoth.view.View.set_auto_run
-  example: mammoth view draft auto-run 123 --input '{"enabled": true, "dataset_id": 456}' --output json --no-input
+  example: mammoth view draft auto-run 123 --input '{"enabled": true, "dataset_id": 456}'
 - `mammoth view draft command` [benign_mutation/none] -> mammoth.api.pipeline.PipelineAPI.command
-  example: mammoth view draft command 123 --input '{"command": "sample", "dataset_id": 456}' --output json --no-input
+  example: mammoth view draft command 123 --input '{"command": "sample", "dataset_id": 456}'
 - `mammoth view draft discard` [destructive/prompt_or_yes] -> mammoth.view.View.discard_draft
-  example: mammoth view draft discard 123 --input '{"dataset_id": 456}' --output json --no-input
+  example: mammoth view draft discard 123 --input '{"dataset_id": 456}'
 - `mammoth view draft enter` [reversible_pipeline/none] -> mammoth.view.View.enter_draft_mode
-  example: mammoth view draft enter 123 --input '{"dataset_id": 456}' --output json --no-input
+  example: mammoth view draft enter 123 --input '{"dataset_id": 456}'
 - `mammoth view draft status` [read/none] -> mammoth.api.pipeline.PipelineAPI.get_draft_status
-  example: mammoth view draft status 123 --output json --no-input
+  example: mammoth view draft status 123
 - `mammoth view draft submit` [reversible_pipeline/none] -> mammoth.view.View.submit_draft
-  example: mammoth view draft submit 123 --input '{"dataset_id": 456}' --output json --no-input
+  example: mammoth view draft submit 123 --input '{"dataset_id": 456}'
 - `mammoth view export azure-blob` [external_effect/yes_always] -> mammoth.view.ViewExport.to_azure_blob
-  example: mammoth view export azure-blob 123 123 --input /private/path/request.json --output json --no-input
+  example: mammoth view export azure-blob 123 123 --input /private/path/request.json
 - `mammoth view export bigquery` [external_effect/yes_always] -> mammoth.view.ViewExport.to_bigquery
-  example: mammoth view export bigquery 123 123 --input '{"selected_profile": {}, "selected_identity": {}, "table": "exports"}' --output json --no-input
+  example: mammoth view export bigquery 123 123 --input '{"selected_profile": {}, "selected_identity": {}, "table": "exports"}'
 - `mammoth view export create` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.create
-  example: mammoth view export create 123 --input '{"export_spec": {"DATAVIEW_ID": 1, "handler_type": "postgres", "trigger_type": "none", "target_properties": {"file": "./sales.csv", "file_type": "./sales.csv", "include_hidden": true, "is_format_set": true, "use_format": true}, "additional_properties": {}, "run_immediately": true}}' --output json --no-input
+  example: mammoth view export create 123 --input '{"export_spec": {"DATAVIEW_ID": 1, "handler_type": "postgres", "trigger_type": "none", "target_properties": {"file": "./sales.csv", "file_type": "./sales.csv", "include_hidden": true, "is_format_set": true, "use_format": true}, "additional_properties": {}, "run_immediately": true}}'
 - `mammoth view export csv` [benign_mutation/none] -> mammoth.api.exports.ExportsAPI.to_csv
-  example: mammoth view export csv 123 --output json --no-input
+  example: mammoth view export csv 123
 - `mammoth view export dataset` [benign_mutation/none] -> mammoth.view.ViewExport.to_dataset
-  example: mammoth view export dataset 123 123 --input '{"dataset_name": "snapshot"}' --output json --no-input
+  example: mammoth view export dataset 123 123 --input '{"dataset_name": "snapshot"}'
 - `mammoth view export delete` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.delete
-  example: mammoth view export delete 123 123 --output json --no-input
+  example: mammoth view export delete 123 123
 - `mammoth view export elasticsearch` [external_effect/yes_always] -> mammoth.view.ViewExport.to_elasticsearch
-  example: mammoth view export elasticsearch 123 123 --input /private/path/request.json --output json --no-input
+  example: mammoth view export elasticsearch 123 123 --input /private/path/request.json
 - `mammoth view export email` [external_effect/yes_always] -> mammoth.view.ViewExport.to_email
-  example: mammoth view export email 123 123 --input '{"emails": ["recipient@example.com"]}' --output json --no-input
+  example: mammoth view export email 123 123 --input '{"emails": ["recipient@example.com"]}'
 - `mammoth view export ftp` [external_effect/yes_always] -> mammoth.view.ViewExport.to_ftp
-  example: mammoth view export ftp 123 123 --input /private/path/request.json --output json --no-input
+  example: mammoth view export ftp 123 123 --input /private/path/request.json
 - `mammoth view export get` [read/none] -> mammoth.api.exports.ExportsAPI.get
-  example: mammoth view export get 123 123 --output json --no-input
+  example: mammoth view export get 123 123
 - `mammoth view export list` [read/none] -> mammoth.api.exports.ExportsAPI.list
-  example: mammoth view export list 123 123 --output json --no-input
+  example: mammoth view export list 123 123
 - `mammoth view export managed-s3` [external_effect/yes_always] -> mammoth.view.ViewExport.to_s3
-  example: mammoth view export managed-s3 123 123 --input '{"file_name": "report.csv"}' --output json --no-input
+  example: mammoth view export managed-s3 123 123 --input '{"file_name": "report.csv"}'
 - `mammoth view export mssql` [external_effect/yes_always] -> mammoth.view.ViewExport.to_mssql
-  example: mammoth view export mssql 123 123 --input /private/path/request.json --output json --no-input
+  example: mammoth view export mssql 123 123 --input /private/path/request.json
 - `mammoth view export mysql` [external_effect/yes_always] -> mammoth.view.ViewExport.to_mysql
-  example: mammoth view export mysql 123 123 --input /private/path/request.json --output json --no-input
+  example: mammoth view export mysql 123 123 --input /private/path/request.json
 - `mammoth view export onedrive` [external_effect/yes_always] -> mammoth.view.ViewExport.to_onedrive
-  example: mammoth view export onedrive 123 123 --input /private/path/request.json --output json --no-input
+  example: mammoth view export onedrive 123 123 --input /private/path/request.json
 - `mammoth view export postgres` [external_effect/yes_always] -> mammoth.view.ViewExport.to_postgres
-  example: mammoth view export postgres 123 123 --input /private/path/request.json --output json --no-input
+  example: mammoth view export postgres 123 123 --input /private/path/request.json
 - `mammoth view export powerbi` [external_effect/yes_always] -> mammoth.view.ViewExport.to_powerbi
-  example: mammoth view export powerbi 123 123 --input /private/path/request.json --output json --no-input
+  example: mammoth view export powerbi 123 123 --input /private/path/request.json
 - `mammoth view export publish-db` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.publish_db
-  example: mammoth view export publish-db 123 --input '{"odbc_type": "postgres", "target_properties": {"sample_key": "Status"}}' --output json --no-input
+  example: mammoth view export publish-db 123 --input '{"odbc_type": "postgres", "target_properties": {"sample_key": "Status"}}'
 - `mammoth view export publish-db-update` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.publish_db_update
-  example: mammoth view export publish-db-update 123 --input '{"patch": [{"op": "replace", "path": "credentials", "value": {"odbc_type": "postgres"}}]}' --output json --no-input
+  example: mammoth view export publish-db-update 123 --input '{"patch": [{"op": "replace", "path": "credentials", "value": {"odbc_type": "postgres"}}]}'
 - `mammoth view export redshift` [external_effect/yes_always] -> mammoth.view.ViewExport.to_redshift
-  example: mammoth view export redshift 123 123 --input /private/path/request.json --output json --no-input
+  example: mammoth view export redshift 123 123 --input /private/path/request.json
 - `mammoth view export rest` [external_effect/yes_always] -> mammoth.view.ViewExport.to_rest_api
-  example: mammoth view export rest 123 123 --input '{"base_url": "https://api.example", "endpoint_path": "/records"}' --output json --no-input
+  example: mammoth view export rest 123 123 --input '{"base_url": "https://api.example", "endpoint_path": "/records"}'
 - `mammoth view export sftp` [external_effect/yes_always] -> mammoth.view.ViewExport.to_sftp
-  example: mammoth view export sftp 123 123 --input '{"host": "sftp.example", "username": "agent"}' --output json --no-input
+  example: mammoth view export sftp 123 123 --input '{"host": "sftp.example", "username": "agent"}'
 - `mammoth view export sharepoint` [external_effect/yes_always] -> mammoth.view.ViewExport.to_sharepoint
-  example: mammoth view export sharepoint 123 123 --input /private/path/request.json --output json --no-input
+  example: mammoth view export sharepoint 123 123 --input /private/path/request.json
 - `mammoth view export tableau` [external_effect/yes_always] -> mammoth.view.ViewExport.to_tableau
-  example: mammoth view export tableau 123 123 --input /private/path/request.json --output json --no-input
+  example: mammoth view export tableau 123 123 --input /private/path/request.json
 - `mammoth view export update` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.update
-  example: mammoth view export update 123 123 --input '{"patches": [{"sample_key": "Status"}]}' --output json --no-input
+  example: mammoth view export update 123 123 --input '{"patches": [{"sample_key": "Status"}]}'
 - `mammoth view exportable-config apply` [reversible_pipeline/confirm_target] -> mammoth.api.dataviews.DataviewsAPI.apply_exportable_config
-  example: mammoth view exportable-config apply 123 --input-format json --input '{"config": {"tasks": []}}' --output json --no-input --yes --confirm 123
+  example: mammoth view exportable-config apply 123 --input-format json --input '{"config": {"tasks": []}}' --yes --confirm 123
 - `mammoth view exportable-config get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.get_exportable_config
-  example: mammoth view exportable-config get 123 --output json --no-input
+  example: mammoth view exportable-config get 123
 - `mammoth view get` [read/none] -> mammoth.client.ViewsResource.get
-  example: mammoth view get 123 123 --output json --no-input
+  example: mammoth view get 123 123
 - `mammoth view list` [read/none] -> mammoth.api.dataviews.DataviewsAPI.list
-  example: mammoth view list 123 --output json --no-input
+  example: mammoth view list 123
 - `mammoth view parameter-context` [read/none] -> mammoth.api.dataviews.DataviewsAPI.parameter_context
-  example: mammoth view parameter-context 123 123 --output json --no-input
+  example: mammoth view parameter-context 123 123
 - `mammoth view pipeline edit` [benign_mutation/none] -> mammoth.api.pipeline.PipelineAPI.edit_pipeline
-  example: mammoth view pipeline edit 123 --input '{"patches": [{"op": "replace", "path": "auto_run", "value": true}]}' --output json --no-input
+  example: mammoth view pipeline edit 123 --input '{"patches": [{"op": "replace", "path": "auto_run", "value": true}]}'
 - `mammoth view pipeline get` [read/none] -> mammoth.api.pipeline.PipelineAPI.get_pipeline
-  example: mammoth view pipeline get 123 --output json --no-input
+  example: mammoth view pipeline get 123
 - `mammoth view pipeline items` [read/none] -> mammoth.api.pipeline.PipelineAPI.items
-  example: mammoth view pipeline items 123 --output json --no-input
+  example: mammoth view pipeline items 123
 - `mammoth view pipeline items-all` [read/none] -> mammoth.api.pipeline.PipelineAPI.items_all
-  example: mammoth view pipeline items-all 123 123 --output json --no-input
+  example: mammoth view pipeline items-all 123 123
 - `mammoth view pipeline rerun` [benign_mutation/none] -> mammoth.api.pipeline.PipelineAPI.rerun
-  example: mammoth view pipeline rerun 123 --output json --no-input
+  example: mammoth view pipeline rerun 123
 - `mammoth view pipeline wait` [read/none] -> mammoth.api.pipeline.PipelineAPI.wait_for_pipeline
-  example: mammoth view pipeline wait 123 --output json --no-input
+  example: mammoth view pipeline wait 123
 - `mammoth view preview` [read/none] -> mammoth.api.dataviews.DataviewsAPI.preview
-  example: mammoth view preview 123 123 --output json --no-input
+  example: mammoth view preview 123 123
 - `mammoth view restore` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.restore
-  example: mammoth view restore 123 123 --output json --no-input
+  example: mammoth view restore 123 123
 - `mammoth view task add` [reversible_pipeline/none] -> mammoth.api.pipeline.PipelineAPI.add_task
-  example: mammoth view task add 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}}' --output json --no-input
+  example: mammoth view task add 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}}'
   agent note: illustrative low-level envelope, not a guaranteed executable task; prefer typed view transform commands because task_spec fields are not fully discoverable.
 - `mammoth view task delete` [destructive/prompt_or_yes] -> mammoth.api.pipeline.PipelineAPI.delete_task
-  example: mammoth view task delete 123 123 --output json --no-input
+  example: mammoth view task delete 123 123
 - `mammoth view task get` [read/none] -> mammoth.api.pipeline.PipelineAPI.get_task
-  example: mammoth view task get 123 123 --output json --no-input
+  example: mammoth view task get 123 123
 - `mammoth view task list` [read/none] -> mammoth.api.pipeline.PipelineAPI.list_tasks
-  example: mammoth view task list 123 --output json --no-input
+  example: mammoth view task list 123
 - `mammoth view task preview` [read/none] -> mammoth.api.pipeline.PipelineAPI.preview_task
-  example: mammoth view task preview 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}}' --output json --no-input
+  example: mammoth view task preview 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}}'
   agent note: illustrative low-level envelope, not a guaranteed executable task; prefer typed view transform commands because task_spec fields are not fully discoverable.
 - `mammoth view task update` [reversible_pipeline/none] -> mammoth.api.pipeline.PipelineAPI.update_task
-  example: mammoth view task update 123 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}, "dataset_id": 456}' --output json --no-input
+  example: mammoth view task update 123 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}, "dataset_id": 456}'
   agent note: illustrative low-level envelope, not a guaranteed executable task; prefer typed view transform commands because task_spec fields are not fully discoverable.
 - `mammoth view transform add-column` [reversible_pipeline/none] -> mammoth.View.add_column
-  example: mammoth view transform add-column 123 --input '{"name": "Revenue report", "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform add-column 123 --input '{"name": "Revenue report", "dataset_id": 456}'
 - `mammoth view transform add-sql` [reversible_pipeline/none] -> mammoth.View.add_sql
-  example: mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) AS revenue FROM \"view:123\" GROUP BY region", "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform add-sql 123 --input '{"query": "SELECT region, SUM(revenue) AS revenue FROM \"view:123\" GROUP BY region", "dataset_id": 456}'
 - `mammoth view transform ai` [reversible_pipeline/none] -> mammoth.View.gen_ai
-  example: mammoth view transform ai 123 --input '{"prompt": "Summarize revenue by region", "context_columns": ["Status"], "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform ai 123 --input '{"prompt": "Summarize revenue by region", "context_columns": ["Status"], "dataset_id": 456}'
 - `mammoth view transform bulk-replace` [reversible_pipeline/none] -> mammoth.View.bulk_replace
-  example: mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["sample"], "replace": "sample"}], "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform bulk-replace 123 --input '{"columns": ["Status"], "mapping": [{"search": ["sample"], "replace": "sample"}], "dataset_id": 456}'
 - `mammoth view transform combine-columns` [reversible_pipeline/none] -> mammoth.View.combine_columns
-  example: mammoth view transform combine-columns 123 --input '{"sources": ["Status"], "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform combine-columns 123 --input '{"sources": ["Status"], "dataset_id": 456}'
 - `mammoth view transform convert-type` [reversible_pipeline/none] -> mammoth.View.convert_type
-  example: mammoth view transform convert-type 123 --input '{"conversions": [{"column": "Status", "to": "TEXT"}], "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform convert-type 123 --input '{"conversions": [{"column": "Status", "to": "TEXT"}], "dataset_id": 456}'
 - `mammoth view transform copy-columns` [reversible_pipeline/none] -> mammoth.View.copy_columns
-  example: mammoth view transform copy-columns 123 --input '{"copies": [{"source": "Status"}], "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform copy-columns 123 --input '{"copies": [{"source": "Status"}], "dataset_id": 456}'
 - `mammoth view transform crosstab` [reversible_pipeline/none] -> mammoth.View.crosstab
-  example: mammoth view transform crosstab 123 --input '{"rows": ["sample"], "pivot_column": "Status", "select": {"function": "SUM"}, "dataset_name": "Revenue report", "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform crosstab 123 --input '{"rows": ["sample"], "pivot_column": "Status", "select": {"function": "SUM"}, "dataset_name": "Revenue report", "dataset_id": 456}'
 - `mammoth view transform date-diff` [reversible_pipeline/none] -> mammoth.View.date_diff
-  example: mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "sample", "end": "sample", "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform date-diff 123 --input '{"component": "YEAR", "start": "sample", "end": "sample", "dataset_id": 456}'
 - `mammoth view transform delete-columns` [reversible_pipeline/none] -> mammoth.View.delete_columns
-  example: mammoth view transform delete-columns 123 --input '{"columns": ["Status"], "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform delete-columns 123 --input '{"columns": ["Status"], "dataset_id": 456}'
 - `mammoth view transform discard-duplicates` [reversible_pipeline/none] -> mammoth.View.discard_duplicates
-  example: mammoth view transform discard-duplicates 123 --input '{"dataset_id": 456}' --output json --no-input
+  example: mammoth view transform discard-duplicates 123 --input '{"dataset_id": 456}'
 - `mammoth view transform extract-date` [reversible_pipeline/none] -> mammoth.View.extract_date
-  example: mammoth view transform extract-date 123 --input '{"column": "Status", "component": "year", "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform extract-date 123 --input '{"column": "Status", "component": "year", "dataset_id": 456}'
 - `mammoth view transform fill-missing` [reversible_pipeline/none] -> mammoth.View.fill_missing
-  example: mammoth view transform fill-missing 123 --input '{"column": "Status", "direction": "FIRST_VALUE", "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform fill-missing 123 --input '{"column": "Status", "direction": "FIRST_VALUE", "dataset_id": 456}'
 - `mammoth view transform filter` [reversible_pipeline/none] -> mammoth.View.filter_rows
-  example: mammoth view transform filter 123 --input '{"condition": {"column": "Status", "operator": "EQ", "value": "Active"}, "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform filter 123 --input '{"condition": {"column": "Status", "operator": "EQ", "value": "Active"}, "dataset_id": 456}'
 - `mammoth view transform generate-sql` [reversible_pipeline/none] -> mammoth.View.generate_sql
-  example: mammoth view transform generate-sql 123 --input '{"intent": "Summarize revenue by region", "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform generate-sql 123 --input '{"intent": "Summarize revenue by region", "dataset_id": 456}'
 - `mammoth view transform increment-date` [reversible_pipeline/none] -> mammoth.View.increment_date
-  example: mammoth view transform increment-date 123 --input '{"column": "Status", "delta": {}, "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform increment-date 123 --input '{"column": "Status", "delta": {}, "dataset_id": 456}'
 - `mammoth view transform join` [reversible_pipeline/none] -> mammoth.View.join
-  example: mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456, "foreign_dataset_id": 457}' --output json --no-input
+  example: mammoth view transform join 123 --input '{"foreign_view": 1, "join_type": "INNER", "on": [{"left": "sample", "right": "sample"}], "select": ["sample"], "dataset_id": 456, "foreign_dataset_id": 457}'
 - `mammoth view transform json-extract` [reversible_pipeline/none] -> mammoth.View.json_extract
-  example: mammoth view transform json-extract 123 --input '{"column": "Status", "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform json-extract 123 --input '{"column": "Status", "dataset_id": 456}'
 - `mammoth view transform limit-rows` [reversible_pipeline/none] -> mammoth.View.limit_rows
-  example: mammoth view transform limit-rows 123 --input '{"n": 1, "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform limit-rows 123 --input '{"n": 1, "dataset_id": 456}'
 - `mammoth view transform lookup` [reversible_pipeline/none] -> mammoth.View.lookup
-  example: mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample", "dataset_id": 456, "lookup_dataset_id": 457}' --output json --no-input
+  example: mammoth view transform lookup 123 --input '{"source": "Status", "lookup_view_id": 1, "key": "Status", "value": "sample", "dataset_id": 456, "lookup_dataset_id": 457}'
 - `mammoth view transform math` [reversible_pipeline/none] -> mammoth.View.math
-  example: mammoth view transform math 123 --input '{"expression": "price * quantity", "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform math 123 --input '{"expression": "price * quantity", "dataset_id": 456}'
 - `mammoth view transform pivot` [reversible_pipeline/none] -> mammoth.View.pivot
-  example: mammoth view transform pivot 123 --input '{"group_by": ["sample"], "aggregations": [{"column": "Status", "function": "SUM"}], "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform pivot 123 --input '{"group_by": ["sample"], "aggregations": [{"column": "Status", "function": "SUM"}], "dataset_id": 456}'
 - `mammoth view transform replace` [reversible_pipeline/none] -> mammoth.View.replace_values
-  example: mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "sample", "replace": "sample", "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "sample", "replace": "sample", "dataset_id": 456}'
 - `mammoth view transform set-values` [reversible_pipeline/none] -> mammoth.View.set_values
-  example: mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}], "existing_column": "Status", "condition": {"column": "Status", "operator": "IS_EMPTY"}, "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}], "existing_column": "Status", "condition": {"column": "Status", "operator": "IS_EMPTY"}, "dataset_id": 456}'
 - `mammoth view transform small-large` [reversible_pipeline/none] -> mammoth.View.small_large
-  example: mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["Status"], "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["Status"], "dataset_id": 456}'
 - `mammoth view transform split` [reversible_pipeline/none] -> mammoth.View.split_column
-  example: mammoth view transform split 123 --input '{"column": "Status", "delimiter": "sample", "new_columns": [{"name": "Revenue report"}], "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform split 123 --input '{"column": "Status", "delimiter": "sample", "new_columns": [{"name": "Revenue report"}], "dataset_id": 456}'
 - `mammoth view transform substring` [reversible_pipeline/none] -> mammoth.View.substring
-  example: mammoth view transform substring 123 --input '{"column": "Status", "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform substring 123 --input '{"column": "Status", "dataset_id": 456}'
 - `mammoth view transform text` [reversible_pipeline/none] -> mammoth.View.text_transform
-  example: mammoth view transform text 123 --input '{"columns": ["Status"], "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform text 123 --input '{"columns": ["Status"], "dataset_id": 456}'
 - `mammoth view transform unnest` [reversible_pipeline/none] -> mammoth.View.unnest
-  example: mammoth view transform unnest 123 --input '{"columns": ["Status"], "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform unnest 123 --input '{"columns": ["Status"], "dataset_id": 456}'
 - `mammoth view transform window` [reversible_pipeline/none] -> mammoth.View.window
-  example: mammoth view transform window 123 --input '{"function": "ROW_NUMBER", "dataset_id": 456}' --output json --no-input
+  example: mammoth view transform window 123 --input '{"function": "ROW_NUMBER", "dataset_id": 456}'
 - `mammoth view trash` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.trash
-  example: mammoth view trash 123 123 --output json --no-input
+  example: mammoth view trash 123 123
 - `mammoth view update` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.update
-  example: mammoth schema get view.update --output json --no-input
+  example: mammoth view update 123 123 --input '{"patch_data": [{"sample_key": "Status"}]}'
   agent note: raw patch input is intentionally blocked; use a separately typed command or return unsupported_contract.
 - `mammoth view version apply` [benign_mutation/none] -> mammoth.api.pipeline_versions.PipelineVersionsAPI.apply
-  example: mammoth view version apply 123 123 123 --output json --no-input
+  example: mammoth view version apply 123 123 123
 - `mammoth view version delete` [destructive/prompt_or_yes] -> mammoth.api.pipeline_versions.PipelineVersionsAPI.delete
-  example: mammoth view version delete 123 123 123 --output json --no-input
+  example: mammoth view version delete 123 123 123
 - `mammoth view version get` [read/none] -> mammoth.api.pipeline_versions.PipelineVersionsAPI.get
-  example: mammoth view version get 123 123 123 --output json --no-input
+  example: mammoth view version get 123 123 123
 - `mammoth view version list` [read/none] -> mammoth.api.pipeline_versions.PipelineVersionsAPI.list
-  example: mammoth view version list 123 123 --output json --no-input
+  example: mammoth view version list 123 123
 - `mammoth view version update` [benign_mutation/none] -> mammoth.api.pipeline_versions.PipelineVersionsAPI.update
-  example: mammoth view version update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "name"}]}}' --output json --no-input
+  example: mammoth view version update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "name"}]}}'
 
 ## webhook
 
 - `mammoth webhook create` [benign_mutation/none] -> mammoth.api.webhooks.WebhooksAPI.create
-  example: mammoth webhook create 'Revenue report' --output json --no-input
+  example: mammoth webhook create 'Revenue report'
 - `mammoth webhook delete` [destructive/prompt_or_yes] -> mammoth.api.webhooks.WebhooksAPI.delete
-  example: mammoth webhook delete 123 --output json --no-input
+  example: mammoth webhook delete 123
 - `mammoth webhook get` [read/none] -> mammoth.api.webhooks.WebhooksAPI.get
-  example: mammoth webhook get 123 --output json --no-input
+  example: mammoth webhook get 123
 - `mammoth webhook list` [read/none] -> mammoth.api.webhooks.WebhooksAPI.list
-  example: mammoth webhook list --output json --no-input
+  example: mammoth webhook list
 - `mammoth webhook send` [benign_mutation/none] -> mammoth.api.webhooks.WebhooksAPI.send_data
-  example: mammoth webhook send --input '{"webhook_uri": "https://example.com/data.csv", "data": {"sample_key": "Status"}}' --output json --no-input
+  example: mammoth webhook send --input '{"webhook_uri": "https://example.com/data.csv", "data": {"sample_key": "Status"}}'
 - `mammoth webhook send-get` [benign_mutation/none] -> mammoth.api.webhooks.WebhooksAPI.send_data_get
-  example: mammoth webhook send-get --input '{"webhook_uri": "https://example.com/data.csv"}' --output json --no-input
+  example: mammoth webhook send-get --input '{"webhook_uri": "https://example.com/data.csv"}'
 - `mammoth webhook update` [benign_mutation/none] -> mammoth.api.webhooks.WebhooksAPI.update
-  example: mammoth webhook update 123 --output json --no-input
+  example: mammoth webhook update 123
 
 ## workflow
 
 - `mammoth workflow block add` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.block_add
-  example: mammoth workflow block add 123 --input '{"block_type": "sample"}' --output json --no-input
+  example: mammoth workflow block add 123 --input '{"block_type": "sample"}'
 - `mammoth workflow block auth` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.block_auth
-  example: mammoth workflow block auth 123 123 --input '{"auth_data": {"sample_key": "Status"}}' --output json --no-input
+  example: mammoth workflow block auth 123 123 --input '{"auth_data": {"sample_key": "Status"}}'
 - `mammoth workflow block config` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.block_config
-  example: mammoth workflow block config 123 123 --output json --no-input
+  example: mammoth workflow block config 123 123
 - `mammoth workflow block type` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.block_type
-  example: mammoth workflow block type 123 123 --input '{"connection_type": "sample"}' --output json --no-input
+  example: mammoth workflow block type 123 123 --input '{"connection_type": "sample"}'
 - `mammoth workflow canvas` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.canvas
-  example: mammoth workflow canvas 123 --input '{"canvas_state": {"sample_key": "Status"}}' --output json --no-input
+  example: mammoth workflow canvas 123 --input '{"canvas_state": {"sample_key": "Status"}}'
 - `mammoth workflow cleanup` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.cleanup
-  example: mammoth workflow cleanup --output json --no-input
+  example: mammoth workflow cleanup
 - `mammoth workflow create` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.create
-  example: mammoth workflow create 'Revenue report' --output json --no-input
+  example: mammoth workflow create 'Revenue report'
 - `mammoth workflow delete` [destructive/prompt_or_yes] -> mammoth.api.workflows.WorkflowsAPI.delete
-  example: mammoth workflow delete 123 --output json --no-input
+  example: mammoth workflow delete 123
 - `mammoth workflow from-template` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.from_template
-  example: mammoth workflow from-template 123 --input '{"workflow_name": "Revenue report"}' --output json --no-input
+  example: mammoth workflow from-template 123 --input '{"workflow_name": "Revenue report"}'
 - `mammoth workflow get` [read/none] -> mammoth.api.workflows.WorkflowsAPI.get
-  example: mammoth workflow get 123 --output json --no-input
+  example: mammoth workflow get 123
 - `mammoth workflow graph` [read/none] -> mammoth.api.workflows.WorkflowsAPI.graph
-  example: mammoth workflow graph --output json --no-input
+  example: mammoth workflow graph
 - `mammoth workflow list` [read/none] -> mammoth.api.workflows.WorkflowsAPI.list
-  example: mammoth workflow list --output json --no-input
+  example: mammoth workflow list
 - `mammoth workflow update` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.update
-  example: mammoth workflow update 123 --output json --no-input
+  example: mammoth workflow update 123
 - `mammoth workflow workspace-datasets` [read/none] -> mammoth.api.workflows.WorkflowsAPI.workspace_datasets
-  example: mammoth workflow workspace-datasets --output json --no-input
+  example: mammoth workflow workspace-datasets
 - `mammoth workflow workspace-exports` [read/none] -> mammoth.api.workflows.WorkflowsAPI.workspace_exports
-  example: mammoth workflow workspace-exports --output json --no-input
+  example: mammoth workflow workspace-exports
 - `mammoth workflow workspace-sources` [read/none] -> mammoth.api.workflows.WorkflowsAPI.workspace_sources
-  example: mammoth workflow workspace-sources --output json --no-input
+  example: mammoth workflow workspace-sources
 
 ## workspace
 
 - `mammoth workspace accept-invite` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.accept_invite
-  example: mammoth workspace accept-invite --input /private/path/request.json --output json --no-input
+  example: mammoth workspace accept-invite --input /private/path/request.json
 - `mammoth workspace app-usage` [read/none] -> mammoth.api.workspaces.WorkspacesAPI.app_usage
-  example: mammoth workspace app-usage --output json --no-input
+  example: mammoth workspace app-usage
 - `mammoth workspace check-expression` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.check_expression
-  example: mammoth workspace check-expression --input '{"body": {"intent": "Summarize revenue by region"}}' --output json --no-input
+  example: mammoth workspace check-expression --input '{"body": {"intent": "Summarize revenue by region"}}'
 - `mammoth workspace create` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.create
-  example: mammoth workspace create --input '{"body": {}}' --output json --no-input
+  example: mammoth workspace create --input '{"body": {}}'
 - `mammoth workspace delete` [high_impact/confirm_target] -> mammoth.api.workspace.WorkspaceAPI.delete
-  example: mammoth workspace delete 123 --output json --no-input
+  example: mammoth workspace delete 123
 - `mammoth workspace get` [read/none] -> mammoth.api.workspace.WorkspaceAPI.get
-  example: mammoth workspace get 123 --output json --no-input
+  example: mammoth workspace get 123
 - `mammoth workspace list` [read/none] -> mammoth.api.workspace.WorkspaceAPI.list
-  example: mammoth workspace list --output json --no-input
+  example: mammoth workspace list
 - `mammoth workspace llm-task` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.llm_task
-  example: mammoth workspace llm-task --input '{"task_type": "sample", "params": {"sample_key": "Status"}}' --output json --no-input
+  example: mammoth workspace llm-task --input '{"task_type": "sample", "params": {"sample_key": "Status"}}'
 - `mammoth workspace reactivate` [high_impact/confirm_target] -> mammoth.api.workspace.WorkspaceAPI.reactivate
-  example: mammoth workspace reactivate 123 --output json --no-input
+  example: mammoth workspace reactivate 123
 - `mammoth workspace segment list` [read/none] -> mammoth.api.workspaces.WorkspacesAPI.segment_list
-  example: mammoth workspace segment list --output json --no-input
+  example: mammoth workspace segment list
 - `mammoth workspace segment update` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.segment_update
-  example: mammoth workspace segment update --input '{"patch": [{"sample_key": "Status"}]}' --output json --no-input
+  example: mammoth workspace segment update --input '{"patch": [{"sample_key": "Status"}]}'
 - `mammoth workspace storage-breakdown` [read/none] -> mammoth.api.workspaces.WorkspacesAPI.storage_breakdown
-  example: mammoth workspace storage-breakdown --output json --no-input
+  example: mammoth workspace storage-breakdown
 - `mammoth workspace update` [high_impact/confirm_target] -> mammoth.api.workspace.WorkspaceAPI.update
-  example: mammoth workspace update 123 --input '{"patches": [{"op": "replace", "path": "name", "value": "sample"}]}' --output json --no-input
+  example: mammoth workspace update 123 --input '{"patches": [{"op": "replace", "path": "name", "value": "sample"}]}'
 - `mammoth workspace user add` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.user_add
-  example: mammoth workspace user add --input '{"email_ids": ["analyst@example.com"]}' --output json --no-input
+  example: mammoth workspace user add --input '{"email_ids": ["analyst@example.com"]}'
 - `mammoth workspace user get` [read/none] -> mammoth.api.workspace.WorkspaceAPI.get_user
-  example: mammoth workspace user get resource-123 --output json --no-input
+  example: mammoth workspace user get resource-123
 - `mammoth workspace user list` [read/none] -> mammoth.api.workspace.WorkspaceAPI.list_users
-  example: mammoth workspace user list --output json --no-input
+  example: mammoth workspace user list
 - `mammoth workspace user remove` [destructive/prompt_or_yes] -> mammoth.api.workspaces.WorkspacesAPI.user_remove
-  example: mammoth workspace user remove 123 --output json --no-input
+  example: mammoth workspace user remove 123
 - `mammoth workspace user remove-batch` [destructive/prompt_or_yes] -> mammoth.api.workspaces.WorkspacesAPI.user_remove_batch
-  example: mammoth workspace user remove-batch --output json --no-input
+  example: mammoth workspace user remove-batch
 - `mammoth workspace user update` [high_impact/confirm_target] -> mammoth.api.workspace.WorkspaceAPI.update_user
-  example: mammoth workspace user update resource-123 --input '{"patches": [{"op": "replace", "path": "role", "value": "workspace_member"}]}' --output json --no-input
+  example: mammoth workspace user update resource-123 --input '{"patches": [{"op": "replace", "path": "role", "value": "workspace_member"}]}'
 - `mammoth workspace user update-batch` [benign_mutation/none] -> mammoth.api.workspaces.WorkspacesAPI.user_update_batch
-  example: mammoth workspace user update-batch --input '{"patches": [{"sample_key": "Status"}]}' --output json --no-input
+  example: mammoth workspace user update-batch --input '{"patches": [{"sample_key": "Status"}]}'

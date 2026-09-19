@@ -5,8 +5,8 @@
 ## Remove the agent skill
 
 ```bash
-mammoth skill uninstall --output json --no-input                 # all agents, user scope
-mammoth skill uninstall --output json --no-input --input '{"agents": ["cursor"]}'
+mammoth skill uninstall                 # all agents, user scope
+mammoth skill uninstall --input '{"agents": ["cursor"]}'
 ```
 
 Uninstall removes only installer-owned skill copies. A locally modified copy is

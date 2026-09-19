@@ -1,6 +1,6 @@
 [project]
 name = "mammoth-cli"
-version = "2.0.20"
+version = "2.0.21"
 description = "Command-line interface for the Mammoth Analytics platform"
 authors = [{name = "Mammoth Analytics", email = "support@mammoth.io"}]
 readme = "README.md"

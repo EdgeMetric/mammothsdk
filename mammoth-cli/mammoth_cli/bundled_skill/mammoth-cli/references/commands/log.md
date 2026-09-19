@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `log.path`
 
-Run: `mammoth log path`. Exact input fields: `mammoth schema get log.path --output json --no-input`.
+Run: `mammoth log path`. Exact input fields: `mammoth schema get log.path`.
 
-Example: `mammoth log path --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth log path`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `LogPathResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: untried; no live run recorded.
 
 ### `log.tail`
 
-Run: `mammoth log tail`. Exact input fields: `mammoth schema get log.tail --output json --no-input`.
+Run: `mammoth log tail`. Exact input fields: `mammoth schema get log.tail`.
 
-Example: `mammoth log tail --input '{"errors_only": true, "limit": 20}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth log tail --input '{"errors_only": true, "limit": 20}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `LogTailResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

@@ -28,7 +28,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth config get KEY --help
-  agent_example: mammoth config get output --output json --no-input
+  agent_example: mammoth config get output
   unit_tests:
   - UT-CONFIG-GET
   contract_tests:
@@ -61,7 +61,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth config list --help
-  agent_example: mammoth config list --output json --no-input
+  agent_example: mammoth config list
   unit_tests:
   - UT-CONFIG-LIST
   contract_tests:
@@ -94,7 +94,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth config path --help
-  agent_example: mammoth config path --output json --no-input
+  agent_example: mammoth config path
   unit_tests:
   - UT-CONFIG-PATH
   contract_tests:
@@ -139,7 +139,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth config set KEY VALUE --help
-  agent_example: mammoth config set output text --output json --no-input
+  agent_example: mammoth config set output text
   unit_tests:
   - UT-CONFIG-SET
   contract_tests:

@@ -19,10 +19,27 @@ from contextlib import contextmanager
 from mammoth_cli.context import profiles
 from mammoth_cli.context.resolver import ResolvedAuth, resolve_auth, resolve_project
 from mammoth_cli.errors.envelope import missing_project_error
+from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.output.policy import resolve_policy
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services import factory
 from mammoth_cli.services.protocol import MammothService
+
+#: Job-wait budget for commands that start work on the platform (uploads,
+#: transforms, exports, deletes). The SDK's 60 s default fits a read; a
+#: transform on a real dataset regularly needs more, and agents were told to
+#: pass ``--timeout 300`` by hand. Reads keep the SDK default.
+DEFAULT_MUTATION_JOB_TIMEOUT = 300.0
+
+
+def default_job_timeout(command_id: str) -> float | None:
+    """The job-wait timeout for ``command_id`` when none was configured."""
+    record = command_by_id(command_id) or {}
+    if record.get("mutation_class", "read") in (None, "read"):
+        return None
+    if record.get("wait_policy") in ("always_wait", "start_or_wait", "returns_job"):
+        return DEFAULT_MUTATION_JOB_TIMEOUT
+    return None
 
 
 @contextmanager
@@ -52,7 +69,11 @@ def open_service(invocation: Invocation) -> Iterator[tuple[MammothService, Resol
     service = factory.build_service(
         auth,
         timeout=invocation.timeout,
-        job_timeout=invocation.job_timeout,
+        job_timeout=(
+            invocation.job_timeout
+            if invocation.job_timeout is not None
+            else default_job_timeout(invocation.command_id)
+        ),
         pipeline_timeout=invocation.pipeline_timeout,
         project_id=resolved_project(invocation),
         profile=invocation.profile or profiles.get_selected(),

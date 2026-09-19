@@ -23,8 +23,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth template create --help
-  agent_example: 'mammoth template create --input ''{"body": {"name": "Revenue report"}}'' --output json
-    --no-input'
+  agent_example: 'mammoth template create --input ''{"body": {"name": "Revenue report"}}'''
   unit_tests:
   - UT-TEMPLATE-CREATE
   contract_tests:
@@ -64,7 +63,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth template delete TEMPLATE_ID --help
-  agent_example: mammoth template delete 123 --output json --no-input
+  agent_example: mammoth template delete 123
   unit_tests:
   - UT-TEMPLATE-DELETE
   contract_tests:
@@ -104,7 +103,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth template get TEMPLATE_ID --help
-  agent_example: mammoth template get 123 --output json --no-input
+  agent_example: mammoth template get 123
   unit_tests:
   - UT-TEMPLATE-GET
   contract_tests:
@@ -138,7 +137,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth template list --help
-  agent_example: mammoth template list --output json --no-input
+  agent_example: mammoth template list
   unit_tests:
   - UT-TEMPLATE-LIST
   contract_tests:
@@ -178,8 +177,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth template update TEMPLATE_ID --help
-  agent_example: 'mammoth template update 123 --input ''{"body": {"name": "Revenue report"}}'' --output
-    json --no-input'
+  agent_example: 'mammoth template update 123 --input ''{"body": {"name": "Revenue report"}}'''
   unit_tests:
   - UT-TEMPLATE-UPDATE
   contract_tests:

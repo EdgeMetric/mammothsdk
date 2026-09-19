@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `report.list`
 
-Run: `mammoth report list`. Exact input fields: `mammoth schema get report.list --output json --no-input`.
+Run: `mammoth report list`. Exact input fields: `mammoth schema get report.list`.
 
-Example: `mammoth report list --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth report list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ReportListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

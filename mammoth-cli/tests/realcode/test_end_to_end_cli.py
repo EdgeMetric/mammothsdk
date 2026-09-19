@@ -286,7 +286,7 @@ def test_view_delete_parent_403_is_preserved_without_fallback_probe(
     )
 
     assert result.exit_code != 0
-    assert '"code": "authorization_required"' in result.output
+    assert '"code":"authorization_required"' in result.output
     deletes = [request for request in api.requests if request.method == "DELETE"]
     assert [request.path for request in deletes] == [
         "/api/v2/workspaces/4/projects/180/datasets/122/dataviews/116"
@@ -399,7 +399,7 @@ def test_data_app_user_remove_rejects_email_via_input(
     )
 
     assert result.exit_code == 2, result.output
-    assert '"code": "missing_argument"' in result.output
+    assert '"code":"missing_argument"' in result.output
     assert not any(r.method == "DELETE" for r in api.requests), "no HTTP before validation"
 
 

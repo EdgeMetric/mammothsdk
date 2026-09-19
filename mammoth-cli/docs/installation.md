@@ -30,14 +30,13 @@ The installer also installs the bundled agent skill. Verify it and read the
 installed `SKILL.md` before any discovery or data operation:
 
 ```bash
-mammoth skill list --output json --no-input
-mammoth skill path --output json --no-input
+mammoth skill list
+mammoth skill path
 ```
 
-Next, inspect the selected profile with `mammoth auth status --output json
---no-input`. If it has no usable credentials, use the secure login flow in
+Next, inspect the selected profile with `mammoth auth status`. If it has no usable credentials, use the secure login flow in
 [Authentication and project context](authentication.md). After login (or for
-an existing usable profile), run `mammoth doctor --output json --no-input` and
+an existing usable profile), run `mammoth doctor` and
 stop to fix any reported configuration, credential, endpoint, or connectivity
 failure. Only then discover commands and resolve task scope. The full cold-start
 sequence is in [Agent and CI operation](agents.md).
@@ -93,9 +92,9 @@ This SDK command does not install the CLI.
 ## Install the agent skill
 
 ```bash
-mammoth skill install --output json --no-input          # all agents, user scope
-mammoth skill path --output json --no-input             # show source + targets
-mammoth skill list --output json --no-input
+mammoth skill install          # all agents, user scope
+mammoth skill path             # show source + targets
+mammoth skill list
 ```
 
 The skill installs for Codex, Claude Code, and Cursor. Pass an `--input`

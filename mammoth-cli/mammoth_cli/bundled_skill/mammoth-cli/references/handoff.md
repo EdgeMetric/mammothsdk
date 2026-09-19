@@ -45,9 +45,9 @@ transport permits it. Do not publish a partially written checkpoint.
 Useful read commands include:
 
 ```bash
-mammoth doctor --profile PROFILE --output json --no-input
-mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input
-mammoth job get JOB_ID --output json --no-input
+mammoth doctor --profile PROFILE
+mammoth view get VIEW_ID --project PROJECT_ID
+mammoth job get JOB_ID
 ```
 
 The required fields and receiving procedure above are self-contained for a

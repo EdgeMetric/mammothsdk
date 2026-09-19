@@ -45,6 +45,17 @@ def isolated_run_log(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     # developer's real cache; tests of the check itself re-enable it.
     monkeypatch.setenv("MAMMOTH_NO_UPDATE_CHECK", "1")
     monkeypatch.setenv("MAMMOTH_UPDATE_CACHE", str(tmp_path / "update-check.json"))
+    # Session defaults from the developer's shell must not leak into tests.
+    for name in (
+        "MAMMOTH_PROFILE",
+        "MAMMOTH_PROJECT",
+        "MAMMOTH_OUTPUT",
+        "MAMMOTH_NO_INPUT",
+        "MAMMOTH_JSON_PRETTY",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    # The view-parent memory is per machine; tests start with an empty one.
+    monkeypatch.setenv("MAMMOTH_PARENT_CACHE", str(tmp_path / "view-parents.json"))
     return log_dir
 
 

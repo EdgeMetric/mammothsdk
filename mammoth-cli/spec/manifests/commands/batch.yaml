@@ -29,7 +29,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch bulk-delete DATASET_ID --help
-  agent_example: mammoth batch bulk-delete 123 --output json --no-input
+  agent_example: mammoth batch bulk-delete 123
   unit_tests:
   - UT-BATCH-BULK-DELETE
   contract_tests:
@@ -76,7 +76,7 @@ commands:
   secret_fields: []
   human_example: mammoth batch create DATASET_ID SOURCE_ID --help
   agent_example: 'mammoth batch create 123 123 --input ''{"mapping": [{"source_c_name": "column_1", "destination_c_name":
-    "column_1", "expected_destination_c_type": "TEXT"}]}'' --output json --no-input'
+    "column_1", "expected_destination_c_type": "TEXT"}]}'''
   unit_tests:
   - UT-BATCH-CREATE
   contract_tests:
@@ -115,7 +115,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch create-spec DATASET_ID --help
-  agent_example: 'mammoth batch create-spec 123 --input ''{"file_id": 94}'' --output json --no-input'
+  agent_example: 'mammoth batch create-spec 123 --input ''{"file_id": 94}'''
   unit_tests:
   - UT-BATCH-CREATE-SPEC
   contract_tests:
@@ -162,7 +162,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch delete DATASET_ID BATCH_ID --help
-  agent_example: mammoth batch delete 123 123 --output json --no-input
+  agent_example: mammoth batch delete 123 123
   unit_tests:
   - UT-BATCH-DELETE
   contract_tests:
@@ -208,7 +208,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch get DATASET_ID BATCH_ID --help
-  agent_example: mammoth batch get 123 123 --output json --no-input
+  agent_example: mammoth batch get 123 123
   unit_tests:
   - UT-BATCH-GET
   contract_tests:
@@ -248,7 +248,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch list DATASET_ID --help
-  agent_example: mammoth batch list 123 --output json --no-input
+  agent_example: mammoth batch list 123
   unit_tests:
   - UT-BATCH-LIST
   contract_tests:
@@ -288,8 +288,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth batch update DATASET_ID --help
-  agent_example: 'mammoth batch update 123 --input ''{"patch": [{"sample_key": "Status"}]}'' --output
-    json --no-input'
+  agent_example: 'mammoth batch update 123 --input ''{"patch": [{"sample_key": "Status"}]}'''
   unit_tests:
   - UT-BATCH-UPDATE
   contract_tests:

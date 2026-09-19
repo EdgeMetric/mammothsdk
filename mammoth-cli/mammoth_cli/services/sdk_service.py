@@ -26,6 +26,7 @@ from mammoth_cli.errors.envelope import (
     missing_project_error,
 )
 from mammoth_cli.output.progress import spinner
+from mammoth_cli.runtime import parents
 from mammoth_cli.services.coerce import coerce_arguments
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dispatch import resolve_sdk_method
@@ -176,8 +177,8 @@ class SdkMammothService:
             ),
             details={"view_id": view_id, "project_id": project, "reason": str(exc)},
             recovery_commands=[
-                f"mammoth dataset list --project {project} --output json --no-input",
-                "mammoth dataset find NAME_SUBSTRING --output json --no-input",
+                f"mammoth dataset list --project {project}",
+                "mammoth dataset find NAME_SUBSTRING",
             ],
         )
 
@@ -283,6 +284,13 @@ class SdkMammothService:
             raise miss from exc
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
+        if dataset_id is None:
+            # The read just paid for parent discovery; keep the answer so the
+            # next command on this view (a transform, an export) needs no
+            # ``dataset_id`` and no second walk.
+            discovered = getattr(view, "dataset_id", None)
+            if isinstance(discovered, int):
+                parents.remember(self._profile, self._workspace_id, {view_id: discovered})
         if method.startswith("_"):
             raise self._view_member_error(view_id, method)
         attribute = getattr(view, method, None)
@@ -401,7 +409,7 @@ class SdkMammothService:
                     "(from 'view list DATASET_ID' or a 'view get' read)."
                 ),
                 details={view_kwarg: value, "missing_field": parent_kwarg},
-                recovery_commands=[f"mammoth view get {value} --output json --no-input"],
+                recovery_commands=[f"mammoth view get {value}"],
             )
         foreign = self._client.views.get(value, dataset_id=int(parent))
         hydrated = dict(kwargs)

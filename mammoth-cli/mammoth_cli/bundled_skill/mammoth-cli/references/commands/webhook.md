@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `webhook.create`
 
-Run: `mammoth webhook create`. Exact input fields: `mammoth schema get webhook.create --output json --no-input`.
+Run: `mammoth webhook create`. Exact input fields: `mammoth schema get webhook.create`.
 
-Example: `mammoth webhook create 'Revenue report' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth webhook create 'Revenue report'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WebhookCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `webhook.delete`
 
-Run: `mammoth webhook delete`. Exact input fields: `mammoth schema get webhook.delete --output json --no-input`.
+Run: `mammoth webhook delete`. Exact input fields: `mammoth schema get webhook.delete`.
 
-Example: `mammoth webhook delete 123 --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth webhook delete 123`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `WebhookDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -24,9 +24,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `webhook.get`
 
-Run: `mammoth webhook get`. Exact input fields: `mammoth schema get webhook.get --output json --no-input`.
+Run: `mammoth webhook get`. Exact input fields: `mammoth schema get webhook.get`.
 
-Example: `mammoth webhook get 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth webhook get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WebhookGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -34,9 +34,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `webhook.list`
 
-Run: `mammoth webhook list`. Exact input fields: `mammoth schema get webhook.list --output json --no-input`.
+Run: `mammoth webhook list`. Exact input fields: `mammoth schema get webhook.list`.
 
-Example: `mammoth webhook list --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth webhook list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WebhookListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -44,9 +44,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `webhook.send`
 
-Run: `mammoth webhook send`. Exact input fields: `mammoth schema get webhook.send --output json --no-input`.
+Run: `mammoth webhook send`. Exact input fields: `mammoth schema get webhook.send`.
 
-Example: `mammoth webhook send --input '{"webhook_uri": "https://example.com/data.csv", "data": {"sample_key": "Status"}}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth webhook send --input '{"webhook_uri": "https://example.com/data.csv", "data": {"sample_key": "Status"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WebhookSendResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -54,9 +54,9 @@ Status on release: untried; no live run recorded.
 
 ### `webhook.send-get`
 
-Run: `mammoth webhook send-get`. Exact input fields: `mammoth schema get webhook.send-get --output json --no-input`.
+Run: `mammoth webhook send-get`. Exact input fields: `mammoth schema get webhook.send-get`.
 
-Example: `mammoth webhook send-get --input '{"webhook_uri": "https://example.com/data.csv"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth webhook send-get --input '{"webhook_uri": "https://example.com/data.csv"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WebhookSendGetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -64,9 +64,9 @@ Status on release: untried; no live run recorded.
 
 ### `webhook.update`
 
-Run: `mammoth webhook update`. Exact input fields: `mammoth schema get webhook.update --output json --no-input`.
+Run: `mammoth webhook update`. Exact input fields: `mammoth schema get webhook.update`.
 
-Example: `mammoth webhook update 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth webhook update 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WebhookUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

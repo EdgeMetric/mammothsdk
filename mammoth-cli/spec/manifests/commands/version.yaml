@@ -22,7 +22,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth version --help
-  agent_example: mammoth version --output json --no-input
+  agent_example: mammoth version
   unit_tests:
   - UT-VERSION
   contract_tests:

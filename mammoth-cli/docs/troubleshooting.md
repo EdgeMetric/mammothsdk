@@ -76,11 +76,11 @@ duration). Headers, bodies and credentials are never logged; every record
 passes through the same secret redaction as command output.
 
 ```bash
-mammoth log path --output json --no-input                                  # where the files are
-mammoth log tail --input '{"errors_only": true, "limit": 20}' --output json --no-input
-mammoth log tail --input '{"run_id": "b6bc6bf6d166"}' --output json --no-input   # one failed invocation
-mammoth log tail --input '{"command_id": "view.transform.join", "days": 3}' --output json --no-input
-mammoth view get 49 28 --debug --output json --no-input                    # mirror the records to stderr
+mammoth log path                                  # where the files are
+mammoth log tail --input '{"errors_only": true, "limit": 20}'
+mammoth log tail --input '{"run_id": "b6bc6bf6d166"}'   # one failed invocation
+mammoth log tail --input '{"command_id": "view.transform.join", "days": 3}'
+mammoth view get 49 28 --debug                    # mirror the records to stderr
 ```
 
 `mammoth doctor` reports the directory as the `log_directory` check. When
@@ -100,9 +100,9 @@ a command, never before it, and `MAMMOTH_NO_UPDATE_CHECK=1` disables it.
 Run read-only checks with the same profile and explicit project:
 
 ```bash
-mammoth doctor --profile PROFILE --output json --no-input
-mammoth auth status --check --profile PROFILE --output json --no-input
-mammoth context project status --profile PROFILE --output json --no-input
+mammoth doctor --profile PROFILE
+mammoth auth status --check --profile PROFILE
+mammoth context project status --profile PROFILE
 ```
 
 Capture the exit code, `error.code`, `details`, `request_id` and the
@@ -114,8 +114,8 @@ For an interrupted or uncertain mutation, preserve the original command and
 run a read or job inspection before changing configuration:
 
 ```bash
-mammoth job get JOB_ID --profile PROFILE --output json --no-input
-mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input
+mammoth job get JOB_ID --profile PROFILE
+mammoth view get VIEW_ID --project PROJECT_ID
 ```
 
 If the operation has no known handle, re-list or read the exact scoped target

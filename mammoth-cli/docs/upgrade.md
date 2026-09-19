@@ -9,8 +9,8 @@ method, then uses the matching upgrade path. Check first when a
 reproducible environment matters.
 
 ```bash
-mammoth upgrade --check --output json --no-input   # report installed vs latest; changes nothing
-mammoth upgrade --yes --output json --no-input      # upgrade to the latest release
+mammoth upgrade --check   # report installed vs latest; changes nothing
+mammoth upgrade --yes      # upgrade to the latest release
 mammoth upgrade --version X.Y.Z --yes               # pin an exact version
 ```
 
@@ -33,7 +33,7 @@ next to the run log (`update-check.json` in the platform state directory).
 From the next command on, while a newer release exists:
 
 - every JSON envelope carries `meta.update_available` =
-  `{"current": "...", "latest": "...", "command": "mammoth upgrade --yes --output json --no-input"}`
+  `{"current": "...", "latest": "...", "command": "mammoth upgrade --yes"}`
   (otherwise `null`);
 - human output modes print one line on stderr;
 - `mammoth doctor` shows `cli_version` with the installed and latest versions.
@@ -55,7 +55,7 @@ underneath a task. Agents should prefer the explicit path: read
 ## Upgrade the agent skill
 
 ```bash
-mammoth skill update --output json --no-input
+mammoth skill update
 ```
 
 Update replaces only installer-owned copies. A locally modified skill directory

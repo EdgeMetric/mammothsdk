@@ -61,13 +61,13 @@ Do not run the next mutation on any of these; report the state (with
 In a shared project, delete only the resources you created, and never touch
 pre-existing ones. Track ids you create and remove them when done:
 ```bash
-mammoth dataset delete "$DS" --project 180 --output json --no-input --yes
-mammoth folder delete "$F" --project 180 --output json --no-input --yes
+mammoth dataset delete "$DS" --project 180 --yes
+mammoth folder delete "$F" --project 180 --yes
 ```
 
 ## Discovery when stuck
 ```bash
-mammoth capability get GetProjectCheckpoints --output json --no-input
-mammoth schema get view.transform.pivot --output json --no-input
-mammoth doctor --output json --no-input
+mammoth capability get GetProjectCheckpoints
+mammoth schema get view.transform.pivot
+mammoth doctor
 ```

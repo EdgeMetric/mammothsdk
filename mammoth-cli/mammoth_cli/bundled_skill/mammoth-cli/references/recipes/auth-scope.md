@@ -1,13 +1,13 @@
 # Auth and scope
 
 Use `mammoth auth status`, `mammoth doctor`, `mammoth project list`, and
-`mammoth schema get project.list` with `--output json --no-input`. Require
+`mammoth schema get project.list`. Require
 successful `data` and observed workspace/project metadata. Never put secrets in
 argv. If credentials are missing, the operator logs in from their own terminal;
 see [auth](../auth.md).
 
 ```bash
-mammoth context project use PROJECT_ID --profile PROFILE --output json --no-input
+mammoth context project use PROJECT_ID --profile PROFILE
 ```
 
 The successful envelope should identify the selected profile/workspace/project

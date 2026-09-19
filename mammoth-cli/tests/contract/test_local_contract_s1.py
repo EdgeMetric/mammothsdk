@@ -63,6 +63,8 @@ EXPECTED_FIELDS: dict[str, tuple[str, ...]] = {
     "completion.show": ("shell",),
     "log.tail": ("days", "limit", "errors_only", "command_id", "run_id"),
     "project.ensure": ("name",),
+    "schema.get": ("full",),
+    "schema.list": ("family", "full"),
     "skill.install": ("agents", "scope", "force"),
     "skill.path": ("agents", "scope"),
     "skill.uninstall": ("agents", "scope"),

@@ -16,16 +16,16 @@ script needs to parse the result.
 
 ```bash
 # Verify and read the installed agent skill before operating.
-mammoth skill list --output json --no-input
-mammoth skill path --output json --no-input
+mammoth skill list
+mammoth skill path
 # Check whether the selected profile and stored credentials are present.
-mammoth auth status --output json --no-input
+mammoth auth status
 # Compare the reported endpoint with the intended target before doctor:
 # app is production; release is only for an explicitly intended release run.
 # Human terminal only, if status shows no usable credentials:
 mammoth auth login
-mammoth doctor --output json --no-input
-mammoth project list --output json --no-input
+mammoth doctor
+mammoth project list
 ```
 
 If the status endpoint is not the intended target, stop before `doctor` and
@@ -35,12 +35,12 @@ production profile for release (or vice versa).
 Select an authorized project and pass it explicitly on subsequent commands:
 
 ```bash
-mammoth context project use PROJECT_ID --output json --no-input
+mammoth context project use PROJECT_ID
 ```
 
 For CI or an agent on POSIX, use a private owner-only (0600) credentials file
 outside the repository with `mammoth auth login --input
-/private/path/credentials.json --storage file --output json --no-input`; see
+/private/path/credentials.json --storage file`; see
 [authentication](authentication.md). Do not put secrets in chat, prompts, or
 arguments. On Windows, use an approved OS keyring instead. An agent that finds
 no credentials asks the operator to run the hidden-prompt login in their own
@@ -51,14 +51,14 @@ terminal; the CLI does not read credentials from environment variables.
 Discover the request shape before writing:
 
 ```bash
-mammoth schema get folder.create --output json --no-input
+mammoth schema get folder.create
 ```
 
 Then create a folder and save its returned resource ID in your task record:
 
 ```bash
 mammoth folder create "Quickstart Demo" --project PROJECT_ID \
-  --output json --no-input
+ 
 ```
 
 Use the returned `resource_id` as `FOLDER_RESOURCE_ID`; never copy the
@@ -71,7 +71,7 @@ mammoth dataset create --project PROJECT_ID --input '{
   "ds_creation_type": "weburl",
   "dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"},
   "folder_resource_id": "FOLDER_RESOURCE_ID"
-}' --output json --no-input
+}'
 ```
 
 Record the returned `dataset_id` and any `job_id`. If the command reports a
@@ -82,8 +82,8 @@ state before creating another dataset.
 ## 4. Discover and select a view explicitly
 
 ```bash
-mammoth view list DATASET_ID --project PROJECT_ID --output json --no-input
-mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input
+mammoth view list DATASET_ID --project PROJECT_ID
+mammoth view get VIEW_ID --project PROJECT_ID
 ```
 
 Choose the view whose returned identity and schema satisfy the task. Do not
@@ -96,10 +96,10 @@ Ask the installed CLI for the exact contract, then compose a request with the
 names shown by `view get` or preview metadata:
 
 ```bash
-mammoth schema get view.transform.math --output json --no-input
+mammoth schema get view.transform.math
 mammoth view transform math VIEW_ID --project PROJECT_ID \
   --input '{"dataset_id": 456, "expression": "Quantity Sold * Unit Price", "new_column": "Revenue"}' \
-  --output json --no-input
+ 
 ```
 
 `dataset_id` (456 here) is the view's exact parent, known from the upload or
@@ -110,11 +110,11 @@ missing or ambiguous, refresh the exact view schema and stop before mutation.
 ## 6. Verify, then export
 
 ```bash
-mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input
+mammoth view get VIEW_ID --project PROJECT_ID
 mammoth view preview VIEW_ID DATASET_ID --project PROJECT_ID \
-  --input '{"rows": 50, "cols": 10}' --output json --no-input
+  --input '{"rows": 50, "cols": 10}'
 mammoth view export csv VIEW_ID --project PROJECT_ID \
-  --input '{"output_path": "./revenue.csv"}' --output json --no-input
+  --input '{"output_path": "./revenue.csv"}'
 ```
 
 Verify the returned schema contains `Revenue` and that the preview/export
@@ -128,9 +128,9 @@ starting another export.
 Inspect the dataset you created, then delete it explicitly:
 
 ```bash
-mammoth dataset get DATASET_ID --project PROJECT_ID --output json --no-input
+mammoth dataset get DATASET_ID --project PROJECT_ID
 mammoth dataset delete DATASET_ID --project PROJECT_ID --yes \
-  --output json --no-input
+ 
 ```
 
 Verify disappearance or the deletion job before removing its folder. Delete a
@@ -138,7 +138,7 @@ folder only when its dependency list proves it contains no work you need:
 
 ```bash
 mammoth folder delete FOLDER_ID --project PROJECT_ID --yes \
-  --input '{"remove_contents": false}' --output json --no-input
+  --input '{"remove_contents": false}'
 ```
 
 For handoff or interruption, write the nonsecret checkpoint in

@@ -47,10 +47,7 @@ def _required_error(action: str, *, target: str | None, need_target: bool) -> Cl
         code=CODE_CONFIRMATION_REQUIRED,
         message=f"This command needs explicit confirmation to {action}.",
         exit_status=EXIT_USAGE,
-        hint=(
-            f"Re-run the same command with {flags} (keeping --output json "
-            "--no-input), or run it interactively at a terminal."
-        ),
+        hint=f"Re-run the same command with {flags}, or run it interactively at a terminal.",
     )
 
 

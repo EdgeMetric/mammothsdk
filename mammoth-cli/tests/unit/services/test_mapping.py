@@ -32,6 +32,12 @@ from mammoth_cli.services.sdk_service import SdkMammothService
         (409, "POST", "failed", "conflict", EXIT_CONFLICT),
         (429, "GET", "not_started", "retryable_error", EXIT_RETRYABLE),
         (503, "GET", "not_started", "retryable_error", EXIT_RETRYABLE),
+        # Gateway timeouts on a read (release edge returns 504 after ~90 s)
+        # have nothing to reconcile: retry, do not report an api_error.
+        (502, "GET", "failed", "retryable_error", EXIT_RETRYABLE),
+        (504, "GET", "failed", "retryable_error", EXIT_RETRYABLE),
+        # The same status on a write is uncertain, never retryable.
+        (504, "POST", "failed", "outcome_unknown", EXIT_RETRYABLE),
     ],
 )
 def test_http_outcomes_keep_typed_exit_and_safe_metadata(
@@ -173,8 +179,8 @@ def test_service_uses_resolved_nondefault_profile_in_job_recovery() -> None:
     assert mapped.details["workspace_id"] == 4
     assert mapped.details["project_id"] == 9
     assert mapped.recovery_commands == [
-        "mammoth job get 44 --profile production --output json --no-input",
-        "mammoth job wait 44 --profile production --output json --no-input",
+        "mammoth job get 44 --profile production",
+        "mammoth job wait 44 --profile production",
     ]
 
 
@@ -197,8 +203,7 @@ def test_post_submit_readback_failure_preserves_safe_task_recovery() -> None:
     assert mapped.code == "outcome_unknown"
     assert mapped.retryable is False
     assert mapped.recovery_commands == [
-        "mammoth view task get 303 130 --project 3 "
-        "--input '{\"dataset_id\": 375}' --output json --no-input"
+        "mammoth view task get 303 130 --project 3 " "--input '{\"dataset_id\": 375}'"
     ]
 
 
@@ -236,8 +241,7 @@ def test_unidentified_post_submit_gets_scoped_pipeline_readback() -> None:
     assert mapped.code == "outcome_unknown"
     assert mapped.retryable is False
     assert mapped.recovery_commands == [
-        "mammoth view pipeline items-all 303 --project 3 "
-        "--input '{\"dataset_id\": 375}' --output json --no-input"
+        "mammoth view pipeline items-all 303 --project 3 " "--input '{\"dataset_id\": 375}'"
     ]
     assert all("task get" not in command for command in mapped.recovery_commands)
     assert all("job get" not in command for command in mapped.recovery_commands)
@@ -249,8 +253,8 @@ def test_job_timeout_retains_handle_and_recovery_action() -> None:
     assert mapped.code == "timeout"
     assert mapped.details["job_handle"] == 44
     assert mapped.recovery_commands == [
-        "mammoth job get 44 --output json --no-input",
-        "mammoth job wait 44 --output json --no-input",
+        "mammoth job get 44",
+        "mammoth job wait 44",
     ]
 
 

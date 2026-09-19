@@ -95,7 +95,7 @@ def _capability_get(invocation: Invocation) -> HandlerResult:
             code="capability_not_found",
             message=f"No capability record for operation '{operation_id}'.",
             exit_status=EXIT_USAGE,
-            hint="List operations with 'mammoth capability list --output json'.",
+            hint="List operations with 'mammoth capability list'.",
         )
     return entry, {}
 
@@ -107,13 +107,20 @@ def _capability_find(invocation: Invocation) -> HandlerResult:
             code="empty_search_query",
             message="The capability search query must contain at least one word.",
             exit_status=EXIT_USAGE,
-            hint="For the complete inventory, use 'mammoth capability list --output json'.",
+            hint="For the complete inventory, use 'mammoth capability list'.",
         )
     return capability_cmd.find_capabilities(query), {}
 
 
-def _schema_list(_: Invocation) -> HandlerResult:
-    return schema_cmd.schema_entries(), {}
+def _schema_list(invocation: Invocation) -> HandlerResult:
+    """Command index by family; ``schema list FAMILY`` for one family; ``full`` for every record."""
+    bound = invocation.bound_input()
+    if bound.get("full"):
+        return schema_cmd.schema_entries(), {}
+    family = bound.get("family")
+    if family is None and invocation.extra_args:
+        family = invocation.extra_args[0]
+    return schema_cmd.schema_index(str(family) if family else None), {}
 
 
 def _schema_get(invocation: Invocation) -> HandlerResult:
@@ -124,9 +131,11 @@ def _schema_get(invocation: Invocation) -> HandlerResult:
             code="schema_not_found",
             message=f"No schema record for command '{command_id}'.",
             exit_status=EXIT_USAGE,
-            hint="List commands with 'mammoth schema list --output json'.",
+            hint="List commands with 'mammoth schema list'.",
         )
-    return entry, {}
+    if invocation.bound_input().get("full"):
+        return entry, {}
+    return schema_cmd.brief_schema(entry), {}
 
 
 def _schema_find(invocation: Invocation) -> HandlerResult:
@@ -136,7 +145,7 @@ def _schema_find(invocation: Invocation) -> HandlerResult:
             code="empty_search_query",
             message="The schema search query must contain at least one word.",
             exit_status=EXIT_USAGE,
-            hint="For the complete inventory, use 'mammoth schema list --output json'.",
+            hint="For the complete inventory, use 'mammoth schema list'.",
         )
     return schema_cmd.find_schemas(query), {}
 

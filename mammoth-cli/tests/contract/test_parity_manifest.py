@@ -160,9 +160,7 @@ def test_agent_examples_use_concrete_positional_samples_in_declared_order() -> N
             # signature; their examples are covered by the general example
             # shape tests rather than the SDK-derived generator.
             continue
-        safe_schema_handoff = (
-            f"mammoth schema get {record['command_id']} --output json --no-input"
-        )
+        safe_schema_handoff = f"mammoth schema get {record['command_id']}"
         if record["agent_example"] == safe_schema_handoff:
             # A raw request shape that has been deliberately blocked must not
             # be advertised as runnable merely because the SDK signature is

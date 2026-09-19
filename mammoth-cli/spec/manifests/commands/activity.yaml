@@ -23,7 +23,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth activity export --help
-  agent_example: mammoth activity export --output json --no-input
+  agent_example: mammoth activity export
   unit_tests:
   - UT-ACTIVITY-EXPORT
   contract_tests:
@@ -58,7 +58,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth activity list --help
-  agent_example: mammoth activity list --output json --no-input
+  agent_example: mammoth activity list
   unit_tests:
   - UT-ACTIVITY-LIST
   contract_tests:

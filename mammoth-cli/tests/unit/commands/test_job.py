@@ -124,6 +124,7 @@ def test_wait_interrupt_recovery_stays_on_selected_profile(
         raise KeyboardInterrupt
 
     monkeypatch.setattr(fake_service, "call", _interrupt)
+
     @contextmanager
     def _service_context() -> object:
         yield fake_service, type("Auth", (), {"workspace_id": 4})()
@@ -133,8 +134,8 @@ def test_wait_interrupt_recovery_stays_on_selected_profile(
         job_cmd.job_wait(_inv("job.wait", extra_args=["9"], profile="staging"))
 
     assert excinfo.value.recovery_commands == [
-        "mammoth job get 9 --output json --no-input --profile staging",
-        "mammoth job wait 9 --output json --no-input --profile staging",
+        "mammoth job get 9 --profile staging",
+        "mammoth job wait 9 --profile staging",
     ]
 
 

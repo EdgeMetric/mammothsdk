@@ -3,10 +3,10 @@
 Drive multi-field commands with one strict document instead of many flags.
 
 ```bash
-mammoth folder create --project 180 --output json --no-input \
+mammoth folder create --project 180 \
   --input '{"name": "Reports", "parent_resource_id": "r_root"}'
 
-mammoth view transform filter 1039 --project 180 --output json --no-input \
+mammoth view transform filter 1039 --project 180 \
   --input '{"condition": {"and": [{"column": "Order Status", "operator": "EQ", "value": "Open"}, {"column": "Customer Age", "operator": "GT", "value": 30}]}}'
 ```
 

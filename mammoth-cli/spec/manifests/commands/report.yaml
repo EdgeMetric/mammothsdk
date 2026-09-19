@@ -23,7 +23,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth report list --help
-  agent_example: mammoth report list --output json --no-input
+  agent_example: mammoth report list
   unit_tests:
   - UT-REPORT-LIST
   contract_tests:

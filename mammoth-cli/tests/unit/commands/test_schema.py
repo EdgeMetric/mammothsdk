@@ -84,7 +84,7 @@ def test_bulk_replace_runnable_example_includes_the_positional_and_input() -> No
     assert example is not None
     assert example.startswith("mammoth view transform bulk-replace 123 ")
     assert "--input" in example
-    assert "--output json --no-input" in example
+    assert "--output json" not in example
     tokens = shlex.split(example)
     document = json.loads(tokens[tokens.index("--input") + 1])
     assert document["mapping"] == [{"search": ["sample"], "replace": "sample"}]
@@ -115,15 +115,15 @@ def test_exportable_config_schema_is_exact_one_of_and_view_centric() -> None:
     apply = get_schema("view.exportable-config.apply")
     assert get is not None and apply is not None
     assert [p["name"] for p in get["positionals"]] == ["view_id", "dataset_id"]
-    assert {
-        field["name"]: field["required"] for field in get["accepted_fields"]
-    } == {"dataset_id": False}
+    assert {field["name"]: field["required"] for field in get["accepted_fields"]} == {
+        "dataset_id": False
+    }
     assert get["input_schema"]["required"] == []
     assert "dataview_id" not in get["input_schema"]["properties"]
     schema = apply["input_schema"]
-    assert {
-        field["name"]: field["required"] for field in apply["accepted_fields"]
-    }["dataset_id"] is False
+    assert {field["name"]: field["required"] for field in apply["accepted_fields"]}[
+        "dataset_id"
+    ] is False
     assert "dataset_id" in schema["properties"]
     assert schema["oneOf"] == [
         {"required": ["items"], "not": {"required": ["config"]}},
@@ -217,8 +217,7 @@ def test_ingestion_contract_preserves_supported_path_and_variant_boundaries() ->
     assert "ds_creation_type=weburl" in dataset_create["preconditions"]
     assert dataset_create["async"] == "always_wait"
     assert (
-        "variants beyond the documented path are not qualified"
-        in dataset_create["preconditions"]
+        "variants beyond the documented path are not qualified" in dataset_create["preconditions"]
     )
 
     assert "IO-LIVE-PERMISSION" not in file_upload["preconditions"]

@@ -1,14 +1,14 @@
 """Contract: every recovery command in an error envelope is agent-runnable.
 
 An autonomous agent runs recovery commands non-interactively and parses JSON.
-So every recovery command string emitted by an error builder MUST carry both
-``--output json`` (as adjacent tokens) and ``--no-input``. The single allowed
-exception is the interactive auth login command (``mammoth auth login``), which
-is inherently interactive and cannot be made non-interactive.
+Machine output and no-prompt mode are session defaults (piped stdout selects
+compact JSON; ``MAMMOTH_OUTPUT`` / ``MAMMOTH_NO_INPUT`` pin them), so a
+recovery command must be a bare, executable ``mammoth`` invocation: no
+``--output json`` / ``--no-input`` noise, no ``...`` placeholder.
 
 This test scans every public CliError builder in ``errors.envelope`` that
-populates ``recovery_commands`` so a future builder that forgets the flags
-fails loudly here.
+populates ``recovery_commands`` so a future builder that reintroduces the
+flags or a placeholder fails loudly here.
 """
 
 from __future__ import annotations
@@ -28,11 +28,7 @@ AUTH_LOGIN_PREFIX = "mammoth auth login"
 _PKG_ROOT = Path(envelope.__file__).resolve().parents[1]
 
 
-def _has_adjacent_output_json(tokens: list[str]) -> bool:
-    for first, second in zip(tokens, tokens[1:]):
-        if first == "--output" and second == "json":
-            return True
-    return False
+_REDUNDANT_FLAGS = frozenset({"--output", "--no-input"})
 
 
 def _discover_recovery_commands() -> list[tuple[str, str]]:
@@ -116,10 +112,10 @@ def test_recovery_command_is_agent_safe(builder: str, command: str) -> None:
         # Interactive auth login is the single allowed exception.
         return
 
-    assert _has_adjacent_output_json(
-        tokens
-    ), f"{builder} recovery command missing adjacent '--output json': {command!r}"
-    assert "--no-input" in tokens, f"{builder} recovery command missing '--no-input': {command!r}"
+    assert tokens[0] == "mammoth", f"{builder} recovery command is not a mammoth call: {command!r}"
+    assert not (
+        _REDUNDANT_FLAGS & set(tokens)
+    ), f"{builder} recovery command repeats a session default: {command!r}"
 
 
 # --- Exhaustive static scan across the whole package -----------------------
@@ -200,17 +196,17 @@ def test_static_scan_reaches_multiple_modules() -> None:
 )
 def test_every_recovery_literal_is_agent_safe(location: str, command: str) -> None:
     # A placeholder command (e.g. "mammoth ... --yes") is never runnable.
-    assert "..." not in command, (
-        f"{location}: non-executable placeholder recovery command: {command!r}"
-    )
+    assert (
+        "..." not in command
+    ), f"{location}: non-executable placeholder recovery command: {command!r}"
 
     if command.startswith(AUTH_LOGIN_PREFIX):
         # Interactive auth login (and its --storage variants) is the exception.
         return
 
-    assert "--output json" in command, (
-        f"{location}: recovery command missing '--output json': {command!r}"
-    )
-    assert "--no-input" in command, (
-        f"{location}: recovery command missing '--no-input': {command!r}"
-    )
+    assert command.startswith(
+        "mammoth "
+    ), f"{location}: recovery command is not a mammoth call: {command!r}"
+    assert (
+        "--output json" not in command and "--no-input" not in command
+    ), f"{location}: recovery command repeats a session default: {command!r}"

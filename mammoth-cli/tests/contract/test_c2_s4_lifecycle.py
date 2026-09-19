@@ -160,8 +160,8 @@ def test_job_wait_interrupt_is_inspectable_and_never_replayed(
     }
     assert service.calls == 1
     assert excinfo.value.recovery_commands == [
-        "mammoth job get 811 --output json --no-input",
-        "mammoth job wait 811 --output json --no-input",
+        "mammoth job get 811",
+        "mammoth job wait 811",
     ]
 
 

@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `folder.bulk-delete`
 
-Run: `mammoth folder bulk-delete`. Exact input fields: `mammoth schema get folder.bulk-delete --output json --no-input`.
+Run: `mammoth folder bulk-delete`. Exact input fields: `mammoth schema get folder.bulk-delete`.
 
-Example: `mammoth folder bulk-delete --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth folder bulk-delete`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `FolderBulkDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 ### `folder.create`
 
-Run: `mammoth folder create`. Exact input fields: `mammoth schema get folder.create --output json --no-input`.
+Run: `mammoth folder create`. Exact input fields: `mammoth schema get folder.create`.
 
-Example: `mammoth folder create 'Revenue report' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth folder create 'Revenue report'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FolderCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -24,9 +24,9 @@ Status on release: ran once on CLI 1.1.5 — Partial bounded release evidence: o
 
 ### `folder.delete`
 
-Run: `mammoth folder delete`. Exact input fields: `mammoth schema get folder.delete --output json --no-input`.
+Run: `mammoth folder delete`. Exact input fields: `mammoth schema get folder.delete`.
 
-Example: `mammoth folder delete 123 --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth folder delete 123`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `FolderDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -34,9 +34,9 @@ Status on release: ran once on CLI 1.1.5 — Partial bounded release evidence: o
 
 ### `folder.find`
 
-Run: `mammoth folder find`. Exact input fields: `mammoth schema get folder.find --output json --no-input`.
+Run: `mammoth folder find`. Exact input fields: `mammoth schema get folder.find`.
 
-Example: `mammoth folder find reports --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth folder find reports`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FolderFindResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -44,9 +44,9 @@ Status on release: untried; no live run recorded.
 
 ### `folder.get`
 
-Run: `mammoth folder get`. Exact input fields: `mammoth schema get folder.get --output json --no-input`.
+Run: `mammoth folder get`. Exact input fields: `mammoth schema get folder.get`.
 
-Example: `mammoth folder get 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth folder get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FolderGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -54,9 +54,9 @@ Status on release: ran once on CLI 1.1.12 — Full bounded support in approved r
 
 ### `folder.list`
 
-Run: `mammoth folder list`. Exact input fields: `mammoth schema get folder.list --output json --no-input`.
+Run: `mammoth folder list`. Exact input fields: `mammoth schema get folder.list`.
 
-Example: `mammoth folder list --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth folder list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FolderListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -64,9 +64,9 @@ Status on release: ran once on CLI an earlier release — Partial bounded releas
 
 ### `folder.move`
 
-Run: `mammoth folder move`. Exact input fields: `mammoth schema get folder.move --output json --no-input`.
+Run: `mammoth folder move`. Exact input fields: `mammoth schema get folder.move`.
 
-Example: `mammoth folder move --input '{"resource_ids": [8024], "target_folder_resource_id": "root"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth folder move --input '{"resource_ids": [8024], "target_folder_resource_id": "root"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FolderMoveResult`; mutation `benign_mutation`, confirmation `none`, wait policy `returns_job`.
 
@@ -74,9 +74,9 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 ### `folder.root`
 
-Run: `mammoth folder root`. Exact input fields: `mammoth schema get folder.root --output json --no-input`.
+Run: `mammoth folder root`. Exact input fields: `mammoth schema get folder.root`.
 
-Example: `mammoth folder root --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth folder root`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FolderRootResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -84,9 +84,9 @@ Status on release: untried; no live run recorded.
 
 ### `folder.trash`
 
-Run: `mammoth folder trash`. Exact input fields: `mammoth schema get folder.trash --output json --no-input`.
+Run: `mammoth folder trash`. Exact input fields: `mammoth schema get folder.trash`.
 
-Example: `mammoth folder trash 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth folder trash 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FolderTrashResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -94,9 +94,9 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 ### `folder.update`
 
-Run: `mammoth folder update`. Exact input fields: `mammoth schema get folder.update --output json --no-input`.
+Run: `mammoth folder update`. Exact input fields: `mammoth schema get folder.update`.
 
-Example: `mammoth folder update 123 --input '{"name": "Revenue report"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth folder update 123 --input '{"name": "Revenue report"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FolderUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

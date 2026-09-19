@@ -18,9 +18,13 @@ by exact name: re-running it (or a second task) returns the same id
 still use `project create NAME` for a throwaway project.
 
 ```bash
-mammoth project ensure 'From Claude' --output json --no-input   # -> data.project_id, data.created
-mammoth project ensure 'From Claude' --output json --no-input   # same id again, created: false
+mammoth project ensure 'From Claude'   # -> data.project_id, data.created; now the active project
+mammoth project ensure 'From Claude'   # same id again, created: false
 ```
+
+`ensure` saves its project as the profile's active project (`data.active`),
+so later commands need no `--project`; pass `--project` only to address a
+different project for one call.
 
 Moving a dataset between projects is not a single API call on release;
 re-upload into the target project when the task asks for that. To sweep the
@@ -29,12 +33,12 @@ call, read back) with `project delete ID --yes --confirm ID`; otherwise delete
 only the datasets you created and leave the project for the next task.
 
 ```bash
-mammoth project ensure 'PROJECT NAME' --output json --no-input
-mammoth schema get file.upload --output json --no-input
-mammoth file upload ./SOURCE.csv --project PROJECT_ID --output json --no-input
-mammoth dataset list --project PROJECT_ID --output json --no-input
-mammoth view list DATASET_ID --project PROJECT_ID --output json --no-input
-mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input
+mammoth project ensure 'PROJECT NAME'
+mammoth schema get file.upload
+mammoth file upload ./SOURCE.csv --project PROJECT_ID
+mammoth dataset list --project PROJECT_ID
+mammoth view list DATASET_ID --project PROJECT_ID
+mammoth view get VIEW_ID --project PROJECT_ID
 ```
 
 ## What `file upload` accepts
@@ -71,10 +75,10 @@ families, use `schema find`/`schema get` first, then read back the exact parent
 and resource IDs. For example:
 
 ```bash
-mammoth schema find "dataset settings" --output json --no-input
-mammoth schema find "folder" --output json --no-input
-mammoth schema get dataset.file-settings.get --output json --no-input
-mammoth dataset file-settings get DATASET_ID --output json --no-input
+mammoth schema find "dataset settings"
+mammoth schema find "folder"
+mammoth schema get dataset.file-settings.get
+mammoth dataset file-settings get DATASET_ID
 ```
 
 For a dataset rename, use the typed `dataset rename DATASET_ID` route and
@@ -105,10 +109,10 @@ The following URL-import shape is a supported documented path, not a claim
 that every freeform creation type or `dataset_spec` variant works:
 
 ```bash
-mammoth schema get dataset.create --output json --no-input
+mammoth schema get dataset.create
 mammoth dataset create --project PROJECT_ID --input \
   '{"ds_creation_type":"weburl","dataset_spec":{"url":"https://example.org/source.csv"}}' \
-  --output json --no-input
+ 
 ```
 
 Use the `data` keys actually returned by that response for the subsequent

@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `ai.condition.generate`
 
-Run: `mammoth ai condition generate`. Exact input fields: `mammoth schema get ai.condition.generate --output json --no-input`.
+Run: `mammoth ai condition generate`. Exact input fields: `mammoth schema get ai.condition.generate`.
 
-Example: `mammoth ai condition generate 123 --input '{"intent": "Summarize revenue by region"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth ai condition generate 123 --input '{"intent": "Summarize revenue by region"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AiConditionGenerateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 ### `ai.expression.generate`
 
-Run: `mammoth ai expression generate`. Exact input fields: `mammoth schema get ai.expression.generate --output json --no-input`.
+Run: `mammoth ai expression generate`. Exact input fields: `mammoth schema get ai.expression.generate`.
 
-Example: `mammoth ai expression generate 123 --input '{"intent": "Summarize revenue by region", "mode": "sample"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth ai expression generate 123 --input '{"intent": "Summarize revenue by region", "mode": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AiExpressionGenerateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -24,9 +24,9 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 2
 
 ### `ai.retention.condition`
 
-Run: `mammoth ai retention condition`. Exact input fields: `mammoth schema get ai.retention.condition --output json --no-input`.
+Run: `mammoth ai retention condition`. Exact input fields: `mammoth schema get ai.retention.condition`.
 
-Example: `mammoth ai retention condition 123 --input '{"mode": "generate", "intent": "completed payments older than 90 days"}' --output json --no-input --project 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth ai retention condition 123 --input '{"mode": "generate", "intent": "completed payments older than 90 days"}' --project 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AiRetentionConditionResult`; mutation `benign_mutation`, confirmation `none`, wait policy `start_or_wait`.
 
@@ -34,9 +34,9 @@ Status on release: observed blocker — permission: POST /workspaces/4/projects/
 
 ### `ai.sql.generate`
 
-Run: `mammoth ai sql generate`. Exact input fields: `mammoth schema get ai.sql.generate --output json --no-input`.
+Run: `mammoth ai sql generate`. Exact input fields: `mammoth schema get ai.sql.generate`.
 
-Example: `mammoth ai sql generate 'Summarize revenue by region' --input '{"dataset_id": 456}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth ai sql generate 'Summarize revenue by region' --input '{"dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AiSqlGenerateResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
@@ -44,9 +44,9 @@ Status on release: observed blocker — backend_error: Fix held (dataset_id requ
 
 ### `ai.suggestion.list`
 
-Run: `mammoth ai suggestion list`. Exact input fields: `mammoth schema get ai.suggestion.list --output json --no-input`.
+Run: `mammoth ai suggestion list`. Exact input fields: `mammoth schema get ai.suggestion.list`.
 
-Example: `mammoth ai suggestion list --input '{"suggestion_type": "generate_task", "params": {"prompt": "Filter rows where Price > 100"}, "dataset_id": 456, "dataview_id": 123}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth ai suggestion list --input '{"suggestion_type": "generate_task", "params": {"prompt": "Filter rows where Price > 100"}, "dataset_id": 456, "dataview_id": 123}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AiSuggestionListResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 

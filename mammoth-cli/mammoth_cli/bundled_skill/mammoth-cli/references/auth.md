@@ -31,8 +31,8 @@ human operator:
    history. Credentials are per environment: a release key never
    authenticates on `app`.
 2. Wait for the operator to confirm, then re-run
-   `mammoth auth status --profile PROFILE --output json --no-input` and
-   `mammoth doctor --profile PROFILE --output json --no-input`.
+   `mammoth auth status --profile PROFILE` and
+   `mammoth doctor --profile PROFILE`.
 3. Do not ask the operator to paste the key or secret into chat. Do not run
    `auth login` yourself, with or without `--input`, unless the operator has
    explicitly given you a protected `0600` credential file path to use.
@@ -50,7 +50,7 @@ authentication and then verify the connection. These checks are mandatory even
 when a profile may already exist:
 
 ```bash
-mammoth auth status --profile PROFILE --output json --no-input
+mammoth auth status --profile PROFILE
 ```
 
 If status reports a missing profile or `has_credentials=false`, run the secure
@@ -58,7 +58,7 @@ login flow, then check status again:
 
 ```bash
 mammoth auth login                       # production; add --profile NAME if not 'default'
-mammoth auth status --output json --no-input
+mammoth auth status
 ```
 
 `auth status` is a local profile/credential-presence check; it does not prove
@@ -69,7 +69,7 @@ profile; do not silently reuse, rewrite, or promote it. After the profile is
 present and its endpoint matches, verify the live connection:
 
 ```bash
-mammoth doctor --profile PROFILE --output json --no-input
+mammoth doctor --profile PROFILE
 ```
 
 `doctor` also lists the projects the credential can see (`projects` check)
@@ -87,9 +87,9 @@ targets release.
 ```bash
 mammoth auth login                                        # hidden prompts; production
 mammoth auth login --server-prefix release                # release environment
-mammoth auth login --profile PROFILE --input creds.json --storage file --output json --no-input
-mammoth auth status --profile PROFILE --output json --no-input
-mammoth auth logout --profile default --output json --no-input --yes
+mammoth auth login --profile PROFILE --input creds.json --storage file
+mammoth auth status --profile PROFILE
+mammoth auth logout --profile default --yes
 ```
 
 `PROFILE` means the actual nonsecret profile name selected by the operator or

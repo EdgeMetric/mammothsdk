@@ -1,10 +1,10 @@
 # Exports and artifacts
 
 ```bash
-mammoth schema find "view export" --output json --no-input
-mammoth schema get view.export.csv --output json --no-input
-mammoth view export csv VIEW_ID --project PROJECT_ID --output json --no-input
-mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID --output json --no-input
+mammoth schema find "view export"
+mammoth schema get view.export.csv
+mammoth view export csv VIEW_ID --project PROJECT_ID
+mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID
 ```
 
 If the export or its source dataset/view is requested as a deliverable, mark
@@ -33,13 +33,13 @@ never appears in argv, the run log, or a checkpoint. The connector command is
 `external_effect` with `confirmation: yes_always`, so `--yes` is required.
 
 ```bash
-mammoth schema get view.export.postgres --output json --no-input   # read secret_fields, required fields
+mammoth schema get view.export.postgres   # read secret_fields, required fields
 # operator writes /private/path/request.json (mode 0600):
 # {"host":"db.example","port":5432,"database":"analytics","table":"exports",
 #  "username":"agent","password":"…","dataset_id":DATASET_ID}
 mammoth view export postgres VIEW_ID DATASET_ID --project PROJECT_ID \
-  --input /private/path/request.json --yes --output json --no-input
-mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID --output json --no-input
+  --input /private/path/request.json --yes
+mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID
 ```
 
 If the operator has not supplied such a file, stop and ask for it; do not

@@ -1062,8 +1062,6 @@ def test_non_read_view_ops_refuse_parent_discovery(
     with pytest.raises(CliError) as excinfo:
         getattr(view_ops_cmd, handler)(_inv(command_id, **overrides))
     assert excinfo.value.code == "missing_argument"
-    assert excinfo.value.recovery_commands == [
-        "mammoth view get 308772 --project 4301 --output json --no-input"
-    ]
+    assert excinfo.value.recovery_commands == ["mammoth view get 308772 --project 4301"]
     assert fake_service.view_call_log == []
     assert fake_service.call_log == []

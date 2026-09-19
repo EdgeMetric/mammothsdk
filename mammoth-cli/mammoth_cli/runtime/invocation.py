@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
-from mammoth_cli.output.policy import OUTPUT_AUTO, resolve_output
+from mammoth_cli.output.policy import OUTPUT_AUTO, SELECTABLE_OUTPUTS, resolve_output
 from mammoth_cli.runtime.input_loader import load_input_document
 from mammoth_cli.runtime.strict import validate_input_fields
 from mammoth_cli.services.input_fields import accepts_resource_dataset
@@ -24,6 +24,8 @@ class _UninitializedInput:
 
 
 _UNINITIALIZED_INPUT = _UninitializedInput()
+
+_TRUTHY = frozenset({"1", "true", "yes", "on"})
 
 
 @dataclass(frozen=True)
@@ -69,20 +71,80 @@ class Invocation:
     )
 
     def __post_init__(self) -> None:
-        """Resolve the ``auto`` output alias to a concrete mode.
+        """Apply session defaults and resolve ``auto`` output to a concrete mode.
 
-        Resolving here — the single point every invocation passes through —
-        means confirmation prompts, the executor, and the renderer all see the
-        concrete mode, so a piped ``auto`` run gets machine JSON everywhere
-        (including its error envelopes) and never a half-human, half-machine
-        mix.
+        This is the single point every invocation passes through, so it is
+        where the per-session environment defaults land (a flag on the command
+        line always wins):
+
+        * ``MAMMOTH_PROFILE`` for ``--profile``
+        * ``MAMMOTH_PROJECT`` for ``--project``
+        * ``MAMMOTH_OUTPUT`` for ``--output`` (only while it is ``auto``)
+        * ``MAMMOTH_NO_INPUT`` for ``--no-input``
+
+        so an agent exports them once instead of repeating four flags on every
+        call. Resolving output here means confirmation prompts, the executor
+        and the renderer all see the concrete mode: a piped ``auto`` run gets
+        machine JSON everywhere, including its error envelopes.
         """
-        if self.output == OUTPUT_AUTO:
-            import sys
+        import os
+        import sys
 
-            object.__setattr__(
-                self, "output", resolve_output(self.output, is_tty=sys.stdout.isatty())
-            )
+        env = os.environ
+        if self.profile is None and env.get("MAMMOTH_PROFILE", "").strip():
+            object.__setattr__(self, "profile", env["MAMMOTH_PROFILE"].strip())
+        if self.project is None and env.get("MAMMOTH_PROJECT", "").strip():
+            raw = env["MAMMOTH_PROJECT"].strip()
+            if not raw.isdigit() or int(raw) <= 0:
+                raise CliError(
+                    code="invalid_project_id",
+                    message=f"MAMMOTH_PROJECT must be a positive integer, got {raw!r}.",
+                    exit_status=EXIT_USAGE,
+                )
+            object.__setattr__(self, "project", int(raw))
+        if not self.no_input and env.get("MAMMOTH_NO_INPUT", "").strip().lower() in _TRUTHY:
+            object.__setattr__(self, "no_input", True)
+        self._apply_profile_settings(env)
+        if self.output == OUTPUT_AUTO:
+            requested = env.get("MAMMOTH_OUTPUT", "").strip().lower()
+            if requested in SELECTABLE_OUTPUTS and requested != OUTPUT_AUTO:
+                object.__setattr__(self, "output", requested)
+            else:
+                object.__setattr__(
+                    self, "output", resolve_output(self.output, is_tty=sys.stdout.isatty())
+                )
+
+    def _apply_profile_settings(self, env: Any) -> None:
+        """Fill still-unset options from ``mammoth config set`` on the profile.
+
+        Precedence is flag, then environment, then the profile's saved
+        settings (``output``, ``timeout``, ``job_timeout``,
+        ``pipeline_timeout``), then the built-in default.
+        """
+        from mammoth_cli.context import profiles
+
+        try:
+            settings = profiles.list_settings(self.profile or profiles.get_selected())
+        except Exception:  # noqa: BLE001 -- a missing or unreadable profile means no settings
+            return
+        if not settings:
+            return
+        if self.output == OUTPUT_AUTO and not env.get("MAMMOTH_OUTPUT", "").strip():
+            saved_output = str(settings.get("output") or "").strip().lower()
+            if saved_output in SELECTABLE_OUTPUTS and saved_output != OUTPUT_AUTO:
+                object.__setattr__(self, "output", saved_output)
+        for key in ("timeout", "job_timeout", "pipeline_timeout"):
+            if getattr(self, key) is not None:
+                continue
+            raw = settings.get(key)
+            if raw in (None, ""):
+                continue
+            try:
+                value = float(raw)
+            except (TypeError, ValueError):
+                continue
+            if value > 0:
+                object.__setattr__(self, key, value)
 
     def positional(self, name: str) -> Any:
         """Return a resolved positional's value, or None when it was omitted.

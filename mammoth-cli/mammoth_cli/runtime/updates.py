@@ -45,7 +45,7 @@ REFRESH_TIMEOUT_SECONDS = 3.0
 #: Commands that manage the install themselves; no hint, no auto-upgrade.
 _SELF_MANAGING = frozenset({"upgrade", "doctor"})
 
-UPGRADE_COMMAND = "mammoth upgrade --yes --output json --no-input"
+UPGRADE_COMMAND = "mammoth upgrade --yes"
 
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
 

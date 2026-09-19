@@ -22,7 +22,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth context project clear --help
-  agent_example: mammoth context project clear --output json --no-input
+  agent_example: mammoth context project clear
   unit_tests:
   - UT-CONTEXT-PROJECT-CLEAR
   contract_tests:
@@ -55,7 +55,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth context project status --help
-  agent_example: mammoth context project status --output json --no-input
+  agent_example: mammoth context project status
   unit_tests:
   - UT-CONTEXT-PROJECT-STATUS
   contract_tests:
@@ -94,7 +94,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth context project use PROJECT_ID --help
-  agent_example: mammoth context project use 123 --output json --no-input
+  agent_example: mammoth context project use 123
   unit_tests:
   - UT-CONTEXT-PROJECT-USE
   contract_tests:

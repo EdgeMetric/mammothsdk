@@ -29,7 +29,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth notification delete NOTIFICATION_ID --help
-  agent_example: mammoth notification delete 123 --output json --no-input
+  agent_example: mammoth notification delete 123
   unit_tests:
   - UT-NOTIFICATION-DELETE
   contract_tests:
@@ -64,7 +64,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth notification delete-batch --help
-  agent_example: mammoth notification delete-batch --output json --no-input
+  agent_example: mammoth notification delete-batch
   unit_tests:
   - UT-NOTIFICATION-DELETE-BATCH
   contract_tests:
@@ -98,7 +98,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth notification list --help
-  agent_example: mammoth notification list --output json --no-input
+  agent_example: mammoth notification list
   unit_tests:
   - UT-NOTIFICATION-LIST
   contract_tests:
@@ -138,8 +138,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth notification update NOTIFICATION_ID --help
-  agent_example: 'mammoth notification update 123 --input ''{"patch": [{"sample_key": "Status"}]}'' --output
-    json --no-input'
+  agent_example: 'mammoth notification update 123 --input ''{"patch": [{"sample_key": "Status"}]}'''
   unit_tests:
   - UT-NOTIFICATION-UPDATE
   contract_tests:
@@ -174,8 +173,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth notification update-batch --help
-  agent_example: 'mammoth notification update-batch --input ''{"patch": [{"sample_key": "Status"}]}''
-    --output json --no-input'
+  agent_example: 'mammoth notification update-batch --input ''{"patch": [{"sample_key": "Status"}]}'''
   unit_tests:
   - UT-NOTIFICATION-UPDATE-BATCH
   contract_tests:

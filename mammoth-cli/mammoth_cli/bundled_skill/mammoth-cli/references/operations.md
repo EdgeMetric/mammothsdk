@@ -30,11 +30,11 @@ the credential can see (or one, with `--project`); they still need
 credentials because they call the live API.
 
 ```bash
-mammoth capability find "transform" --output json --no-input
-mammoth capability find "pipeline" --output json --no-input
-mammoth capability find "export" --output json --no-input
-mammoth schema find "view.transform" --output json --no-input
-mammoth schema get view.transform.math --output json --no-input
+mammoth capability find "transform"
+mammoth capability find "pipeline"
+mammoth capability find "export"
+mammoth schema find "view.transform"
+mammoth schema get view.transform.math
 ```
 
 ## Transforms and pipeline tasks
@@ -43,12 +43,12 @@ For common data-preparation intents, search the live catalog rather than
 assuming a route is available. Typical discovery queries are:
 
 ```bash
-mammoth schema find "convert type" --output json --no-input
-mammoth schema find "duplicate" --output json --no-input
-mammoth schema find "join" --output json --no-input
-mammoth schema find "lookup" --output json --no-input
-mammoth schema find "fill missing" --output json --no-input
-mammoth schema find "replace" --output json --no-input
+mammoth schema find "convert type"
+mammoth schema find "duplicate"
+mammoth schema find "join"
+mammoth schema find "lookup"
+mammoth schema find "fill missing"
+mammoth schema find "replace"
 ```
 
 There is no pipeline `union`/`append` transform. `join` and `lookup` are the
@@ -77,8 +77,8 @@ project-wide discovery:
 ```bash
 mammoth view transform math VIEW_ID --project PROJECT_ID \
   --input '{"dataset_id":DATASET_ID,"expression":"Unit Price * Quantity","new_column":"Revenue"}' \
-  --output json --no-input
-mammoth view pipeline get VIEW_ID --project PROJECT_ID --output json --no-input
+ 
+mammoth view pipeline get VIEW_ID --project PROJECT_ID
 ```
 
 The low-level `view task add|preview|update` routes expose an opaque
@@ -94,9 +94,9 @@ For a new workflow (a container for automation), discover and then read it
 back; workflow creation is not the same as adding a view pipeline task:
 
 ```bash
-mammoth schema get workflow.create --output json --no-input
-mammoth workflow create "Revenue report" --output json --no-input
-mammoth workflow get WORKFLOW_ID --output json --no-input
+mammoth schema get workflow.create
+mammoth workflow create "Revenue report"
+mammoth workflow get WORKFLOW_ID
 ```
 
 Draft mode is server-side batching for view pipeline edits. Enter, inspect
@@ -122,10 +122,10 @@ must be verified with `job get/wait` and then `view export get/list` or a
 destination-side artifact when the schema requires it.
 
 ```bash
-mammoth schema get view.export.csv --output json --no-input
-mammoth schema get view.export.postgres --output json --no-input
-mammoth view export csv VIEW_ID --project PROJECT_ID --output json --no-input
-mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID --output json --no-input
+mammoth schema get view.export.csv
+mammoth schema get view.export.postgres
+mammoth view export csv VIEW_ID --project PROJECT_ID
+mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID
 ```
 
 Use `--input` for connector configuration. Keep fields listed as secret by the

@@ -64,9 +64,7 @@ def test_parent_discovery_miss_is_a_named_not_found_error(
     assert excinfo.value.code == "resource_not_found"
     assert excinfo.value.exit_status == 5
     assert excinfo.value.details["reason"].endswith("project 4301")
-    assert excinfo.value.recovery_commands[0] == (
-        "mammoth dataset list --project 4301 --output json --no-input"
-    )
+    assert excinfo.value.recovery_commands[0] == ("mammoth dataset list --project 4301")
 
 
 def test_parent_discovery_miss_on_the_generic_call_path_is_not_found_too(

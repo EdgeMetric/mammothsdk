@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `version`
 
-Run: `mammoth version`. Exact input fields: `mammoth schema get version --output json --no-input`.
+Run: `mammoth version`. Exact input fields: `mammoth schema get version`.
 
-Example: `mammoth version --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth version`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `VersionResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

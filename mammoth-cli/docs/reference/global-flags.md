@@ -30,9 +30,17 @@ The default `auto` mode adapts to context. On a terminal it renders a table for
 a human reader. Off a terminal it emits JSON for parsing. Set an explicit mode when
 you need a fixed format.
 
-Use `--output json` for scripts and agents. It always emits the full envelope. It
-never adds color or progress output. See [output and error envelopes](output-and-errors.md)
-for the envelope shape.
+Scripts and agents normally need no flag: piped output is JSON, compact (one
+line) so it costs half the bytes, and prompts are disabled. `--output json`
+pins it regardless of the terminal (pretty-printed on a TTY,
+`MAMMOTH_JSON_PRETTY=1` forces indentation). It never adds color or progress
+output. See [output and error envelopes](output-and-errors.md) for the shape.
+
+Session defaults: `MAMMOTH_PROFILE`, `MAMMOTH_PROJECT`, `MAMMOTH_OUTPUT` and
+`MAMMOTH_NO_INPUT` stand in for `--profile`, `--project`, `--output` and
+`--no-input` when the flag is omitted; a flag always wins. `project ensure
+NAME` also saves its project as the profile's active project, so `--project`
+is rarely needed after it.
 
 The `--color` flag defaults to `auto`. Color turns off when stdout is not a
 terminal. Color turns off in machine output. The flag honors the `NO_COLOR`
@@ -41,7 +49,7 @@ environment variable.
 For automation, make the three important choices visible in every command:
 
 ```bash
-mammoth project list --output json --no-input --profile production
+mammoth project list --profile production
 ```
 
 For data operations, the project is only one part of scope. Resolve and retain

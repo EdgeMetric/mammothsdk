@@ -22,7 +22,9 @@ class Meta:
     update_available: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        # Null fields are omitted: every call pays for meta, and a missing key
+        # reads the same as null to any consumer (``meta.get("pagination")``).
+        document = {
             "command": self.command,
             "profile": self.profile,
             "workspace_id": self.workspace_id,
@@ -30,6 +32,7 @@ class Meta:
             "pagination": self.pagination,
             "update_available": self.update_available,
         }
+        return {key: value for key, value in document.items() if value is not None}
 
 
 @dataclass

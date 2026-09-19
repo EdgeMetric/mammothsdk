@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -254,6 +255,7 @@ def project_ensure(invocation: Invocation) -> HandlerResult:
                 "created": False,
                 "duplicates": [p.get("id") for p in same_name[1:]],
             }
+            data["active"] = _make_active_project(invocation, data["project_id"])
             return data, _meta(invocation, auth.workspace_id, chosen.get("id"))
         created = service.call(_ENSURE_CREATE_SYMBOL, name=name)
     record = created.get("project", created) if isinstance(created, dict) else {}
@@ -266,7 +268,32 @@ def project_ensure(invocation: Invocation) -> HandlerResult:
         "created": True,
         "duplicates": [],
     }
+    data["active"] = _make_active_project(invocation, project_id)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _make_active_project(invocation: Invocation, project_id: Any) -> bool:
+    """Save ``project_id`` as the profile's active project; True when saved.
+
+    ``project ensure`` exists so an agent picks its working project once;
+    saving it here means no later command needs ``--project``. A profile-less
+    run (environment login) has nowhere to save, and reports ``active: false``.
+    """
+    if not isinstance(project_id, int) or project_id <= 0:
+        return False
+    profile_name = invocation.profile or profiles.get_selected()
+    existing = profiles.get_profile(profile_name)
+    if existing is None:
+        return False
+    profiles.save_profile(
+        profiles.ProfileRecord(
+            name=existing.name,
+            workspace_id=existing.workspace_id,
+            server_prefix=existing.server_prefix,
+            project_id=project_id,
+        )
+    )
+    return True
 
 
 def project_update(invocation: Invocation) -> HandlerResult:

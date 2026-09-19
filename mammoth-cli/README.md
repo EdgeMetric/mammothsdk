@@ -53,21 +53,21 @@ command. An agent does this by asking the operator to run the login below in
 their own terminal; the CLI never reads credentials from environment variables:
 
 ```bash
-mammoth skill list --output json --no-input
-mammoth skill path --output json --no-input
+mammoth skill list
+mammoth skill path
 # Read the installed SKILL.md before operating.
-mammoth auth status --output json --no-input
+mammoth auth status
 # Compare the reported endpoint with the intended target before doctor.
 # Use app for production; use release only when explicitly intended.
 # Human terminal only, if profile or stored credentials are absent:
 mammoth auth login
 # Then verify configuration, credentials, endpoint, and connectivity:
-mammoth doctor --output json --no-input
+mammoth doctor
 # Then discover a task-specific route:
-mammoth schema find "TASK OR RESOURCE" --output json --no-input
-mammoth schema get COMMAND_ID --output json --no-input
+mammoth schema find "TASK OR RESOURCE"
+mammoth schema get COMMAND_ID
 # Optional API-binding inventory (not the complete CLI surface):
-mammoth capability list --output json --no-input
+mammoth capability list
 ```
 
 For an agent or CI, do not request or paste secrets into chat, prompts, shell
@@ -76,7 +76,7 @@ private owner-only (0600) file outside the repository and pass its path to:
 
 ```bash
 mammoth auth login --input /private/path/credentials.json --storage file \
-  --output json --no-input
+ 
 ```
 
 On Windows, use the approved OS keyring instead; do not use a file fallback
@@ -103,12 +103,13 @@ on automatically off a terminal, so an agent needs no special flags:
 mammoth project list | jq '.data'
 ```
 
-To be explicit, pass `--output json --no-input`. Log in without a prompt with
+To pin it for a whole session, `export MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1`
+(a flag still wins). Log in without a prompt with
 the private, permission-checked file described above:
 
 ```bash
 mammoth auth login --input /private/path/credentials.json --storage file \
-  --output json --no-input
+ 
 ```
 
 Feed multi-field requests as one document instead of many flags:
@@ -122,9 +123,9 @@ For pipeline transformations, prefer the typed commands and inspect their
 schemas before composing input. For example:
 
 ```bash
-mammoth schema get view.transform.filter --output json --no-input
-mammoth schema get view.transform.math --output json --no-input
-mammoth schema get view.transform.substring --output json --no-input
+mammoth schema get view.transform.filter
+mammoth schema get view.transform.math
+mammoth schema get view.transform.substring
 ```
 
 The generic `view task add`, `view task preview`, and `view task update`
@@ -135,7 +136,7 @@ their target explicitly, for example:
 
 ```bash
 mammoth dashboard import-workbook ./sample.twbx --project 456 \
-  --yes --confirm 456 --output json --no-input
+  --yes --confirm 456
 ```
 
 The sample path and project ID are placeholders for a local workbook and a
@@ -175,8 +176,8 @@ and paste it into any agent with a bash tool; the long form is
 [docs/agent-prompt.md](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-prompt.md).
 
 ```text
-Use Mammoth Analytics only through the `mammoth` CLI in bash, every call with
-`--output json --no-input`. Install if missing:
+Use Mammoth Analytics only through the `mammoth` CLI in bash; run
+`export MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once. Install if missing:
 curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
 Then `cat` the SKILL.md at `mammoth skill path` (data.canonical) and follow it.
 Run `mammoth auth status --profile PROFILE`; if it has no credentials, stop and

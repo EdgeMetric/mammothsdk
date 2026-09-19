@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `doctor`
 
-Run: `mammoth doctor`. Exact input fields: `mammoth schema get doctor --output json --no-input`.
+Run: `mammoth doctor`. Exact input fields: `mammoth schema get doctor`.
 
-Example: `mammoth doctor --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth doctor`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DoctorResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

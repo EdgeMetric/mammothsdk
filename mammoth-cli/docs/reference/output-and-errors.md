@@ -73,16 +73,18 @@ Example successful list stream:
 A successful command prints this shape to stdout.
 
 ```json
-{"schema_version": 1, "data": <result>, "meta": {"command": "...", "profile": "...", "workspace_id": 4, "project_id": 180, "pagination": null, "update_available": null}}
+{"schema_version":1,"data":<result>,"meta":{"command":"...","profile":"...","workspace_id":4,"project_id":180}}
 ```
 
 The `data` field holds the command result. The `meta` field records the command
-name, active profile, workspace, project, and pagination state.
-`meta.update_available` is `null`, or `{"current", "latest", "command"}` when
-the daily PyPI check has seen a newer CLI; run its `command` when it suits
-you (see [upgrade](../upgrade.md)).
+name, active profile, workspace and project; keys without a value are omitted.
+`meta.pagination` appears on paged reads. `meta.update_available` appears as
+`{"current", "latest", "command"}` when the daily PyPI check has seen a newer
+CLI; run its `command` when it suits you (see [upgrade](../upgrade.md)).
 
-A project list looks like this.
+JSON is one compact line when stdout is a pipe or file (the agent case) and
+indented when stdout is a terminal; `MAMMOTH_JSON_PRETTY=1` or `=0` overrides
+that choice. A project list on a terminal looks like this.
 
 ```json
 {
@@ -95,9 +97,7 @@ A project list looks like this.
     "command": "project list",
     "profile": "default",
     "workspace_id": 4,
-    "project_id": 180,
-    "pagination": null,
-    "update_available": null
+    "project_id": 180
   }
 }
 ```

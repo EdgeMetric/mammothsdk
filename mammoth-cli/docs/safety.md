@@ -34,9 +34,9 @@ and a structured `confirmation_required` or
 
 ```bash
 mammoth dataset delete DATASET_ID --project PROJECT_ID --yes \
-  --output json --no-input
+ 
 mammoth workspace delete --yes --confirm WORKSPACE_ID \
-  --output json --no-input
+ 
 ```
 
 ## Scope and display-name safety
@@ -92,10 +92,10 @@ arbitrary inventory difference. After deletion, verify absence or inspect the
 deletion job because an acknowledgement can precede disappearance.
 
 ```bash
-mammoth dataset get DATASET_ID --project PROJECT_ID --output json --no-input
+mammoth dataset get DATASET_ID --project PROJECT_ID
 mammoth dataset delete DATASET_ID --project PROJECT_ID --yes \
-  --output json --no-input
-mammoth dataset list --project PROJECT_ID --output json --no-input
+ 
+mammoth dataset list --project PROJECT_ID
 ```
 
 See [troubleshooting](troubleshooting.md) and the [portable handoff](agent-handoff.md)

@@ -172,9 +172,15 @@ def test_ensure_returns_the_existing_project_without_creating(
         "project_id": 9,
         "created": False,
         "duplicates": [],
+        "active": True,
     }
     assert meta["project_id"] == 9
     assert fake_service.call_log == []  # no create
+    # The working project is now the profile's active project: no --project
+    # on later commands.
+    from mammoth_cli.context import profiles
+
+    assert profiles.get_profile(profiles.get_selected()).project_id == 9
 
 
 def test_ensure_matches_exactly_and_prefers_the_lowest_id(

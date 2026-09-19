@@ -22,7 +22,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth auth login --help
-  agent_example: mammoth auth login --output json --no-input
+  agent_example: mammoth auth login
   unit_tests:
   - UT-AUTH-LOGIN
   contract_tests:
@@ -55,7 +55,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth auth logout --help
-  agent_example: mammoth auth logout --output json --no-input
+  agent_example: mammoth auth logout
   unit_tests:
   - UT-AUTH-LOGOUT
   contract_tests:
@@ -88,7 +88,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth auth status --help
-  agent_example: mammoth auth status --output json --no-input
+  agent_example: mammoth auth status
   unit_tests:
   - UT-AUTH-STATUS
   contract_tests:

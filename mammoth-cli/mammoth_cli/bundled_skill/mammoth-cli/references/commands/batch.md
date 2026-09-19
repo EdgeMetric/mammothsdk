@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `batch.bulk-delete`
 
-Run: `mammoth batch bulk-delete`. Exact input fields: `mammoth schema get batch.bulk-delete --output json --no-input`.
+Run: `mammoth batch bulk-delete`. Exact input fields: `mammoth schema get batch.bulk-delete`.
 
-Example: `mammoth batch bulk-delete 123 --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth batch bulk-delete 123`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `BatchBulkDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 ### `batch.create`
 
-Run: `mammoth batch create`. Exact input fields: `mammoth schema get batch.create --output json --no-input`.
+Run: `mammoth batch create`. Exact input fields: `mammoth schema get batch.create`.
 
-Example: `mammoth batch create 123 123 --input '{"mapping": [{"source_c_name": "column_1", "destination_c_name": "column_1", "expected_destination_c_type": "TEXT"}]}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth batch create 123 123 --input '{"mapping": [{"source_c_name": "column_1", "destination_c_name": "column_1", "expected_destination_c_type": "TEXT"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `BatchCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `returns_job`.
 
@@ -24,9 +24,9 @@ Status on release: observed blocker — backend_error: SUSPECTED DEFECT (4th occ
 
 ### `batch.create-spec`
 
-Run: `mammoth batch create-spec`. Exact input fields: `mammoth schema get batch.create-spec --output json --no-input`.
+Run: `mammoth batch create-spec`. Exact input fields: `mammoth schema get batch.create-spec`.
 
-Example: `mammoth batch create-spec 123 --input '{"file_id": 94}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth batch create-spec 123 --input '{"file_id": 94}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `BatchCreateSpecResult`; mutation `benign_mutation`, confirmation `none`, wait policy `returns_job`.
 
@@ -34,9 +34,9 @@ Status on release: untried; no live run recorded.
 
 ### `batch.delete`
 
-Run: `mammoth batch delete`. Exact input fields: `mammoth schema get batch.delete --output json --no-input`.
+Run: `mammoth batch delete`. Exact input fields: `mammoth schema get batch.delete`.
 
-Example: `mammoth batch delete 123 123 --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth batch delete 123 123`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `BatchDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `returns_job`.
 
@@ -44,9 +44,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `batch.get`
 
-Run: `mammoth batch get`. Exact input fields: `mammoth schema get batch.get --output json --no-input`.
+Run: `mammoth batch get`. Exact input fields: `mammoth schema get batch.get`.
 
-Example: `mammoth batch get 123 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth batch get 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `BatchGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -54,9 +54,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `batch.list`
 
-Run: `mammoth batch list`. Exact input fields: `mammoth schema get batch.list --output json --no-input`.
+Run: `mammoth batch list`. Exact input fields: `mammoth schema get batch.list`.
 
-Example: `mammoth batch list 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth batch list 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `BatchListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -64,9 +64,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `batch.update`
 
-Run: `mammoth batch update`. Exact input fields: `mammoth schema get batch.update --output json --no-input`.
+Run: `mammoth batch update`. Exact input fields: `mammoth schema get batch.update`.
 
-Example: `mammoth batch update 123 --input '{"patch": [{"sample_key": "Status"}]}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth batch update 123 --input '{"patch": [{"sample_key": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `BatchUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `returns_job`.
 

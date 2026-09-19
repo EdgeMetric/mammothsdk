@@ -11,8 +11,8 @@ uses to start, hand over, and recover a real task.
 
 The short form is the [agent prompt](agent-prompt.md): a paste-ready block
 that has the agent install, read the shipped skill, authenticate through the
-operator, and do everything else via `mammoth ... --output json --no-input`
-in bash. The rest of this page is the same loop in detail.
+operator, and do everything else through the `mammoth` command in bash. The
+rest of this page is the same loop in detail.
 
 Install once on the host:
 
@@ -25,8 +25,8 @@ Confirm and read the installed guidance before assigning work:
 
 ```bash
 mammoth --version
-mammoth skill list --output json --no-input
-mammoth skill path --output json --no-input
+mammoth skill list
+mammoth skill path
 ```
 
 Read the `SKILL.md` at the installed path reported above. Its cold-start
@@ -44,7 +44,7 @@ argv, transcript, checkpoint, or a source file.
 ## The operating loop
 
 1. **Diagnose the profile first.** Run `mammoth auth status --profile
-   PROFILE --output json --no-input`. This is a local presence check, not
+   PROFILE`. This is a local presence check, not
    proof that credentials work. If the profile or credentials are missing,
    stop and tell the operator to run `mammoth auth login` in their own
    terminal (add `--server-prefix release` only for release); it uses hidden
@@ -53,14 +53,14 @@ argv, transcript, checkpoint, or a source file.
    look for them in environment variables: the CLI does not read them from
    there. Use `--input` only with a protected `0600` file the operator handed
    you; see [Authentication](authentication.md). Then run `mammoth doctor --profile
-   PROFILE --output json --no-input` and stop on any failed check. Before
+   PROFILE` and stop on any failed check. Before
    doctor, compare the endpoint in `auth status` with the intended target:
    production uses `app`; `release` is allowed only when explicitly intended.
    If it does not match, stop and select or create a separate correctly
    configured profile; do not diagnose or operate through the mismatched one.
    Every `view` command that changes, exports, or deletes data requires the
    exact parent `DATASET_ID`; only reads may omit it. Read it with
-   `mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input`.
+   `mammoth view get VIEW_ID --project PROJECT_ID`.
 2. **Discover the local contract.** Only after doctor succeeds, use `mammoth schema find
    QUERY` to locate a command and `mammoth schema get COMMAND_ID` before
    composing a request. `mammoth schema list` is the full CLI inventory.
@@ -70,8 +70,9 @@ argv, transcript, checkpoint, or a source file.
    folder, or dashboard. Pass the observed `--project` and parents to every
    operation. A dataset is not a default view: list its views and select one by
    returned identity.
-4. **Operate with structured data.** Use `--output json --no-input` and one
-   `--input` document for nested fields. Column inputs and expressions use the
+4. **Operate with structured data.** Piped output is JSON and never prompts
+   (set `MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` in a session that is not
+   piped); nested fields go in one `--input` document. Column inputs and expressions use the
    exact display names returned by the selected view—not backend aliases.
 5. **Verify the stated result.** Read back the resource, job, pipeline task,
    dashboard, or exported artifact against the task’s acceptance criteria.
@@ -90,8 +91,8 @@ for a simple read operation.
 Use explicit flags in automation:
 
 ```bash
-mammoth schema get view.transform.math --output json --no-input
-mammoth project list --profile production --output json --no-input
+mammoth schema get view.transform.math
+mammoth project list --profile production
 ```
 
 Success is a JSON envelope on stdout; errors are a JSON envelope on stderr.

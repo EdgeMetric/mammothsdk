@@ -29,8 +29,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth ai condition generate DATASET_ID --help
-  agent_example: 'mammoth ai condition generate 123 --input ''{"intent": "Summarize revenue by region"}''
-    --output json --no-input'
+  agent_example: 'mammoth ai condition generate 123 --input ''{"intent": "Summarize revenue by region"}'''
   unit_tests:
   - UT-AI-CONDITION-GENERATE
   contract_tests:
@@ -71,7 +70,7 @@ commands:
   secret_fields: []
   human_example: mammoth ai expression generate DATASET_ID --help
   agent_example: 'mammoth ai expression generate 123 --input ''{"intent": "Summarize revenue by region",
-    "mode": "sample"}'' --output json --no-input'
+    "mode": "sample"}'''
   unit_tests:
   - UT-AI-EXPRESSION-GENERATE
   contract_tests:
@@ -111,7 +110,7 @@ commands:
   secret_fields: []
   human_example: mammoth ai retention condition DATASET_ID --help
   agent_example: 'mammoth ai retention condition 123 --input ''{"mode": "generate", "intent": "completed
-    payments older than 90 days"}'' --output json --no-input --project 456'
+    payments older than 90 days"}'' --project 456'
   unit_tests:
   - UT-AI-RETENTION-CONDITION
   contract_tests:
@@ -152,8 +151,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth ai sql generate --help
-  agent_example: 'mammoth ai sql generate ''Summarize revenue by region'' --input ''{"dataset_id": 456}''
-    --output json --no-input'
+  agent_example: 'mammoth ai sql generate ''Summarize revenue by region'' --input ''{"dataset_id": 456}'''
   unit_tests:
   - UT-AI-SQL-GENERATE
   contract_tests:
@@ -189,7 +187,7 @@ commands:
   secret_fields: []
   human_example: mammoth ai suggestion list --help
   agent_example: 'mammoth ai suggestion list --input ''{"suggestion_type": "generate_task", "params": {"prompt":
-    "Filter rows where Price > 100"}, "dataset_id": 456, "dataview_id": 123}'' --output json --no-input'
+    "Filter rows where Price > 100"}, "dataset_id": 456, "dataview_id": 123}'''
   unit_tests:
   - UT-AI-SUGGESTION-LIST
   contract_tests:

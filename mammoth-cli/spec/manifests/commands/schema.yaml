@@ -28,7 +28,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth schema find QUERY --help
-  agent_example: mammoth schema find 'view transform' --output json --no-input
+  agent_example: mammoth schema find 'view transform'
   unit_tests:
   - UT-SCHEMA-FIND
   contract_tests:
@@ -67,7 +67,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth schema get COMMAND_ID --help
-  agent_example: mammoth schema get view.transform.bulk-replace --output json --no-input
+  agent_example: mammoth schema get view.transform.bulk-replace
   unit_tests:
   - UT-SCHEMA-GET
   contract_tests:
@@ -83,7 +83,13 @@ commands:
   disposition: command
   alias_of: null
   operation_ids: []
-  positionals: []
+  positionals:
+  - name: family
+    type: str
+    required: false
+    metavar: FAMILY
+    falls_back_to_field: family
+    help: Command family to list (e.g. view); omit for the family index.
   options: []
   sdk_symbol: mammoth_cli.commands.schema.list_
   sdk_conversion: Call mammoth_cli.commands.schema.list_ with validated request fields.
@@ -100,7 +106,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth schema list --help
-  agent_example: mammoth schema list --output json --no-input
+  agent_example: mammoth schema list view
   unit_tests:
   - UT-SCHEMA-LIST
   contract_tests:

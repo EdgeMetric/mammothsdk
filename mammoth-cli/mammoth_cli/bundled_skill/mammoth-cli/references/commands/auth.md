@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `auth.login`
 
-Run: `mammoth auth login`. Exact input fields: `mammoth schema get auth.login --output json --no-input`.
+Run: `mammoth auth login`. Exact input fields: `mammoth schema get auth.login`.
 
-Example: `mammoth auth login --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth auth login`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AuthLoginResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: untried; no live run recorded.
 
 ### `auth.logout`
 
-Run: `mammoth auth logout`. Exact input fields: `mammoth schema get auth.logout --output json --no-input`.
+Run: `mammoth auth logout`. Exact input fields: `mammoth schema get auth.logout`.
 
-Example: `mammoth auth logout --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth auth logout`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AuthLogoutResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -24,9 +24,9 @@ Status on release: untried; no live run recorded.
 
 ### `auth.status`
 
-Run: `mammoth auth status`. Exact input fields: `mammoth schema get auth.status --output json --no-input`.
+Run: `mammoth auth status`. Exact input fields: `mammoth schema get auth.status`.
 
-Example: `mammoth auth status --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth auth status`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AuthStatusResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

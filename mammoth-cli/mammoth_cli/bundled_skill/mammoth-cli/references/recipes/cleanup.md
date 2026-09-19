@@ -7,10 +7,10 @@ authorization: never delete all resources created by a task, and never delete
 a requested dataset, dashboard, view, or export artifact as incidental tidy-up.
 
 ```bash
-mammoth schema find "trash" --output json --no-input
-mammoth schema find "restore" --output json --no-input
-mammoth schema get dataset.delete --output json --no-input
-mammoth dataset delete OWNED_DATASET_ID --project PROJECT_ID --output json --no-input --yes
+mammoth schema find "trash"
+mammoth schema find "restore"
+mammoth schema get dataset.delete
+mammoth dataset delete OWNED_DATASET_ID --project PROJECT_ID --yes
 ```
 
 Keep an immutable typed baseline: before creating anything, record every

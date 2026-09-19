@@ -30,7 +30,7 @@ commands:
   secret_fields: []
   human_example: mammoth parameter create --help
   agent_example: 'mammoth parameter create ''Revenue report'' --input ''{"param_type": "sample", "value":
-    "sample"}'' --output json --no-input'
+    "sample"}'''
   unit_tests:
   - UT-PARAMETER-CREATE
   contract_tests:
@@ -70,7 +70,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter delete PARAMETER_ID --help
-  agent_example: mammoth parameter delete 123 --output json --no-input
+  agent_example: mammoth parameter delete 123
   unit_tests:
   - UT-PARAMETER-DELETE
   contract_tests:
@@ -110,7 +110,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter dependencies PARAMETER_ID --help
-  agent_example: mammoth parameter dependencies 123 --output json --no-input
+  agent_example: mammoth parameter dependencies 123
   unit_tests:
   - UT-PARAMETER-DEPENDENCIES
   contract_tests:
@@ -150,7 +150,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter duplicate PARAMETER_ID --help
-  agent_example: mammoth parameter duplicate 123 --output json --no-input
+  agent_example: mammoth parameter duplicate 123
   unit_tests:
   - UT-PARAMETER-DUPLICATE
   contract_tests:
@@ -190,7 +190,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter get PARAMETER_ID --help
-  agent_example: mammoth parameter get 123 --output json --no-input
+  agent_example: mammoth parameter get 123
   unit_tests:
   - UT-PARAMETER-GET
   contract_tests:
@@ -230,7 +230,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter group create --help
-  agent_example: mammoth parameter group create 'Revenue report' --output json --no-input
+  agent_example: mammoth parameter group create 'Revenue report'
   unit_tests:
   - UT-PARAMETER-GROUP-CREATE
   contract_tests:
@@ -270,7 +270,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter group delete GROUP_ID --help
-  agent_example: mammoth parameter group delete 123 --output json --no-input
+  agent_example: mammoth parameter group delete 123
   unit_tests:
   - UT-PARAMETER-GROUP-DELETE
   contract_tests:
@@ -304,7 +304,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter group list --help
-  agent_example: mammoth parameter group list --output json --no-input
+  agent_example: mammoth parameter group list
   unit_tests:
   - UT-PARAMETER-GROUP-LIST
   contract_tests:
@@ -338,7 +338,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter group reorder --help
-  agent_example: 'mammoth parameter group reorder --input ''{"order": [1]}'' --output json --no-input'
+  agent_example: 'mammoth parameter group reorder --input ''{"order": [1]}'''
   unit_tests:
   - UT-PARAMETER-GROUP-REORDER
   contract_tests:
@@ -378,7 +378,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter group update GROUP_ID --help
-  agent_example: mammoth parameter group update 123 --output json --no-input
+  agent_example: mammoth parameter group update 123
   unit_tests:
   - UT-PARAMETER-GROUP-UPDATE
   contract_tests:
@@ -412,7 +412,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter list --help
-  agent_example: mammoth parameter list --output json --no-input
+  agent_example: mammoth parameter list
   unit_tests:
   - UT-PARAMETER-LIST
   contract_tests:
@@ -452,7 +452,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter rerun PARAMETER_ID --help
-  agent_example: mammoth parameter rerun 123 --output json --no-input
+  agent_example: mammoth parameter rerun 123
   unit_tests:
   - UT-PARAMETER-RERUN
   contract_tests:
@@ -486,7 +486,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter rerun-all-stale --help
-  agent_example: mammoth parameter rerun-all-stale --output json --no-input
+  agent_example: mammoth parameter rerun-all-stale
   unit_tests:
   - UT-PARAMETER-RERUN-ALL-STALE
   contract_tests:
@@ -526,7 +526,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter update PARAMETER_ID --help
-  agent_example: mammoth parameter update 123 --output json --no-input
+  agent_example: mammoth parameter update 123
   unit_tests:
   - UT-PARAMETER-UPDATE
   contract_tests:

@@ -5,6 +5,7 @@ The command manifest is authoritative for *published CLI command* coverage.
 It intentionally does not claim coverage of every backend/OpenAPI operation:
 those are separately represented by capability/schema discovery at runtime.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -116,7 +117,7 @@ def body(record: dict[str, object], matrix: dict[str, dict[str, object]]) -> str
     command_id = str(record["command_id"])
     path = str(record["command_path"])
     result = str(record.get("result_model") or "JSON result envelope")
-    example = str(record.get("agent_example") or f"mammoth {path} --output json --no-input")
+    example = str(record.get("agent_example") or f"mammoth {path}")
     mutation = str(record.get("mutation_class") or "unknown")
     wait = str(record.get("wait_policy") or "not_async")
     confirmation = str(record.get("confirmation") or "none")
@@ -154,8 +155,7 @@ def body(record: dict[str, object], matrix: dict[str, dict[str, object]]) -> str
         )
     return (
         f"### `{command_id}`\n\n"
-        f"Run: `mammoth {path}`. Exact input fields: `mammoth schema get {command_id} "
-        "--output json --no-input`.\n\n"
+        f"Run: `mammoth {path}`. Exact input fields: `mammoth schema get {command_id}`.\n\n"
         f"Example: `{example}`. {example_note}\n\n"
         + (
             "Secret fields: pass the body as `--input FILE` (mode 0600); never inline.\n\n"
@@ -169,7 +169,7 @@ def body(record: dict[str, object], matrix: dict[str, dict[str, object]]) -> str
 _GROUP_PREAMBLE = (
     "Every command returns the standard JSON envelope. On nonzero exit, read the error "
     "envelope and its `recovery_commands`; do not guess request fields. "
-    "\"Status on release\" is joined from `docs/release-capability-matrix.json`: "
+    '"Status on release" is joined from `docs/release-capability-matrix.json`: '
     "*ran once* means one bounded live run succeeded on the named CLI release, "
     "*untried* means nobody has run it, *not supported* means the backend refuses it. "
     "When this file disagrees with [capabilities](../capabilities.md) or a recipe, "
@@ -198,7 +198,7 @@ def render() -> dict[Path, str]:
         f"manifest, currently {sum(len(items) for items in groups.values())}; each entry "
         "carries its release status line. It is a command-contract index, not an "
         "assertion that every backend/OpenAPI operation has a CLI binding. For an exact local "
-        "CLI contract, run `mammoth schema get COMMAND_ID --output json --no-input`; "
+        "CLI contract, run `mammoth schema get COMMAND_ID`; "
         "`mammoth capability list` is an API-binding inventory and can omit typed/local CLI "
         "routes. For focused workflows, read the "
         "[recipes index](recipes/index.md). Sensitive structured input must come from a private "

@@ -34,7 +34,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset batch-data DATASET_ID BATCH_ID --help
-  agent_example: mammoth dataset batch-data 123 123 --output json --no-input
+  agent_example: mammoth dataset batch-data 123 123
   unit_tests:
   - UT-DATASET-BATCH-DATA
   contract_tests:
@@ -68,7 +68,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset bulk-delete --help
-  agent_example: 'mammoth dataset bulk-delete --input ''{"dataset_ids": [456, 457]}'' --output json --no-input'
+  agent_example: 'mammoth dataset bulk-delete --input ''{"dataset_ids": [456, 457]}'''
   unit_tests:
   - UT-DATASET-BULK-DELETE
   contract_tests:
@@ -102,8 +102,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset bulk-update --help
-  agent_example: 'mammoth dataset bulk-update --input ''{"patch_data": {"sample_key": "Status"}}'' --output
-    json --no-input'
+  agent_example: 'mammoth dataset bulk-update --input ''{"patch_data": {"sample_key": "Status"}}'''
   unit_tests:
   - UT-DATASET-BULK-UPDATE
   contract_tests:
@@ -138,7 +137,7 @@ commands:
   secret_fields: []
   human_example: mammoth dataset create --help
   agent_example: 'mammoth dataset create --input ''{"dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"},
-    "ds_creation_type": "weburl"}'' --output json --no-input'
+    "ds_creation_type": "weburl"}'''
   unit_tests:
   - UT-DATASET-CREATE
   contract_tests:
@@ -181,8 +180,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset create-from-pdf FILE_OBJECT_ID --help
-  agent_example: 'mammoth dataset create-from-pdf 123 --input ''{"file_name": "./sales.csv"}'' --output
-    json --no-input'
+  agent_example: 'mammoth dataset create-from-pdf 123 --input ''{"file_name": "./sales.csv"}'''
   unit_tests:
   - UT-DATASET-CREATE-FROM-PDF
   contract_tests:
@@ -222,7 +220,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset data DATASET_ID --help
-  agent_example: mammoth dataset data 123 --output json --no-input
+  agent_example: mammoth dataset data 123
   unit_tests:
   - UT-DATASET-DATA
   contract_tests:
@@ -262,7 +260,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset delete DATASET_ID --help
-  agent_example: mammoth dataset delete 123 --output json --no-input
+  agent_example: mammoth dataset delete 123
   unit_tests:
   - UT-DATASET-DELETE
   contract_tests:
@@ -302,7 +300,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset file-settings get DATASET_ID --help
-  agent_example: mammoth dataset file-settings get 123 --output json --no-input
+  agent_example: mammoth dataset file-settings get 123
   unit_tests:
   - UT-DATASET-FILE-SETTINGS-GET
   contract_tests:
@@ -342,7 +340,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset file-settings undo DATASET_ID --help
-  agent_example: mammoth dataset file-settings undo 123 --output json --no-input
+  agent_example: mammoth dataset file-settings undo 123
   unit_tests:
   - UT-DATASET-FILE-SETTINGS-UNDO
   contract_tests:
@@ -383,7 +381,7 @@ commands:
   secret_fields: []
   human_example: mammoth dataset file-settings update DATASET_ID --help
   agent_example: 'mammoth dataset file-settings update 123 --input ''{"delimiter": "sample", "has_header":
-    true, "initial_skip_count": 1, "quotechar": "sample"}'' --output json --no-input'
+    true, "initial_skip_count": 1, "quotechar": "sample"}'''
   unit_tests:
   - UT-DATASET-FILE-SETTINGS-UPDATE
   contract_tests:
@@ -422,7 +420,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset find NAME_SUBSTRING --help
-  agent_example: mammoth dataset find sales --output json --no-input
+  agent_example: mammoth dataset find sales
   unit_tests:
   - UT-DATASET-FIND
   contract_tests:
@@ -462,7 +460,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset get DATASET_ID --help
-  agent_example: mammoth dataset get 123 --output json --no-input
+  agent_example: mammoth dataset get 123
   unit_tests:
   - UT-DATASET-GET
   contract_tests:
@@ -496,7 +494,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset list --help
-  agent_example: mammoth dataset list --output json --no-input
+  agent_example: mammoth dataset list
   unit_tests:
   - UT-DATASET-LIST
   contract_tests:
@@ -536,7 +534,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset rename DATASET_ID --help
-  agent_example: 'mammoth dataset rename 123 --input ''{"name": "Revenue report"}'' --output json --no-input'
+  agent_example: 'mammoth dataset rename 123 --input ''{"name": "Revenue report"}'''
   unit_tests:
   - UT-DATASET-RENAME
   contract_tests:
@@ -577,7 +575,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset restore DATASET_ID --help
-  agent_example: mammoth dataset restore 123 --output json --no-input
+  agent_example: mammoth dataset restore 123
   unit_tests:
   - UT-DATASET-RESTORE
   contract_tests:
@@ -617,7 +615,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset trash DATASET_ID --help
-  agent_example: mammoth dataset trash 123 --output json --no-input
+  agent_example: mammoth dataset trash 123
   unit_tests:
   - UT-DATASET-TRASH
   contract_tests:
@@ -651,7 +649,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset update --help
-  agent_example: mammoth schema get dataset.update --output json --no-input
+  agent_example: 'mammoth dataset update --input ''{"patch_data": [{"sample_key": "Status"}]}'''
   unit_tests:
   - UT-DATASET-UPDATE
   contract_tests:

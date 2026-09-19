@@ -507,7 +507,7 @@ def dataset_update(invocation: Invocation) -> HandlerResult:
             "typed_alternatives": ["dataset.rename", "dataset.file-settings.update"],
         },
         recovery_commands=[
-            "mammoth schema get dataset.rename --output json --no-input",
-            "mammoth schema get dataset.file-settings.update --output json --no-input",
+            "mammoth schema get dataset.rename",
+            "mammoth schema get dataset.file-settings.update",
         ],
     )

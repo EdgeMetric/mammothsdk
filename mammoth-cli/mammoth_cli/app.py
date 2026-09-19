@@ -813,7 +813,46 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
     example = (record or {}).get("agent_example")
     if example:
         parts.append(f"Example: {example}")
+    fields = _help_input_fields(command_id)
+    if fields:
+        parts.append(f"Input fields: {fields}")
     return "\n\n".join(parts) or None
+
+
+def _help_input_fields(command_id: str) -> str | None:
+    """One line naming the ``--input`` fields, so ``--help`` can replace ``schema get``.
+
+    Required fields come first and are marked with ``*``; each carries its
+    short type, or its enum values. Bounded to keep ``--help`` readable; the
+    full contract stays behind ``schema get``.
+    """
+    from mammoth_cli.services.command_contract import resolve_command_contract
+
+    try:
+        contract = resolve_command_contract(command_id)
+    except Exception:  # noqa: BLE001 -- help must never fail on a contract quirk
+        return None
+    if contract is None or not contract.accepted_fields:
+        return None
+    rendered: list[str] = []
+    fields = sorted(contract.accepted_fields, key=lambda item: (not item.required, item.name))
+    for field in fields:
+        label = f"{field.name}*" if field.required else field.name
+        enum = field.enum_values
+        kind = "|".join(str(item) for item in enum[:6]) if enum else _short_type(field.type_name)
+        rendered.append(f"{label} ({kind})" if kind else label)
+        if len(rendered) == 12 and len(fields) > 12:
+            rendered.append(f"... {len(fields) - 12} more (schema get {command_id})")
+            break
+    return ", ".join(rendered)
+
+
+def _short_type(type_name: str) -> str:
+    """``mammoth.condition.Condition | ...`` -> ``condition``; dotted names lose their module."""
+    text = str(type_name or "")
+    if "condition." in text:
+        return "condition"
+    return " | ".join(part.strip().rsplit(".", 1)[-1] for part in text.split("|"))[:40]
 
 
 def build_app() -> typer.Typer:

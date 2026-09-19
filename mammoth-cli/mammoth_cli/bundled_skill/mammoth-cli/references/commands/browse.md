@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `browse.folder`
 
-Run: `mammoth browse folder`. Exact input fields: `mammoth schema get browse.folder --output json --no-input`.
+Run: `mammoth browse folder`. Exact input fields: `mammoth schema get browse.folder`.
 
-Example: `mammoth browse folder 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth browse folder 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `BrowseFolderResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: observed blocker — cli_error: rejects folder id 0 although 
 
 ### `browse.project`
 
-Run: `mammoth browse project`. Exact input fields: `mammoth schema get browse.project --output json --no-input`.
+Run: `mammoth browse project`. Exact input fields: `mammoth schema get browse.project`.
 
-Example: `mammoth browse project --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth browse project`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `BrowseProjectResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -24,9 +24,9 @@ Status on release: observed blocker — backend_error: SUSPECTED DEFECT: GET /wo
 
 ### `browse.root`
 
-Run: `mammoth browse root`. Exact input fields: `mammoth schema get browse.root --output json --no-input`.
+Run: `mammoth browse root`. Exact input fields: `mammoth schema get browse.root`.
 
-Example: `mammoth browse root --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth browse root`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `BrowseRootResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -34,9 +34,9 @@ Status on release: observed blocker — backend_error: SUSPECTED DEFECT: GET /br
 
 ### `browse.workspace`
 
-Run: `mammoth browse workspace`. Exact input fields: `mammoth schema get browse.workspace --output json --no-input`.
+Run: `mammoth browse workspace`. Exact input fields: `mammoth schema get browse.workspace`.
 
-Example: `mammoth browse workspace --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth browse workspace`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `BrowseWorkspaceResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

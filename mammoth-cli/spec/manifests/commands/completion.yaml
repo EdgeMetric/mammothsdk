@@ -28,7 +28,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth completion install --help
-  agent_example: mammoth completion install bash --output json --no-input
+  agent_example: mammoth completion install bash
   unit_tests:
   - UT-COMPLETION-INSTALL
   contract_tests:
@@ -67,7 +67,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth completion show --help
-  agent_example: mammoth completion show bash --output json --no-input
+  agent_example: mammoth completion show bash
   unit_tests:
   - UT-COMPLETION-SHOW
   contract_tests:

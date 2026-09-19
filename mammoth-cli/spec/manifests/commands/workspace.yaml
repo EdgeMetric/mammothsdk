@@ -24,7 +24,7 @@ commands:
   secret_fields:
   - token
   human_example: mammoth workspace accept-invite --help
-  agent_example: mammoth workspace accept-invite --input /private/path/request.json --output json --no-input
+  agent_example: mammoth workspace accept-invite --input /private/path/request.json
   unit_tests:
   - UT-WORKSPACE-ACCEPT-INVITE
   contract_tests:
@@ -58,7 +58,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace app-usage --help
-  agent_example: mammoth workspace app-usage --output json --no-input
+  agent_example: mammoth workspace app-usage
   unit_tests:
   - UT-WORKSPACE-APP-USAGE
   contract_tests:
@@ -92,8 +92,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace check-expression --help
-  agent_example: 'mammoth workspace check-expression --input ''{"body": {"intent": "Summarize revenue
-    by region"}}'' --output json --no-input'
+  agent_example: 'mammoth workspace check-expression --input ''{"body": {"intent": "Summarize revenue by
+    region"}}'''
   unit_tests:
   - UT-WORKSPACE-CHECK-EXPRESSION
   contract_tests:
@@ -127,7 +127,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace create --help
-  agent_example: 'mammoth workspace create --input ''{"body": {}}'' --output json --no-input'
+  agent_example: 'mammoth workspace create --input ''{"body": {}}'''
   unit_tests:
   - UT-WORKSPACE-CREATE
   contract_tests:
@@ -167,7 +167,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace delete --help
-  agent_example: mammoth workspace delete 123 --output json --no-input
+  agent_example: mammoth workspace delete 123
   unit_tests:
   - UT-WORKSPACE-DELETE
   contract_tests:
@@ -207,7 +207,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace get --help
-  agent_example: mammoth workspace get 123 --output json --no-input
+  agent_example: mammoth workspace get 123
   unit_tests:
   - UT-WORKSPACE-GET
   contract_tests:
@@ -241,7 +241,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace list --help
-  agent_example: mammoth workspace list --output json --no-input
+  agent_example: mammoth workspace list
   unit_tests:
   - UT-WORKSPACE-LIST
   contract_tests:
@@ -276,7 +276,7 @@ commands:
   secret_fields: []
   human_example: mammoth workspace llm-task --help
   agent_example: 'mammoth workspace llm-task --input ''{"task_type": "sample", "params": {"sample_key":
-    "Status"}}'' --output json --no-input'
+    "Status"}}'''
   unit_tests:
   - UT-WORKSPACE-LLM-TASK
   contract_tests:
@@ -316,7 +316,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace reactivate --help
-  agent_example: mammoth workspace reactivate 123 --output json --no-input
+  agent_example: mammoth workspace reactivate 123
   unit_tests:
   - UT-WORKSPACE-REACTIVATE
   contract_tests:
@@ -350,7 +350,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace segment list --help
-  agent_example: mammoth workspace segment list --output json --no-input
+  agent_example: mammoth workspace segment list
   unit_tests:
   - UT-WORKSPACE-SEGMENT-LIST
   contract_tests:
@@ -384,8 +384,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace segment update --help
-  agent_example: 'mammoth workspace segment update --input ''{"patch": [{"sample_key": "Status"}]}'' --output
-    json --no-input'
+  agent_example: 'mammoth workspace segment update --input ''{"patch": [{"sample_key": "Status"}]}'''
   unit_tests:
   - UT-WORKSPACE-SEGMENT-UPDATE
   contract_tests:
@@ -419,7 +418,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace storage-breakdown --help
-  agent_example: mammoth workspace storage-breakdown --output json --no-input
+  agent_example: mammoth workspace storage-breakdown
   unit_tests:
   - UT-WORKSPACE-STORAGE-BREAKDOWN
   contract_tests:
@@ -460,7 +459,7 @@ commands:
   secret_fields: []
   human_example: mammoth workspace update --help
   agent_example: 'mammoth workspace update 123 --input ''{"patches": [{"op": "replace", "path": "name",
-    "value": "sample"}]}'' --output json --no-input'
+    "value": "sample"}]}'''
   unit_tests:
   - UT-WORKSPACE-UPDATE
   contract_tests:
@@ -494,8 +493,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace user add --help
-  agent_example: 'mammoth workspace user add --input ''{"email_ids": ["analyst@example.com"]}'' --output
-    json --no-input'
+  agent_example: 'mammoth workspace user add --input ''{"email_ids": ["analyst@example.com"]}'''
   unit_tests:
   - UT-WORKSPACE-USER-ADD
   contract_tests:
@@ -534,7 +532,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace user get USER_ID --help
-  agent_example: mammoth workspace user get resource-123 --output json --no-input
+  agent_example: mammoth workspace user get resource-123
   unit_tests:
   - UT-WORKSPACE-USER-GET
   contract_tests:
@@ -568,7 +566,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace user list --help
-  agent_example: mammoth workspace user list --output json --no-input
+  agent_example: mammoth workspace user list
   unit_tests:
   - UT-WORKSPACE-USER-LIST
   contract_tests:
@@ -608,7 +606,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace user remove USER_ID --help
-  agent_example: mammoth workspace user remove 123 --output json --no-input
+  agent_example: mammoth workspace user remove 123
   unit_tests:
   - UT-WORKSPACE-USER-REMOVE
   contract_tests:
@@ -642,7 +640,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace user remove-batch --help
-  agent_example: mammoth workspace user remove-batch --output json --no-input
+  agent_example: mammoth workspace user remove-batch
   unit_tests:
   - UT-WORKSPACE-USER-REMOVE-BATCH
   contract_tests:
@@ -682,8 +680,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace user update USER_ID --help
-  agent_example: 'mammoth workspace user update resource-123 --input ''{"patches": [{"op": "replace",
-    "path": "role", "value": "workspace_member"}]}'' --output json --no-input'
+  agent_example: 'mammoth workspace user update resource-123 --input ''{"patches": [{"op": "replace", "path":
+    "role", "value": "workspace_member"}]}'''
   unit_tests:
   - UT-WORKSPACE-USER-UPDATE
   contract_tests:
@@ -717,8 +715,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace user update-batch --help
-  agent_example: 'mammoth workspace user update-batch --input ''{"patches": [{"sample_key": "Status"}]}''
-    --output json --no-input'
+  agent_example: 'mammoth workspace user update-batch --input ''{"patches": [{"sample_key": "Status"}]}'''
   unit_tests:
   - UT-WORKSPACE-USER-UPDATE-BATCH
   contract_tests:

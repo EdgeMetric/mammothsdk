@@ -23,9 +23,7 @@ def test_all_examples_start_with_command_path() -> None:
         if record.get("disposition") == "alias":
             continue
         path_tokens = record["command_path"].split()
-        safe_schema_handoff = (
-            f"mammoth schema get {record['command_id']} --output json --no-input"
-        )
+        safe_schema_handoff = f"mammoth schema get {record['command_id']}"
         for key in ("human_example", "agent_example"):
             if key == "agent_example" and record[key] == safe_schema_handoff:
                 # A deliberately blocked raw request shape hands the agent to
@@ -44,12 +42,13 @@ def test_bulk_replace_defaults_match_sdk() -> None:
     assert sig.parameters["match_words"].default is False
 
 
-def test_agent_examples_use_json_no_input() -> None:
+def test_agent_examples_carry_no_redundant_output_flags() -> None:
+    """A piped run is already machine JSON and never prompts; the flags cost tokens."""
     for record in load_commands():
         if record.get("disposition") == "alias":
             continue
-        assert "--output json" in record["agent_example"], record["command_id"]
-        assert "--no-input" in record["agent_example"], record["command_id"]
+        assert "--output json" not in record["agent_example"], record["command_id"]
+        assert "--no-input" not in record["agent_example"], record["command_id"]
 
 
 def test_generic_pipeline_task_examples_are_structural_and_warn_about_typed_routes() -> None:

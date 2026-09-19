@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `config.get`
 
-Run: `mammoth config get`. Exact input fields: `mammoth schema get config.get --output json --no-input`.
+Run: `mammoth config get`. Exact input fields: `mammoth schema get config.get`.
 
-Example: `mammoth config get output --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth config get output`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConfigGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: untried; no live run recorded.
 
 ### `config.list`
 
-Run: `mammoth config list`. Exact input fields: `mammoth schema get config.list --output json --no-input`.
+Run: `mammoth config list`. Exact input fields: `mammoth schema get config.list`.
 
-Example: `mammoth config list --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth config list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConfigListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -24,9 +24,9 @@ Status on release: untried; no live run recorded.
 
 ### `config.path`
 
-Run: `mammoth config path`. Exact input fields: `mammoth schema get config.path --output json --no-input`.
+Run: `mammoth config path`. Exact input fields: `mammoth schema get config.path`.
 
-Example: `mammoth config path --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth config path`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConfigPathResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -34,9 +34,9 @@ Status on release: untried; no live run recorded.
 
 ### `config.set`
 
-Run: `mammoth config set`. Exact input fields: `mammoth schema get config.set --output json --no-input`.
+Run: `mammoth config set`. Exact input fields: `mammoth schema get config.set`.
 
-Example: `mammoth config set output text --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth config set output text`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConfigSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

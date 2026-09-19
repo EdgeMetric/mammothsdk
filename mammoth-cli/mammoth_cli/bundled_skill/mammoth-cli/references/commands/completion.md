@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `completion.install`
 
-Run: `mammoth completion install`. Exact input fields: `mammoth schema get completion.install --output json --no-input`.
+Run: `mammoth completion install`. Exact input fields: `mammoth schema get completion.install`.
 
-Example: `mammoth completion install bash --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth completion install bash`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `CompletionInstallResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: untried; no live run recorded.
 
 ### `completion.show`
 
-Run: `mammoth completion show`. Exact input fields: `mammoth schema get completion.show --output json --no-input`.
+Run: `mammoth completion show`. Exact input fields: `mammoth schema get completion.show`.
 
-Example: `mammoth completion show bash --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth completion show bash`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `CompletionShowResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

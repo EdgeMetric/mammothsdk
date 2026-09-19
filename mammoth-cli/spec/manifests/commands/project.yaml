@@ -23,7 +23,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project bulk-delete --help
-  agent_example: 'mammoth project bulk-delete --input ''{"project_ids": [1]}'' --output json --no-input'
+  agent_example: 'mammoth project bulk-delete --input ''{"project_ids": [1]}'''
   unit_tests:
   - UT-PROJECT-BULK-DELETE
   contract_tests:
@@ -58,8 +58,7 @@ commands:
   secret_fields: []
   human_example: mammoth project bulk-update --help
   agent_example: 'mammoth project bulk-update --input ''{"patch_data": {"patches": [{"op": "add", "path":
-    "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}''
-    --output json --no-input'
+    "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}'''
   unit_tests:
   - UT-PROJECT-BULK-UPDATE
   contract_tests:
@@ -101,7 +100,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project checkpoint list --help
-  agent_example: mammoth project checkpoint list 123 --output json --no-input
+  agent_example: mammoth project checkpoint list 123
   unit_tests:
   - UT-PROJECT-CHECKPOINT-LIST
   contract_tests:
@@ -141,7 +140,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project create --help
-  agent_example: mammoth project create 'Revenue report' --output json --no-input
+  agent_example: mammoth project create 'Revenue report'
   unit_tests:
   - UT-PROJECT-CREATE
   contract_tests:
@@ -180,7 +179,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project ensure --help
-  agent_example: mammoth project ensure 'Revenue report' --output json --no-input
+  agent_example: mammoth project ensure 'Revenue report'
   unit_tests:
   - UT-PROJECT-ENSURE
   contract_tests:
@@ -222,7 +221,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project data-check list --help
-  agent_example: mammoth project data-check list 123 --output json --no-input
+  agent_example: mammoth project data-check list 123
   unit_tests:
   - UT-PROJECT-DATA-CHECK-LIST
   contract_tests:
@@ -262,7 +261,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project delete --help
-  agent_example: mammoth project delete 123 --output json --no-input
+  agent_example: mammoth project delete 123
   unit_tests:
   - UT-PROJECT-DELETE
   contract_tests:
@@ -301,7 +300,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project get --help
-  agent_example: mammoth project get 123 --output json --no-input
+  agent_example: mammoth project get 123
   unit_tests:
   - UT-PROJECT-GET
   contract_tests:
@@ -335,7 +334,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project list --help
-  agent_example: mammoth project list --output json --no-input
+  agent_example: mammoth project list
   unit_tests:
   - UT-PROJECT-LIST
   contract_tests:
@@ -375,7 +374,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project pending-changes --help
-  agent_example: mammoth project pending-changes 123 --output json --no-input
+  agent_example: mammoth project pending-changes 123
   unit_tests:
   - UT-PROJECT-PENDING-CHANGES
   contract_tests:
@@ -415,8 +414,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project publish-credentials --help
-  agent_example: 'mammoth project publish-credentials 123 --input ''{"odbc_type": "postgres"}'' --output
-    json --no-input'
+  agent_example: 'mammoth project publish-credentials 123 --input ''{"odbc_type": "postgres"}'''
   unit_tests:
   - UT-PROJECT-PUBLISH-CREDENTIALS
   contract_tests:
@@ -456,7 +454,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project resource-dependencies --help
-  agent_example: 'mammoth project resource-dependencies 123 --input ''{"resource_ids": [456]}'' --output json --no-input'
+  agent_example: 'mammoth project resource-dependencies 123 --input ''{"resource_ids": [456]}'''
   unit_tests:
   - UT-PROJECT-RESOURCE-DEPENDENCIES
   contract_tests:
@@ -497,8 +495,7 @@ commands:
   secret_fields: []
   human_example: mammoth project resource-dependencies update --help
   agent_example: 'mammoth project resource-dependencies update 123 --input ''{"patches": [{"op": "replace",
-    "path": "data_sync", "value": {"context_type": "dataview", "context_id": 1}}]}'' --output json --no-input
-    --yes --confirm 123'
+    "path": "data_sync", "value": {"context_type": "dataview", "context_id": 1}}]}'' --yes --confirm 123'
   unit_tests:
   - UT-PROJECT-RESOURCE-DEPENDENCIES-UPDATE
   contract_tests:
@@ -538,7 +535,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project resource-status --help
-  agent_example: mammoth project resource-status 123 --output json --no-input
+  agent_example: mammoth project resource-status 123
   unit_tests:
   - UT-PROJECT-RESOURCE-STATUS
   contract_tests:
@@ -578,7 +575,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project sample-flow --help
-  agent_example: mammoth project sample-flow 123 --output json --no-input
+  agent_example: mammoth project sample-flow 123
   unit_tests:
   - UT-PROJECT-SAMPLE-FLOW
   contract_tests:
@@ -618,7 +615,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project update --help
-  agent_example: 'mammoth project update 123 --input ''{"name": "Renamed project"}'' --output json --no-input'
+  agent_example: 'mammoth project update 123 --input ''{"name": "Renamed project"}'''
   unit_tests:
   - UT-PROJECT-UPDATE
   contract_tests:
@@ -658,8 +655,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project user add --help
-  agent_example: 'mammoth project user add 123 --input ''{"user_ids": [123], "role": "project_analyst"}''
-    --output json --no-input'
+  agent_example: 'mammoth project user add 123 --input ''{"user_ids": [123], "role": "project_analyst"}'''
   unit_tests:
   - UT-PROJECT-USER-ADD
   contract_tests:
@@ -699,8 +695,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth project user remove --help
-  agent_example: 'mammoth project user remove 123 --input ''{"user_ids": ["resource-123"]}'' --output
-    json --no-input'
+  agent_example: 'mammoth project user remove 123 --input ''{"user_ids": ["resource-123"]}'''
   unit_tests:
   - UT-PROJECT-USER-REMOVE
   contract_tests:
@@ -741,7 +736,7 @@ commands:
   secret_fields: []
   human_example: mammoth project user update --help
   agent_example: 'mammoth project user update 123 --input ''{"role": "project_admin", "user_id": 123}''
-    --output json --no-input --yes'
+    --yes'
   unit_tests:
   - UT-PROJECT-USER-UPDATE
   contract_tests:

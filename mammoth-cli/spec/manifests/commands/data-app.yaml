@@ -29,7 +29,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app active-job DATA_APP_ID --help
-  agent_example: mammoth data-app active-job 123 --output json --no-input
+  agent_example: mammoth data-app active-job 123
   unit_tests:
   - UT-DATA-APP-ACTIVE-JOB
   contract_tests:
@@ -64,7 +64,7 @@ commands:
   secret_fields: []
   human_example: mammoth data-app create --help
   agent_example: 'mammoth data-app create --input ''{"body": {"automation_id": 1, "dashboard_ids": [1],
-    "name": "Revenue report", "project_id": 1}}'' --output json --no-input'
+    "name": "Revenue report", "project_id": 1}}'''
   unit_tests:
   - UT-DATA-APP-CREATE
   contract_tests:
@@ -104,7 +104,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app delete DATA_APP_ID --help
-  agent_example: mammoth data-app delete 123 --output json --no-input
+  agent_example: mammoth data-app delete 123
   unit_tests:
   - UT-DATA-APP-DELETE
   contract_tests:
@@ -144,7 +144,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app get DATA_APP_ID --help
-  agent_example: mammoth data-app get 123 --output json --no-input
+  agent_example: mammoth data-app get 123
   unit_tests:
   - UT-DATA-APP-GET
   contract_tests:
@@ -190,7 +190,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app job DATA_APP_ID JOB_ID --help
-  agent_example: mammoth data-app job 123 123 --output json --no-input
+  agent_example: mammoth data-app job 123 123
   unit_tests:
   - UT-DATA-APP-JOB
   contract_tests:
@@ -224,7 +224,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app list --help
-  agent_example: mammoth data-app list --output json --no-input
+  agent_example: mammoth data-app list
   unit_tests:
   - UT-DATA-APP-LIST
   contract_tests:
@@ -264,7 +264,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app pipeline-changes DATA_APP_ID --help
-  agent_example: mammoth data-app pipeline-changes 123 --output json --no-input
+  agent_example: mammoth data-app pipeline-changes 123
   unit_tests:
   - UT-DATA-APP-PIPELINE-CHANGES
   contract_tests:
@@ -305,7 +305,7 @@ commands:
   secret_fields: []
   human_example: mammoth data-app share DATA_APP_ID --help
   agent_example: 'mammoth data-app share 123 --input ''{"body": {"params": {"auth": {"type_of_auth": "mammoth"}}}}''
-    --output json --no-input --yes'
+    --yes'
   unit_tests:
   - UT-DATA-APP-SHARE
   contract_tests:
@@ -345,8 +345,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app update DATA_APP_ID --help
-  agent_example: 'mammoth data-app update 123 --input ''{"body": {"params": {"name": "Revenue report"}}}''
-    --output json --no-input'
+  agent_example: 'mammoth data-app update 123 --input ''{"body": {"params": {"name": "Revenue report"}}}'''
   unit_tests:
   - UT-DATA-APP-UPDATE
   contract_tests:
@@ -392,7 +391,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app upload DATA_APP_ID --help
-  agent_example: mammoth data-app upload 123 ./sales.csv --output json --no-input
+  agent_example: mammoth data-app upload 123 ./sales.csv
   unit_tests:
   - UT-DATA-APP-UPLOAD
   contract_tests:
@@ -432,7 +431,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app user list DATA_APP_ID --help
-  agent_example: mammoth data-app user list 123 --output json --no-input
+  agent_example: mammoth data-app user list 123
   unit_tests:
   - UT-DATA-APP-USER-LIST
   contract_tests:
@@ -478,7 +477,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth data-app user remove DATA_APP_ID EMAIL --help
-  agent_example: mammoth data-app user remove 123 analyst@example.com --output json --no-input
+  agent_example: mammoth data-app user remove 123 analyst@example.com
   unit_tests:
   - UT-DATA-APP-USER-REMOVE
   contract_tests:

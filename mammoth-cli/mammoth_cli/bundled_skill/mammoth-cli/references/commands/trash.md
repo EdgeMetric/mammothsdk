@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `trash.add`
 
-Run: `mammoth trash add`. Exact input fields: `mammoth schema get trash.add --output json --no-input`.
+Run: `mammoth trash add`. Exact input fields: `mammoth schema get trash.add`.
 
-Example: `mammoth trash add --input '{"items": [{"sample_key": "Status"}]}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth trash add --input '{"items": [{"sample_key": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `TrashAddResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -14,9 +14,9 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 ### `trash.list`
 
-Run: `mammoth trash list`. Exact input fields: `mammoth schema get trash.list --output json --no-input`.
+Run: `mammoth trash list`. Exact input fields: `mammoth schema get trash.list`.
 
-Example: `mammoth trash list --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth trash list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `TrashListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -24,9 +24,9 @@ Status on release: ran once on CLI 1.1.9 — Bounded release read succeeded with
 
 ### `trash.restore`
 
-Run: `mammoth trash restore`. Exact input fields: `mammoth schema get trash.restore --output json --no-input`.
+Run: `mammoth trash restore`. Exact input fields: `mammoth schema get trash.restore`.
 
-Example: `mammoth trash restore --input '{"items": [{"sample_key": "Status"}]}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth trash restore --input '{"items": [{"sample_key": "Status"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `TrashRestoreResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 

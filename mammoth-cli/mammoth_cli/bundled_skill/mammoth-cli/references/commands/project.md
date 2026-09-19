@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `project.bulk-delete`
 
-Run: `mammoth project bulk-delete`. Exact input fields: `mammoth schema get project.bulk-delete --output json --no-input`.
+Run: `mammoth project bulk-delete`. Exact input fields: `mammoth schema get project.bulk-delete`.
 
-Example: `mammoth project bulk-delete --input '{"project_ids": [1]}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth project bulk-delete --input '{"project_ids": [1]}'`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ProjectBulkDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 ### `project.bulk-update`
 
-Run: `mammoth project bulk-update`. Exact input fields: `mammoth schema get project.bulk-update --output json --no-input`.
+Run: `mammoth project bulk-update`. Exact input fields: `mammoth schema get project.bulk-update`.
 
-Example: `mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth project bulk-update --input '{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ProjectBulkUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -24,9 +24,9 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 ### `project.checkpoint.list`
 
-Run: `mammoth project checkpoint list`. Exact input fields: `mammoth schema get project.checkpoint.list --output json --no-input`.
+Run: `mammoth project checkpoint list`. Exact input fields: `mammoth schema get project.checkpoint.list`.
 
-Example: `mammoth project checkpoint list 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project checkpoint list 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectCheckpointListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -34,9 +34,9 @@ Status on release: ran once on CLI an earlier release — Bounded release read i
 
 ### `project.create`
 
-Run: `mammoth project create`. Exact input fields: `mammoth schema get project.create --output json --no-input`.
+Run: `mammoth project create`. Exact input fields: `mammoth schema get project.create`.
 
-Example: `mammoth project create 'Revenue report' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project create 'Revenue report'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -44,9 +44,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `project.data-check.list`
 
-Run: `mammoth project data-check list`. Exact input fields: `mammoth schema get project.data-check.list --output json --no-input`.
+Run: `mammoth project data-check list`. Exact input fields: `mammoth schema get project.data-check.list`.
 
-Example: `mammoth project data-check list 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project data-check list 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectDataCheckListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -54,9 +54,9 @@ Status on release: ran once on CLI an earlier release — Bounded release read i
 
 ### `project.delete`
 
-Run: `mammoth project delete`. Exact input fields: `mammoth schema get project.delete --output json --no-input`.
+Run: `mammoth project delete`. Exact input fields: `mammoth schema get project.delete`.
 
-Example: `mammoth project delete 123 --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth project delete 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ProjectDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -64,9 +64,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `project.ensure`
 
-Run: `mammoth project ensure`. Exact input fields: `mammoth schema get project.ensure --output json --no-input`.
+Run: `mammoth project ensure`. Exact input fields: `mammoth schema get project.ensure`.
 
-Example: `mammoth project ensure 'Revenue report' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project ensure 'Revenue report'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectEnsureResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -74,9 +74,9 @@ Status on release: untried; no live run recorded.
 
 ### `project.get`
 
-Run: `mammoth project get`. Exact input fields: `mammoth schema get project.get --output json --no-input`.
+Run: `mammoth project get`. Exact input fields: `mammoth schema get project.get`.
 
-Example: `mammoth project get 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -84,9 +84,9 @@ Status on release: untried; no live run recorded.
 
 ### `project.list`
 
-Run: `mammoth project list`. Exact input fields: `mammoth schema get project.list --output json --no-input`.
+Run: `mammoth project list`. Exact input fields: `mammoth schema get project.list`.
 
-Example: `mammoth project list --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -94,9 +94,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `project.pending-changes`
 
-Run: `mammoth project pending-changes`. Exact input fields: `mammoth schema get project.pending-changes --output json --no-input`.
+Run: `mammoth project pending-changes`. Exact input fields: `mammoth schema get project.pending-changes`.
 
-Example: `mammoth project pending-changes 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project pending-changes 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectPendingChangesResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -104,9 +104,9 @@ Status on release: ran once on CLI an earlier release — Bounded release read i
 
 ### `project.publish-credentials`
 
-Run: `mammoth project publish-credentials`. Exact input fields: `mammoth schema get project.publish-credentials --output json --no-input`.
+Run: `mammoth project publish-credentials`. Exact input fields: `mammoth schema get project.publish-credentials`.
 
-Example: `mammoth project publish-credentials 123 --input '{"odbc_type": "postgres"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project publish-credentials 123 --input '{"odbc_type": "postgres"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectPublishCredentialsResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -114,9 +114,9 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 ### `project.resource-dependencies`
 
-Run: `mammoth project resource-dependencies`. Exact input fields: `mammoth schema get project.resource-dependencies --output json --no-input`.
+Run: `mammoth project resource-dependencies`. Exact input fields: `mammoth schema get project.resource-dependencies`.
 
-Example: `mammoth project resource-dependencies 123 --input '{"resource_ids": [456]}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project resource-dependencies 123 --input '{"resource_ids": [456]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectResourceDependenciesResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -124,9 +124,9 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 ### `project.resource-dependencies.update`
 
-Run: `mammoth project resource-dependencies update`. Exact input fields: `mammoth schema get project.resource-dependencies.update --output json --no-input`.
+Run: `mammoth project resource-dependencies update`. Exact input fields: `mammoth schema get project.resource-dependencies.update`.
 
-Example: `mammoth project resource-dependencies update 123 --input '{"patches": [{"op": "replace", "path": "data_sync", "value": {"context_type": "dataview", "context_id": 1}}]}' --output json --no-input --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth project resource-dependencies update 123 --input '{"patches": [{"op": "replace", "path": "data_sync", "value": {"context_type": "dataview", "context_id": 1}}]}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ProjectResourceDependenciesUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `always_wait`.
 
@@ -134,9 +134,9 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 ### `project.resource-status`
 
-Run: `mammoth project resource-status`. Exact input fields: `mammoth schema get project.resource-status --output json --no-input`.
+Run: `mammoth project resource-status`. Exact input fields: `mammoth schema get project.resource-status`.
 
-Example: `mammoth project resource-status 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project resource-status 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectResourceStatusResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -144,9 +144,9 @@ Status on release: ran once on CLI an earlier release — Bounded release read i
 
 ### `project.sample-flow`
 
-Run: `mammoth project sample-flow`. Exact input fields: `mammoth schema get project.sample-flow --output json --no-input`.
+Run: `mammoth project sample-flow`. Exact input fields: `mammoth schema get project.sample-flow`.
 
-Example: `mammoth project sample-flow 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project sample-flow 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectSampleFlowResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -154,9 +154,9 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 ### `project.update`
 
-Run: `mammoth project update`. Exact input fields: `mammoth schema get project.update --output json --no-input`.
+Run: `mammoth project update`. Exact input fields: `mammoth schema get project.update`.
 
-Example: `mammoth project update 123 --input '{"name": "Renamed project"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth project update 123 --input '{"name": "Renamed project"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ProjectUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -164,9 +164,9 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 ### `project.user.add`
 
-Run: `mammoth project user add`. Exact input fields: `mammoth schema get project.user.add --output json --no-input`.
+Run: `mammoth project user add`. Exact input fields: `mammoth schema get project.user.add`.
 
-Example: `mammoth project user add 123 --input '{"user_ids": [123], "role": "project_analyst"}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth project user add 123 --input '{"user_ids": [123], "role": "project_analyst"}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ProjectUserAddResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -174,9 +174,9 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 ### `project.user.remove`
 
-Run: `mammoth project user remove`. Exact input fields: `mammoth schema get project.user.remove --output json --no-input`.
+Run: `mammoth project user remove`. Exact input fields: `mammoth schema get project.user.remove`.
 
-Example: `mammoth project user remove 123 --input '{"user_ids": ["resource-123"]}' --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth project user remove 123 --input '{"user_ids": ["resource-123"]}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `ProjectUserRemoveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -184,9 +184,9 @@ Status on release: untried; no live run recorded.
 
 ### `project.user.update`
 
-Run: `mammoth project user update`. Exact input fields: `mammoth schema get project.user.update --output json --no-input`.
+Run: `mammoth project user update`. Exact input fields: `mammoth schema get project.user.update`.
 
-Example: `mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --output json --no-input --yes`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ProjectUserUpdateResult`; mutation `high_impact`, confirmation `yes_always`, wait policy `not_async`.
 

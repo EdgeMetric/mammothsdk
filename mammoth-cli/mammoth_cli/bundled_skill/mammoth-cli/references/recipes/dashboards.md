@@ -8,9 +8,9 @@ capabilities); verify the view binding with `dashboard get DASHBOARD_ID`
 (`data.dataview_id`) instead.
 
 ```bash
-mammoth schema get dashboard.create-blank --output json --no-input
-mammoth dashboard create-blank --input INPUT_JSON --project PROJECT_ID --output json --no-input
-mammoth dashboard get DASHBOARD_ID --output json --no-input
+mammoth schema get dashboard.create-blank
+mammoth dashboard create-blank --input INPUT_JSON --project PROJECT_ID
+mammoth dashboard get DASHBOARD_ID
 ```
 
 Discover page/widget/publish routes and verify the binding, draft/published
@@ -25,9 +25,9 @@ object and do not clean it up. Otherwise, classify it explicitly as
 temporary/intermediate before authorizing deletion. Then run:
 
 ```bash
-mammoth dashboard get DASHBOARD_ID --output json --no-input
-mammoth schema find "dashboard page" --output json --no-input
-mammoth schema find "dashboard" --output json --no-input
+mammoth dashboard get DASHBOARD_ID
+mammoth schema find "dashboard page"
+mammoth schema find "dashboard"
 ```
 
 Page/widget schemas vary by release. Read each schema, use returned IDs, and
@@ -39,8 +39,8 @@ creation response alone is not proof of a usable published view.
 Never save an invented canvas. Read it, change it, write it back:
 
 ```bash
-mammoth dashboard canvas get DASHBOARD_ID --output json --no-input   # data.canvas incl. style_tokens
-mammoth dashboard canvas save DASHBOARD_ID --input '{"body":{"params":{"canvas":CANVAS_FROM_GET}}}' --output json --no-input
+mammoth dashboard canvas get DASHBOARD_ID   # data.canvas incl. style_tokens
+mammoth dashboard canvas save DASHBOARD_ID --input '{"body":{"params":{"canvas":CANVAS_FROM_GET}}}'
 ```
 
 `canvas save` with `{"canvas": {}}` fails (`dataset` and other fields are

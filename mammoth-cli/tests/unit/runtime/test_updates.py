@@ -60,7 +60,7 @@ def test_available_update_comes_from_the_cache_only(check_enabled: Path) -> None
     assert update == {
         "current": __version__,
         "latest": "99.0.0",
-        "command": "mammoth upgrade --yes --output json --no-input",
+        "command": "mammoth upgrade --yes",
     }
     _write(check_enabled, __version__)
     assert updates.available_update("project.list") is None
@@ -123,7 +123,7 @@ def test_success_envelope_carries_update_available(
     monkeypatch.setattr(updates, "_fetch_latest", lambda: "99.0.0")
     executor.run("project.list", "json", lambda: ({"projects": []}, {}))
     first = json.loads(capsys.readouterr().out)
-    assert first["meta"]["update_available"] is None  # cache was empty at start
+    assert "update_available" not in first["meta"]  # cache was empty at start; nulls are omitted
     executor.run("project.list", "json", lambda: ({"projects": []}, {}))
     second = json.loads(capsys.readouterr().out)
     assert second["meta"]["update_available"]["latest"] == "99.0.0"

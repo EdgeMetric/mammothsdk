@@ -22,6 +22,7 @@ from __future__ import annotations
 from typing import Any
 
 from mammoth_cli.commands.view import _require_discovery_allowed
+from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -31,6 +32,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.runtime import parents
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
@@ -86,7 +88,12 @@ def _view_id(invocation: Invocation) -> int:
 
 
 def _resolve_exact_dataset_id(
-    invocation: Invocation, view_id: int, document: dict[str, Any], *, required: bool = False
+    invocation: Invocation,
+    view_id: int,
+    document: dict[str, Any],
+    *,
+    required: bool = False,
+    allow_missing: bool = False,
 ) -> int | None:
     """Resolve and reconcile optional exact parent identity for one view.
 
@@ -133,6 +140,9 @@ def _resolve_exact_dataset_id(
                 exit_status=EXIT_USAGE,
                 hint="Pass DATASET_ID or include dataset_id in --input.",
             )
+        if allow_missing:
+            # The caller consults the local parent memory before deciding.
+            return None
         # Transforms, exports and other non-read view commands must not fall
         # into the SDK's project-wide browse-and-probe discovery: on large
         # projects it can 500 on a folder or miss the view entirely and
@@ -208,16 +218,25 @@ def _dispatch_view(
         invocation,
         view_id,
         document,
-        # Keep the legacy discovery path for existing transform callers, but
-        # reject conflicting explicit identities rather than selecting one.
+        # Reject conflicting explicit identities rather than selecting one;
+        # an omitted parent is filled from the local parent memory below and
+        # only then refused for a mutation.
         required=False,
+        allow_missing=True,
     )
     with open_service(invocation) as (service, auth):
         if dataset_id is None:
+            dataset_id = parents.lookup(_profile_name(invocation), auth.workspace_id, view_id)
+        if dataset_id is None:
+            _require_discovery_allowed(invocation, view_id)
             data = service.call_view(view_id, method, **kwargs)
         else:
             data = service.call_view(view_id, method, dataset_id=int(dataset_id), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _profile_name(invocation: Invocation) -> str:
+    return invocation.profile or profiles.get_selected()
 
 
 def _without_resource_context(document: dict[str, Any]) -> dict[str, Any]:
@@ -285,6 +304,7 @@ def view_get(invocation: Invocation) -> HandlerResult:
             kwargs["fields"] = document["fields"]
         with open_service(invocation) as (service, auth):
             data = service.call("mammoth.api.dataviews.DataviewsAPI.get", **kwargs)
+            parents.remember(_profile_name(invocation), auth.workspace_id, {view_id: dataset_id})
         return data, _meta(invocation, auth.workspace_id)
     context: dict[str, Any] = {"view_id": view_id}
     if dataset_id is not None:
@@ -297,7 +317,9 @@ def view_get(invocation: Invocation) -> HandlerResult:
         kwargs["dataset_id"] = dataset_id
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-    return _view_payload(data), _meta(invocation, auth.workspace_id)
+        payload = _view_payload(data)
+        parents.remember_records(_profile_name(invocation), auth.workspace_id, payload)
+    return payload, _meta(invocation, auth.workspace_id)
 
 
 def _view_payload(value: Any) -> Any:

@@ -199,7 +199,7 @@ def test_doctor_reports_visible_projects_and_selected_project(
     checks = {c["name"]: c for c in data["checks"]}
     assert checks["project_context"]["ok"] is False
     assert data["ok"] is False
-    assert "mammoth project list --output json --no-input" in data["recommendations"]
+    assert "mammoth project list" in data["recommendations"]
 
 
 def test_doctor_checks_the_run_log_directory(
@@ -229,3 +229,15 @@ def test_doctor_reports_installed_vs_latest_version(
     check = next(c for c in data["checks"] if c["name"] == "cli_version")
     assert check["ok"] is True
     assert "not reachable" in check["detail"]
+
+
+def test_doctor_names_a_disabled_update_check(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A disabled check is not an unreachable PyPI; the detail says which.
+    monkeypatch.setenv("MAMMOTH_NO_UPDATE_CHECK", "1")
+    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    check = next(c for c in data["checks"] if c["name"] == "cli_version")
+    assert check["ok"] is True
+    assert "update check disabled (MAMMOTH_NO_UPDATE_CHECK)" in check["detail"]
+    assert "not reachable" not in check["detail"]

@@ -1,12 +1,12 @@
 # Typed transformations and drafts
 
 ```bash
-mammoth schema find "convert type" --output json --no-input
-mammoth schema find "duplicate" --output json --no-input
-mammoth schema find "fill missing" --output json --no-input
-mammoth schema find "join" --output json --no-input
-mammoth schema get view.transform.join --output json --no-input
-mammoth view transform OPERATION VIEW_ID --project PROJECT_ID --input INPUT_JSON --output json --no-input
+mammoth schema find "convert type"
+mammoth schema find "duplicate"
+mammoth schema find "fill missing"
+mammoth schema find "join"
+mammoth schema get view.transform.join
+mammoth view transform OPERATION VIEW_ID --project PROJECT_ID --input INPUT_JSON
 ```
 
 Every `view transform *` and `view draft *` mutation needs the exact parent
@@ -27,11 +27,11 @@ lists them. Pick the operation by what it does, not by its name:
   on the existing column with an `IS_EMPTY` condition:
 
 ```bash
-mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID --output json --no-input   # before: note which rows have a blank revenue, and a few non-blank values
+mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID   # before: note which rows have a blank revenue, and a few non-blank values
 mammoth view transform set-values VIEW_ID --project PROJECT_ID \
   --input '{"dataset_id":DATASET_ID,"existing_column":"revenue","values":[{"value":0}],"condition":{"column":"revenue","operator":"IS_EMPTY"}}' \
-  --output json --no-input
-mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID --output json --no-input   # after
+ 
+mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID   # after
 ```
 
 Compare the two reads: the row count is unchanged, the rows that were blank
@@ -50,14 +50,14 @@ These examples use the released route IDs and input shapes documented by the
 command manifest; substitute only observed view IDs and display names:
 
 ```bash
-mammoth schema get view.transform.convert-type --output json --no-input
+mammoth schema get view.transform.convert-type
 mammoth view transform convert-type VIEW_ID --project PROJECT_ID \
   --input '{"dataset_id":DATASET_ID,"conversions":[{"column":"Amount","to":"NUMERIC"}]}' \
-  --output json --no-input
-mammoth schema get view.transform.math --output json --no-input
+ 
+mammoth schema get view.transform.math
 mammoth view transform math VIEW_ID --project PROJECT_ID \
   --input '{"dataset_id":DATASET_ID,"expression":"GDP / Population","new_column":"GDP per capita"}' \
-  --output json --no-input
+ 
 ```
 
 The released catalog exposes typed dedupe through `schema find duplicate` as
@@ -66,11 +66,11 @@ field before submitting. For a join, verify both schemas and
 expected multiplicity:
 
 ```bash
-mammoth schema get view.transform.discard-duplicates --output json --no-input
+mammoth schema get view.transform.discard-duplicates
 mammoth view transform discard-duplicates VIEW_ID --project PROJECT_ID \
-  --input '{"dataset_id":DATASET_ID,"ignore_columns":["ID"]}' --output json --no-input
-mammoth schema get view.transform.join --output json --no-input
-mammoth view transform join VIEW_ID --project PROJECT_ID --input INPUT_JSON --output json --no-input
+  --input '{"dataset_id":DATASET_ID,"ignore_columns":["ID"]}'
+mammoth schema get view.transform.join
+mammoth view transform join VIEW_ID --project PROJECT_ID --input INPUT_JSON
 ```
 
 ## Aggregate or summarise
@@ -96,11 +96,11 @@ name (`{"column": "monthly_target", "function": "MAX", "as_name": "target"}`)
 or use the SQL task with `MAX(monthly_target) AS monthly_target`.
 
 ```bash
-mammoth schema get view.transform.pivot --output json --no-input
+mammoth schema get view.transform.pivot
 mammoth view transform add-sql VIEW_ID --project PROJECT_ID \
   --input '{"dataset_id":DATASET_ID,"query":"SELECT region, SUM(amount) AS total_amount, COUNT(*) AS order_count FROM \"view:VIEW_ID\" GROUP BY region"}' \
-  --output json --no-input
-mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID --output json --no-input
+ 
+mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID
 ```
 
 Read the data back after every value-changing step (`view data get`, or

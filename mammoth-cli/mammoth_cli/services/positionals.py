@@ -411,6 +411,16 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="view.transform.bulk-replace",
         ),
     ),
+    "schema.list": (
+        PositionalSpec(
+            name="family",
+            type=str,
+            required=False,
+            help="Command family to list (e.g. view); omit for the family index.",
+            example_value="view",
+            falls_back_to_field="family",
+        ),
+    ),
     "schema.find": (
         PositionalSpec(
             name="query",

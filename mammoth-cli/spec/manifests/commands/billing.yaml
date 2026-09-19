@@ -23,7 +23,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing chargebee-plan --help
-  agent_example: mammoth billing chargebee-plan --output json --no-input
+  agent_example: mammoth billing chargebee-plan
   unit_tests:
   - UT-BILLING-CHARGEBEE-PLAN
   contract_tests:
@@ -63,7 +63,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing hosted-page --help
-  agent_example: mammoth billing hosted-page sample --output json --no-input
+  agent_example: mammoth billing hosted-page sample
   unit_tests:
   - UT-BILLING-HOSTED-PAGE
   contract_tests:
@@ -97,7 +97,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing invoice charge --help
-  agent_example: mammoth billing invoice charge --output json --no-input
+  agent_example: mammoth billing invoice charge
   unit_tests:
   - UT-BILLING-INVOICE-CHARGE
   contract_tests:
@@ -137,7 +137,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing invoice get INVOICE_ID --help
-  agent_example: mammoth billing invoice get 123 --output json --no-input
+  agent_example: mammoth billing invoice get 123
   unit_tests:
   - UT-BILLING-INVOICE-GET
   contract_tests:
@@ -171,7 +171,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing invoice list --help
-  agent_example: mammoth billing invoice list --output json --no-input
+  agent_example: mammoth billing invoice list
   unit_tests:
   - UT-BILLING-INVOICE-LIST
   contract_tests:
@@ -205,7 +205,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe cancel --help
-  agent_example: mammoth billing stripe cancel --output json --no-input
+  agent_example: mammoth billing stripe cancel
   unit_tests:
   - UT-BILLING-STRIPE-CANCEL
   contract_tests:
@@ -240,7 +240,7 @@ commands:
   secret_fields: []
   human_example: mammoth billing stripe checkout-url --help
   agent_example: 'mammoth billing stripe checkout-url --input ''{"success_url": "https://example.com/data.csv",
-    "cancel_url": "https://example.com/data.csv"}'' --output json --no-input'
+    "cancel_url": "https://example.com/data.csv"}'''
   unit_tests:
   - UT-BILLING-STRIPE-CHECKOUT-URL
   contract_tests:
@@ -280,7 +280,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe create PLAN_ID --help
-  agent_example: mammoth billing stripe create 123 --output json --no-input
+  agent_example: mammoth billing stripe create 123
   unit_tests:
   - UT-BILLING-STRIPE-CREATE
   contract_tests:
@@ -314,7 +314,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe end-trial --help
-  agent_example: mammoth billing stripe end-trial --output json --no-input
+  agent_example: mammoth billing stripe end-trial
   unit_tests:
   - UT-BILLING-STRIPE-END-TRIAL
   contract_tests:
@@ -348,7 +348,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe get --help
-  agent_example: mammoth billing stripe get --output json --no-input
+  agent_example: mammoth billing stripe get
   unit_tests:
   - UT-BILLING-STRIPE-GET
   contract_tests:
@@ -382,7 +382,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe history --help
-  agent_example: mammoth billing stripe history --output json --no-input
+  agent_example: mammoth billing stripe history
   unit_tests:
   - UT-BILLING-STRIPE-HISTORY
   contract_tests:
@@ -423,7 +423,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe payment-method delete PAYMENT_METHOD_ID --help
-  agent_example: mammoth billing stripe payment-method delete resource-123 --output json --no-input
+  agent_example: mammoth billing stripe payment-method delete resource-123
   unit_tests:
   - UT-BILLING-STRIPE-PAYMENT-METHOD-DELETE
   contract_tests:
@@ -458,7 +458,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe payment-method list --help
-  agent_example: mammoth billing stripe payment-method list --output json --no-input
+  agent_example: mammoth billing stripe payment-method list
   unit_tests:
   - UT-BILLING-STRIPE-PAYMENT-METHOD-LIST
   contract_tests:
@@ -499,7 +499,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe payment-method set-default PAYMENT_METHOD_ID --help
-  agent_example: mammoth billing stripe payment-method set-default resource-123 --output json --no-input
+  agent_example: mammoth billing stripe payment-method set-default resource-123
   unit_tests:
   - UT-BILLING-STRIPE-PAYMENT-METHOD-SET-DEFAULT
   contract_tests:
@@ -533,7 +533,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe portal-url --help
-  agent_example: mammoth billing stripe portal-url --output json --no-input
+  agent_example: mammoth billing stripe portal-url
   unit_tests:
   - UT-BILLING-STRIPE-PORTAL-URL
   contract_tests:
@@ -567,7 +567,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe preview-invoice --help
-  agent_example: mammoth billing stripe preview-invoice --output json --no-input
+  agent_example: mammoth billing stripe preview-invoice
   unit_tests:
   - UT-BILLING-STRIPE-PREVIEW-INVOICE
   contract_tests:
@@ -601,7 +601,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe retry-payment --help
-  agent_example: mammoth billing stripe retry-payment --output json --no-input
+  agent_example: mammoth billing stripe retry-payment
   unit_tests:
   - UT-BILLING-STRIPE-RETRY-PAYMENT
   contract_tests:
@@ -635,7 +635,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe status --help
-  agent_example: mammoth billing stripe status --output json --no-input
+  agent_example: mammoth billing stripe status
   unit_tests:
   - UT-BILLING-STRIPE-STATUS
   contract_tests:
@@ -669,7 +669,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe sync --help
-  agent_example: mammoth billing stripe sync --output json --no-input
+  agent_example: mammoth billing stripe sync
   unit_tests:
   - UT-BILLING-STRIPE-SYNC
   contract_tests:
@@ -703,7 +703,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe upcoming-invoice --help
-  agent_example: mammoth billing stripe upcoming-invoice --output json --no-input
+  agent_example: mammoth billing stripe upcoming-invoice
   unit_tests:
   - UT-BILLING-STRIPE-UPCOMING-INVOICE
   contract_tests:
@@ -737,7 +737,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe usage --help
-  agent_example: mammoth billing stripe usage --output json --no-input
+  agent_example: mammoth billing stripe usage
   unit_tests:
   - UT-BILLING-STRIPE-USAGE
   contract_tests:
@@ -771,7 +771,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing subscription get --help
-  agent_example: mammoth billing subscription get --output json --no-input
+  agent_example: mammoth billing subscription get
   unit_tests:
   - UT-BILLING-SUBSCRIPTION-GET
   contract_tests:
@@ -805,8 +805,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing subscription update --help
-  agent_example: 'mammoth billing subscription update --input ''{"patch": [{"sample_key": "Status"}]}''
-    --output json --no-input'
+  agent_example: 'mammoth billing subscription update --input ''{"patch": [{"sample_key": "Status"}]}'''
   unit_tests:
   - UT-BILLING-SUBSCRIPTION-UPDATE
   contract_tests:

@@ -2,19 +2,22 @@
 
 ## Success envelope (stdout)
 ```json
-{"schema_version": 1, "data": <result>, "meta": {"command": "project list", "profile": "default", "workspace_id": 4, "project_id": 180, "pagination": null, "update_available": null}}
+{"schema_version":1,"data":<result>,"meta":{"command":"project list","profile":"default","workspace_id":4,"project_id":180}}
 ```
 
-`meta.update_available` is `null` or `{"current", "latest", "command"}` when a
-newer CLI is on PyPI (checked once a day, after a command, never blocking).
-Run its `command` before starting a task, not in the middle of one.
+Compact single-line JSON when stdout is not a terminal (pretty when it is;
+`MAMMOTH_JSON_PRETTY=1` forces pretty). `meta` carries only the keys that have a
+value: `pagination` appears on paged reads, `update_available`
+(`{"current", "latest", "command"}`) when a newer CLI is on PyPI (checked once
+a day, after a command, never blocking). Run its `command` before starting a
+task, not in the middle of one.
 
 ## Error envelope (stderr)
 ```json
 {"schema_version": 1, "error": {"code": "resource_not_found", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": ["..."], "log_ref": {"file": ".../logs/2026-09-19.jsonl", "run_id": "b6bc6bf6d166"}}}
 ```
 
-`log_ref` points at the local run log: `mammoth log tail --input '{"run_id": "RUN_ID"}' --output json --no-input` lists every request that invocation made, with HTTP status and backend `request_id`. Quote both when reporting a backend fault.
+`log_ref` points at the local run log: `mammoth log tail --input '{"run_id": "RUN_ID"}'` lists every request that invocation made, with HTTP status and backend `request_id`. Quote both when reporting a backend fault.
 
 ## Representative result keys
 
@@ -25,8 +28,8 @@ The following are illustrative envelope shapes. They show keys, not a universal
 result schema; dashboard and transform result fields remain schema-driven.
 
 ```json
-{"schema_version":1,"data":{"id":5,"ds_id":5,"name":"View 1","row_count":51,"status":"ready","metadata":[{"display_name":"store_id","internal_name":"column_1","type":"TEXT"}]},"meta":{"command":"view get","pagination":null,"profile":"expanded-live","project_id":null,"workspace_id":4}}
-{"schema_version":1,"data":{"output_path":"dataview_12_12_export.csv"},"meta":{"command":"view export csv","pagination":null,"profile":"expanded-live","project_id":null,"workspace_id":4}}
+{"schema_version":1,"data":{"id":5,"ds_id":5,"name":"View 1","row_count":51,"status":"ready","metadata":[{"display_name":"store_id","internal_name":"column_1","type":"TEXT"}]},"meta":{"command":"view get","profile":"expanded-live","workspace_id":4}}
+{"schema_version":1,"data":{"output_path":"dataview_12_12_export.csv"},"meta":{"command":"view export csv","profile":"expanded-live","workspace_id":4}}
 ```
 
 For pagination, preserve the returned `meta.pagination`/`data.next` cursor and

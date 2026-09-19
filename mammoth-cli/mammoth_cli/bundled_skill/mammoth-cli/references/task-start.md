@@ -19,19 +19,18 @@ or secrets in an argument, prompt, transcript, or checkpoint.
    your own initiative. The SDK (`mammoth-io`) comes with the CLI. If a later
    envelope shows `meta.update_available`, run the `command` it names before
    the next task step, then continue on the new version.
-2. Locate the installed guidance with `mammoth skill path --output json
-   --no-input` and read `SKILL.md`; open a reference only when the routing
+2. Locate the installed guidance with `mammoth skill path` and read `SKILL.md`; open a reference only when the routing
    table sends you there. `references/commands/*.md` are per-command lookups,
    not upfront reading. If a skill install is required for the agent host,
-   run `mammoth skill install --output json --no-input` and verify ownership
-   with `mammoth skill list --output json --no-input`.
+   run `mammoth skill install` and verify ownership
+   with `mammoth skill list`.
 3. Establish authentication before any remote read or write. Determine the
    intended environment from the task first: production defaults to the `app` endpoint;
    use `release` only when the task explicitly names release. Then inspect the
    selected profile without attempting business work:
 
    ```bash
-   mammoth auth status --output json --no-input
+   mammoth auth status
    ```
 
    Compare the status response's `endpoint` with the intended environment. If
@@ -42,7 +41,7 @@ or secrets in an argument, prompt, transcript, or checkpoint.
    configuration check and require success:
 
    ```bash
-   mammoth doctor --profile PROFILE --output json --no-input
+   mammoth doctor --profile PROFILE
    ```
 
    Do not print, echo, or copy secret-bearing inputs. A failed status, login,
@@ -55,14 +54,14 @@ or secrets in an argument, prompt, transcript, or checkpoint.
    it. Then resolve workspace/project/dataset/view
    parents with reads. Use display names returned by the exact view schema.
 5. Translate the business intent into a plan the agent chooses. Submit only
-   supported operations with explicit `--project` (and other returned parents),
-   structured `--input`, `--output json`, and `--no-input`. Do not use private
+   supported operations against the active project (`project ensure` sets it;
+   `--project` overrides) with structured `--input`. Do not use private
    HTTP/SDK escape hatches or local data processing as a substitute.
    For pipeline transformations, prefer the typed `mammoth view transform
    <operation>` commands. Useful typed alternatives include
    `view.transform.filter`, `view.transform.math`, and
    `view.transform.substring`; inspect one with
-   `mammoth schema get view.transform.filter --output json --no-input` before
+   `mammoth schema get view.transform.filter` before
    composing its input. The generic `view task add`, `view task preview`, and
    `view task update` routes expose an opaque `task_spec` object in the current
    schema. Prefer typed `view transform <operation>` routes. Use a low-level

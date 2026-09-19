@@ -255,6 +255,11 @@ _PILOT_ADAPTER_INPUTS: dict[str, frozenset[str]] = {
 # values that may cross the structured-input boundary.
 _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     "project.ensure": (FieldSpec("name", required=False, annotation=str),),
+    "schema.get": (FieldSpec("full", required=False, annotation=bool, default=False),),
+    "schema.list": (
+        FieldSpec("family", required=False, annotation=str | None, default=None),
+        FieldSpec("full", required=False, annotation=bool, default=False),
+    ),
     "auth.login": (
         FieldSpec("api_key", required=True, annotation=str),
         FieldSpec("api_secret", required=True, annotation=str),
@@ -570,6 +575,9 @@ S7_COMMANDS = frozenset(
 # admission, and handler binding agree instead of treating every arbitrary
 # keyword as valid.
 _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
+    # The GET data route has no server-side page size; the CLI trims the row
+    # list so a read-back costs a screen of tokens, not the whole view.
+    "view.data.get": (FieldSpec("limit", required=False, annotation=int, default=50),),
     "activity.list": (
         FieldSpec("project_id", required=False, annotation=int | None, default=None),
         FieldSpec("workspace_id", required=False, annotation=int | None, default=None),

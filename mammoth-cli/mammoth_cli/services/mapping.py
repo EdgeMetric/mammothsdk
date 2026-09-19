@@ -37,6 +37,8 @@ from mammoth_cli.errors.envelope import (
     interrupted_error,
 )
 
+_RETRYABLE_READ_STATUSES = frozenset({408, 425, 429, 502, 503, 504})
+
 
 def _metadata(exc: MammothAPIError) -> dict[str, Any]:
     """Copy only safe, bounded recovery metadata from an SDK exception."""
@@ -99,8 +101,8 @@ def _is_known_read(method: object) -> bool:
 def _job_recovery(job_id: object, *, profile: str | None = None) -> list[str]:
     profile_option = f" --profile {shlex.quote(profile)}" if profile else ""
     return [
-        f"mammoth job get {job_id}{profile_option} --output json --no-input",
-        f"mammoth job wait {job_id}{profile_option} --output json --no-input",
+        f"mammoth job get {job_id}{profile_option}",
+        f"mammoth job wait {job_id}{profile_option}",
     ]
 
 
@@ -207,13 +209,13 @@ def map_sdk_exception(
                 recovery = [
                     f"mammoth view task get {dataview_id} {task_id} --project {recovery_project_id}"
                     f"{' --profile ' + shlex.quote(profile) if profile else ''} "
-                    f"--input '{{\"dataset_id\": {dataset_id}}}' --output json --no-input"
+                    f"--input '{{\"dataset_id\": {dataset_id}}}'"
                 ]
             elif not recovery and valid_scope:
                 recovery = [
                     f"mammoth view pipeline items-all {dataview_id} --project {recovery_project_id}"
                     f"{' --profile ' + shlex.quote(profile) if profile else ''} "
-                    f"--input '{{\"dataset_id\": {dataset_id}}}' --output json --no-input"
+                    f"--input '{{\"dataset_id\": {dataset_id}}}'"
                 ]
 
         # A complete destination was intentionally not published by the SDK
@@ -312,7 +314,9 @@ def map_sdk_exception(
                 request_id=request_id,
                 recovery_commands=recovery,
             )
-        if status in {429, 503} or (status is None and _is_known_read(method)):
+        # A read that hit a gateway or capacity limit (502/504 from the edge,
+        # 503, 429, 408/425) has no effect to reconcile: retry it.
+        if status in _RETRYABLE_READ_STATUSES or (status is None and _is_known_read(method)):
             return CliError(
                 code=CODE_RETRYABLE,
                 message="Mammoth is temporarily unavailable or the request timed out.",

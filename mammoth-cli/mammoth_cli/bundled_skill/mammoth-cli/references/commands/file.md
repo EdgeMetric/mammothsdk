@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `file.bulk-delete`
 
-Run: `mammoth file bulk-delete`. Exact input fields: `mammoth schema get file.bulk-delete --output json --no-input`.
+Run: `mammoth file bulk-delete`. Exact input fields: `mammoth schema get file.bulk-delete`.
 
-Example: `mammoth file bulk-delete --input '{"file_ids": [1]}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth file bulk-delete --input '{"file_ids": [1]}'`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `FileBulkDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 ### `file.delete`
 
-Run: `mammoth file delete`. Exact input fields: `mammoth schema get file.delete --output json --no-input`.
+Run: `mammoth file delete`. Exact input fields: `mammoth schema get file.delete`.
 
-Example: `mammoth file delete 123 --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth file delete 123`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `FileDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -24,9 +24,9 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 ### `file.extract-sheets`
 
-Run: `mammoth file extract-sheets`. Exact input fields: `mammoth schema get file.extract-sheets --output json --no-input`.
+Run: `mammoth file extract-sheets`. Exact input fields: `mammoth schema get file.extract-sheets`.
 
-Example: `mammoth file extract-sheets 123 --input '{"sheets": ["sample"]}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth file extract-sheets 123 --input '{"sheets": ["sample"]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FileExtractSheetsResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -34,9 +34,9 @@ Status on release: untried; no live run recorded.
 
 ### `file.get`
 
-Run: `mammoth file get`. Exact input fields: `mammoth schema get file.get --output json --no-input`.
+Run: `mammoth file get`. Exact input fields: `mammoth schema get file.get`.
 
-Example: `mammoth file get 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth file get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FileGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -44,9 +44,9 @@ Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.
 
 ### `file.list`
 
-Run: `mammoth file list`. Exact input fields: `mammoth schema get file.list --output json --no-input`.
+Run: `mammoth file list`. Exact input fields: `mammoth schema get file.list`.
 
-Example: `mammoth file list --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth file list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FileListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -54,9 +54,9 @@ Status on release: ran once on CLI an earlier release — Bounded release read i
 
 ### `file.set-password`
 
-Run: `mammoth file set-password`. Exact input fields: `mammoth schema get file.set-password --output json --no-input`.
+Run: `mammoth file set-password`. Exact input fields: `mammoth schema get file.set-password`.
 
-Example: `mammoth file set-password 123 --input /private/path/request.json --output json --no-input`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth file set-password 123 --input /private/path/request.json`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
@@ -66,9 +66,9 @@ Status on release: untried; no live run recorded.
 
 ### `file.update`
 
-Run: `mammoth file update`. Exact input fields: `mammoth schema get file.update --output json --no-input`.
+Run: `mammoth file update`. Exact input fields: `mammoth schema get file.update`.
 
-Example: `mammoth file update 123 --input '{"patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "sample"}]}}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth file update 123 --input '{"patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "sample"}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FileUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -76,9 +76,9 @@ Status on release: observed blocker — backend_error: CLI accepted the typed pa
 
 ### `file.upload`
 
-Run: `mammoth file upload`. Exact input fields: `mammoth schema get file.upload --output json --no-input`.
+Run: `mammoth file upload`. Exact input fields: `mammoth schema get file.upload`.
 
-Example: `mammoth file upload ./sales.csv --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth file upload ./sales.csv`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FileUploadResult`; mutation `benign_mutation`, confirmation `none`, wait policy `start_or_wait`.
 
@@ -86,9 +86,9 @@ Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 
 
 ### `file.upload-folder`
 
-Run: `mammoth file upload-folder`. Exact input fields: `mammoth schema get file.upload-folder --output json --no-input`.
+Run: `mammoth file upload-folder`. Exact input fields: `mammoth schema get file.upload-folder`.
 
-Example: `mammoth file upload-folder ./sales.csv --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth file upload-folder ./sales.csv`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `FileUploadFolderResult`; mutation `benign_mutation`, confirmation `none`, wait policy `start_or_wait`.
 

@@ -25,6 +25,7 @@ from typing import Any
 
 from mammoth.view import ViewExport
 
+from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -35,6 +36,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.runtime import parents
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
     POLICY_PROMPT_OR_YES,
@@ -164,8 +166,19 @@ def _resolve_dataset_id(
     field = document.get(_DATASET_ID_FIELD)
     if field is not None:
         return int(field)
+    profile_name = _profile_name(invocation)
+    workspace_id = getattr(service, "_workspace_id", None)
+    remembered = parents.lookup(profile_name, workspace_id, view_id)
+    if remembered is not None:
+        return remembered
     _require_discovery_allowed(invocation, view_id)
-    return int(service.call(_FIND_DATASET_SYMBOL, dataview_id=view_id))
+    dataset_id = int(service.call(_FIND_DATASET_SYMBOL, dataview_id=view_id))
+    parents.remember(profile_name, workspace_id, {view_id: dataset_id})
+    return dataset_id
+
+
+def _profile_name(invocation: Invocation) -> str:
+    return invocation.profile or profiles.get_selected()
 
 
 def _require_discovery_allowed(invocation: Invocation, view_id: int) -> None:
@@ -182,7 +195,7 @@ def _require_discovery_allowed(invocation: Invocation, view_id: int) -> None:
     if record.get("mutation_class", "read") == "read":
         return
     project = f" --project {invocation.project}" if invocation.project else ""
-    lookup = f"mammoth view get {view_id}{project} --output json --no-input"
+    lookup = f"mammoth view get {view_id}{project}"
     takes_positional = any(
         positional.get("name") == "dataset_id" for positional in record.get("positionals", [])
     )
@@ -227,6 +240,9 @@ def view_list(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("limit", "sort"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+        parents.remember_records(
+            _profile_name(invocation), auth.workspace_id, data, project_id=project_id
+        )
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
@@ -524,8 +540,8 @@ def view_update(invocation: Invocation) -> HandlerResult:
             "typed_alternatives": [],
         },
         recovery_commands=[
-            "mammoth schema find view --output json --no-input",
-            "mammoth schema get view.update --output json --no-input",
+            "mammoth schema find view",
+            "mammoth schema get view.update",
         ],
     )
 
@@ -546,10 +562,42 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
             "dataview_id": view_id,
             "project_id": project_id,
         }
-        _forward_optional(document, kwargs, ("timeout", "poll_interval"))
+        _forward_optional(document, kwargs, ("timeout", "poll_interval", "sequence"))
         data = service.call(_symbol(invocation), **kwargs)
         data = _relabel_columns(service, dataset_id, view_id, project_id, data)
-    return data, _meta(invocation, auth.workspace_id, project_id)
+    return _trim_rows(data, document.get("limit", _DATA_GET_DEFAULT_LIMIT)), _meta(
+        invocation, auth.workspace_id, project_id
+    )
+
+
+#: Rows a plain ``view data get`` returns unless ``limit`` says otherwise.
+_DATA_GET_DEFAULT_LIMIT = 50
+
+
+def _trim_rows(data: Any, limit: Any) -> Any:
+    """Keep the first ``limit`` rows of a data page and say what was cut.
+
+    The route returns every row of the view; an agent reading back a
+    transform needs a sample and the total. ``limit`` 0 or a negative value
+    means "all rows".
+    """
+    if not isinstance(data, dict) or not isinstance(data.get(_ROWS_KEY), list):
+        return data
+    try:
+        cap = int(limit)
+    except (TypeError, ValueError):
+        cap = _DATA_GET_DEFAULT_LIMIT
+    rows = data[_ROWS_KEY]
+    total = len(rows)
+    if cap <= 0 or total <= cap:
+        return {**data, "rows_returned": total, "rows_total_in_page": total, "truncated": False}
+    return {
+        **data,
+        _ROWS_KEY: rows[:cap],
+        "rows_returned": cap,
+        "rows_total_in_page": total,
+        "truncated": True,
+    }
 
 
 def view_data_query(invocation: Invocation) -> HandlerResult:

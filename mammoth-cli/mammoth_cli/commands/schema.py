@@ -34,7 +34,10 @@ from mammoth_cli.services.openapi_types import openapi_body_schema_for, sample_f
 from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
 from mammoth_cli.services.type_system import is_opaque_mapping, json_schema, sample_value
 
-_OUTPUT_JSON_NO_INPUT = ("--output", "json", "--no-input")
+# Agent examples carry no ``--output json --no-input``: a piped run already
+# gets machine JSON and never prompts, and ``MAMMOTH_OUTPUT``/``MAMMOTH_NO_INPUT``
+# cover a session that is not piped.
+_OUTPUT_JSON_NO_INPUT: tuple[str, ...] = ()
 # A command whose request carries a secret never gets an inline JSON example:
 # the published example points at a protected owner-only file instead, so no
 # generated or copied command line ever puts a credential in argv.
@@ -292,21 +295,26 @@ def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
     search_text = f"{command_id} {family} {operation_hints}".casefold()
     if family == "dashboard" and command_id.startswith("dashboard.tags."):
         scope = "workspace"
-    elif command_id == "ai.retention.condition" or "{project_id}" in search_text or family in {
-        "project",
-        "dataset",
-        "file",
-        "folder",
-        "view",
-        "batch",
-        "annotation",
-        "dashboard",
-        "automation",
-        "schedule",
-        "snippet",
-        "template",
-        "workflow",
-    }:
+    elif (
+        command_id == "ai.retention.condition"
+        or "{project_id}" in search_text
+        or family
+        in {
+            "project",
+            "dataset",
+            "file",
+            "folder",
+            "view",
+            "batch",
+            "annotation",
+            "dashboard",
+            "automation",
+            "schedule",
+            "snippet",
+            "template",
+            "workflow",
+        }
+    ):
         scope = "project"
     elif "{workspace_id}" in search_text or family in {
         "workspace",
@@ -365,9 +373,9 @@ def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
         "recovery": recovery,
         "limits": {
             "pagination": record.get("pagination_policy"),
-            "continuation": "not_proven"
-            if record.get("pagination_policy") not in {None, "none"}
-            else None,
+            "continuation": (
+                "not_proven" if record.get("pagination_policy") not in {None, "none"} else None
+            ),
         },
     }
 
@@ -406,7 +414,7 @@ def runnable_example(
 
     Returns:
         A ``mammoth ...`` command line covering every required positional and
-        required ``--input`` field, plus ``--output json --no-input``; or None
+        required ``--input`` field; or None
         when the command has no resolvable backing signature.
     """
     if not symbol:
@@ -419,11 +427,14 @@ def runnable_example(
     if record["command_id"] == "ai.retention.condition":
         return shlex.join(
             [
-                "mammoth", *record["command_path"].split(), "123",
+                "mammoth",
+                *record["command_path"].split(),
+                "123",
                 "--input",
                 json.dumps({"mode": "generate", "intent": "completed payments older than 90 days"}),
                 *_OUTPUT_JSON_NO_INPUT,
-                "--project", "456",
+                "--project",
+                "456",
             ]
         )
     if record["command_id"] == "dashboard.import-workbook":
@@ -485,8 +496,12 @@ def runnable_example(
     if record["command_id"] == "batch.create-spec":
         return shlex.join(
             [
-                "mammoth", *record["command_path"].split(), "123",
-                "--input", json.dumps({"file_id": 94}), *_OUTPUT_JSON_NO_INPUT,
+                "mammoth",
+                *record["command_path"].split(),
+                "123",
+                "--input",
+                json.dumps({"file_id": 94}),
+                *_OUTPUT_JSON_NO_INPUT,
             ]
         )
     if record["command_id"] == "view.exportable-config.get":
@@ -512,40 +527,69 @@ def runnable_example(
     if record["command_id"] == "dashboard.tags.rename":
         return shlex.join(
             [
-                "mammoth", *record["command_path"].split(), "123",
-                "--input", json.dumps({"name": "Revenue"}),
-                *_OUTPUT_JSON_NO_INPUT, "--yes", "--confirm", "123",
+                "mammoth",
+                *record["command_path"].split(),
+                "123",
+                "--input",
+                json.dumps({"name": "Revenue"}),
+                *_OUTPUT_JSON_NO_INPUT,
+                "--yes",
+                "--confirm",
+                "123",
             ]
         )
     if record["command_id"] == "dashboard.tags.set":
         return shlex.join(
             [
-                "mammoth", *record["command_path"].split(), "123",
-                "--input", json.dumps({"tags": ["Revenue"]}),
-                *_OUTPUT_JSON_NO_INPUT, "--yes", "--confirm", "123",
+                "mammoth",
+                *record["command_path"].split(),
+                "123",
+                "--input",
+                json.dumps({"tags": ["Revenue"]}),
+                *_OUTPUT_JSON_NO_INPUT,
+                "--yes",
+                "--confirm",
+                "123",
             ]
         )
     if record["command_id"] == "dashboard.tags.delete":
         return shlex.join(
             [
-                "mammoth", *record["command_path"].split(), "123",
-                *_OUTPUT_JSON_NO_INPUT, "--yes", "--confirm", "123",
+                "mammoth",
+                *record["command_path"].split(),
+                "123",
+                *_OUTPUT_JSON_NO_INPUT,
+                "--yes",
+                "--confirm",
+                "123",
             ]
         )
     if record["command_id"] == "dashboard.tags.merge":
         return shlex.join(
             [
-                "mammoth", *record["command_path"].split(), "123",
-                "--input", json.dumps({"target_id": 456}),
-                *_OUTPUT_JSON_NO_INPUT, "--yes", "--confirm", "123",
+                "mammoth",
+                *record["command_path"].split(),
+                "123",
+                "--input",
+                json.dumps({"target_id": 456}),
+                *_OUTPUT_JSON_NO_INPUT,
+                "--yes",
+                "--confirm",
+                "123",
             ]
         )
     if record["command_id"] == "dashboard.archive":
         return shlex.join(
             [
-                "mammoth", *record["command_path"].split(), "123",
-                "--input", json.dumps({"archived": True}),
-                *_OUTPUT_JSON_NO_INPUT, "--yes", "--confirm", "123",
+                "mammoth",
+                *record["command_path"].split(),
+                "123",
+                "--input",
+                json.dumps({"archived": True}),
+                *_OUTPUT_JSON_NO_INPUT,
+                "--yes",
+                "--confirm",
+                "123",
             ]
         )
     contract = resolve_command_contract(str(record["command_id"]))
@@ -772,9 +816,7 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
     contract_level = (
         "opaque_expert"
         if record["command_id"] in _OPAQUE_EXPERT_COMMANDS
-        else "partially_typed"
-        if opaque_fields
-        else "typed"
+        else "partially_typed" if opaque_fields else "typed"
     )
     return {
         "positionals": _positionals(record["command_id"]),
@@ -819,6 +861,75 @@ def schema_entries() -> list[dict[str, Any]]:
             }
         )
     return sorted(entries, key=lambda entry: entry["command_id"])
+
+
+#: ``schema get`` fields an agent needs to compose one call. The rest of the
+#: record (JSON Schema, exit-code table, recovery boilerplate) is static or
+#: duplicated and comes back only with ``full``.
+_BRIEF_SCHEMA_KEYS = (
+    "command_id",
+    "command_path",
+    "positionals",
+    "accepted_fields",
+    "agent_example",
+    "mutation_class",
+    "confirmation",
+    "wait_policy",
+    "scope",
+    "scope_requirements",
+    "preconditions",
+    "secret_fields",
+    "safe_typed_alternatives",
+)
+
+
+def schema_index(family: str | None = None) -> dict[str, Any]:
+    """Return the command index: families with counts, or one family's commands.
+
+    The complete per-command records (``schema_entries``) run to megabytes;
+    an agent choosing a command needs names and mutation classes, then one
+    ``schema get`` for the command it picked.
+    """
+    entries = schema_entries()
+    if family:
+        wanted = family.strip().split(".")[0].split()[0]
+        commands = [
+            {
+                "command_id": entry["command_id"],
+                "command_path": entry["command_path"],
+                "mutation_class": entry["mutation_class"],
+                "confirmation": entry["confirmation"],
+            }
+            for entry in entries
+            if entry["command_path"].split()[0] == wanted
+        ]
+        return {"family": wanted, "total": len(commands), "commands": commands}
+    counts: dict[str, int] = {}
+    for entry in entries:
+        counts[entry["command_path"].split()[0]] = (
+            counts.get(entry["command_path"].split()[0], 0) + 1
+        )
+    return {
+        "total": len(entries),
+        "families": [{"family": name, "commands": count} for name, count in sorted(counts.items())],
+        "next": "mammoth schema list FAMILY, then mammoth schema get COMMAND_ID",
+    }
+
+
+def brief_schema(entry: dict[str, Any]) -> dict[str, Any]:
+    """Reduce a full ``schema get`` record to what composing one call needs."""
+    brief = {key: entry[key] for key in _BRIEF_SCHEMA_KEYS if key in entry}
+    accepted = brief.get("accepted_fields")
+    if isinstance(accepted, list):
+        # Type and requirement are what a caller reads; the per-field JSON
+        # Schema is available under ``full``.
+        brief["accepted_fields"] = [
+            {key: value for key, value in field.items() if key != "schema"}
+            for field in accepted
+            if isinstance(field, dict)
+        ]
+    brief["full"] = f"mammoth schema get {entry['command_id']} --input '{{\"full\": true}}'"
+    return brief
 
 
 def find_schemas(
@@ -898,9 +1009,7 @@ def find_schemas(
                         "command_path": command_path,
                         "mutation_class": record["mutation_class"],
                         "confirmation": record["confirmation"],
-                        "full_schema_command": (
-                            f"mammoth schema get {command_id} --output json --no-input"
-                        ),
+                        "full_schema_command": (f"mammoth schema get {command_id}"),
                     },
                 )
             )

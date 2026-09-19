@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `workflow.block.add`
 
-Run: `mammoth workflow block add`. Exact input fields: `mammoth schema get workflow.block.add --output json --no-input`.
+Run: `mammoth workflow block add`. Exact input fields: `mammoth schema get workflow.block.add`.
 
-Example: `mammoth workflow block add 123 --input '{"block_type": "sample"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow block add 123 --input '{"block_type": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowBlockAddResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: untried; no live run recorded.
 
 ### `workflow.block.auth`
 
-Run: `mammoth workflow block auth`. Exact input fields: `mammoth schema get workflow.block.auth --output json --no-input`.
+Run: `mammoth workflow block auth`. Exact input fields: `mammoth schema get workflow.block.auth`.
 
-Example: `mammoth workflow block auth 123 123 --input '{"auth_data": {"sample_key": "Status"}}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow block auth 123 123 --input '{"auth_data": {"sample_key": "Status"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowBlockAuthResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -24,9 +24,9 @@ Status on release: untried; no live run recorded.
 
 ### `workflow.block.config`
 
-Run: `mammoth workflow block config`. Exact input fields: `mammoth schema get workflow.block.config --output json --no-input`.
+Run: `mammoth workflow block config`. Exact input fields: `mammoth schema get workflow.block.config`.
 
-Example: `mammoth workflow block config 123 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow block config 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowBlockConfigResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -34,9 +34,9 @@ Status on release: untried; no live run recorded.
 
 ### `workflow.block.type`
 
-Run: `mammoth workflow block type`. Exact input fields: `mammoth schema get workflow.block.type --output json --no-input`.
+Run: `mammoth workflow block type`. Exact input fields: `mammoth schema get workflow.block.type`.
 
-Example: `mammoth workflow block type 123 123 --input '{"connection_type": "sample"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow block type 123 123 --input '{"connection_type": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowBlockTypeResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -44,9 +44,9 @@ Status on release: untried; no live run recorded.
 
 ### `workflow.canvas`
 
-Run: `mammoth workflow canvas`. Exact input fields: `mammoth schema get workflow.canvas --output json --no-input`.
+Run: `mammoth workflow canvas`. Exact input fields: `mammoth schema get workflow.canvas`.
 
-Example: `mammoth workflow canvas 123 --input '{"canvas_state": {"sample_key": "Status"}}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow canvas 123 --input '{"canvas_state": {"sample_key": "Status"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowCanvasResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -54,9 +54,9 @@ Status on release: untried; no live run recorded.
 
 ### `workflow.cleanup`
 
-Run: `mammoth workflow cleanup`. Exact input fields: `mammoth schema get workflow.cleanup --output json --no-input`.
+Run: `mammoth workflow cleanup`. Exact input fields: `mammoth schema get workflow.cleanup`.
 
-Example: `mammoth workflow cleanup --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow cleanup`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowCleanupResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -64,9 +64,9 @@ Status on release: untried; no live run recorded.
 
 ### `workflow.create`
 
-Run: `mammoth workflow create`. Exact input fields: `mammoth schema get workflow.create --output json --no-input`.
+Run: `mammoth workflow create`. Exact input fields: `mammoth schema get workflow.create`.
 
-Example: `mammoth workflow create 'Revenue report' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow create 'Revenue report'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -74,9 +74,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `workflow.delete`
 
-Run: `mammoth workflow delete`. Exact input fields: `mammoth schema get workflow.delete --output json --no-input`.
+Run: `mammoth workflow delete`. Exact input fields: `mammoth schema get workflow.delete`.
 
-Example: `mammoth workflow delete 123 --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth workflow delete 123`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `WorkflowDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -84,9 +84,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `workflow.from-template`
 
-Run: `mammoth workflow from-template`. Exact input fields: `mammoth schema get workflow.from-template --output json --no-input`.
+Run: `mammoth workflow from-template`. Exact input fields: `mammoth schema get workflow.from-template`.
 
-Example: `mammoth workflow from-template 123 --input '{"workflow_name": "Revenue report"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow from-template 123 --input '{"workflow_name": "Revenue report"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowFromTemplateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -94,9 +94,9 @@ Status on release: untried; no live run recorded.
 
 ### `workflow.get`
 
-Run: `mammoth workflow get`. Exact input fields: `mammoth schema get workflow.get --output json --no-input`.
+Run: `mammoth workflow get`. Exact input fields: `mammoth schema get workflow.get`.
 
-Example: `mammoth workflow get 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -104,9 +104,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `workflow.graph`
 
-Run: `mammoth workflow graph`. Exact input fields: `mammoth schema get workflow.graph --output json --no-input`.
+Run: `mammoth workflow graph`. Exact input fields: `mammoth schema get workflow.graph`.
 
-Example: `mammoth workflow graph --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow graph`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowGraphResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -114,9 +114,9 @@ Status on release: ran once on CLI 2.0.11 — Read-only sweep 2026-09-18: exit 0
 
 ### `workflow.list`
 
-Run: `mammoth workflow list`. Exact input fields: `mammoth schema get workflow.list --output json --no-input`.
+Run: `mammoth workflow list`. Exact input fields: `mammoth schema get workflow.list`.
 
-Example: `mammoth workflow list --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -124,9 +124,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `workflow.update`
 
-Run: `mammoth workflow update`. Exact input fields: `mammoth schema get workflow.update --output json --no-input`.
+Run: `mammoth workflow update`. Exact input fields: `mammoth schema get workflow.update`.
 
-Example: `mammoth workflow update 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow update 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -134,9 +134,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `workflow.workspace-datasets`
 
-Run: `mammoth workflow workspace-datasets`. Exact input fields: `mammoth schema get workflow.workspace-datasets --output json --no-input`.
+Run: `mammoth workflow workspace-datasets`. Exact input fields: `mammoth schema get workflow.workspace-datasets`.
 
-Example: `mammoth workflow workspace-datasets --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow workspace-datasets`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowWorkspaceDatasetsResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -144,9 +144,9 @@ Status on release: ran once on CLI 2.0.11 — Read-only sweep 2026-09-18: exit 0
 
 ### `workflow.workspace-exports`
 
-Run: `mammoth workflow workspace-exports`. Exact input fields: `mammoth schema get workflow.workspace-exports --output json --no-input`.
+Run: `mammoth workflow workspace-exports`. Exact input fields: `mammoth schema get workflow.workspace-exports`.
 
-Example: `mammoth workflow workspace-exports --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow workspace-exports`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowWorkspaceExportsResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -154,9 +154,9 @@ Status on release: ran once on CLI 2.0.11 — Read-only sweep 2026-09-18: exit 0
 
 ### `workflow.workspace-sources`
 
-Run: `mammoth workflow workspace-sources`. Exact input fields: `mammoth schema get workflow.workspace-sources --output json --no-input`.
+Run: `mammoth workflow workspace-sources`. Exact input fields: `mammoth schema get workflow.workspace-sources`.
 
-Example: `mammoth workflow workspace-sources --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow workspace-sources`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowWorkspaceSourcesResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

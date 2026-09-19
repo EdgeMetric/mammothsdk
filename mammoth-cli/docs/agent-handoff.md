@@ -123,9 +123,9 @@ The checkpoint can be inspected with ordinary reads and job commands; there is
 no implicit resume command:
 
 ```bash
-mammoth doctor --profile PROFILE --output json --no-input
-mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input
-mammoth job get JOB_ID --output json --no-input
+mammoth doctor --profile PROFILE
+mammoth view get VIEW_ID --project PROJECT_ID
+mammoth job get JOB_ID
 ```
 
 See [agent usage](agents.md), [safe mutation](safety.md), and

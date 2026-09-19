@@ -4,9 +4,9 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 ### `dataset.batch-data`
 
-Run: `mammoth dataset batch-data`. Exact input fields: `mammoth schema get dataset.batch-data --output json --no-input`.
+Run: `mammoth dataset batch-data`. Exact input fields: `mammoth schema get dataset.batch-data`.
 
-Example: `mammoth dataset batch-data 123 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset batch-data 123 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetBatchDataResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -14,9 +14,9 @@ Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.
 
 ### `dataset.bulk-delete`
 
-Run: `mammoth dataset bulk-delete`. Exact input fields: `mammoth schema get dataset.bulk-delete --output json --no-input`.
+Run: `mammoth dataset bulk-delete`. Exact input fields: `mammoth schema get dataset.bulk-delete`.
 
-Example: `mammoth dataset bulk-delete --input '{"dataset_ids": [456, 457]}' --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dataset bulk-delete --input '{"dataset_ids": [456, 457]}'`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DatasetBulkDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -24,9 +24,9 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 ### `dataset.bulk-update`
 
-Run: `mammoth dataset bulk-update`. Exact input fields: `mammoth schema get dataset.bulk-update --output json --no-input`.
+Run: `mammoth dataset bulk-update`. Exact input fields: `mammoth schema get dataset.bulk-update`.
 
-Example: `mammoth dataset bulk-update --input '{"patch_data": {"sample_key": "Status"}}' --output json --no-input`. Discovery only: this command is fail-closed and must not dispatch a request.
+Example: `mammoth dataset bulk-update --input '{"patch_data": {"sample_key": "Status"}}'`. Discovery only: this command is fail-closed and must not dispatch a request.
 
 Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
 
@@ -34,9 +34,9 @@ Known restriction: BLOCKED[B07 DATASET_PATCH_UNTYPED]; reserved, not registered.
 
 ### `dataset.create`
 
-Run: `mammoth dataset create`. Exact input fields: `mammoth schema get dataset.create --output json --no-input`.
+Run: `mammoth dataset create`. Exact input fields: `mammoth schema get dataset.create`.
 
-Example: `mammoth dataset create --input '{"dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"}, "ds_creation_type": "weburl"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset create --input '{"dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"}, "ds_creation_type": "weburl"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -44,9 +44,9 @@ Status on release: ran once on CLI 1.1.9 — Bounded owned-fixture create succee
 
 ### `dataset.create-from-pdf`
 
-Run: `mammoth dataset create-from-pdf`. Exact input fields: `mammoth schema get dataset.create-from-pdf --output json --no-input`.
+Run: `mammoth dataset create-from-pdf`. Exact input fields: `mammoth schema get dataset.create-from-pdf`.
 
-Example: `mammoth dataset create-from-pdf 123 --input '{"file_name": "./sales.csv"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset create-from-pdf 123 --input '{"file_name": "./sales.csv"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetCreateFromPdfResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -54,9 +54,9 @@ Status on release: observed blocker — backend: POST /workspaces/4/projects/24/
 
 ### `dataset.data`
 
-Run: `mammoth dataset data`. Exact input fields: `mammoth schema get dataset.data --output json --no-input`.
+Run: `mammoth dataset data`. Exact input fields: `mammoth schema get dataset.data`.
 
-Example: `mammoth dataset data 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset data 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetDataResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
@@ -64,9 +64,9 @@ Status on release: ran once on CLI 1.1.10 — Bounded retained-resource read wit
 
 ### `dataset.delete`
 
-Run: `mammoth dataset delete`. Exact input fields: `mammoth schema get dataset.delete --output json --no-input`.
+Run: `mammoth dataset delete`. Exact input fields: `mammoth schema get dataset.delete`.
 
-Example: `mammoth dataset delete 123 --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dataset delete 123`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DatasetDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -74,9 +74,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `dataset.file-settings.get`
 
-Run: `mammoth dataset file-settings get`. Exact input fields: `mammoth schema get dataset.file-settings.get --output json --no-input`.
+Run: `mammoth dataset file-settings get`. Exact input fields: `mammoth schema get dataset.file-settings.get`.
 
-Example: `mammoth dataset file-settings get 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset file-settings get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetFileSettingsGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -84,9 +84,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `dataset.file-settings.undo`
 
-Run: `mammoth dataset file-settings undo`. Exact input fields: `mammoth schema get dataset.file-settings.undo --output json --no-input`.
+Run: `mammoth dataset file-settings undo`. Exact input fields: `mammoth schema get dataset.file-settings.undo`.
 
-Example: `mammoth dataset file-settings undo 123 --output json --no-input`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth dataset file-settings undo 123`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `DatasetFileSettingsUndoResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -94,9 +94,9 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 ### `dataset.file-settings.update`
 
-Run: `mammoth dataset file-settings update`. Exact input fields: `mammoth schema get dataset.file-settings.update --output json --no-input`.
+Run: `mammoth dataset file-settings update`. Exact input fields: `mammoth schema get dataset.file-settings.update`.
 
-Example: `mammoth dataset file-settings update 123 --input '{"delimiter": "sample", "has_header": true, "initial_skip_count": 1, "quotechar": "sample"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset file-settings update 123 --input '{"delimiter": "sample", "has_header": true, "initial_skip_count": 1, "quotechar": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetFileSettingsUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -104,9 +104,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `dataset.find`
 
-Run: `mammoth dataset find`. Exact input fields: `mammoth schema get dataset.find --output json --no-input`.
+Run: `mammoth dataset find`. Exact input fields: `mammoth schema get dataset.find`.
 
-Example: `mammoth dataset find sales --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset find sales`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetFindResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -114,9 +114,9 @@ Status on release: untried; no live run recorded.
 
 ### `dataset.get`
 
-Run: `mammoth dataset get`. Exact input fields: `mammoth schema get dataset.get --output json --no-input`.
+Run: `mammoth dataset get`. Exact input fields: `mammoth schema get dataset.get`.
 
-Example: `mammoth dataset get 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -124,9 +124,9 @@ Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit
 
 ### `dataset.list`
 
-Run: `mammoth dataset list`. Exact input fields: `mammoth schema get dataset.list --output json --no-input`.
+Run: `mammoth dataset list`. Exact input fields: `mammoth schema get dataset.list`.
 
-Example: `mammoth dataset list --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset list`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -134,9 +134,9 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 ### `dataset.rename`
 
-Run: `mammoth dataset rename`. Exact input fields: `mammoth schema get dataset.rename --output json --no-input`.
+Run: `mammoth dataset rename`. Exact input fields: `mammoth schema get dataset.rename`.
 
-Example: `mammoth dataset rename 123 --input '{"name": "Revenue report"}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset rename 123 --input '{"name": "Revenue report"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetRenameResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -144,9 +144,9 @@ Status on release: untried; no live run recorded.
 
 ### `dataset.restore`
 
-Run: `mammoth dataset restore`. Exact input fields: `mammoth schema get dataset.restore --output json --no-input`.
+Run: `mammoth dataset restore`. Exact input fields: `mammoth schema get dataset.restore`.
 
-Example: `mammoth dataset restore 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset restore 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetRestoreResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -154,9 +154,9 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 ### `dataset.trash`
 
-Run: `mammoth dataset trash`. Exact input fields: `mammoth schema get dataset.trash --output json --no-input`.
+Run: `mammoth dataset trash`. Exact input fields: `mammoth schema get dataset.trash`.
 
-Example: `mammoth dataset trash 123 --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset trash 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetTrashResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -164,9 +164,9 @@ Status on release: ran once on CLI 2.0.13 — Haiku e2e 2026-09-18: dataset tras
 
 ### `dataset.update`
 
-Run: `mammoth dataset update`. Exact input fields: `mammoth schema get dataset.update --output json --no-input`.
+Run: `mammoth dataset update`. Exact input fields: `mammoth schema get dataset.update`.
 
-Example: `mammoth schema get dataset.update --output json --no-input`. Discovery only: this command is fail-closed and must not dispatch a request.
+Example: `mammoth dataset update --input '{"patch_data": [{"sample_key": "Status"}]}'`. Discovery only: this command is fail-closed and must not dispatch a request.
 
 Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
 

@@ -12,6 +12,7 @@ embedded callers that explicitly opt into it.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from typing import Any, TextIO
 
@@ -35,7 +36,19 @@ def render(
     # dataclass reprs, or secret-bearing SDK objects into machine output.
     envelope = normalize(envelope)
     if output == "json":
-        json.dump(envelope, stream, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False)
+        # Pretty for a person at a terminal; compact (one line) when piped,
+        # which is what an agent or script reads: same document, roughly half
+        # the bytes and tokens. ``MAMMOTH_JSON_PRETTY=1`` forces indentation.
+        pretty = _json_pretty(stream)
+        json.dump(
+            envelope,
+            stream,
+            indent=2 if pretty else None,
+            separators=None if pretty else (",", ":"),
+            sort_keys=True,
+            ensure_ascii=False,
+            allow_nan=False,
+        )
         stream.write("\n")
     elif output == "ndjson":
         _render_ndjson(envelope, stream, legacy=ndjson_legacy)
@@ -47,6 +60,16 @@ def render(
         _render_table(envelope.get("data"), stream)
     else:  # pragma: no cover - guarded by option validation
         raise ValueError(f"unknown output mode: {output}")
+
+
+def _json_pretty(stream: TextIO) -> bool:
+    forced = os.environ.get("MAMMOTH_JSON_PRETTY")
+    if forced is not None:
+        return forced.strip().lower() in {"1", "true", "yes", "on"}
+    try:
+        return bool(stream.isatty())
+    except (AttributeError, ValueError):
+        return False
 
 
 def _write_ndjson(frame: dict[str, Any], stream: TextIO) -> None:
