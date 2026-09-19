@@ -1750,3 +1750,27 @@ def test_pipeline_items_all_rejects_conflicting_parents(
         )
     assert excinfo.value.code == "ambiguous_resource_identity"
     assert fake_service.call_log == []
+
+
+def test_view_list_trims_records_unless_full(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    record = {
+        "id": 45,
+        "ds_id": 9,
+        "name": "v",
+        "status": "ready",
+        "row_count": 6,
+        "dependencies_info": {"dependees": {"45": {}}},
+        "display_properties": {},
+    }
+    fake_service.responses[_VIEW_LIST] = {"dataviews": [record], "next": None}
+    data, _ = view_cmd.view_list(_inv("view.list", project=180, extra_args=["9"]))
+    assert data["dataviews"] == [
+        {"id": 45, "ds_id": 9, "name": "v", "status": "ready", "row_count": 6}
+    ]
+    assert data["next"] is None
+    doc = _doc(tmp_path, {"full": True})
+    data, _ = view_cmd.view_list(_inv("view.list", project=180, extra_args=["9"], input_file=doc))
+    assert data["dataviews"] == [record]
+    assert "full" not in fake_service.call_log[-1][1]

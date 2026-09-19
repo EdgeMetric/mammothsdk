@@ -1065,3 +1065,48 @@ def test_non_read_view_ops_refuse_parent_discovery(
     assert excinfo.value.recovery_commands == ["mammoth view get 308772 --project 4301"]
     assert fake_service.view_call_log == []
     assert fake_service.call_log == []
+
+
+_DV_GET = "mammoth.api.dataviews.DataviewsAPI.get"
+_BRIEF = (
+    "id,ds_id,name,status,row_count,column_count,metadata,pipeline_status,"
+    "is_pipeline_running,is_dataview_data_in_sync,data_updated_at,updated_at"
+)
+
+
+def test_get_with_exact_parent_asks_the_server_for_the_brief_projection(
+    fake_service: FakeMammothService,
+) -> None:
+    # The standard dataview record is ~5x the brief one (dependencies_info,
+    # display trees); the GET route projects server-side.
+    view_ops_cmd.view_get(_inv("view.get", extra_args=["7", "63"]))
+    assert fake_service.call_log == [
+        (_DV_GET, {"dataset_id": 63, "dataview_id": 7, "fields": _BRIEF})
+    ]
+
+
+def test_get_fields_input_overrides_the_projection(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text('{"fields": "__full"}', encoding="utf-8")
+    view_ops_cmd.view_get(_inv("view.get", extra_args=["7", "63"], input_file=str(doc)))
+    assert fake_service.call_log[-1][1]["fields"] == "__full"
+
+
+def test_get_via_discovery_trims_to_the_brief_shape(fake_service: FakeMammothService) -> None:
+    rich = _RichView()
+    rich.raw = {
+        "id": 7,
+        "ds_id": 63,
+        "name": "View 1",
+        "status": "ready",
+        "row_count": 3,
+        "metadata": [{"display_name": "amount"}],
+        "dependencies_info": {"dependees": {"7": {"DISPLAY_PROPERTIES": {}}}},
+        "display_properties": {"COLUMN_ORDER": {}},
+    }
+    fake_service.responses[_GET] = rich
+    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    assert "dependencies_info" not in data and "display_properties" not in data
+    assert data["row_count"] == 3 and data["dataset_id"] == 63 and data["ds_id"] == 63

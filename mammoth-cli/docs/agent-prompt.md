@@ -77,7 +77,8 @@ HOW TO CALL
   there are no per-field flags.
 - Destructive commands need `--yes --confirm ID`. Only delete ids that this
   run created.
-- Long operations: pass `--timeout 300`. On `timeout` with a `job_handle`,
+- Commands that start work (upload, transform, export) wait up to 300 s by
+  default; `--job-timeout N` changes that. On `timeout` with a `job_handle`,
   poll with the `job get` recovery command printed in the error; do not
   resubmit. On `outcome_unknown`, read the target back before any retry.
 - Uploads: local path as the positional; csv/tsv/xlsx/txt/xml/pdf/images or a

@@ -21,7 +21,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.commands.view import _require_discovery_allowed
+from mammoth_cli.commands.view import (
+    BRIEF_VIEW_FIELDS,
+    _require_discovery_allowed,
+    brief_view_record,
+)
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
@@ -304,9 +308,13 @@ def view_get(invocation: Invocation) -> HandlerResult:
         # The release operation is dataset-scoped.  Bypass the rich-object
         # resolver when the caller supplied the exact parent so no discovery
         # probe can escape the requested project/dataset.
-        kwargs: dict[str, Any] = {"dataset_id": dataset_id, "dataview_id": view_id}
-        if "fields" in document:
-            kwargs["fields"] = document["fields"]
+        kwargs: dict[str, Any] = {
+            "dataset_id": dataset_id,
+            "dataview_id": view_id,
+            # Server-side projection; the brief set unless the caller asks.
+            "fields": document.get("fields")
+            or ",".join(key for key in BRIEF_VIEW_FIELDS if key != "dataset_id"),
+        }
         with open_service(invocation) as (service, auth):
             data = service.call("mammoth.api.dataviews.DataviewsAPI.get", **kwargs)
             parents.remember(_profile_name(invocation), auth.workspace_id, {view_id: dataset_id})
@@ -324,6 +332,10 @@ def view_get(invocation: Invocation) -> HandlerResult:
         data = service.call(_symbol(invocation), **kwargs)
         payload = _view_payload(data)
         parents.remember_records(_profile_name(invocation), auth.workspace_id, payload)
+    if not document.get("fields"):
+        # The discovery path returns the standard record; trim it to the same
+        # brief shape the exact path asks the server for.
+        payload = brief_view_record(payload)
     return payload, _meta(invocation, auth.workspace_id)
 
 

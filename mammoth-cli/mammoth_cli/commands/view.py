@@ -231,6 +231,34 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> 
 # ---------------------------------------------------------------------------
 
 
+#: What an agent reads a view for: identity, parent, columns and types, row
+#: count, and pipeline state. The record's ``dependencies_info`` and display
+#: trees are several times that size and rarely wanted; ``fields`` (``"__full"``,
+#: ``"__standard"`` or a list) returns them.
+BRIEF_VIEW_FIELDS: tuple[str, ...] = (
+    "id",
+    "ds_id",
+    "dataset_id",
+    "name",
+    "status",
+    "row_count",
+    "column_count",
+    "metadata",
+    "pipeline_status",
+    "is_pipeline_running",
+    "is_dataview_data_in_sync",
+    "data_updated_at",
+    "updated_at",
+)
+
+
+def brief_view_record(record: Any) -> Any:
+    """Keep only :data:`BRIEF_VIEW_FIELDS` of a dataview record."""
+    if not isinstance(record, dict):
+        return record
+    return {key: record[key] for key in BRIEF_VIEW_FIELDS if key in record}
+
+
 def view_list(invocation: Invocation) -> HandlerResult:
     """List dataviews for a dataset in the active project."""
     project_id = require_project(invocation)
@@ -243,6 +271,14 @@ def view_list(invocation: Invocation) -> HandlerResult:
         parents.remember_records(
             _profile_name(invocation), auth.workspace_id, data, project_id=project_id
         )
+    if (
+        isinstance(data, dict)
+        and isinstance(data.get("dataviews"), list)
+        and not document.get("full")
+    ):
+        # The list route has no field projection in the SDK; trim each record
+        # to the brief shape ``view get`` returns (``full: true`` keeps all).
+        data = {**data, "dataviews": [brief_view_record(item) for item in data["dataviews"]]}
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

@@ -1,5 +1,26 @@
 # CLI release provenance
 
+## 2.0.24 / SDK 0.7.11
+
+From a Haiku 4.5 cold start on 2.0.23 with a complex ETL brief
+(`docs/capability-evidence/haiku-etl-20260919`; blocked by the release upload
+worker after two uploads, see its REPORT.md) and the operator's follow-up.
+SDK unchanged.
+
+- `view get` returns the brief record by default (id, ds_id, name, status,
+  row_count, column_count, `metadata`, pipeline state) through the route's
+  server-side `fields` projection: 7.5 KB → 1.5 KB on a three-column view.
+  `--input '{"fields": "__full"}'` (or `"__standard"`, or a comma list)
+  returns the rest. `fields` was handled but undeclared, so strict validation
+  rejected it. `view list` records are trimmed to the same shape
+  (10.9 KB → 2.2 KB for two views); `full: true` keeps them whole.
+- Docs: the agent prompt and the upload recipe said `--timeout 300` for long
+  operations; the job budget is `--job-timeout` (300 s by default since
+  2.0.21). The recipe also states that re-uploading a stuck file queues a
+  second job, and that `project list` can still show a project whose delete
+  was accepted (202) until the worker runs it.
+- Evidence index lists `ergonomics-sweep-20260919` and `haiku-etl-20260919`.
+
 ## 2.0.23 / SDK 0.7.11
 
 One fix from running the 2.0.22 onboarding lines as a fresh user: `doctor`

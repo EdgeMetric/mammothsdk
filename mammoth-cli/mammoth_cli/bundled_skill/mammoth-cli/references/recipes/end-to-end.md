@@ -68,6 +68,8 @@ mammoth dataset list --project PROJECT_ID           # the id is gone
 mammoth project list                                # matches the baseline plus your deliverables
 # only if the task said the whole project was temporary:
 # mammoth project delete PROJECT_ID --yes --confirm PROJECT_ID
+#   202 means queued: project list can still show it for a while; project get
+#   returning resource_not_found is the proof, re-check rather than re-delete
 ```
 
 Then walk the [report checklist](../report-checklist.md). If any step

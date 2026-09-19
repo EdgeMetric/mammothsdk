@@ -578,6 +578,11 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     # The GET data route has no server-side page size; the CLI trims the row
     # list so a read-back costs a screen of tokens, not the whole view.
     "view.data.get": (FieldSpec("limit", required=False, annotation=int, default=50),),
+    # The dataview GET takes a server-side projection: "__min", "__standard",
+    # "__full" or a comma-separated field list.
+    "view.get": (FieldSpec("fields", required=False, annotation=str | None, default=None),),
+    # ``view list`` records are trimmed to the brief shape; ``full`` keeps them.
+    "view.list": (FieldSpec("full", required=False, annotation=bool, default=False),),
     "activity.list": (
         FieldSpec("project_id", required=False, annotation=int | None, default=None),
         FieldSpec("workspace_id", required=False, annotation=int | None, default=None),

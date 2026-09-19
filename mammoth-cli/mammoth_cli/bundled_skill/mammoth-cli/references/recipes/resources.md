@@ -56,10 +56,12 @@ through your context, so size costs nothing but time. Two boundaries hold:
   upload the parts, or compress it (a `.zip`/`.gz` of a CSV is accepted and
   expanded server-side).
 
-Scanning and parsing time grows with size; pass `--timeout 300` on anything
-past a few MB and, when the command returns `timeout` with a `job_handle`,
-poll with the `job get` recovery command it prints instead of uploading
-again. A bare HTTP 500 from this route (`outcome_unknown`, empty body) means
+Scanning and parsing time grows with size; the upload waits up to 300 s by
+default (`--job-timeout N` to change it) and, when the command returns
+`timeout` with a `job_handle`, poll with the `job get` recovery command it
+prints instead of uploading again: a second upload of the same file queues a
+second job behind the first, and one stuck scan job holds every later upload
+in the workspace (seen on release with jobs 667 and 708). A bare HTTP 500 from this route (`outcome_unknown`, empty body) means
 the upload service is degraded; check `job get` for a job first, do not
 retry in a loop.
 

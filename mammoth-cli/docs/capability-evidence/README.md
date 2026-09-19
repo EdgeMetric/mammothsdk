@@ -41,3 +41,5 @@ in the matrix rows by SHA-256) and a `SUMMARY.md`:
 - `haiku-cold-20260918` — a cold-start Haiku agent installing 2.0.16 from
   PyPI and running an ETL brief from the bundled skill alone; its report and
   the triage that led to 2.0.17.
+- `ergonomics-sweep-20260919` — 27 calls with session defaults only on the 2.0.21 tree (owned projects 44–47).
+- `haiku-etl-20260919` — Haiku 4.5 cold start on published 2.0.23 with a complex-join / cross-project brief; blocked by the release upload worker after two uploads (brief + report).

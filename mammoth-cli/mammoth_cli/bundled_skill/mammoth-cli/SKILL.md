@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.23
+version: 2.0.24
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines, dashboards, exports, and handoffs."
 ---
 
@@ -51,6 +51,10 @@ before the next step.
   family, `schema find WORDS` a search.
 - Uploads return a **dataset** id; transforms, joins, exports and previews
   take the **view** id from `view list DATASET_ID`.
+- `view list` and `view get` return the brief record (id, ds_id, name,
+  status, row_count, `metadata` columns and types, pipeline state);
+  `view get ... --input '{"fields": "__full"}'` or `view list ... --input
+  '{"full": true}'` returns the dependency and display trees too.
 - Column inputs and expressions use the exact **display names** the view
   returns, never backend aliases.
 - Destructive commands need `--yes --confirm ID`. Preserve requested
