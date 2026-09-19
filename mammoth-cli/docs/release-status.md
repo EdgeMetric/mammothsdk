@@ -27,7 +27,11 @@ the docs. SDK unchanged.
 - Matrix: 13 rows folded from the run; REL-461 `proven_transforms` gains
   `add-sql`.
 
-PYPI_HASHES_PLACEHOLDER
+Published from deterministic local artifacts built from tag `cli-v2.0.29`
+(source commit `63bccdd`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.29-py3-none-any.whl` sha256 `3eb3fb83861336a1557739ba1511b48679f143d6e8e83eb314c00243a18a3244`
+- `mammoth_cli-2.0.29.tar.gz` sha256 `2cb971309248a8c29d0257e7a3d5110de016c3e3f506ce1b4cc19a1a6ea6160f`
 
 ## 2.0.28 / SDK 0.7.13
 
