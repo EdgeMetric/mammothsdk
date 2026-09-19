@@ -124,4 +124,4 @@ Ran once: `view.active-user.list`, `view.active-user.mark`, `view.ai.generate-da
 | `view.task.preview` | observed blocker | backend_error: Fix held: the COPY task_spec is accepted and a task_preview job (406) is created; the job then fails backend-side with 'Object of type datetime is not JSON serializa |
 | `view.export.publish-db-update` | CLI defect fixed, untried since | 2.0.16 (example value is the documented {"odbc_type": "postgres"} object (a bare string is rejected)) |
 
-Evidence collected on CLI releases 1.1.5 through 2.0.17; each row's release is recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row that ran on an older release has not been re-run since unless its note says so. Details: `docs/capability-evidence/` in the repository.
+Evidence collected on CLI releases 1.1.5 through 2.0.18; each row's release is recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row that ran on an older release has not been re-run since unless its note says so. Details: `docs/capability-evidence/` in the repository.

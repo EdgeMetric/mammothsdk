@@ -40,7 +40,7 @@ Example: `mammoth project create 'Revenue report' --output json --no-input`. Pla
 
 Result: `ProjectCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Created project id 21 (cli-write-sweep-20260918), owner_workspace_id 4, status ACTIVE. Used as the fixture project for this entire sweep. Single invocation only.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
 
 ### `project.data-check.list`
 
@@ -60,7 +60,7 @@ Example: `mammoth project delete 123 --output json --no-input`. Illustrative onl
 
 Result: `ProjectDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 202 Accepted with non-object body reported as success, not outcome_unknown. Response: {"data":{"response":null,"status_code":202}}. Reconciled: project 23 no longer in `project list` aft…
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): owned project deleted with --yes --confirm PROJECT_ID after its datasets were deleted one by one; project list read back without it. Single invocation only.
 
 ### `project.get`
 
@@ -80,7 +80,7 @@ Example: `mammoth project list --output json --no-input`. Placeholders are illus
 
 Result: `ProjectListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI an earlier release — Tier B observed project.list response for workspace 4/project 3 context.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
 
 ### `project.pending-changes`
 

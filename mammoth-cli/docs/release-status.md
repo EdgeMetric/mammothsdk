@@ -1,5 +1,67 @@
 # CLI release provenance
 
+## 2.0.18 / SDK 0.7.10
+
+This release adds an always-on local run log, folds the 2026-09-18 skill
+review, and passes a new live golden-data gate on release
+(`docs/capability-evidence/golden-20260919`: every value-changing transform
+run once on an owned fixture and read back against a known answer). What the
+gate and the review found, and what changed:
+
+- SDK: structured `mammoth.http` / `mammoth.jobs` log records (method, path,
+  status, duration, backend request id, job polls); no headers, bodies or
+  credentials. Nothing is emitted unless a handler is attached.
+- CLI: `mammoth log path` / `mammoth log tail` over a JSONL run log (one file
+  per day, 0600, 7-day retention, 20 MB cap, `MAMMOTH_LOG_DIR` override);
+  every error envelope carries `error.log_ref {file, run_id}`; `doctor`
+  checks the log directory is writable.
+- CLI: `view create` returned `"<unserializable View>"`; it now returns the
+  new view's record (`id`, `dataset_id`).
+- CLI: `view data query` forwarded the `{column, operator, value}` spec
+  verbatim, which the data route rejects (`A clause can only have one key`,
+  job failed). The condition is compiled to the backend clause shape with the
+  view's internal names and types, and `columns` display names are mapped;
+  verified live (EQ with column select; AND of CONTAINS and NE).
+- CLI: an all-text CSV comes back `ready` with "more than one plausible way to
+  be read" and no view; `file upload` now reports it as `need_action` with the
+  settings command to run (recipe: need-action.md).
+- CLI: `project delete` is `confirm_target` (`--yes --confirm PROJECT_ID`);
+  `dashboard create-blank` no longer asks for `--yes`; `schema get` exposes
+  `secret_fields`.
+- Skill: recipes only route from SKILL.md; new end-to-end worked example and
+  report checklist; recovery table by error message; ID glossary; cleanup
+  verified for ids returned by your own run; exports that carry a secret go
+  through `--input FILE` (0600) and `--yes`; per-entry release status lines in
+  the command catalog; the release capability matrix ships as
+  `references/capabilities.md` (core) and `capabilities-misc.md`.
+- Recipes no longer build a summary on a `view create ... clone_from` copy:
+  on release the clone job succeeds but the copy answers every read with
+  `4DTVW019` and its copied tasks never execute (backend defect, recorded in
+  `backend-repro-20260918/HANDOVER.md` together with the all-text CSV case).
+  Export the cleaned rows first, then pivot in place as the last step.
+
+Golden gate (CLI 2.0.18 on release, project created and deleted by the run):
+bulk-replace, convert-type, set-values with IS_EMPTY, text trim/lower, filter
+REMOVE, discard-duplicates, LEFT join, export csv, pivot — 23 value
+assertions, all read back with `view data get`; `view data query` with a
+condition on the pivoted view.
+
+Matrix after this release: 227 verified of 528 (core workflow 187/230), 2
+Not supported, 9 rows "CLI defect fixed" still awaiting a fixture or blocked by
+the backend (`batch create`, `view export publish-db-update`, seven dashboard
+routes). The CLI requires
+`mammoth-io>=0.7.10,<0.8`, adds no API bindings, and makes no
+capability-status or autonomous-workflow qualification claim.
+
+Published from deterministic local artifacts built from tag `cli-v2.0.18`
+(source commit `CLI_COMMIT`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.18-py3-none-any.whl` sha256 `CLI_WHL`
+- `mammoth_cli-2.0.18.tar.gz` sha256 `CLI_SDIST`
+
+SDK 0.7.10 (`sdk-v0.7.10`, source commit `SDK_COMMIT`): `mammoth_io-0.7.10-py3-none-any.whl` sha256
+`SDK_WHL`; `mammoth_io-0.7.10.tar.gz` sha256 `SDK_SDIST`; digests verified against PyPI.
+
 ## 2.0.17 / SDK 0.7.9
 
 This release folds a cold-start end-to-end run by a Claude Haiku agent

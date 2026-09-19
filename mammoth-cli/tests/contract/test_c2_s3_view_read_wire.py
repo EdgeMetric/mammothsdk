@@ -193,7 +193,9 @@ def test_s3_view_data_reads_have_literal_query_and_body_wires(
                     "offset": 11,
                     "limit": 17,
                     "columns": ["C2_S3_COLUMN"],
-                    "condition": {"column": "C2_S3_KEY", "operator": "EQ", "value": "C2_S3_VALUE"},
+                    # Compiled to the backend clause shape; with no metadata
+                    # on this fake the display name is sent as given.
+                    "condition": {"C2_S3_KEY": {"EQ": {"VALUE": "C2_S3_VALUE"}}},
                     "sort": "C2_S3_SORT",
                 },
             ),
@@ -521,7 +523,12 @@ def test_true_cli_data_query_wire_and_display_name_handling(
     api.on(
         "GET",
         r"/dataviews/278$",
-        body={"metadata": [{"internal_name": "column_7", "display_name": "CLI_DISPLAY"}]},
+        body={
+            "metadata": [
+                {"internal_name": "column_7", "display_name": "CLI_DISPLAY", "type": "NUMERIC"},
+                {"internal_name": "column_9", "display_name": "CLI_KEY", "type": "TEXT"},
+            ]
+        },
     )
     doc = tmp_path / "s3-query.json"
     doc.write_text(
@@ -530,7 +537,7 @@ def test_true_cli_data_query_wire_and_display_name_handling(
                 "sequence": 13,
                 "offset": 5,
                 "limit": 19,
-                "columns": ["CLI_COLUMN"],
+                "columns": ["CLI_DISPLAY"],
                 "condition": {"column": "CLI_KEY", "operator": "EQ", "value": "CLI_MATCH"},
                 "sort": "CLI_SORT",
             }
@@ -556,13 +563,18 @@ def test_true_cli_data_query_wire_and_display_name_handling(
         ]
     )
     assert result.exit_code == 0, result.output
-    assert api.requests[0].method == "POST"
-    assert api.requests[0].json_body == {
+    # One metadata read (display -> internal names and types), then the POST
+    # with the condition compiled to the backend clause shape.  A TEXT
+    # equality is sent as a single-item IN_LIST (the SDK's workaround for the
+    # backend's TEXT + EQ type-mismatch rejection).
+    wires = [(r.method, r.path.removeprefix("/api/v2").rsplit("/", 1)[-1]) for r in api.requests]
+    assert wires[-2:] == [("GET", "278"), ("POST", "data")]
+    assert api.requests[-1].json_body == {
         "sequence": 13,
         "offset": 5,
         "limit": 19,
-        "columns": ["CLI_COLUMN"],
-        "condition": {"column": "CLI_KEY", "operator": "EQ", "value": "CLI_MATCH"},
+        "columns": ["column_7"],
+        "condition": {"column_9": {"IN_LIST": {"VALUE": ["CLI_MATCH"]}}},
         "sort": "CLI_SORT",
     }
     assert json.loads(result.output)["data"]["data"] == [{"CLI_DISPLAY": "CLI_VALUE"}]

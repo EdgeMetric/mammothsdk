@@ -94,6 +94,19 @@ def test_get_via_discovery_returns_the_dataview_record(
     }
 
 
+def test_create_returns_the_dataview_record(fake_service: FakeMammothService) -> None:
+    # ``ViewsResource.create`` also hands back a rich View; the envelope must
+    # carry the new view's record so callers can read its id.
+    fake_service.responses[_CREATE] = _RichView()
+    data, _ = view_ops_cmd.view_create(_inv("view.create", extra_args=["63"]))
+    assert data == {
+        "id": 7,
+        "name": "View 1",
+        "metadata": [{"display_name": "amount"}],
+        "dataset_id": 63,
+    }
+
+
 def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7"], output="json"))

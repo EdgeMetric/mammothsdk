@@ -267,7 +267,8 @@ def view_create(invocation: Invocation) -> HandlerResult:
     kwargs = bind_command_inputs(invocation.command_id, document, dataset_id=dataset_id)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-    return data, _meta(invocation, auth.workspace_id)
+    # The SDK returns a rich ``View``; emit its dataview record like ``view get``.
+    return _view_payload(data), _meta(invocation, auth.workspace_id)
 
 
 def view_get(invocation: Invocation) -> HandlerResult:

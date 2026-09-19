@@ -47,20 +47,20 @@ mammoth view data get ORDERS_VIEW ORDERS_DS --project PROJECT_ID --output json -
 #   if region is empty/"Unknown" on most rows, the key does not match: compare the two key columns' values
 #   (type, padding, case) with view data get on both views; do not summarise unmatched data
 
-# 6. per-region summary on a copy of the cleaned view (pivot replaces the view's columns in place)
-mammoth view create ORDERS_DS --project PROJECT_ID \
-  --input '{"name": "orders_by_region", "clone_from": ORDERS_VIEW}' --output json --no-input   # -> SUMMARY_VIEW (data.dataview_id)
-mammoth view data get SUMMARY_VIEW ORDERS_DS --project PROJECT_ID --output json --no-input
-#   the copy must show the cleaned rows (same columns as ORDERS_VIEW), not the raw upload
-mammoth view transform pivot SUMMARY_VIEW --project PROJECT_ID \
-  --input '{"dataset_id": ORDERS_DS, "group_by": ["region"], "aggregations": [{"column": "amount", "function": "SUM", "as_name": "total_amount"}, {"column": "order_id", "function": "COUNT", "as_name": "order_count"}]}' --output json --no-input
-mammoth view data get SUMMARY_VIEW ORDERS_DS --project PROJECT_ID --output json --no-input
-#   Σ order_count over groups == ORDERS_VIEW row_count; no group's total_amount is 0 unless its rows really are
+# 6. deliverable first: export the cleaned, joined rows before any step that replaces them
+mammoth view export csv ORDERS_VIEW --project PROJECT_ID \
+  --input '{"dataset_id": ORDERS_DS, "output_path": "orders_clean.csv"}' --output json --no-input
+#   check the file's header and row count against the last readback
 
-# 7. deliverable
-mammoth view export csv SUMMARY_VIEW --project PROJECT_ID \
+# 7. per-region summary as the LAST step on the same view (pivot replaces the view's columns in place;
+#    do not use view create with clone_from for this: on release the clone job succeeds but the copy
+#    answers every read with 4DTVW019 and its copied tasks never execute)
+mammoth view transform pivot ORDERS_VIEW --project PROJECT_ID \
+  --input '{"dataset_id": ORDERS_DS, "group_by": ["region"], "aggregations": [{"column": "amount", "function": "SUM", "as_name": "total_amount"}, {"column": "order_id", "function": "COUNT", "as_name": "order_count"}]}' --output json --no-input
+mammoth view data get ORDERS_VIEW ORDERS_DS --project PROJECT_ID --output json --no-input
+#   Σ order_count over groups == the cleaned row count; no group's total_amount is 0 unless its rows really are
+mammoth view export csv ORDERS_VIEW --project PROJECT_ID \
   --input '{"dataset_id": ORDERS_DS, "output_path": "orders_by_region.csv"}' --output json --no-input
-#   check the file's header and row count against the readback
 
 # 8. cleanup only what you created, one id per call, read back
 mammoth dataset delete INTERMEDIATE_DS --project PROJECT_ID --output json --no-input --yes

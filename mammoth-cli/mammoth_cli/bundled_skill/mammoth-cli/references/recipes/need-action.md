@@ -34,3 +34,19 @@ until `status` leaves `need_action`; it normally reaches `ready` within a few
 seconds, after which `view list` returns the generated view and typed
 transforms can proceed. If the status becomes `error`, read `status_info`
 and stop; do not retry with guessed settings.
+
+## All-text CSV: `ready` without a view
+
+A CSV whose columns are all text (ids, names, regions, no number or date)
+comes back `status: "ready"` with `status_info.ready` = "This file has more
+than one plausible way to be read." and still gets no view. `file upload`
+reports this as `status: "need_action"` with the same `next_command` as
+above. Confirm the settings exactly as for ambiguous dates; `file-settings
+get` shows `at_least_one_non_text_column_present: false`.
+
+On the release backend the settings update returns a successful
+`understand_csv` job and a batch, but a view is still not created (backend
+defect, reported). If `view list DATASET_ID` stays empty after two polls of
+`dataset get`, stop and report it as a platform blocker for that file; do not
+retry the update. Where the task allows, a file with at least one numeric
+column is processed straight to `ready` with its view.

@@ -293,6 +293,24 @@ def test_upload_reports_need_action_instead_of_assuming_ready(
     ]
 
 
+def test_upload_treats_ready_with_a_plausibility_message_as_need_action(
+    fake_service: FakeMammothService,
+) -> None:
+    # An all-text CSV comes back "ready" with the message below and no view is
+    # ever created until the settings are confirmed; report it as need_action.
+    fake_service.responses[_UPLOAD] = 74
+    fake_service.responses[_DATASET_GET] = {
+        "dataset": {
+            "id": 74,
+            "status": "ready",
+            "status_info": {"ready": "This file has more than one plausible way to be read."},
+        }
+    }
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["customers.csv"]))
+    assert data["status"] == "need_action"
+    assert data["datasets"][0]["next_command"] == "mammoth dataset file-settings get 74"
+
+
 def test_upload_reports_multiple_dataset_ids(fake_service: FakeMammothService) -> None:
     fake_service.responses[_UPLOAD] = [11, 22]
     fake_service.responses[_DATASET_GET] = {"dataset": {"status": "ready"}}

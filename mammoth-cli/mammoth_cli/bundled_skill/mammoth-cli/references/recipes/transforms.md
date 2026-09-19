@@ -81,9 +81,13 @@ SELECT that names the view as the quoted table `"view:VIEW_ID"` (or its quoted
 display name) with display-name columns; unquoted or placeholder table names
 (`data`, `__TABLE__`) are rejected with "table name ... not found" or "only
 select queries allowed". The result replaces the view's columns: never run it
-(or `pivot`) on a view that is itself a deliverable; run it on a copy
-(`view create DATASET_ID --input '{"name": "...", "clone_from": VIEW_ID}'`)
-or as the last step, and prefer `pivot` (proven on release) over a SQL task:
+(or `pivot`) on a view whose rows are still needed; export those rows first
+(`view export csv`) and run the summary as the last step, and prefer `pivot`
+(proven on release) over a SQL task. Do not build the summary on a
+`view create ... "clone_from": VIEW_ID` copy: on release the clone job succeeds
+but the copy answers every read with `4DTVW019` and its copied tasks never
+execute. A plain `view create DATASET_ID` (no `clone_from`) gives a fresh view
+of the raw upload, without the pipeline:
 
 ```bash
 mammoth schema get view.transform.pivot --output json --no-input

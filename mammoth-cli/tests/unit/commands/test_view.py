@@ -465,6 +465,15 @@ def test_exportable_config_apply_passes_exact_confirmation(
 
 
 def test_data_query_forwards_filters(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    # The data route takes the backend condition shape with internal column
+    # names (forwarding the CLI spec verbatim fails the job with "A clause can
+    # only have one key"); display names in ``columns`` are mapped the same way.
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [
+            {"internal_name": "column_1", "display_name": "a", "type": "TEXT"},
+            {"internal_name": "column_2", "display_name": "b", "type": "NUMERIC"},
+        ]
+    }
     doc = _doc(
         tmp_path,
         {
@@ -472,7 +481,7 @@ def test_data_query_forwards_filters(fake_service: FakeMammothService, tmp_path:
             "offset": 10,
             "limit": 100,
             "columns": ["a", "b"],
-            "condition": {"op": "eq"},
+            "condition": {"column": "b", "operator": ">", "value": 3},
             "sort": "(a:asc)",
         },
     )
@@ -480,6 +489,7 @@ def test_data_query_forwards_filters(fake_service: FakeMammothService, tmp_path:
         _inv("view.data.query", project=180, extra_args=["7", "9"], input_file=doc)
     )
     assert fake_service.call_log == [
+        (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
         (
             _DATA_QUERY,
             {
@@ -489,12 +499,24 @@ def test_data_query_forwards_filters(fake_service: FakeMammothService, tmp_path:
                 "sequence": 1,
                 "offset": 10,
                 "limit": 100,
-                "columns": ["a", "b"],
-                "condition": {"op": "eq"},
+                "columns": ["column_1", "column_2"],
+                "condition": {"column_2": {"GT": {"VALUE": 3}}},
                 "sort": "(a:asc)",
             },
-        )
+        ),
     ]
+
+
+def test_data_query_rejects_an_unknown_operator(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"condition": {"column": "a", "operator": "GREATER", "value": 1}})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_data_query(
+            _inv("view.data.query", project=180, extra_args=["7", "9"], input_file=doc)
+        )
+    assert excinfo.value.code == "invalid_condition"
+    assert fake_service.call_log[-1][0] != _DATA_QUERY
 
 
 def test_data_get_resolves_dataset_from_view_when_omitted(

@@ -697,7 +697,7 @@
       "capability_id": "REL-037",
       "capability": "Delete a project",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 202 Accepted with non-object body reported as success, not outcome_unknown. Response: {\"data\":{\"response\":null,\"status_code\":202}}. Reconciled: project 23 no longer in `project list` after this call. Single invocation only.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19 (CLI 2.0.18): owned project deleted with --yes --confirm PROJECT_ID after its datasets were deleted one by one; project list read back without it. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteProject",
       "method": "DELETE",
@@ -708,14 +708,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
-        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
-        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
-        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
         "command_id": "project.delete",
         "exit_status": 0
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-038",
@@ -830,7 +830,7 @@
       "capability_id": "REL-044",
       "capability": "Delete dataset",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded owned-fixture delete succeeded with pinned CLI 1.1.9: delete job 42 succeeded for dataset 16 and final dataset list was empty. No Full claim: no protected-resource preservation check or broader delete variants.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18.  Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDataset",
       "method": "DELETE",
@@ -841,26 +841,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "report": "docs/capability-evidence/historical-release-index.md",
-        "scope": "owned disposable dataset 16; returned-ID cleanup; final absence verified; CLI 1.1.9",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-044",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-delete-42-reconcile.json",
-            "sha256": "c02606ff7742b7eb30dcf1dfe4e0941ea6c6401d5af66291596ddd62e7f9c54f",
-            "size_bytes": 989,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-list-final.json",
-            "sha256": "1e32986bae8d597438f6bece8a1d1d71e8f400a66ee1a333a5b6681da4bbadfa",
-            "size_bytes": 741,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "command_id": "dataset.delete",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.9"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-045",
@@ -938,7 +926,7 @@
       "capability_id": "REL-048",
       "capability": "Delete dataview safely",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. job 350 safe_delete_dataviews -> status success. View 72 (already exercised via view.trash/view.restore) permanently deleted. Single invocation only.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18.  Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDataview",
       "method": "DELETE",
@@ -949,14 +937,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
         "command_id": "view.delete",
         "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-049",
@@ -3756,7 +3744,7 @@
       "capability_id": "REL-174",
       "capability": "Get list of projects",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Tier B observed project.list response for workspace 4/project 3 context.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18.  Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetProject",
       "method": "GET",
@@ -3767,35 +3755,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "command": "docs/capability-evidence/historical-release-index.md",
-        "result": "project 3 returned",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-174",
-        "archived_git_paths": [
-          {
-            "sha256": "8a5a281fc96df5984a0facc120b58625b21ea8309e862e847dc9363a485355b8",
-            "size_bytes": 337,
-            "archive_revision": null,
-            "external_workbook_path": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0009.stdout",
-            "provenance_kind": "external_local_workbook",
-            "former_reference": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0009.stdout",
-            "external_workbook_root": "mammoth-cli-readiness",
-            "note": "Raw external workbook evidence is unavailable from the public repository; this is a bounded Partial claim based on the sanitized summary."
-          },
-          {
-            "sha256": "88680cf2f9a3ec940b14716f578d96eda78af6771ce3e78791d64abd5c2e3fe6",
-            "size_bytes": 1652,
-            "archive_revision": null,
-            "external_workbook_path": "evidence/readiness-closure/tier-b-live-20260916T172000Z/pilot-summary.json",
-            "provenance_kind": "external_local_workbook",
-            "former_reference": "evidence/readiness-closure/tier-b-live-20260916T172000Z/pilot-summary.json",
-            "external_workbook_root": "mammoth-cli-readiness",
-            "note": "Raw external workbook evidence is unavailable from the public repository; this is a bounded Partial claim based on the sanitized summary."
-          }
-        ],
-        "alternate_evidence": "docs/capability-evidence/capability-batch-201.md#REL-174"
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "command_id": "project.list",
+        "exit_status": 0
       },
-      "evidence_version": null
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-175",
@@ -4245,7 +4212,7 @@
       "capability_id": "REL-191",
       "capability": "Get list of datasets",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded owned-fixture read with pinned CLI 1.1.9 returned dataset 16 in project 3; no Full claim: single disposable fixture and no pagination/variant coverage.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. post-cleanup list Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDatasets",
       "method": "GET",
@@ -4256,35 +4223,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "related": [
-          "docs/capability-evidence/historical-release-index.md"
-        ],
-        "scope": "workspace 4/project 3; owned dataset 16; final absence verified",
-        "cli": "1.1.9",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-191",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/dataset-list-final.json",
-            "sha256": "1e32986bae8d597438f6bece8a1d1d71e8f400a66ee1a333a5b6681da4bbadfa",
-            "size_bytes": 741,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/capability-next/fixture-20260917/view-list-16.json",
-            "sha256": "fc8cd12873a0dab5dac16fc49f75e8583f9779154a208587eb25b52cef298cd3",
-            "size_bytes": 29919,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "command_id": "dataset.list",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.9"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-192",
       "capability": "Get dataset details",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded retained-resource read with published CLI 1.1.10 returned dataset 28 details and schema metadata. No Full claim: retained ETL-owned resource, no mutation/lifecycle coverage.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18.  Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataset",
       "method": "GET",
@@ -4295,19 +4247,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "workspace 4/project 3; retained dataset 28; read-only; CLI 1.1.10",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-192",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/retained-read-110/dataset-get-28.json",
-            "sha256": "d63eeb9ab91c4b8459cc4ed53619b306b3a4d023d9a1fa75a9199c564d3cb150",
-            "size_bytes": 149673,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "command_id": "dataset.get",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.10"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-193",
@@ -4430,7 +4377,7 @@
       "capability_id": "REL-197",
       "capability": "Get list of dataviews present in a dataset",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 no-parent preview on retained view46 returned 9 columns and 50 rows; bounded to one view and not Full.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18.  Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListDataviews",
       "method": "GET",
@@ -4441,26 +4388,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "report": "docs/capability-evidence/historical-release-index.md",
-        "scope": "one retained view46 resolved dataset29 without parent; 9 columns/50 rows; public PyPI 1.1.11",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-197",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/view46-public-111/README.md",
-            "sha256": "7b7275b1e967bb8bcef2a198671ad93be3aadd2f1da6492fcf1353c5a3089ca4",
-            "size_bytes": 1881,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/view46-public-111/RESULTS.json",
-            "sha256": "4228b7f945d5f94f32ba5630868f5d159afe93d0246b42ff91784172061d8a95",
-            "size_bytes": 2203,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "command_id": "view.list",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.11-pypi"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-198",
@@ -4564,7 +4499,7 @@
       "capability_id": "REL-201",
       "capability": "Get dataview data",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 correct-parent data read on retained view46/dataset29 returned a bounded 400-row page. The earlier dataset28 403 remains an invalid-parent control; bounded and not Full.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19 (CLI 2.0.18): read back after every transform in the run (11 reads on release, rows compared by value with the fixture's known answer: amounts, statuses, ids, joined region, pivot totals). Full page only; paging not exercised.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewData",
       "method": "GET",
@@ -4575,35 +4510,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "related": [
-          "docs/capability-evidence/historical-release-index.md",
-          "docs/capability-evidence/historical-release-index.md"
-        ],
-        "scope": "workspace 4/project 3; retained view46/dataset29; public PyPI 1.1.11 correct-parent bounded page",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-201",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/retained-read-110/view-data-46.json",
-            "sha256": "241d54f857782703e3655e7202cc1c9ab6b8bdd64cdae1a237d093e1788d6eac",
-            "size_bytes": 1299,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-110/view-data-46-parent-29-pypi-111.json",
-            "sha256": "065d4373b4cc81ce570b8880863863bd57f9074f899f33809e56b6da6186f65e",
-            "size_bytes": 1377,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-110/view-get-46-invalid-parent-28-pypi-111.json",
-            "sha256": "71ec07fcf25b7473202e9927151143b61f9369a6f1616d0dcf44d5bf9f285b4c",
-            "size_bytes": 866,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "command_id": "view.data.get",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.11-pypi"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-202",
@@ -4720,7 +4634,7 @@
       "capability_id": "REL-206",
       "capability": "Get dataview pipeline information",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 pipeline get on retained view46/dataset29 returned a bounded state object; earlier owned-view evidence is retained and no Full claim is made.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18.  Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipeline",
       "method": "GET",
@@ -4731,29 +4645,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "report": "docs/capability-evidence/historical-release-index.md",
-        "related": [
-          "docs/capability-evidence/historical-release-index.md"
-        ],
-        "scope": "retained view46/dataset29 plus prior owned view5 evidence; read-only; CLI 1.1.11 public positive",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-206",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-110/view-pipeline-get-46-parent-29-pypi-111.json",
-            "sha256": "331b5b158f79dacffc2f51d186600438fc423497afbd2133b8244d033c8be210",
-            "size_bytes": 1389,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/transform-next/pipeline.json",
-            "sha256": "a596fe34542d37799109ef2505cf2bd245a65d2acf5d8ccdcc9729f4e0f4f5e7",
-            "size_bytes": 908,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "command_id": "view.pipeline.get",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.11-pypi"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-207",
@@ -4957,7 +4856,7 @@
       "capability_id": "REL-214",
       "capability": "Get dataview pipeline tasks information",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 task-list read on retained view46/dataset29 returned five bounded tasks; prior owned-view evidence is retained and no Full claim is made.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18.  Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineTasks",
       "method": "GET",
@@ -4968,29 +4867,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "report": "docs/capability-evidence/historical-release-index.md",
-        "related": [
-          "docs/capability-evidence/historical-release-index.md"
-        ],
-        "scope": "retained view46/dataset29 five-task page plus prior owned view6 evidence; read-only",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-214",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/task-list-repro.json",
-            "sha256": "13c145c9ac95ef91bcff15a228f12af67a6df5ea06c81efe4654faa5f89d8c16",
-            "size_bytes": 666,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-110/view-task-list-46-parent-29-pypi-111.json",
-            "sha256": "30dda189100918066de20f41f4753fe8cb2223cc6d98e20586735a5fb1618005",
-            "size_bytes": 1302,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "command_id": "view.task.list",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.11-pypi"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-215",
@@ -5083,7 +4967,7 @@
       "capability_id": "REL-218",
       "capability": "Get dataview data preview",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 no-parent preview on retained view46 returned 9 columns and 50 rows; bounded to one view and not Full.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18.  Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewPreview",
       "method": "GET",
@@ -5094,26 +4978,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "report": "docs/capability-evidence/historical-release-index.md",
-        "scope": "one retained view46 resolved dataset29 without parent; 9 columns/50 rows; public PyPI 1.1.11",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-218",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/view46-public-111/README.md",
-            "sha256": "7b7275b1e967bb8bcef2a198671ad93be3aadd2f1da6492fcf1353c5a3089ca4",
-            "size_bytes": 1881,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/view46-public-111/RESULTS.json",
-            "sha256": "4228b7f945d5f94f32ba5630868f5d159afe93d0246b42ff91784172061d8a95",
-            "size_bytes": 2203,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "command_id": "view.preview",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.11-pypi"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-219",
@@ -9617,7 +9489,7 @@
       "capability_id": "REL-431",
       "capability": "Create a new project in given workspace",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Created project id 21 (cli-write-sweep-20260918), owner_workspace_id 4, status ACTIVE. Used as the fixture project for this entire sweep. Single invocation only.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18.  Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateProject",
       "method": "POST",
@@ -9628,14 +9500,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
         "command_id": "project.create",
         "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-432",
@@ -9936,7 +9808,7 @@
       "capability_id": "REL-446",
       "capability": "Create or duplicate dataview",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 created returned owned view 51 under returned dataset 35, verified its exact parent, then cleaned up the owned dataset. One disposable fixture and lifecycle only; not Full.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19 (CLI 2.0.18): plain create on an owned dataset returned the new view's record (id, dataset_id; earlier releases printed '<unserializable View>'), and discard-duplicates then ran on it. clone_from is not usable on release: the clone job succeeds but the copy answers every read with 4DTVW019 and its copied tasks never execute (backend, see backend-repro-20260918/HANDOVER.md).",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AddDataview",
       "method": "POST",
@@ -9947,19 +9819,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "one disposable owned dataset 35; verified cleanup",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-446",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-d-pypi-111/README.md",
-            "sha256": "f4e3342a9d5e8e6de1d738d3ddd9d9fcbcb2b10cd7c963ff3872fa2c7eff7235",
-            "size_bytes": 3415,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "command_id": "view.create",
+        "exit_status": 0
       },
-      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-447",
@@ -10013,7 +9880,7 @@
       "capability_id": "REL-449",
       "capability": "Get dataview data",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 schema-classified read POST succeeded for retained view 46/dataset 29 with a bounded 400-row page. One scope and no pagination breadth; not Full.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19 (CLI 2.0.18): read back after every transform in the run (11 reads on release, rows compared by value with the fixture's known answer: amounts, statuses, ids, joined region, pivot totals). Full page only; paging not exercised.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewDataPost",
       "method": "POST",
@@ -10024,19 +9891,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "bounded retained view46/dataset29 read-only evidence",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-449",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-f-pypi-111/view-data-get-46-parent-29.json",
-            "sha256": "9d8563146e6e98d3e18343fb9b37c05f4a73223e8e70c82852a1f08fc42e3501",
-            "size_bytes": 1377,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "command_id": "view.data.get",
+        "exit_status": 0
       },
-      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-450",
@@ -10066,7 +9928,7 @@
       "capability_id": "REL-451",
       "capability": "Execute volatile query on dataview",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 schema-classified read POST query succeeded for retained view 46/dataset 29 at documented limit=1, offset=1. One query shape and no continuation breadth; not Full.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19 (CLI 2.0.18): condition on the pivoted view compiled to the backend clause shape and answered (exit 0); EQ with a column select and an AND of CONTAINS/NE also verified read-only on a pre-existing view. Before 2.0.18 the spec was forwarded verbatim and the job failed with 'A clause can only have one key'. Sort and offset not exercised.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ExecuteVolatileQuery",
       "method": "POST",
@@ -10077,19 +9939,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "bounded retained view46/dataset29 read-only evidence",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-451",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-f-pypi-111/view-data-query-46-parent-29.json",
-            "sha256": "3e9d3320b7413f12daf7770c9e56d32cefe478c020b27f442bc47cac1239281e",
-            "size_bytes": 1428,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "command_id": "view.data.query",
+        "exit_status": 0
       },
-      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-452",
@@ -10311,7 +10168,7 @@
       "capability_id": "REL-461",
       "capability": "Add a task in the pipeline",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; transforms proven end to end on release through view transform *: filter, fill-missing, join (two, foreign_dataset_id), pivot (Haiku e2e 2026-09-18, CLI 2.0.13, owned view 65; per-region summary exported and read back with the expected four rows); set-values with a task-level condition (only the matching row changed; SDK 0.7.9 job 439), text, bulk-replace, convert-type, discard-duplicates (reverify-216 2026-09-18, CLI 2.0.16/2.0.17, read back with view data get); Haiku cold-start 2026-09-18 on 2.0.17 ran the same ETL end to end. Transforms not named here are untried.",
+      "remarks": "Partial bounded evidence only; golden-data check golden-20260919 (CLI 2.0.18): typed transforms bulk-replace, convert-type, discard-duplicates, filter, join, pivot, set-values, text each run once on an owned fixture on release and read back with view data get against a known answer (values compared, not just exit codes). Earlier runs also proved fill-missing. Raw task_spec bodies beyond the typed transforms are not covered.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AddTask",
       "method": "POST",
@@ -10322,25 +10179,25 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/reverify-216-20260918/SUMMARY.md",
-        "report": "docs/capability-evidence/reverify-216-20260918/SUMMARY.md",
-        "scope": "reverify-216 probe on release ws 4 (owned project 29): set-values with condition, text, bulk-replace, convert-type, discard-duplicates, each read back with view data get; plus Haiku e2e 2026-09-18 (docs/capability-evidence/haiku-e2e-20260918/REPORT.md) for filter/fill-missing/join/pivot",
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
         "command_id": "view.task.add",
         "exit_status": 0,
-        "sha256": "6ea6dec70c8ac1affa362a643253d6ff597341982b016d080e9a1cf057ef1118",
         "proven_transforms": [
-          "filter",
+          "bulk-replace",
+          "convert-type",
+          "discard-duplicates",
           "fill-missing",
+          "filter",
           "join",
           "pivot",
           "set-values",
-          "text",
-          "bulk-replace",
-          "convert-type",
-          "discard-duplicates"
+          "text"
         ]
       },
-      "evidence_version": "2.0.17"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-462",
@@ -10560,7 +10417,7 @@
       "capability_id": "REL-471",
       "capability": "Upload file or folder",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Tier B observed upload ready, owned view/list/preview, and delete job success; final absence and dataset120 preservation were not verified. Also exercised successfully in the Haiku e2e run 2026-09-18 (CLI 2.0.13, see docs/capability-evidence/haiku-e2e-20260918/REPORT.md).",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19 (CLI 2.0.18): two small CSVs (numeric, text and date columns) uploaded to an owned project, both reported ready with a view. An all-text CSV is reported need_action (platform says 'more than one plausible way to be read' and creates no view); large files and non-CSV formats not exercised.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateFileDataset",
       "method": "POST",
@@ -10571,92 +10428,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "commands": [
-          "docs/capability-evidence/historical-release-index.md",
-          "docs/capability-evidence/historical-release-index.md",
-          "docs/capability-evidence/historical-release-index.md",
-          "docs/capability-evidence/historical-release-index.md",
-          "docs/capability-evidence/historical-release-index.md",
-          "docs/capability-evidence/historical-release-index.md"
-        ],
-        "result": "upload 364 ready; view 283/list/preview observed; delete job succeeded; final dataset.get(364) returned 403",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-471",
-        "archived_git_paths": [
-          {
-            "sha256": "822d37cd40a7471ac3dff0b21e275b57f07b8dc367cc1c051676a7a8335d46ce",
-            "size_bytes": 272,
-            "archive_revision": null,
-            "external_workbook_path": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0012.stdout",
-            "provenance_kind": "external_local_workbook",
-            "former_reference": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0012.stdout",
-            "external_workbook_root": "mammoth-cli-readiness",
-            "note": "Raw external workbook evidence is unavailable from the public repository; this is a bounded Partial claim based on the sanitized summary."
-          },
-          {
-            "sha256": "50f949b6e413cc1d1f81cf06cd1ceb2b1bf87b8bc0c0131c9f91fd832e079039",
-            "size_bytes": 7644,
-            "archive_revision": null,
-            "external_workbook_path": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0013.stdout",
-            "provenance_kind": "external_local_workbook",
-            "former_reference": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0013.stdout",
-            "external_workbook_root": "mammoth-cli-readiness",
-            "note": "Raw external workbook evidence is unavailable from the public repository; this is a bounded Partial claim based on the sanitized summary."
-          },
-          {
-            "sha256": "0d7fcef42f5807e5074dfb10d022022ce4f049bc117993219b19ff4c769ae421",
-            "size_bytes": 776,
-            "archive_revision": null,
-            "external_workbook_path": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0014.stdout",
-            "provenance_kind": "external_local_workbook",
-            "former_reference": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0014.stdout",
-            "external_workbook_root": "mammoth-cli-readiness",
-            "note": "Raw external workbook evidence is unavailable from the public repository; this is a bounded Partial claim based on the sanitized summary."
-          },
-          {
-            "sha256": "0a789dc03ae31d88026dbb899231cc1345ba0ee36bcafbce504beed1d9b89f54",
-            "size_bytes": 210,
-            "archive_revision": null,
-            "external_workbook_path": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0015.stdout",
-            "provenance_kind": "external_local_workbook",
-            "former_reference": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0015.stdout",
-            "external_workbook_root": "mammoth-cli-readiness",
-            "note": "Raw external workbook evidence is unavailable from the public repository; this is a bounded Partial claim based on the sanitized summary."
-          },
-          {
-            "sha256": "2b95eff75a676b9692010e2e1419d53913e3b720909ef89736ea4df6d858cae1",
-            "size_bytes": 457,
-            "archive_revision": null,
-            "external_workbook_path": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0016.stdout",
-            "provenance_kind": "external_local_workbook",
-            "former_reference": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0016.stdout",
-            "external_workbook_root": "mammoth-cli-readiness",
-            "note": "Raw external workbook evidence is unavailable from the public repository; this is a bounded Partial claim based on the sanitized summary."
-          },
-          {
-            "sha256": "d828c2abc3cd74beef360711275f7554b8d4eeb21ad2e6f1059282d81e1a09c9",
-            "size_bytes": 749,
-            "archive_revision": null,
-            "external_workbook_path": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0017.stderr",
-            "provenance_kind": "external_local_workbook",
-            "former_reference": "evidence/readiness-closure/tier-b-live-20260916T172000Z/commands/0017.stderr",
-            "external_workbook_root": "mammoth-cli-readiness",
-            "note": "Raw external workbook evidence is unavailable from the public repository; this is a bounded Partial claim based on the sanitized summary."
-          },
-          {
-            "sha256": "88680cf2f9a3ec940b14716f578d96eda78af6771ce3e78791d64abd5c2e3fe6",
-            "size_bytes": 1652,
-            "archive_revision": null,
-            "external_workbook_path": "evidence/readiness-closure/tier-b-live-20260916T172000Z/pilot-summary.json",
-            "provenance_kind": "external_local_workbook",
-            "former_reference": "evidence/readiness-closure/tier-b-live-20260916T172000Z/pilot-summary.json",
-            "external_workbook_root": "mammoth-cli-readiness",
-            "note": "Raw external workbook evidence is unavailable from the public repository; this is a bounded Partial claim based on the sanitized summary."
-          }
-        ],
-        "alternate_evidence": "docs/capability-evidence/capability-batch-201.md#REL-471"
+        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
+        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
+        "scope": "golden-data-readback",
+        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "command_id": "file.upload",
+        "exit_status": 0
       },
-      "evidence_version": null
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-472",

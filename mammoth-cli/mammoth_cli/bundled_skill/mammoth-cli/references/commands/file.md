@@ -82,7 +82,7 @@ Example: `mammoth file upload ./sales.csv --output json --no-input`. Placeholder
 
 Result: `FileUploadResult`; mutation `benign_mutation`, confirmation `none`, wait policy `start_or_wait`.
 
-Status on release: ran once on CLI an earlier release — Tier B observed upload ready, owned view/list/preview, and delete job success; final absence and dataset120 preservation were not verified. Also exercised successfully in the Haiku e2e run 2026-09-18 (CLI 2.0.13, see docs/capability-evidence/haiku-e2e-2026091…
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): two small CSVs (numeric, text and date columns) uploaded to an owned project, both reported ready with a view. An all-text CSV is reported need_action (platform says 'more than one plausible way to be read' and creat…
 
 ### `file.upload-folder`
 

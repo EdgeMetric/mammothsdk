@@ -43,7 +43,7 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
-from mammoth_cli.services.conditions import CONDITION_KWARG
+from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -304,6 +304,25 @@ def view_parameter_context(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def _dataview_metadata(
+    service: Any, dataset_id: int, dataview_id: int, project_id: int | None
+) -> list[dict[str, Any]]:
+    """Return a dataview's column metadata records, or ``[]`` on any failure."""
+    try:
+        info = service.call(
+            _DATAVIEW_GET_SYMBOL,
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            project_id=project_id,
+        )
+    except Exception:  # noqa: BLE001 -- labels are a presentation nicety, never fatal
+        return []
+    metadata = info.get(_METADATA_KEY) if isinstance(info, dict) else None
+    if not isinstance(metadata, list):
+        return []
+    return [column for column in metadata if isinstance(column, dict)]
+
+
 def _display_name_map(
     service: Any, dataset_id: int, dataview_id: int, project_id: int | None
 ) -> dict[str, str]:
@@ -313,26 +332,53 @@ def _display_name_map(
     the display names the user actually works with. Best-effort: any failure
     yields an empty map, so a data command still returns its rows.
     """
-    try:
-        info = service.call(
-            _DATAVIEW_GET_SYMBOL,
-            dataset_id=dataset_id,
-            dataview_id=dataview_id,
-            project_id=project_id,
-        )
-    except Exception:  # noqa: BLE001 -- labels are a presentation nicety, never fatal
-        return {}
-    metadata = info.get(_METADATA_KEY) if isinstance(info, dict) else None
-    if not isinstance(metadata, list):
-        return {}
     mapping: dict[str, str] = {}
-    for column in metadata:
-        if isinstance(column, dict):
-            internal = column.get(_INTERNAL_NAME_KEY)
-            display = column.get(_DISPLAY_NAME_KEY)
-            if isinstance(internal, str) and isinstance(display, str):
-                mapping[internal] = display
+    for column in _dataview_metadata(service, dataset_id, dataview_id, project_id):
+        internal = column.get(_INTERNAL_NAME_KEY)
+        display = column.get(_DISPLAY_NAME_KEY)
+        if isinstance(internal, str) and isinstance(display, str):
+            mapping[internal] = display
     return mapping
+
+
+def _compile_query_filters(
+    service: Any,
+    dataset_id: int,
+    dataview_id: int,
+    project_id: int | None,
+    document: dict[str, Any],
+    kwargs: dict[str, Any],
+) -> dict[str, str] | None:
+    """Translate a data query's ``condition`` and ``columns`` to the wire format.
+
+    The data route takes the backend condition shape (``{internal: {OP: ...}}``,
+    the one every pipeline task uses), not the CLI's ``{column, operator,
+    value}`` spec; forwarding the spec verbatim fails the job with "A clause can
+    only have one key". The spec is compiled through the shared condition
+    service and built against the view's display -> internal name and type
+    maps, and ``columns`` given as display names are mapped the same way.
+    Returns the internal -> display map when metadata was fetched, so the row
+    relabelling can reuse it.
+    """
+    if CONDITION_KWARG not in document and "columns" not in document:
+        return None
+    metadata = _dataview_metadata(service, dataset_id, dataview_id, project_id)
+    column_map: dict[str, str] = {}
+    column_types: dict[str, str] = {}
+    for column in metadata:
+        internal = column.get(_INTERNAL_NAME_KEY)
+        display = column.get(_DISPLAY_NAME_KEY)
+        if isinstance(internal, str) and isinstance(display, str):
+            column_map[display] = internal
+            if isinstance(column.get("type"), str):
+                column_types[display] = column["type"]
+    if CONDITION_KWARG in document:
+        compiled = compile_condition(document[CONDITION_KWARG])
+        kwargs[CONDITION_KWARG] = compiled.build(column_map or None, column_types or None)
+    columns = document.get("columns")
+    if isinstance(columns, list):
+        kwargs["columns"] = [column_map.get(c, c) if isinstance(c, str) else c for c in columns]
+    return {internal: display for display, internal in column_map.items()} if metadata else None
 
 
 def _relabel_columns(
@@ -522,11 +568,10 @@ def view_data_query(invocation: Invocation) -> HandlerResult:
             "dataview_id": view_id,
             "project_id": project_id,
         }
-        _forward_optional(
-            document, kwargs, ("sequence", "offset", "limit", "columns", CONDITION_KWARG, "sort")
-        )
+        _forward_optional(document, kwargs, ("sequence", "offset", "limit", "sort"))
+        mapping = _compile_query_filters(service, dataset_id, view_id, project_id, document, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
-        data = _relabel_columns(service, dataset_id, view_id, project_id, data)
+        data = _relabel_columns(service, dataset_id, view_id, project_id, data, mapping)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

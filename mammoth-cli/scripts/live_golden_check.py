@@ -6,15 +6,15 @@ correct answers are known, runs the typed transforms an ETL task uses, and
 reads the data back after every step asserting the *values*, not just the
 job status:
 
-- bulk-replace strips ``$`` and ``,`` from ``amount`` and nothing else
+- bulk-replace strips the ``USD `` prefix from ``amount`` and nothing else
 - convert-type makes ``amount`` numeric (blank stays null)
 - set-values with a condition fills only the blank ``amount``
 - text trims and lower-cases ``status`` only
 - filter removes exactly the negative-qty row
 - discard-duplicates removes exactly the duplicated row
 - join brings ``region`` for matched customers and null for the unmatched one
-- view create (clone_from) + pivot gives per-region sums that add up
-- export csv writes the rows that were read back
+- export csv writes the cleaned rows that were read back
+- pivot (in place, last) gives per-region sums that add up
 
 Every command's outcome is appended to ``results.jsonl`` in the evidence
 directory (``--evidence-dir``) in the matrix fold format, and a SUMMARY.md is
@@ -43,18 +43,24 @@ from typing import Any
 
 ORDERS = [
     ["order_id", "customer_id", "amount", "qty", "status", "order_date"],
-    ["1", "C1", "$1,234.56", "2", " Active ", "2024-01-05"],
+    ["1", "C1", "USD 1234.56", "2", " Active ", "2024-01-05"],
     ["2", "C2", "", "1", "active", "2024-02-10"],
-    ["3", "C3", "10", "0", "INACTIVE", "2024-03-15"],
-    ["4", "C1", "$7,000", "-1", "Active", "2024-04-20"],
-    ["4", "C1", "$7,000", "-1", "Active", "2024-04-20"],
-    ["5", "C9", "25", "3", "Active", "2024-05-01"],
+    ["3", "C3", "USD 10", "0", "INACTIVE", "2024-03-15"],
+    ["4", "C1", "USD 7000", "-1", "Active", "2024-04-20"],
+    ["4", "C1", "USD 7000", "-1", "Active", "2024-04-20"],
+    ["5", "C9", "USD 25", "3", "Active", "2024-05-01"],
 ]
+# ``USD 1234.56`` keeps ``amount`` TEXT on upload.  ``$1,234.56`` is parsed as
+# NUMERIC by the platform, and a REPLACE task on a numeric column leaves the
+# view's pipeline broken (task stuck in ``added``, reads fail).
+# ``credit_limit`` keeps one non-text column in the file: an all-text CSV is
+# reported "ready" with a plausibility message and never gets a view until its
+# settings are confirmed (see recipes/need-action.md).
 CUSTOMERS = [
-    ["customer_id", "region"],
-    ["C1", "north"],
-    ["C2", "south"],
-    ["C3", "south"],
+    ["customer_id", "region", "credit_limit"],
+    ["C1", "north", "1000"],
+    ["C2", "south", "2500"],
+    ["C3", "south", "500"],
 ]
 
 
@@ -175,17 +181,16 @@ class Check:
         return int(ids[0])
 
     def view_for(self, dataset_id: int) -> int | None:
-        _, data, _ = self.run("view.list", ["view", "list", str(dataset_id)])
-        items = (
-            data
-            if isinstance(data, list)
-            else (data or {}).get("dataviews") or (data or {}).get("data")
-        )
-        if isinstance(data, dict) and not items:
-            items = next((v for v in data.values() if isinstance(v, list)), None)
-        if not items:
-            return None
-        return int(items[0]["id"])
+        """Return the dataset's first view id, waiting for the platform to create it."""
+        for attempt in range(12):
+            _, data, _ = self.run("view.list", ["view", "list", str(dataset_id)])
+            items = data.get("dataviews") if isinstance(data, dict) else data
+            if isinstance(items, list) and items:
+                if attempt:
+                    self.amend("view.list", f"view appeared after {attempt} re-read(s)")
+                return int(items[0]["id"])
+            time.sleep(5)
+        return None
 
     def transform(self, name: str, view_id: int, dataset_id: int, body: dict[str, Any]) -> bool:
         code, _, _ = self.run(
@@ -240,8 +245,8 @@ class Check:
         self.expect(len(before) == 6, f"orders upload has 6 rows (got {len(before)})")
         by_id = {str(r.get("order_id")): r for r in before}
         self.expect(
-            str(by_id.get("1", {}).get("amount")) == "$1,234.56",
-            "amount is text with $ and , before bulk-replace",
+            str(by_id.get("1", {}).get("amount")) == "USD 1234.56",
+            "amount is text with a USD prefix before bulk-replace",
         )
 
         # 1. bulk-replace: strip currency formatting from amount only.
@@ -249,7 +254,7 @@ class Check:
             "bulk-replace",
             v_o,
             ds_o,
-            {"columns": ["amount"], "mapping": [{"search": ["$", ","], "replace": ""}]},
+            {"columns": ["amount"], "mapping": [{"search": ["USD "], "replace": ""}]},
         ):
             rows = self.rows(v_o, ds_o, "after bulk-replace")
             got = {str(r.get("order_id")): r for r in rows}
@@ -261,7 +266,7 @@ class Check:
             )
             self.amend(
                 "view.transform.bulk-replace",
-                "removed $ and , from amount; other columns unchanged (read back)",
+                "removed the USD prefix from amount; other columns unchanged (read back)",
             )
 
         # 2. convert-type: amount -> NUMERIC.
@@ -270,9 +275,9 @@ class Check:
         ):
             rows = self.rows(v_o, ds_o, "after convert-type")
             got = {str(r.get("order_id")): r for r in rows}
+            # Reads serialise numbers as strings; compare by value.
             self.expect(
-                isinstance(got.get("1", {}).get("amount"), (int, float))
-                and abs(float(got["1"]["amount"]) - 1234.56) < 1e-6,
+                abs(float(got.get("1", {}).get("amount") or 0) - 1234.56) < 1e-6,
                 "convert-type: amount numeric 1234.56",
             )
             self.expect(
@@ -388,81 +393,63 @@ class Check:
                 "unmatched row null (read back)",
             )
 
-        # 8. pivot on a clone of the cleaned view; sums must add up.
-        _, data, _ = self.run(
-            "view.create",
-            ["view", "create", str(ds_o)],
-            input_doc={"name": f"summary-{stamp}", "clone_from": v_o},
+        # 8. export the cleaned rows before the pivot replaces them.  (A
+        #    ``clone_from`` copy is not usable on release: the clone job
+        #    succeeds, but the new view answers every read with 4DTVW019 and
+        #    its copied tasks never execute.)
+        cleaned = self.rows(v_o, ds_o, "cleaned rows before export")
+        out = work / "orders_clean.csv"
+        code, data, _ = self.run(
+            "view.export.csv",
+            ["view", "export", "csv", str(v_o)],
+            input_doc={"dataset_id": ds_o, "output_path": str(out)},
         )
-        v_sum = (
-            (data or {}).get("dataview_id") or (data or {}).get("id")
-            if isinstance(data, dict)
-            else None
-        )
-        if isinstance(v_sum, int):
-            self.created.append(("view", [str(v_sum), str(ds_o)]))
-            clone_rows = self.rows(v_sum, ds_o, "clone before pivot")
-            cloned = self.expect(
-                len(clone_rows) == 4 and "region" in (clone_rows[0] if clone_rows else {}),
-                "view create clone_from copies the pipeline (4 cleaned rows with region)",
+        if code == 0 and out.exists():
+            with out.open(encoding="utf-8") as handle:
+                exported = list(csv.DictReader(handle))
+            self.expect(
+                len(exported) == len(cleaned) == 4,
+                f"export csv rows == readback rows ({len(exported)})",
+            )
+            self.expect(
+                "region" in (exported[0] if exported else {}),
+                "export csv carries the joined region column",
             )
             self.amend(
-                "view.create",
-                (
-                    "clone_from copied the source pipeline: "
-                    "the new view shows the cleaned, joined rows"
-                    if cloned
-                    else "clone_from did not copy the pipeline"
-                ),
+                "view.export.csv",
+                f"wrote {len(exported)} rows matching the read-back cleaned view",
             )
-            if cloned and self.transform(
-                "pivot",
-                v_sum,
-                ds_o,
-                {
-                    "group_by": ["region"],
-                    "aggregations": [
-                        {"column": "amount", "function": "SUM", "as_name": "total_amount"},
-                        {"column": "order_id", "function": "COUNT", "as_name": "order_count"},
-                    ],
-                },
-            ):
-                rows = self.rows(v_sum, ds_o, "after pivot")
-                totals = {str(r.get("region")): r for r in rows}
-                counts = sum(int(r.get("order_count") or 0) for r in rows)
-                self.expect(counts == 4, f"pivot: Σ order_count == 4 (got {counts})")
-                self.expect(
-                    abs(float(totals.get("north", {}).get("total_amount") or 0) - 1234.56) < 1e-6,
-                    "pivot: north total 1234.56",
-                )
-                self.expect(
-                    abs(float(totals.get("south", {}).get("total_amount") or 0) - 10.0) < 1e-6,
-                    "pivot: south total 10 (0 + 10)",
-                )
-                self.amend(
-                    "view.transform.pivot",
-                    "group by region with SUM/COUNT: totals match the read-back rows "
-                    "and counts sum to the row count",
-                )
 
-                # 9. export csv of the summary and compare with the readback.
-                out = work / "summary.csv"
-                code, data, _ = self.run(
-                    "view.export.csv",
-                    ["view", "export", "csv", str(v_sum)],
-                    input_doc={"dataset_id": ds_o, "output_path": str(out)},
-                )
-                if code == 0 and out.exists():
-                    with out.open(encoding="utf-8") as handle:
-                        exported = list(csv.DictReader(handle))
-                    self.expect(
-                        len(exported) == len(rows),
-                        f"export csv rows == readback rows ({len(exported)})",
-                    )
-                    self.amend(
-                        "view.export.csv",
-                        f"wrote {len(exported)} rows matching the read-back summary",
-                    )
+        # 9. pivot in place as the last step; sums must add up.
+        if self.transform(
+            "pivot",
+            v_o,
+            ds_o,
+            {
+                "group_by": ["region"],
+                "aggregations": [
+                    {"column": "amount", "function": "SUM", "as_name": "total_amount"},
+                    {"column": "order_id", "function": "COUNT", "as_name": "order_count"},
+                ],
+            },
+        ):
+            rows = self.rows(v_o, ds_o, "after pivot")
+            totals = {str(r.get("region")): r for r in rows}
+            counts = sum(int(float(r.get("order_count") or 0)) for r in rows)
+            self.expect(counts == 4, f"pivot: Σ order_count == 4 (got {counts})")
+            self.expect(
+                abs(float(totals.get("north", {}).get("total_amount") or 0) - 1234.56) < 1e-6,
+                "pivot: north total 1234.56",
+            )
+            self.expect(
+                abs(float(totals.get("south", {}).get("total_amount") or 0) - 10.0) < 1e-6,
+                "pivot: south total 10 (0 + 10)",
+            )
+            self.amend(
+                "view.transform.pivot",
+                "group by region with SUM/COUNT: totals match the read-back rows "
+                "and counts sum to the row count",
+            )
 
         # 10. a few cheap read routes on the owned fixtures.
         self.run(

@@ -160,7 +160,7 @@ Example: `mammoth view create 123 --output json --no-input`. Placeholders are il
 
 Result: `ViewCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.7.1 created returned owned view 51 under returned dataset 35, verified its exact parent, then cleaned up the owned dataset. One disposable fixture and lifecycle only; not Full.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): plain create on an owned dataset returned the new view's record (id, dataset_id; earlier releases printed '<unserializable View>'), and discard-duplicates then ran on it. clone_from is not usable on release: the clon…
 
 ### `view.data-check.create`
 
@@ -220,7 +220,7 @@ Example: `mammoth view data get 123 123 --output json --no-input`. Placeholders 
 
 Result: `ViewDataGetResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 correct-parent data read on retained view46/dataset29 returned a bounded 400-row page. The earlier dataset28 403 remains an invalid-parent control; bounded and not Full.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): read back after every transform in the run (11 reads on release, rows compared by value with the fixture's known answer: amounts, statuses, ids, joined region, pivot totals). Full page only; paging not exercised.
 
 ### `view.data.query`
 
@@ -230,7 +230,7 @@ Example: `mammoth view data query 123 123 --output json --no-input`. Placeholder
 
 Result: `ViewDataQueryResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.7.1 schema-classified read POST query succeeded for retained view 46/dataset 29 at documented limit=1, offset=1. One query shape and no continuation breadth; not Full.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): condition on the pivoted view compiled to the backend clause shape and answered (exit 0); EQ with a column select and an AND of CONTAINS/NE also verified read-only on a pre-existing view. Before 2.0.18 the spec was f…
 
 ### `view.delete`
 
@@ -240,7 +240,7 @@ Example: `mammoth view delete 123 123 --output json --no-input`. Illustrative on
 
 Result: `ViewDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. job 350 safe_delete_dataviews -> status success. View 72 (already exercised via view.trash/view.restore) permanently deleted. Single invocation only.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
 
 ### `view.derivative.create`
 
@@ -662,7 +662,7 @@ Example: `mammoth view list 123 --output json --no-input`. Placeholders are illu
 
 Result: `ViewListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 no-parent preview on retained view46 returned 9 columns and 50 rows; bounded to one view and not Full.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
 
 ### `view.parameter-context`
 
@@ -692,7 +692,7 @@ Example: `mammoth view pipeline get 123 --output json --no-input`. Placeholders 
 
 Result: `ViewPipelineGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 pipeline get on retained view46/dataset29 returned a bounded state object; earlier owned-view evidence is retained and no Full claim is made.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
 
 ### `view.pipeline.items`
 
@@ -742,7 +742,7 @@ Example: `mammoth view preview 123 123 --output json --no-input`. Placeholders a
 
 Result: `ViewPreviewResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 no-parent preview on retained view46 returned 9 columns and 50 rows; bounded to one view and not Full.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
 
 ### `view.restore`
 
@@ -762,7 +762,7 @@ Example: `mammoth view task add 123 --input '{"task_spec": {"DATAVIEW_ID": 123, 
 
 Result: `ViewTaskAddResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.17 — transforms proven end to end on release through view transform *: filter, fill-missing, join (two, foreign_dataset_id), pivot (Haiku e2e 2026-09-18, CLI 2.0.13, owned view 65; per-region summary exported and read back with the expected four rows); set-values…
+Status on release: ran once on CLI 2.0.18 — golden-data check golden-20260919 (CLI 2.0.18): typed transforms bulk-replace, convert-type, discard-duplicates, filter, join, pivot, set-values, text each run once on an owned fixture on release and read back with view data get against a known answer (values…
 
 ### `view.task.delete`
 
@@ -792,7 +792,7 @@ Example: `mammoth view task list 123 --output json --no-input`. Placeholders are
 
 Result: `ViewTaskListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 task-list read on retained view46/dataset29 returned five bounded tasks; prior owned-view evidence is retained and no Full claim is made.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
 
 ### `view.task.preview`
 
@@ -852,7 +852,7 @@ Example: `mammoth view transform bulk-replace 123 --input '{"columns": ["Status"
 
 Result: `ViewTransformBulkReplaceResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.17 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.combine-columns`
 
@@ -872,7 +872,7 @@ Example: `mammoth view transform convert-type 123 --input '{"conversions": [{"co
 
 Result: `ViewTransformConvertTypeResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.17 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.copy-columns`
 
@@ -922,7 +922,7 @@ Example: `mammoth view transform discard-duplicates 123 --input '{"dataset_id": 
 
 Result: `ViewTransformDiscardDuplicatesResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.17 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.extract-date`
 
@@ -942,7 +942,7 @@ Example: `mammoth view transform fill-missing 123 --input '{"column": "Status", 
 
 Result: `ViewTransformFillMissingResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.17 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.filter`
 
@@ -952,7 +952,7 @@ Example: `mammoth view transform filter 123 --input '{"condition": {"column": "S
 
 Result: `ViewTransformFilterResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.17 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.generate-sql`
 
@@ -982,7 +982,7 @@ Example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_typ
 
 Result: `ViewTransformJoinResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.17 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.json-extract`
 
@@ -1032,7 +1032,7 @@ Example: `mammoth view transform pivot 123 --input '{"group_by": ["sample"], "ag
 
 Result: `ViewTransformPivotResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.17 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.replace`
 
@@ -1052,7 +1052,7 @@ Example: `mammoth view transform set-values 123 --input '{"values": [{"value": "
 
 Result: `ViewTransformSetValuesResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.17 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.small-large`
 
@@ -1092,7 +1092,7 @@ Example: `mammoth view transform text 123 --input '{"columns": ["Status"], "data
 
 Result: `ViewTransformTextResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.17 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.unnest`
 

@@ -245,3 +245,21 @@ fails earlier with `'INTERNAL_NAME'` (job 377). Classification: CLI example
 defect (fixed in 2.0.16) plus a backend serialization defect in the preview
 response for views with a DATE column. Owner: backend (task_preview response
 serialization).
+
+## Addendum (operator, 2026-09-19) — all-text CSV never gets a view
+
+- **Route:** `POST /workspaces/4/projects/{p}/files` → `GET .../datasets/{id}`; then `PATCH .../datasets/{id}/file-settings` (`understand_csv`).
+- **Fixture:** project 36, `customers.csv` (3 rows; columns `customer_id`, `region`, both text) → datasets 74 and 75; `orders.csv` (numeric and date columns) → dataset 76. All deleted afterwards; `project list` = project 3 only.
+- **Observed:** the all-text file reaches `status: "ready"` with `status_info.ready` = "This file has more than one plausible way to be read.", `file-settings get` shows `automation_possible: true`, `at_least_one_non_text_column_present: false`, and `view list` stays empty. `file-settings update` (with the detected settings, with and without `skip_auto_process_check: true`) returns a successful `understand_csv` job and a batch (row_count 3) but still no dataview. `orders.csv` in the same project got its view immediately.
+- **Classification:** `backend` — `ready` is reported for a dataset that has not been processed into a view, and confirming the settings does not process it. Reference: `mvc-service/api/api/file/unprocessed.py` (`understand()`/`process()`), where the plausibility gate leaves the dataset without a view.
+- **CLI side (2.0.18):** `file upload` now reports this state as `need_action` with `next_command: mammoth dataset file-settings get ID` instead of `ready`; `recipes/need-action.md` documents the stop condition.
+- **Suggested fix owner:** backend (file understanding / auto-process) — either create the view when settings are confirmed or report the dataset as `need_action` rather than `ready`.
+
+## Addendum (operator, 2026-09-19) — `clone_config_from` leaves the copy unreadable
+
+- **Route:** `POST /workspaces/4/projects/38/datasets/80/dataviews` with `{"name": "clone-test", "clone_config_from": 96}` → job 520 (`clone_dataview`) → `success`; then `GET .../dataviews/99`.
+- **Fixture:** project 38 (`dbg4-20260919`), dataset 80 (`orders_usd.csv`, 6 rows), source view 96 with two executed tasks (REPLACE, CONVERT). Copy = view 99. All deleted afterwards; `project list` = project 3 only.
+- **Observed:** every `GET .../dataviews/99` answers HTTP 400 `4DTVW019 INVALID_RESPONSE_GENERATED` ("The response generated is invalid. Please try again later."), still five minutes after the clone job succeeded. `view task list 99` shows the copied tasks 48 (REPLACE) and 49 (CONVERT) in `status: added`, `pipeline get` shows `draft_mode: dirty`, `auto_run: false`, `execution_state: idle`. `view data get 99` fails (`get_dataview_data` job error `'NoneType' object has no attribute 'id'`); `view draft submit 99` fails on the same GET; `pipeline/rerun` rejects an empty body (`4GENR007 'data'`). The same symptoms appeared in the first golden run (view 92, project 37) after a REPLACE task on a column the platform had typed NUMERIC (`$1,234.56` is parsed as a number on upload).
+- **Classification:** `backend` — a clone job that reports success hands back a dataview the API cannot serialise and whose pipeline is never run; `pipeline/items` on such a view also returned 403 `4PERM002` once (view 92).
+- **CLI side (2.0.18):** recipes no longer build summaries on a `clone_from` copy (export the source rows, then pivot in place as the last step); `recovery.md` maps `4DTVW019` after `clone_from` to that path. `view create` now returns the new view's record (`id`, `dataset_id`) instead of `"<unserializable View>"`.
+- **Suggested fix owner:** backend (dataview clone task: run or stage the copied pipeline and return a serialisable dataview).

@@ -70,7 +70,7 @@ Example: `mammoth dataset delete 123 --output json --no-input`. Illustrative onl
 
 Result: `DatasetDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.9 — Bounded owned-fixture delete succeeded with pinned CLI 1.1.9: delete job 42 succeeded for dataset 16 and final dataset list was empty. No Full claim: no protected-resource preservation check or broader delete variants.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
 
 ### `dataset.file-settings.get`
 
@@ -120,7 +120,7 @@ Example: `mammoth dataset get 123 --output json --no-input`. Placeholders are il
 
 Result: `DatasetGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.10 — Bounded retained-resource read with published CLI 1.1.10 returned dataset 28 details and schema metadata. No Full claim: retained ETL-owned resource, no mutation/lifecycle coverage.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
 
 ### `dataset.list`
 
@@ -130,7 +130,7 @@ Example: `mammoth dataset list --output json --no-input`. Placeholders are illus
 
 Result: `DatasetListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.9 — Bounded owned-fixture read with pinned CLI 1.1.9 returned dataset 16 in project 3; no Full claim: single disposable fixture and no pagination/variant coverage.
+Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. post-cleanup list Single invocation only.
 
 ### `dataset.rename`
 

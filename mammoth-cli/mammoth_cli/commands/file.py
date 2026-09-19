@@ -265,6 +265,12 @@ def _upload_result(
     datasets: list[dict[str, Any]] = []
     for dataset_id in ids:
         status, status_info = read_status(dataset_id)
+        # The platform reports an all-text CSV as ``ready`` with the message
+        # "This file has more than one plausible way to be read." and creates
+        # no view until its settings are confirmed; that is a need_action state
+        # whatever the status field says.
+        if status == "ready" and status_info and str(status_info.get("ready") or "").strip():
+            status = "need_action"
         entry: dict[str, Any] = {"id": dataset_id, "status": status}
         if status_info:
             entry["status_info"] = status_info
