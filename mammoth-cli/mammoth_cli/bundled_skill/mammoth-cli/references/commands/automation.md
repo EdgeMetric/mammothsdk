@@ -10,7 +10,7 @@ Example: `mammoth automation create 'Revenue report' --input '{"description": "s
 
 Result: `AutomationCreateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created automation id=1 after two failed attempts: agent_example's run_data_retrieval needs cloud-source dataset ids (4AUTO006), and send_an_alert needed attachments.dataview_ids (undocume…
 
 ### `automation.delete`
 
@@ -20,7 +20,7 @@ Example: `mammoth automation delete 123 --output json --no-input`. Illustrative 
 
 Result: `AutomationDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Delete returned 200/data:{} despite get/list never having shown the resource; cannot independently confirm deletion given get/list breakage for this id. Single invocation only.
 
 ### `automation.get`
 
@@ -30,7 +30,7 @@ Example: `mammoth automation get 123 --output json --no-input`. Placeholders are
 
 Result: `AutomationGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: observed blocker — backend_error: SUSPECTED DEFECT: automation.get on the id just returned by automation.create (id=1) returns HTTP 500 empty body every time (3 retries, several seconds apart), not e. Re-check before relying on it.
 
 ### `automation.list`
 
@@ -40,7 +40,7 @@ Example: `mammoth automation list --output json --no-input`. Placeholders are il
 
 Result: `AutomationListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.10 — Bounded release read with published CLI 1.1.10 returned an empty automation collection; unknown input field produced deterministic unknown_input_field. No Full claim: no automation fixture or lifecycle coverage.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Empty (consistent with family 4's observation that create automations never surface in list). Single invocation only.
 
 ### `automation.restore`
 
@@ -70,4 +70,4 @@ Example: `mammoth automation update 123 --input '{"patch": [{"op": "replace", "p
 
 Result: `AutomationUpdateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: observed blocker — cli_error: CLI rejected 'name' field; error message says accepted field is 'patch' (nested patch object), not documented in agent_example. Re-check before relying on it.

@@ -30,7 +30,12 @@ Ran once: `annotation.list`
 
 ## `automation`
 
-Ran once: `automation.list`
+Ran once: `automation.create`, `automation.delete`, `automation.list`
+
+| Command | State | Note |
+|---|---|---|
+| `automation.get` | observed blocker | backend_error: SUSPECTED DEFECT: automation.get on the id just returned by automation.create (id=1) returns HTTP 500 empty body every time (3 retries, several seconds apart), not e |
+| `automation.update` | observed blocker | cli_error: CLI rejected 'name' field; error message says accepted field is 'patch' (nested patch object), not documented in agent_example |
 
 ## `batch`
 
@@ -38,7 +43,7 @@ Ran once: `batch.bulk-delete`, `batch.delete`, `batch.get`, `batch.list`, `batch
 
 | Command | State | Note |
 |---|---|---|
-| `batch.create` | CLI defect fixed, untried since | 2.0.16 (mapping items carry expected_destination_c_type (TEXT/NUMERIC/DATE) |
+| `batch.create` | observed blocker | backend_error: SUSPECTED DEFECT (4th occurrence of this pattern in the sweep): retried with source_id=87 as an actual dataset id, got HTTP 500 empty body / outcome_unknown |
 
 ## `billing`
 
@@ -55,12 +60,13 @@ Ran once: `billing.stripe.history`, `billing.stripe.payment-method.list`, `billi
 
 ## `browse`
 
-Ran once: `browse.project`, `browse.workspace`
+Ran once: `browse.workspace`
 
 | Command | State | Note |
 |---|---|---|
 | `browse.folder` | observed blocker | cli_error: rejects folder id 0 although folder.root reports id 0 as the root |
-| `browse.root` | observed blocker | server_error: see sweep report |
+| `browse.project` | observed blocker | backend_error: SUSPECTED DEFECT: GET /workspaces/4/projects/41/browse also 500s empty body, same pattern as browse.root, on our own fresh empty-of-folders project |
+| `browse.root` | observed blocker | backend_error: SUSPECTED DEFECT: GET /browse returns HTTP 500 empty body, reproduced twice |
 
 ## `client-app`
 
@@ -70,13 +76,12 @@ Ran once: `browse.project`, `browse.workspace`
 
 ## `connector`
 
-Ran once: `connector.active`, `connector.list`
+Ran once: `connector.active`, `connector.ai.session.list`, `connector.list`
 
 | Command | State | Note |
 |---|---|---|
-| `connector.ai.session.list` | observed blocker | cli_error: backend returned HTTP 200 but the CLI raised api_error (envelope mismatch) |
 | `connector.connection.list` | observed blocker | server_error: see sweep report |
-| `connector.get` | observed blocker | validation_error: HTTP 400 'Invalid connector key' for a key returned by connector.list |
+| `connector.get` | observed blocker | backend_error: SUSPECTED DEFECT: connector.get rejects the exact name_key values returned by connector.list ('azure_blob', 'bigquery' both tried) with 4CNTR002 INVALID_CONNECTOR_KE |
 | `connector.query.generate` | observed blocker | blocked_missing_fixture: No real connector connection exists in workspace 4 (connector.list shows all is_added:false; connector.active returns []), matching the documented capabili |
 | `connector.query.status` | observed blocker | blocked_missing_fixture: No real connector connection exists in workspace 4 (connector list shows all is_added:false; connector active returns []) and creating one requires externa |
 
@@ -86,9 +91,7 @@ Ran once: `data-app.list`
 
 ## `external-key`
 
-| Command | State | Note |
-|---|---|---|
-| `external-key.list` | observed blocker | cli_error: not_authenticated although the same session authenticated elsewhere |
+Ran once: `external-key.list`
 
 ## `notification`
 
@@ -96,7 +99,7 @@ Ran once: `notification.list`
 
 ## `parameter`
 
-Ran once: `parameter.group.list`, `parameter.list`
+Ran once: `parameter.create`, `parameter.delete`, `parameter.dependencies`, `parameter.get`, `parameter.group.list`, `parameter.list`, `parameter.update`
 
 ## `report`
 
@@ -106,12 +109,13 @@ Ran once: `report.list`
 
 | Command | State | Note |
 |---|---|---|
+| `schedule.create` | observed blocker | backend_error: SUSPECTED CLI/BACKEND DEFECT: second create attempt (with work_items bound to dataset 85) returned HTTP 500 with empty response body, surfaced by CLI as code=outcome |
 | `schedule.get` | observed blocker | blocked_missing_fixture: Not run: id source schedule.list failed with backend_error (5GENR011 NOT_IMPLEMENTED, HTTP 400), so no schedule_id was observed to use |
-| `schedule.list` | observed blocker | backend_error: backend_code=5GENR011 NOT_IMPLEMENTED: 'Not implemented' on GET /workspaces/4/projects/3/schedules |
+| `schedule.list` | observed blocker | backend_error: Re-confirms 5GENR011 NOT_IMPLEMENTED from family 3 |
 
 ## `snippet`
 
-Ran once: `snippet.list`
+Ran once: `snippet.create`, `snippet.delete`, `snippet.dependencies`, `snippet.get`, `snippet.list`, `snippet.update`
 
 ## `support`
 
@@ -119,9 +123,7 @@ Ran once: `support.connector-profile.list`, `support.connector.list`, `support.f
 
 ## `template`
 
-| Command | State | Note |
-|---|---|---|
-| `template.list` | observed blocker | cli_error: backend returned HTTP 200 but the CLI raised api_error (envelope mismatch) |
+Ran once: `template.create`, `template.delete`, `template.get`, `template.list`, `template.update`
 
 ## `trash`
 
@@ -133,13 +135,11 @@ Ran once: `user.get`, `user.preference.get`, `user.preference.update`
 
 ## `webhook`
 
-| Command | State | Note |
-|---|---|---|
-| `webhook.list` | observed blocker | cli_error: api_error with no HTTP status recorded |
+Ran once: `webhook.create`, `webhook.delete`, `webhook.get`, `webhook.list`, `webhook.update`
 
 ## `workflow`
 
-Ran once: `workflow.graph`, `workflow.list`, `workflow.workspace-datasets`, `workflow.workspace-exports`, `workflow.workspace-sources`
+Ran once: `workflow.create`, `workflow.delete`, `workflow.get`, `workflow.graph`, `workflow.list`, `workflow.update`, `workflow.workspace-datasets`, `workflow.workspace-exports`, `workflow.workspace-sources`
 
 ## `workspace`
 

@@ -40,7 +40,7 @@ Example: `mammoth connector ai session list --output json --no-input`. Placehold
 
 Result: `ConnectorAiSessionListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — cli_error: backend returned HTTP 200 but the CLI raised api_error (envelope mismatch). Re-check before relying on it.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. No AI chat sessions for connectors. Single invocation only.
 
 ### `connector.ai.session.messages`
 
@@ -190,7 +190,7 @@ Example: `mammoth connector get sample --output json --no-input`. Placeholders a
 
 Result: `ConnectorGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — validation_error: HTTP 400 'Invalid connector key' for a key returned by connector.list. Re-check before relying on it.
+Status on release: observed blocker — backend_error: SUSPECTED DEFECT: connector.get rejects the exact name_key values returned by connector.list ('azure_blob', 'bigquery' both tried) with 4CNTR002 INVALID_CONNECTOR_KE. Re-check before relying on it.
 
 ### `connector.list`
 
@@ -200,7 +200,7 @@ Example: `mammoth connector list --output json --no-input`. Placeholders are ill
 
 Result: `ConnectorListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.11 — Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: l, i, s, t, [, 4, 2, ]. Single read only; no fixture variants, error envelopes, or write paths assessed.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Listed 42 available connectors (name_key, disp_name, api_type, is_added, is_premium). Single invocation only.
 
 ### `connector.query.generate`
 

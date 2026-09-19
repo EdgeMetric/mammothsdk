@@ -40,4 +40,4 @@ Example: `mammoth external-key list --output json --no-input`. Placeholders are 
 
 Result: `ExternalKeyListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — cli_error: not_authenticated although the same session authenticated elsewhere. Re-check before relying on it.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. No owned external_keys present; one house_key (open_ai, in_use) visible read-only, not touched. Minor note: offset=50 returned for an empty list with limit=50…

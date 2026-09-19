@@ -10,7 +10,7 @@ Example: `mammoth schedule create --input '{"spec": {"rrule": {"frequency": "min
 
 Result: `ScheduleCreateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: observed blocker — backend_error: SUSPECTED CLI/BACKEND DEFECT: second create attempt (with work_items bound to dataset 85) returned HTTP 500 with empty response body, surfaced by CLI as code=outcome. Re-check before relying on it.
 
 ### `schedule.delete`
 
@@ -40,7 +40,7 @@ Example: `mammoth schedule list --output json --no-input`. Placeholders are illu
 
 Result: `ScheduleListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — backend_error: backend_code=5GENR011 NOT_IMPLEMENTED: 'Not implemented' on GET /workspaces/4/projects/3/schedules. Re-check before relying on it.
+Status on release: observed blocker — backend_error: Re-confirms 5GENR011 NOT_IMPLEMENTED from family 3. Re-check before relying on it.
 
 ### `schedule.update`
 

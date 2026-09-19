@@ -1,7 +1,7 @@
 # What is proven on release
 
 Generated from `docs/release-capability-matrix.json`; do not edit by hand.
-The CLI publishes 551 commands. 455 of them bind one of the 528 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (every `view transform *` command submits through `view.task.add`). 227 bound commands ran once successfully on release, 2 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID --output json --no-input`, run it, and treat the structured error envelope as the answer.
+The CLI publishes 551 commands. 455 of them bind one of the 528 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (every `view transform *` command submits through `view.task.add`). 258 bound commands ran once successfully on release, 2 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID --output json --no-input`, run it, and treat the structured error envelope as the answer.
 
 Status meanings:
 
@@ -18,21 +18,21 @@ The typed `view transform *` commands all submit through `view.task.add`; its ma
 | Family | Commands | Ran once | Not supported | Untried |
 |---|---|---|---|---|
 | `dashboard` | 104 | 81 | 2 | 21 |
-| `view` | 62 | 52 | 0 | 10 |
+| `view` | 62 | 56 | 0 | 6 |
 | `support` | 45 | 9 | 0 | 36 |
 | `billing` | 23 | 4 | 0 | 19 |
-| `connector` | 22 | 2 | 0 | 20 |
+| `connector` | 22 | 3 | 0 | 19 |
 | `workspace` | 19 | 7 | 0 | 12 |
 | `project` | 17 | 15 | 0 | 2 |
-| `workflow` | 16 | 5 | 0 | 11 |
+| `workflow` | 16 | 9 | 0 | 7 |
 | `dataset` | 15 | 12 | 0 | 3 |
-| `parameter` | 14 | 2 | 0 | 12 |
+| `parameter` | 14 | 7 | 0 | 7 |
 | `data-app` | 12 | 1 | 0 | 11 |
 | `folder` | 8 | 8 | 0 | 0 |
-| `snippet` | 8 | 1 | 0 | 7 |
-| `automation` | 7 | 1 | 0 | 6 |
+| `snippet` | 8 | 6 | 0 | 2 |
+| `automation` | 7 | 3 | 0 | 4 |
 | `user` | 7 | 3 | 0 | 4 |
-| `webhook` | 7 | 0 | 0 | 7 |
+| `webhook` | 7 | 5 | 0 | 2 |
 | `addon` | 6 | 0 | 0 | 6 |
 | `batch` | 6 | 5 | 0 | 1 |
 | `file` | 6 | 5 | 0 | 1 |
@@ -42,9 +42,9 @@ The typed `view transform *` commands all submit through `view.task.add`; its ma
 | `client-app` | 5 | 0 | 0 | 5 |
 | `notification` | 5 | 1 | 0 | 4 |
 | `schedule` | 5 | 0 | 0 | 5 |
-| `template` | 5 | 0 | 0 | 5 |
-| `browse` | 4 | 2 | 0 | 2 |
-| `external-key` | 4 | 0 | 0 | 4 |
+| `template` | 5 | 5 | 0 | 0 |
+| `browse` | 4 | 1 | 0 | 3 |
+| `external-key` | 4 | 1 | 0 | 3 |
 | `trash` | 3 | 3 | 0 | 0 |
 | `activity` | 2 | 1 | 0 | 1 |
 | `job` | 2 | 2 | 0 | 0 |
@@ -81,7 +81,7 @@ Ran once: `dataset.batch-data`, `dataset.bulk-delete`, `dataset.create`, `datase
 
 | Command | State | Note |
 |---|---|---|
-| `dataset.bulk-update` | observed blocker | cli_error: Schema preconditions already flag this as BLOCKED[B07 DATASET_PATCH_UNTYPED]; reserved, not registered -- confirmed live |
+| `dataset.bulk-update` | observed blocker | skipped_out_of_scope: SUSPECTED DEFECT: schema.get advertises this command's precondition as 'BLOCKED[B07 DATASET_PATCH_UNTYPED]; reserved, not registered' and its only documented |
 | `dataset.create-from-pdf` | observed blocker | backend: POST /workspaces/4/projects/24/datasets-from-pdf |
 
 ## `file`
@@ -110,18 +110,14 @@ Ran once: `project.bulk-delete`, `project.bulk-update`, `project.checkpoint.list
 
 ## `view`
 
-Ran once: `view.active-user.list`, `view.active-user.mark`, `view.ai.generate-data`, `view.ai.profile`, `view.bulk-delete`, `view.checkpoint.create`, `view.checkpoint.delete`, `view.checkpoint.list`, `view.conditional-format.create`, `view.conditional-format.delete-all`, `view.conditional-format.list`, `view.conditional-format.update`, `view.create`, `view.data-check.create`, `view.data-check.delete`, `view.data-check.get`, `view.data-check.list`, `view.data.get`, `view.data.query`, `view.delete`, `view.derivative.create`, `view.derivative.delete`, `view.derivative.list`, `view.derivative.update`, `view.draft.command`, `view.export.delete`, `view.export.get`, `view.export.list`, `view.export.publish-db`, `view.export.update`, `view.exportable-config.get`, `view.get`, `view.list`, `view.parameter-context`, `view.pipeline.edit`, `view.pipeline.get`, `view.pipeline.items`, `view.pipeline.rerun`, `view.preview`, `view.restore`, `view.task.add`, `view.task.delete`, `view.task.get`, `view.task.list`, `view.task.update`, `view.trash`, `view.version.apply`, `view.version.delete`, `view.version.get`, `view.version.list`, `view.version.update`
+Ran once: `view.active-user.list`, `view.active-user.mark`, `view.ai.generate-data`, `view.ai.profile`, `view.bulk-delete`, `view.checkpoint.create`, `view.checkpoint.delete`, `view.checkpoint.get`, `view.checkpoint.list`, `view.checkpoint.update`, `view.conditional-format.create`, `view.conditional-format.delete-all`, `view.conditional-format.list`, `view.conditional-format.update`, `view.create`, `view.data-check.create`, `view.data-check.delete`, `view.data-check.get`, `view.data-check.list`, `view.data.get`, `view.data.query`, `view.delete`, `view.derivative.create`, `view.derivative.delete`, `view.derivative.list`, `view.derivative.update`, `view.draft.command`, `view.export.delete`, `view.export.get`, `view.export.list`, `view.export.publish-db`, `view.export.update`, `view.exportable-config.apply`, `view.exportable-config.get`, `view.get`, `view.list`, `view.parameter-context`, `view.pipeline.edit`, `view.pipeline.get`, `view.pipeline.items`, `view.pipeline.rerun`, `view.preview`, `view.restore`, `view.task.add`, `view.task.delete`, `view.task.get`, `view.task.list`, `view.task.preview`, `view.task.update`, `view.trash`, `view.version.apply`, `view.version.delete`, `view.version.get`, `view.version.list`, `view.version.update`
 
 | Command | State | Note |
 |---|---|---|
 | `view.ai.generation-info` | observed blocker | backend: GET /workspaces/4/projects/24/datasets/54/dataviews/76/data/generate -> HTTP 400 5GENR011 NOT_IMPLEMENTED 'Not implemented', request_id:null |
-| `view.checkpoint.get` | observed blocker | backend: GET /workspaces/4/projects/24/datasets/54/dataviews/76/pipeline/checkpoints/2 -> HTTP 500, empty response_body:{}, request_id:null, backend code: none surfaced (generic ap |
-| `view.checkpoint.update` | observed blocker | backend_error: CLI-side fix (payload now carries value:null as required) held: the correctly-shaped request was dispatched and the backend returned HTTP 500 (not a CLI-side crash): |
-| `view.data-check.update` | observed blocker | backend: PATCH .../pipeline/data-checks/3 -> HTTP 500, empty response_body, request_id:null, code:outcome_unknown |
-| `view.derivative.data` | observed blocker | backend: POST .../derivatives/4/data -> HTTP 500, empty response_body, request_id:null, code:outcome_unknown |
+| `view.data-check.update` | observed blocker | backend_error: SUSPECTED DEFECT: PATCH returned HTTP 500 empty body / CLI code=outcome_unknown, but a follow-up get confirmed the mutation actually applied (enabled:false, updated_ |
+| `view.derivative.data` | observed blocker | backend_error: SUSPECTED DEFECT: using the CLI's own documented agent_example body verbatim, derivative data fetch returns HTTP 500 empty body / outcome_unknown, reproduced twice ( |
 | `view.export.create` | observed blocker | backend: CLI accepts the request (exit 0, job 358 accepted on POST /dataviews/76/actions), but job get 358 -> status:error, response:{"error":{"message":"'destination'"}} (a raw Py |
-| `view.exportable-config.apply` | observed blocker | cli_error: Schema's own runnable_example (config:{tasks:[]}) fails: job_failed, response:{reason:(quote)dependencies(quote)} -- a raw Python KeyError, not a structured validation m |
-| `view.task.preview` | observed blocker | backend_error: Fix held: the COPY task_spec is accepted and a task_preview job (406) is created; the job then fails backend-side with 'Object of type datetime is not JSON serializa |
 | `view.export.publish-db-update` | CLI defect fixed, untried since | 2.0.16 (example value is the documented {"odbc_type": "postgres"} object (a bare string is rejected)) |
 
 Evidence collected on CLI releases 1.1.5 through 2.0.18; each row's release is recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row that ran on an older release has not been re-run since unless its note says so. Details: `docs/capability-evidence/` in the repository.

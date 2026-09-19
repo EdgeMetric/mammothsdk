@@ -62,7 +62,7 @@ Example: `mammoth workspace get 123 --output json --no-input`. Placeholders are 
 
 Result: `WorkspaceGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.11 — Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: created_at, id, last_accessed, name, path, status, updated_at, url. Single read only; no fixture variants, error envelopes, or write paths assessed.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Returned workspace 4 (API Tests) profile. Single invocation only.
 
 ### `workspace.list`
 

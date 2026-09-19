@@ -8,8 +8,10 @@ The live OpenAPI generator is nondeterministic. Repeated fetches keep the path
 and operation counts stable but change examples, some defaults, parameter order,
 and some descriptions. This script does two things:
 
-1. Save the exact raw response and its SHA-256 to ``spec/openapi/openapi.json``
-   and ``spec/openapi/metadata.json``. The raw snapshot is the pinned contract.
+1. Save the raw response, with credential-shaped example values redacted (see
+   :func:`scrub_examples`), and its SHA-256 to ``spec/openapi/openapi.json``
+   and ``spec/openapi/metadata.json``. That snapshot is the pinned contract and
+   ships inside the wheel, so it must never carry a real key.
 2. Write a normalized *contract projection* to ``spec/openapi/projection.json``.
    The projection removes ``example``/``examples``, sorts parameter arrays by
    location then name, and sorts object keys. A primary reviewer compares the
@@ -20,6 +22,7 @@ Usage::
 
     python scripts/sync_openapi.py            # fetch, write snapshot + projection
     python scripts/sync_openapi.py --check    # re-project committed snapshot only
+    python scripts/sync_openapi.py --scrub    # redact the committed snapshot in place
     python scripts/sync_openapi.py --check-live  # opt-in semantic contract drift check
 
 After reviewing a newly fetched candidate, generate a local release-matrix
@@ -32,6 +35,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 import urllib.request
 from datetime import UTC, datetime
@@ -45,6 +49,42 @@ METADATA_PATH = SPEC_DIR / "metadata.json"
 PROJECTION_PATH = SPEC_DIR / "projection.json"
 
 HTTP_METHODS = {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
+
+#: Example fields whose string values are replaced before the snapshot is
+#: written.  The backend generates its examples from live objects, so a
+#: client-app key or a webhook key can appear verbatim in the document.
+_SECRET_FIELDS = (
+    "api_key",
+    "api_secret",
+    "secret",
+    "token",
+    "password",
+    "access_key",
+    "secret_key",
+    "secret_access_key",
+    "private_key",
+    "client_secret",
+    "access_token",
+    "refresh_token",
+)
+_REDACTED = "REDACTED_EXAMPLE"
+_SECRET_VALUE = re.compile(r'"(' + "|".join(_SECRET_FIELDS) + r')"(\s*:\s*)"[^"]*"')
+# A bare ``key`` is a common map example ("key": "value"); redact it only when
+# the value looks like a generated credential.
+_KEY_VALUE = re.compile(r'"key"(\s*:\s*)"([A-Za-z0-9_-]{16,})"')
+_WEBHOOK_PATH = re.compile(r"(/webhook/data/)[A-Za-z0-9_-]{16,}")
+
+
+def scrub_examples(text: str) -> str:
+    """Return ``text`` with credential-shaped example values redacted.
+
+    Only string *values* are touched; property names, schemas, and the
+    document's structure are unchanged, so the contract projection is the
+    same before and after.
+    """
+    text = _SECRET_VALUE.sub(lambda m: f'"{m.group(1)}"{m.group(2)}"{_REDACTED}"', text)
+    text = _KEY_VALUE.sub(lambda m: f'"key"{m.group(1)}"{_REDACTED}"', text)
+    return _WEBHOOK_PATH.sub(lambda m: f"{m.group(1)}{_REDACTED}", text)
 
 
 def count_operations(document: dict[str, Any]) -> int:
@@ -167,11 +207,13 @@ def write_json(path: Path, data: Any) -> None:
 
 
 def fetch() -> None:
-    raw, document = fetch_document()
+    raw, _ = fetch_document()
+    raw = scrub_examples(raw.decode("utf-8")).encode("utf-8")
+    document = json.loads(raw)
     digest = hashlib.sha256(raw).hexdigest()
 
     SPEC_DIR.mkdir(parents=True, exist_ok=True)
-    # Preserve the exact bytes as the pinned contract.
+    # Preserve the redacted bytes as the pinned contract.
     SNAPSHOT_PATH.write_bytes(raw)
 
     metadata = {
@@ -190,6 +232,23 @@ def fetch() -> None:
     print(json.dumps(metadata, indent=2))
 
 
+def scrub() -> int:
+    """Redact the committed snapshot in place and re-pin its digest."""
+    text = SNAPSHOT_PATH.read_text(encoding="utf-8")
+    scrubbed = scrub_examples(text)
+    if scrubbed == text:
+        print("snapshot already clean")
+        return 0
+    raw = scrubbed.encode("utf-8")
+    SNAPSHOT_PATH.write_bytes(raw)
+    metadata = json.loads(METADATA_PATH.read_text(encoding="utf-8"))
+    metadata["sha256"] = hashlib.sha256(raw).hexdigest()
+    metadata["redacted_example_fields"] = list(_SECRET_FIELDS) + ["key (credential-shaped)"]
+    write_json(METADATA_PATH, metadata)
+    print(f"snapshot scrubbed: {metadata['sha256']}")
+    return 0
+
+
 def check() -> int:
     if not SNAPSHOT_PATH.exists():
         print("no committed snapshot", file=sys.stderr)
@@ -200,6 +259,9 @@ def check() -> int:
     metadata = json.loads(METADATA_PATH.read_text(encoding="utf-8"))
     if metadata.get("sha256") != digest:
         print("digest mismatch between snapshot and metadata", file=sys.stderr)
+        return 1
+    if scrub_examples(raw.decode("utf-8")) != raw.decode("utf-8"):
+        print("snapshot carries credential-shaped example values; run --scrub", file=sys.stderr)
         return 1
     write_json(PROJECTION_PATH, project_contract(document))
     print(f"snapshot ok: {digest} operations={count_operations(document)}")
@@ -236,6 +298,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--check", action="store_true", help="re-project committed snapshot only")
+    modes.add_argument("--scrub", action="store_true", help="redact the committed snapshot")
     modes.add_argument(
         "--check-live",
         action="store_true",
@@ -244,6 +307,8 @@ def main() -> int:
     args = parser.parse_args()
     if args.check:
         return check()
+    if args.scrub:
+        return scrub()
     if args.check_live:
         return check_live()
     fetch()

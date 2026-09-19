@@ -20,7 +20,7 @@ Example: `mammoth batch create 123 123 --input '{"mapping": [{"source_c_name": "
 
 Result: `BatchCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `returns_job`.
 
-Status on release: CLI defect fixed, untried since — CLI defect fixed in 2.0.16 (mapping items carry expected_destination_c_type (TEXT|NUMERIC|DATE); the {src: dst} shortcut stamps a default and the example shows the full item); not re-verified live yet. re-verification 2026-09-18 (2.0.16 fixes) observed not_re…
+Status on release: observed blocker — backend_error: SUSPECTED DEFECT (4th occurrence of this pattern in the sweep): retried with source_id=87 as an actual dataset id, got HTTP 500 empty body / outcome_unknown. Re-check before relying on it.
 
 ### `batch.create-spec`
 
@@ -40,7 +40,7 @@ Example: `mammoth batch delete 123 123 --output json --no-input`. Illustrative o
 
 Result: `BatchDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `returns_job`.
 
-Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. First call without --yes correctly returned confirmation_required (exit 2). With --yes returned {job_id:301}. Single invocation only.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted batch 90 (async job_id=612); read-back batch.list confirms 0 active batches. Single invocation only.
 
 ### `batch.get`
 
@@ -50,7 +50,7 @@ Example: `mammoth batch get 123 123 --output json --no-input`. Placeholders are 
 
 Result: `BatchGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.7.1 batch get succeeded for an ID observed from retained dataset 29. One observed-ID chain; not Full.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched batch 90 detail, matches list. Single invocation only.
 
 ### `batch.list`
 
@@ -60,7 +60,7 @@ Example: `mammoth batch list 123 --output json --no-input`. Placeholders are ill
 
 Result: `BatchListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.5 — Partial bounded release evidence: retained 1.1.5 response reports 1 batch with 51 rows; independent public-fixture oracle matches 51 rows; no Full claim.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Listed the auto-created batch (id=90) from the original file upload; confirmed the failed batch.create above did not add a second batch. Single invocation only.
 
 ### `batch.update`
 

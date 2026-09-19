@@ -46,12 +46,27 @@ REMOVE, discard-duplicates, LEFT join, export csv, pivot — 23 value
 assertions, all read back with `view data get`; `view data query` with a
 condition on the pivoted view.
 
-Matrix after this release: 227 verified of 528 (core workflow 187/230), 2
+A fixture-lifecycle sweep the same day (`fixture-sweep-20260919`: one owned
+project, 91 calls, every created id deleted and read back) added 31 verified
+routes — webhook, automation, workflow, snippet, template, parameter,
+checkpoint, data-check, derivative, batch and exportable-config lifecycles plus
+the no-fixture reads. It also recorded, for the next release: `automation
+update` documents `name` where the route takes `patch`; `file upload` with
+`append_to_ds_id` raises a bare ValueError before any request; the checkpoint
+and data-check create examples omit `pinned_to_end` / mis-type `threshold`;
+`checkpoint update` needs a patches envelope. Backend-side: `schedule` routes
+answer NOT_IMPLEMENTED, `automation get/list` cannot read a created
+automation, `browse root/project` 500, `connector get` rejects the keys
+`connector list` returns, `batch create` and `derivative data` 500 with an
+empty body. The OpenAPI snapshot that ships in the wheel is now scrubbed of
+credential-shaped example values (`sync_openapi.py --scrub`, enforced by
+`--check`).
+
+Matrix after this release: 258 verified of 528 (core workflow 191/230), 2
 Not supported, 9 rows "CLI defect fixed" still awaiting a fixture or blocked by
-the backend (`batch create`, `view export publish-db-update`, seven dashboard
-routes). The CLI requires
-`mammoth-io>=0.7.10,<0.8`, adds no API bindings, and makes no
-capability-status or autonomous-workflow qualification claim.
+the backend. The CLI requires `mammoth-io>=0.7.10,<0.8`, adds no API
+bindings, and makes no capability-status or autonomous-workflow qualification
+claim.
 
 Published from deterministic local artifacts built from tag `cli-v2.0.18`
 (source commit `CLI_COMMIT`). PyPI reports the uploaded local artifact hashes:

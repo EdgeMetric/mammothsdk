@@ -10,7 +10,7 @@ Example: `mammoth snippet create 'Revenue report' --input '{"code": "sample", "l
 
 Result: `SnippetCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. First attempt with hyphenated name 'sweep-218 snippet' failed 4SNPT006 (name must be letters/digits/underscore); retried with sweep_218_snippet, created id=1 scope=project. Single invocati…
 
 ### `snippet.delete`
 
@@ -20,7 +20,7 @@ Example: `mammoth snippet delete 123 --output json --no-input`. Illustrative onl
 
 Result: `SnippetDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted snippet 1; read-back list shows total_count=0. Single invocation only.
 
 ### `snippet.dependencies`
 
@@ -30,7 +30,7 @@ Example: `mammoth snippet dependencies 123 --output json --no-input`. Placeholde
 
 Result: `SnippetDependenciesResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. No dependencies for unused snippet, as expected. Single invocation only.
 
 ### `snippet.duplicate`
 
@@ -50,7 +50,7 @@ Example: `mammoth snippet get 123 --output json --no-input`. Placeholders are il
 
 Result: `SnippetGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched snippet 1 with dependencies/history fields added. Minor note: meta.project_id is null on this response (and on dependencies/update/delete) while list/create show 41 - inconsistent…
 
 ### `snippet.list`
 
@@ -60,7 +60,7 @@ Example: `mammoth snippet list --output json --no-input`. Placeholders are illus
 
 Result: `SnippetListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.11 — Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: items, limit, next, offset, total_count. Single read only; no fixture variants, error envelopes, or write paths assessed.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Empty after family 6 cleanup, as expected. Single invocation only.
 
 ### `snippet.rerun`
 
@@ -80,4 +80,4 @@ Example: `mammoth snippet update 123 --output json --no-input`. Placeholders are
 
 Result: `SnippetUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Updated description; response reflects change. Single invocation only.

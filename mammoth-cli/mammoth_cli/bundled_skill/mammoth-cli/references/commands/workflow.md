@@ -70,7 +70,7 @@ Example: `mammoth workflow create 'Revenue report' --output json --no-input`. Pl
 
 Result: `WorkflowCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created workflow id=1 seeded from dataset 85. Single invocation only.
 
 ### `workflow.delete`
 
@@ -80,7 +80,7 @@ Example: `mammoth workflow delete 123 --output json --no-input`. Illustrative on
 
 Result: `WorkflowDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted workflow 1; read-back get now returns 404 WORKFLOW_NOT_FOUND, confirming deletion. Single invocation only.
 
 ### `workflow.from-template`
 
@@ -100,7 +100,7 @@ Example: `mammoth workflow get 123 --output json --no-input`. Placeholders are i
 
 Result: `WorkflowGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Read back workflow 1, fields match create response. Single invocation only.
 
 ### `workflow.graph`
 
@@ -120,7 +120,7 @@ Example: `mammoth workflow list --output json --no-input`. Placeholders are illu
 
 Result: `WorkflowListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.11 — Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: l, i, s, t, [, 0, ]. Single read only; no fixture variants, error envelopes, or write paths assessed.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Empty after family 5 cleanup, as expected. Single invocation only.
 
 ### `workflow.update`
 
@@ -130,7 +130,7 @@ Example: `mammoth workflow update 123 --output json --no-input`. Placeholders ar
 
 Result: `WorkflowUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Updated notes field; response reflects change and bumped updated_at. Single invocation only.
 
 ### `workflow.workspace-datasets`
 

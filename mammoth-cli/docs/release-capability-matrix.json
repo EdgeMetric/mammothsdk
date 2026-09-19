@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 1,
-    "Partial": 226,
+    "Partial": 257,
     "Not supported": 2,
-    "Unassessed": 299
+    "Unassessed": 268
   },
   "rows": [
     {
@@ -655,8 +655,8 @@
     {
       "capability_id": "REL-035",
       "capability": "Delete parameter",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted parameter 1; read-back list shows total_count=0. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "DeleteParameter",
       "method": "DELETE",
@@ -666,8 +666,15 @@
       "sdk_symbol": "mammoth.api.parameters.ParametersAPI.delete",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "parameter.delete",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-036",
@@ -697,7 +704,7 @@
       "capability_id": "REL-037",
       "capability": "Delete a project",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19 (CLI 2.0.18): owned project deleted with --yes --confirm PROJECT_ID after its datasets were deleted one by one; project list read back without it. Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted project 41 (sweep-218-1224), read back with project get 41 beforehand. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteProject",
       "method": "DELETE",
@@ -708,10 +715,10 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
-        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
-        "scope": "golden-data-readback",
-        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "project.delete",
         "exit_status": 0
       },
@@ -737,8 +744,8 @@
     {
       "capability_id": "REL-039",
       "capability": "Delete automation and its tasks",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Delete returned 200/data:{} despite get/list never having shown the resource; cannot independently confirm deletion given get/list breakage for this id. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "DeleteAutomation",
       "method": "DELETE",
@@ -748,8 +755,15 @@
       "sdk_symbol": "mammoth.api.automations.AutomationsAPI.delete",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "automation.delete",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-040",
@@ -830,7 +844,7 @@
       "capability_id": "REL-044",
       "capability": "Delete dataset",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18.  Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted dataset 85 (main fixture.csv/view 106) after get-back confirmed id/name. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDataset",
       "method": "DELETE",
@@ -841,10 +855,10 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
-        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
-        "scope": "golden-data-readback",
-        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "dataset.delete",
         "exit_status": 0
       },
@@ -878,7 +892,7 @@
       "capability_id": "REL-046",
       "capability": "Delete batch",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. First call without --yes correctly returned confirmation_required (exit 2). With --yes returned {job_id:301}. Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted batch 90 (async job_id=612); read-back batch.list confirms 0 active batches. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteBatch",
       "method": "DELETE",
@@ -889,14 +903,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "batch.delete",
         "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-047",
@@ -974,7 +988,7 @@
       "capability_id": "REL-050",
       "capability": "Delete a derivative",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 202 Accepted non-object body reported as success. Response: {\"data\":{\"response\":null,\"status_code\":202}}. Derivative 3 was created earlier by us on view 75/dataset 53 via view.derivative.create. Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted derivative 5 (202 accepted). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDerivative",
       "method": "DELETE",
@@ -985,20 +999,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
-        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
-        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
-        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "view.derivative.delete",
         "exit_status": 0
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-051",
       "capability": "Delete a pipeline checkpoint",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 202 Accepted non-object body reported as success. Response: {\"data\":{\"response\":null,\"status_code\":202}}. Checkpoint 3 was created earlier by us via view.checkpoint.create (required pinned_to_end:true). Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted checkpoint 4 (202 accepted); read-back list is empty. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteCheckpoint",
       "method": "DELETE",
@@ -1009,20 +1023,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
-        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
-        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
-        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "view.checkpoint.delete",
         "exit_status": 0
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-052",
       "capability": "Delete a pipeline data check",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 202 Accepted non-object body reported as success. Response: {\"data\":{\"response\":null,\"status_code\":202}}. Data-check 2 was created earlier by us via view.data-check.create (required pinned_to_end:true). Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted data check 4 (202); read-back get now returns 404 NON_EXISTENT_RESOURCE, confirming deletion. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDataCheck",
       "method": "DELETE",
@@ -1033,14 +1047,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
-        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
-        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
-        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "view.data-check.delete",
         "exit_status": 0
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-053",
@@ -1290,8 +1304,8 @@
     {
       "capability_id": "REL-063",
       "capability": "Delete webhook",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted webhook 1; read-back list is empty, confirming deletion. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "DeleteWebhook",
       "method": "DELETE",
@@ -1301,14 +1315,21 @@
       "sdk_symbol": "mammoth.api.webhooks.WebhooksAPI.delete",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "webhook.delete",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-064",
       "capability": "Delete a workflow",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted workflow 1; read-back get now returns 404 WORKFLOW_NOT_FOUND, confirming deletion. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "DeleteWorkflow",
       "method": "DELETE",
@@ -1318,14 +1339,21 @@
       "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.delete",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "workflow.delete",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-065",
       "capability": "Delete snippet",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted snippet 1; read-back list shows total_count=0. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "DeleteSnippet",
       "method": "DELETE",
@@ -1335,8 +1363,15 @@
       "sdk_symbol": "mammoth.api.snippets.SnippetsAPI.delete",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "snippet.delete",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-066",
@@ -1358,8 +1393,8 @@
     {
       "capability_id": "REL-067",
       "capability": "Delete a workflow template",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted template 1; read-back list is empty. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "DeleteTemplate",
       "method": "DELETE",
@@ -1369,8 +1404,15 @@
       "sdk_symbol": "mammoth.api.templates.TemplatesAPI.delete",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "template.delete",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-068",
@@ -1458,7 +1500,7 @@
       "capability_id": "REL-072",
       "capability": "Browse and discover resources",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed server_error: see sweep report.",
+      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: SUSPECTED DEFECT: GET /browse returns HTTP 500 empty body, reproduced twice. Read-only, no fixture needed.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "BrowseResources",
       "method": "GET",
@@ -1469,14 +1511,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "browse.root",
         "exit_status": 1
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-073",
@@ -2855,7 +2897,7 @@
       "capability_id": "REL-136",
       "capability": "List notifications",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: notifications. Single read only; no fixture variants, error envelopes, or write paths assessed.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. No notifications. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetAllNotifications",
       "method": "GET",
@@ -2866,14 +2908,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "notification.list",
         "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-137",
@@ -2915,7 +2957,7 @@
       "capability_id": "REL-138",
       "capability": "Get list of reports",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: limit, next, offset, reports. Single read only; no fixture variants, error envelopes, or write paths assessed.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. No reports. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetReports",
       "method": "GET",
@@ -2926,20 +2968,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "report.list",
         "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-139",
       "capability": "Get request user details",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: created_at, email, first_name, id, last_app_activity_at, last_login_date, last_login_from_ip, last_name, profile_link, updated_at. Single read only; no fixture variants, error envelopes, or write paths assessed.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Returned current user's profile (apitests@mammoth.io). Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetUserDetails",
       "method": "GET",
@@ -2950,14 +2992,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "user.get",
         "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-140",
@@ -3350,7 +3392,7 @@
       "capability_id": "REL-157",
       "capability": "Get workspace details",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: created_at, id, last_accessed, name, path, status, updated_at, url. Single read only; no fixture variants, error envelopes, or write paths assessed.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Returned workspace 4 (API Tests) profile. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetWorkspace",
       "method": "GET",
@@ -3361,14 +3403,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "workspace.get",
         "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-158",
@@ -3422,7 +3464,7 @@
       "capability_id": "REL-160",
       "capability": "Browse and discover workspace resources",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: limit, next, offset, resources. Single read only; no fixture variants, error envelopes, or write paths assessed.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Works fine and lists workspace resources (read-only; includes pre-existing project 3 datasets, not touched) - contrasts with browse.root/browse.project both 500ing, suggesting a scope-specific bug in the latter two. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "BrowseWorkspaceWorkspaces",
       "method": "GET",
@@ -3433,14 +3475,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "browse.workspace",
         "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-161",
@@ -3518,7 +3560,7 @@
       "capability_id": "REL-164",
       "capability": "List connectors",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: l, i, s, t, [, 4, 2, ]. Single read only; no fixture variants, error envelopes, or write paths assessed.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Listed 42 available connectors (name_key, disp_name, api_type, is_added, is_premium). Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListWorkspaceConnectors",
       "method": "GET",
@@ -3529,20 +3571,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "connector.list",
         "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-165",
       "capability": "Get connector details",
       "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed validation_error: HTTP 400 'Invalid connector key' for a key returned by connector.list.",
+      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: SUSPECTED DEFECT: connector.get rejects the exact name_key values returned by connector.list ('azure_blob', 'bigquery' both tried) with 4CNTR002 INVALID_CONNECTOR_KEY - list and get disagree on what a valid connector key looks like.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetConnector",
       "method": "GET",
@@ -3553,14 +3595,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "connector.get",
         "exit_status": 1
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-166",
@@ -3582,8 +3624,8 @@
     {
       "capability_id": "REL-167",
       "capability": "Get external keys of the given Workspace ID",
-      "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: not_authenticated although the same session authenticated elsewhere.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. No owned external_keys present; one house_key (open_ai, in_use) visible read-only, not touched. Minor note: offset=50 returned for an empty list with limit=50 - odd but harmless. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetKeysByWorkspaceId",
       "method": "GET",
@@ -3594,14 +3636,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "external-key.list",
-        "exit_status": 4
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-168",
@@ -3648,7 +3690,7 @@
       "capability_id": "REL-170",
       "capability": "List parameters",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: items, limit, next, offset, total_count. Single read only; no fixture variants, error envelopes, or write paths assessed.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Empty after family 8 cleanup, as expected. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListParameters",
       "method": "GET",
@@ -3659,14 +3701,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "parameter.list",
         "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-171",
@@ -3695,8 +3737,8 @@
     {
       "capability_id": "REL-172",
       "capability": "Get parameter detail",
-      "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched parameter 1 with dependencies/history fields. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetParameterDetail",
       "method": "GET",
@@ -3707,20 +3749,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "parameter.get",
-        "exit_status": null
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-173",
       "capability": "Get parameter dependencies",
-      "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. No dependencies, as expected for unused parameter. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetParameterDependencies",
       "method": "GET",
@@ -3731,20 +3773,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "parameter.dependencies",
-        "exit_status": null
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-174",
       "capability": "Get list of projects",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18.  Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Final check: only project 3 (API Tests_project, pre-existing, not touched) remains; project 41 is gone. Project 40 (golden-... concurrent run) was also gone by this point but was never touched by this sweep. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetProject",
       "method": "GET",
@@ -3755,10 +3797,10 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
-        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
-        "scope": "golden-data-readback",
-        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "project.list",
         "exit_status": 0
       },
@@ -3808,8 +3850,8 @@
     {
       "capability_id": "REL-177",
       "capability": "List recent AI chat sessions for the current user",
-      "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: backend returned HTTP 200 but the CLI raised api_error (envelope mismatch).",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. No AI chat sessions for connectors. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListSessions",
       "method": "GET",
@@ -3820,14 +3862,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "connector.ai.session.list",
-        "exit_status": 1
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-178",
@@ -3903,7 +3945,7 @@
       "capability_id": "REL-180",
       "capability": "Get list of automations",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded release read with published CLI 1.1.10 returned an empty automation collection; unknown input field produced deterministic unknown_input_field. No Full claim: no automation fixture or lifecycle coverage.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Empty (consistent with family 4's observation that create automations never surface in list). Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetList",
       "method": "GET",
@@ -3914,35 +3956,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "related": [
-          "docs/capability-evidence/historical-release-index.md"
-        ],
-        "scope": "expanded-live workspace 4/project 3; read-only option/error matrix",
-        "cli": "1.1.10",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-180",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/annotation-automation-110/automation-default.json",
-            "sha256": "389835058adcf695207ad07d04047189b7f6f4efdddf1164f26886e28356d3e4",
-            "size_bytes": 640,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/annotation-automation-110/automation-invalid-option.json",
-            "sha256": "d5062dfaff1ccbdff15d384951bce398919b7b386d182a42e5528c981810a7b4",
-            "size_bytes": 871,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "automation.list",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.10"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-181",
       "capability": "Get automation data",
       "status": "Unassessed",
-      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed blocked_missing_fixture: Not run: id source 'automation list --project 3' returned exit 0 with data:[] (empty envelope), so no automation_id was observed. Per brief, an empty list means record the get as blocked_missing_fixture rather than guessing an id.",
+      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: SUSPECTED DEFECT: automation.get on the id just returned by automation.create (id=1) returns HTTP 500 empty body every time (3 retries, several seconds apart), not eventual-consistency.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetAutomation",
       "method": "GET",
@@ -3953,20 +3980,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
-        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "automation.get",
-        "exit_status": null
+        "exit_status": 1
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-182",
       "capability": "Browse and discover project resources",
-      "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded release read with pinned CLI 1.1.10: default browse returned documented structured HTTP 500; limit=1 and limit=0 returned valid empty resource pages. No Full claim: backend server variance and no non-empty resource fixture.",
+      "status": "Unassessed",
+      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: SUSPECTED DEFECT: GET /workspaces/4/projects/41/browse also 500s empty body, same pattern as browse.root, on our own fresh empty-of-folders project.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "BrowseProjectProjects",
       "method": "GET",
@@ -3977,36 +4004,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "related": [
-          "docs/capability-evidence/historical-release-index.md",
-          "docs/capability-evidence/historical-release-index.md"
-        ],
-        "scope": "expanded-live workspace 4/project 3; read-only option/error matrix",
-        "cli": "1.1.10",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-182",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/browse-project-110/browse-default.json",
-            "sha256": "90a13f3690946444e64d680b34235b3311b900ea61af6fbdb134f0e7118acb04",
-            "size_bytes": 1034,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/browse-project-110/browse-invalid.json",
-            "sha256": "50767f990dde41ec517c75271a8a94159ea3b7c0af83e7ed7ac56c7ee7798555",
-            "size_bytes": 799,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/browse-project-110/browse-limit-1.json",
-            "sha256": "c1d01bd3ba9bd23f911676af1ed748a655beaddd8b82bac6f81612f589a32fce",
-            "size_bytes": 726,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "browse.project",
+        "exit_status": 1
       },
-      "evidence_version": "1.1.10"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-183",
@@ -4212,7 +4217,7 @@
       "capability_id": "REL-191",
       "capability": "Get list of datasets",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. post-cleanup list Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Confirmed all 3 owned datasets (85,86,87) gone before deleting the project. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDatasets",
       "method": "GET",
@@ -4223,10 +4228,10 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
-        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
-        "scope": "golden-data-readback",
-        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "dataset.list",
         "exit_status": 0
       },
@@ -4260,7 +4265,7 @@
       "capability_id": "REL-193",
       "capability": "List batches",
       "status": "Partial",
-      "remarks": "Partial bounded release evidence: retained 1.1.5 response reports 1 batch with 51 rows; independent public-fixture oracle matches 51 rows; no Full claim.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Listed the auto-created batch (id=90) from the original file upload; confirmed the failed batch.create above did not add a second batch. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetBatches",
       "method": "GET",
@@ -4271,26 +4276,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/release-owned-fixture-tranche-20260917.md",
-        "report": "docs/release-owned-fixture-tranche-20260917.md",
-        "scope": "owned disposable dataset 3; retained sanitized envelope and oracle; returned-ID cleanup; CLI 1.1.5",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-193",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/release-owned-fixture-tranche-20260917.md",
-            "sha256": "99d7cb40d67030d886f4ebce75178b566fb8e4e41f4b900e1a66d28738934675",
-            "size_bytes": 2827,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "batch.list",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.5"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-194",
       "capability": "List batches",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 batch get succeeded for an ID observed from retained dataset 29. One observed-ID chain; not Full.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched batch 90 detail, matches list. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetBatch",
       "method": "GET",
@@ -4301,19 +4300,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "bounded retained-resource read-only evidence",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-194",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-capability-batch-c-111/README.md",
-            "sha256": "1483b9a11eefccc99079d9f6f080ef696ff665c6359a02af0ae00b4ea409f7e1",
-            "size_bytes": 3657,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "batch.get",
+        "exit_status": 0
       },
-      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-195",
@@ -4377,7 +4371,7 @@
       "capability_id": "REL-197",
       "capability": "Get list of dataviews present in a dataset",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18.  Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Listed 1 dataview: id=106, ds_id=85, status=ready, row_count=3. Note: response includes a 'next' pagination URL (offset=100) despite only 1 total item, possibly a minor pagination defect. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListDataviews",
       "method": "GET",
@@ -4388,10 +4382,10 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
-        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
-        "scope": "golden-data-readback",
-        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "view.list",
         "exit_status": 0
       },
@@ -4576,7 +4570,7 @@
       "capability_id": "REL-204",
       "capability": "Get exportable config for a dataview",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 exact-parent retained view 46/dataset 29 exportable-config read succeeded. One view only; not Full.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched full exportable config for view 106 (metadata, display_properties, dependencies, empty tasks/checkpoints/derivatives/data_checks). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetExportableConfig",
       "method": "GET",
@@ -4587,19 +4581,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "bounded retained-resource read-only evidence",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-204",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-b-pypi-111/exportable-config-get.json",
-            "sha256": "018e1b7e875c446957524a7d218a346f719cee9a0a5a4706c22c505b906a06d8",
-            "size_bytes": 4071,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "view.exportable-config.get",
+        "exit_status": 0
       },
-      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-205",
@@ -4658,7 +4647,7 @@
       "capability_id": "REL-207",
       "capability": "Get dataview pipeline checkpoints",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 exact-parent retained view 46/dataset 29 read succeeded with an empty checkpoint list. One view and single-page boundary; not Full.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Listed checkpoints, showed id=4. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineCheckpoints",
       "method": "GET",
@@ -4669,25 +4658,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "bounded retained-resource read-only evidence",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-207",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-b-pypi-111/checkpoint-list.json",
-            "sha256": "4899edbd5e84e490b60a5b24af42e6653015d8518b5ccec63eec21311d8b6b2b",
-            "size_bytes": 974,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "view.checkpoint.list",
+        "exit_status": 0
       },
-      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-208",
       "capability": "Get the given dataview pipeline checkpoint",
-      "status": "Unassessed",
-      "remarks": "Unassessed; backend reproduction 2026-09-18 (CLI 2.0.15) observed backend: GET /workspaces/4/projects/24/datasets/54/dataviews/76/pipeline/checkpoints/2 -> HTTP 500, empty response_body:{}, request_id:null, backend code: none surfaced (generic api_error/500). Reproduced immediately after view.checkpoint.create returned checkpoint_id:2 on our own view 76/dataset 54/project 24. Alternative input tried: omitted dataset_id from --input (letting CLI discover the parent) -> identical HTTP 500...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched checkpoint 4, matches create. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineCheckpoint",
       "method": "GET",
@@ -4698,14 +4682,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/backend-repro-20260918/results.jsonl",
-        "report": "docs/capability-evidence/backend-repro-20260918/HANDOVER.md",
-        "scope": "backend-defect reproduction on release ws 4 with the published CLI 2.0.15 in disposable project 24 (dataset 54 / view 76), each item run once plus one alternative input; fixtures deleted",
-        "sha256": "e9880ab0d06f5dc6ea0b8ccc213c16019459ca5f580082f3e71552ce5e75c4a3",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "view.checkpoint.get",
-        "exit_status": 1
+        "exit_status": 0
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-209",
@@ -4740,7 +4724,7 @@
       "capability_id": "REL-210",
       "capability": "Get the given dataview pipeline data check",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Returned full data check object {id:1,name:sweep-check,checks:[...],status:not_run,enabled:true,...}. Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched data check 4, threshold shows as 0 (the applied default). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineDataCheck",
       "method": "GET",
@@ -4751,14 +4735,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "view.data-check.get",
         "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-211",
@@ -4991,7 +4975,7 @@
       "capability_id": "REL-219",
       "capability": "Get File Settings",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded retained-resource read with published CLI 1.1.10 returned file-settings info for dataset 28; dataset_id=0 produced deterministic invalid_option_value. No Full claim: retained ETL-owned resource and no settings mutation/readback lifecycle.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Read parse info (delimiter, header, ambiguous dates) for dataset 85. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetFileSettings",
       "method": "GET",
@@ -5002,29 +4986,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "related": [
-          "docs/capability-evidence/historical-release-index.md"
-        ],
-        "scope": "expanded-live workspace 4/project 3; retained dataset 28; read-only positive/error matrix",
-        "cli": "1.1.10",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-219",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/file-settings-110/settings-get-28.json",
-            "sha256": "7635e9e263c515a7532fb51b3f857a7b6dc9e32e7eb1d06ff3fcd2cd660f2eab",
-            "size_bytes": 119266,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/file-settings-110/settings-invalid-0.json",
-            "sha256": "2d9739e8db1df1aa638ffad540011035ea9ed31b0cc949faee687a93d5661586",
-            "size_bytes": 883,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "dataset.file-settings.get",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.10"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-220",
@@ -5334,7 +5303,7 @@
       "capability_id": "REL-232",
       "capability": "Get list of schedules",
       "status": "Unassessed",
-      "remarks": "Unassessed; admin read sweep 2026-09-18 (CLI 2.0.15) observed backend_error: backend_code=5GENR011 NOT_IMPLEMENTED: 'Not implemented' on GET /workspaces/4/projects/3/schedules. Matches known capabilities.md note for schedule.list.",
+      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: Re-confirms 5GENR011 NOT_IMPLEMENTED from family 3.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListSchedules",
       "method": "GET",
@@ -5345,14 +5314,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/admin-read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/admin-read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep of support/billing/client-app/schedule/automation/agent GET routes on release ws 4 with the published CLI 2.0.15; gated GETs run with --yes --confirm 4; no mutation",
-        "sha256": "f03a2be6e33d802b8d74f08a80043b7e89b4bd2eafc0246d17154e086c1e8083",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "schedule.list",
         "exit_status": 1
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-233",
@@ -5411,8 +5380,8 @@
     {
       "capability_id": "REL-235",
       "capability": "List webhooks",
-      "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: api_error with no HTTP status recorded.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Re-check after family 2 cleanup: empty, as expected. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListWebhooks",
       "method": "GET",
@@ -5423,20 +5392,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "webhook.list",
-        "exit_status": 1
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-236",
       "capability": "Get webhook details",
-      "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched webhook 1, fields match create response. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetWebhookDetails",
       "method": "GET",
@@ -5447,20 +5416,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "webhook.get",
-        "exit_status": null
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-237",
       "capability": "List workflows",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: l, i, s, t, [, 0, ]. Single read only; no fixture variants, error envelopes, or write paths assessed.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Empty after family 5 cleanup, as expected. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListWorkflows",
       "method": "GET",
@@ -5471,14 +5440,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "workflow.list",
         "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-238",
@@ -5579,8 +5548,8 @@
     {
       "capability_id": "REL-242",
       "capability": "Get a workflow",
-      "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Read back workflow 1, fields match create response. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetWorkflow",
       "method": "GET",
@@ -5591,14 +5560,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "workflow.get",
-        "exit_status": null
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-243",
@@ -5621,7 +5590,7 @@
       "capability_id": "REL-244",
       "capability": "List snippets",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: items, limit, next, offset, total_count. Single read only; no fixture variants, error envelopes, or write paths assessed.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Empty after family 6 cleanup, as expected. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListSnippets",
       "method": "GET",
@@ -5632,20 +5601,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "snippet.list",
         "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-245",
       "capability": "Get snippet detail",
-      "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched snippet 1 with dependencies/history fields added. Minor note: meta.project_id is null on this response (and on dependencies/update/delete) while list/create show 41 - inconsistent meta population, likely cosmetic. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetSnippetDetail",
       "method": "GET",
@@ -5656,20 +5625,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "snippet.get",
-        "exit_status": null
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-246",
       "capability": "Get snippet dependencies",
-      "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. No dependencies for unused snippet, as expected. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetSnippetDependencies",
       "method": "GET",
@@ -5680,14 +5649,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "snippet.dependencies",
-        "exit_status": null
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-247",
@@ -5992,8 +5961,8 @@
     {
       "capability_id": "REL-259",
       "capability": "List workflow templates",
-      "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed cli_error: backend returned HTTP 200 but the CLI raised api_error (envelope mismatch).",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Re-check after family 7 cleanup: empty, as expected. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListTemplates",
       "method": "GET",
@@ -6004,20 +5973,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "template.list",
-        "exit_status": 1
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-260",
       "capability": "Get a workflow template",
-      "status": "Unassessed",
-      "remarks": "Unassessed; read-only sweep 2026-09-18 on release observed blocked_missing_fixture: see sweep report.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched template 1, matches create. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetTemplate",
       "method": "GET",
@@ -6028,14 +5997,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "template.get",
-        "exit_status": null
+        "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-261",
@@ -6466,8 +6435,8 @@
     {
       "capability_id": "REL-284",
       "capability": "Update parameter",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Updated value hello->world. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "UpdateParameter",
       "method": "PATCH",
@@ -6477,8 +6446,15 @@
       "sdk_symbol": "mammoth.api.parameters.ParametersAPI.update",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "parameter.update",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-285",
@@ -6549,7 +6525,7 @@
       "capability_id": "REL-288",
       "capability": "Update automation related data",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed cli_error: CLI rejected 'name' field; error message says accepted field is 'patch' (nested patch object), not documented in agent_example. Skipped retry with correct shape given get/list are already broken for this resource and time budget.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "UpdateAutomation",
       "method": "PATCH",
@@ -6559,8 +6535,15 @@
       "sdk_symbol": "mammoth.api.automations.AutomationsAPI.update",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "automation.update",
+        "exit_status": 2
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-289",
@@ -6600,7 +6583,7 @@
       "capability_id": "REL-291",
       "capability": "Update datasets name",
       "status": "Unassessed",
-      "remarks": "Unassessed; write sweep 2026-09-18 (CLI 2.0.14) observed cli_error: Schema preconditions already flag this as BLOCKED[B07 DATASET_PATCH_UNTYPED]; reserved, not registered -- confirmed live. Attempt 1 patch_data={name:x} -> HTTP 400 4GENR007 extra=[patch.op Field required, patch.path Field required, patch.value Field required]. Attempt 2 patch_data={op:replace,path:/name,value:x} -> HTTP 400 4GENR007 extra=[patch.path \"Input should be 'name'\", patch.value \"Input should be a valid d...",
+      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed skipped_out_of_scope: SUSPECTED DEFECT: schema.get advertises this command's precondition as 'BLOCKED[B07 DATASET_PATCH_UNTYPED]; reserved, not registered' and its only documented field is patch_data (an arbitrary object, agent_example {sample_key:Status}), but the live backend PATCH /datasets endpoint actually requires a JSON-Patch-shaped body (patch.op/patch.path/patch.value - none of which patch_data maps to), returning 4GENR007 VAL...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdateDatasets",
       "method": "PATCH",
@@ -6611,14 +6594,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "dataset.bulk-update",
         "exit_status": 1
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-292",
@@ -6767,8 +6750,8 @@
     {
       "capability_id": "REL-298",
       "capability": "Edit and perform operations on a pipeline checkpoint",
-      "status": "Unassessed",
-      "remarks": "Unassessed; re-verification 2026-09-18 (CLI 2.0.15) observed backend_error: CLI-side fix (payload now carries value:null as required) held: the correctly-shaped request was dispatched and the backend returned HTTP 500 (not a CLI-side crash): {\"error\":{\"code\":\"outcome_unknown\",\"details\":{\"status_code\":500,\"response_body\":{}},\"message\":\"The request may have committed, but its outcome was not confirmed.\"}}. Reconciliation attempt (`view checkpoint list 75`) also returned HTTP 500 with empty...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. First attempt sending a full AddCheckpointSpec body (matching create's shape) failed with invalid_input_field_type; update actually needs body.patches[] (CheckpointPatches/CheckPointPatch with op/path enums approve|enable|disable|spec) - schema's top-level body ref for update command_id resolves to the wrong $def in the CLI-rendered example. Retried with a disable command-patch, succeeded (enabled:false). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "EditPatches",
       "method": "PATCH",
@@ -6779,20 +6762,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
-        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
-        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
-        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "view.checkpoint.update",
-        "exit_status": 7
+        "exit_status": 0
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-299",
       "capability": "Edit and perform operations on a pipeline data check",
       "status": "Unassessed",
-      "remarks": "Unassessed; backend reproduction 2026-09-18 (CLI 2.0.15) observed backend: PATCH .../pipeline/data-checks/3 -> HTTP 500, empty response_body, request_id:null, code:outcome_unknown. Reconciled via view.data-check.get 76 3: enabled still true, updated_at still null -> patch did NOT commit. Alternative 1 tried: op:replace,path:enable (no value) -> HTTP 400 4GENR007 'patches.0.value: Field required'. Alternative 2: op:replace,path:enable,value:null -> HTTP 400 4GENR007 \"For op PatchOps.REPLA...",
+      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: SUSPECTED DEFECT: PATCH returned HTTP 500 empty body / CLI code=outcome_unknown, but a follow-up get confirmed the mutation actually applied (enabled:false, updated_at bumped) - the request succeeded server-side but the response envelope was a 500, so the CLI could not report success.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "EditDatacheck",
       "method": "PATCH",
@@ -6803,14 +6786,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/backend-repro-20260918/results.jsonl",
-        "report": "docs/capability-evidence/backend-repro-20260918/HANDOVER.md",
-        "scope": "backend-defect reproduction on release ws 4 with the published CLI 2.0.15 in disposable project 24 (dataset 54 / view 76), each item run once plus one alternative input; fixtures deleted",
-        "sha256": "e9880ab0d06f5dc6ea0b8ccc213c16019459ca5f580082f3e71552ce5e75c4a3",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "view.data-check.update",
         "exit_status": 7
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-300",
@@ -7077,8 +7060,8 @@
     {
       "capability_id": "REL-311",
       "capability": "Updates the webhook",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Updated mode replace->combine; response reflects new mode. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "UpdateWebhookConfigurations",
       "method": "PATCH",
@@ -7088,14 +7071,21 @@
       "sdk_symbol": "mammoth.api.webhooks.WebhooksAPI.update",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "webhook.update",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-312",
       "capability": "Update a workflow",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Updated notes field; response reflects change and bumped updated_at. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "UpdateWorkflow",
       "method": "PATCH",
@@ -7105,8 +7095,15 @@
       "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.update",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "workflow.update",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-313",
@@ -7179,8 +7176,8 @@
     {
       "capability_id": "REL-317",
       "capability": "Update snippet",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Updated description; response reflects change. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "UpdateSnippet",
       "method": "PATCH",
@@ -7190,8 +7187,15 @@
       "sdk_symbol": "mammoth.api.snippets.SnippetsAPI.update",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "snippet.update",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-318",
@@ -7237,8 +7241,8 @@
     {
       "capability_id": "REL-320",
       "capability": "Update a workflow template",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Updated description field. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "UpdateTemplate",
       "method": "PATCH",
@@ -7248,8 +7252,15 @@
       "sdk_symbol": "mammoth.api.templates.TemplatesAPI.update",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "template.update",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-321",
@@ -9169,7 +9180,7 @@
       "capability_id": "REL-413",
       "capability": "Get requested activity logs",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: activity_logs, limit, next, offset. Single read only; no fixture variants, error envelopes, or write paths assessed.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Returned activity_logs scoped to project 41 (our own actions), e.g. View category entries. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetActivityLogs",
       "method": "POST",
@@ -9180,14 +9191,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/read-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/read-sweep-20260918/SUMMARY.md",
-        "scope": "read-only sweep on release ws 4 / project 3 with public CLI 2.0.11 via a mechanical read-only fence; one invocation per command",
-        "sha256": "ecb51a1e198b600556185078360f30c19d188039a2196fb8fdb76533b7d1e502",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "activity.list",
         "exit_status": 0
       },
-      "evidence_version": "2.0.11"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-414",
@@ -9319,7 +9330,7 @@
       "capability_id": "REL-421",
       "capability": "Add external keys to access the intended services",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed blocked_missing_fixture: Backend validates the key live against the real OpenAI API (4WKSP003 VALIDATION_FAILED_FOR_THE_KEY, 401 invalid_api_key from OpenAI); we have no real provider credentials to supply per task rules, so get/delete for this family are skipped (nothing was created).",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "AddExternalKey",
       "method": "POST",
@@ -9329,8 +9340,15 @@
       "sdk_symbol": "mammoth.api.external_keys.ExternalKeysAPI.create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "external-key.create",
+        "exit_status": 1
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-422",
@@ -9386,8 +9404,8 @@
     {
       "capability_id": "REL-425",
       "capability": "Create parameter",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. First attempt with lowercase param_type 'text' failed 4PARM008 (must be NUMERIC/TEXT/DATE, uppercase; schema example is misleadingly lowercase). Retried with TEXT, created id=1. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "CreateParameter",
       "method": "POST",
@@ -9397,8 +9415,15 @@
       "sdk_symbol": "mammoth.api.parameters.ParametersAPI.create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "parameter.create",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-426",
@@ -9489,7 +9514,7 @@
       "capability_id": "REL-431",
       "capability": "Create a new project in given workspace",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18.  Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created project id=41 name=sweep-218-1224. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateProject",
       "method": "POST",
@@ -9500,10 +9525,10 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
-        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
-        "scope": "golden-data-readback",
-        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "project.create",
         "exit_status": 0
       },
@@ -9597,8 +9622,8 @@
     {
       "capability_id": "REL-437",
       "capability": "Create automation",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created automation id=1 after two failed attempts: agent_example's run_data_retrieval needs cloud-source dataset ids (4AUTO006), and send_an_alert needed attachments.dataview_ids (undocumented shape) not just recipients/subject. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "CreateAutomation",
       "method": "POST",
@@ -9608,8 +9633,15 @@
       "sdk_symbol": "mammoth.api.automations.AutomationsAPI.create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "automation.create",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-438",
@@ -9784,7 +9816,7 @@
       "capability_id": "REL-445",
       "capability": "Create batch",
       "status": "Unassessed",
-      "remarks": "CLI defect fixed in 2.0.16 (mapping items carry expected_destination_c_type (TEXT|NUMERIC|DATE); the {src: dst} shortcut stamps a default and the example shows the full item); not re-verified live yet. re-verification 2026-09-18 (2.0.16 fixes) observed not_rerun: Not re-run: the 2.0.15 re-verification already showed the release route returns 500 after the mapping passes validation (backend-repro-20260918 HANDOVER); the 2.0.16 change only adds expected_destination_c_type to each mapping item and is covered by unit tests.",
+      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: SUSPECTED DEFECT (4th occurrence of this pattern in the sweep): retried with source_id=87 as an actual dataset id, got HTTP 500 empty body / outcome_unknown. Verified via batch.list 85 immediately after that the batch was NOT created (still only the original file-upload batch present), so this 500 is a genuine failed request, not a silent success - but the CLI cannot distinguish these two cases from the envelope a...",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateBatch",
       "method": "POST",
@@ -9795,14 +9827,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/reverify-216-20260918/results.jsonl",
-        "report": "docs/capability-evidence/reverify-216-20260918/SUMMARY.md",
-        "scope": "re-verification of the 2.0.16 fixes plus set-values/add-sql probes",
-        "sha256": "7cdd80c7f3d9aa4db5b789aaea0390fe09606553b4c6bddb47a84f1f6224282a",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "batch.create",
-        "exit_status": null
+        "exit_status": 7
       },
-      "evidence_version": "2.0.17"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-446",
@@ -9832,7 +9864,7 @@
       "capability_id": "REL-447",
       "capability": "Mark active user on this dataview",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Returned active_users:[{id:5,email:apitests@mammoth.io,...}] confirming our session is now marked active on view 68. Single invocation only.",
+      "remarks": "Partial bounded evidence only; write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Returned active_users:[{id:5,email:<api user>,...}] confirming our session is now marked active on view 68. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "MarkActiveUser",
       "method": "POST",
@@ -9952,7 +9984,7 @@
       "capability_id": "REL-452",
       "capability": "Create a derivative",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Created derivative metric id 2 on view 73 (SUM of internal column_1/store_id). Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created a SUM(amount) metric derivative on view 106, id=5 (my own first attempt keyed the param dict by the metric name instead of the required literal 'METRIC' key - that was my error, not a CLI defect; fixed per schema's own MetricParam def). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateDerivative",
       "method": "POST",
@@ -9963,20 +9995,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "view.derivative.create",
         "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-453",
       "capability": "Fetch derivative data",
       "status": "Unassessed",
-      "remarks": "Unassessed; backend reproduction 2026-09-18 (CLI 2.0.15) observed backend: POST .../derivatives/4/data -> HTTP 500, empty response_body, request_id:null, code:outcome_unknown. Input is the documented runnable_example verbatim (condition:{FILTER_TYPE:SHOW}) against our own freshly-created derivative id 4 (SUM of column_1/store_id) on view 76. Read-shaped POST, so no state to reconcile. Alternative tried: richer condition with STRING_PROP filter (COLUMN:column_2,OPERATOR:CONTAINS,VALUE:Sto...",
+      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: SUSPECTED DEFECT: using the CLI's own documented agent_example body verbatim, derivative data fetch returns HTTP 500 empty body / outcome_unknown, reproduced twice (2s apart). This is a read-only fetch, not a mutation, so the 500 looks like a genuine backend bug on this route rather than a race.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "FetchDerivativeData",
       "method": "POST",
@@ -9987,14 +10019,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/backend-repro-20260918/results.jsonl",
-        "report": "docs/capability-evidence/backend-repro-20260918/HANDOVER.md",
-        "scope": "backend-defect reproduction on release ws 4 with the published CLI 2.0.15 in disposable project 24 (dataset 54 / view 76), each item run once plus one alternative input; fixtures deleted",
-        "sha256": "e9880ab0d06f5dc6ea0b8ccc213c16019459ca5f580082f3e71552ce5e75c4a3",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "view.derivative.data",
         "exit_status": 7
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-454",
@@ -10023,8 +10055,8 @@
     {
       "capability_id": "REL-455",
       "capability": "Apply exportable config to a dataview",
-      "status": "Unassessed",
-      "remarks": "Unassessed; write sweep 2026-09-18 (CLI 2.0.14) observed cli_error: Schema's own runnable_example (config:{tasks:[]}) fails: job_failed, response:{reason:(quote)dependencies(quote)} -- a raw Python KeyError, not a structured validation message. Attempt 2 added dependencies:{} -> job_failed again with response:{reason:(quote)metadata(quote)}, i.e. another undocumented required top-level key. Ran out of 2-attempt budget; the config object clearly needs the FULL exportable-config sha...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Re-applied the view's own exportable config verbatim (idempotent no-op); returned dataview_id=106. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ApplyExportableConfig",
       "method": "POST",
@@ -10035,20 +10067,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "view.exportable-config.apply",
-        "exit_status": 1
+        "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-456",
       "capability": "Add a checkpoint",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Attempt 1 without pinned_to_end/task_sequence -> HTTP 400 4GENR007 clear message: 'Either task_sequence or pinned_to_end must be set'. Attempt 2 added pinned_to_end:true -> {checkpoint_id:1} on view 73. Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. First attempt without pinned_to_end/task_sequence failed 4GENR007 (schema's own example omits the requirement, doc mismatch). Retried with pinned_to_end:true, created checkpoint id=4. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AddCheckpoint",
       "method": "POST",
@@ -10059,20 +10091,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "view.checkpoint.create",
         "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-457",
       "capability": "Add a data check",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Attempt 1 with threshold:5.0 -> client-side invalid_input_field_type on body.checks.0 (CLI's discriminated-union validation rejected the object with threshold set, no further detail than 'must match the declared schema). Attempt 2 omitting threshold (defaults to 0) -> {data_check_id:1} on view 73. Single invocation only.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. SUSPECTED DEFECT: passing an explicit threshold:5.0 (a float, matching the schema's documented oneOf[number,integer,...] and default) caused invalid_input_field_type on body.checks.0. Omitting threshold entirely (falling back to schema default 0) succeeded, created data_check_id=4. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AddDataCheck",
       "method": "POST",
@@ -10083,14 +10115,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "view.data-check.create",
         "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-458",
@@ -10143,8 +10175,8 @@
     {
       "capability_id": "REL-460",
       "capability": "Get task preview",
-      "status": "Unassessed",
-      "remarks": "Unassessed; re-verification 2026-09-18 (2.0.16 fixes) (CLI 2.0.17) observed backend_error: Fix held: the COPY task_spec is accepted and a task_preview job (406) is created; the job then fails backend-side with 'Object of type datetime is not JSON serializable' while persisting the future_requests response. Same failure as job 379 in backend-repro-20260918; the view has a DATE column (dt). Not a CLI defect.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Previewed a COPY task using the documented agent_example shape; metadata correctly shows the new column_9. Minor note: data:[] came back empty despite the source view having 3 rows - preview returned schema only, no sample rows, which may be expected preview behavior or may be a gap. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetTaskPreview",
       "method": "POST",
@@ -10155,14 +10187,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/reverify-216-20260918/results.jsonl",
-        "report": "docs/capability-evidence/reverify-216-20260918/SUMMARY.md",
-        "scope": "re-verification of the 2.0.16 fixes plus set-values/add-sql probes",
-        "sha256": "7cdd80c7f3d9aa4db5b789aaea0390fe09606553b4c6bddb47a84f1f6224282a",
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
         "command_id": "view.task.preview",
-        "exit_status": 1
+        "exit_status": 0
       },
-      "evidence_version": "2.0.17"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-461",
@@ -10323,7 +10355,7 @@
       "capability_id": "REL-467",
       "capability": "Updates dataset file settings",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 sent only the owned dataset 35 pre-read file-settings baseline and verified identical remote readback. Safe no-op update path only; not Full.",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Confirmed settings for dataset 87; reached status=ready. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "UpdateFileSettings",
       "method": "POST",
@@ -10334,19 +10366,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "one disposable owned dataset 35; verified cleanup",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-467",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-d-pypi-111/README.md",
-            "sha256": "f4e3342a9d5e8e6de1d738d3ddd9d9fcbcb2b10cd7c963ff3872fa2c7eff7235",
-            "size_bytes": 3415,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "dataset.file-settings.update",
+        "exit_status": 0
       },
-      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-468",
@@ -10417,7 +10444,7 @@
       "capability_id": "REL-471",
       "capability": "Upload file or folder",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19 (CLI 2.0.18): two small CSVs (numeric, text and date columns) uploaded to an owned project, both reported ready with a view. An all-text CSV is reported need_action (platform says 'more than one plausible way to be read' and creates no view); large files and non-CSV formats not exercised.",
+      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19 (CLI 2.0.18): two small CSVs (numeric, text and date columns) uploaded to an owned project, both reported ready with a view; the fixture sweep the same day uploaded two more (one landed in need_action and was used as a batch source). An all-text CSV is reported need_action (platform says 'more than one plausible way to be read' and creates no view); large files and non-CSV formats not exercised.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateFileDataset",
       "method": "POST",
@@ -10542,7 +10569,7 @@
       "capability_id": "REL-476",
       "capability": "Create schedule",
       "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: SUSPECTED CLI/BACKEND DEFECT: second create attempt (with work_items bound to dataset 85) returned HTTP 500 with empty response body, surfaced by CLI as code=outcome_unknown (retryable=false, no request_id). Immediately following schedule.list also 400 NOT_IMPLEMENTED, confirming nothing was actually created (feature unimplemented on release backend) but the outcome_unknown envelope on a definitively-failed 500 is...",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "CreateSchedule",
       "method": "POST",
@@ -10552,8 +10579,15 @@
       "sdk_symbol": "mammoth.api.schedules.SchedulesAPI.create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "schedule.create",
+        "exit_status": 7
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-477",
@@ -10750,8 +10784,8 @@
     {
       "capability_id": "REL-485",
       "capability": "Create a webhook",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created webhook id=1, which auto-created a backing dataset ds_id=86. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "CreateAWebhook",
       "method": "POST",
@@ -10761,14 +10795,21 @@
       "sdk_symbol": "mammoth.api.webhooks.WebhooksAPI.create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "webhook.create",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-486",
       "capability": "Create a workflow",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created workflow id=1 seeded from dataset 85. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "CreateWorkflow",
       "method": "POST",
@@ -10778,8 +10819,15 @@
       "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "workflow.create",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-487",
@@ -10852,8 +10900,8 @@
     {
       "capability_id": "REL-491",
       "capability": "Create snippet",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. First attempt with hyphenated name 'sweep-218 snippet' failed 4SNPT006 (name must be letters/digits/underscore); retried with sweep_218_snippet, created id=1 scope=project. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "CreateSnippet",
       "method": "POST",
@@ -10863,8 +10911,15 @@
       "sdk_symbol": "mammoth.api.snippets.SnippetsAPI.create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "snippet.create",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-492",
@@ -11090,8 +11145,8 @@
     {
       "capability_id": "REL-505",
       "capability": "Create a workflow template",
-      "status": "Unassessed",
-      "remarks": "Unassigned pending user approval and release evidence.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created template id=1 status=draft (workspace-scoped, no dataset/view source needed since template_data is optional). Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "CreateTemplate",
       "method": "POST",
@@ -11101,8 +11156,15 @@
       "sdk_symbol": "mammoth.api.templates.TemplatesAPI.create",
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
-      "evidence": null,
-      "evidence_version": null
+      "evidence": {
+        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
+        "scope": "fixture-lifecycle-sweep",
+        "sha256": "aef255c5fe80492997e115b6ec59133652a114f229485c80f82c449a822e8963",
+        "command_id": "template.create",
+        "exit_status": 0
+      },
+      "evidence_version": "2.0.18"
     },
     {
       "capability_id": "REL-506",

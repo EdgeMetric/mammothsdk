@@ -10,7 +10,7 @@ Example: `mammoth parameter create 'Revenue report' --input '{"param_type": "sam
 
 Result: `ParameterCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. First attempt with lowercase param_type 'text' failed 4PARM008 (must be NUMERIC/TEXT/DATE, uppercase; schema example is misleadingly lowercase). Retried with TEXT, created id=1. Single inv…
 
 ### `parameter.delete`
 
@@ -20,7 +20,7 @@ Example: `mammoth parameter delete 123 --output json --no-input`. Illustrative o
 
 Result: `ParameterDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted parameter 1; read-back list shows total_count=0. Single invocation only.
 
 ### `parameter.dependencies`
 
@@ -30,7 +30,7 @@ Example: `mammoth parameter dependencies 123 --output json --no-input`. Placehol
 
 Result: `ParameterDependenciesResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. No dependencies, as expected for unused parameter. Single invocation only.
 
 ### `parameter.duplicate`
 
@@ -50,7 +50,7 @@ Example: `mammoth parameter get 123 --output json --no-input`. Placeholders are 
 
 Result: `ParameterGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched parameter 1 with dependencies/history fields. Single invocation only.
 
 ### `parameter.group.create`
 
@@ -110,7 +110,7 @@ Example: `mammoth parameter list --output json --no-input`. Placeholders are ill
 
 Result: `ParameterListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.11 — Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: items, limit, next, offset, total_count. Single read only; no fixture variants, error envelopes, or write paths assessed.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Empty after family 8 cleanup, as expected. Single invocation only.
 
 ### `parameter.rerun`
 
@@ -140,4 +140,4 @@ Example: `mammoth parameter update 123 --output json --no-input`. Placeholders a
 
 Result: `ParameterUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Updated value hello->world. Single invocation only.

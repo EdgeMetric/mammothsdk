@@ -10,7 +10,7 @@ Example: `mammoth template create --input '{"body": {"name": "Revenue report"}}'
 
 Result: `TemplateCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created template id=1 status=draft (workspace-scoped, no dataset/view source needed since template_data is optional). Single invocation only.
 
 ### `template.delete`
 
@@ -20,7 +20,7 @@ Example: `mammoth template delete 123 --output json --no-input`. Illustrative on
 
 Result: `TemplateDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted template 1; read-back list is empty. Single invocation only.
 
 ### `template.get`
 
@@ -30,7 +30,7 @@ Example: `mammoth template get 123 --output json --no-input`. Placeholders are i
 
 Result: `TemplateGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched template 1, matches create. Single invocation only.
 
 ### `template.list`
 
@@ -40,7 +40,7 @@ Example: `mammoth template list --output json --no-input`. Placeholders are illu
 
 Result: `TemplateListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — cli_error: backend returned HTTP 200 but the CLI raised api_error (envelope mismatch). Re-check before relying on it.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Re-check after family 7 cleanup: empty, as expected. Single invocation only.
 
 ### `template.update`
 
@@ -50,4 +50,4 @@ Example: `mammoth template update 123 --input '{"body": {"name": "Revenue report
 
 Result: `TemplateUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Updated description field. Single invocation only.

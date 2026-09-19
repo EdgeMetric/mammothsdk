@@ -70,7 +70,7 @@ Example: `mammoth dataset delete 123 --output json --no-input`. Illustrative onl
 
 Result: `DatasetDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted dataset 85 (main fixture.csv/view 106) after get-back confirmed id/name. Single invocation only.
 
 ### `dataset.file-settings.get`
 
@@ -80,7 +80,7 @@ Example: `mammoth dataset file-settings get 123 --output json --no-input`. Place
 
 Result: `DatasetFileSettingsGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.10 — Bounded retained-resource read with published CLI 1.1.10 returned file-settings info for dataset 28; dataset_id=0 produced deterministic invalid_option_value. No Full claim: retained ETL-owned resource and no settings mutation/readback lifecycle.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Read parse info (delimiter, header, ambiguous dates) for dataset 85. Single invocation only.
 
 ### `dataset.file-settings.undo`
 
@@ -100,7 +100,7 @@ Example: `mammoth dataset file-settings update 123 --input '{"delimiter": "sampl
 
 Result: `DatasetFileSettingsUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.7.1 sent only the owned dataset 35 pre-read file-settings baseline and verified identical remote readback. Safe no-op update path only; not Full.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Confirmed settings for dataset 87; reached status=ready. Single invocation only.
 
 ### `dataset.find`
 
@@ -130,7 +130,7 @@ Example: `mammoth dataset list --output json --no-input`. Placeholders are illus
 
 Result: `DatasetListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. post-cleanup list Single invocation only.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Confirmed all 3 owned datasets (85,86,87) gone before deleting the project. Single invocation only.
 
 ### `dataset.rename`
 

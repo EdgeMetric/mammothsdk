@@ -10,7 +10,7 @@ Example: `mammoth webhook create 'Revenue report' --output json --no-input`. Pla
 
 Result: `WebhookCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created webhook id=1, which auto-created a backing dataset ds_id=86. Single invocation only.
 
 ### `webhook.delete`
 
@@ -20,7 +20,7 @@ Example: `mammoth webhook delete 123 --output json --no-input`. Illustrative onl
 
 Result: `WebhookDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted webhook 1; read-back list is empty, confirming deletion. Single invocation only.
 
 ### `webhook.get`
 
@@ -30,7 +30,7 @@ Example: `mammoth webhook get 123 --output json --no-input`. Placeholders are il
 
 Result: `WebhookGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched webhook 1, fields match create response. Single invocation only.
 
 ### `webhook.list`
 
@@ -40,7 +40,7 @@ Example: `mammoth webhook list --output json --no-input`. Placeholders are illus
 
 Result: `WebhookListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — cli_error: api_error with no HTTP status recorded. Re-check before relying on it.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Re-check after family 2 cleanup: empty, as expected. Single invocation only.
 
 ### `webhook.send`
 
@@ -70,4 +70,4 @@ Example: `mammoth webhook update 123 --output json --no-input`. Placeholders are
 
 Result: `WebhookUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; no live run recorded.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Updated mode replace->combine; response reflects new mode. Single invocation only.

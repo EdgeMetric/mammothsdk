@@ -40,7 +40,7 @@ Example: `mammoth project create 'Revenue report' --output json --no-input`. Pla
 
 Result: `ProjectCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created project id=41 name=sweep-218-1224. Single invocation only.
 
 ### `project.data-check.list`
 
@@ -60,7 +60,7 @@ Example: `mammoth project delete 123 --output json --no-input`. Illustrative onl
 
 Result: `ProjectDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): owned project deleted with --yes --confirm PROJECT_ID after its datasets were deleted one by one; project list read back without it. Single invocation only.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted project 41 (sweep-218-1224), read back with project get 41 beforehand. Single invocation only.
 
 ### `project.get`
 
@@ -80,7 +80,7 @@ Example: `mammoth project list --output json --no-input`. Placeholders are illus
 
 Result: `ProjectListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Final check: only project 3 (API Tests_project, pre-existing, not touched) remains; project 41 is gone. Project 40 (golden-... concurrent run) was also gone by this point but was never tou…
 
 ### `project.pending-changes`
 

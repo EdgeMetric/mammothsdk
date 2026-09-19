@@ -20,7 +20,7 @@ Example: `mammoth browse project --output json --no-input`. Placeholders are ill
 
 Result: `BrowseProjectResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.10 — Bounded release read with pinned CLI 1.1.10: default browse returned documented structured HTTP 500; limit=1 and limit=0 returned valid empty resource pages. No Full claim: backend server variance and no non-empty resource fixture.
+Status on release: observed blocker — backend_error: SUSPECTED DEFECT: GET /workspaces/4/projects/41/browse also 500s empty body, same pattern as browse.root, on our own fresh empty-of-folders project. Re-check before relying on it.
 
 ### `browse.root`
 
@@ -30,7 +30,7 @@ Example: `mammoth browse root --output json --no-input`. Placeholders are illust
 
 Result: `BrowseRootResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — server_error: see sweep report. Re-check before relying on it.
+Status on release: observed blocker — backend_error: SUSPECTED DEFECT: GET /browse returns HTTP 500 empty body, reproduced twice. Re-check before relying on it.
 
 ### `browse.workspace`
 
@@ -40,4 +40,4 @@ Example: `mammoth browse workspace --output json --no-input`. Placeholders are i
 
 Result: `BrowseWorkspaceResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.11 — Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: limit, next, offset, resources. Single read only; no fixture variants, error envelopes, or write paths assessed.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Works fine and lists workspace resources (read-only; includes pre-existing project 3 datasets, not touched) - contrasts with browse.root/browse.project both 500ing, suggesting a scope-spec…

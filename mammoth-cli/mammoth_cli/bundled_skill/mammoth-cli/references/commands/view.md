@@ -20,7 +20,7 @@ Example: `mammoth view active-user mark 123 123 --output json --no-input`. Place
 
 Result: `ViewActiveUserMarkResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Returned active_users:[{id:5,email:apitests@mammoth.io,...}] confirming our session is now marked active on view 68. Single invocation only.
+Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Returned active_users:[{id:5,email:<api user>,...}] confirming our session is now marked active on view 68. Single invocation only.
 
 ### `view.ai.generate-data`
 
@@ -70,7 +70,7 @@ Example: `mammoth view checkpoint create 123 123 --input '{"body": {"checkpoint_
 
 Result: `ViewCheckpointCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Attempt 1 without pinned_to_end/task_sequence -> HTTP 400 4GENR007 clear message: 'Either task_sequence or pinned_to_end must be set'. Attempt 2 added pinned_to_end:true -> {checkpoint_id:1} on view 7…
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. First attempt without pinned_to_end/task_sequence failed 4GENR007 (schema's own example omits the requirement, doc mismatch). Retried with pinned_to_end:true, created checkpoint id=4. Sing…
 
 ### `view.checkpoint.delete`
 
@@ -80,7 +80,7 @@ Example: `mammoth view checkpoint delete 123 123 123 --output json --no-input`. 
 
 Result: `ViewCheckpointDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 202 Accepted non-object body reported as success. Response: {"data":{"response":null,"status_code":202}}. Checkpoint 3 was created earlier by us via view.checkpoint.create (required pinn…
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted checkpoint 4 (202 accepted); read-back list is empty. Single invocation only.
 
 ### `view.checkpoint.get`
 
@@ -90,7 +90,7 @@ Example: `mammoth view checkpoint get 123 123 123 --output json --no-input`. Pla
 
 Result: `ViewCheckpointGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — backend: GET /workspaces/4/projects/24/datasets/54/dataviews/76/pipeline/checkpoints/2 -> HTTP 500, empty response_body:{}, request_id:null, backend code: none surfaced (generic ap. Re-check before relying on it.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched checkpoint 4, matches create. Single invocation only.
 
 ### `view.checkpoint.list`
 
@@ -100,7 +100,7 @@ Example: `mammoth view checkpoint list 123 123 --output json --no-input`. Placeh
 
 Result: `ViewCheckpointListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.7.1 exact-parent retained view 46/dataset 29 read succeeded with an empty checkpoint list. One view and single-page boundary; not Full.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Listed checkpoints, showed id=4. Single invocation only.
 
 ### `view.checkpoint.update`
 
@@ -110,7 +110,7 @@ Example: `mammoth view checkpoint update 123 123 123 --input '{"body": {"patches
 
 Result: `ViewCheckpointUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — backend_error: CLI-side fix (payload now carries value:null as required) held: the correctly-shaped request was dispatched and the backend returned HTTP 500 (not a CLI-side crash):. Re-check before relying on it.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. First attempt sending a full AddCheckpointSpec body (matching create's shape) failed with invalid_input_field_type; update actually needs body.patches[] (CheckpointPatches/CheckPointPatch…
 
 ### `view.conditional-format.create`
 
@@ -170,7 +170,7 @@ Example: `mammoth view data-check create 123 123 --input '{"body": {"checks": [{
 
 Result: `ViewDataCheckCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Attempt 1 with threshold:5.0 -> client-side invalid_input_field_type on body.checks.0 (CLI's discriminated-union validation rejected the object with threshold set, no further detail than 'must match t…
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. SUSPECTED DEFECT: passing an explicit threshold:5.0 (a float, matching the schema's documented oneOf[number,integer,...] and default) caused invalid_input_field_type on body.checks.0. Omit…
 
 ### `view.data-check.delete`
 
@@ -180,7 +180,7 @@ Example: `mammoth view data-check delete 123 123 123 --output json --no-input`. 
 
 Result: `ViewDataCheckDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 202 Accepted non-object body reported as success. Response: {"data":{"response":null,"status_code":202}}. Data-check 2 was created earlier by us via view.data-check.create (required pinn…
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted data check 4 (202); read-back get now returns 404 NON_EXISTENT_RESOURCE, confirming deletion. Single invocation only.
 
 ### `view.data-check.get`
 
@@ -190,7 +190,7 @@ Example: `mammoth view data-check get 123 123 123 --output json --no-input`. Pla
 
 Result: `ViewDataCheckGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Returned full data check object {id:1,name:sweep-check,checks:[...],status:not_run,enabled:true,...}. Single invocation only.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched data check 4, threshold shows as 0 (the applied default). Single invocation only.
 
 ### `view.data-check.list`
 
@@ -210,7 +210,7 @@ Example: `mammoth view data-check update 123 123 123 --input '{"body": {"patches
 
 Result: `ViewDataCheckUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — backend: PATCH .../pipeline/data-checks/3 -> HTTP 500, empty response_body, request_id:null, code:outcome_unknown. Re-check before relying on it.
+Status on release: observed blocker — backend_error: SUSPECTED DEFECT: PATCH returned HTTP 500 empty body / CLI code=outcome_unknown, but a follow-up get confirmed the mutation actually applied (enabled:false, updated_. Re-check before relying on it.
 
 ### `view.data.get`
 
@@ -250,7 +250,7 @@ Example: `mammoth view derivative create 123 123 --input '{"body": {"param": {"M
 
 Result: `ViewDerivativeCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Created derivative metric id 2 on view 73 (SUM of internal column_1/store_id). Single invocation only.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created a SUM(amount) metric derivative on view 106, id=5 (my own first attempt keyed the param dict by the metric name instead of the required literal 'METRIC' key - that was my error, no…
 
 ### `view.derivative.data`
 
@@ -260,7 +260,7 @@ Example: `mammoth view derivative data 123 123 123 --input '{"body": {"condition
 
 Result: `ViewDerivativeDataResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — backend: POST .../derivatives/4/data -> HTTP 500, empty response_body, request_id:null, code:outcome_unknown. Re-check before relying on it.
+Status on release: observed blocker — backend_error: SUSPECTED DEFECT: using the CLI's own documented agent_example body verbatim, derivative data fetch returns HTTP 500 empty body / outcome_unknown, reproduced twice (. Re-check before relying on it.
 
 ### `view.derivative.delete`
 
@@ -270,7 +270,7 @@ Example: `mammoth view derivative delete 123 123 123 --output json --no-input`. 
 
 Result: `ViewDerivativeDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 202 Accepted non-object body reported as success. Response: {"data":{"response":null,"status_code":202}}. Derivative 3 was created earlier by us on view 75/dataset 53 via view.derivative…
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted derivative 5 (202 accepted). Single invocation only.
 
 ### `view.derivative.list`
 
@@ -632,7 +632,7 @@ Example: `mammoth view exportable-config apply 123 --input-format json --input '
 
 Result: `ViewExportableConfigApplyResult`; mutation `reversible_pipeline`, confirmation `confirm_target`, wait policy `returns_job`.
 
-Status on release: observed blocker — cli_error: Schema's own runnable_example (config:{tasks:[]}) fails: job_failed, response:{reason:(quote)dependencies(quote)} -- a raw Python KeyError, not a structured validation m. Re-check before relying on it.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Re-applied the view's own exportable config verbatim (idempotent no-op); returned dataview_id=106. Single invocation only.
 
 ### `view.exportable-config.get`
 
@@ -642,7 +642,7 @@ Example: `mammoth view exportable-config get 123 --output json --no-input`. Plac
 
 Result: `ViewExportableConfigGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.7.1 exact-parent retained view 46/dataset 29 exportable-config read succeeded. One view only; not Full.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched full exportable config for view 106 (metadata, display_properties, dependencies, empty tasks/checkpoints/derivatives/data_checks). Single invocation only.
 
 ### `view.get`
 
@@ -662,7 +662,7 @@ Example: `mammoth view list 123 --output json --no-input`. Placeholders are illu
 
 Result: `ViewListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit 0 on release with CLI 2.0.18. Single invocation only.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Listed 1 dataview: id=106, ds_id=85, status=ready, row_count=3. Note: response includes a 'next' pagination URL (offset=100) despite only 1 total item, possibly a minor pagination defect.…
 
 ### `view.parameter-context`
 
@@ -802,7 +802,7 @@ Example: `mammoth view task preview 123 --input '{"task_spec": {"DATAVIEW_ID": 1
 
 Result: `ViewTaskPreviewResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: observed blocker — backend_error: Fix held: the COPY task_spec is accepted and a task_preview job (406) is created; the job then fails backend-side with 'Object of type datetime is not JSON serializa. Re-check before relying on it.
+Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Previewed a COPY task using the documented agent_example shape; metadata correctly shows the new column_9. Minor note: data:[] came back empty despite the source view having 3 rows - previ…
 
 ### `view.task.update`
 
