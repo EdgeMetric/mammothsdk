@@ -20,7 +20,7 @@ from mammoth_cli import __version__
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.resolver import resolve_auth
 from mammoth_cli.errors.envelope import CliError
-from mammoth_cli.runtime import runlog
+from mammoth_cli.runtime import runlog, updates
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 
@@ -57,15 +57,13 @@ def _safe_connection_diagnostics(error: CliError, *, debug: bool) -> dict[str, A
     if isinstance(retry_after, str):
         if len(retry_after) > 10 or not retry_after.isascii() or not retry_after.isdigit():
             retry_after = None
-    elif (
-        not isinstance(retry_after, int)
-        or isinstance(retry_after, bool)
-        or retry_after < 0
-    ):
+    elif not isinstance(retry_after, int) or isinstance(retry_after, bool) or retry_after < 0:
         retry_after = None
     request_id = error.request_id or raw.get("request_id")
-    if not isinstance(request_id, str) or len(request_id) > 128 or not re.fullmatch(
-        r"[A-Za-z0-9._:-]+", request_id
+    if (
+        not isinstance(request_id, str)
+        or len(request_id) > 128
+        or not re.fullmatch(r"[A-Za-z0-9._:-]+", request_id)
     ):
         request_id = None
 
@@ -165,6 +163,16 @@ def doctor(invocation: Invocation) -> HandlerResult:
             ),
         )
     )
+
+    latest = updates.latest_from_pypi()
+    if latest is None:
+        version_detail = f"{__version__} installed; PyPI not reachable to compare"
+    elif updates.is_newer(latest):
+        version_detail = f"{__version__} installed; {latest} available: {updates.UPGRADE_COMMAND}"
+    else:
+        version_detail = f"{__version__} installed; latest on PyPI"
+    # Informational: an older CLI still works, so the check never fails.
+    checks.append(_check("cli_version", True, version_detail))
 
     record = profiles.get_profile(profile_name)
     checks.append(
@@ -266,9 +274,7 @@ def doctor(invocation: Invocation) -> HandlerResult:
         recommendations.append("mammoth context project use PROJECT_ID")
     if not connection_ok and auth_ok and not invocation.debug:
         debug_profile = f" --profile {shlex.quote(profile_name)}" if profile_name else ""
-        recommendations.append(
-            f"mammoth doctor --debug{debug_profile} --output json --no-input"
-        )
+        recommendations.append(f"mammoth doctor --debug{debug_profile} --output json --no-input")
 
     data = {
         "cli_version": __version__,

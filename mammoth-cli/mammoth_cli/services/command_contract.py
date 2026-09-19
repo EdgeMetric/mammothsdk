@@ -254,6 +254,7 @@ _PILOT_ADAPTER_INPUTS: dict[str, frozenset[str]] = {
 # conversions remain in the named handlers, while these fields are the only
 # values that may cross the structured-input boundary.
 _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
+    "project.ensure": (FieldSpec("name", required=False, annotation=str),),
     "auth.login": (
         FieldSpec("api_key", required=True, annotation=str),
         FieldSpec("api_secret", required=True, annotation=str),
@@ -335,6 +336,7 @@ _LOCAL_COMMANDS = frozenset(
         "context.project.use",
         "dataset.find",
         "doctor",
+        "project.ensure",
         "folder.find",
         "log.path",
         "log.tail",

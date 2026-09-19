@@ -293,7 +293,7 @@ commands:
   secret_fields: []
   human_example: mammoth view checkpoint create VIEW_ID --help
   agent_example: 'mammoth view checkpoint create 123 123 --input ''{"body": {"checkpoint_name": "Revenue
-    report", "checkpoint_type": "alert"}}'' --output json --no-input'
+    report", "checkpoint_type": "alert", "pinned_to_end": true}}'' --output json --no-input'
   unit_tests:
   - UT-VIEW-CHECKPOINT-CREATE
   contract_tests:
@@ -2844,7 +2844,10 @@ commands:
   - CT-VIEW-EXPORTABLE-CONFIG-APPLY-ERROR
   draft_test: null
   undo_test: LT-VIEW-EXPORTABLE-CONFIG-APPLY-UNDO
-  known_restrictions: Exactly one of items or config is required; explicit dataset parent is preferred.
+  known_restrictions: 'Exactly one of items or config is required; explicit dataset parent is preferred.
+    config must be the full document returned by view exportable-config get (metadata, display_properties,
+    dependencies, tasks, checkpoints, derivatives, data_checks) with your edits applied; the job rejects
+    a bare {"tasks": []} (verified on release 2026-09-19). Round-trip get -> edit -> apply.'
   reviewed_by: primary
 - command_id: view.exportable-config.get
   command_path: view exportable-config get

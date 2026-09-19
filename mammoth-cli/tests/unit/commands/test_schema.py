@@ -223,7 +223,11 @@ def test_ingestion_contract_preserves_supported_path_and_variant_boundaries() ->
 
     assert "IO-LIVE-PERMISSION" not in file_upload["preconditions"]
     assert "tenant- and scope-specific" in file_upload["preconditions"]
-    assert "did not verify final cleanup absence" in file_upload["preconditions"]
+    # The contract states the measured boundaries instead of a blanket block.
+    assert "Accepted extensions" in file_upload["preconditions"]
+    assert "not json" in file_upload["preconditions"]
+    assert "HTTP 413" in file_upload["preconditions"]
+    assert "do not assume other upload variants are qualified" in file_upload["preconditions"]
 
 
 def test_dataset_create_sdk_catalog_does_not_conflate_cli_waiting() -> None:

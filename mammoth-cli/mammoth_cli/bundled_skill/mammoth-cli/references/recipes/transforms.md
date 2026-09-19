@@ -89,6 +89,12 @@ but the copy answers every read with `4DTVW019` and its copied tasks never
 execute. A plain `view create DATASET_ID` (no `clone_from`) gives a fresh view
 of the raw upload, without the pipeline:
 
+Every pivot `as_name` must be a display name that does not already exist on
+the view (`4DTVW018 Same display name cannot be reused`): to carry a joined
+column such as `monthly_target` into the summary, aggregate it under a new
+name (`{"column": "monthly_target", "function": "MAX", "as_name": "target"}`)
+or use the SQL task with `MAX(monthly_target) AS monthly_target`.
+
 ```bash
 mammoth schema get view.transform.pivot --output json --no-input
 mammoth view transform add-sql VIEW_ID --project PROJECT_ID \

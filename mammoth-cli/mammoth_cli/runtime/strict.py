@@ -60,6 +60,7 @@ CODE_INVALID_INPUT_FIELD_TYPE = "invalid_input_field_type"
 _TRUE_STRINGS = frozenset({"true", "1", "yes", "y", "on"})
 _FALSE_STRINGS = frozenset({"false", "0", "no", "n", "off"})
 
+
 def _unknown_option_hint(command_id: str, token: str) -> tuple[str, dict[str, Any]]:
     """Name the accepted form when an unknown ``--option`` matches a real field.
 
@@ -138,8 +139,7 @@ def _invalid_field_type_error(command_id: str, field: str, value: Any, expected:
     return CliError(
         code=CODE_INVALID_INPUT_FIELD_TYPE,
         message=(
-            f"Input field '{field}' for '{command_id.replace('.', ' ')}' must be a "
-            f"{expected}."
+            f"Input field '{field}' for '{command_id.replace('.', ' ')}' must be a " f"{expected}."
         ),
         exit_status=EXIT_USAGE,
         hint=f"Pass '{field}' as a {expected} value.",
@@ -193,6 +193,30 @@ def _coerce_float(value: Any, *, command_id: str, field: str) -> float:
     raise _invalid_field_type_error(command_id, field, value, "number")
 
 
+def _relax_numeric_oneof(schema: Any) -> Any:
+    """Turn ``oneOf: [number, integer, ...]`` into ``anyOf`` throughout ``schema``.
+
+    The backend's generated schemas declare numeric fields (``threshold`` on a
+    data check, for one) as ``oneOf`` over ``number`` and ``integer``. An
+    integral value satisfies both branches, so strict ``oneOf`` rejects
+    exactly the values the backend accepts (``5`` fails, ``0.5`` passes).
+    The intent is clearly "any of these"; validate it that way.
+    """
+    if isinstance(schema, list):
+        return [_relax_numeric_oneof(item) for item in schema]
+    if not isinstance(schema, dict):
+        return schema
+    relaxed: dict[str, Any] = {}
+    for key, value in schema.items():
+        if key == "oneOf" and isinstance(value, list):
+            types = {b.get("type") for b in value if isinstance(b, dict)}
+            if {"number", "integer"} <= types:
+                relaxed["anyOf"] = _relax_numeric_oneof(value)
+                continue
+        relaxed[key] = _relax_numeric_oneof(value)
+    return relaxed
+
+
 def _coerce_document_fields(
     command_id: str,
     document: dict[str, Any],
@@ -208,15 +232,12 @@ def _coerce_document_fields(
             key == "body"
             and is_opaque_mapping(field.annotation)
             and input_schema is not None
-            and (
-                body_schema := input_schema.get("properties", {}).get("body")
-            )
-            is not None
+            and (body_schema := input_schema.get("properties", {}).get("body")) is not None
         ):
             from jsonschema import ValidationError, validate  # type: ignore[import-untyped]
 
             try:
-                validate(document[key], thaw_contract_metadata(body_schema))
+                validate(document[key], _relax_numeric_oneof(thaw_contract_metadata(body_schema)))
             except ValidationError as error:
                 path = ".".join(str(part) for part in error.absolute_path)
                 field_path = f"body.{path}" if path else "body"

@@ -21,6 +21,7 @@ from mammoth_cli.errors.envelope import (
     CODE_AUTHENTICATION_FAILED,
     CODE_AUTHORIZATION_REQUIRED,
     CODE_CONFLICT,
+    CODE_INVALID_ARGUMENT,
     CODE_INVALID_ARGUMENTS,
     CODE_JOB_FAILED,
     CODE_OUTCOME_UNKNOWN,
@@ -285,6 +286,21 @@ def map_sdk_exception(
                 details=details,
                 request_id=request_id,
                 authorization_required=True,
+            )
+        if status == 413:
+            # The ingress in front of the API caps a request body (measured
+            # on release 2026-09-19: a 16 MB upload passes, 60 MB does not);
+            # the application never sees the file, so the body is a bare
+            # "Request Entity Too Large" with no backend code.
+            return CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message="The request body is larger than Mammoth accepts.",
+                exit_status=EXIT_USAGE,
+                hint="Split the file (or compress it: .zip/.gz/.bz2/.7z are accepted) "
+                "and upload the parts; see 'mammoth schema get file.upload'.",
+                details=details,
+                request_id=request_id,
+                retryable=False,
             )
         if status == 409:
             return CliError(

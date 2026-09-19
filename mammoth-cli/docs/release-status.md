@@ -1,5 +1,50 @@
 # CLI release provenance
 
+## 2.0.19 / SDK 0.7.10
+
+This release turns the 2026-09-19 evidence into contract: what an agent can
+upload, where its work lands, and how it learns a newer CLI exists. SDK
+unchanged (`mammoth-io>=0.7.10,<0.8`).
+
+- CLI: a once-a-day update check. Every success envelope carries
+  `meta.update_available` (`null`, or `{current, latest, command}`); human
+  output modes add one stderr line. The check reads a cached answer and
+  refreshes it after the command's own output with a 3 s timeout, so no
+  command ever waits on PyPI. `MAMMOTH_NO_UPDATE_CHECK=1` disables it;
+  `MAMMOTH_AUTO_UPGRADE=1` (opt-in) upgrades before the command through the
+  same manager detection as `mammoth upgrade`, once per release; `doctor`
+  reports installed vs latest. The skill tells agents to run the returned
+  `command` when `update_available` is set.
+- CLI: `project ensure NAME`, an idempotent get-or-create by exact name
+  (`created`, `duplicates`), for the "one working project per agent"
+  convention the recipes now use (`project ensure 'From Claude'`). The
+  projects route caps `limit` at 100 (`4GENR007` above it); with a full page
+  and no match the command refuses to create blindly (`conflict`).
+- CLI: `file upload` names a missing local path as a usage error before any
+  request (the sweep's bare `ValueError`); HTTP 413 from the ingress maps to
+  `invalid_argument` with a split/compress hint. The contract now states the
+  accepted extensions (backend list; not `.json`) and the measured size
+  boundary: 60 MB refused with 413, 16 MB accepted.
+- CLI: strict input validation accepted only floats where the backend schema
+  says `oneOf [number, integer]` (`data-check create` `threshold: 5`
+  rejected); integral values now pass.
+- Examples: `view checkpoint create` shows `pinned_to_end: true` (the backend
+  requires a placement); `view exportable-config apply` states that `config`
+  must be the full `get` document, not `{"tasks": []}`.
+- Skill: pivot output names must not reuse an existing display name
+  (`4DTVW018`); upload boundaries and scratch-project conventions in
+  resources.md; `docs/upgrade.md` documents the notice and the opt-in
+  auto-upgrade (the curl installer section is gone).
+
+Live evidence this release: a Haiku 4.5 cold-start run
+(`docs/capability-evidence/haiku-cold-20260919`: upload, clean, join, pivot,
+export and cleanup from the shipped skill alone; 0 CLI or doc bugs, friction
+notes folded into the recipes) and the upload size probe in an owned project
+(60 MB -> 413; 32 MB and 8 MB -> bare 500 while the upload service was
+degraded; 16 MB accepted as job 667, still `processing` when the probe
+stopped). During the probe the release upload path stopped answering even a
+50-row CSV; reads were unaffected. Matrix unchanged at 258 verified of 528.
+
 ## 2.0.18 / SDK 0.7.10
 
 This release adds an always-on local run log, folds the 2026-09-18 skill

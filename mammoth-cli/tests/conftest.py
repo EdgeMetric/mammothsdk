@@ -41,6 +41,10 @@ def isolated_run_log(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """
     log_dir = tmp_path / "mammoth-run-log"
     monkeypatch.setenv("MAMMOTH_LOG_DIR", str(log_dir))
+    # The daily update check must never reach PyPI from a test, nor read the
+    # developer's real cache; tests of the check itself re-enable it.
+    monkeypatch.setenv("MAMMOTH_NO_UPDATE_CHECK", "1")
+    monkeypatch.setenv("MAMMOTH_UPDATE_CACHE", str(tmp_path / "update-check.json"))
     return log_dir
 
 

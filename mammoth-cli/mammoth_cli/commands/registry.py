@@ -187,6 +187,7 @@ HANDLERS: dict[str, Handler] = {
     "project.publish-credentials": project_cmd.project_publish_credentials,
     # project family (mutations)
     "project.create": project_cmd.project_create,
+    "project.ensure": project_cmd.project_ensure,
     "project.update": project_cmd.project_update,
     "project.delete": project_cmd.project_delete,
     "project.bulk-delete": project_cmd.project_bulk_delete,

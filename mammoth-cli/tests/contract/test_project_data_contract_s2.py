@@ -334,7 +334,11 @@ def test_representative_s2_fields_are_forwarded(
     expected_symbol: str,
     expected_kwargs: dict[str, object],
     extra_args: list[str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    # ``file upload`` verifies local paths exist before the SDK call.
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "s2-input.csv").write_text("h\n", encoding="utf-8")
     # The fixture uses each family's public handler, but expected kwargs are
     # authored here rather than obtained from the resolver under test.
     handler(  # type: ignore[operator]

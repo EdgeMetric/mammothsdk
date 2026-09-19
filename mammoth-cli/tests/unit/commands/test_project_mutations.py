@@ -148,3 +148,78 @@ def test_bulk_update_proceeds_with_matching_target(
         _inv("project.bulk-update", input_file=str(doc), yes=True, confirm="4")
     )
     assert fake_service.call_log == [(_BULK_UPDATE, {"patch_data": _ROLE_PATCH})]
+
+
+# --- project ensure (get-or-create by exact name) -----------------------------
+
+_ENSURE_CREATE = "mammoth.api.projects.ProjectsAPI.create"
+
+
+def test_ensure_requires_a_name(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        project_cmd.project_ensure(_inv("project.ensure"))
+    assert excinfo.value.code == "missing_argument"
+    assert fake_service.call_log == []
+
+
+def test_ensure_returns_the_existing_project_without_creating(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.projects = [{"id": 3, "name": "API Tests"}, {"id": 9, "name": "From Claude"}]
+    data, meta = project_cmd.project_ensure(_inv("project.ensure", extra_args=["From Claude"]))
+    assert data == {
+        "project": {"id": 9, "name": "From Claude"},
+        "project_id": 9,
+        "created": False,
+        "duplicates": [],
+    }
+    assert meta["project_id"] == 9
+    assert fake_service.call_log == []  # no create
+
+
+def test_ensure_matches_exactly_and_prefers_the_lowest_id(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.projects = [
+        {"id": 12, "name": "From Claude"},
+        {"id": 7, "name": "From Claude"},
+        {"id": 8, "name": "from claude"},
+    ]
+    data, _meta = project_cmd.project_ensure(_inv("project.ensure", extra_args=["From Claude"]))
+    assert data["project_id"] == 7
+    assert data["duplicates"] == [12]
+    assert data["created"] is False
+
+
+def test_ensure_creates_when_absent(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    fake_service.projects = [{"id": 3, "name": "API Tests"}]
+    fake_service.responses[_ENSURE_CREATE] = {"id": 41, "name": "From Claude"}
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"name": "From Claude"}), encoding="utf-8")
+    data, meta = project_cmd.project_ensure(_inv("project.ensure", input_file=str(doc)))
+    assert fake_service.call_log == [(_ENSURE_CREATE, {"name": "From Claude"})]
+    assert data["created"] is True
+    assert data["project_id"] == 41
+    assert data["project"] == {"id": 41, "name": "From Claude"}
+    assert meta["project_id"] == 41
+
+
+def test_ensure_refuses_to_create_blindly_when_the_listing_is_full(
+    fake_service: FakeMammothService,
+) -> None:
+    # The projects route caps ``limit`` at 100; a full page means the name may
+    # sit on a page ensure cannot see, and a blind create would break
+    # idempotency.
+    fake_service.projects = [{"id": i, "name": f"p{i}"} for i in range(1, 101)]
+    with pytest.raises(CliError) as excinfo:
+        project_cmd.project_ensure(_inv("project.ensure", extra_args=["From Claude"]))
+    assert excinfo.value.code == "conflict"
+    assert fake_service.call_log == []
+
+
+def test_ensure_finds_a_name_on_a_full_page(fake_service: FakeMammothService) -> None:
+    fake_service.projects = [{"id": i, "name": f"p{i}"} for i in range(1, 100)]
+    fake_service.projects.append({"id": 100, "name": "From Claude"})
+    data, _meta = project_cmd.project_ensure(_inv("project.ensure", extra_args=["From Claude"]))
+    assert data["project_id"] == 100
+    assert data["created"] is False

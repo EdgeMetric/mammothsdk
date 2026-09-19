@@ -265,6 +265,16 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             falls_back_to_field="name",
         ),
     ),
+    # project ensure: exact name to find or create, positional or ``name`` field.
+    "project.ensure": (
+        PositionalSpec(
+            name="name",
+            type=str,
+            required=False,
+            help="Exact project name to find or create; or pass it via the 'name' input field.",
+            falls_back_to_field="name",
+        ),
+    ),
     # project commands sourced entirely from ``--input`` or the active workspace.
     "project.list": (),
     "project.bulk-delete": (),

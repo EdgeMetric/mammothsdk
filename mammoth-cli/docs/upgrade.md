@@ -25,15 +25,32 @@ mammoth --version
 mammoth doctor
 ```
 
-To move to an exact version, rerun the supported installer with the approved
-release number:
+## Update notice
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash -s -- --version X.Y.Z
-mammoth --version
-```
+Once a day the CLI asks PyPI for the latest release, *after* a command has
+written its output (3-second timeout, silent on failure) and caches the answer
+next to the run log (`update-check.json` in the platform state directory).
+From the next command on, while a newer release exists:
 
-After any upgrade, run `mammoth doctor` to confirm the new version works.
+- every JSON envelope carries `meta.update_available` =
+  `{"current": "...", "latest": "...", "command": "mammoth upgrade --yes --output json --no-input"}`
+  (otherwise `null`);
+- human output modes print one line on stderr;
+- `mammoth doctor` shows `cli_version` with the installed and latest versions.
+
+The check never delays or blocks a command. `MAMMOTH_NO_UPDATE_CHECK=1` turns
+it off; `MAMMOTH_UPDATE_CACHE=/path` moves the cache file.
+
+## Automatic upgrade (opt-in)
+
+`MAMMOTH_AUTO_UPGRADE=1` makes the CLI run the upgrade itself, through the
+detected manager, at the start of the first command that sees a newer cached
+release; the command that triggered it still completes on the version that
+started it, the run log records the attempt (`auto_upgrade`), and the same
+release is not installed twice. It is off by default on purpose: a pinned
+environment (lock file, CI image, shared virtualenv) must never change
+underneath a task. Agents should prefer the explicit path: read
+`meta.update_available` and run its `command` before starting a task.
 
 ## Upgrade the agent skill
 

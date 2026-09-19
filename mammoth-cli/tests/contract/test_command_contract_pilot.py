@@ -108,10 +108,15 @@ def test_zero_input_read_has_no_sdk_keywords(fake_service) -> None:
 def test_upload_preserves_positional_or_input_fallback(
     fake_service,
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
     extra_args: list[str],
     payload: dict[str, Any],
     oracle: dict[str, Any],
 ) -> None:
+    # ``file upload`` verifies local paths exist before the SDK call.
+    monkeypatch.chdir(tmp_path)
+    for name in ("pilot-positional.csv", "pilot-input.csv"):
+        (tmp_path / name).write_text("h\n", encoding="utf-8")
     file_cmd.file_upload(
         _inv("file.upload", extra_args=extra_args, input_file=_write(tmp_path, payload))
     )

@@ -2,8 +2,12 @@
 
 ## Success envelope (stdout)
 ```json
-{"schema_version": 1, "data": <result>, "meta": {"command": "project list", "profile": "default", "workspace_id": 4, "project_id": 180, "pagination": null}}
+{"schema_version": 1, "data": <result>, "meta": {"command": "project list", "profile": "default", "workspace_id": 4, "project_id": 180, "pagination": null, "update_available": null}}
 ```
+
+`meta.update_available` is `null` or `{"current", "latest", "command"}` when a
+newer CLI is on PyPI (checked once a day, after a command, never blocking).
+Run its `command` before starting a task, not in the middle of one.
 
 ## Error envelope (stderr)
 ```json

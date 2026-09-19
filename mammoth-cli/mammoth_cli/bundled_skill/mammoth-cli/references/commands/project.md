@@ -62,6 +62,16 @@ Result: `ProjectDeleteResult`; mutation `high_impact`, confirmation `confirm_tar
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted project 41 (sweep-218-1224), read back with project get 41 beforehand. Single invocation only.
 
+### `project.ensure`
+
+Run: `mammoth project ensure`. Exact input fields: `mammoth schema get project.ensure --output json --no-input`.
+
+Example: `mammoth project ensure 'Revenue report' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ProjectEnsureResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `project.get`
 
 Run: `mammoth project get`. Exact input fields: `mammoth schema get project.get --output json --no-input`.

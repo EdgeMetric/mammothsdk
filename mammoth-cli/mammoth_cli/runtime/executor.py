@@ -20,6 +20,7 @@ from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
 from mammoth_cli.output.render import render
+from mammoth_cli.runtime import updates
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.runlog import RunLog
 from mammoth_cli.services.mapping import map_sdk_exception
@@ -73,6 +74,7 @@ def emit_success(
     workspace_id: int | None = None,
     project_id: int | None = None,
     pagination: dict[str, Any] | None = None,
+    update_available: dict[str, Any] | None = None,
 ) -> None:
     """Render one success envelope to stdout.
 
@@ -85,6 +87,7 @@ def emit_success(
         workspace_id: The resolved workspace id, if any.
         project_id: The resolved project id, if any.
         pagination: Pagination metadata, if any.
+        update_available: The cached newer-release notice, if any.
     """
     meta = Meta(
         command=command_id.replace(".", " "),
@@ -92,6 +95,7 @@ def emit_success(
         workspace_id=workspace_id,
         project_id=project_id,
         pagination=pagination,
+        update_available=update_available,
     )
     envelope = Result(data=data, meta=meta).to_envelope()
     render(envelope, output=output)
@@ -171,10 +175,15 @@ def run(
             run_log.finish(error.exit_status, error_code=error.code)
         emit_error(error, machine=machine_error, output=output)
 
+    # The update notice is read from the daily cache (no network); the cache
+    # itself is refreshed only after the command has produced its output.
+    update = updates.available_update(command_id)
     try:
         _validate_output(output)
+        updates.auto_upgrade(command_id, run_log)
         data, meta_extra = producer()
-        emit_success(command_id, data, output, **meta_extra)
+        emit_success(command_id, data, output, update_available=update, **meta_extra)
+        updates.emit_hint(update, output=output)
     except CliError as error:
         fail(error)
         raise typer.Exit(error.exit_status) from None
@@ -194,6 +203,7 @@ def run(
         raise typer.Exit(mapped_error.exit_status) from None
     if run_log is not None:
         run_log.finish(0)
+    updates.refresh_if_stale(command_id)
 
 
 def _open_run_log(command_id: str, invocation: Invocation | None) -> RunLog | None:

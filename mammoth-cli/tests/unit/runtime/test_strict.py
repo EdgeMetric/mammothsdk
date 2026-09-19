@@ -212,3 +212,41 @@ def test_handler_ignored_or_replaced_fields_are_rejected(command_id: str, field:
     with pytest.raises(CliError) as excinfo:
         validate_input_fields(command_id, {field: "ignored"})
     assert excinfo.value.code == "unknown_input_field"
+
+
+@pytest.mark.parametrize("threshold", [5, 5.0, 0.5])
+def test_body_schema_numeric_oneof_accepts_integral_values(threshold: float) -> None:
+    # The backend declares ``threshold`` as oneOf[number, integer, ...]; an
+    # integral value matches both branches and strict oneOf rejected it while
+    # the backend accepts it. Validation treats that pattern as anyOf.
+    document = {
+        "body": {
+            "name": "chk",
+            "pinned_to_end": True,
+            "checks": [
+                {
+                    "check_type": "null_percentage",
+                    "config": {"column": "Status", "condition": "lt", "threshold": threshold},
+                }
+            ],
+        }
+    }
+    validate_input_fields("view.data-check.create", document)
+
+
+def test_body_schema_still_rejects_a_wrong_type() -> None:
+    document = {
+        "body": {
+            "name": "chk",
+            "pinned_to_end": True,
+            "checks": [
+                {
+                    "check_type": "null_percentage",
+                    "config": {"column": "Status", "condition": "lt", "threshold": "five"},
+                }
+            ],
+        }
+    }
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields("view.data-check.create", document)
+    assert excinfo.value.code == "invalid_input_field_type"

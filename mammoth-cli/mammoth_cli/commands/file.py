@@ -12,6 +12,7 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 from __future__ import annotations
 
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from mammoth_cli.errors.envelope import (
@@ -213,6 +214,7 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         document,
         **({"files": list(invocation.extra_args)} if invocation.extra_args else {}),
     )
+    _require_local_files(kwargs.get("files"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
         # The SDK waits for the upload job and returns the created dataset
@@ -225,6 +227,31 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         # the status the platform holds for each dataset, not an assumed one.
         result = _upload_result(data, lambda dataset_id: _dataset_status(service, dataset_id))
     return result, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def _require_local_files(files: Any) -> None:
+    """Fail as a usage error, naming the path, when a local file is missing.
+
+    The SDK raises a bare ``ValueError`` for an unreadable path, which the
+    generic mapping renders as an opaque ``api_error``; a relative path from
+    the wrong working directory is the usual cause and must say so.
+    """
+    candidates = files if isinstance(files, list) else [files] if files else []
+    for candidate in candidates:
+        if not isinstance(candidate, str):
+            continue
+        path = Path(candidate).expanduser()
+        if not path.is_file():
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=f"Local file not found: {candidate}",
+                exit_status=EXIT_USAGE,
+                hint=(
+                    f"Resolved against the working directory {Path.cwd()}; pass an absolute "
+                    "path or run the command from the directory that holds the file."
+                ),
+                details={"path": candidate, "cwd": str(Path.cwd())},
+            )
 
 
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"

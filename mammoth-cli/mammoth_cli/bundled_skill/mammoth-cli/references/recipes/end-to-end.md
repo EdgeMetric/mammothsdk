@@ -11,7 +11,7 @@ mammoth doctor --output json --no-input                # must succeed
 mammoth project list --output json --no-input          # baseline: ids that exist before you start
 
 # 1. own project, upload, find the view ids
-mammoth project create 'orders-etl' --output json --no-input                 # -> PROJECT_ID
+mammoth project ensure 'From Claude' --output json --no-input                # -> PROJECT_ID (data.project_id; reused next time)
 mammoth file upload orders.csv --project PROJECT_ID --output json --no-input # -> data.datasets[].id/status
 mammoth file upload customers.csv --project PROJECT_ID --output json --no-input
 # a dataset in need_action is not usable yet: follow need-action.md (file-settings update), then re-read

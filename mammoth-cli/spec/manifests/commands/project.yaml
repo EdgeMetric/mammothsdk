@@ -152,6 +152,47 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: project.ensure
+  command_path: project ensure
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: name
+    type: str
+    required: false
+    metavar: NAME
+    falls_back_to_field: name
+    help: Exact project name to find or create; or pass it via the 'name' input field.
+  options: []
+  sdk_symbol: mammoth_cli.commands.project.project_ensure
+  sdk_conversion: Call mammoth_cli.commands.project.project_ensure with validated request fields.
+  request_model: ProjectEnsureRequest
+  result_model: ProjectEnsureResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: null
+  live_exemption_reason: Local composite over project list and project create; idempotent by exact name.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth project ensure --help
+  agent_example: mammoth project ensure 'Revenue report' --output json --no-input
+  unit_tests:
+  - UT-PROJECT-ENSURE
+  contract_tests:
+  - CT-PROJECT-ENSURE-HUMAN
+  - CT-PROJECT-ENSURE-JSON
+  - CT-PROJECT-ENSURE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Matches the exact, case-sensitive name; several projects with the same name resolve
+    to the lowest id and the rest are listed under 'duplicates'. Creating a project is a benign mutation;
+    sweep with 'project delete ID --yes --confirm ID'.
+  reviewed_by: primary
 - command_id: project.data-check.list
   command_path: project data-check list
   disposition: command

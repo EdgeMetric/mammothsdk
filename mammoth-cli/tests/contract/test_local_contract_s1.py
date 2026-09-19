@@ -44,6 +44,7 @@ S1_ROUTES = (
     "folder.find",
     "log.path",
     "log.tail",
+    "project.ensure",
     "schema.find",
     "schema.get",
     "schema.list",
@@ -61,6 +62,7 @@ EXPECTED_FIELDS: dict[str, tuple[str, ...]] = {
     "completion.install": ("shell",),
     "completion.show": ("shell",),
     "log.tail": ("days", "limit", "errors_only", "command_id", "run_id"),
+    "project.ensure": ("name",),
     "skill.install": ("agents", "scope", "force"),
     "skill.path": ("agents", "scope"),
     "skill.uninstall": ("agents", "scope"),
@@ -142,15 +144,11 @@ def test_completion_contract_is_verified_by_filesystem_oracle(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    result, _ = completion_cmd.completion_install(
-        _inv("completion.install", extra_args=["fish"])
-    )
+    result, _ = completion_cmd.completion_install(_inv("completion.install", extra_args=["fish"]))
     path = Path(result["path"])
     assert path == tmp_path / ".config" / "fish" / "config.fish"
     assert path.read_text(encoding="utf-8").count("_MAMMOTH_COMPLETE") == 1
     # The second invocation is idempotent and must not duplicate the effect.
-    again, _ = completion_cmd.completion_install(
-        _inv("completion.install", extra_args=["fish"])
-    )
+    again, _ = completion_cmd.completion_install(_inv("completion.install", extra_args=["fish"]))
     assert again["added"] is False
     assert path.read_text(encoding="utf-8").count("_MAMMOTH_COMPLETE") == 1

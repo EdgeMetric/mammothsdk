@@ -73,11 +73,14 @@ Example successful list stream:
 A successful command prints this shape to stdout.
 
 ```json
-{"schema_version": 1, "data": <result>, "meta": {"command": "...", "profile": "...", "workspace_id": 4, "project_id": 180, "pagination": null}}
+{"schema_version": 1, "data": <result>, "meta": {"command": "...", "profile": "...", "workspace_id": 4, "project_id": 180, "pagination": null, "update_available": null}}
 ```
 
 The `data` field holds the command result. The `meta` field records the command
 name, active profile, workspace, project, and pagination state.
+`meta.update_available` is `null`, or `{"current", "latest", "command"}` when
+the daily PyPI check has seen a newer CLI; run its `command` when it suits
+you (see [upgrade](../upgrade.md)).
 
 A project list looks like this.
 
@@ -93,7 +96,8 @@ A project list looks like this.
     "profile": "default",
     "workspace_id": 4,
     "project_id": 180,
-    "pagination": null
+    "pagination": null,
+    "update_available": null
   }
 }
 ```

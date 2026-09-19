@@ -36,7 +36,7 @@ def _no_subprocess(monkeypatch: pytest.MonkeyPatch) -> list[list[str]]:
     def _boom(command: list[str]) -> object:
         raise AssertionError(f"unexpected upgrade subprocess: {command}")
 
-    monkeypatch.setattr(upgrade_cmd, "_run_upgrade", _boom)
+    monkeypatch.setattr(upgrade_cmd, "run_upgrade", _boom)
     return calls
 
 
@@ -155,7 +155,7 @@ def test_upgrade_to_latest_runs_built_command_with_yes(monkeypatch: pytest.Monke
 
     monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: "uv")
     monkeypatch.setattr(upgrade_cmd, "latest_version", lambda: "999.0.0")
-    monkeypatch.setattr(upgrade_cmd, "_run_upgrade", _fake_run)
+    monkeypatch.setattr(upgrade_cmd, "run_upgrade", _fake_run)
 
     data, _meta = upgrade_cmd.perform(
         _inv(output="json", no_input=True, yes=True), check=False, target_version=None
@@ -179,7 +179,7 @@ def test_upgrade_pinned_version_forces_install_without_pypi(
 
     monkeypatch.setattr(upgrade_cmd, "detect_manager", lambda: "pipx")
     monkeypatch.setattr(upgrade_cmd, "latest_version", _no_pypi)
-    monkeypatch.setattr(upgrade_cmd, "_run_upgrade", _fake_run)
+    monkeypatch.setattr(upgrade_cmd, "run_upgrade", _fake_run)
 
     data, _meta = upgrade_cmd.perform(
         _inv(output="json", no_input=True, yes=True), check=False, target_version="1.2.3"
@@ -206,7 +206,7 @@ def test_upgrade_failure_surfaces_upgrade_failed(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(upgrade_cmd, "latest_version", lambda: "999.0.0")
     monkeypatch.setattr(
         upgrade_cmd,
-        "_run_upgrade",
+        "run_upgrade",
         lambda command: _completed(command, returncode=1, stderr="boom"),
     )
 

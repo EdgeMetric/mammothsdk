@@ -14,6 +14,7 @@ from __future__ import annotations
 from typing import Any
 
 from mammoth_cli.errors.envelope import (
+    CODE_CONFLICT,
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
@@ -214,6 +215,76 @@ def project_create(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+#: The projects route caps ``limit`` at 100 (backend 4GENR007 above it) and
+#: the SDK exposes no offset, so this is the largest listing one call can see.
+_ENSURE_PROJECT_LIST_LIMIT = 100
+_ENSURE_CREATE_SYMBOL = "mammoth.api.projects.ProjectsAPI.create"
+
+
+def project_ensure(invocation: Invocation) -> HandlerResult:
+    """Return the project with exactly this name, creating it when absent.
+
+    Idempotent get-or-create for a scratch or working project (the "From
+    Claude" convention: pick one project once, land every task's datasets
+    there, sweep it with ``project delete``). Matching is exact and
+    case-sensitive on the name; when several projects share the name the
+    lowest id wins and ``duplicates`` lists the rest, so a re-run never
+    creates a second one.
+    """
+    document = invocation.load_input() or {}
+    name = _string_positional(invocation) or document.get("name")
+    if not isinstance(name, str) or not name.strip():
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="A project name is required.",
+            exit_status=EXIT_USAGE,
+            hint="Pass the name as a positional argument or a 'name' input field.",
+        )
+    with open_service(invocation) as (service, auth):
+        listing = service.list_projects(limit=_ENSURE_PROJECT_LIST_LIMIT)
+        projects = list(listing.get("projects", [])) if isinstance(listing, dict) else []
+        same_name = sorted(
+            (p for p in projects if isinstance(p, dict) and p.get("name") == name),
+            key=lambda p: int(p.get("id") or 0),
+        )
+        if same_name:
+            chosen = same_name[0]
+            data: dict[str, Any] = {
+                "project": chosen,
+                "project_id": chosen.get("id"),
+                "created": False,
+                "duplicates": [p.get("id") for p in same_name[1:]],
+            }
+            return data, _meta(invocation, auth.workspace_id, chosen.get("id"))
+        truncated = bool(listing.get("next")) if isinstance(listing, dict) else False
+        if truncated or len(projects) >= _ENSURE_PROJECT_LIST_LIMIT:
+            # A name beyond the first page may exist; creating blindly would
+            # break the idempotency this command promises.
+            raise CliError(
+                code=CODE_CONFLICT,
+                message=(
+                    f"Workspace has more than {_ENSURE_PROJECT_LIST_LIMIT} projects; "
+                    f"cannot prove {name!r} is absent."
+                ),
+                exit_status=EXIT_USAGE,
+                hint="Find the project with 'project list' and pass --project, "
+                "or create it explicitly with 'project create'.",
+                details={"listed": len(projects)},
+            )
+        created = service.call(_ENSURE_CREATE_SYMBOL, name=name)
+    record = created.get("project", created) if isinstance(created, dict) else {}
+    project_id = record.get("id") if isinstance(record, dict) else None
+    if project_id is None and isinstance(created, dict):
+        project_id = created.get("project_id") or created.get("id")
+    data = {
+        "project": record if isinstance(record, dict) else created,
+        "project_id": project_id,
+        "created": True,
+        "duplicates": [],
+    }
+    return data, _meta(invocation, auth.workspace_id, project_id)
 
 
 def project_update(invocation: Invocation) -> HandlerResult:

@@ -31,6 +31,15 @@ def _env_auth(isolated_cli_config: Path) -> None:
     login_default_profile()
 
 
+@pytest.fixture(autouse=True)
+def _local_fixture_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Upload tests name local files; ``file upload`` checks they exist first."""
+    monkeypatch.chdir(tmp_path)
+    for name in ("a.csv", "b.csv", "customers.csv"):
+        (tmp_path / name).write_text("h\n1\n", encoding="utf-8")
+    return tmp_path
+
+
 def _inv(command_id: str, **overrides: object) -> Invocation:
     return Invocation(command_id=command_id, **overrides)  # type: ignore[arg-type]
 
@@ -328,9 +337,7 @@ def test_upload_status_is_unknown_when_the_read_back_fails(
     # The upload succeeded; a failed status read must not turn it into an
     # error or into a false "ready".
     fake_service.responses[_UPLOAD] = 7
-    fake_service.responses[_DATASET_GET] = CliError(
-        code="api_error", message="boom", exit_status=1
-    )
+    fake_service.responses[_DATASET_GET] = CliError(code="api_error", message="boom", exit_status=1)
     data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv"]))
     assert data["status"] == "unknown"
     assert data["datasets"] == [{"id": 7, "status": "unknown"}]
@@ -343,9 +350,7 @@ def test_upload_without_wait_returns_raw_handle(
     # passes it through unchanged rather than claiming a ready dataset.
     fake_service.responses[_UPLOAD] = 99
     doc = tmp_path / "in.json"
-    doc.write_text(
-        json.dumps({"files": ["a.csv"], "wait_for_completion": False}), encoding="utf-8"
-    )
+    doc.write_text(json.dumps({"files": ["a.csv"], "wait_for_completion": False}), encoding="utf-8")
     data, _ = file_cmd.file_upload(_inv("file.upload", input_file=str(doc)))
     assert data == 99
 
@@ -376,3 +381,16 @@ def test_upload_folder_forwards_optional_fields(
             {"folder_path": "/data/in", "folder_resource_id": "r1", "timeout": 60},
         )
     ]
+
+
+def test_upload_names_a_missing_local_file_before_any_request(
+    fake_service: FakeMammothService,
+) -> None:
+    # A relative path from the wrong working directory used to surface as an
+    # opaque ``api_error ValueError`` from the SDK; it is a usage error here.
+    with pytest.raises(CliError) as excinfo:
+        file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv", "missing.csv"]))
+    assert excinfo.value.code == "invalid_argument"
+    assert "missing.csv" in excinfo.value.message
+    assert excinfo.value.details["cwd"] == str(Path.cwd())
+    assert fake_service.call_log == []

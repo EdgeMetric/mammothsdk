@@ -106,13 +106,15 @@ def test_doctor_debug_adds_only_safe_request_context(
     login_default_profile()
     service = fake_service
     service.check_connection = lambda: (_ for _ in ()).throw(  # type: ignore[attr-defined]
-        map_sdk_exception(MammothAPIError(
-            "failed",
-            status_code=503,
-            method="GET",
-            endpoint="https://release.mammoth.io/api/v2/projects",
-            phase="request",
-        ))
+        map_sdk_exception(
+            MammothAPIError(
+                "failed",
+                status_code=503,
+                method="GET",
+                endpoint="https://release.mammoth.io/api/v2/projects",
+                phase="request",
+            )
+        )
     )
 
     data, _meta = doctor_cmd.doctor(_inv("doctor", debug=True))
@@ -207,3 +209,23 @@ def test_doctor_checks_the_run_log_directory(
     check = next(c for c in data["checks"] if c["name"] == "log_directory")
     assert check["ok"] is True
     assert str(isolated_run_log) in check["detail"]
+
+
+def test_doctor_reports_installed_vs_latest_version(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from mammoth_cli.runtime import updates
+
+    monkeypatch.delenv("MAMMOTH_NO_UPDATE_CHECK", raising=False)
+    monkeypatch.setattr(updates, "_fetch_latest", lambda: "99.0.0")
+    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    check = next(c for c in data["checks"] if c["name"] == "cli_version")
+    assert check["ok"] is True  # informational: an older CLI still works
+    assert "99.0.0 available" in check["detail"]
+    assert "mammoth upgrade --yes" in check["detail"]
+
+    monkeypatch.setattr(updates, "_fetch_latest", lambda: None)
+    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    check = next(c for c in data["checks"] if c["name"] == "cli_version")
+    assert check["ok"] is True
+    assert "not reachable" in check["detail"]

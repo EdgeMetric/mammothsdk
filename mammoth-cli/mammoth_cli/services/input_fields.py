@@ -251,6 +251,15 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     "view.checkpoint.update": {
         "body": {"patches": [{"op": "command", "path": "approve", "value": None}]},
     },
+    # The backend requires a placement ("Data check position must be given");
+    # ``pinned_to_end`` is the placement that needs no sequence number.
+    "view.checkpoint.create": {
+        "body": {
+            "checkpoint_name": "Revenue report",
+            "checkpoint_type": "alert",
+            "pinned_to_end": True,
+        },
+    },
 }
 
 

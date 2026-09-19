@@ -66,7 +66,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth view checkpoint create`. Exact input fields: `mammoth schema get view.checkpoint.create --output json --no-input`.
 
-Example: `mammoth view checkpoint create 123 123 --input '{"body": {"checkpoint_name": "Revenue report", "checkpoint_type": "alert"}}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view checkpoint create 123 123 --input '{"body": {"checkpoint_name": "Revenue report", "checkpoint_type": "alert", "pinned_to_end": true}}' --output json --no-input`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewCheckpointCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

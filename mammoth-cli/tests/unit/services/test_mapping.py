@@ -18,6 +18,7 @@ from mammoth_cli.errors.envelope import (
     EXIT_INTERRUPT,
     EXIT_NOT_FOUND,
     EXIT_RETRYABLE,
+    EXIT_USAGE,
     CliError,
 )
 from mammoth_cli.services.mapping import map_sdk_exception
@@ -83,6 +84,7 @@ def test_unknown_mutation_is_not_advertised_as_safe_retry() -> None:
         (403, "failed", "authorization_required", EXIT_AUTH),
         (404, "failed", "resource_not_found", EXIT_NOT_FOUND),
         (409, "failed", "conflict", EXIT_CONFLICT),
+        (413, "failed", "invalid_argument", EXIT_USAGE),
         (502, "outcome_unknown", "outcome_unknown", EXIT_RETRYABLE),
     ],
 )

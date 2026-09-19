@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.18.
+Generated from the reviewed command manifests for mammoth-cli 2.0.19.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 551.
+Total commands: 552.
 
 ## activity
 
@@ -2932,6 +2932,17 @@ Total commands: 551.
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.delete`
 - Agent example: `mammoth project delete 123 --output json --no-input`
 
+### `mammoth project ensure`
+
+**Arguments**
+
+- `NAME` (str, optional) — Exact project name to find or create; or pass it via the 'name' input field.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.project.project_ensure`
+- Agent example: `mammoth project ensure 'Revenue report' --output json --no-input`
+
 ### `mammoth project get`
 
 **Arguments**
@@ -3972,7 +3983,7 @@ Total commands: 551.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.checkpoints.CheckpointsAPI.create`
-- Agent example: `mammoth view checkpoint create 123 123 --input '{"body": {"checkpoint_name": "Revenue report", "checkpoint_type": "alert"}}' --output json --no-input`
+- Agent example: `mammoth view checkpoint create 123 123 --input '{"body": {"checkpoint_name": "Revenue report", "checkpoint_type": "alert", "pinned_to_end": true}}' --output json --no-input`
 
 ### `mammoth view checkpoint delete`
 

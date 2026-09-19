@@ -166,8 +166,11 @@ def build_upgrade_command(manager: str, target_version: str | None) -> list[str]
     return [sys.executable, "-m", "pip", "install", "--upgrade", PACKAGE_NAME]
 
 
-def _run_upgrade(command: list[str]) -> subprocess.CompletedProcess[str]:
+def run_upgrade(command: list[str]) -> subprocess.CompletedProcess[str]:
     """Run the upgrade command as a subprocess, capturing its output.
+
+    Public so the opt-in automatic upgrade (:mod:`mammoth_cli.runtime.updates`)
+    goes through the same seam tests patch here.
 
     Raises:
         CliError: ``upgrade_failed`` when the command cannot be launched.
@@ -269,7 +272,7 @@ def perform(invocation: Invocation, *, check: bool, target_version: str | None) 
         policy=POLICY_PROMPT_OR_YES,
         action=f"upgrade {PACKAGE_NAME} to {action_target} using {manager}",
     )
-    result = _run_upgrade(command)
+    result = run_upgrade(command)
     if result.returncode != 0:
         raise CliError(
             code="upgrade_failed",

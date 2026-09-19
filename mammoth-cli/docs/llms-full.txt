@@ -677,6 +677,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth project data-check list 123 --output json --no-input
 - `mammoth project delete` [high_impact/confirm_target] -> mammoth.api.projects.ProjectsAPI.delete
   example: mammoth project delete 123 --output json --no-input
+- `mammoth project ensure` [benign_mutation/none] -> mammoth_cli.commands.project.project_ensure
+  example: mammoth project ensure 'Revenue report' --output json --no-input
 - `mammoth project get` [read/none] -> mammoth.api.projects.ProjectsAPI.get
   example: mammoth project get 123 --output json --no-input
 - `mammoth project list` [read/none] -> mammoth.api.projects.ProjectsAPI.list
@@ -920,7 +922,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.dataviews.DataviewsAPI.bulk_delete
   example: mammoth view bulk-delete 123 --input '{"dataview_ids": [1]}' --output json --no-input
 - `mammoth view checkpoint create` [benign_mutation/none] -> mammoth.api.checkpoints.CheckpointsAPI.create
-  example: mammoth view checkpoint create 123 123 --input '{"body": {"checkpoint_name": "Revenue report", "checkpoint_type": "alert"}}' --output json --no-input
+  example: mammoth view checkpoint create 123 123 --input '{"body": {"checkpoint_name": "Revenue report", "checkpoint_type": "alert", "pinned_to_end": true}}' --output json --no-input
 - `mammoth view checkpoint delete` [destructive/prompt_or_yes] -> mammoth.api.checkpoints.CheckpointsAPI.delete
   example: mammoth view checkpoint delete 123 123 123 --output json --no-input
 - `mammoth view checkpoint get` [read/none] -> mammoth.api.checkpoints.CheckpointsAPI.get

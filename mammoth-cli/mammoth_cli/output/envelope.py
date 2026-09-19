@@ -17,6 +17,9 @@ class Meta:
     workspace_id: int | None = None
     project_id: int | None = None
     pagination: dict[str, Any] | None = None
+    #: ``{"current", "latest", "command"}`` when a newer CLI is on PyPI
+    #: (from the daily cached check), else None.
+    update_available: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -25,6 +28,7 @@ class Meta:
             "workspace_id": self.workspace_id,
             "project_id": self.project_id,
             "pagination": self.pagination,
+            "update_available": self.update_available,
         }
 
 

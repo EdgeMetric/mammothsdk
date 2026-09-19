@@ -6,11 +6,30 @@ id instead. Run `view list DATASET_ID --project PROJECT_ID` to get it. Do not
 dig through `dataset get` and its `dependencies` field for a view id; `view
 list` is the supported route.
 
-Discover exact contracts, then upload and read back explicit parents. A new
-project takes its name as the positional argument:
+Discover exact contracts, then upload and read back explicit parents.
+
+## Where uploads land
+
+Unless the task names a project, work in one project of your own and put
+every dataset of the task there, so the user's real projects stay clean and
+one sweep removes everything. `project ensure` is idempotent get-or-create
+by exact name: re-running it (or a second task) returns the same id
+(`created: false`) instead of making another project. A one-off task can
+still use `project create NAME` for a throwaway project.
 
 ```bash
-mammoth project create 'PROJECT NAME' --output json --no-input
+mammoth project ensure 'From Claude' --output json --no-input   # -> data.project_id, data.created
+mammoth project ensure 'From Claude' --output json --no-input   # same id again, created: false
+```
+
+Moving a dataset between projects is not a single API call on release;
+re-upload into the target project when the task asks for that. To sweep the
+working project when the task says it was temporary, delete it (one id per
+call, read back) with `project delete ID --yes --confirm ID`; otherwise delete
+only the datasets you created and leave the project for the next task.
+
+```bash
+mammoth project ensure 'PROJECT NAME' --output json --no-input
 mammoth schema get file.upload --output json --no-input
 mammoth file upload ./SOURCE.csv --project PROJECT_ID --output json --no-input
 mammoth dataset list --project PROJECT_ID --output json --no-input
@@ -18,8 +37,31 @@ mammoth view list DATASET_ID --project PROJECT_ID --output json --no-input
 mammoth view get VIEW_ID --project PROJECT_ID --output json --no-input
 ```
 
+## What `file upload` accepts
+
+`file upload` reads the file from local disk and streams it; nothing passes
+through your context, so size costs nothing but time. Two boundaries hold:
+
+- Format, by extension: `csv tsv psv txt xls xlsx xml pdf tiff jpeg jpg png
+  heic webp`, or an archive of those (`zip gz bz2 tar 7z`). `.json` is not
+  accepted; convert to CSV first. Other extensions fail before any upload.
+- Size, at the ingress in front of the API: a 60 MB upload is refused with
+  HTTP 413 (`invalid_argument`, "larger than Mammoth accepts") before the API
+  sees it; 16 MB is accepted. The exact cap between those was not pinned
+  down. Keep one upload well under 16 MB: split a larger file by rows and
+  upload the parts, or compress it (a `.zip`/`.gz` of a CSV is accepted and
+  expanded server-side).
+
+Scanning and parsing time grows with size; pass `--timeout 300` on anything
+past a few MB and, when the command returns `timeout` with a `job_handle`,
+poll with the `job get` recovery command it prints instead of uploading
+again. A bare HTTP 500 from this route (`outcome_unknown`, empty body) means
+the upload service is degraded; check `job get` for a job first, do not
+retry in a loop.
+
 `file upload` takes the local path as its positional argument; there is no
-`--source`/`--file` option. Its result carries the status the platform holds
+`--source`/`--file` option. A path that does not exist is a usage error
+(`Local file not found`) before any request. Its result carries the status the platform holds
 for each created dataset: `ready`, or `need_action` with a `next_command`, in
 which case follow [need-action](need-action.md) before looking for a view. `dataset delete` is asynchronous: re-read
 `dataset list` (the id disappears once the job completes) before reporting.

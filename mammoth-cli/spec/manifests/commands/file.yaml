@@ -310,10 +310,14 @@ commands:
   - CT-FILE-UPLOAD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Upload authorization is tenant- and scope-specific; a permission failure does not
-    make this route universally unavailable. Retained owned-fixture evidence observed a ready upload and
-    readback, but did not verify final cleanup absence. On success retain returned IDs, read them back,
-    and verify owned cleanup; do not assume other upload variants are qualified.
+  known_restrictions: 'Accepted extensions: csv tsv psv txt xls xlsx xml pdf tiff jpeg jpg png heic
+    webp and archives zip gz bz2 tar 7z (not json). Request size is capped by the ingress in front of
+    the API: a 60 MB upload is refused with HTTP 413 (invalid_argument) before the API sees it; 16 MB
+    is accepted (measured on release 2026-09-19; the cap between them is not pinned down). Keep one
+    upload well under 16 MB: split larger files or upload a zip/gz. Parsing is asynchronous; use --timeout 300 for files past a few MB and poll the returned
+    job on timeout. Upload authorization is tenant- and scope-specific; a permission failure does not
+    make this route universally unavailable. On success retain returned IDs, read them back, and
+    verify owned cleanup; do not assume other upload variants are qualified.'
   reviewed_by: primary
 - command_id: file.upload-folder
   command_path: file upload-folder
