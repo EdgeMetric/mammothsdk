@@ -197,11 +197,16 @@ def _forward_optional(
 
 
 def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
-    """Build the common envelope metadata for a view command (no project scope)."""
+    """Build the common envelope metadata for a view command.
+
+    View routes are not project-scoped on the wire, but the project the call
+    ran under (``--project`` or the profile's active project) is what the agent
+    needs to correlate with its other envelopes, so it is reported when known.
+    """
     return {
         "profile": invocation.profile,
         "workspace_id": workspace_id,
-        "project_id": None,
+        "project_id": resolved_project(invocation),
     }
 
 

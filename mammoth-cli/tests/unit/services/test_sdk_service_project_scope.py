@@ -90,6 +90,29 @@ def test_parent_discovery_miss_on_the_generic_call_path_is_not_found_too(
     }
 
 
+def test_project_get_on_a_missing_id_is_not_found_without_the_listing(
+    service: SdkMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # ``ProjectsAPI.get`` searches the listing and raises a ValueError whose
+    # message names every visible project (seen live after ``project
+    # delete``: api_error / ValueError). The envelope is not_found and keeps
+    # only the id that was asked for.
+    def _miss(project: object = None, workspace_id: int | None = None) -> object:
+        raise ValueError(
+            "Project ID 44 not found. Available projects: [('Secret plan', 3), ('Other', 5)]"
+        )
+
+    monkeypatch.setattr(service._client.projects, "get", _miss)
+    with pytest.raises(CliError) as excinfo:
+        service.call("mammoth.api.projects.ProjectsAPI.get", project=44)
+    error = excinfo.value
+    assert error.code == "resource_not_found"
+    assert error.exit_status == 5
+    assert error.details == {"project_id": 44, "workspace_id": service._workspace_id}
+    assert "Secret plan" not in str(error.to_envelope())
+    assert error.recovery_commands == ["mammoth project list"]
+
+
 @pytest.mark.parametrize(
     ("method", "view_kwarg", "parent_kwarg"),
     [

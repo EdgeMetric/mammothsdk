@@ -78,3 +78,11 @@ def test_remember_records_ignores_non_view_shapes() -> None:
     parents.remember_records("default", 1, {"id": 9, "name": "no dataset here"})
     parents.remember_records("default", 1, [{"id": "x", "dataset_id": 3}])
     assert parents.lookup("default", 1, 9) is None
+
+
+def test_view_list_reads_the_backend_ds_id_key(fake_service: FakeMammothService) -> None:
+    # Live dataview records name the parent ``ds_id`` (the 2.0.21 smoke on
+    # release wrote nothing to the cache until this was accepted).
+    fake_service.responses[_VIEW_LIST] = {"dataviews": [{"id": 113, "ds_id": 91, "name": "v"}]}
+    view_cmd.view_list(_inv("view.list", project=44, extra_args=["91"]))
+    assert parents.lookup("default", 4, 113) == 91

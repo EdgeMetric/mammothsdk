@@ -120,7 +120,9 @@ def remember_records(
         if not isinstance(record, dict):
             continue
         view_id = record.get("id", record.get("view_id", record.get("dataview_id")))
-        dataset_id = record.get("dataset_id")
+        # The backend's dataview record names its parent ``ds_id``; SDK View
+        # payloads and older fixtures say ``dataset_id``.
+        dataset_id = record.get("ds_id", record.get("dataset_id"))
         if isinstance(view_id, int) and isinstance(dataset_id, int):
             pairs.append((view_id, dataset_id))
     if pairs:

@@ -8,6 +8,7 @@ a private (``_``-prefixed) SDK member.
 
 from __future__ import annotations
 
+import re
 from types import TracebackType
 from typing import Any
 
@@ -33,6 +34,7 @@ from mammoth_cli.services.dispatch import resolve_sdk_method
 from mammoth_cli.services.mapping import map_sdk_exception
 
 #: Largest ``limit`` the projects route accepts (``4GENR007`` above it).
+_PROJECT_MISS = re.compile(r"^Project (ID \d+|'.*') not found\.")
 _PROJECT_PAGE_SIZE = 100
 
 
@@ -138,6 +140,8 @@ class SdkMammothService:
             # same project-wide parent discovery as ``call_view``; a miss must
             # read as not_found here too, not "operation failed unexpectedly".
             miss = self._discovery_miss_error(exc, kwargs.get("view_id", kwargs.get("dataview_id")))
+            if miss is None:
+                miss = self._project_miss_error(exc, kwargs.get("project"))
             if miss is not None:
                 raise miss from exc
             raise map_sdk_exception(
@@ -153,6 +157,24 @@ class SdkMammothService:
                 project_id=self._project_id,
                 workspace_id=self._workspace_id,
             ) from exc
+
+    def _project_miss_error(self, exc: ValueError, project: Any) -> CliError | None:
+        """Map ``ProjectsAPI.get``'s "Project ... not found" ValueError to not_found.
+
+        The SDK searches the listing and names every visible project in its
+        message; the envelope keeps only the id that was asked for.
+        """
+        text = str(exc)
+        if not _PROJECT_MISS.match(text):
+            return None
+        return CliError(
+            code=CODE_RESOURCE_NOT_FOUND,
+            message=f"Project {project} was not found in workspace {self._workspace_id}.",
+            exit_status=EXIT_NOT_FOUND,
+            hint="List the projects you can see and use one of those ids.",
+            details={"project_id": project, "workspace_id": self._workspace_id},
+            recovery_commands=["mammoth project list"],
+        )
 
     def _discovery_miss_error(self, exc: ValueError, view_id: Any) -> CliError | None:
         """Map the SDK's bare "not found in any dataset" ValueError to not_found.

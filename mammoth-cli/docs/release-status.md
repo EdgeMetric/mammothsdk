@@ -41,7 +41,19 @@ that is short; output costs as few tokens as the answer needs. SDK unchanged
   get), and `docs/agent-prompt.md` exports the two session defaults once.
 - Errors: HTTP 502/504 (and 408/425) on a read map to `retryable_error`
   (exit 7) like 503; the same status on a write stays `outcome_unknown`.
-  `doctor` distinguishes a disabled update check from an unreachable PyPI.
+  `project get` on an id that no longer exists is `resource_not_found`
+  (was `api_error` with the SDK's `ValueError`, whose message listed every
+  visible project). `doctor` distinguishes a disabled update check from an
+  unreachable PyPI. View-scoped envelopes (`view transform ...`, `view get`)
+  now report the effective `meta.project_id` like the project-scoped ones.
+
+Verified live on release after the outage: doctor → `project ensure`
+(created, active) → `file upload` → `view list` → `view get`, `view data get`
+(3 rows, `truncated: false`; `limit: 2` → `truncated: true`) and `view
+transform filter` with the view id alone (parent taken from the cache written
+by `view list`) → read-back 2 rows, `row_count` 2 → `project delete` of the
+smoke project only, then `project get` → `resource_not_found`. `schema get
+view.transform.filter` 1.3 KB, `schema list` 1.6 KB, `schema list view` 16 KB.
 
 ## 2.0.20 / SDK 0.7.11
 
