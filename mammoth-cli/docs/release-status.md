@@ -55,6 +55,12 @@ by `view list`) → read-back 2 rows, `row_count` 2 → `project delete` of the
 smoke project only, then `project get` → `resource_not_found`. `schema get
 view.transform.filter` 1.3 KB, `schema list` 1.6 KB, `schema list view` 16 KB.
 
+Published from deterministic local artifacts built from tag `cli-v2.0.21`
+(source commit `08c806c`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.21-py3-none-any.whl` sha256 `4408a08825a37c92d98d0c03a2b56eb262d79190e247afbea6d86e00c3bf8d1d`
+- `mammoth_cli-2.0.21.tar.gz` sha256 `befca8a99e348d10e175547a97bf28f1dc41da91509e5577a7045dfcb668d85f`
+
 ## 2.0.20 / SDK 0.7.11
 
 A follow-up to 2.0.19 for one thing the live run showed: the projects route
