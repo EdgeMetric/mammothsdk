@@ -28,6 +28,12 @@ Evidence and onboarding. SDK unchanged (`mammoth-io>=0.7.11,<0.8`).
   default profile and `app` server are the defaults, named ones are added
   on request).
 
+Published from deterministic local artifacts built from tag `cli-v2.0.22`
+(source commit `473453d`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.22-py3-none-any.whl` sha256 `109511c4b1139e24328f83f3de9f05c87be81ec0f9ceaaaef81d1f5efa16e3ae`
+- `mammoth_cli-2.0.22.tar.gz` sha256 `79380584c215a3ca110c07c56e14022eca07eac2ecf3b5935567c42c409b1601`
+
 ## 2.0.21 / SDK 0.7.11
 
 Ergonomics. The agent runs seldom-changing choices once and every call after
