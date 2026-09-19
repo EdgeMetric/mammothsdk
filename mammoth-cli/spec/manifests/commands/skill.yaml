@@ -99,6 +99,73 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: skill.agents-md.install
+  command_path: skill agents-md install
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.skills.steering.install_steering
+  sdk_conversion: Call mammoth_cli.skills.steering.install_steering with validated request fields.
+  request_model: SkillAgentsMdInstallRequest
+  result_model: SkillAgentsMdInstallResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local agent-skill file.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth skill agents-md install --help
+  agent_example: mammoth skill agents-md install
+  unit_tests:
+  - UT-SKILL-AGENTS-MD-INSTALL
+  contract_tests:
+  - CT-SKILL-AGENTS-MD-INSTALL-HUMAN
+  - CT-SKILL-AGENTS-MD-INSTALL-JSON
+  - CT-SKILL-AGENTS-MD-INSTALL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Writes one <mammoth-cli>…</mammoth-cli> block into AGENTS.md in the current directory (--input ''{"path": "CLAUDE.md"}'' for another file); re-running replaces the block in place. Local file write only.'
+  reviewed_by: primary
+- command_id: skill.show
+  command_path: skill show
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.skills.steering.show
+  sdk_conversion: Call mammoth_cli.skills.steering.show with validated request fields.
+  request_model: SkillShowRequest
+  result_model: SkillShowResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local agent-skill file.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth skill show --help
+  agent_example: mammoth skill show
+  unit_tests:
+  - UT-SKILL-SHOW
+  contract_tests:
+  - CT-SKILL-SHOW-HUMAN
+  - CT-SKILL-SHOW-JSON
+  - CT-SKILL-SHOW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Prints the bundled SKILL.md under data.text; --input ''{"file": "references/recipes/transforms.md"}'' prints one reference file. Read-only, local.'
+  reviewed_by: primary
+
 - command_id: skill.uninstall
   command_path: skill uninstall
   disposition: command

@@ -57,3 +57,31 @@ def skill_path(invocation: Invocation) -> HandlerResult:
     """Show the canonical skill path and the computed destination paths."""
     agents, scope, _force = _options(invocation)
     return installer.path(agents, scope), {}
+
+
+def skill_show(invocation: Invocation) -> HandlerResult:
+    """Print the bundled SKILL.md, or one reference file, as text."""
+    from mammoth_cli.errors.envelope import CODE_RESOURCE_NOT_FOUND, EXIT_NOT_FOUND, CliError
+    from mammoth_cli.skills import steering
+
+    document = invocation.load_input() or {}
+    file = document.get("file")
+    try:
+        return steering.show(str(file) if file else None), {}
+    except FileNotFoundError as exc:
+        raise CliError(
+            code=CODE_RESOURCE_NOT_FOUND,
+            message=f"'{exc}' is not a file of the bundled skill.",
+            exit_status=EXIT_NOT_FOUND,
+            hint="Paths are relative to the skill directory, e.g. references/recipes/index.md.",
+            recovery_commands=["mammoth skill path"],
+        ) from exc
+
+
+def skill_agents_md_install(invocation: Invocation) -> HandlerResult:
+    """Write or refresh the <mammoth-cli> steering block in AGENTS.md (or the given path)."""
+    from mammoth_cli.skills import steering
+
+    document = invocation.load_input() or {}
+    path = document.get("path")
+    return steering.install_steering(str(path) if path else None), {}

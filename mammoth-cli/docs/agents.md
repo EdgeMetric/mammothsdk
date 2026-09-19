@@ -25,11 +25,10 @@ Confirm and read the installed guidance before assigning work:
 
 ```bash
 mammoth --version
-mammoth skill list
-mammoth skill path
+mammoth skill show
 ```
 
-Read the `SKILL.md` at the installed path reported above. Its cold-start
+Read the `SKILL.md` it prints (`mammoth skill path` shows where it lives). Its cold-start
 instructions are part of the local command contract; do not substitute a
 repository copy or start discovery first.
 

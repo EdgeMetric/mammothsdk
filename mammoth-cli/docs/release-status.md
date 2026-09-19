@@ -1,5 +1,23 @@
 # CLI release provenance
 
+## 2.0.27 / SDK 0.7.12
+
+Two onboarding commands taken from a review of the Loops and PostHog agent
+CLIs (`think/mammoth-cli-readiness/research/agent-cli-peers-20260919.md`).
+SDK unchanged.
+
+- `mammoth skill show` prints the bundled `SKILL.md` (or one reference file
+  with `--input '{"file": "references/recipes/transforms.md"}'`) as
+  `data.text`, so a cold start loads the guide with one command instead of
+  `skill path` → parse → `cat`, which both Haiku runs did.
+- `mammoth skill agents-md install [--input '{"path": "CLAUDE.md"}']`
+  writes one `<mammoth-cli>…</mammoth-cli>` steering block into `AGENTS.md`
+  (created, appended, or replaced in place; `unchanged` when current), the
+  way `posthog-cli api agents-md install` does, so upgrading the CLI and
+  re-running refreshes stale instructions without duplicating them.
+- Both READMEs, `docs/agent-prompt.md`, `docs/agents.md` and the skill's
+  task-start reference now say `mammoth skill show`.
+
 ## 2.0.26 / SDK 0.7.12
 
 The SDK side of the 2.0.25 reference-error finding, and an upgrade fix

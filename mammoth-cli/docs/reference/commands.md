@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.26.
+Generated from the reviewed command manifests for mammoth-cli 2.0.27.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 552.
+Total commands: 554.
 
 ## activity
 
@@ -3166,6 +3166,13 @@ Total commands: 552.
 
 ## skill
 
+### `mammoth skill agents-md install`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.skills.steering.install_steering`
+- Agent example: `mammoth skill agents-md install`
+
 ### `mammoth skill install`
 
 - Mutation class: `benign_mutation`
@@ -3186,6 +3193,13 @@ Total commands: 552.
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.skills.installer.path`
 - Agent example: `mammoth skill path`
+
+### `mammoth skill show`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.skills.steering.show`
+- Agent example: `mammoth skill show`
 
 ### `mammoth skill uninstall`
 

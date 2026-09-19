@@ -2,6 +2,16 @@
 
 Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it, *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
 
+### `skill.agents-md.install`
+
+Run: `mammoth skill agents-md install`. Exact input fields: `mammoth schema get skill.agents-md.install`.
+
+Example: `mammoth skill agents-md install`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SkillAgentsMdInstallResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `skill.install`
 
 Run: `mammoth skill install`. Exact input fields: `mammoth schema get skill.install`.
@@ -29,6 +39,16 @@ Run: `mammoth skill path`. Exact input fields: `mammoth schema get skill.path`.
 Example: `mammoth skill path`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `SkillPathResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `skill.show`
+
+Run: `mammoth skill show`. Exact input fields: `mammoth schema get skill.show`.
+
+Example: `mammoth skill show`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SkillShowResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

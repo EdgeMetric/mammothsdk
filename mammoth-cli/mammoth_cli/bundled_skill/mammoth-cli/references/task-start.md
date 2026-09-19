@@ -19,7 +19,7 @@ or secrets in an argument, prompt, transcript, or checkpoint.
    your own initiative. The SDK (`mammoth-io`) comes with the CLI. If a later
    envelope shows `meta.update_available`, run the `command` it names before
    the next task step, then continue on the new version.
-2. Locate the installed guidance with `mammoth skill path` and read `SKILL.md`; open a reference only when the routing
+2. Read the installed guidance with `mammoth skill show` (`--input '{"file": "references/..."}'` prints one reference); open a reference only when the routing
    table sends you there. `references/commands/*.md` are per-command lookups,
    not upfront reading. If a skill install is required for the agent host,
    run `mammoth skill install` and verify ownership

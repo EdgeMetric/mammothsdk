@@ -29,8 +29,8 @@ Use Mammoth Analytics only through the `mammoth` CLI in bash; run
    create an API key (key + secret) and note your workspace id, then run in
    your own terminal: mammoth auth login" — never ask for, read, or pass a key
    or secret yourself, and never run auth login.
-3. Require `mammoth doctor` to pass, then `cat` the SKILL.md at
-   `mammoth skill path` (data.canonical) and follow it.
+3. Require `mammoth doctor` to pass, then run `mammoth skill show` and
+   follow the guide it prints.
 Work inside `mammoth project ensure 'PROJECT NAME'` unless I name a project;
 take ids only from reads; `schema get COMMAND_ID` before a new command; read
 results back before reporting.

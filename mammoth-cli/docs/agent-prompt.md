@@ -55,10 +55,9 @@ ONBOARDING (run in bash, in this order; stop at the first failure and report it)
    Every check must be ok. If `meta.update_available` is set on any envelope,
    run the `command` it names before continuing.
 4. Read the shipped guidance before anything else; it is the command contract:
-   SKILL="$(mammoth skill path | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["canonical"])')"
-   cat "$SKILL/SKILL.md"
-   Follow its routing: cat the reference it names for your task
-   (recipes/*.md, commands/*.md) before composing a request.
+   mammoth skill show
+   Follow its routing: `mammoth skill show --input '{"file": "references/recipes/index.md"}'`
+   prints any reference it names for your task before you compose a request.
 
 SCOPE
 - Work in one project of your own: `mammoth project ensure 'PROJECT NAME'`

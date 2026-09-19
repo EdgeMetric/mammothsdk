@@ -284,6 +284,10 @@ _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("run_id", required=False, annotation=str | None, default=None),
     ),
     "skill.list": (),
+    "skill.show": (FieldSpec("file", required=False, annotation=str | None, default=None),),
+    "skill.agents-md.install": (
+        FieldSpec("path", required=False, annotation=str | None, default=None),
+    ),
     "skill.path": (
         FieldSpec("agents", required=False, annotation=list[str] | None, default=None),
         FieldSpec("scope", required=False, annotation=str, default="user"),
@@ -348,9 +352,11 @@ _LOCAL_COMMANDS = frozenset(
         "schema.find",
         "schema.get",
         "schema.list",
+        "skill.agents-md.install",
         "skill.install",
         "skill.list",
         "skill.path",
+        "skill.show",
         "skill.uninstall",
         "skill.update",
         "upgrade",

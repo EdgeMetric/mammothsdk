@@ -53,9 +53,9 @@ command. An agent does this by asking the operator to run the login below in
 their own terminal; the CLI never reads credentials from environment variables:
 
 ```bash
-mammoth skill list
-mammoth skill path
-# Read the installed SKILL.md before operating.
+mammoth skill show
+# Read the SKILL.md it prints before operating; `mammoth skill agents-md install`
+# writes a short steering block into AGENTS.md so future sessions start here.
 mammoth auth status
 # Compare the reported endpoint with the intended target before doctor.
 # Use app for production; use release only when explicitly intended.
@@ -186,8 +186,8 @@ Use Mammoth Analytics only through the `mammoth` CLI in bash; run
    create an API key (key + secret) and note your workspace id, then run in
    your own terminal: mammoth auth login" — never ask for, read, or pass a key
    or secret yourself, and never run auth login.
-3. Require `mammoth doctor` to pass, then `cat` the SKILL.md at
-   `mammoth skill path` (data.canonical) and follow it.
+3. Require `mammoth doctor` to pass, then run `mammoth skill show` and
+   follow the guide it prints.
 Work inside `mammoth project ensure 'PROJECT NAME'` unless I name a project;
 take ids only from reads; `schema get COMMAND_ID` before a new command; read
 results back before reporting.

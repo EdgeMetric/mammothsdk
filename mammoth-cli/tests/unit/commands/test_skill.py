@@ -200,3 +200,55 @@ def test_unknown_agent_is_usage_error(tmp_path: Path) -> None:
     with pytest.raises(CliError) as excinfo:
         installer.install(["nope"], "user", home=tmp_path)
     assert excinfo.value.code == "unknown_agent"
+
+
+# --- skill show / skill agents-md install ---------------------------------
+
+
+def test_show_returns_skill_md_text() -> None:
+    from mammoth_cli.skills import steering
+
+    result = steering.show()
+    assert result["file"] == "SKILL.md"
+    assert str(result["text"]).startswith("---\nname: mammoth-cli")
+
+
+def test_show_reads_a_reference_file_and_refuses_escapes() -> None:
+    import pytest
+
+    from mammoth_cli.skills import steering
+
+    result = steering.show("references/recipes/transforms.md")
+    assert "transform" in str(result["text"]).lower()
+    with pytest.raises(FileNotFoundError):
+        steering.show("../../pyproject.toml")
+    with pytest.raises(FileNotFoundError):
+        steering.show("references/does-not-exist.md")
+
+
+def test_agents_md_install_creates_appends_and_replaces(tmp_path: Path) -> None:
+    from mammoth_cli.skills import steering
+
+    created = steering.install_steering(cwd=tmp_path)
+    target = tmp_path / "AGENTS.md"
+    assert created["action"] == "created" and target.is_file()
+    text = target.read_text(encoding="utf-8")
+    assert text.count(steering.BLOCK_OPEN) == 1 and "mammoth skill show" in text
+
+    assert steering.install_steering(cwd=tmp_path)["action"] == "unchanged"
+
+    other = tmp_path / "CLAUDE.md"
+    other.write_text("# Project notes\n", encoding="utf-8")
+    appended = steering.install_steering("CLAUDE.md", cwd=tmp_path)
+    assert appended["action"] == "appended"
+    body = other.read_text(encoding="utf-8")
+    assert body.startswith("# Project notes\n") and body.count(steering.BLOCK_OPEN) == 1
+
+    stale = body.replace("mammoth skill show", "mammoth skill OLD")
+    other.write_text(stale, encoding="utf-8")
+    replaced = steering.install_steering("CLAUDE.md", cwd=tmp_path)
+    assert replaced["action"] == "replaced"
+    refreshed = other.read_text(encoding="utf-8")
+    assert "mammoth skill OLD" not in refreshed
+    assert refreshed.count(steering.BLOCK_OPEN) == 1
+    assert refreshed.startswith("# Project notes\n")

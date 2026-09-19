@@ -733,12 +733,16 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 ## skill
 
+- `mammoth skill agents-md install` [benign_mutation/none] -> mammoth_cli.skills.steering.install_steering
+  example: mammoth skill agents-md install
 - `mammoth skill install` [benign_mutation/none] -> mammoth_cli.skills.installer.install
   example: mammoth skill install
 - `mammoth skill list` [read/none] -> mammoth_cli.skills.installer.list_
   example: mammoth skill list
 - `mammoth skill path` [read/none] -> mammoth_cli.skills.installer.path
   example: mammoth skill path
+- `mammoth skill show` [read/none] -> mammoth_cli.skills.steering.show
+  example: mammoth skill show
 - `mammoth skill uninstall` [benign_mutation/none] -> mammoth_cli.skills.installer.uninstall
   example: mammoth skill uninstall
 - `mammoth skill update` [benign_mutation/none] -> mammoth_cli.skills.installer.update

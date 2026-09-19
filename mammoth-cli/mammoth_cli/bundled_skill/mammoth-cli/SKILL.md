@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.26
+version: 2.0.27
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines, dashboards, exports, and handoffs."
 ---
 
@@ -45,6 +45,9 @@ before the next step.
 
 - Ids are positionals; request fields are one `--input '{...}'` document;
   there are no per-field flags (`project create NAME`, not `--name`).
+- `mammoth skill show --input '{"file": "references/recipes/transforms.md"}'`
+  prints any file of this skill; `mammoth skill agents-md install` writes a
+  steering block into a repository's AGENTS.md so later sessions start here.
 - `COMMAND --help` lists the input fields with types; `mammoth schema get
   COMMAND_ID` is the full contract (add `--input '{"full": true}'` for the
   JSON Schema); `schema list` is the family index, `schema list view` one
