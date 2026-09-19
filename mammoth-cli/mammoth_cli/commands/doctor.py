@@ -13,6 +13,7 @@ import platform
 import re
 import shlex
 import sys
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -120,6 +121,17 @@ def _visible_projects(service: Any) -> list[dict[str, Any]]:
     return [p for p in projects if isinstance(p, dict)]
 
 
+def _nearest_existing(path: Path) -> Path:
+    """Return ``path`` or its closest existing ancestor.
+
+    A fresh account often has no ``~/.config`` yet; the first login creates
+    the whole chain, so writability is judged where creation would start.
+    """
+    while not path.exists() and path.parent != path:
+        path = path.parent
+    return path
+
+
 def doctor(invocation: Invocation) -> HandlerResult:
     """Run environment and connectivity diagnostics.
 
@@ -135,7 +147,7 @@ def doctor(invocation: Invocation) -> HandlerResult:
     checks: list[dict[str, Any]] = []
 
     config_directory = profiles.config_dir()
-    writable_target = config_directory if config_directory.exists() else config_directory.parent
+    writable_target = _nearest_existing(config_directory)
     config_ok = os.access(writable_target, os.W_OK | os.X_OK)
     checks.append(
         _check(

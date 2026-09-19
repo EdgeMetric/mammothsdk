@@ -241,3 +241,18 @@ def test_doctor_names_a_disabled_update_check(
     assert check["ok"] is True
     assert "update check disabled (MAMMOTH_NO_UPDATE_CHECK)" in check["detail"]
     assert "not reachable" not in check["detail"]
+
+
+def test_doctor_config_check_walks_up_to_an_existing_ancestor(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, isolated_run_log: Path
+) -> None:
+    # A fresh account has no ~/.config yet: the first login creates the whole
+    # chain, so the check must judge the nearest existing ancestor, not fail
+    # on a missing parent (seen on a bare HOME with the published 2.0.22).
+    from mammoth_cli.context import profiles
+
+    missing = tmp_path / "home" / ".config" / "mammoth-cli"
+    monkeypatch.setattr(profiles, "config_dir", lambda: missing)
+    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    check = next(c for c in data["checks"] if c["name"] == "config_directory")
+    assert check["ok"] is True, check
