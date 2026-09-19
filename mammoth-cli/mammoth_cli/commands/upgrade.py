@@ -19,6 +19,7 @@ real subprocess.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -54,37 +55,50 @@ ACTION_ALREADY_CURRENT = "already_current"
 ACTION_WOULD_UPGRADE = "would_upgrade"
 
 
-def _uv_tool_lists_package() -> bool:
-    """Whether ``uv tool list`` reports this package as a uv-managed tool.
+def _tool_root(argv: list[str]) -> str | None:
+    """Return the directory a tool manager keeps its venvs in, or None.
 
-    Returns False (rather than raising) when ``uv`` is absent or the listing
-    fails, so detection can fall through to the next manager.
+    ``uv tool dir`` / ``pipx environment --value PIPX_LOCAL_VENVS`` answer
+    with one path. Returns None (rather than raising) when the manager is
+    absent or the query fails, so detection can fall through.
     """
-    uv = shutil.which("uv")
-    if not uv:
-        return False
+    binary = shutil.which(argv[0])
+    if not binary:
+        return None
     try:
-        result = subprocess.run(  # noqa: S603 - fixed argv, no shell, trusted uv path
-            [uv, "tool", "list"],
+        result = subprocess.run(  # noqa: S603 - fixed argv, no shell, trusted path
+            [binary, *argv[1:]],
             capture_output=True,
             text=True,
             timeout=30,
             check=False,
         )
     except (OSError, subprocess.SubprocessError):
-        return False
+        return None
     if result.returncode != 0:
+        return None
+    root = result.stdout.strip().splitlines()
+    return root[0].strip() if root else None
+
+
+def _runs_under(root: str | None) -> bool:
+    """Whether the running interpreter's environment lives under ``root``."""
+    if not root:
         return False
-    return PACKAGE_NAME in result.stdout
+    prefix = os.path.realpath(sys.prefix)
+    return prefix.startswith(os.path.realpath(root).rstrip("/\\") + os.sep)
 
 
 def detect_manager() -> str:
     """Detect which tool manages this CLI install.
 
-    Detection order is ``uv tool`` (the running executable lives under a uv
-    tools directory, or ``uv tool list`` reports the package), then ``pipx``
-    (the executable lives under a pipx venvs directory), then a ``pip``
-    fallback.
+    The decision is about the *running* environment, never about what else
+    is installed on the machine: a plain venv on a host that also has a
+    ``uv tool`` install must be upgraded with pip in that venv, or the
+    upgrade lands somewhere else and the caller keeps the old version.
+    Detection order is ``uv tool`` (``sys.executable`` under a uv tools
+    directory, or ``sys.prefix`` under ``uv tool dir``), then ``pipx`` (the
+    same for its venvs directory), then the ``pip`` of the running interpreter.
 
     Returns:
         One of :data:`MANAGER_UV`, :data:`MANAGER_PIPX`, or :data:`MANAGER_PIP`.
@@ -94,8 +108,13 @@ def detect_manager() -> str:
         return MANAGER_UV
     if "/pipx/venvs/" in location or "/pipx/venv/" in location:
         return MANAGER_PIPX
-    if _uv_tool_lists_package():
-        return MANAGER_UV
+    if sys.prefix != sys.base_prefix:
+        # Inside some virtual environment: only a manager that owns *this*
+        # environment may upgrade it.
+        if _runs_under(_tool_root(["uv", "tool", "dir"])):
+            return MANAGER_UV
+        if _runs_under(_tool_root(["pipx", "environment", "--value", "PIPX_LOCAL_VENVS"])):
+            return MANAGER_PIPX
     return MANAGER_PIP
 
 

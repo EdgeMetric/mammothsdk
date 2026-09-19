@@ -163,3 +163,36 @@ class TestSetAutoRun:
         )
         assert view.is_draft_mode is True
         assert result == {"state": "ready"}
+
+
+class TestAddTaskReferenceErrors:
+    def test_draft_state_is_read_before_the_submit(self, mock_client: MammothClient) -> None:
+        """A reference error flips the server's draft flag; reading it after the
+        submit would skip the pipeline wait and report the failure as success."""
+        from unittest.mock import MagicMock
+
+        view = View(mock_client, SAMPLE_VIEW_DATA, SAMPLE_DATASET_ID)
+        view.refresh = lambda: view  # type: ignore[assignment]
+        states = iter([{"is_draft": False}, {"is_draft": True}])
+        mock_client.pipeline.get_draft_status = MagicMock(side_effect=lambda *a, **k: next(states))
+
+        view._add_task({"TASK_TYPE": "TEST"})
+
+        mock_client.pipeline.wait_for_pipeline.assert_called_once_with(view.id, SAMPLE_DATASET_ID)
+
+    def test_has_error_result_raises_transform_error(self, mock_client: MammothClient) -> None:
+        from mammoth.exceptions import MammothTransformError
+
+        view = View(mock_client, SAMPLE_VIEW_DATA, SAMPLE_DATASET_ID)
+        mock_client.pipeline.add_task.return_value = {
+            "has_error": True,
+            "status": "done",
+            "type_of_modification": "add_rule",
+        }
+
+        with pytest.raises(MammothTransformError) as excinfo:
+            view._add_task({"TASK_KEY": "REPLACE"})
+
+        assert excinfo.value.task_key == "REPLACE"
+        assert excinfo.value.details["response"]["has_error"] is True
+        mock_client.pipeline.wait_for_pipeline.assert_not_called()

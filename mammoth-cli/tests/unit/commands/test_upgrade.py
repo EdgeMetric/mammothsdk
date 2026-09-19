@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -285,8 +286,36 @@ def test_detect_manager_pipx_from_path(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_detect_manager_pip_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(upgrade_cmd.sys, "executable", "/usr/bin/python3")
-    monkeypatch.setattr(upgrade_cmd, "_uv_tool_lists_package", lambda: False)
+    monkeypatch.setattr(upgrade_cmd, "_tool_root", lambda argv: None)
     assert upgrade_cmd.detect_manager() == "pip"
+
+
+def test_detect_manager_ignores_a_uv_install_that_is_not_this_venv(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A plain venv on a host with `uv tool install mammoth-cli` upgrades itself with pip."""
+    venv = tmp_path / "proj" / ".venv"
+    venv.mkdir(parents=True)
+    monkeypatch.setattr(upgrade_cmd.sys, "executable", str(venv / "bin" / "python"))
+    monkeypatch.setattr(upgrade_cmd.sys, "prefix", str(venv))
+    monkeypatch.setattr(upgrade_cmd.sys, "base_prefix", "/usr")
+    monkeypatch.setattr(upgrade_cmd, "_tool_root", lambda argv: str(tmp_path / "uv" / "tools"))
+    assert upgrade_cmd.detect_manager() == "pip"
+
+
+def test_detect_manager_uv_from_a_custom_tool_dir(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    root = tmp_path / "custom-tools"
+    prefix = root / "mammoth-cli"
+    prefix.mkdir(parents=True)
+    monkeypatch.setattr(upgrade_cmd.sys, "executable", str(prefix / "bin" / "python"))
+    monkeypatch.setattr(upgrade_cmd.sys, "prefix", str(prefix))
+    monkeypatch.setattr(upgrade_cmd.sys, "base_prefix", "/usr")
+    monkeypatch.setattr(
+        upgrade_cmd, "_tool_root", lambda argv: str(root) if argv[0] == "uv" else None
+    )
+    assert upgrade_cmd.detect_manager() == "uv"
 
 
 # --- option surface --------------------------------------------------------

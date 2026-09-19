@@ -1,5 +1,30 @@
 # CLI release provenance
 
+## 2.0.26 / SDK 0.7.12
+
+The SDK side of the 2.0.25 reference-error finding, and an upgrade fix
+seen while checking that a 2.0.24 install learns about 2.0.25.
+
+- SDK 0.7.12: `View._add_task` reads the server's draft flag *before*
+  submitting (the backend flips it on a reference error, which is what made
+  every transform skip its pipeline wait and report `has_error: true` as
+  success) and raises `MammothTransformError` on a `has_error` result. The
+  CLI enriches that error into the same `pipeline_reference_error`
+  envelope (column, type, reason, `view task delete ... --yes`) it builds
+  for older SDKs; verified live on a fresh view (probe project 56, deleted).
+  `mammoth-io>=0.7.12,<0.8`.
+- `mammoth upgrade` and `MAMMOTH_AUTO_UPGRADE` decided the package manager
+  from `uv tool list`, so a plain venv on a host that also had a `uv tool`
+  install "upgraded" the uv copy and kept running the old version. The
+  decision is now about the running environment only: `sys.executable`
+  under a uv/pipx tools directory, or `sys.prefix` under `uv tool dir` /
+  pipx's venvs directory; otherwise pip in the running interpreter.
+- Verified on a 2.0.24 venv: the daily check writes `update-check.json`
+  after the first command, the next envelope carries
+  `meta.update_available` `{current, latest, command: "mammoth upgrade
+  --yes"}`, human output prints the one-line hint on stderr, and
+  `MAMMOTH_AUTO_UPGRADE=1` upgrades before the command (opt-in).
+
 ## 2.0.25 / SDK 0.7.11
 
 Payload fixes for the three routes the 2026-09-19 sweeps left as "500 on

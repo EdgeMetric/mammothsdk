@@ -4,6 +4,19 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.12]
+
+### Fixed
+
+- `View._add_task` (every transform method) read the server's draft flag
+  *after* submitting the task. The backend flips that flag to `dirty` when
+  the new task carries a reference error (missing column, wrong column
+  type), so the SDK skipped `wait_for_pipeline` and returned the job result
+  `{"has_error": true, "status": "done"}` as success while the view sat in
+  `ref_error`. Draft state is now read before the submit, and a result with
+  `has_error: true` raises `MammothTransformError` (details carry the
+  response; remove the task with `client.pipeline.delete_task`).
+
 ## [0.7.11]
 
 ### Added

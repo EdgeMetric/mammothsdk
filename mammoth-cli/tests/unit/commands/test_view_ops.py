@@ -1234,3 +1234,29 @@ def test_reference_error_survives_a_failed_follow_up_read(
     assert error.recovery_commands == [
         'mammoth view pipeline items 132 --input \'{"fields": "__full"}\''
     ]
+
+
+def test_sdk_raised_reference_error_is_enriched_the_same_way(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    _programme_reference_error(fake_service, 132)
+    fake_service.view_responses[(132, "bulk_replace")] = CliError(
+        code="api_error",
+        message="Mammoth could not complete the operation.",
+        exit_status=1,
+        details={"dataview_id": 132, "response": {"has_error": True, "status": "done"}},
+    )
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_transform_bulk_replace(
+            _inv(
+                "view.transform.bulk-replace",
+                extra_args=["132"],
+                resource_ref=_parent(132),
+                positionals={"view_id": "132"},
+                input_file=_write(
+                    tmp_path, {"columns": ["amount"], "mapping": [{"search": ["$"], "replace": ""}]}
+                ),
+            )
+        )
+    assert excinfo.value.code == view_ops_cmd.CODE_PIPELINE_REFERENCE_ERROR
+    assert excinfo.value.recovery_commands == ["mammoth view task delete 132 107 --yes"]

@@ -251,11 +251,17 @@ def _dispatch_view(
     with open_service(invocation) as (service, auth):
         if dataset_id is None:
             dataset_id = parents.lookup(_profile_name(invocation), auth.workspace_id, view_id)
-        if dataset_id is None:
-            _require_discovery_allowed(invocation, view_id)
-            data = service.call_view(view_id, method, **kwargs)
-        else:
-            data = service.call_view(view_id, method, dataset_id=int(dataset_id), **kwargs)
+        try:
+            if dataset_id is None:
+                _require_discovery_allowed(invocation, view_id)
+                data = service.call_view(view_id, method, **kwargs)
+            else:
+                data = service.call_view(view_id, method, dataset_id=int(dataset_id), **kwargs)
+        except CliError as exc:
+            # SDK >= 0.7.12 raises on the same job result; enrich it the same way.
+            response = exc.details.get("response") if isinstance(exc.details, dict) else None
+            reject_pipeline_reference_errors(service, view_id, dataset_id, response)
+            raise
         reject_pipeline_reference_errors(service, view_id, dataset_id, data)
     return data, _meta(invocation, auth.workspace_id)
 

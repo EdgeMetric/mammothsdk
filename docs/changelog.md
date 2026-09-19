@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.7.12
+
+### Fixed
+
+- Every transform method read the server's draft flag *after* submitting the
+  task. The backend flips that flag when the new task carries a reference
+  error (missing column, wrong column type), so the SDK skipped the pipeline
+  wait and returned `{"has_error": true, "status": "done"}` as success while
+  the view sat in `ref_error`. Draft state is now read before the submit and
+  a `has_error` result raises `MammothTransformError`.
+
+## v0.7.11
+
+### Added
+
+- `ProjectsAPI.list` takes a server-side `offset`; `list_all` walks the
+  route's 100-row pages; `get(project="name")` searches every page.
+
 ## v0.7.10
 
 ### Added

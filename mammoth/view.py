@@ -62,6 +62,7 @@ from mammoth.exceptions import (
     MammothColumnError,
     MammothExportError,
     MammothJobTimeoutError,
+    MammothTransformError,
     MammothValidationError,
 )
 from mammoth.models.exports import (
@@ -313,11 +314,30 @@ class View(
         Returns:
             API response dict.
         """
-        result = self._client.pipeline.add_task(self.id, task_spec, self.dataset_id)
+        # Read draft state *before* submitting: the server flips a view's
+        # draft flag to "dirty" when the new task carries a reference error
+        # (missing column, wrong column type), so reading it afterwards would
+        # mistake that failure for a queued draft and skip the pipeline wait.
         # The server owns draft state.  The local flag is retained only as a
         # compatibility fallback for older injected clients that do not return
         # a status mapping; it is never authoritative for a real transport.
-        if not self.is_draft_mode:
+        in_draft = self.is_draft_mode
+        result = self._client.pipeline.add_task(self.id, task_spec, self.dataset_id)
+        if isinstance(result, dict) and result.get("has_error") is True:
+            # The task was stored but cannot bind to the view (the pipeline is
+            # now in ref_error and every read of it fails until the task is
+            # removed).  Surface it as the transform failure it is.
+            raise MammothTransformError(
+                "The task was added but cannot bind to the view's columns "
+                "(reference error); remove it with delete_task and fix the input.",
+                task_key=str(task_spec.get("TASK_KEY") or "") or None,
+                details={
+                    "dataview_id": self.id,
+                    "dataset_id": self.dataset_id,
+                    "response": result,
+                },
+            )
+        if not in_draft:
             try:
                 self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
                 self.refresh()
