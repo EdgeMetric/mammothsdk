@@ -69,13 +69,13 @@ bindings, and makes no capability-status or autonomous-workflow qualification
 claim.
 
 Published from deterministic local artifacts built from tag `cli-v2.0.18`
-(source commit `CLI_COMMIT`). PyPI reports the uploaded local artifact hashes:
+(source commit `63628bf`). PyPI reports the uploaded local artifact hashes:
 
-- `mammoth_cli-2.0.18-py3-none-any.whl` sha256 `CLI_WHL`
-- `mammoth_cli-2.0.18.tar.gz` sha256 `CLI_SDIST`
+- `mammoth_cli-2.0.18-py3-none-any.whl` sha256 `1a7525988228882c5ed84ceee61d4eb425fbde171d70bd9423272eea48aa88f5`
+- `mammoth_cli-2.0.18.tar.gz` sha256 `92ec23b98095712e75e5121c74b54c3fa6578e5d83262d1af3284ebb92437d4e`
 
-SDK 0.7.10 (`sdk-v0.7.10`, source commit `SDK_COMMIT`): `mammoth_io-0.7.10-py3-none-any.whl` sha256
-`SDK_WHL`; `mammoth_io-0.7.10.tar.gz` sha256 `SDK_SDIST`; digests verified against PyPI.
+SDK 0.7.10 (`sdk-v0.7.10`, source commit `8f3e0a0`): `mammoth_io-0.7.10-py3-none-any.whl` sha256
+`b52c85c28d8107381078f848e6a10b4cfe455b0ca15c470412e6e6fdb28be3c6`; `mammoth_io-0.7.10.tar.gz` sha256 `f7f988396ef51109a18ef910ffddf28e755af426bdc19f884977f20b99640cb4`; digests verified against PyPI.
 
 ## 2.0.17 / SDK 0.7.9
 
