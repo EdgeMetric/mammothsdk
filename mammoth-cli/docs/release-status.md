@@ -18,6 +18,15 @@ SDK unchanged.
 - Both READMEs, `docs/agent-prompt.md`, `docs/agents.md` and the skill's
   task-start reference now say `mammoth skill show`.
 
+Also in this release: `docs/production-readiness.md`, the one-page verdict and
+evidence map, and `docs/capability-evidence/ilg-feasibility-20260919.md`.
+
+Published from deterministic local artifacts built from tag `cli-v2.0.27`
+(source commit `c5f16b1`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.27-py3-none-any.whl` sha256 `f7aa720118b629847a22da0de6d3c01000b0db7449b15a4923b2fa6f09564638`
+- `mammoth_cli-2.0.27.tar.gz` sha256 `e1b7bf447ed7cc2e2da360b895ff7ece3a1b4cd4bae03e9f1f7edbdd5b912f6c`
+
 ## 2.0.26 / SDK 0.7.12
 
 The SDK side of the 2.0.25 reference-error finding, and an upgrade fix

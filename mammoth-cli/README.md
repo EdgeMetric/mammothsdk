@@ -258,6 +258,12 @@ COMMAND.ID` to verify a request shape against the installed CLI.
 Agent-readable indexes: [`docs/llms.txt`](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/llms.txt) and
 [`docs/llms-full.txt`](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/llms-full.txt).
 
+## Production readiness
+
+[`docs/production-readiness.md`](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/production-readiness.md)
+is the one-page verdict: what is proven live, what is not, and where every
+claim's evidence lives. Read it before promising a deliverable.
+
 ## Capability-matrix status
 
 The committed machine-readable release matrix is the canonical repository
