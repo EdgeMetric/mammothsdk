@@ -6502,7 +6502,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.view.View.branch_out
   implementation_origin: mammoth.view.View.branch_out
-  signature: 'branch_out(self, dataset_name: ''str'', *, target_ds_id: ''int | None'' = None, save_as_mode: ''SaveAsDatasetMode'' = <SaveAsDatasetMode.REPLACE: ''REPLACE_IN_DS''>, column_mapping: ''dict[str, str] | None'' = None, label_ids: ''list[int] | None'' = None, condition: ''Condition | CompoundCondition | NotCondition | None'' = None, timeout: ''int | None'' = None) -> ''int'''
+  signature: 'branch_out(self, dataset_name: ''str'', *, target_ds_id: ''int | None'' = None, save_as_mode: ''SaveAsDatasetMode'' = <SaveAsDatasetMode.REPLACE: ''REPLACE_IN_DS''>, column_mapping: ''dict[str, str] | None'' = None, label_ids: ''list[int] | None'' = None, condition: ''Condition | CompoundCondition | NotCondition | None'' = None, timeout: ''int | None'' = None, target_project_id: ''int | None'' = None) -> ''int'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: view.export.dataset
@@ -6744,7 +6744,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.view.ViewExport.to_dataset
   implementation_origin: mammoth.view.ViewExport.to_dataset
-  signature: 'to_dataset(self, dataset_name: ''str'', *, target_ds_id: ''int | None'' = None, save_as_mode: ''SaveAsDatasetMode'' = <SaveAsDatasetMode.REPLACE: ''REPLACE_IN_DS''>, column_mapping: ''dict[str, str] | None'' = None, label_ids: ''list[int] | None'' = None, condition: ''Condition | CompoundCondition | NotCondition | None'' = None, timeout: ''int | None'' = None) -> ''int'''
+  signature: 'to_dataset(self, dataset_name: ''str'', *, target_ds_id: ''int | None'' = None, save_as_mode: ''SaveAsDatasetMode'' = <SaveAsDatasetMode.REPLACE: ''REPLACE_IN_DS''>, column_mapping: ''dict[str, str] | None'' = None, label_ids: ''list[int] | None'' = None, condition: ''Condition | CompoundCondition | NotCondition | None'' = None, timeout: ''int | None'' = None, target_project_id: ''int | None'' = None) -> ''int'''
   openapi_operation_ids: []
   canonical_command: view.export.dataset
   alias_of: null

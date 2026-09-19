@@ -1864,4 +1864,15 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
         if dataset_id is None:
             dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
         data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
+    if invocation.command_id == "view.export.dataset" and isinstance(data, int):
+        # The SDK returns the bare id of the dataset written to; name it, and
+        # say which project it landed in, so the agent's next read is obvious.
+        target_project = kwargs.get("target_project_id")
+        data = {
+            "dataset_id": data,
+            "project_id": int(target_project) if target_project is not None else project_id,
+            "source_view_id": dataview_id,
+            "next": f"mammoth view list {data}"
+            + (f" --project {int(target_project)}" if target_project is not None else ""),
+        }
     return data, _meta(invocation, auth.workspace_id, project_id)

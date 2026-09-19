@@ -1859,7 +1859,9 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: 'Mutation class dynamic: benign_mutation for a new target, destructive when replacing
-    an existing target.'
+    an existing target. The export is appended to the source pipeline (end_of_pipeline) and re-runs with it;
+    target_project_id sends the dataset into another project (cross-project branch-out, proven on release).
+    Result: {dataset_id, project_id, source_view_id, next}.'
   reviewed_by: primary
 - command_id: view.export.delete
   command_path: view export delete

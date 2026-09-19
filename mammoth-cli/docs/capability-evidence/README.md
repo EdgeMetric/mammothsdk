@@ -46,3 +46,4 @@ in the matrix rows by SHA-256) and a `SUMMARY.md`:
 - `payload-probe-20260919` — derivative create/data re-run with corrected bodies after reading the release apiv2 tracebacks (both ok; project 52).
 - `haiku-etl-20260919` also holds `REPORT-2.md`: the same brief re-run on published 2.0.24 after the release host's full root disk (the cause of the stuck upload jobs) was reclaimed.
 - `ilg-feasibility-20260919.md` — desk review (Sonnet) of a real customer rebuild brief against the CLI's proven routes: cross-project send, add-only pipeline edits and dashboard measures are the unproven items.
+- `cross-project-send-20260919` — the ILG blocker closed: `view export dataset` with `target_project_id` delivers a view into another project as a re-running pipeline step (projects 57/58).

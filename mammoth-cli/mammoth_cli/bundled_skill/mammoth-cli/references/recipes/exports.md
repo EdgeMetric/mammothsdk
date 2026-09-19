@@ -22,6 +22,31 @@ If `schema get view.export.csv` rejects requested fields, preserve the
 structured error and discover another declared export route rather than using
 raw HTTP.
 
+## Send a view into another project (parallel send, branch-out)
+
+`view export dataset` writes the view's rows into a Mammoth dataset **as a
+pipeline step of the source view**, so the copy is refreshed every time the
+source pipeline re-runs; existing tasks and existing exports (for example a
+Power BI send) are not touched — it is appended at the end of the pipeline.
+`target_project_id` puts the dataset in another project (proven on release:
+view 134 in project 58 → dataset 114 in project 57, refreshed 302 → 301 rows
+after a filter was added upstream).
+
+```bash
+mammoth view export dataset SOURCE_VIEW_ID SOURCE_DATASET_ID --yes \
+  --input '{"dataset_name": "Finance feed", "target_project_id": TARGET_PROJECT_ID}'
+# -> {"dataset_id": N, "project_id": TARGET_PROJECT_ID, "next": "mammoth view list N --project TARGET_PROJECT_ID"}
+mammoth view export list SOURCE_VIEW_ID SOURCE_DATASET_ID     # handler internal_dataset, status executed, TARGET_DS_ID N
+```
+
+`target_ds_id` writes into an existing dataset instead of creating one
+(`save_as_mode` `REPLACE_IN_DS` or `APPEND_TO_DS`). Read the delivery back in
+the target project (`view list N --project P`, `view data get`) before
+reporting it. Do not build this with `view export create`: the raw
+`internal_dataset` spec needs `USER_ID` and the `export_project` /
+`project_id` / `source_project_id` trio, and without them the backend answers
+`4GENR007 Validation error` with no detail; the typed command fills them.
+
 ## Destination exports that carry a secret
 
 `schema get` lists `secret_fields` for every typed destination export

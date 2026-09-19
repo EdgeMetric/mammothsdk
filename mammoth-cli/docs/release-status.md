@@ -1,5 +1,31 @@
 # CLI release provenance
 
+## 2.0.28 / SDK 0.7.13
+
+Cross-project send, the first blocker in the ILG feasibility review, proven
+live and made a typed route (`docs/capability-evidence/cross-project-send-20260919/`).
+
+- SDK 0.7.13: `View.to_dataset(...)` / `branch_out(...)` take
+  `target_project_id`. The backend's internal_dataset export needs
+  `USER_ID`, `export_project`, `project_id` and `source_project_id` in
+  `target_properties` for a cross-project write (it checks the caller's
+  dataset-create permission on the target; without them the answer is
+  4GENR007 with no detail). The SDK reads the user id once from `/self`.
+- `mammoth view export dataset VIEW --yes --input '{"dataset_name": ...,
+  "target_project_id": N}'` returns `{dataset_id, project_id,
+  source_view_id, next}` instead of a bare integer, so the next read is in
+  the envelope. The send is appended with `end_of_pipeline: true`, and the
+  fixture run shows the target re-materialising (302 → 301 rows) when a
+  filter is added upstream: it is a persistent pipeline step, not a copy.
+- Exports recipe: new section "Send a view into another project"; manifest
+  restriction on `view.export.dataset` records the result shape and the
+  cross-project field.
+- Matrix: REL-458 (AddExport) moves Unassessed → Partial on this evidence;
+  the typed `view.export.dataset` route is a convenience over the same
+  operation and has no row of its own.
+
+PYPI_HASHES_PLACEHOLDER
+
 ## 2.0.27 / SDK 0.7.12
 
 Two onboarding commands taken from a review of the Loops and PostHog agent

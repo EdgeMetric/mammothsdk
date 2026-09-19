@@ -46,6 +46,30 @@ def test_dataset_route_uses_view_export_and_exact_parent(
     ]
 
 
+def test_dataset_route_names_the_written_dataset_and_its_project(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.view_responses[(7, "to_dataset")] = 114
+    data, _meta = view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=58,
+            extra_args=["7", "9"],
+            input_file=_doc(tmp_path, {"dataset_name": "feed", "target_project_id": 57}),
+            yes=True,
+        )
+    )
+    assert fake_service.view_call_log == [
+        (7, "to_dataset", {"dataset_id": 9, "dataset_name": "feed", "target_project_id": 57})
+    ]
+    assert data == {
+        "dataset_id": 114,
+        "project_id": 57,
+        "source_view_id": 7,
+        "next": "mammoth view list 114 --project 57",
+    }
+
+
 @pytest.mark.parametrize("file_type", ["csv", "json", "parquet"])
 def test_managed_s3_omitted_filename_reaches_sdk_default(
     fake_service: FakeMammothService, tmp_path: Path, file_type: str
@@ -59,9 +83,7 @@ def test_managed_s3_omitted_filename_reaches_sdk_default(
             yes=True,
         )
     )
-    assert fake_service.view_call_log == [
-        (7, "to_s3", {"dataset_id": 9, "file_type": file_type})
-    ]
+    assert fake_service.view_call_log == [(7, "to_s3", {"dataset_id": 9, "file_type": file_type})]
 
 
 def test_postgres_route_requires_confirmation_and_forwards_secret(

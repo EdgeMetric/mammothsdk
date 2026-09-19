@@ -382,7 +382,7 @@ Example: `mammoth view export create 123 --input '{"export_spec": {"DATAVIEW_ID"
 
 Result: `ViewExportCreateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `returns_job`.
 
-Status on release: observed blocker — backend: CLI accepts the request (exit 0, job 358 accepted on POST /dataviews/76/actions), but job get 358 -> status:error, response:{"error":{"message":"'destination'"}} (a raw Py. Re-check before relying on it.
+Status on release: ran once on CLI 2.0.27 — cross-project send 2026-09-19: exit 0 on release with CLI 2.0.27. Raw internal_dataset export accepted (job 831 add_action) and created dataset 113 in project 57. Without USER_ID the same spec is 4GENR007 Validation error with no detail (the backend checks th…
 
 ### `view.export.csv`
 

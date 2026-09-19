@@ -4,6 +4,19 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.13]
+
+### Added
+
+- `View.to_dataset(...)` / `View.branch_out(...)` take `target_project_id`.
+  A cross-project send is a persistent pipeline export step: the SDK reads
+  the caller's user id once (`/self`) and sets the backend's `USER_ID`,
+  `export_project`, `project_id` and `source_project_id` target properties;
+  without them the backend answers 4GENR007 with no detail.
+  `build_branch_out_params` accepts the same keywords and raises
+  `MammothValidationError` when `target_project_id` is given without
+  `user_id`.
+
 ## [0.7.12]
 
 ### Fixed

@@ -1014,6 +1014,10 @@ ERR_BRANCHOUT_APPEND_NO_TARGET = (
     "APPEND mode needs an existing `target_ds_id` to append into; "
     "pass target_ds_id, or use REPLACE to create a new dataset."
 )
+ERR_BRANCHOUT_CROSS_PROJECT_USER = (
+    "A cross-project branch-out needs the caller's user id (the backend checks "
+    "dataset-create permission on the target project); pass user_id."
+)
 
 
 def build_branch_out_params(
@@ -1022,6 +1026,10 @@ def build_branch_out_params(
     save_as_mode: SaveAsDatasetMode = SaveAsDatasetMode.REPLACE,
     column_mapping: dict[str, str] | None = None,
     label_ids: list[int] | None = None,
+    *,
+    target_project_id: int | None = None,
+    source_project_id: int | None = None,
+    user_id: int | None = None,
 ) -> dict[str, Any]:
     """Build the ``target_properties`` for a branch-out (save-as-dataset) export.
 
@@ -1030,6 +1038,11 @@ def build_branch_out_params(
 
     ``target_ds_id`` None creates a new dataset named *dataset_name*; an int
     replaces/appends into that existing dataset (per *save_as_mode*).
+    ``target_project_id`` sends the dataset into another project (the web
+    app's cross-project branch-out): the backend then requires ``USER_ID``
+    (whose dataset-create permission on that project it checks) and the
+    ``export_project`` / ``project_id`` / ``source_project_id`` trio; without
+    ``USER_ID`` it answers ``4GENR007 Validation error`` with no detail.
     *column_mapping* maps source -> destination column names (empty = all
     columns). ``TRANSFORM`` is explicitly ``None`` — the backend treats a
     non-dict transform as "plain copy".
@@ -1045,7 +1058,7 @@ def build_branch_out_params(
             ERR_BRANCHOUT_APPEND_NO_TARGET,
             {"save_as_mode": save_as_mode.value, "target_ds_id": None},
         )
-    return {
+    params: dict[str, Any] = {
         "DS_NAME": dataset_name,
         "TARGET_DS_ID": target_ds_id,
         "SAVE_AS_DS_MODE": save_as_mode.value,
@@ -1053,6 +1066,21 @@ def build_branch_out_params(
         "TARGET_DS_LABEL_IDS": label_ids,
         "TRANSFORM": None,
     }
+    if target_project_id is not None:
+        if user_id is None:
+            raise MammothValidationError(
+                ERR_BRANCHOUT_CROSS_PROJECT_USER,
+                {"target_project_id": target_project_id},
+            )
+        params.update(
+            {
+                "USER_ID": user_id,
+                "export_project": source_project_id != target_project_id,
+                "project_id": target_project_id,
+                "source_project_id": source_project_id,
+            }
+        )
+    return params
 
 
 # ---------------------------------------------------------------------------

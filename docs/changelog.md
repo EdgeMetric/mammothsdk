@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.7.13
+
+- Added `target_project_id` to `View.to_dataset()` and `View.branch_out()`:
+  send a view into another project as a pipeline step that re-materialises
+  on every run. The SDK fills the backend's `USER_ID` / `export_project` /
+  `project_id` / `source_project_id` target properties from `/self`.
+
 ## v0.7.12
 
 ### Fixed

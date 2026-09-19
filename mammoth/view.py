@@ -807,6 +807,7 @@ class View(
         label_ids: list[int] | None = None,
         condition: Condition | CompoundCondition | NotCondition | None = None,
         timeout: int | None = None,
+        target_project_id: int | None = None,
     ) -> int:
         """Branch out — save this view's data as a Mammoth dataset.
 
@@ -823,6 +824,8 @@ class View(
             label_ids: Folder/label ids for the new dataset.
             condition: Optional row filter applied before copying.
             timeout: Max seconds to wait for the job.
+            target_project_id: Send the dataset into another project (see
+                :meth:`ViewExport.to_dataset`).
 
         Returns:
             The id of the dataset written to (new when ``target_ds_id`` is None,
@@ -840,6 +843,7 @@ class View(
             label_ids=label_ids,
             condition=condition,
             timeout=timeout,
+            target_project_id=target_project_id,
         )
 
     def __repr__(self) -> str:
@@ -1021,6 +1025,7 @@ class ViewExport:
         label_ids: list[int] | None = None,
         condition: Condition | CompoundCondition | NotCondition | None = None,
         timeout: int | None = None,
+        target_project_id: int | None = None,
     ) -> int:
         """Save this view's data as an internal Mammoth dataset (branch out).
 
@@ -1036,6 +1041,10 @@ class ViewExport:
             label_ids: Folder/label ids for the new dataset.
             condition: Optional row filter applied before copying.
             timeout: Max seconds to wait for the job.
+            target_project_id: Project to create (or find ``target_ds_id``) the
+                dataset in when it is not this view's project. The export stays
+                a pipeline step of this view, so the copy is refreshed whenever
+                the pipeline re-runs -- a "parallel send" into another project.
 
         Returns:
             The id of the dataset written to (new when ``target_ds_id`` is None,
@@ -1044,13 +1053,24 @@ class ViewExport:
         Example::
 
             new_id = view.export.to_dataset("Sales snapshot")
+            sent = view.export.to_dataset("Sales feed", target_project_id=57)
         """
+        cross_project: dict[str, Any] = {}
+        if target_project_id is not None:
+            profile = self._client.user_profile.get()
+            user = profile.get("user", profile) if isinstance(profile, dict) else {}
+            cross_project = {
+                "target_project_id": target_project_id,
+                "source_project_id": getattr(self._client, "project_id", None),
+                "user_id": user.get("id") if isinstance(user, dict) else None,
+            }
         target_properties = build_branch_out_params(
             dataset_name,
             target_ds_id=target_ds_id,
             save_as_mode=save_as_mode,
             column_mapping=column_mapping,
             label_ids=label_ids,
+            **cross_project,
         )
         return self._view._run_internal_dataset_export(target_properties, timeout, condition)
 

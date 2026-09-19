@@ -1101,10 +1101,33 @@ class TestBranchOut:
         tp = b.build_branch_out_params("DS", target_ds_id=9, save_as_mode=SaveAsDatasetMode.APPEND)
         assert tp["TARGET_DS_ID"] == 9
 
+    # ===============================================================
+    # Advanced operations
+    # ===============================================================
 
-# ===============================================================
-# Advanced operations
-# ===============================================================
+    def test_cross_project_adds_the_web_apps_trio_and_user(self) -> None:
+        tp = b.build_branch_out_params(
+            "Feed", target_project_id=57, source_project_id=58, user_id=5
+        )
+        assert tp["USER_ID"] == 5
+        assert tp["export_project"] is True
+        assert tp["project_id"] == 57
+        assert tp["source_project_id"] == 58
+        assert tp["TARGET_DS_ID"] is None
+
+    def test_same_project_target_is_not_flagged_as_cross_project(self) -> None:
+        tp = b.build_branch_out_params(
+            "Feed", target_project_id=58, source_project_id=58, user_id=5
+        )
+        assert tp["export_project"] is False and tp["project_id"] == 58
+
+    def test_cross_project_without_user_raises(self) -> None:
+        with pytest.raises(MammothValidationError):
+            b.build_branch_out_params("Feed", target_project_id=57, source_project_id=58)
+
+    def test_default_shape_carries_no_project_keys(self) -> None:
+        tp = b.build_branch_out_params("Fresh DS")
+        assert "USER_ID" not in tp and "project_id" not in tp
 
 
 class TestAdvanced:
