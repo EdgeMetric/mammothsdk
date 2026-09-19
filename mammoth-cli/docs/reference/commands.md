@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.24.
+Generated from the reviewed command manifests for mammoth-cli 2.0.25.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -4208,7 +4208,7 @@ Total commands: 552.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.derivatives.DerivativesAPI.create`
-- Agent example: `mammoth view derivative create 123 123 --input '{"body": {"param": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}}'`
+- Agent example: `mammoth view derivative create 123 123 --input '{"body": {"param": {"METRIC": {"AS": "total", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "column_1", "FUNCTION": "SUM"}}]}}}}'`
 
 ### `mammoth view derivative data`
 
@@ -4221,7 +4221,7 @@ Total commands: 552.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.derivatives.DerivativesAPI.data`
-- Agent example: `mammoth view derivative data 123 123 123 --input '{"body": {"condition": {"FILTER_TYPE": "SHOW"}}}'`
+- Agent example: `mammoth view derivative data 123 123 123 --input '{"body": {"limit": null}}'`
 
 ### `mammoth view derivative delete`
 

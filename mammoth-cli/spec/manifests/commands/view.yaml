@@ -993,7 +993,7 @@ commands:
   - CT-VIEW-DATA-CHECK-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'patches are {op: command, path: enable|disable, value: null} or {op: replace, path: spec, value: AddDataCheckSpec}. On release the PATCH returns HTTP 500 (outcome_unknown) after applying; read the check back with view data-check get.'
+  known_restrictions: 'patches are {op: command, path: enable|disable, value: null} or {op: replace, path: spec, value: AddDataCheckSpec}, the same body the web app sends. On release the PATCH returns HTTP 500 (outcome_unknown) from backend validation that runs after the change is committed; read the check back with view data-check get before retrying.'
   reviewed_by: primary
 - command_id: view.data.get
   command_path: view data get
@@ -1173,7 +1173,7 @@ commands:
   secret_fields: []
   human_example: mammoth view derivative create VIEW_ID --help
   agent_example: 'mammoth view derivative create 123 123 --input ''{"body": {"param": {"METRIC": {"AS":
-    "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}}'''
+    "total", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "column_1", "FUNCTION": "SUM"}}]}}}}'''
   unit_tests:
   - UT-VIEW-DERIVATIVE-CREATE
   contract_tests:
@@ -1182,7 +1182,9 @@ commands:
   - CT-VIEW-DERIVATIVE-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'ARGUMENT and any column reference in the METRIC expression are internal names (metadata[].internal_name
+    from view get, e.g. column_1), not display names; a display name makes the backend fail with HTTP 500. The
+    result is {"id": N}; read the value with view derivative data.'
   reviewed_by: primary
 - command_id: view.derivative.data
   command_path: view derivative data
@@ -1226,8 +1228,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view derivative data VIEW_ID DERIVATIVE_ID --help
-  agent_example: 'mammoth view derivative data 123 123 123 --input ''{"body": {"condition": {"FILTER_TYPE":
-    "SHOW"}}}'''
+  agent_example: 'mammoth view derivative data 123 123 123 --input ''{"body": {"limit": null}}'''
   unit_tests:
   - UT-VIEW-DERIVATIVE-DATA
   contract_tests:
@@ -1236,7 +1237,9 @@ commands:
   - CT-VIEW-DERIVATIVE-DATA-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'body is {"condition": CONDITION_OR_NULL, "limit": null}, the same document the web app posts;
+    {"limit": null} is the minimal accepted body and an empty body is rejected (4GENR007). Returns STATUS, the
+    metric row(s) under data and their metadata.'
   reviewed_by: primary
 - command_id: view.derivative.delete
   command_path: view derivative delete

@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 1,
-    "Partial": 259,
+    "Partial": 260,
     "Not supported": 2,
-    "Unassessed": 266
+    "Unassessed": 265
   },
   "rows": [
     {
@@ -9958,7 +9958,7 @@
       "capability_id": "REL-452",
       "capability": "Create a derivative",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only (earlier run); ergonomics sweep 2026-09-19 (CLI 2.0.21) observed backend_error: POST .../derivatives with the example shape (METRIC object) returns HTTP 500 empty body / outcome_unknown on release today. A list under METRIC is rejected client-side by the schema.",
+      "remarks": "Partial bounded evidence only; payload probe 2026-09-19: exit 0 on release with CLI 2.0.24. Created derivative id=6 on view 123 (project 52, dataset 104) with the column INTERNAL name as ARGUMENT; metric_status DONE on read-back. The same call with the display name reproduces the HTTP 500 seen in earlier sweeps (apiv2 traceback: KeyError 'column'). Example and known_restrictions corrected in 2.0.25. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateDerivative",
       "method": "POST",
@@ -9969,20 +9969,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
-        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
-        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
+        "artifact": "docs/capability-evidence/payload-probe-20260919/results.jsonl",
+        "report": "docs/capability-evidence/payload-probe-20260919/SUMMARY.md",
+        "scope": "release ws 4, owned project 52",
+        "sha256": "39de0950efb7cc1ad9a7c8cec1b7b646d8f73dffbce363cf1e242191a828561b",
         "command_id": "view.derivative.create",
-        "exit_status": 7
+        "exit_status": 0
       },
-      "evidence_version": "2.0.21"
+      "evidence_version": "2.0.24"
     },
     {
       "capability_id": "REL-453",
       "capability": "Fetch derivative data",
-      "status": "Unassessed",
-      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: SUSPECTED DEFECT: using the CLI's own documented agent_example body verbatim, derivative data fetch returns HTTP 500 empty body / outcome_unknown, reproduced twice (2s apart). This is a read-only fetch, not a mutation, so the 500 looks like a genuine backend bug on this route rather than a race.",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; payload probe 2026-09-19: exit 0 on release with CLI 2.0.24. STATUS READY, data [{RESULT: 60.0}], metadata total/RESULT/NUMERIC, row_count 1. {\"condition\": null, \"limit\": null} (the web app's body) also works; {} is 4GENR007. Example corrected in 2.0.25. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "FetchDerivativeData",
       "method": "POST",
@@ -9993,14 +9993,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/payload-probe-20260919/results.jsonl",
+        "report": "docs/capability-evidence/payload-probe-20260919/SUMMARY.md",
+        "scope": "release ws 4, owned project 52",
+        "sha256": "39de0950efb7cc1ad9a7c8cec1b7b646d8f73dffbce363cf1e242191a828561b",
         "command_id": "view.derivative.data",
-        "exit_status": 7
+        "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.24"
     },
     {
       "capability_id": "REL-454",

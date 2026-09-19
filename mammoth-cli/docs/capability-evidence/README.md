@@ -43,3 +43,5 @@ in the matrix rows by SHA-256) and a `SUMMARY.md`:
   the triage that led to 2.0.17.
 - `ergonomics-sweep-20260919` — 27 calls with session defaults only on the 2.0.21 tree (owned projects 44–47).
 - `haiku-etl-20260919` — Haiku 4.5 cold start on published 2.0.23 with a complex-join / cross-project brief; blocked by the release upload worker after two uploads (brief + report).
+- `payload-probe-20260919` — derivative create/data re-run with corrected bodies after reading the release apiv2 tracebacks (both ok; project 52).
+- `haiku-etl-20260919` also holds `REPORT-2.md`: the same brief re-run on published 2.0.24 after the release host's full root disk (the cause of the stuck upload jobs) was reclaimed.

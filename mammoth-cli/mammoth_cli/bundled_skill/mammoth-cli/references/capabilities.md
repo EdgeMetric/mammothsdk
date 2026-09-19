@@ -1,7 +1,7 @@
 # What is proven on release
 
 Generated from `docs/release-capability-matrix.json`; do not edit by hand.
-The CLI publishes 552 commands. 455 of them bind one of the 528 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (every `view transform *` command submits through `view.task.add`). 260 bound commands ran once successfully on release, 2 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer.
+The CLI publishes 552 commands. 455 of them bind one of the 528 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (every `view transform *` command submits through `view.task.add`). 261 bound commands ran once successfully on release, 2 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer.
 
 Status meanings:
 
@@ -18,7 +18,7 @@ The typed `view transform *` commands all submit through `view.task.add`; its ma
 | Family | Commands | Ran once | Not supported | Untried |
 |---|---|---|---|---|
 | `dashboard` | 104 | 81 | 2 | 21 |
-| `view` | 62 | 56 | 0 | 6 |
+| `view` | 62 | 57 | 0 | 5 |
 | `support` | 45 | 9 | 0 | 36 |
 | `billing` | 23 | 4 | 0 | 19 |
 | `connector` | 22 | 3 | 0 | 19 |
@@ -110,14 +110,13 @@ Ran once: `project.bulk-delete`, `project.bulk-update`, `project.checkpoint.list
 
 ## `view`
 
-Ran once: `view.active-user.list`, `view.active-user.mark`, `view.ai.generate-data`, `view.ai.profile`, `view.bulk-delete`, `view.checkpoint.create`, `view.checkpoint.delete`, `view.checkpoint.get`, `view.checkpoint.list`, `view.checkpoint.update`, `view.conditional-format.create`, `view.conditional-format.delete-all`, `view.conditional-format.list`, `view.conditional-format.update`, `view.create`, `view.data-check.create`, `view.data-check.delete`, `view.data-check.get`, `view.data-check.list`, `view.data.get`, `view.data.query`, `view.delete`, `view.derivative.create`, `view.derivative.delete`, `view.derivative.list`, `view.derivative.update`, `view.draft.command`, `view.export.delete`, `view.export.get`, `view.export.list`, `view.export.publish-db`, `view.export.update`, `view.exportable-config.apply`, `view.exportable-config.get`, `view.get`, `view.list`, `view.parameter-context`, `view.pipeline.edit`, `view.pipeline.get`, `view.pipeline.items`, `view.pipeline.rerun`, `view.preview`, `view.restore`, `view.task.add`, `view.task.delete`, `view.task.get`, `view.task.list`, `view.task.preview`, `view.task.update`, `view.trash`, `view.version.apply`, `view.version.delete`, `view.version.get`, `view.version.list`, `view.version.update`
+Ran once: `view.active-user.list`, `view.active-user.mark`, `view.ai.generate-data`, `view.ai.profile`, `view.bulk-delete`, `view.checkpoint.create`, `view.checkpoint.delete`, `view.checkpoint.get`, `view.checkpoint.list`, `view.checkpoint.update`, `view.conditional-format.create`, `view.conditional-format.delete-all`, `view.conditional-format.list`, `view.conditional-format.update`, `view.create`, `view.data-check.create`, `view.data-check.delete`, `view.data-check.get`, `view.data-check.list`, `view.data.get`, `view.data.query`, `view.delete`, `view.derivative.create`, `view.derivative.data`, `view.derivative.delete`, `view.derivative.list`, `view.derivative.update`, `view.draft.command`, `view.export.delete`, `view.export.get`, `view.export.list`, `view.export.publish-db`, `view.export.update`, `view.exportable-config.apply`, `view.exportable-config.get`, `view.get`, `view.list`, `view.parameter-context`, `view.pipeline.edit`, `view.pipeline.get`, `view.pipeline.items`, `view.pipeline.rerun`, `view.preview`, `view.restore`, `view.task.add`, `view.task.delete`, `view.task.get`, `view.task.list`, `view.task.preview`, `view.task.update`, `view.trash`, `view.version.apply`, `view.version.delete`, `view.version.get`, `view.version.list`, `view.version.update`
 
 | Command | State | Note |
 |---|---|---|
 | `view.ai.generation-info` | observed blocker | backend: GET /workspaces/4/projects/24/datasets/54/dataviews/76/data/generate -> HTTP 400 5GENR011 NOT_IMPLEMENTED 'Not implemented', request_id:null |
 | `view.data-check.update` | observed blocker | backend_error: PATCH with the schema's documented {op: command, path: enable/disable, value: null} shape returns HTTP 500 empty body (CLI outcome_unknown, exit 7) while the mutatio |
-| `view.derivative.data` | observed blocker | backend_error: SUSPECTED DEFECT: using the CLI's own documented agent_example body verbatim, derivative data fetch returns HTTP 500 empty body / outcome_unknown, reproduced twice ( |
 | `view.export.create` | observed blocker | backend: CLI accepts the request (exit 0, job 358 accepted on POST /dataviews/76/actions), but job get 358 -> status:error, response:{"error":{"message":"'destination'"}} (a raw Py |
 | `view.export.publish-db-update` | CLI defect fixed, untried since | 2.0.16 (example value is the documented {"odbc_type": "postgres"} object (a bare string is rejected)) |
 
-Evidence collected on CLI releases 1.1.5 through 2.0.21; each row's release is recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row that ran on an older release has not been re-run since unless its note says so. Details: `docs/capability-evidence/` in the repository.
+Evidence collected on CLI releases 1.1.5 through 2.0.24; each row's release is recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row that ran on an older release has not been re-run since unless its note says so. Details: `docs/capability-evidence/` in the repository.

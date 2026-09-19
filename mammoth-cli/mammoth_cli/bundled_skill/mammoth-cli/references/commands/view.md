@@ -246,21 +246,21 @@ Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19: exit
 
 Run: `mammoth view derivative create`. Exact input fields: `mammoth schema get view.derivative.create`.
 
-Example: `mammoth view derivative create 123 123 --input '{"body": {"param": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view derivative create 123 123 --input '{"body": {"param": {"METRIC": {"AS": "total", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "column_1", "FUNCTION": "SUM"}}]}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDerivativeCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.21 — Partial bounded evidence only (earlier run); ergonomics sweep 2026-09-19 (CLI 2.0.21) observed backend_error: POST .../derivatives with the example shape (METRIC object) returns HTTP 500 empty body / outcome_unknown on release today. A list under METRIC is re…
+Status on release: ran once on CLI 2.0.24 — payload probe 2026-09-19: exit 0 on release with CLI 2.0.24. Created derivative id=6 on view 123 (project 52, dataset 104) with the column INTERNAL name as ARGUMENT; metric_status DONE on read-back. The same call with the display name reproduces the HTTP 500…
 
 ### `view.derivative.data`
 
 Run: `mammoth view derivative data`. Exact input fields: `mammoth schema get view.derivative.data`.
 
-Example: `mammoth view derivative data 123 123 123 --input '{"body": {"condition": {"FILTER_TYPE": "SHOW"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view derivative data 123 123 123 --input '{"body": {"limit": null}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDerivativeDataResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — backend_error: SUSPECTED DEFECT: using the CLI's own documented agent_example body verbatim, derivative data fetch returns HTTP 500 empty body / outcome_unknown, reproduced twice (. Re-check before relying on it.
+Status on release: ran once on CLI 2.0.24 — payload probe 2026-09-19: exit 0 on release with CLI 2.0.24. STATUS READY, data [{RESULT: 60.0}], metadata total/RESULT/NUMERIC, row_count 1. {"condition": null, "limit": null} (the web app's body) also works; {} is 4GENR007. Example corrected in 2.0.25. Sing…
 
 ### `view.derivative.delete`
 

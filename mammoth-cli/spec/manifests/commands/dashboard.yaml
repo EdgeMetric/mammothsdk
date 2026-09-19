@@ -3560,7 +3560,9 @@ commands:
   - CT-DASHBOARD-TEMPLATE-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'dashboard_id must name a dashboard whose widgets bind dataset columns; a blank dashboard
+    fails with "None of the columns this template binds are in the dataset". Build the dashboard first (dashboard
+    create, then widgets), then save it as a template.'
   reviewed_by: primary
 - command_id: dashboard.template.delete
   command_path: dashboard template delete

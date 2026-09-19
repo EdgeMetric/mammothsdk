@@ -269,6 +269,25 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     "view.data-check.update": {
         "body": {"patches": [{"op": "command", "path": "disable", "value": None}]},
     },
+    # ARGUMENT is the column's *internal* name (metadata[].internal_name from
+    # view get); a display name makes the backend fail with HTTP 500.
+    "view.derivative.create": {
+        "body": {
+            "param": {
+                "METRIC": {
+                    "AS": "total",
+                    "EXPRESSION": [
+                        {
+                            "TYPE": "FUNCTION",
+                            "VALUE": {"ARGUMENT": "column_1", "FUNCTION": "SUM"},
+                        }
+                    ],
+                }
+            }
+        },
+    },
+    # The web app posts {condition, limit: null}; an empty body is 4GENR007.
+    "view.derivative.data": {"body": {"limit": None}},
     # The backend accepts NUMERIC, TEXT or DATE (4PARM008 otherwise).
     "parameter.create": {"param_type": "TEXT", "value": "Q3"},
     # The backend requires a placement ("Data check position must be given");

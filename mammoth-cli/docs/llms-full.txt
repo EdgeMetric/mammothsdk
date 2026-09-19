@@ -958,9 +958,9 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view delete` [destructive/prompt_or_yes] -> mammoth.client.ViewsResource.delete
   example: mammoth view delete 123 123
 - `mammoth view derivative create` [benign_mutation/none] -> mammoth.api.derivatives.DerivativesAPI.create
-  example: mammoth view derivative create 123 123 --input '{"body": {"param": {"METRIC": {"AS": "sample", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "sample", "FUNCTION": "SUM"}}]}}}}'
+  example: mammoth view derivative create 123 123 --input '{"body": {"param": {"METRIC": {"AS": "total", "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"ARGUMENT": "column_1", "FUNCTION": "SUM"}}]}}}}'
 - `mammoth view derivative data` [benign_mutation/none] -> mammoth.api.derivatives.DerivativesAPI.data
-  example: mammoth view derivative data 123 123 123 --input '{"body": {"condition": {"FILTER_TYPE": "SHOW"}}}'
+  example: mammoth view derivative data 123 123 123 --input '{"body": {"limit": null}}'
 - `mammoth view derivative delete` [destructive/prompt_or_yes] -> mammoth.api.derivatives.DerivativesAPI.delete
   example: mammoth view derivative delete 123 123 123
 - `mammoth view derivative list` [read/none] -> mammoth.api.derivatives.DerivativesAPI.list

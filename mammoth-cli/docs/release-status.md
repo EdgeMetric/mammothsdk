@@ -1,5 +1,30 @@
 # CLI release provenance
 
+## 2.0.25 / SDK 0.7.11
+
+Payload fixes for the three routes the 2026-09-19 sweeps left as "500 on
+release", verified by reading the apiv2 tracebacks on the release host and
+re-running the calls; SDK unchanged.
+
+- `view derivative create`: the METRIC `ARGUMENT` must be the column's
+  internal name (`metadata[].internal_name` from `view get`, e.g.
+  `column_1`); a display name raises `KeyError: 'column'` in the backend.
+  Example and hint now show an internal name; `known_restrictions` says so.
+- `view derivative data`: the body is `{"condition": ..., "limit": null}`,
+  what the web app posts; `{"limit": null}` is the minimal accepted body and
+  `{}` is 4GENR007. The example used a `FILTER_TYPE` condition alone.
+- `dashboard template create` restriction: the dashboard must bind columns
+  ("None of the columns this template binds are in the dataset" on a blank
+  one). `view data-check update`: the body equals the web app's; the 500 is
+  backend validation after commit, so read the check back before retrying.
+- Release host finding (operational, not a CLI change): every "flapping"
+  upload, stuck job (667, 693/694/699, 708–712 remain `processing`) and read
+  timeout of 2026-09-19 traced to the root disk at 100 %, which raised the
+  RabbitMQ disk alarm and blocked publishers, so jobs were created but never
+  dispatched. ~5.5 GB of caches and journal were reclaimed (disk 82 %); uploads
+  complete in ~16 s again. The volume needs to grow or `~/data/duckdb_efs`
+  (2.1 GB) and `~/mmfiles/resources` (3.8 GB) need to move off it.
+
 ## 2.0.24 / SDK 0.7.11
 
 From a Haiku 4.5 cold start on 2.0.23 with a complex ETL brief
