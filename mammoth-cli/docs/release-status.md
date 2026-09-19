@@ -38,6 +38,12 @@ re-running the calls; SDK unchanged.
   complete in ~16 s again. The volume needs to grow or `~/data/duckdb_efs`
   (2.1 GB) and `~/mmfiles/resources` (3.8 GB) need to move off it.
 
+Published from deterministic local artifacts built from tag `cli-v2.0.25`
+(source commit `b02c78b`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.25-py3-none-any.whl` sha256 `64a195faf39905ff2b49a822fd61adc665c36d4f36cf859a1b1fc287ca522c8b`
+- `mammoth_cli-2.0.25.tar.gz` sha256 `2c9e11e4cb6422b8b8b0dfe479e7245f3b69e16c0e475e5c0a09c2ce0521efa4`
+
 ## 2.0.24 / SDK 0.7.11
 
 From a Haiku 4.5 cold start on 2.0.23 with a complex ETL brief
