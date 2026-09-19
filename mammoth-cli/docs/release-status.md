@@ -24,7 +24,13 @@ live and made a typed route (`docs/capability-evidence/cross-project-send-202609
   the typed `view.export.dataset` route is a convenience over the same
   operation and has no row of its own.
 
-PYPI_HASHES_PLACEHOLDER
+Published from deterministic local artifacts built from tag `cli-v2.0.28`
+(source commit `399544d`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.28-py3-none-any.whl` sha256 `0391a5dd8cec9088623a906174860196f2bab7a7495ee4e23eb012e692593c9f`
+- `mammoth_cli-2.0.28.tar.gz` sha256 `3dabcc993482cd5a27b4a2985303ef56c6884853ab59f602003195e457de55f0`
+- `mammoth_io-0.7.13-py3-none-any.whl` sha256 `f0991e22e72022f66802aa0c6a7e4df63a34b8e1675a4f4a3206a790037e1fff`
+- `mammoth_io-0.7.13.tar.gz` sha256 `a269c76ed1db06c39760a0c949da88157133b1b3091eb3efee5ae39ba1c8ea9a`
 
 ## 2.0.27 / SDK 0.7.12
 
