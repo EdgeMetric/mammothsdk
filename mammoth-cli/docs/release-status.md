@@ -25,6 +25,15 @@ seen while checking that a 2.0.24 install learns about 2.0.25.
   --yes"}`, human output prints the one-line hint on stderr, and
   `MAMMOTH_AUTO_UPGRADE=1` upgrades before the command (opt-in).
 
+Published from deterministic local artifacts built from tag `cli-v2.0.26`
+(source commit `0580f31`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.26-py3-none-any.whl` sha256 `2a67da18e28544082e3889c31ff658483f9a0148ad387494417f474b4444f0bf`
+- `mammoth_cli-2.0.26.tar.gz` sha256 `3ceb63f28d1107ec3fa35571d6b177989fd04564fe97680c1bc3526809fe9af8`
+
+SDK 0.7.12 (`sdk-v0.7.12`, source commit `0580f31`): `mammoth_io-0.7.12-py3-none-any.whl` sha256
+`994e1fcb46d5ecc96d8c83b09583e8b3bf8364fd79332a01d94e159d3b1a9eb8`; `mammoth_io-0.7.12.tar.gz` sha256 `a084fa8030c1784c5f50f9ede50ba4be32ed4516b304df69fdd0bd4d09075cc0`; digests verified against PyPI.
+
 ## 2.0.25 / SDK 0.7.11
 
 Payload fixes for the three routes the 2026-09-19 sweeps left as "500 on
