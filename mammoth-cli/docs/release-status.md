@@ -21,6 +21,12 @@ SDK unchanged.
   was accepted (202) until the worker runs it.
 - Evidence index lists `ergonomics-sweep-20260919` and `haiku-etl-20260919`.
 
+Published from deterministic local artifacts built from tag `cli-v2.0.24`
+(source commit `bd83f46`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.24-py3-none-any.whl` sha256 `7a5bc05012c5bcd96d34a251e234fb480bb9abdbee8bbafc04a9c25b30f4a0d5`
+- `mammoth_cli-2.0.24.tar.gz` sha256 `c50cd935bd08a3458e2b286f7e3c82563996767e3d20562087cf965647e95547`
+
 ## 2.0.23 / SDK 0.7.11
 
 One fix from running the 2.0.22 onboarding lines as a fresh user: `doctor`
