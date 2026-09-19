@@ -3789,8 +3789,7 @@ commands:
   - CT-VIEW-TRANSFORM-BULK-REPLACE-ERROR
   draft_test: LT-VIEW-TRANSFORM-BULK-REPLACE-DRAFT
   undo_test: LT-VIEW-TRANSFORM-BULK-REPLACE-UNDO
-  known_restrictions: Complete flags/defaults/result/draft/undo/live contract is specified in plan 02's
-    'Complete bulk-replace command contract'; this appendix does not narrow or replace it.
+  known_restrictions: 'Complete flags/defaults/result/draft/undo/live contract is specified in plan 02''s ''Complete bulk-replace command contract''; this appendix does not narrow or replace it. columns must be TEXT (metadata[].type from view get): a NUMERIC or DATE column is stored with a type-mismatch reference error, the view enters ref_error and the CLI answers pipeline_reference_error with the view task delete that removes the task.'
   reviewed_by: primary
 - command_id: view.transform.combine-columns
   command_path: view transform combine-columns
@@ -4538,7 +4537,9 @@ commands:
   - CT-VIEW-TRANSFORM-PIVOT-ERROR
   draft_test: LT-VIEW-TRANSFORM-PIVOT-DRAFT
   undo_test: LT-VIEW-TRANSFORM-PIVOT-UNDO
-  known_restrictions: null
+  known_restrictions: 'Replaces the view''s columns with the summary, so run it last (export rows first). Every as_name
+    must be a display name that does not already exist on the view (4DTVW018 SAME_DISPLAY_NAME_CANNOT_BE_REUSED):
+    aggregate a joined column under a new name.'
   reviewed_by: primary
 - command_id: view.transform.replace
   command_path: view transform replace
@@ -4579,7 +4580,7 @@ commands:
   - CT-VIEW-TRANSFORM-REPLACE-ERROR
   draft_test: LT-VIEW-TRANSFORM-REPLACE-DRAFT
   undo_test: LT-VIEW-TRANSFORM-REPLACE-UNDO
-  known_restrictions: null
+  known_restrictions: 'columns must be TEXT (metadata[].type from view get): a NUMERIC or DATE column is stored with a type-mismatch reference error, the view enters ref_error and the CLI answers pipeline_reference_error with the view task delete that removes the task.'
   reviewed_by: primary
 - command_id: view.transform.set-values
   command_path: view transform set-values

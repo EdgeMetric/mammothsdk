@@ -1110,3 +1110,127 @@ def test_get_via_discovery_trims_to_the_brief_shape(fake_service: FakeMammothSer
     data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
     assert "dependencies_info" not in data and "display_properties" not in data
     assert data["row_count"] == 3 and data["dataset_id"] == 63 and data["ds_id"] == 63
+
+
+# --- reference errors after a pipeline mutation ---------------------------
+
+
+def _programme_reference_error(fake_service: FakeMammothService, view_id: int) -> None:
+    fake_service.view_responses[(view_id, "bulk_replace")] = {
+        "has_error": True,
+        "status": "done",
+        "type_of_modification": "add_rule",
+    }
+    fake_service.responses[view_ops_cmd._PIPELINE_SYMBOL] = {"state": "ref_error"}
+    fake_service.responses[view_ops_cmd._PIPELINE_ITEMS_SYMBOL] = {
+        "items": [
+            {"id": 91, "item_type": "task", "sequence": 1, "status": "executed"},
+            {
+                "id": 107,
+                "item_type": "task",
+                "sequence": 2,
+                "status": "added",
+                "reference_errors": {
+                    "type": "referror",
+                    "reference_errors": [
+                        {
+                            "column": {
+                                "display_name": "amount",
+                                "internal_name": "column_4",
+                                "type": "NUMERIC",
+                            },
+                            "reason": "type mismatch",
+                            "error_code": 7003,
+                        }
+                    ],
+                },
+            },
+        ]
+    }
+
+
+def test_transform_with_reference_errors_fails_with_the_repair_command(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    _programme_reference_error(fake_service, 132)
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_transform_bulk_replace(
+            _inv(
+                "view.transform.bulk-replace",
+                extra_args=["132"],
+                resource_ref=_parent(132),
+                positionals={"view_id": "132"},
+                input_file=_write(
+                    tmp_path,
+                    {"columns": ["amount"], "mapping": [{"search": ["$"], "replace": ""}]},
+                ),
+            )
+        )
+    error = excinfo.value
+    assert error.code == view_ops_cmd.CODE_PIPELINE_REFERENCE_ERROR
+    assert error.exit_status == 1
+    assert error.details["pipeline_state"] == "ref_error"
+    assert error.details["task_ids"] == [107]
+    assert error.details["reference_errors"] == [
+        {
+            "column": "amount",
+            "internal_name": "column_4",
+            "type": "NUMERIC",
+            "reason": "type mismatch",
+            "error_code": 7003,
+        }
+    ]
+    assert error.recovery_commands == ["mammoth view task delete 132 107 --yes"]
+    assert "amount" in error.message and "TEXT" in (error.hint or "")
+    # The follow-up reads carry the exact parent so they never fall into discovery.
+    assert (
+        view_ops_cmd._PIPELINE_ITEMS_SYMBOL,
+        {"dataview_id": 132, "dataset_id": 122, "fields": "__full"},
+    ) in fake_service.call_log
+
+
+def test_transform_without_has_error_is_untouched(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.view_responses[(132, "bulk_replace")] = {"has_error": False, "status": "done"}
+    data, _meta = view_ops_cmd.view_transform_bulk_replace(
+        _inv(
+            "view.transform.bulk-replace",
+            extra_args=["132"],
+            resource_ref=_parent(132),
+            positionals={"view_id": "132"},
+            input_file=_write(
+                tmp_path, {"columns": ["amount"], "mapping": [{"search": ["$"], "replace": ""}]}
+            ),
+        )
+    )
+    assert data == {"has_error": False, "status": "done"}
+    assert view_ops_cmd._PIPELINE_SYMBOL not in fake_service.calls
+
+
+def test_reference_error_survives_a_failed_follow_up_read(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    _programme_reference_error(fake_service, 132)
+    fake_service.responses[view_ops_cmd._PIPELINE_ITEMS_SYMBOL] = CliError(
+        code="api_error", message="boom", exit_status=1
+    )
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_transform_bulk_replace(
+            _inv(
+                "view.transform.bulk-replace",
+                extra_args=["132"],
+                resource_ref=_parent(132),
+                positionals={"view_id": "132"},
+                input_file=_write(
+                    tmp_path,
+                    {"columns": ["amount"], "mapping": [{"search": ["$"], "replace": ""}]},
+                ),
+            )
+        )
+    error = excinfo.value
+    assert error.code == view_ops_cmd.CODE_PIPELINE_REFERENCE_ERROR
+    assert error.details["task_ids"] == []
+    assert error.recovery_commands == [
+        'mammoth view pipeline items 132 --input \'{"fields": "__full"}\''
+    ]

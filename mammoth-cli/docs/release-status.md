@@ -17,6 +17,19 @@ re-running the calls; SDK unchanged.
   ("None of the columns this template binds are in the dataset" on a blank
   one). `view data-check update`: the body equals the web app's; the 500 is
   backend validation after commit, so read the check back before retrying.
+- A transform whose task the backend stores with a reference error (a
+  find/replace on a NUMERIC column, a missing column) no longer reports
+  success: the SDK reads the draft flag after the submit and the backend
+  flips it on a reference error, so the job result `has_error: true` came
+  back as exit 0 while the view sat in `ref_error` answering 4DTVW019 to
+  every read. Transforms and `view task add` now fail with
+  `pipeline_reference_error` (column, type, reason, `pipeline_state`) and
+  the exact `view task delete VIEW_ID TASK_ID --yes` that repairs the view.
+  Found by the second Haiku ETL run (`haiku-etl-20260919/REPORT-2.md`).
+- `schema find` splits hyphenated ids, so `date` finds `extract-date`,
+  `date-diff` and `increment-date`; the ETL transforms carry purpose words
+  (`month`, `multiply`, `upper case`, `summary per region`). `pivot`,
+  `replace` and `bulk-replace` carry their column-type / `as_name` rules.
 - Release host finding (operational, not a CLI change): every "flapping"
   upload, stuck job (667, 693/694/699, 708–712 remain `processing`) and read
   timeout of 2026-09-19 traced to the root disk at 100 %, which raised the

@@ -32,6 +32,7 @@ from mammoth_cli.errors.envelope import (
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
+    EXIT_API,
     EXIT_USAGE,
     CliError,
 )
@@ -44,6 +45,20 @@ from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.conditions import CONDITION_KWARG
 
 HandlerResult = tuple[Any, dict[str, Any]]
+
+#: Error code for a task the backend accepted but could not bind to the view.
+CODE_PIPELINE_REFERENCE_ERROR = "pipeline_reference_error"
+_PIPELINE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
+_PIPELINE_ITEMS_SYMBOL = "mammoth.api.pipeline.PipelineAPI.items"
+_PIPELINE_ITEMS_FULL = "__full"
+_REFERROR_REASON_HINTS = {
+    "type mismatch": (
+        "the task needs a different column type (find/replace and text operations "
+        "take TEXT columns, math takes NUMERIC); convert-type the column first or "
+        "use a transform for that type"
+    ),
+    "not available": "the column does not exist in the view at that point in the pipeline",
+}
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -241,7 +256,93 @@ def _dispatch_view(
             data = service.call_view(view_id, method, **kwargs)
         else:
             data = service.call_view(view_id, method, dataset_id=int(dataset_id), **kwargs)
+        reject_pipeline_reference_errors(service, view_id, dataset_id, data)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _compact_reference_error(entry: Any) -> dict[str, Any]:
+    if not isinstance(entry, dict):
+        return {"reason": str(entry)}
+    raw_column = entry.get("column")
+    column: dict[str, Any] = raw_column if isinstance(raw_column, dict) else {}
+    return {
+        "column": column.get("display_name"),
+        "internal_name": column.get("internal_name"),
+        "type": column.get("type"),
+        "reason": entry.get("reason"),
+        "error_code": entry.get("error_code"),
+    }
+
+
+def reject_pipeline_reference_errors(
+    service: Any, view_id: int, dataset_id: Any, data: Any
+) -> None:
+    """Fail a pipeline mutation whose task the backend accepted but could not bind.
+
+    A task that references a missing column or the wrong column type is stored
+    with ``reference_errors`` and answered with ``has_error: true``; the
+    pipeline then sits in ``ref_error`` and every read of the view fails with
+    4DTVW019 until the task is removed. The SDK reads the view's draft flag
+    after the submit, and the backend flips that flag on a reference error, so
+    the SDK returns the job result instead of raising. Turn that into one
+    envelope that names the column, the reason and the exact repair command.
+    """
+    if not (isinstance(data, dict) and data.get("has_error") is True):
+        return
+    kwargs: dict[str, Any] = {"dataview_id": view_id}
+    if dataset_id is not None:
+        kwargs["dataset_id"] = int(dataset_id)
+    pipeline: dict[str, Any] = {}
+    broken: list[dict[str, Any]] = []
+    try:
+        read = service.call(_PIPELINE_SYMBOL, **kwargs)
+        if isinstance(read, dict):
+            pipeline = read
+        items = service.call(_PIPELINE_ITEMS_SYMBOL, fields=_PIPELINE_ITEMS_FULL, **kwargs)
+        if isinstance(items, dict):
+            broken = [
+                item
+                for item in items.get("items") or []
+                if isinstance(item, dict) and item.get("reference_errors")
+            ]
+    except CliError:
+        # The mutation already failed; a failed follow-up read must not hide that.
+        pass
+    reference_errors = [
+        _compact_reference_error(entry)
+        for item in broken
+        for entry in (item.get("reference_errors") or {}).get("reference_errors") or []
+    ]
+    task_ids = [item.get("id") for item in broken if item.get("id") is not None]
+    first = reference_errors[0] if reference_errors else {}
+    reason = str(first.get("reason") or "").lower()
+    column = first.get("column")
+    what = f"column '{column}' ({first.get('type')})" if column else "a column it references"
+    why = _REFERROR_REASON_HINTS.get(reason, f"reason: {reason or 'unknown'}")
+    raise CliError(
+        code=CODE_PIPELINE_REFERENCE_ERROR,
+        message=(
+            f"The task was added to view {view_id} but cannot bind to {what}; "
+            "the pipeline is in ref_error and the data did not change."
+        ),
+        exit_status=EXIT_API,
+        hint=(
+            f"Reads of view {view_id} fail (4DTVW019) until the task is removed: "
+            f"run the recovery command, then fix the input ({why})."
+        ),
+        details={
+            "view_id": view_id,
+            "dataset_id": kwargs.get("dataset_id"),
+            "pipeline_state": pipeline.get("state"),
+            "task_ids": task_ids,
+            "reference_errors": reference_errors,
+            "response": data,
+        },
+        recovery_commands=[
+            f"mammoth view task delete {view_id} {task_id} --yes" for task_id in task_ids
+        ]
+        or [f'mammoth view pipeline items {view_id} --input \'{{"fields": "__full"}}\''],
+    )
 
 
 def _profile_name(invocation: Invocation) -> str:

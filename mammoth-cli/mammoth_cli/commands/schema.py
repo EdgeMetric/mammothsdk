@@ -70,6 +70,17 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.convert-type": "convert type cast numeric text date column",
     "view.transform.fill-missing": "fill missing null empty impute carry forward values",
     "view.transform.join": "join blend lookup merge matching keys rows",
+    "view.transform.extract-date": (
+        "extract date part year month day hour minute second week quarter weekday "
+        "month_text into a new column"
+    ),
+    "view.transform.date-diff": "date difference days between two date columns age duration",
+    "view.transform.increment-date": "add subtract days months years to a date column shift",
+    "view.transform.math": "math arithmetic multiply divide add subtract formula expression amount",
+    "view.transform.pivot": "pivot group by aggregate sum count summary per region total",
+    "view.transform.set-values": "set values assign overwrite blank empty default where condition",
+    "view.transform.text": "text case upper lower title trim whitespace normalise",
+    "view.transform.bulk-replace": "find replace strip characters text values mapping",
 }
 
 # A compact string scope is retained for existing discovery consumers.  These
@@ -268,8 +279,18 @@ def _humanize_sample(value: Any, field_name: str) -> Any:
 
 
 def _tokens(value: str) -> frozenset[str]:
-    """Tokenize search text consistently across platforms and Python runs."""
-    return frozenset(_TOKEN_RE.findall(value.casefold()))
+    """Tokenize search text consistently across platforms and Python runs.
+
+    A hyphenated word is kept whole and also split into its parts, so that
+    ``date`` finds ``extract-date`` and ``date-diff`` as well as ``convert-type``'s
+    example text.
+    """
+    tokens: set[str] = set()
+    for token in _TOKEN_RE.findall(value.casefold()):
+        tokens.add(token)
+        if "-" in token:
+            tokens.update(token.split("-"))
+    return frozenset(tokens)
 
 
 def _query_tokens(query: str) -> tuple[str, ...]:

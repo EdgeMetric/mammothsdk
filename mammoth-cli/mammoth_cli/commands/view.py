@@ -1447,6 +1447,10 @@ def view_task_add(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+        # Imported here: view_ops imports this module for the brief record helpers.
+        from mammoth_cli.commands.view_ops import reject_pipeline_reference_errors
+
+        reject_pipeline_reference_errors(service, dataview_id, kwargs.get("dataset_id"), data)
     return data, _meta(invocation, auth.workspace_id, None)
 
 

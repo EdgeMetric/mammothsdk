@@ -89,6 +89,15 @@ but the copy answers every read with `4DTVW019` and its copied tasks never
 execute. A plain `view create DATASET_ID` (no `clone_from`) gives a fresh view
 of the raw upload, without the pipeline:
 
+A task must fit the column's type: `replace-values`, `bulk-replace` and the
+text operations take TEXT columns, `math` takes NUMERIC. Check `type` in the
+`metadata` from `view get` first; the uploader already types `$1,234.56` as
+NUMERIC, so strip nothing. When a task does not fit, the CLI answers
+`pipeline_reference_error` with the column, the reason and the exact
+`view task delete VIEW_ID TASK_ID --yes` that removes it; until then the view
+is in `ref_error` and every read of it fails with `4DTVW019`. `convert-type`
+changes the column's type when the task really needs the other one.
+
 Every pivot `as_name` must be a display name that does not already exist on
 the view (`4DTVW018 Same display name cannot be reused`): to carry a joined
 column such as `monthly_target` into the summary, aggregate it under a new
