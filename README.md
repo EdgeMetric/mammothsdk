@@ -29,7 +29,8 @@ tell me the exact `mammoth auth login` command to run in my own terminal, then
 wait — never ask for, read, or pass a key or secret yourself. Require `mammoth
 doctor` to pass. Work inside `mammoth project ensure 'PROJECT NAME'` unless I
 name a project; take ids only from reads; `schema get COMMAND_ID` before a new
-command; read results back before reporting. TASK: ...
+command; read results back before reporting.
+TASK: <what to achieve, and how you will know it is done>
 ```
 
 ## Installation
