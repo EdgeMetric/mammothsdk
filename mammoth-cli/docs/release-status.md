@@ -1,5 +1,18 @@
 # CLI release provenance
 
+## 2.0.23 / SDK 0.7.11
+
+One fix from running the 2.0.22 onboarding lines as a fresh user: `doctor`
+reported `config_directory` not writable on an account with no `~/.config`
+yet, because it tested only the missing parent. It now judges the nearest
+existing ancestor (where the first login creates the chain). SDK unchanged.
+
+Published from deterministic local artifacts built from tag `cli-v2.0.23`
+(source commit `e9796b8`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.23-py3-none-any.whl` sha256 `646360a727095eeb0bf354f202d64f76ceab433b772a530bfdfce727df2cd9a2`
+- `mammoth_cli-2.0.23.tar.gz` sha256 `1072efc4289d1faf31af3ebe489e30a41017b86393fdd6aff4747dc81c56c6ca`
+
 ## 2.0.22 / SDK 0.7.11
 
 Evidence and onboarding. SDK unchanged (`mammoth-io>=0.7.11,<0.8`).
