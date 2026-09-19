@@ -1,5 +1,24 @@
 # CLI release provenance
 
+## 2.0.20 / SDK 0.7.11
+
+A follow-up to 2.0.19 for one thing the live run showed: the projects route
+caps `limit` at 100 (`4GENR007` above it), so `project ensure` could not see
+past the first hundred projects and refused to create in that case.
+
+- SDK 0.7.11: `ProjectsAPI.list(offset=...)` (server-side) and
+  `ProjectsAPI.list_all()`, which walks the 100-row pages and stops if the
+  server ignores the offset; `ProjectsAPI.get(project="name")` searches every
+  page.
+- CLI: `project ensure` matches against every page before creating; the
+  `conflict` refusal on a full page is gone. `list_projects` in the service
+  layer pages server-side instead of asking for `limit + offset` rows.
+- Docs: `docs/agent-prompt.md`, a paste-ready prompt that gives an agent
+  Mammoth through the CLI in bash (install, read the shipped skill, operator
+  login, `project ensure`, JSON envelopes, read-back); linked from the README
+  and the agents guide as the recommended handover.
+- The CLI requires `mammoth-io>=0.7.11,<0.8`. No other change from 2.0.19.
+
 ## 2.0.19 / SDK 0.7.10
 
 This release turns the 2026-09-19 evidence into contract: what an agent can

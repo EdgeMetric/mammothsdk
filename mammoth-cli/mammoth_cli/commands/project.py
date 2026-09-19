@@ -14,7 +14,6 @@ from __future__ import annotations
 from typing import Any
 
 from mammoth_cli.errors.envelope import (
-    CODE_CONFLICT,
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
@@ -217,9 +216,6 @@ def project_create(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
-#: The projects route caps ``limit`` at 100 (backend 4GENR007 above it) and
-#: the SDK exposes no offset, so this is the largest listing one call can see.
-_ENSURE_PROJECT_LIST_LIMIT = 100
 _ENSURE_CREATE_SYMBOL = "mammoth.api.projects.ProjectsAPI.create"
 
 
@@ -243,8 +239,9 @@ def project_ensure(invocation: Invocation) -> HandlerResult:
             hint="Pass the name as a positional argument or a 'name' input field.",
         )
     with open_service(invocation) as (service, auth):
-        listing = service.list_projects(limit=_ENSURE_PROJECT_LIST_LIMIT)
-        projects = list(listing.get("projects", [])) if isinstance(listing, dict) else []
+        # Walks every 100-row page of the projects route, so an exact-name
+        # match anywhere in the workspace is found before anything is created.
+        projects = [p for p in service.list_all_projects() if isinstance(p, dict)]
         same_name = sorted(
             (p for p in projects if isinstance(p, dict) and p.get("name") == name),
             key=lambda p: int(p.get("id") or 0),
@@ -258,21 +255,6 @@ def project_ensure(invocation: Invocation) -> HandlerResult:
                 "duplicates": [p.get("id") for p in same_name[1:]],
             }
             return data, _meta(invocation, auth.workspace_id, chosen.get("id"))
-        truncated = bool(listing.get("next")) if isinstance(listing, dict) else False
-        if truncated or len(projects) >= _ENSURE_PROJECT_LIST_LIMIT:
-            # A name beyond the first page may exist; creating blindly would
-            # break the idempotency this command promises.
-            raise CliError(
-                code=CODE_CONFLICT,
-                message=(
-                    f"Workspace has more than {_ENSURE_PROJECT_LIST_LIMIT} projects; "
-                    f"cannot prove {name!r} is absent."
-                ),
-                exit_status=EXIT_USAGE,
-                hint="Find the project with 'project list' and pass --project, "
-                "or create it explicitly with 'project create'.",
-                details={"listed": len(projects)},
-            )
         created = service.call(_ENSURE_CREATE_SYMBOL, name=name)
     record = created.get("project", created) if isinstance(created, dict) else {}
     project_id = record.get("id") if isinstance(record, dict) else None

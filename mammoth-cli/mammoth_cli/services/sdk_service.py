@@ -31,6 +31,9 @@ from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dispatch import resolve_sdk_method
 from mammoth_cli.services.mapping import map_sdk_exception
 
+#: Largest ``limit`` the projects route accepts (``4GENR007`` above it).
+_PROJECT_PAGE_SIZE = 100
+
 
 class SdkMammothService:
     """Production :class:`~mammoth_cli.services.protocol.MammothService`."""
@@ -615,25 +618,44 @@ class SdkMammothService:
     def list_projects(self, limit: int = 100, offset: int = 0) -> dict[str, Any]:
         """List projects in the current workspace.
 
-        The public SDK does not expose server-side pagination offsets, so an
-        offset is applied client-side to the returned page.
+        The projects route caps ``limit`` at 100 and pages with a server-side
+        ``offset``; a larger ``limit`` is served by walking the pages.
 
         Args:
             limit: Maximum number of results.
             offset: Number of leading results to skip.
 
         Returns:
-            The raw project-list response, sliced by ``offset``/``limit``.
+            The raw project-list response, with ``projects`` holding at most
+            ``limit`` records from ``offset`` on.
 
         Raises:
             CliError: Mapped from any SDK exception.
         """
         try:
-            response = self._client.projects.list(limit=limit + offset)
+            if limit <= _PROJECT_PAGE_SIZE:
+                response = self._client.projects.list(limit=limit, offset=offset)
+                return {**response, "projects": list(response.get("projects", []))}
+            everything = self._client.projects.list_all()
         except Exception as exc:
             raise map_sdk_exception(exc) from exc
-        projects = response.get("projects", [])
-        return {**response, "projects": projects[offset : offset + limit]}
+        return {
+            "projects": everything[offset : offset + limit],
+            "limit": limit,
+            "offset": offset,
+            "next": "",
+        }
+
+    def list_all_projects(self) -> list[dict[str, Any]]:
+        """Every project in the workspace, across the route's 100-row pages.
+
+        Raises:
+            CliError: Mapped from any SDK exception.
+        """
+        try:
+            return list(self._client.projects.list_all())
+        except Exception as exc:
+            raise map_sdk_exception(exc) from exc
 
     def get_project(self, project_id: int) -> dict[str, Any]:
         """Get one project by id.

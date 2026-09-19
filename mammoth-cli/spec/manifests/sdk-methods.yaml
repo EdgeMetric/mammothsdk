@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 572
+method_count: 573
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -4805,7 +4805,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.list
   implementation_origin: mammoth.api.projects.ProjectsAPI.list
-  signature: 'list(self, workspace_id: ''int | None'' = None, limit: ''int'' = 100) -> ''dict[str, Any]'''
+  signature: 'list(self, workspace_id: ''int | None'' = None, limit: ''int'' = 100, offset: ''int'' = 0) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: project.list
   alias_of: null
@@ -4813,6 +4813,19 @@ methods:
   mutation_class: read
   wait_policy: not_async
   pagination_policy: single_page
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.projects.ProjectsAPI.list_all
+  implementation_origin: mammoth.api.projects.ProjectsAPI.list_all
+  signature: 'list_all(self, workspace_id: ''int | None'' = None) -> ''_list[dict[str, Any]]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper that walks the 100-row pages of the projects route; project
+    ensure uses it through the service layer, project list stays single-page.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.pending_changes

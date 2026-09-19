@@ -9,6 +9,11 @@ uses to start, hand over, and recover a real task.
 
 ## Give an agent Mammoth access
 
+The short form is the [agent prompt](agent-prompt.md): a paste-ready block
+that has the agent install, read the shipped skill, authenticate through the
+operator, and do everything else via `mammoth ... --output json --no-input`
+in bash. The rest of this page is the same loop in detail.
+
 Install once on the host:
 
 ```bash

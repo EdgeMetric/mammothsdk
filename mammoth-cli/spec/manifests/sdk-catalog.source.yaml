@@ -2925,7 +2925,8 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: single_page
   openapi_operation_ids: []
-  notes: 'B01 FIRST_PAGE_ONLY: no offset/cursor continuation proven yet.'
+  notes: 'Single page; the route caps limit at 100 (4GENR007). SDK 0.7.11 adds offset and list_all
+    for the following pages.'
 - sdk_symbol: mammoth.api.projects.ProjectsAPI.pending_changes
   canonical_command: project.pending-changes
   alias_of: null

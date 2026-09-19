@@ -204,22 +204,12 @@ def test_ensure_creates_when_absent(fake_service: FakeMammothService, tmp_path: 
     assert meta["project_id"] == 41
 
 
-def test_ensure_refuses_to_create_blindly_when_the_listing_is_full(
-    fake_service: FakeMammothService,
-) -> None:
-    # The projects route caps ``limit`` at 100; a full page means the name may
-    # sit on a page ensure cannot see, and a blind create would break
-    # idempotency.
-    fake_service.projects = [{"id": i, "name": f"p{i}"} for i in range(1, 101)]
-    with pytest.raises(CliError) as excinfo:
-        project_cmd.project_ensure(_inv("project.ensure", extra_args=["From Claude"]))
-    assert excinfo.value.code == "conflict"
-    assert fake_service.call_log == []
-
-
-def test_ensure_finds_a_name_on_a_full_page(fake_service: FakeMammothService) -> None:
-    fake_service.projects = [{"id": i, "name": f"p{i}"} for i in range(1, 100)]
-    fake_service.projects.append({"id": 100, "name": "From Claude"})
+def test_ensure_finds_a_name_beyond_the_first_page(fake_service: FakeMammothService) -> None:
+    # The projects route caps ``limit`` at 100; ensure walks every page.
+    fake_service.projects = [{"id": i, "name": f"p{i}"} for i in range(1, 150)]
+    fake_service.projects.append({"id": 150, "name": "From Claude"})
     data, _meta = project_cmd.project_ensure(_inv("project.ensure", extra_args=["From Claude"]))
-    assert data["project_id"] == 100
+    assert data["project_id"] == 150
     assert data["created"] is False
+    assert fake_service.call_log == []
+    assert "list_all_projects" in fake_service.calls

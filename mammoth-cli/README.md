@@ -222,6 +222,7 @@ The full generated list is in [docs/reference/commands.md](https://github.com/Ed
 | [Output and errors](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/reference/output-and-errors.md) | Envelopes, exit codes, error codes. |
 | [Global flags](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/reference/global-flags.md) | The flags every command shares. |
 | [Troubleshooting](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/troubleshooting.md) | Exit codes, error envelopes, the run log, recovery. |
+| [Agent prompt](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-prompt.md) | Paste-ready prompt: an agent uses Mammoth through the CLI in bash. |
 | [Upgrade](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/upgrade.md) / [Uninstall](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/uninstall.md) | Keep the CLI current, or remove it. |
 | [Command reference](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/reference/commands.md) | Every command, grouped by family. |
 

@@ -46,11 +46,16 @@ def public_sdk_symbol(symbol: str) -> str:
     """
     return _MIXIN_SYMBOL_RE.sub("mammoth.View.", symbol)
 
+
 GUIDES = [
     ("installation.md", "Install the CLI and the agent skill."),
     ("quickstart.md", "Authenticate and run your first commands in five minutes."),
     ("authentication.md", "Getting an API key, login, profiles, and project context."),
     ("agents.md", "Cold start, discovery, checkpoints, recovery, and handoff for agents."),
+    (
+        "agent-prompt.md",
+        "Ready-to-paste prompt that gives an agent Mammoth through the CLI in bash.",
+    ),
     ("task-spec-pilot-gap.md", "Typed transform pilot coverage and generic task-spec limits."),
     ("dataset-view-update-contract-gap.md", "Why raw dataset and view patch commands are blocked."),
     ("agent-handoff.md", "Portable nonsecret checkpoints for continuing work in another session."),

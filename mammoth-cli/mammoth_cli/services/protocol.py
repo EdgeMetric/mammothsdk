@@ -76,6 +76,14 @@ class MammothService(Protocol):
         """
         ...
 
+    def list_all_projects(self) -> list[dict[str, Any]]:
+        """Every project in the workspace, across the route's pages.
+
+        Returns:
+            The project records (``id``, ``name``).
+        """
+        ...
+
     def get_project(self, project_id: int) -> dict[str, Any]:
         """Get one project by id.
 

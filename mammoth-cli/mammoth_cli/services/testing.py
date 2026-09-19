@@ -118,6 +118,11 @@ class FakeMammothService:
         self.calls.append("list_projects")
         return {"projects": self.projects[offset : offset + limit]}
 
+    def list_all_projects(self) -> list[dict[str, Any]]:
+        """Return the whole in-memory project list."""
+        self.calls.append("list_all_projects")
+        return list(self.projects)
+
     def get_project(self, project_id: int) -> dict[str, Any]:
         """Return one in-memory project, or raise ``resource_not_found``."""
         self.calls.append("get_project")

@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.19
+version: 2.0.20
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines, dashboards, exports, and handoffs."
 ---
 
