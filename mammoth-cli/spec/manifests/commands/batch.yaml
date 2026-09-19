@@ -85,7 +85,7 @@ commands:
   - CT-BATCH-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: delete_source_ds=true changes the mutation class to destructive and requires confirmation.
+  known_restrictions: SOURCE_ID is a standalone dataset in the same project (4BATC010 INVALID_SOURCE_DATASET for a file id or an append child); to append a file use file upload with append_to_ds_id. delete_source_ds=true changes the mutation class to destructive and requires confirmation.
   reviewed_by: primary
 - command_id: batch.create-spec
   command_path: batch create-spec

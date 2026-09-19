@@ -40,7 +40,7 @@ Example: `mammoth schedule list`. Placeholders are illustrative; resolve IDs and
 
 Result: `ScheduleListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — backend_error: Re-confirms 5GENR011 NOT_IMPLEMENTED from family 3. Re-check before relying on it.
+Status on release: observed blocker — backend_error: 5GENR011 NOT_IMPLEMENTED on GET /workspaces/4/projects/47/schedules; schedules remain unimplemented on release. Re-check before relying on it.
 
 ### `schedule.update`
 

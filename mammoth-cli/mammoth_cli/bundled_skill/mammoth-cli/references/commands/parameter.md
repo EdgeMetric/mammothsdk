@@ -6,11 +6,11 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth parameter create`. Exact input fields: `mammoth schema get parameter.create`.
 
-Example: `mammoth parameter create 'Revenue report' --input '{"param_type": "sample", "value": "sample"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth parameter create 'Revenue report' --input '{"param_type": "TEXT", "value": "Q3"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ParameterCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. First attempt with lowercase param_type 'text' failed 4PARM008 (must be NUMERIC/TEXT/DATE, uppercase; schema example is misleadingly lowercase). Retried with TEXT, created id=1. Single inv…
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Created parameter id=2 scope project. The shipped agent_example (param_type "sample") is rejected by the backend with 4PARM008 (must be NUMERIC/TEXT/DATE); example corrected in 2.0.22. Single inv…
 
 ### `parameter.delete`
 
@@ -20,7 +20,7 @@ Example: `mammoth parameter delete 123`. Illustrative only: append `--yes` after
 
 Result: `ParameterDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted parameter 1; read-back list shows total_count=0. Single invocation only.
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Deleted; list read-back total_count 0. Single invocation only.
 
 ### `parameter.dependencies`
 
@@ -110,7 +110,7 @@ Example: `mammoth parameter list`. Placeholders are illustrative; resolve IDs an
 
 Result: `ParameterListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Empty after family 8 cleanup, as expected. Single invocation only.
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. total_count 1 with id 2; 0 after delete. Single invocation only.
 
 ### `parameter.rerun`
 

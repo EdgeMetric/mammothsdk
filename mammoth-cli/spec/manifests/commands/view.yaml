@@ -779,7 +779,7 @@ commands:
   secret_fields: []
   human_example: mammoth view data-check create VIEW_ID --help
   agent_example: 'mammoth view data-check create 123 123 --input ''{"body": {"checks": [{"check_type": "null_percentage",
-    "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report"}}'''
+    "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report", "pinned_to_end": true}}'''
   unit_tests:
   - UT-VIEW-DATA-CHECK-CREATE
   contract_tests:
@@ -788,7 +788,7 @@ commands:
   - CT-VIEW-DATA-CHECK-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'body needs a placement: pinned_to_end true or a task_sequence (4GENR007 "Either task_sequence or pinned_to_end must be set" otherwise).'
   reviewed_by: primary
 - command_id: view.data-check.delete
   command_path: view data-check delete
@@ -983,8 +983,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view data-check update VIEW_ID DATA_CHECK_ID --help
-  agent_example: 'mammoth view data-check update 123 123 123 --input ''{"body": {"patches": [{"op": "replace",
-    "path": "enable"}]}}'''
+  agent_example: 'mammoth view data-check update 123 123 123 --input ''{"body": {"patches": [{"op": "command",
+    "path": "disable", "value": null}]}}'''
   unit_tests:
   - UT-VIEW-DATA-CHECK-UPDATE
   contract_tests:
@@ -993,7 +993,7 @@ commands:
   - CT-VIEW-DATA-CHECK-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'patches are {op: command, path: enable|disable, value: null} or {op: replace, path: spec, value: AddDataCheckSpec}. On release the PATCH returns HTTP 500 (outcome_unknown) after applying; read the check back with view data-check get.'
   reviewed_by: primary
 - command_id: view.data.get
   command_path: view data get

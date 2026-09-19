@@ -40,7 +40,7 @@ Example: `mammoth ai sql generate 'Summarize revenue by region' --input '{"datas
 
 Result: `AiSqlGenerateResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: observed blocker — backend_error: Fix held (dataset_id required and sent as query param -- request reached backend and got a domain-specific conflict, not an empty api_error). Re-check before relying on it.
+Status on release: observed blocker — backend_error: 4DTVW029 conflict: 'Cannot run AI generation for this rule: the input table from the previous rule is not available' on a fresh dataset with no prior rule. Re-check before relying on it.
 
 ### `ai.suggestion.list`
 
@@ -50,4 +50,4 @@ Example: `mammoth ai suggestion list --input '{"suggestion_type": "generate_task
 
 Result: `AiSuggestionListResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: observed blocker — backend_error: Fix held: release UnifiedPromptSpec (suggestion_type + params, optional dataset_id/dataview_id) shape accepted and dispatched to a real job (id 381), which failed fo. Re-check before relying on it.
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Returned a pipeline suggestion (interpretation echoed, params with prev_metadata) — the 2.0.15 re-verification's backend job failure did not recur. Single invocation only.

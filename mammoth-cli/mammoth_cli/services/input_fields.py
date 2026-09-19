@@ -251,6 +251,26 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     "view.checkpoint.update": {
         "body": {"patches": [{"op": "command", "path": "approve", "value": None}]},
     },
+    # Same placement rule as checkpoints ("Either task_sequence or
+    # pinned_to_end must be set").
+    "view.data-check.create": {
+        "body": {
+            "checks": [
+                {
+                    "check_type": "null_percentage",
+                    "config": {"column": "Status", "condition": "lt"},
+                }
+            ],
+            "name": "Revenue report",
+            "pinned_to_end": True,
+        },
+    },
+    # ``value`` is an AddDataCheckSpec or null; enable/disable take null.
+    "view.data-check.update": {
+        "body": {"patches": [{"op": "command", "path": "disable", "value": None}]},
+    },
+    # The backend accepts NUMERIC, TEXT or DATE (4PARM008 otherwise).
+    "parameter.create": {"param_type": "TEXT", "value": "Q3"},
     # The backend requires a placement ("Data check position must be given");
     # ``pinned_to_end`` is the placement that needs no sequence number.
     "view.checkpoint.create": {

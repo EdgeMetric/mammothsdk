@@ -60,7 +60,7 @@ Example: `mammoth project delete 123`. Illustrative only: append `--yes --confir
 
 Result: `ProjectDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted project 41 (sweep-218-1224), read back with project get 41 beforehand. Single invocation only.
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. 202 accepted; smoke projects 44/45/46 deleted the same way earlier and project get on them then returned resource_not_found (2.0.21 fix; was api_error/ValueError). Single invocation only.
 
 ### `project.ensure`
 

@@ -1,5 +1,33 @@
 # CLI release provenance
 
+## 2.0.22 / SDK 0.7.11
+
+Evidence and onboarding. SDK unchanged (`mammoth-io>=0.7.11,<0.8`).
+
+- Capability matrix: the 2026-09-19 ergonomics sweep on release
+  (`docs/capability-evidence/ergonomics-sweep-20260919`, 27 calls in owned
+  projects 44–47, all deleted) is folded in: 259 Partial / 266 Unassessed.
+  Newly verified: `batch create` (accepted as a job when the source is a
+  standalone dataset), `ai suggestion list`, `file upload` with
+  `append_to_ds_id` (row_count 3 → 6). Still backend-side: `browse`
+  500, `schedule` NOT_IMPLEMENTED, `dashboard template create` 500,
+  `view derivative create` 500 today, `view data-check update` 500 after
+  applying, `ai sql generate` 4DTVW029 on a fresh dataset.
+- Examples corrected from that run: `parameter create` uses
+  `param_type: "TEXT"` (backend accepts NUMERIC|TEXT|DATE, 4PARM008
+  otherwise); `view data-check create` carries `pinned_to_end: true`
+  (4GENR007 "Either task_sequence or pinned_to_end must be set");
+  `view data-check update` shows `{op: command, path: disable, value: null}`;
+  `batch create` states that `SOURCE_ID` is a standalone dataset. The same
+  shapes are the `--input` hints.
+- Agent prompt (both READMEs and `docs/agent-prompt.md`): onboarding first.
+  The agent installs the CLI when `mammoth --version` fails, and when
+  `auth status` shows no credentials it prints a verbatim message telling the
+  operator where to create an API key and to run `mammoth auth login` in
+  their own terminal, then waits; `PROFILE` is no longer a placeholder (the
+  default profile and `app` server are the defaults, named ones are added
+  on request).
+
 ## 2.0.21 / SDK 0.7.11
 
 Ergonomics. The agent runs seldom-changing choices once and every call after

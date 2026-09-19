@@ -29,8 +29,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth parameter create --help
-  agent_example: 'mammoth parameter create ''Revenue report'' --input ''{"param_type": "sample", "value":
-    "sample"}'''
+  agent_example: 'mammoth parameter create ''Revenue report'' --input ''{"param_type": "TEXT", "value":
+    "Q3"}'''
   unit_tests:
   - UT-PARAMETER-CREATE
   contract_tests:
@@ -39,7 +39,7 @@ commands:
   - CT-PARAMETER-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: param_type is NUMERIC, TEXT or DATE (uppercase; 4PARM008 otherwise).
   reviewed_by: primary
 - command_id: parameter.delete
   command_path: parameter delete

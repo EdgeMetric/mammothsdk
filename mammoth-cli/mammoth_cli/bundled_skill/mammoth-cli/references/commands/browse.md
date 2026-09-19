@@ -20,7 +20,7 @@ Example: `mammoth browse project`. Placeholders are illustrative; resolve IDs an
 
 Result: `BrowseProjectResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — backend_error: SUSPECTED DEFECT: GET /workspaces/4/projects/41/browse also 500s empty body, same pattern as browse.root, on our own fresh empty-of-folders project. Re-check before relying on it.
+Status on release: observed blocker — backend_error: GET /workspaces/4/projects/47/browse HTTP 500 empty body. Re-check before relying on it.
 
 ### `browse.root`
 
@@ -30,7 +30,7 @@ Example: `mammoth browse root`. Placeholders are illustrative; resolve IDs and i
 
 Result: `BrowseRootResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — backend_error: SUSPECTED DEFECT: GET /browse returns HTTP 500 empty body, reproduced twice. Re-check before relying on it.
+Status on release: observed blocker — backend_error: GET /browse still HTTP 500 empty body on release (same as 2026-09-18/19 sweeps). Re-check before relying on it.
 
 ### `browse.workspace`
 

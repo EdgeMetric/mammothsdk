@@ -9,9 +9,13 @@ Python SDK code, no MCP server, no browser — the CLI is the contract, and its
 bundled skill is read from disk with `cat`, so the prompt works even when the
 agent's skill directory is not wired up.
 
-Fill the three placeholders (`TASK`, `PROFILE`, `PROJECT NAME`), then paste.
-A ten-line version of the same prompt sits in the repository README for
-quick handovers; this page is the full form.
+Fill the two placeholders (`TASK`, `PROJECT NAME`), then paste. The agent
+installs the CLI if it is missing and, when no login exists yet, hands you
+the one-time `mammoth auth login` step; it never touches the key or secret.
+A short version of the same prompt sits in the repository README for quick
+handovers; this page is the full form. If you use a named profile or a
+server other than `app`, say so in the task and the agent adds
+`export MAMMOTH_PROFILE=NAME` and tells you the matching login flags.
 
 ---
 
@@ -25,28 +29,42 @@ never prompts. Read the envelope, never prose.
 TASK
 <what to achieve, with acceptance criteria you can read back>
 
-SETUP (run in bash, in this order; stop at the first failure and report it)
-1. command -v mammoth || curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
+ONBOARDING (run in bash, in this order; stop at the first failure and report it)
+1. Install if missing, then verify:
+   command -v mammoth >/dev/null || curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
    mammoth --version
-2. Read the shipped guidance before anything else; it is the command contract:
+   If `mammoth` is still not found, the installer's bin directory is not on
+   PATH yet: tell the operator to open a new shell (or `source` their profile)
+   and re-run the check.
+2. mammoth auth status
+   `has_credentials: true` → go to step 3. Otherwise print this to the
+   operator, verbatim, and wait until they say it is done:
+     "Mammoth needs a one-time login that only you can do. In the Mammoth web
+      app open your account settings, create an API key (you get a key and a
+      secret) and note your workspace id. Then run in your own terminal:
+        mammoth auth login
+      It prompts for the key, the secret (both hidden) and the workspace id
+      and saves them in your OS keyring. Tell me when it says logged in."
+   Add `--server-prefix LABEL` to that command only when the task names a
+   server other than app, and `--profile NAME` (plus
+   `export MAMMOTH_PROFILE=NAME` for yourself) only when it names a profile.
+   Never ask for a key or secret in chat, never read one from a file or
+   environment variable, never run `auth login` yourself. Re-run
+   `mammoth auth status` after they confirm.
+3. mammoth doctor
+   Every check must be ok. If `meta.update_available` is set on any envelope,
+   run the `command` it names before continuing.
+4. Read the shipped guidance before anything else; it is the command contract:
    SKILL="$(mammoth skill path | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["canonical"])')"
    cat "$SKILL/SKILL.md"
    Follow its routing: cat the reference it names for your task
    (recipes/*.md, commands/*.md) before composing a request.
-3. mammoth auth status --profile PROFILE
-   If the profile is missing or has no credentials: stop and tell the operator
-   to run `mammoth auth login --profile PROFILE` in their own terminal, then
-   re-check. Never ask for a key or secret in chat, never read one from a
-   file or environment variable, never run `auth login` yourself.
-4. mammoth doctor --profile PROFILE
-   Every check must be ok. If `meta.update_available` is set on any envelope,
-   run the `command` it names before continuing.
 
 SCOPE
-- Work in one project of your own: `mammoth project ensure 'PROJECT NAME'
-  --profile PROFILE` → data.project_id. Pass
-  `--project` with that id to every command. Do not read, change or delete
-  anything in other projects unless the task names them.
+- Work in one project of your own: `mammoth project ensure 'PROJECT NAME'`
+  → data.project_id, which becomes the active project for every later
+  command. Do not read, change or delete anything in other projects unless
+  the task names them.
 - Resource ids come from reads (`project list`, `dataset list`, `view list
   DATASET_ID`), never from memory or guesses. Uploads return a dataset id;
   transforms, exports and previews need the view id from `view list`.

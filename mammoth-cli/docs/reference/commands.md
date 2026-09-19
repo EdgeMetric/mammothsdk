@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.21.
+Generated from the reviewed command manifests for mammoth-cli 2.0.22.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -2743,7 +2743,7 @@ Total commands: 552.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.parameters.ParametersAPI.create`
-- Agent example: `mammoth parameter create 'Revenue report' --input '{"param_type": "sample", "value": "sample"}'`
+- Agent example: `mammoth parameter create 'Revenue report' --input '{"param_type": "TEXT", "value": "Q3"}'`
 
 ### `mammoth parameter delete`
 
@@ -4133,7 +4133,7 @@ Total commands: 552.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_checks.DataChecksAPI.create`
-- Agent example: `mammoth view data-check create 123 123 --input '{"body": {"checks": [{"check_type": "null_percentage", "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report"}}'`
+- Agent example: `mammoth view data-check create 123 123 --input '{"body": {"checks": [{"check_type": "null_percentage", "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report", "pinned_to_end": true}}'`
 
 ### `mammoth view data-check delete`
 
@@ -4184,7 +4184,7 @@ Total commands: 552.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.data_checks.DataChecksAPI.update`
-- Agent example: `mammoth view data-check update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "enable"}]}}'`
+- Agent example: `mammoth view data-check update 123 123 123 --input '{"body": {"patches": [{"op": "command", "path": "disable", "value": null}]}}'`
 
 ### `mammoth view delete`
 

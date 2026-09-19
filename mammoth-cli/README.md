@@ -171,21 +171,26 @@ putting credentials into the handoff.
 
 ## Give your coding agent the CLI playbook
 
-The shortest handover is a prompt. Fill `PROFILE`, `PROJECT NAME` and `TASK`
-and paste it into any agent with a bash tool; the long form is
+The shortest handover is a prompt. Fill `PROJECT NAME` and `TASK` and paste
+it into any agent with a bash tool; it installs the CLI, walks you through the
+one-time login, and works from the shipped skill. The long form is
 [docs/agent-prompt.md](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-prompt.md).
 
 ```text
 Use Mammoth Analytics only through the `mammoth` CLI in bash; run
-`export MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once. Install if missing:
-curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
-Then `cat` the SKILL.md at `mammoth skill path` (data.canonical) and follow it.
-Run `mammoth auth status --profile PROFILE`; if it has no credentials, stop and
-tell me the exact `mammoth auth login` command to run in my own terminal, then
-wait — never ask for, read, or pass a key or secret yourself. Require `mammoth
-doctor` to pass. Work inside `mammoth project ensure 'PROJECT NAME'` unless I
-name a project; take ids only from reads; `schema get COMMAND_ID` before a new
-command; read results back before reporting.
+`export MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once. Onboard me first:
+1. If `mammoth --version` fails, install, then re-check (new shell if needed):
+   curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
+2. Run `mammoth auth status`. If it shows no credentials, print exactly this
+   and wait until I say done: "In the Mammoth web app open account settings,
+   create an API key (key + secret) and note your workspace id, then run in
+   your own terminal: mammoth auth login" — never ask for, read, or pass a key
+   or secret yourself, and never run auth login.
+3. Require `mammoth doctor` to pass, then `cat` the SKILL.md at
+   `mammoth skill path` (data.canonical) and follow it.
+Work inside `mammoth project ensure 'PROJECT NAME'` unless I name a project;
+take ids only from reads; `schema get COMMAND_ID` before a new command; read
+results back before reporting.
 TASK: <what to achieve, and how you will know it is done>
 ```
 

@@ -635,7 +635,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 ## parameter
 
 - `mammoth parameter create` [benign_mutation/none] -> mammoth.api.parameters.ParametersAPI.create
-  example: mammoth parameter create 'Revenue report' --input '{"param_type": "sample", "value": "sample"}'
+  example: mammoth parameter create 'Revenue report' --input '{"param_type": "TEXT", "value": "Q3"}'
 - `mammoth parameter delete` [destructive/prompt_or_yes] -> mammoth.api.parameters.ParametersAPI.delete
   example: mammoth parameter delete 123
 - `mammoth parameter dependencies` [read/none] -> mammoth.api.parameters.ParametersAPI.dependencies
@@ -946,7 +946,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view data query` [read/none] -> mammoth.api.dataviews.DataviewsAPI.query_data
   example: mammoth view data query 123 123
 - `mammoth view data-check create` [benign_mutation/none] -> mammoth.api.data_checks.DataChecksAPI.create
-  example: mammoth view data-check create 123 123 --input '{"body": {"checks": [{"check_type": "null_percentage", "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report"}}'
+  example: mammoth view data-check create 123 123 --input '{"body": {"checks": [{"check_type": "null_percentage", "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report", "pinned_to_end": true}}'
 - `mammoth view data-check delete` [destructive/prompt_or_yes] -> mammoth.api.data_checks.DataChecksAPI.delete
   example: mammoth view data-check delete 123 123 123
 - `mammoth view data-check get` [read/none] -> mammoth.api.data_checks.DataChecksAPI.get
@@ -954,7 +954,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view data-check list` [read/none] -> mammoth.api.data_checks.DataChecksAPI.list
   example: mammoth view data-check list 123 123
 - `mammoth view data-check update` [benign_mutation/none] -> mammoth.api.data_checks.DataChecksAPI.update
-  example: mammoth view data-check update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "enable"}]}}'
+  example: mammoth view data-check update 123 123 123 --input '{"body": {"patches": [{"op": "command", "path": "disable", "value": null}]}}'
 - `mammoth view delete` [destructive/prompt_or_yes] -> mammoth.client.ViewsResource.delete
   example: mammoth view delete 123 123
 - `mammoth view derivative create` [benign_mutation/none] -> mammoth.api.derivatives.DerivativesAPI.create

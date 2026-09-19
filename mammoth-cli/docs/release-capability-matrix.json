@@ -13,9 +13,9 @@
   },
   "counts": {
     "Full": 1,
-    "Partial": 257,
+    "Partial": 259,
     "Not supported": 2,
-    "Unassessed": 268
+    "Unassessed": 266
   },
   "rows": [
     {
@@ -210,7 +210,7 @@
       "capability_id": "REL-010",
       "capability": "Delete Dashboard",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: n/a. permanently deleted D2=54 Single invocation only; no error-path or variant coverage. Also exercised successfully in the Haiku e2e run 2026-09-18 (CLI 2.0.13, see docs/capability-evidence/haiku-e2e-20260918/REPORT.md).",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Deleted dashboard 62. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteDashboard",
       "method": "DELETE",
@@ -221,14 +221,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
-        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
-        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "dashboard.delete",
         "exit_status": 0
       },
-      "evidence_version": "2.0.12"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-011",
@@ -656,7 +656,7 @@
       "capability_id": "REL-035",
       "capability": "Delete parameter",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted parameter 1; read-back list shows total_count=0. Single invocation only.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Deleted; list read-back total_count 0. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "DeleteParameter",
       "method": "DELETE",
@@ -667,14 +667,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "parameter.delete",
         "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-036",
@@ -704,7 +704,7 @@
       "capability_id": "REL-037",
       "capability": "Delete a project",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted project 41 (sweep-218-1224), read back with project get 41 beforehand. Single invocation only.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. 202 accepted; smoke projects 44/45/46 deleted the same way earlier and project get on them then returned resource_not_found (2.0.21 fix; was api_error/ValueError). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteProject",
       "method": "DELETE",
@@ -715,14 +715,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "project.delete",
         "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-038",
@@ -1500,7 +1500,7 @@
       "capability_id": "REL-072",
       "capability": "Browse and discover resources",
       "status": "Unassessed",
-      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: SUSPECTED DEFECT: GET /browse returns HTTP 500 empty body, reproduced twice. Read-only, no fixture needed.",
+      "remarks": "Unassessed; ergonomics sweep 2026-09-19 (CLI 2.0.21) observed backend_error: GET /browse still HTTP 500 empty body on release (same as 2026-09-18/19 sweeps).",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "BrowseResources",
       "method": "GET",
@@ -1511,14 +1511,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "browse.root",
         "exit_status": 1
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-073",
@@ -2039,7 +2039,7 @@
       "capability_id": "REL-096",
       "capability": "Curated template catalog",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Bounded release read with published CLI 1.1.10 succeeded for the curated template catalog; schema_version 1 and five top-level collections observed. No Full claim: catalog content/fixture lifecycle not qualified. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: formats, functions, industries, templates, use_cases. returns formats/functions/industries/templates catalog Single invocation only; no error-path or variant coverage.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Returned the template catalogue (formats, functions, ...). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DashboardV3ListTemplates",
       "method": "GET",
@@ -2050,14 +2050,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
-        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
-        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "dashboard.template.list",
         "exit_status": 0
       },
-      "evidence_version": "2.0.12"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-097",
@@ -3690,7 +3690,7 @@
       "capability_id": "REL-170",
       "capability": "List parameters",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Empty after family 8 cleanup, as expected. Single invocation only.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. total_count 1 with id 2; 0 after delete. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListParameters",
       "method": "GET",
@@ -3701,14 +3701,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "parameter.list",
         "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-171",
@@ -3945,7 +3945,7 @@
       "capability_id": "REL-180",
       "capability": "Get list of automations",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Empty (consistent with family 4's observation that create automations never surface in list). Single invocation only.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Empty result on this fixture. Empty list in a fresh project. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "GetList",
       "method": "GET",
@@ -3956,14 +3956,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "automation.list",
         "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-181",
@@ -3993,7 +3993,7 @@
       "capability_id": "REL-182",
       "capability": "Browse and discover project resources",
       "status": "Unassessed",
-      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: SUSPECTED DEFECT: GET /workspaces/4/projects/41/browse also 500s empty body, same pattern as browse.root, on our own fresh empty-of-folders project.",
+      "remarks": "Unassessed; ergonomics sweep 2026-09-19 (CLI 2.0.21) observed backend_error: GET /workspaces/4/projects/47/browse HTTP 500 empty body.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "BrowseProjectProjects",
       "method": "GET",
@@ -4004,14 +4004,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "browse.project",
         "exit_status": 1
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-183",
@@ -4265,7 +4265,7 @@
       "capability_id": "REL-193",
       "capability": "List batches",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Listed the auto-created batch (id=90) from the original file upload; confirmed the failed batch.create above did not add a second batch. Single invocation only.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. active_batches 2: file batch 99 (3 rows) and combine_ds batch 101 from the append (3 rows). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetBatches",
       "method": "GET",
@@ -4276,14 +4276,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "batch.list",
         "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-194",
@@ -4371,7 +4371,7 @@
       "capability_id": "REL-197",
       "capability": "Get list of dataviews present in a dataset",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Listed 1 dataview: id=106, ds_id=85, status=ready, row_count=3. Note: response includes a 'next' pagination URL (offset=100) despite only 1 total item, possibly a minor pagination defect. Single invocation only.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Listed dataview 116 (ds_id 94, row_count 3); the parent cache picked up 116 -> 94 so later view commands took the view id alone. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "ListDataviews",
       "method": "GET",
@@ -4382,20 +4382,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "view.list",
         "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-198",
       "capability": "Get dataview information",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 correct-parent read resolves retained view46 under dataset29. The earlier dataset28 403 remains an invalid-parent control, not an authorization boundary; bounded to one view and not Full.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Read back without a dataset id (parent from cache). row_count 6 after the append. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewInformationIndividual",
       "method": "GET",
@@ -4406,35 +4406,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "related": [
-          "docs/capability-evidence/historical-release-index.md",
-          "docs/capability-evidence/historical-release-index.md"
-        ],
-        "scope": "workspace 4/project 3; retained view46 correct parent dataset29; public PyPI 1.1.11 positive plus invalid-parent 28 control",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-198",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/core-next/retained-read-110/view-get-46.json",
-            "sha256": "c6399b988ef0c45b18cc1162f2e742a7ee0c2de5a7156b0e7b6d4fcabaae70b5",
-            "size_bytes": 1299,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-110/view-get-46-invalid-parent-28-pypi-111.json",
-            "sha256": "71ec07fcf25b7473202e9927151143b61f9369a6f1616d0dcf44d5bf9f285b4c",
-            "size_bytes": 866,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-110/view-get-46-parent-29-pypi-111.json",
-            "sha256": "44b43ac5b50f95da3cd63a11d3b3b74f657932d947e93092afa15941866ab952",
-            "size_bytes": 3447,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
+        "command_id": "view.get",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.11-pypi"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-199",
@@ -4493,7 +4472,7 @@
       "capability_id": "REL-201",
       "capability": "Get dataview data",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19 (CLI 2.0.18): read back after every transform in the run (11 reads on release, rows compared by value with the fixture's known answer: amounts, statuses, ids, joined region, pivot totals). Full page only; paging not exercised.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Default trim: rows_returned 3, rows_total_in_page 3, truncated false; with limit 2: rows_returned 2, truncated true. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewData",
       "method": "GET",
@@ -4504,14 +4483,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
-        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
-        "scope": "golden-data-readback",
-        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "view.data.get",
         "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-202",
@@ -4695,7 +4674,7 @@
       "capability_id": "REL-209",
       "capability": "Get dataview pipeline data checks",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 exact-parent retained view 46/dataset 29 read succeeded with an empty data-check list. One view and single-page boundary; not Full.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Listed data check 5 (enabled true, pinned_to_end true). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineDataChecks",
       "method": "GET",
@@ -4706,25 +4685,20 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "bounded retained-resource read-only evidence",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-209",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-b-pypi-111/data-check-list.json",
-            "sha256": "9ec24406886e9cd6127d9600c9f63c230c71ddd18c52df2569ad96da276daddc",
-            "size_bytes": 974,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
+        "command_id": "view.data-check.list",
+        "exit_status": 0
       },
-      "evidence_version": "mammoth-cli 1.1.11; mammoth-io 0.7.1"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-210",
       "capability": "Get the given dataview pipeline data check",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched data check 4, threshold shows as 0 (the applied default). Single invocation only.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Read back after each patch: enabled true, then false. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineDataCheck",
       "method": "GET",
@@ -4735,14 +4709,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "view.data-check.get",
         "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-211",
@@ -5303,7 +5277,7 @@
       "capability_id": "REL-232",
       "capability": "Get list of schedules",
       "status": "Unassessed",
-      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: Re-confirms 5GENR011 NOT_IMPLEMENTED from family 3.",
+      "remarks": "Unassessed; ergonomics sweep 2026-09-19 (CLI 2.0.21) observed backend_error: 5GENR011 NOT_IMPLEMENTED on GET /workspaces/4/projects/47/schedules; schedules remain unimplemented on release.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "ListSchedules",
       "method": "GET",
@@ -5314,14 +5288,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "schedule.list",
         "exit_status": 1
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-233",
@@ -6775,7 +6749,7 @@
       "capability_id": "REL-299",
       "capability": "Edit and perform operations on a pipeline data check",
       "status": "Unassessed",
-      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: SUSPECTED DEFECT: PATCH returned HTTP 500 empty body / CLI code=outcome_unknown, but a follow-up get confirmed the mutation actually applied (enabled:false, updated_at bumped) - the request succeeded server-side but the response envelope was a 500, so the CLI could not report success.",
+      "remarks": "Unassessed; ergonomics sweep 2026-09-19 (CLI 2.0.21) observed backend_error: PATCH with the schema's documented {op: command, path: enable|disable, value: null} shape returns HTTP 500 empty body (CLI outcome_unknown, exit 7) while the mutation applies: get shows enabled false after 'disable'. Same pattern as the 2.0.18 sweep. A {op: replace, path: enable, value: false} body is rejected client-side because value must be an AddDataCheckSpec or null.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "EditDatacheck",
       "method": "PATCH",
@@ -6786,14 +6760,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "view.data-check.update",
         "exit_status": 7
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-300",
@@ -7553,7 +7527,7 @@
       "capability_id": "REL-335",
       "capability": "Create an empty v3 dashboard",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: id, sequence. created dashboard D=52 from dataview 45 Single invocation only; no error-path or variant coverage. Also exercised successfully in the Haiku e2e run 2026-09-18 (CLI 2.0.13, see docs/capability-evidence/haiku-e2e-20260918/REPORT.md).",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Created dashboard 62 (sequence 1). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateBlankDashboard",
       "method": "POST",
@@ -7564,14 +7538,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
-        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
-        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "dashboard.create-blank",
         "exit_status": 0
       },
-      "evidence_version": "2.0.12"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-336",
@@ -7817,7 +7791,7 @@
       "capability_id": "REL-346",
       "capability": "Save a dashboard as a workspace template",
       "status": "Unassessed",
-      "remarks": "Unassessed; backend reproduction 2026-09-18 (CLI 2.0.15) observed backend: POST /dashboards/v3/templates -> HTTP 500, empty response_body, request_id:null, code:outcome_unknown. Fixture: dashboard 58 created via dashboard create-blank on view 76/dataset 54/project 24 (our only dashboard, per the ONE-dashboard limit). Reconciled via dashboard template list: templates with is_yours:true = [] -> attempt did NOT commit. Alternative tried: same dashboard_id, different title+description ('repr...",
+      "remarks": "Unassessed; ergonomics sweep 2026-09-19 (CLI 2.0.21) observed backend_error: POST /dashboards/v3/templates HTTP 500 empty body / outcome_unknown, as on 2026-09-18.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SaveTemplate",
       "method": "POST",
@@ -7828,14 +7802,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/backend-repro-20260918/results.jsonl",
-        "report": "docs/capability-evidence/backend-repro-20260918/HANDOVER.md",
-        "scope": "backend-defect reproduction on release ws 4 with the published CLI 2.0.15 in disposable project 24 (dataset 54 / view 76), each item run once plus one alternative input; fixtures deleted",
-        "sha256": "e9880ab0d06f5dc6ea0b8ccc213c16019459ca5f580082f3e71552ce5e75c4a3",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "dashboard.template.create",
         "exit_status": 7
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-347",
@@ -9405,7 +9379,7 @@
       "capability_id": "REL-425",
       "capability": "Create parameter",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. First attempt with lowercase param_type 'text' failed 4PARM008 (must be NUMERIC/TEXT/DATE, uppercase; schema example is misleadingly lowercase). Retried with TEXT, created id=1. Single invocation only.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Created parameter id=2 scope project. The shipped agent_example (param_type \"sample\") is rejected by the backend with 4PARM008 (must be NUMERIC/TEXT/DATE); example corrected in 2.0.22. Single invocation only.",
       "core_vs_misc": "MISCELLANEOUS_API",
       "operation_id": "CreateParameter",
       "method": "POST",
@@ -9416,14 +9390,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "parameter.create",
         "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-426",
@@ -9815,8 +9789,8 @@
     {
       "capability_id": "REL-445",
       "capability": "Create batch",
-      "status": "Unassessed",
-      "remarks": "Unassessed; fixture-lifecycle sweep 2026-09-19 (CLI 2.0.18) observed backend_error: SUSPECTED DEFECT (4th occurrence of this pattern in the sweep): retried with source_id=87 as an actual dataset id, got HTTP 500 empty body / outcome_unknown. Verified via batch.list 85 immediately after that the batch was NOT created (still only the original file-upload batch present), so this 500 is a genuine failed request, not a silent success - but the CLI cannot distinguish these two cases from the envelope a...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Accepted as job 688 (validate_append) when SOURCE_ID is a standalone dataset (96) in the same project; using the append child dataset 95 as source is 4BATC010 INVALID_SOURCE_DATASET. Job 688 was still processing 5 minutes later, so the batch was not confirmed in batch list. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateBatch",
       "method": "POST",
@@ -9827,14 +9801,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "batch.create",
-        "exit_status": 7
+        "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-446",
@@ -9912,7 +9886,7 @@
       "capability_id": "REL-449",
       "capability": "Get dataview data",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19 (CLI 2.0.18): read back after every transform in the run (11 reads on release, rows compared by value with the fixture's known answer: amounts, statuses, ids, joined region, pivot totals). Full page only; paging not exercised.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Default trim: rows_returned 3, rows_total_in_page 3, truncated false; with limit 2: rows_returned 2, truncated true. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewDataPost",
       "method": "POST",
@@ -9923,14 +9897,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
-        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
-        "scope": "golden-data-readback",
-        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "view.data.get",
         "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-450",
@@ -9984,7 +9958,7 @@
       "capability_id": "REL-452",
       "capability": "Create a derivative",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created a SUM(amount) metric derivative on view 106, id=5 (my own first attempt keyed the param dict by the metric name instead of the required literal 'METRIC' key - that was my error, not a CLI defect; fixed per schema's own MetricParam def). Single invocation only.",
+      "remarks": "Partial bounded evidence only (earlier run); ergonomics sweep 2026-09-19 (CLI 2.0.21) observed backend_error: POST .../derivatives with the example shape (METRIC object) returns HTTP 500 empty body / outcome_unknown on release today. A list under METRIC is rejected client-side by the schema.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateDerivative",
       "method": "POST",
@@ -9995,14 +9969,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "view.derivative.create",
-        "exit_status": 0
+        "exit_status": 7
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-453",
@@ -10104,7 +10078,7 @@
       "capability_id": "REL-457",
       "capability": "Add a data check",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. SUSPECTED DEFECT: passing an explicit threshold:5.0 (a float, matching the schema's documented oneOf[number,integer,...] and default) caused invalid_input_field_type on body.checks.0. Omitting threshold entirely (falling back to schema default 0) succeeded, created data_check_id=4. Single invocation only.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Created data_check_id 5. Without pinned_to_end the backend rejects the body with 4GENR007 'Either task_sequence or pinned_to_end must be set' (the shipped example lacked it; corrected in 2.0.22). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AddDataCheck",
       "method": "POST",
@@ -10115,14 +10089,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "view.data-check.create",
         "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-458",
@@ -10444,7 +10418,7 @@
       "capability_id": "REL-471",
       "capability": "Upload file or folder",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; golden-data check 2026-09-19 (CLI 2.0.18): two small CSVs (numeric, text and date columns) uploaded to an owned project, both reported ready with a view; the fixture sweep the same day uploaded two more (one landed in need_action and was used as a batch source). An all-text CSV is reported need_action (platform says 'more than one plausible way to be read' and creates no view); large files and non-CSV formats not exercised.",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Uploaded smoke.csv -> dataset 94 ready; dataview 116 (3 rows). Second call with --input {\"append_to_ds_id\": 94} returned dataset 95 ready and view 116 row_count went 3 -> 6: append path works (the 2.0.18 sweep's raw ValueError is gone). batch list on 94 shows batch 101 source combine_ds dataset 95. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateFileDataset",
       "method": "POST",
@@ -10455,14 +10429,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/golden-20260919/results.jsonl",
-        "report": "docs/capability-evidence/golden-20260919/SUMMARY.md",
-        "scope": "golden-data-readback",
-        "sha256": "a5c987cc1e70d094a3b30b7eba577ff3e4d8795cd72ebf0c9d8c0f32b719d6e8",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "file.upload",
         "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-472",
@@ -10593,7 +10567,7 @@
       "capability_id": "REL-477",
       "capability": "Generate SQL query based on intent",
       "status": "Unassessed",
-      "remarks": "Unassessed; re-verification 2026-09-18 (CLI 2.0.15) observed backend_error: Fix held (dataset_id required and sent as query param -- request reached backend and got a domain-specific conflict, not an empty api_error). Tried on both dataset 53 and dataset 55 (untouched fresh dataset), same clear structured error both times: {\"error\":{\"code\":\"conflict\",\"details\":{\"backend_code\":\"4DTVW029\"},\"message\":\"Cannot run AI generation for this rule: the input table from the previous rule is not avail...",
+      "remarks": "Unassessed; ergonomics sweep 2026-09-19 (CLI 2.0.21) observed backend_error: 4DTVW029 conflict: 'Cannot run AI generation for this rule: the input table from the previous rule is not available' on a fresh dataset with no prior rule. Request shape accepted; backend precondition unclear.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GenerateSql",
       "method": "POST",
@@ -10604,14 +10578,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
-        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
-        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
-        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "ai.sql.generate",
         "exit_status": 6
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-478",
@@ -10688,8 +10662,8 @@
     {
       "capability_id": "REL-481",
       "capability": "Generate AI-based Suggestions for Dataview",
-      "status": "Unassessed",
-      "remarks": "Unassessed; re-verification 2026-09-18 (CLI 2.0.15) observed backend_error: Fix held: release UnifiedPromptSpec (suggestion_type + params, optional dataset_id/dataview_id) shape accepted and dispatched to a real job (id 381), which failed for an unrelated backend reason rather than a client-side/api shape rejection: {\"error\":{\"code\":\"job_failed\",\"details\":{\"observed_job\":{\"operation\":\"generate_transformations_based_on_intent\",\"response\":{\"reason\":\"Unexpected error using param generation\"}...",
+      "status": "Partial",
+      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Returned a pipeline suggestion (interpretation echoed, params with prev_metadata) — the 2.0.15 re-verification's backend job failure did not recur. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AiSuggestions",
       "method": "POST",
@@ -10700,14 +10674,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/reverify-215-20260918/results.jsonl",
-        "report": "docs/capability-evidence/reverify-215-20260918/SUMMARY.md",
-        "scope": "re-verification of the 2.0.15 CLI fixes on release ws 4 with the published CLI 2.0.15 in disposable project 23 (datasets 53/55, views 75/77, dashboard 59); fixtures deleted and baseline verified",
-        "sha256": "62d1e56935404ea56ecf297f9d9108c2a0ebafe601a2720b588d7ea175038263",
+        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
+        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
+        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
         "command_id": "ai.suggestion.list",
-        "exit_status": 1
+        "exit_status": 0
       },
-      "evidence_version": "2.0.15"
+      "evidence_version": "2.0.21"
     },
     {
       "capability_id": "REL-482",

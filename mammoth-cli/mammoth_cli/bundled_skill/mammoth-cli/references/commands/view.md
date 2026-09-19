@@ -166,11 +166,11 @@ Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 
 
 Run: `mammoth view data-check create`. Exact input fields: `mammoth schema get view.data-check.create`.
 
-Example: `mammoth view data-check create 123 123 --input '{"body": {"checks": [{"check_type": "null_percentage", "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view data-check create 123 123 --input '{"body": {"checks": [{"check_type": "null_percentage", "config": {"column": "Status", "condition": "lt"}}], "name": "Revenue report", "pinned_to_end": true}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDataCheckCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. SUSPECTED DEFECT: passing an explicit threshold:5.0 (a float, matching the schema's documented oneOf[number,integer,...] and default) caused invalid_input_field_type on body.checks.0. Omit…
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Created data_check_id 5. Without pinned_to_end the backend rejects the body with 4GENR007 'Either task_sequence or pinned_to_end must be set' (the shipped example lacked it; corrected in 2.0.22).…
 
 ### `view.data-check.delete`
 
@@ -190,7 +190,7 @@ Example: `mammoth view data-check get 123 123 123`. Placeholders are illustrativ
 
 Result: `ViewDataCheckGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Fetched data check 4, threshold shows as 0 (the applied default). Single invocation only.
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Read back after each patch: enabled true, then false. Single invocation only.
 
 ### `view.data-check.list`
 
@@ -200,17 +200,17 @@ Example: `mammoth view data-check list 123 123`. Placeholders are illustrative; 
 
 Result: `ViewDataCheckListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 / SDK 0.7.1 exact-parent retained view 46/dataset 29 read succeeded with an empty data-check list. One view and single-page boundary; not Full.
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Listed data check 5 (enabled true, pinned_to_end true). Single invocation only.
 
 ### `view.data-check.update`
 
 Run: `mammoth view data-check update`. Exact input fields: `mammoth schema get view.data-check.update`.
 
-Example: `mammoth view data-check update 123 123 123 --input '{"body": {"patches": [{"op": "replace", "path": "enable"}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view data-check update 123 123 123 --input '{"body": {"patches": [{"op": "command", "path": "disable", "value": null}]}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDataCheckUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — backend_error: SUSPECTED DEFECT: PATCH returned HTTP 500 empty body / CLI code=outcome_unknown, but a follow-up get confirmed the mutation actually applied (enabled:false, updated_. Re-check before relying on it.
+Status on release: observed blocker — backend_error: PATCH with the schema's documented {op: command, path: enable|disable, value: null} shape returns HTTP 500 empty body (CLI outcome_unknown, exit 7) while the mutatio. Re-check before relying on it.
 
 ### `view.data.get`
 
@@ -220,7 +220,7 @@ Example: `mammoth view data get 123 123`. Placeholders are illustrative; resolve
 
 Result: `ViewDataGetResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 — golden-data check 2026-09-19 (CLI 2.0.18): read back after every transform in the run (11 reads on release, rows compared by value with the fixture's known answer: amounts, statuses, ids, joined region, pivot totals). Full page only; paging not exercised.
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Default trim: rows_returned 3, rows_total_in_page 3, truncated false; with limit 2: rows_returned 2, truncated true. Single invocation only.
 
 ### `view.data.query`
 
@@ -250,7 +250,7 @@ Example: `mammoth view derivative create 123 123 --input '{"body": {"param": {"M
 
 Result: `ViewDerivativeCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Created a SUM(amount) metric derivative on view 106, id=5 (my own first attempt keyed the param dict by the metric name instead of the required literal 'METRIC' key - that was my error, no…
+Status on release: ran once on CLI 2.0.21 — Partial bounded evidence only (earlier run); ergonomics sweep 2026-09-19 (CLI 2.0.21) observed backend_error: POST .../derivatives with the example shape (METRIC object) returns HTTP 500 empty body / outcome_unknown on release today. A list under METRIC is re…
 
 ### `view.derivative.data`
 
@@ -652,7 +652,7 @@ Example: `mammoth view get 123 123`. Placeholders are illustrative; resolve IDs 
 
 Result: `ViewGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 correct-parent read resolves retained view46 under dataset29. The earlier dataset28 403 remains an invalid-parent control, not an authorization boundary; bounded to one view and not Full.
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Read back without a dataset id (parent from cache). row_count 6 after the append. Single invocation only.
 
 ### `view.list`
 
@@ -662,7 +662,7 @@ Example: `mammoth view list 123`. Placeholders are illustrative; resolve IDs and
 
 Result: `ViewListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Listed 1 dataview: id=106, ds_id=85, status=ready, row_count=3. Note: response includes a 'next' pagination URL (offset=100) despite only 1 total item, possibly a minor pagination defect.…
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Listed dataview 116 (ds_id 94, row_count 3); the parent cache picked up 116 -> 94 so later view commands took the view id alone. Single invocation only.
 
 ### `view.parameter-context`
 

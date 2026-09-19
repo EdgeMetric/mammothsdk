@@ -40,7 +40,7 @@ Example: `mammoth automation list`. Placeholders are illustrative; resolve IDs a
 
 Result: `AutomationListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Empty (consistent with family 4's observation that create automations never surface in list). Single invocation only.
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Empty result on this fixture. Empty list in a fresh project. Single invocation only.
 
 ### `automation.restore`
 

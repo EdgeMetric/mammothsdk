@@ -20,7 +20,7 @@ Example: `mammoth batch create 123 123 --input '{"mapping": [{"source_c_name": "
 
 Result: `BatchCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `returns_job`.
 
-Status on release: observed blocker — backend_error: SUSPECTED DEFECT (4th occurrence of this pattern in the sweep): retried with source_id=87 as an actual dataset id, got HTTP 500 empty body / outcome_unknown. Re-check before relying on it.
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Accepted as job 688 (validate_append) when SOURCE_ID is a standalone dataset (96) in the same project; using the append child dataset 95 as source is 4BATC010 INVALID_SOURCE_DATASET. Job 688 was…
 
 ### `batch.create-spec`
 
@@ -60,7 +60,7 @@ Example: `mammoth batch list 123`. Placeholders are illustrative; resolve IDs an
 
 Result: `BatchListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Listed the auto-created batch (id=90) from the original file upload; confirmed the failed batch.create above did not add a second batch. Single invocation only.
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. active_batches 2: file batch 99 (3 rows) and combine_ds batch 101 from the append (3 rows). Single invocation only.
 
 ### `batch.update`
 

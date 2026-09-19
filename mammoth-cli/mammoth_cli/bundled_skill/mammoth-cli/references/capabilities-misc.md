@@ -16,13 +16,12 @@ Ran once: `agent.session.list`
 
 ## `ai`
 
-Ran once: `ai.condition.generate`, `ai.expression.generate`
+Ran once: `ai.condition.generate`, `ai.expression.generate`, `ai.suggestion.list`
 
 | Command | State | Note |
 |---|---|---|
 | `ai.retention.condition` | observed blocker | permission: POST /workspaces/4/projects/24/sql_generation/retention_policy -> HTTP 403 4PERM001 PERMISSION_UNDEFINED, error_object {code:76,message:'Permissions have not been set c |
-| `ai.sql.generate` | observed blocker | backend_error: Fix held (dataset_id required and sent as query param -- request reached backend and got a domain-specific conflict, not an empty api_error) |
-| `ai.suggestion.list` | observed blocker | backend_error: Fix held: release UnifiedPromptSpec (suggestion_type + params, optional dataset_id/dataview_id) shape accepted and dispatched to a real job (id 381), which failed fo |
+| `ai.sql.generate` | observed blocker | backend_error: 4DTVW029 conflict: 'Cannot run AI generation for this rule: the input table from the previous rule is not available' on a fresh dataset with no prior rule |
 
 ## `annotation`
 
@@ -39,11 +38,7 @@ Ran once: `automation.create`, `automation.delete`, `automation.list`
 
 ## `batch`
 
-Ran once: `batch.bulk-delete`, `batch.delete`, `batch.get`, `batch.list`, `batch.update`
-
-| Command | State | Note |
-|---|---|---|
-| `batch.create` | observed blocker | backend_error: SUSPECTED DEFECT (4th occurrence of this pattern in the sweep): retried with source_id=87 as an actual dataset id, got HTTP 500 empty body / outcome_unknown |
+Ran once: `batch.bulk-delete`, `batch.create`, `batch.delete`, `batch.get`, `batch.list`, `batch.update`
 
 ## `billing`
 
@@ -65,8 +60,8 @@ Ran once: `browse.workspace`
 | Command | State | Note |
 |---|---|---|
 | `browse.folder` | observed blocker | cli_error: rejects folder id 0 although folder.root reports id 0 as the root |
-| `browse.project` | observed blocker | backend_error: SUSPECTED DEFECT: GET /workspaces/4/projects/41/browse also 500s empty body, same pattern as browse.root, on our own fresh empty-of-folders project |
-| `browse.root` | observed blocker | backend_error: SUSPECTED DEFECT: GET /browse returns HTTP 500 empty body, reproduced twice |
+| `browse.project` | observed blocker | backend_error: GET /workspaces/4/projects/47/browse HTTP 500 empty body |
+| `browse.root` | observed blocker | backend_error: GET /browse still HTTP 500 empty body on release (same as 2026-09-18/19 sweeps) |
 
 ## `client-app`
 
@@ -111,7 +106,7 @@ Ran once: `report.list`
 |---|---|---|
 | `schedule.create` | observed blocker | backend_error: SUSPECTED CLI/BACKEND DEFECT: second create attempt (with work_items bound to dataset 85) returned HTTP 500 with empty response body, surfaced by CLI as code=outcome |
 | `schedule.get` | observed blocker | blocked_missing_fixture: Not run: id source schedule.list failed with backend_error (5GENR011 NOT_IMPLEMENTED, HTTP 400), so no schedule_id was observed to use |
-| `schedule.list` | observed blocker | backend_error: Re-confirms 5GENR011 NOT_IMPLEMENTED from family 3 |
+| `schedule.list` | observed blocker | backend_error: 5GENR011 NOT_IMPLEMENTED on GET /workspaces/4/projects/47/schedules; schedules remain unimplemented on release |
 
 ## `snippet`
 
@@ -145,4 +140,4 @@ Ran once: `workflow.create`, `workflow.delete`, `workflow.get`, `workflow.graph`
 
 Ran once: `workspace.app-usage`, `workspace.get`, `workspace.list`, `workspace.segment.list`, `workspace.segment.update`, `workspace.storage-breakdown`, `workspace.user.list`
 
-Evidence collected on CLI releases 1.1.5 through 2.0.18; each row's release is recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row that ran on an older release has not been re-run since unless its note says so. Details: `docs/capability-evidence/` in the repository.
+Evidence collected on CLI releases 1.1.5 through 2.0.21; each row's release is recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row that ran on an older release has not been re-run since unless its note says so. Details: `docs/capability-evidence/` in the repository.

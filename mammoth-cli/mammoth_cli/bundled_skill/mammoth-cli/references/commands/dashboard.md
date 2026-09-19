@@ -178,7 +178,7 @@ Example: `mammoth dashboard create-blank --input '{"params": {"dataview_id": 1}}
 
 Result: `DashboardCreateBlankResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: id, sequence. created dashboard D=52 from dataview 45 Single invocation only; no error-path or variant coverage. Also exercised successfully in the Haiku e2e run 2026-09-18 (CLI 2.0.1…
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Created dashboard 62 (sequence 1). Single invocation only.
 
 ### `dashboard.data.draft`
 
@@ -208,7 +208,7 @@ Example: `mammoth dashboard delete 123`. Illustrative only: append `--yes` after
 
 Result: `DashboardDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: n/a. permanently deleted D2=54 Single invocation only; no error-path or variant coverage. Also exercised successfully in the Haiku e2e run 2026-09-18 (CLI 2.0.13, see docs/capability-…
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Deleted dashboard 62. Single invocation only.
 
 ### `dashboard.descriptor-data`
 
@@ -876,7 +876,7 @@ Example: `mammoth dashboard template create --input '{"body": {"params": {"dashb
 
 Result: `DashboardTemplateCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — backend: POST /dashboards/v3/templates -> HTTP 500, empty response_body, request_id:null, code:outcome_unknown. Re-check before relying on it.
+Status on release: observed blocker — backend_error: POST /dashboards/v3/templates HTTP 500 empty body / outcome_unknown, as on 2026-09-18. Re-check before relying on it.
 
 ### `dashboard.template.delete`
 
@@ -916,7 +916,7 @@ Example: `mammoth dashboard template list`. Placeholders are illustrative; resol
 
 Result: `DashboardTemplateListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.12 — Bounded release read with published CLI 1.1.10 succeeded for the curated template catalog; schema_version 1 and five top-level collections observed. No Full claim: catalog content/fixture lifecycle not qualified. Also: Dashboard sweep 2026-09-18: exit 0 on re…
+Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Returned the template catalogue (formats, functions, ...). Single invocation only.
 
 ### `dashboard.template.preview`
 
