@@ -10,8 +10,8 @@ mammoth view transform filter 1039 --project 180 \
   --input '{"condition": {"and": [{"column": "Order Status", "operator": "EQ", "value": "Open"}, {"column": "Customer Age", "operator": "GT", "value": 30}]}}'
 ```
 
-- `--input FILE` reads a JSON or YAML file; the format is inferred from the
-  extension.
+- `--input FILE` (or `--input @FILE`) reads a JSON or YAML file; the format
+  is inferred from the extension.
 - `--input -` reads stdin; then `--input-format json|yaml` is required.
 - The top level must be a mapping. A bad path, format, or shape fails with exit
   code 2 and a stable error code.

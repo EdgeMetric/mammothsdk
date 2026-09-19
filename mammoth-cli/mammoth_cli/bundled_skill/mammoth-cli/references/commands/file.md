@@ -82,7 +82,7 @@ Example: `mammoth file upload ./sales.csv`. Placeholders are illustrative; resol
 
 Result: `FileUploadResult`; mutation `benign_mutation`, confirmation `none`, wait policy `start_or_wait`.
 
-Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Uploaded smoke.csv -> dataset 94 ready; dataview 116 (3 rows). Second call with --input {"append_to_ds_id": 94} returned dataset 95 ready and view 116 row_count went 3 -> 6: append path works (th…
+Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Three CSV uploads into a new source project; dates typed DATE without file-settings changes. Single invocation only.
 
 ### `file.upload-folder`
 

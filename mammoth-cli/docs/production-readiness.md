@@ -1,6 +1,6 @@
 # mammoth-cli production readiness
 
-Last updated 2026-09-19 for **mammoth-cli 2.0.27 / mammoth-io 0.7.12**. This is
+Last updated 2026-09-19 for **mammoth-cli 2.0.29 / mammoth-io 0.7.13**. This is
 the one page an agent or engineer reads to know what the CLI is, what is
 proven, what is not, and where every claim's evidence lives. Update it with
 every release; `docs/release-status.md` holds the per-release detail and the
@@ -19,6 +19,14 @@ export CSV → deliver into a second project → pivot as the last step → read
 back → delete only what it created and prove it is gone. Report:
 `docs/capability-evidence/haiku-etl-20260919/REPORT-2.md`.
 
+Also proven live (2026-09-19, `docs/capability-evidence/ilg-sim-20260919/`),
+replaying a real customer rebuild brief on synthetic data: sends from two
+source projects into a target project as pipeline steps that re-run on
+upstream change, SQL conform per fact (`add-sql`) and joins into a
+mixed-grain consolidated table, and authored dashboards whose `countDistinct`
+card reads the true distinct count under a Month range filter (111 / 64 /
+110 against the fixture key), with bindings read back by descriptor id.
+
 ## What "ready" is backed by
 
 | Claim | Evidence |
@@ -30,11 +38,11 @@ back → delete only what it created and prove it is gone. Report:
 | Long operations wait up to 300 s (`--job-timeout`), timeouts hand back a `job get` recovery command, `outcome_unknown` is never retried blindly | `references/jobs-drafts.md`, `references/recovery.md` |
 | Newer releases are announced in every envelope (`meta.update_available`), `mammoth upgrade --yes` upgrades the *running* install, `MAMMOTH_AUTO_UPGRADE=1` does it unattended | `docs/upgrade.md`; 2.0.26 entry (verified on a 2.0.24 venv) |
 | Every published artifact is deterministic, scanned for local paths and secrets, and its PyPI digest is recorded | `docs/release-status.md` (one block per version) |
-| Each release runs the unit + contract + realcode suites once (3212 passed at 2.0.27), ruff, mypy strict, and three `--check`-clean generators | commit messages; `docs/release-status.md` |
+| Each release runs the unit + contract + realcode suites once (4427 passed at 2.0.28), ruff, mypy strict, and three `--check`-clean generators | commit messages; `docs/release-status.md` |
 
 Evidence directory index: `docs/capability-evidence/README.md`. Row-level
 status of all 528 API operations: `docs/release-capability-matrix.md`
-(counts at 2.0.27: Full 1, Partial 260, Not supported 2, Unassessed 265 —
+(counts at 2.0.29: Full 1, Partial 261, Not supported 2, Unassessed 264 —
 "Partial" means exercised live at least once in an owned project; it is a
 bounded proof, not a qualification of every input shape).
 
@@ -63,43 +71,53 @@ these are recorded with tracebacks in `docs/release-status.md`):
 - `view export create` with a CSV/Postgres destination fails in the job with
   `'destination'` (REL-458); use `view export csv`.
 
-CLI routes with **no live proof yet** that a real customer brief needs
-(`docs/capability-evidence/ilg-feasibility-20260919.md`, section D):
+The four gaps the ILG feasibility review listed
+(`docs/capability-evidence/ilg-feasibility-20260919.md`, section D) and where
+they stand after the live simulation (`ilg-sim-20260919/SUMMARY.md`):
 
-1. **Cross-project delivery as a pipeline step.** `view export dataset` with a
-   `target_ds_id` in another project has never been run live; both Haiku
-   runs delivered by CSV + upload instead. Until proven, "add a parallel send
-   from a production pipeline into a new project" is not a CLI promise.
-2. **Add-only edits to a shared/production pipeline.** Typed transforms append
-   at the end and never reorder, but there is no precondition (expected task
-   count / version) that refuses when the pipeline changed since the read,
-   and `view task add` takes an opaque `task_spec`.
-3. **Dashboard measures beyond the typed surface.** KPI cards with
-   `countDistinct` under a date filter, range filters and free-form widgets
-   are reachable only through `dashboard canvas save` / the chat routes,
-   neither proven for this; binding read-back (`dashboard canvas get`) is
-   proven.
-4. `view transform window`, month bucketing (`extract-date` component
-   `month` / `add-sql DATE_TRUNC`) — commands exist, no live run recorded.
+1. **Cross-project delivery as a pipeline step — proven.** `view export
+   dataset VIEW --yes --input '{"dataset_name": ..., "target_project_id": N}'`
+   (SDK 0.7.13 `to_dataset(target_project_id=...)`) appends an
+   internal-dataset export that re-materialises the target on every run.
+2. **Add-only edits next to an existing send — proven for the append case.**
+   The pre-existing export's sequence and execution times did not move.
+   Still missing: a precondition (`expected_task_count` / version) that
+   refuses when the pipeline changed since the read; `view task add` still
+   takes an opaque `task_spec`.
+3. **Dashboard measures beyond the typed surface — proven through `canvas
+   save`.** `countDistinct` KPI cards, `measure2` bars, derived ratio lines,
+   tables, range/multi filters persist and bake; `descriptor-data` evaluates
+   them under a filter. `pages add` and the chat routes pass the LLM guard,
+   which can drop a unit it cannot evidence.
+4. `add-sql DATE_TRUNC` month bucketing — proven. `view transform window` and
+   `extract-date` — commands exist, still no live run recorded.
+
+Remaining CLI limits a brief may hit: one dataview per dashboard; PDF/video
+export needs the browser; `series` on a derived-measure line was ignored in
+the simulation; row volumes proven are hundreds, not the customer's
+thousands.
 
 Operational (release host, not the CLI): the root volume of 10.1.100.131 was
 100 % full on 2026-09-19, which raised the RabbitMQ disk alarm and left every
-upload job in `processing`; 5.5 GB were reclaimed (82 % used). It needs a
-bigger volume or `~/data/duckdb_efs` / `~/mmfiles/resources` moved.
+upload job in `processing`; 5.5 GB were reclaimed and an hourly guard
+(`~/utils/disk-guard.sh`, cron `17 * * * *`, log `~/logs/disk-guard.log`)
+now trims caches, journals and rotated logs above 80 %. It sits at 80 % with
+~6 GB free; the guard cannot go lower without touching data. Candidates for a
+human decision: `~/mmfiles/resources/.git/lfs/objects` (1.5 GB, duplicates
+the checked-out LFS files), `~/data/duckdb_efs/17` (2 GB, workspace data),
+or a bigger volume.
 
 ## Next actions (ordered)
 
-1. Prove item 1 above in two disposable projects and record it in the matrix
-   (`view.export.dataset`, then `view.export.create` with an internal-dataset
-   handler). This unblocks the ILG-style "parallel send" brief.
-2. Add `--dry-run` (validate and print the resolved SDK call without a network
+1. Add `--dry-run` (validate and print the resolved SDK call without a network
    call) and an `expected_task_count` precondition on pipeline mutations —
-   both taken from the peer review of the Loops and PostHog agent CLIs.
-3. Probe `dashboard canvas save` with a `countDistinct` KPI widget on a
-   disposable dashboard; read it back with `canvas get` and `dashboard query`.
-4. Re-run the ILG handoff in its reduced form (`F - SchoolPnL` + Overview)
-   only after 1 and 3 have positive evidence, one production pipeline at a
-   time, per the brief's own stop conditions.
+   both taken from the peer review of the Loops and PostHog agent CLIs; the
+   precondition is what remains of ILG gap 2.
+2. Run the ILG brief for real in its reduced form (`F - SchoolPnL` +
+   Overview), one production pipeline at a time, per the brief's own stop
+   conditions; the routes are proven, the data volumes and feeds are not.
+3. Record a live run of `view transform window` and `extract-date`, and
+   look at why `series` on a derived-measure line is ignored.
 
 ## Where things live
 

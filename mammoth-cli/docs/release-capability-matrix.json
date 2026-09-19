@@ -1084,7 +1084,7 @@
       "capability_id": "REL-054",
       "capability": "Delete a task",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Task 24 (created via view transform convert-type) deleted -> {future_id:347,status:processing,type_of_modification:discard_rule}. Verified via view task list 73: tasks:[] afterward. Single invocation only.",
+      "remarks": "Partial bounded evidence only; ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Removed a SQL task that had run on the wrong intermediate shape; view returned to the previous columns and row count. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DeleteTask",
       "method": "DELETE",
@@ -1095,14 +1095,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/write-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/write-sweep-20260918/SUMMARY.md",
-        "scope": "write sweep on release ws 4 with CLI 2.0.14 build: own disposable projects 21/22 (dataset 48/view 68 etc.), never touching project 3; fixtures deleted and baseline verified",
-        "sha256": "e206f01cd00e8f4b6ae160b61ba1c43d478b86ca8cea94ec71cb91358e6349ab",
+        "artifact": "docs/capability-evidence/ilg-sim-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ilg-sim-20260919/SUMMARY.md",
+        "scope": "ILG simulation on release ws 4 in owned projects 57/58/59 with the CLI 2.0.28 working tree; every value checked against a Python-computed fixture key",
+        "sha256": "c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4",
         "command_id": "view.task.delete",
         "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.28"
     },
     {
       "capability_id": "REL-055",
@@ -2247,7 +2247,7 @@
       "capability_id": "REL-107",
       "capability": "Get Dashboard",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 read-only dashboard get on retained dashboard48 returned a bounded structural object; one retained scope does not establish Full support. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: auto_publish, auto_sync, id, is_publish_pending, is_publish_presentation_pending, is_sync_pending, share, sources, title, url, was_published. D=52 fetched; has share url slug SWMLZrPqlcwVkralQQpxvQ despite was_published=false Single invocation only; no error-path or variant coverage.",
+      "remarks": "Partial bounded evidence only; ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. auto_sync for the bound view showed last_synced_at after the upstream data change. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDashboard",
       "method": "GET",
@@ -2258,14 +2258,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
-        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
-        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "artifact": "docs/capability-evidence/ilg-sim-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ilg-sim-20260919/SUMMARY.md",
+        "scope": "ILG simulation on release ws 4 in owned projects 57/58/59 with the CLI 2.0.28 working tree; every value checked against a Python-computed fixture key",
+        "sha256": "c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4",
         "command_id": "dashboard.get",
         "exit_status": 0
       },
-      "evidence_version": "2.0.12"
+      "evidence_version": "2.0.28"
     },
     {
       "capability_id": "REL-108",
@@ -2295,7 +2295,7 @@
       "capability_id": "REL-109",
       "capability": "Editor canvas (draft)",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 / SDK 0.7.1 draft canvas read succeeded for retained dashboard 48. One dashboard only; not Full. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: canvas, dashboard_id, meta, plan, specs. returned canvas JSON for D=52 Single invocation only; no error-path or variant coverage.",
+      "remarks": "Partial bounded evidence only; ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Read back the authored canvas, plan.hints.kpis and meta.figures (figure key -> descriptor id) after each bake; used as the binding check the ILG brief requires. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetCanvasDraft",
       "method": "GET",
@@ -2306,14 +2306,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
-        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
-        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "artifact": "docs/capability-evidence/ilg-sim-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ilg-sim-20260919/SUMMARY.md",
+        "scope": "ILG simulation on release ws 4 in owned projects 57/58/59 with the CLI 2.0.28 working tree; every value checked against a Python-computed fixture key",
+        "sha256": "c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4",
         "command_id": "dashboard.canvas.get",
         "exit_status": 0
       },
-      "evidence_version": "2.0.12"
+      "evidence_version": "2.0.28"
     },
     {
       "capability_id": "REL-110",
@@ -4217,7 +4217,7 @@
       "capability_id": "REL-191",
       "capability": "Get list of datasets",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Confirmed all 3 owned datasets (85,86,87) gone before deleting the project. Single invocation only.",
+      "remarks": "Partial bounded evidence only; ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Listed the datasets the sends created in the target project. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDatasets",
       "method": "GET",
@@ -4228,14 +4228,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/fixture-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/fixture-sweep-20260919/SUMMARY.md",
-        "scope": "fixture-lifecycle-sweep",
-        "sha256": "4f4c57243abf2f4c13b129c4f82c493890e4b0e473b6cc025fd3bf1d4ee5c9f0",
+        "artifact": "docs/capability-evidence/ilg-sim-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ilg-sim-20260919/SUMMARY.md",
+        "scope": "ILG simulation on release ws 4 in owned projects 57/58/59 with the CLI 2.0.28 working tree; every value checked against a Python-computed fixture key",
+        "sha256": "c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4",
         "command_id": "dataset.list",
         "exit_status": 0
       },
-      "evidence_version": "2.0.18"
+      "evidence_version": "2.0.28"
     },
     {
       "capability_id": "REL-192",
@@ -4472,7 +4472,7 @@
       "capability_id": "REL-201",
       "capability": "Get dataview data",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Default trim: rows_returned 3, rows_total_in_page 3, truncated false; with limit 2: rows_returned 2, truncated true. Single invocation only.",
+      "remarks": "Partial bounded evidence only; ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Paged reads (limit up to 500) used for every value check; envelope data.data rows keyed by display name. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewData",
       "method": "GET",
@@ -4483,14 +4483,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
-        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
-        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
+        "artifact": "docs/capability-evidence/ilg-sim-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ilg-sim-20260919/SUMMARY.md",
+        "scope": "ILG simulation on release ws 4 in owned projects 57/58/59 with the CLI 2.0.28 working tree; every value checked against a Python-computed fixture key",
+        "sha256": "c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4",
         "command_id": "view.data.get",
         "exit_status": 0
       },
-      "evidence_version": "2.0.21"
+      "evidence_version": "2.0.28"
     },
     {
       "capability_id": "REL-202",
@@ -4722,7 +4722,7 @@
       "capability_id": "REL-211",
       "capability": "Get dataview pipeline exports information",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 read-only export-list call on retained view46/dataset29 returned a bounded empty page with unexpected offset50; no export was executed and Full support is not claimed.",
+      "remarks": "Partial bounded evidence only; ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Listed both internal_dataset exports with target_properties (DS_NAME, COLUMN_MAPPING, project fields). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineExports",
       "method": "GET",
@@ -4733,19 +4733,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "scope": "one retained view46/dataset29; empty exports with offset50 caveat; no export execution",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-211",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-110/view-export-list-46-parent-29-pypi-111.json",
-            "sha256": "dba010be08e4d2a2e5cb4e499a523127e8d83728c9f4c569c96ab23a3dcdac71",
-            "size_bytes": 1210,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/ilg-sim-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ilg-sim-20260919/SUMMARY.md",
+        "scope": "ILG simulation on release ws 4 in owned projects 57/58/59 with the CLI 2.0.28 working tree; every value checked against a Python-computed fixture key",
+        "sha256": "c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4",
+        "command_id": "view.export.list",
+        "exit_status": 0
       },
-      "evidence_version": null
+      "evidence_version": "2.0.28"
     },
     {
       "capability_id": "REL-212",
@@ -4775,7 +4770,7 @@
       "capability_id": "REL-213",
       "capability": "Get dataview pipeline items",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Published PyPI CLI 1.1.11 pipeline-items read on retained view46/dataset29 returned one bounded item; prior owned-view evidence is retained and no Full claim is made.",
+      "remarks": "Partial bounded evidence only; ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. fields=__full listed both export steps with sequence/status/execution times; the pre-existing step's timestamps did not move when a second send was appended. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetPipelineItems",
       "method": "GET",
@@ -4786,29 +4781,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/historical-release-index.md",
-        "report": "docs/capability-evidence/historical-release-index.md",
-        "related": [
-          "docs/capability-evidence/historical-release-index.md"
-        ],
-        "scope": "retained view46/dataset29 limit1 plus prior owned view5 evidence; read-only",
-        "archive_locator": "docs/capability-evidence/historical-release-index.md#REL-213",
-        "archived_git_paths": [
-          {
-            "archived_git_path": "docs/live-evidence-20260917/terra-core-batch-110/view-pipeline-items-46-parent-29-pypi-111.json",
-            "sha256": "dddd3cce58b1b713847f371571233070f0bb150f6592b8844f8c920f77c36c73",
-            "size_bytes": 1324,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          },
-          {
-            "archived_git_path": "docs/live-evidence-20260917/transform-next/items.json",
-            "sha256": "40d2ba63001de4524b8f275dac4613e956049e2423a5240167def75b1f812248",
-            "size_bytes": 810,
-            "archive_revision": "ab17a535ce9c08423f50f74488fe6e439bf11e39"
-          }
-        ]
+        "artifact": "docs/capability-evidence/ilg-sim-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ilg-sim-20260919/SUMMARY.md",
+        "scope": "ILG simulation on release ws 4 in owned projects 57/58/59 with the CLI 2.0.28 working tree; every value checked against a Python-computed fixture key",
+        "sha256": "c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4",
+        "command_id": "view.pipeline.items",
+        "exit_status": 0
       },
-      "evidence_version": "1.1.11-pypi"
+      "evidence_version": "2.0.28"
     },
     {
       "capability_id": "REL-214",
@@ -7527,7 +7507,7 @@
       "capability_id": "REL-335",
       "capability": "Create an empty v3 dashboard",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Created dashboard 62 (sequence 1). Single invocation only.",
+      "remarks": "Partial bounded evidence only; ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Two blank v3 dashboards bound to owned views (ids 63, 64). Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateBlankDashboard",
       "method": "POST",
@@ -7538,14 +7518,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
-        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
-        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
+        "artifact": "docs/capability-evidence/ilg-sim-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ilg-sim-20260919/SUMMARY.md",
+        "scope": "ILG simulation on release ws 4 in owned projects 57/58/59 with the CLI 2.0.28 working tree; every value checked against a Python-computed fixture key",
+        "sha256": "c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4",
         "command_id": "dashboard.create-blank",
         "exit_status": 0
       },
-      "evidence_version": "2.0.21"
+      "evidence_version": "2.0.28"
     },
     {
       "capability_id": "REL-336",
@@ -8212,7 +8192,7 @@
       "capability_id": "REL-365",
       "capability": "Descriptor data — future-request",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: completed, expected, results. endpoint works on v3 engine; returned structured per-id error (404 unknown descriptor id) for a fabricated descriptor id since no real descriptor id was discoverable via CLI reads Single invocation only; no error-path or variant coverage.",
+      "remarks": "Partial bounded evidence only; ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Evaluated baked descriptors by id with filter_state {Month: [start, end]}: countDistinct card = 111 unfiltered and 64 under a Q1 range (the fixture key; a summed per-cell count would read 83), sums and the volume-weighted rate matched the key; re-read 110 after the upstream filter. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "DescriptorData",
       "method": "POST",
@@ -8223,14 +8203,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
-        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
-        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "artifact": "docs/capability-evidence/ilg-sim-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ilg-sim-20260919/SUMMARY.md",
+        "scope": "ILG simulation on release ws 4 in owned projects 57/58/59 with the CLI 2.0.28 working tree; every value checked against a Python-computed fixture key",
+        "sha256": "c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4",
         "command_id": "dashboard.descriptor-data",
         "exit_status": 0
       },
-      "evidence_version": "2.0.12"
+      "evidence_version": "2.0.28"
     },
     {
       "capability_id": "REL-366",
@@ -8342,7 +8322,7 @@
       "capability_id": "REL-371",
       "capability": "Add pages structurally (no LLM turn)",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: added_page_ids, bake_job_id, message, sequence. added page p2 to D=52 after supplying --yes --confirm 52 (first attempt without confirmation correctly returned confirmation_required, exit 2) Single invocation only; no error-path or variant coverage. Also exercised successfully in the Haiku e2e run 2026-09-18 (CLI 2.0.13, see docs/capability-evidence/haiku-e2e-20260918/REPORT.md).",
+      "remarks": "Partial bounded evidence only; ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Needs --yes --confirm DASHBOARD_ID. body.params.pages[] takes PageAdd objects (title, focus{kpis}, charts[]); the route runs through the LLM guard and dropped unit.prefix on a money card ('nothing in this data says which currency') that canvas save had kept. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AddPages",
       "method": "POST",
@@ -8353,14 +8333,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/dashboard-sweep-20260918/results.jsonl",
-        "report": "docs/capability-evidence/dashboard-sweep-20260918/SUMMARY.md",
-        "scope": "dashboard sweep on release ws 4 / project 3 with public CLI 2.0.12; owned fixture dashboards 52/53/54 created and deleted; one invocation per command; baseline (dashboard 48, datasets 28-33) verified unchanged",
-        "sha256": "3d2df1d4bb1404c2837a49e0443ebacffd9c7ae1df672c21d30d8837c13e20ca",
+        "artifact": "docs/capability-evidence/ilg-sim-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ilg-sim-20260919/SUMMARY.md",
+        "scope": "ILG simulation on release ws 4 in owned projects 57/58/59 with the CLI 2.0.28 working tree; every value checked against a Python-computed fixture key",
+        "sha256": "c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4",
         "command_id": "dashboard.pages.add",
         "exit_status": 0
       },
-      "evidence_version": "2.0.12"
+      "evidence_version": "2.0.28"
     },
     {
       "capability_id": "REL-372",
@@ -9886,7 +9866,7 @@
       "capability_id": "REL-449",
       "capability": "Get dataview data",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Default trim: rows_returned 3, rows_total_in_page 3, truncated false; with limit 2: rows_returned 2, truncated true. Single invocation only.",
+      "remarks": "Partial bounded evidence only; ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Paged reads (limit up to 500) used for every value check; envelope data.data rows keyed by display name. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "GetDataviewDataPost",
       "method": "POST",
@@ -9897,14 +9877,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
-        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
-        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
+        "artifact": "docs/capability-evidence/ilg-sim-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ilg-sim-20260919/SUMMARY.md",
+        "scope": "ILG simulation on release ws 4 in owned projects 57/58/59 with the CLI 2.0.28 working tree; every value checked against a Python-computed fixture key",
+        "sha256": "c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4",
         "command_id": "view.data.get",
         "exit_status": 0
       },
-      "evidence_version": "2.0.21"
+      "evidence_version": "2.0.28"
     },
     {
       "capability_id": "REL-450",
@@ -10174,7 +10154,7 @@
       "capability_id": "REL-461",
       "capability": "Add a task in the pipeline",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; golden-data check golden-20260919 (CLI 2.0.18): typed transforms bulk-replace, convert-type, discard-duplicates, filter, join, pivot, set-values, text each run once on an owned fixture on release and read back with view data get against a known answer (values compared, not just exit codes). Earlier runs also proved fill-missing. Raw task_spec bodies beyond the typed transforms are not covered.",
+      "remarks": "Partial bounded evidence only; golden-data check golden-20260919 (CLI 2.0.18): typed transforms bulk-replace, convert-type, discard-duplicates, filter, join, pivot, set-values, text each run once on an owned fixture on release and read back with view data get against a known answer (values compared, not just exit codes). Earlier runs also proved fill-missing. Raw task_spec bodies beyond the typed transforms are not covered. ILG simulation 2026-09-19 (CLI 2.0.28): add-sql (single-view SQL task: CASE canonicaliser, DATE_TRUNC, GROUP BY, UNION ALL), three LEFT joins on a text key and a REMOVE filter each read back against a fixture key; add-sql result columns must be NUMERIC/TEXT/TIMESTAMPTZ and a second view in FROM is rejected.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AddTask",
       "method": "POST",
@@ -10200,8 +10180,10 @@
           "join",
           "pivot",
           "set-values",
-          "text"
-        ]
+          "text",
+          "add-sql"
+        ],
+        "also": "docs/capability-evidence/ilg-sim-20260919/results.jsonl sha256=c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4"
       },
       "evidence_version": "2.0.18"
     },
@@ -10418,7 +10400,7 @@
       "capability_id": "REL-471",
       "capability": "Upload file or folder",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Uploaded smoke.csv -> dataset 94 ready; dataview 116 (3 rows). Second call with --input {\"append_to_ds_id\": 94} returned dataset 95 ready and view 116 row_count went 3 -> 6: append path works (the 2.0.18 sweep's raw ValueError is gone). batch list on 94 shows batch 101 source combine_ds dataset 95. Single invocation only.",
+      "remarks": "Partial bounded evidence only; ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Three CSV uploads into a new source project; dates typed DATE without file-settings changes. Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "CreateFileDataset",
       "method": "POST",
@@ -10429,14 +10411,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/ergonomics-sweep-20260919/results.jsonl",
-        "report": "docs/capability-evidence/ergonomics-sweep-20260919/SUMMARY.md",
-        "scope": "ergonomics sweep on release ws 4 with the CLI 2.0.21 working tree: session defaults only (no --project/--output/--no-input); own projects 44-47 created and deleted in the run (datasets 91-96, dataviews 113-116, parameter 2, data check 5, dashboard 62); project 3 read once, never mutated",
-        "sha256": "36012ca37d2b2761058cc433f37cea1a8411d8384bd25d1454dcf5bc2893c4f6",
+        "artifact": "docs/capability-evidence/ilg-sim-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ilg-sim-20260919/SUMMARY.md",
+        "scope": "ILG simulation on release ws 4 in owned projects 57/58/59 with the CLI 2.0.28 working tree; every value checked against a Python-computed fixture key",
+        "sha256": "c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4",
         "command_id": "file.upload",
         "exit_status": 0
       },
-      "evidence_version": "2.0.21"
+      "evidence_version": "2.0.28"
     },
     {
       "capability_id": "REL-472",
@@ -11291,7 +11273,7 @@
       "capability_id": "REL-513",
       "capability": "Save the canvas (append a draft version)",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; dashboard re-verification 2026-09-18: exit 0 on release with CLI 2.0.14. CLI defect fixed, confirmed: dashboard canvas get -> save round-trip completed cleanly, sequence advanced 1->2, response {\"bake_job_id\":296,\"changed_tiles\":0,\"recomposed\":false,\"seeded_pages\":[],\"sequence\":2}. Caveat: this blank dashboard's canvas had style_tokens=null (not a dict), so the specific  Single invocation only.",
+      "remarks": "Partial bounded evidence only; ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Authored a canvas from a blank one: page-level focus.kpis (sum with unit.prefix GBP, and a countDistinct card), added bar (measure+measure2), hbar, line on a derived ratio measure (canvas.derived), table with columns, range and multi filters. Root-level focus is persisted but ignored when pages exist: the bake reads the active page. A ratio dict on added[].measure is rejected with a pydantic detail; derived[] is t... Single invocation only.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "SaveCanvas",
       "method": "PUT",
@@ -11302,14 +11284,14 @@
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
       "evidence": {
-        "artifact": "docs/capability-evidence/dashboard-reverify-20260918/results.jsonl",
-        "report": "docs/capability-evidence/dashboard-reverify-20260918/SUMMARY.md",
-        "scope": "dashboard re-verification on release ws 4 / project 3 with CLI 2.0.14 build: owned dashboard 56 (create-blank on view 45), publicly shared + publish-presentation to reach url routes, then unshared, trashed, deleted; baseline verified",
-        "sha256": "5fbf6cb406576e8e8f7329d4be95b427927d60ff88f4a9f3f4211978f74219cc",
+        "artifact": "docs/capability-evidence/ilg-sim-20260919/results.jsonl",
+        "report": "docs/capability-evidence/ilg-sim-20260919/SUMMARY.md",
+        "scope": "ILG simulation on release ws 4 in owned projects 57/58/59 with the CLI 2.0.28 working tree; every value checked against a Python-computed fixture key",
+        "sha256": "c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4",
         "command_id": "dashboard.canvas.save",
         "exit_status": 0
       },
-      "evidence_version": "2.0.14"
+      "evidence_version": "2.0.28"
     },
     {
       "capability_id": "REL-514",

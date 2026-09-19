@@ -358,7 +358,7 @@ commands:
   - CT-DASHBOARD-CANVAS-SAVE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Read the canvas with dashboard canvas get, edit, write back; a canvas with pages[] bakes the ACTIVE page (pages[i].focus / pages[i].added), a root-level focus is stored but produces no descriptors. focus.kpis entries are {field, agg, label, unit, decimals, filters}; agg countDistinct persists and bakes (ILG simulation 2026-09-19). added[].measure is a column name; a ratio goes in canvas.derived[] as {id, numerator, denominator} and is referenced by id from measure or a KPI field. Validation errors return the pydantic path (e.g. pages.0.added.2.measure). The response carries bake_job_id: job wait it, then dashboard canvas get for meta.figures (figure key -> descriptor id) and dashboard descriptor-data to evaluate. This raw route does not pass the LLM unit guard that pages add / chat edit apply.'
   reviewed_by: primary
 - command_id: dashboard.chat.edit
   command_path: dashboard chat edit
@@ -701,7 +701,7 @@ commands:
   - CT-DASHBOARD-CREATE-BLANK-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Input is {"params": {"dataview_id": VIEW_ID, "title": ...}} with --yes; returns {id, sequence}. The blank canvas has one page (p1) and no figures: author it with dashboard canvas get -> edit -> dashboard canvas save or dashboard pages add. One dataview per dashboard.'
   reviewed_by: primary
 - command_id: dashboard.data.draft
   command_path: dashboard data draft
@@ -854,8 +854,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard descriptor-data DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard descriptor-data 123 --input ''{"body": {"params": {"descriptor_ids":
-    ["resource-123"]}}}'''
+  agent_example: 'mammoth dashboard descriptor-data 123 --input ''{"body": {"params": {"descriptor_ids": ["ef28f9bcc263c0f7"], "filter_state": {"Month": ["2025-01-01", "2025-03-31"]}}}}'''
   unit_tests:
   - UT-DASHBOARD-DESCRIPTOR-DATA
   contract_tests:
@@ -864,7 +863,7 @@ commands:
   - CT-DASHBOARD-DESCRIPTOR-DATA-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Evaluates baked descriptors by id. Ids come from dashboard canvas get data.meta.figures[<page>:<kpi|add>:<n>].descriptors.value (rows for a table figure) and data.meta.filters. body.params.filter_state is {"<filter field>": value} against the canvas''''s declared filters: a range control takes [start, end] (dates as YYYY-MM-DD), categorical controls a list of values; an undeclared field is rejected. Results are {descriptor_id: {status, value | data}}. Used to prove a countDistinct card under a Month range (ILG simulation 2026-09-19).'
   reviewed_by: primary
 - command_id: dashboard.duplicate
   command_path: dashboard duplicate
@@ -1290,7 +1289,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard pages add DASHBOARD_ID --help
-  agent_example: 'mammoth dashboard pages add 123 --input ''{"body": {"params": {"pages": [{}]}}}'''
+  agent_example: 'mammoth dashboard pages add 123 --input ''{"body": {"params": {"pages": [{"title": "By region", "focus": {"measure": "Revenue", "dim": "Region", "kpis": [{"field": "Revenue", "agg": "sum", "label": "Revenue"}]}, "charts": [{"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}]}]}}}'''
   unit_tests:
   - UT-DASHBOARD-PAGES-ADD
   contract_tests:
@@ -1299,7 +1298,7 @@ commands:
   - CT-DASHBOARD-PAGES-ADD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Requires --yes --confirm DASHBOARD_ID. body.params.pages is a list of PageAdd objects: {title, focus: {measure, dim, kpis: [...]}, charts: [{kind, title, dim, measure, agg}]}; the schema example''''s {} entry is not a usable page. The route runs through the LLM control guard: in the ILG simulation it dropped unit.prefix on a money card ("nothing in this data says which currency") that dashboard canvas save had kept, and reports that in data.message.'
   reviewed_by: primary
 - command_id: dashboard.pdf-artifact
   command_path: dashboard pdf-artifact

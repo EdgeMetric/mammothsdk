@@ -1,0 +1,348 @@
+Location,Absence Start,Employee Ref,Reason,Days
+HEAD OFFICE,2025-01-07,E0050,Sickness,1
+HEAD OFFICE,2025-01-28,E0005,Unplanned,1
+Head Office,2025-01-21,E0106,Unplanned,4
+HEAD OFFICE,2025-01-26,E0013,Unplanned,2
+HEAD OFFICE,2025-01-14,E0038,Unplanned,1
+HEAD OFFICE,2025-01-10,E0045,Sickness,3
+HEAD OFFICE,2025-01-20,E0117,Unplanned,4
+HEAD OFFICE,2025-01-24,E0109,Sickness,4
+Head Office,2025-02-04,E0056,Unplanned,4
+HEAD OFFICE,2025-02-19,E0091,Sickness,1
+Head Office,2025-02-06,E0074,Unplanned,1
+HEAD OFFICE,2025-03-25,E0026,Sickness,1
+HEAD OFFICE,2025-03-16,E0045,Unplanned,2
+Head Office,2025-03-27,E0064,Unplanned,3
+Head Office,2025-03-10,E0074,Sickness,2
+HEAD OFFICE,2025-03-21,E0064,Sickness,4
+Head Office,2025-03-18,E0101,Sickness,3
+HEAD OFFICE,2025-03-13,E0046,Unplanned,1
+Head Office,2025-04-12,E0114,Sickness,3
+HEAD OFFICE,2025-04-18,E0034,Unplanned,2
+Head Office,2025-04-21,E0049,Sickness,4
+Head Office,2025-04-25,E0017,Unplanned,5
+HEAD OFFICE,2025-04-19,E0083,Unplanned,5
+Head Office,2025-04-15,E0020,Unplanned,5
+HEAD OFFICE,2025-05-15,E0042,Unplanned,3
+HEAD OFFICE,2025-05-11,E0075,Unplanned,2
+HEAD OFFICE,2025-05-10,E0065,Unplanned,5
+Head Office,2025-05-08,E0020,Unplanned,3
+Head Office,2025-05-06,E0078,Sickness,3
+HEAD OFFICE,2025-05-24,E0025,Sickness,2
+HEAD OFFICE,2025-05-13,E0085,Sickness,2
+HEAD OFFICE,2025-05-10,E0102,Unplanned,3
+Head Office,2025-06-04,E0014,Unplanned,2
+HEAD OFFICE,2025-06-02,E0114,Sickness,4
+Head Office,2025-06-23,E0110,Sickness,5
+HEAD OFFICE,2025-06-01,E0081,Sickness,3
+HEAD OFFICE,2025-07-24,E0095,Sickness,4
+Head Office,2025-07-24,E0090,Unplanned,4
+HEAD OFFICE,2025-07-24,E0109,Unplanned,5
+HEAD OFFICE,2025-07-06,E0110,Unplanned,1
+HEAD OFFICE,2025-07-09,E0059,Unplanned,1
+HEAD OFFICE,2025-07-26,E0115,Unplanned,2
+Head Office,2025-07-16,E0033,Unplanned,1
+HEAD OFFICE,2025-08-22,E0110,Unplanned,2
+Head Office,2025-08-25,E0115,Sickness,4
+HEAD OFFICE,2025-08-04,E0107,Sickness,3
+HEAD OFFICE,2025-08-23,E0070,Sickness,5
+HEAD OFFICE,2025-08-19,E0045,Unplanned,5
+Head Office,2025-08-17,E0027,Sickness,3
+HEAD OFFICE,2025-08-24,E0067,Unplanned,2
+HEAD OFFICE,2025-09-25,E0024,Sickness,5
+Head Office,2025-09-09,E0046,Unplanned,4
+HEAD OFFICE,2025-09-03,E0052,Unplanned,4
+Head Office,2025-09-12,E0081,Unplanned,3
+HEAD OFFICE,2025-09-24,E0014,Unplanned,5
+Head Office,2025-09-13,E0029,Unplanned,2
+HEAD OFFICE,2025-09-25,E0022,Sickness,2
+Head Office,2025-09-24,E0061,Sickness,2
+Head Office,2025-10-27,E0086,Unplanned,4
+Head Office,2025-10-21,E0038,Sickness,4
+Head Office,2025-10-08,E0046,Unplanned,4
+HEAD OFFICE,2025-10-14,E0088,Unplanned,2
+HEAD OFFICE,2025-10-24,E0062,Unplanned,3
+HEAD OFFICE,2025-11-16,E0084,Unplanned,4
+Head Office,2025-11-22,E0080,Unplanned,2
+HEAD OFFICE,2025-11-13,E0119,Sickness,1
+Head Office,2025-11-11,E0106,Sickness,5
+Head Office,2025-12-01,E0045,Unplanned,1
+Head Office,2025-12-21,E0027,Unplanned,3
+HEAD OFFICE,2025-12-05,E0078,Sickness,2
+HEAD OFFICE,2025-12-26,E0100,Sickness,2
+HEAD OFFICE,2025-12-18,E0116,Sickness,5
+Head Office,2025-12-26,E0115,Sickness,5
+Head Office,2025-12-10,E0101,Sickness,4
+HEAD OFFICE,2025-12-03,E0089,Unplanned,4
+Head Office,2025-12-18,E0086,Sickness,3
+SHREWSBURY HIGH SCHOOL,2025-01-16,E0030,Unplanned,5
+Shrewsbury High School,2025-01-05,E0008,Unplanned,4
+Shrewsbury High School,2025-01-18,E0032,Unplanned,1
+SHREWSBURY HIGH SCHOOL,2025-01-15,E0021,Unplanned,5
+SHREWSBURY HIGH SCHOOL,2025-01-27,E0064,Unplanned,3
+Shrewsbury High School,2025-01-22,E0055,Sickness,2
+SHREWSBURY HIGH SCHOOL,2025-02-01,E0047,Sickness,5
+SHREWSBURY HIGH SCHOOL,2025-02-11,E0006,Sickness,5
+Shrewsbury High School,2025-02-05,E0062,Sickness,2
+Shrewsbury High School,2025-02-05,E0092,Unplanned,1
+SHREWSBURY HIGH SCHOOL,2025-02-11,E0111,Unplanned,5
+SHREWSBURY HIGH SCHOOL,2025-02-07,E0071,Unplanned,4
+Shrewsbury High School,2025-02-18,E0044,Sickness,3
+Shrewsbury High School,2025-02-16,E0038,Unplanned,3
+SHREWSBURY HIGH SCHOOL,2025-03-12,E0035,Sickness,4
+Shrewsbury High School,2025-03-07,E0102,Unplanned,3
+SHREWSBURY HIGH SCHOOL,2025-03-21,E0017,Sickness,1
+SHREWSBURY HIGH SCHOOL,2025-03-13,E0052,Unplanned,5
+Shrewsbury High School,2025-03-04,E0007,Sickness,1
+SHREWSBURY HIGH SCHOOL,2025-03-16,E0025,Unplanned,1
+SHREWSBURY HIGH SCHOOL,2025-03-18,E0101,Unplanned,4
+SHREWSBURY HIGH SCHOOL,2025-04-23,E0019,Unplanned,5
+SHREWSBURY HIGH SCHOOL,2025-04-07,E0113,Sickness,4
+SHREWSBURY HIGH SCHOOL,2025-04-04,E0081,Unplanned,2
+Shrewsbury High School,2025-04-25,E0112,Sickness,1
+SHREWSBURY HIGH SCHOOL,2025-04-05,E0048,Unplanned,5
+Shrewsbury High School,2025-04-10,E0091,Sickness,4
+Shrewsbury High School,2025-04-14,E0005,Unplanned,5
+SHREWSBURY HIGH SCHOOL,2025-05-02,E0064,Sickness,4
+SHREWSBURY HIGH SCHOOL,2025-05-13,E0074,Unplanned,1
+SHREWSBURY HIGH SCHOOL,2025-05-20,E0002,Unplanned,2
+Shrewsbury High School,2025-06-04,E0099,Sickness,4
+SHREWSBURY HIGH SCHOOL,2025-06-21,E0028,Sickness,4
+Shrewsbury High School,2025-06-22,E0001,Sickness,1
+SHREWSBURY HIGH SCHOOL,2025-06-05,E0028,Unplanned,1
+SHREWSBURY HIGH SCHOOL,2025-06-08,E0036,Unplanned,2
+Shrewsbury High School,2025-06-25,E0119,Unplanned,2
+Shrewsbury High School,2025-07-21,E0098,Unplanned,4
+SHREWSBURY HIGH SCHOOL,2025-07-09,E0059,Sickness,1
+Shrewsbury High School,2025-07-21,E0002,Unplanned,5
+Shrewsbury High School,2025-07-10,E0011,Unplanned,5
+SHREWSBURY HIGH SCHOOL,2025-07-27,E0022,Unplanned,5
+Shrewsbury High School,2025-07-19,E0008,Unplanned,4
+SHREWSBURY HIGH SCHOOL,2025-07-05,E0061,Sickness,3
+Shrewsbury High School,2025-07-26,E0083,Unplanned,4
+SHREWSBURY HIGH SCHOOL,2025-08-09,E0100,Unplanned,3
+Shrewsbury High School,2025-08-20,E0038,Unplanned,5
+SHREWSBURY HIGH SCHOOL,2025-08-24,E0043,Sickness,2
+SHREWSBURY HIGH SCHOOL,2025-08-19,E0077,Unplanned,2
+Shrewsbury High School,2025-08-13,E0049,Unplanned,2
+Shrewsbury High School,2025-08-23,E0104,Sickness,3
+Shrewsbury High School,2025-09-19,E0035,Sickness,3
+Shrewsbury High School,2025-09-28,E0107,Unplanned,2
+SHREWSBURY HIGH SCHOOL,2025-09-26,E0036,Unplanned,4
+SHREWSBURY HIGH SCHOOL,2025-09-18,E0045,Unplanned,4
+Shrewsbury High School,2025-09-26,E0103,Unplanned,2
+Shrewsbury High School,2025-10-13,E0078,Unplanned,2
+Shrewsbury High School,2025-10-25,E0119,Sickness,4
+SHREWSBURY HIGH SCHOOL,2025-10-18,E0059,Unplanned,1
+Shrewsbury High School,2025-10-17,E0030,Unplanned,5
+Shrewsbury High School,2025-10-19,E0042,Sickness,2
+Shrewsbury High School,2025-11-26,E0025,Unplanned,3
+SHREWSBURY HIGH SCHOOL,2025-11-12,E0047,Unplanned,5
+Shrewsbury High School,2025-11-02,E0110,Unplanned,3
+Shrewsbury High School,2025-11-21,E0111,Unplanned,1
+SHREWSBURY HIGH SCHOOL,2025-12-12,E0041,Unplanned,5
+Shrewsbury High School,2025-12-02,E0078,Sickness,5
+SHREWSBURY HIGH SCHOOL,2025-12-07,E0063,Unplanned,3
+Shrewsbury High School,2025-12-15,E0055,Unplanned,5
+Eaton End School,2025-01-11,E0033,Sickness,2
+Eaton End,2025-01-02,E0049,Sickness,5
+Eaton End School,2025-01-15,E0048,Unplanned,1
+Eaton End School,2025-01-13,E0111,Sickness,1
+Eaton End School,2025-02-21,E0041,Sickness,5
+Eaton End,2025-02-28,E0051,Sickness,3
+Eaton End School,2025-02-08,E0031,Sickness,1
+Eaton End School,2025-02-02,E0033,Unplanned,1
+Eaton End School,2025-02-09,E0108,Unplanned,4
+Eaton End,2025-03-25,E0013,Sickness,2
+Eaton End School,2025-03-19,E0087,Unplanned,4
+Eaton End School,2025-03-16,E0098,Unplanned,3
+Eaton End,2025-04-16,E0050,Unplanned,2
+Eaton End,2025-04-05,E0057,Unplanned,1
+Eaton End School,2025-04-07,E0060,Sickness,2
+Eaton End School,2025-04-03,E0119,Unplanned,3
+Eaton End School,2025-04-25,E0114,Unplanned,1
+Eaton End,2025-05-03,E0108,Unplanned,3
+Eaton End School,2025-05-16,E0042,Sickness,3
+Eaton End,2025-05-24,E0019,Sickness,2
+Eaton End,2025-05-05,E0092,Unplanned,2
+Eaton End,2025-05-08,E0035,Sickness,1
+Eaton End School,2025-05-10,E0035,Unplanned,2
+Eaton End,2025-06-15,E0063,Unplanned,1
+Eaton End School,2025-06-02,E0020,Unplanned,2
+Eaton End,2025-06-10,E0072,Sickness,3
+Eaton End,2025-06-12,E0097,Unplanned,3
+Eaton End School,2025-06-04,E0031,Unplanned,3
+Eaton End,2025-07-27,E0115,Unplanned,3
+Eaton End School,2025-07-01,E0019,Unplanned,5
+Eaton End School,2025-07-15,E0044,Sickness,5
+Eaton End,2025-07-14,E0037,Sickness,4
+Eaton End,2025-07-06,E0028,Sickness,2
+Eaton End School,2025-07-23,E0067,Sickness,2
+Eaton End School,2025-08-20,E0011,Unplanned,4
+Eaton End,2025-08-07,E0098,Sickness,5
+Eaton End School,2025-08-26,E0086,Sickness,5
+Eaton End,2025-08-03,E0040,Unplanned,5
+Eaton End School,2025-08-02,E0053,Unplanned,3
+Eaton End,2025-08-21,E0043,Unplanned,1
+Eaton End,2025-08-25,E0002,Unplanned,2
+Eaton End,2025-09-06,E0086,Unplanned,3
+Eaton End,2025-09-12,E0005,Unplanned,5
+Eaton End,2025-09-17,E0110,Unplanned,5
+Eaton End,2025-09-23,E0010,Sickness,3
+Eaton End School,2025-09-13,E0100,Unplanned,1
+Eaton End School,2025-09-24,E0038,Unplanned,4
+Eaton End,2025-09-26,E0066,Unplanned,2
+Eaton End,2025-09-03,E0003,Sickness,5
+Eaton End,2025-09-10,E0024,Unplanned,5
+Eaton End,2025-10-23,E0004,Unplanned,2
+Eaton End,2025-10-20,E0034,Unplanned,5
+Eaton End School,2025-10-23,E0060,Unplanned,1
+Eaton End School,2025-10-23,E0045,Sickness,1
+Eaton End,2025-10-16,E0035,Unplanned,5
+Eaton End,2025-10-04,E0098,Sickness,4
+Eaton End,2025-10-19,E0114,Sickness,2
+Eaton End School,2025-10-15,E0019,Unplanned,4
+Eaton End School,2025-10-01,E0022,Unplanned,4
+Eaton End School,2025-11-20,E0054,Unplanned,1
+Eaton End School,2025-11-02,E0051,Unplanned,3
+Eaton End,2025-11-11,E0052,Unplanned,4
+Eaton End School,2025-11-26,E0108,Unplanned,4
+Eaton End School,2025-11-11,E0109,Unplanned,2
+Eaton End School,2025-11-08,E0088,Unplanned,1
+Eaton End,2025-11-06,E0047,Sickness,3
+Eaton End,2025-11-22,E0056,Sickness,2
+Eaton End School,2025-12-25,E0054,Unplanned,1
+Eaton End School,2025-12-02,E0104,Sickness,5
+Eaton End School,2025-12-20,E0035,Unplanned,5
+Eaton End School,2025-12-20,E0104,Sickness,3
+Northwood Prep,2025-01-08,E0067,Sickness,3
+Northwood Prep,2025-01-21,E0015,Sickness,1
+Northwood Prep,2025-01-17,E0008,Unplanned,1
+Northwood Prep,2025-02-05,E0076,Unplanned,1
+Northwood Prep,2025-02-10,E0066,Unplanned,5
+Northwood Prep,2025-02-24,E0037,Sickness,5
+Northwood Prep,2025-02-20,E0037,Unplanned,5
+Northwood Prep,2025-02-07,E0029,Unplanned,3
+Northwood Prep,2025-02-10,E0059,Unplanned,4
+Northwood Prep,2025-03-08,E0105,Unplanned,2
+Northwood Prep,2025-03-13,E0025,Unplanned,4
+Northwood Prep,2025-03-06,E0002,Sickness,3
+Northwood Prep,2025-03-09,E0072,Unplanned,2
+Northwood Prep,2025-03-01,E0038,Sickness,5
+Northwood Prep,2025-03-12,E0009,Unplanned,1
+Northwood Prep,2025-04-12,E0050,Unplanned,1
+Northwood Prep,2025-04-22,E0067,Unplanned,2
+Northwood Prep,2025-04-12,E0054,Sickness,2
+Northwood Prep,2025-04-09,E0079,Unplanned,1
+Northwood Prep,2025-04-25,E0095,Unplanned,3
+Northwood Prep,2025-04-21,E0101,Unplanned,2
+Northwood Prep,2025-04-01,E0053,Unplanned,5
+Northwood Prep,2025-05-19,E0016,Sickness,4
+Northwood Prep,2025-05-28,E0109,Unplanned,5
+Northwood Prep,2025-05-15,E0015,Unplanned,4
+Northwood Prep,2025-05-10,E0037,Unplanned,4
+Northwood Prep,2025-05-13,E0068,Unplanned,3
+Northwood Prep,2025-05-28,E0001,Unplanned,4
+Northwood Prep,2025-05-18,E0057,Unplanned,2
+Northwood Prep,2025-06-08,E0074,Sickness,3
+Northwood Prep,2025-06-20,E0042,Sickness,3
+Northwood Prep,2025-06-01,E0027,Sickness,1
+Northwood Prep,2025-06-16,E0033,Unplanned,5
+Northwood Prep,2025-06-20,E0100,Unplanned,5
+Northwood Prep,2025-06-22,E0106,Unplanned,4
+Northwood Prep,2025-07-22,E0046,Unplanned,4
+Northwood Prep,2025-07-17,E0002,Sickness,1
+Northwood Prep,2025-07-13,E0053,Unplanned,5
+Northwood Prep,2025-07-07,E0119,Unplanned,4
+Northwood Prep,2025-07-20,E0052,Unplanned,3
+Northwood Prep,2025-07-27,E0089,Sickness,2
+Northwood Prep,2025-08-03,E0041,Unplanned,5
+Northwood Prep,2025-08-10,E0023,Unplanned,3
+Northwood Prep,2025-08-17,E0106,Unplanned,2
+Northwood Prep,2025-08-17,E0068,Sickness,5
+Northwood Prep,2025-08-06,E0115,Sickness,5
+Northwood Prep,2025-09-21,E0014,Unplanned,1
+Northwood Prep,2025-09-26,E0089,Sickness,3
+Northwood Prep,2025-09-01,E0091,Unplanned,4
+Northwood Prep,2025-09-01,E0108,Unplanned,1
+Northwood Prep,2025-09-25,E0026,Unplanned,5
+Northwood Prep,2025-09-18,E0035,Unplanned,2
+Northwood Prep,2025-09-20,E0074,Sickness,2
+Northwood Prep,2025-10-04,E0067,Sickness,1
+Northwood Prep,2025-10-17,E0010,Unplanned,4
+Northwood Prep,2025-10-26,E0079,Sickness,1
+Northwood Prep,2025-10-11,E0088,Sickness,2
+Northwood Prep,2025-11-09,E0036,Unplanned,1
+Northwood Prep,2025-11-19,E0110,Sickness,3
+Northwood Prep,2025-11-13,E0025,Sickness,1
+Northwood Prep,2025-11-19,E0029,Sickness,4
+Northwood Prep,2025-11-08,E0007,Sickness,1
+Northwood Prep,2025-12-06,E0120,Unplanned,1
+Northwood Prep,2025-12-15,E0116,Unplanned,4
+Northwood Prep,2025-12-16,E0078,Sickness,2
+Northwood Prep,2025-12-23,E0087,Unplanned,2
+Riverside Academy,2025-01-23,E0040,Unplanned,1
+Riverside Academy,2025-01-03,E0102,Sickness,2
+Riverside Academy,2025-01-01,E0046,Unplanned,4
+Riverside Academy,2025-01-11,E0072,Unplanned,4
+Riverside Academy,2025-01-03,E0043,Sickness,4
+Riverside Academy,2025-01-18,E0106,Sickness,4
+Riverside Academy,2025-02-08,E0060,Unplanned,1
+Riverside Academy,2025-02-11,E0036,Sickness,2
+Riverside Academy,2025-02-07,E0091,Unplanned,5
+Riverside Academy,2025-02-18,E0107,Unplanned,4
+Riverside Academy,2025-03-06,E0102,Unplanned,3
+Riverside Academy,2025-03-13,E0028,Unplanned,5
+Riverside Academy,2025-03-16,E0027,Unplanned,2
+Riverside Academy,2025-03-22,E0030,Sickness,3
+Riverside Academy,2025-03-19,E0077,Unplanned,5
+Riverside Academy,2025-03-17,E0032,Sickness,2
+Riverside Academy,2025-03-22,E0112,Unplanned,1
+Riverside Academy,2025-03-24,E0070,Unplanned,1
+Riverside Academy,2025-03-05,E0085,Unplanned,1
+Riverside Academy,2025-04-06,E0091,Sickness,3
+Riverside Academy,2025-04-04,E0025,Sickness,5
+Riverside Academy,2025-04-17,E0117,Unplanned,2
+Riverside Academy,2025-04-03,E0009,Sickness,3
+Riverside Academy,2025-04-13,E0017,Unplanned,3
+Riverside Academy,2025-04-15,E0052,Unplanned,2
+Riverside Academy,2025-05-22,E0023,Unplanned,3
+Riverside Academy,2025-05-22,E0115,Unplanned,4
+Riverside Academy,2025-05-13,E0032,Unplanned,1
+Riverside Academy,2025-05-09,E0024,Unplanned,2
+Riverside Academy,2025-05-13,E0092,Sickness,5
+Riverside Academy,2025-06-10,E0056,Sickness,4
+Riverside Academy,2025-06-10,E0095,Unplanned,2
+Riverside Academy,2025-06-19,E0073,Unplanned,5
+Riverside Academy,2025-06-22,E0033,Unplanned,5
+Riverside Academy,2025-07-27,E0120,Unplanned,3
+Riverside Academy,2025-07-28,E0116,Unplanned,5
+Riverside Academy,2025-07-08,E0090,Unplanned,1
+Riverside Academy,2025-07-07,E0005,Unplanned,1
+Riverside Academy,2025-07-13,E0054,Unplanned,5
+Riverside Academy,2025-08-03,E0029,Unplanned,4
+Riverside Academy,2025-08-23,E0057,Unplanned,4
+Riverside Academy,2025-08-23,E0066,Sickness,4
+Riverside Academy,2025-08-25,E0087,Sickness,4
+Riverside Academy,2025-08-23,E0098,Unplanned,3
+Riverside Academy,2025-08-25,E0023,Unplanned,2
+Riverside Academy,2025-08-02,E0070,Sickness,3
+Riverside Academy,2025-08-07,E0045,Unplanned,3
+Riverside Academy,2025-08-23,E0018,Unplanned,4
+Riverside Academy,2025-09-17,E0091,Unplanned,4
+Riverside Academy,2025-09-12,E0018,Unplanned,3
+Riverside Academy,2025-09-05,E0018,Unplanned,5
+Riverside Academy,2025-09-27,E0031,Sickness,5
+Riverside Academy,2025-10-22,E0098,Unplanned,2
+Riverside Academy,2025-10-27,E0077,Unplanned,2
+Riverside Academy,2025-10-01,E0015,Unplanned,4
+Riverside Academy,2025-10-09,E0027,Unplanned,2
+Riverside Academy,2025-10-15,E0015,Sickness,2
+Riverside Academy,2025-10-19,E0042,Unplanned,3
+Riverside Academy,2025-11-01,E0072,Unplanned,4
+Riverside Academy,2025-11-11,E0011,Unplanned,5
+Riverside Academy,2025-11-16,E0034,Unplanned,4
+Riverside Academy,2025-11-11,E0025,Sickness,3
+Riverside Academy,2025-12-20,E0083,Unplanned,3
+Riverside Academy,2025-12-05,E0084,Unplanned,1
+Riverside Academy,2025-12-27,E0004,Sickness,3

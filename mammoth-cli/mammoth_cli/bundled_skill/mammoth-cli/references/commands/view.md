@@ -220,7 +220,7 @@ Example: `mammoth view data get 123 123`. Placeholders are illustrative; resolve
 
 Result: `ViewDataGetResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Default trim: rows_returned 3, rows_total_in_page 3, truncated false; with limit 2: rows_returned 2, truncated true. Single invocation only.
+Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Paged reads (limit up to 500) used for every value check; envelope data.data rows keyed by display name. Single invocation only.
 
 ### `view.data.query`
 
@@ -466,7 +466,7 @@ Example: `mammoth view export list 123 123`. Placeholders are illustrative; reso
 
 Result: `ViewExportListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI an earlier release — Published PyPI CLI 1.1.11 read-only export-list call on retained view46/dataset29 returned a bounded empty page with unexpected offset50; no export was executed and Full support is not claimed.
+Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Listed both internal_dataset exports with target_properties (DS_NAME, COLUMN_MAPPING, project fields). Single invocation only.
 
 ### `view.export.managed-s3`
 
@@ -702,7 +702,7 @@ Example: `mammoth view pipeline items 123`. Placeholders are illustrative; resol
 
 Result: `ViewPipelineItemsResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.11 — Published PyPI CLI 1.1.11 pipeline-items read on retained view46/dataset29 returned one bounded item; prior owned-view evidence is retained and no Full claim is made.
+Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. fields=__full listed both export steps with sequence/status/execution times; the pre-existing step's timestamps did not move when a second send was appended. Single invocation only.
 
 ### `view.pipeline.items-all`
 
@@ -772,7 +772,7 @@ Example: `mammoth view task delete 123 123`. Illustrative only: append `--yes` a
 
 Result: `ViewTaskDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Task 24 (created via view transform convert-type) deleted -> {future_id:347,status:processing,type_of_modification:discard_rule}. Verified via view task list 73: tasks:[] afterward. Single invocation…
+Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Removed a SQL task that had run on the wrong intermediate shape; view returned to the previous columns and row count. Single invocation only.
 
 ### `view.task.get`
 
@@ -832,7 +832,7 @@ Example: `mammoth view transform add-sql 123 --input '{"query": "SELECT region, 
 
 Result: `ViewTransformAddSqlResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.ai`
 

@@ -3708,7 +3708,7 @@ commands:
   - CT-VIEW-TRANSFORM-ADD-SQL-ERROR
   draft_test: LT-VIEW-TRANSFORM-ADD-SQL-DRAFT
   undo_test: LT-VIEW-TRANSFORM-ADD-SQL-UNDO
-  known_restrictions: null
+  known_restrictions: 'Single-view SQL: the only table is "view:VIEW_ID" (the view the task is added to); a second view in FROM or JOIN is rejected (5GENR010 "only one table allowed"), use view transform join for that. UNION ALL over the same view, CASE, DATE_TRUNC, GROUP BY and COUNT(DISTINCT ...) run on release. Result columns must be NUMERIC, TEXT or TIMESTAMPTZ: CAST(x AS DATE) is rejected (5GENR010 "Invalid column type DATE"); CAST(x AS TIMESTAMPTZ) or DATE_TRUNC land as a DATE column. The task replaces every column of the view; run it on a copy (view export dataset) when the source columns are still needed. Read the result back with view data get. Evidence: docs/capability-evidence/ilg-sim-20260919.'
   reviewed_by: primary
 - command_id: view.transform.ai
   command_path: view transform ai

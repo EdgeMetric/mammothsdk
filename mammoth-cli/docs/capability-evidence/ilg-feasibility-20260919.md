@@ -303,3 +303,20 @@ Red / hard blockers: cross-project send without CSV upload (Phase 1's core requi
 demonstrably safe add-only task-insertion contract, the `countDistinct`-survives-a-filter KPI card
 (trap 1, the brief's own "sharpest single check"), month-bucketing via any transform actually proven
 on release, and the window-function transform the DISTINCTCOUNT fix depends on.
+
+---
+
+## Addendum 2026-09-19 — live outcome
+
+The simulation in `ilg-sim-20260919/SUMMARY.md` ran the brief's shape on
+release with CLI 2.0.28: C1 (cross-project send) is closed by
+`view export dataset ... target_project_id` (SDK 0.7.13); C2 is closed for
+the append case (existing export untouched, no precondition yet); C3 is
+closed through `dashboard canvas save` (a `countDistinct` card persisted,
+baked and evaluated to the true distinct count under a Month range; a
+derived ratio measure for the rate chart; `unit.prefix` on money cards
+only), with the caveat that `pages add` / chat routes still pass the LLM
+guard; C4 is closed by `dashboard canvas get` → `meta.figures` →
+`dashboard descriptor-data`. `add-sql` is the per-fact conform route
+(single view; result types NUMERIC/TEXT/TIMESTAMPTZ). The production-readiness
+page carries the updated list.

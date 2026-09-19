@@ -288,6 +288,43 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     },
     # The web app posts {condition, limit: null}; an empty body is 4GENR007.
     "view.derivative.data": {"body": {"limit": None}},
+    # pages[] takes PageAdd objects; the bare {} the schema suggests adds an
+    # empty page. focus.kpis and charts use the canvas vocabulary.
+    "dashboard.pages.add": {
+        "body": {
+            "params": {
+                "pages": [
+                    {
+                        "title": "By region",
+                        "focus": {
+                            "measure": "Revenue",
+                            "dim": "Region",
+                            "kpis": [{"field": "Revenue", "agg": "sum", "label": "Revenue"}],
+                        },
+                        "charts": [
+                            {
+                                "kind": "hbar",
+                                "title": "Revenue by region",
+                                "dim": "Region",
+                                "measure": "Revenue",
+                                "agg": "sum",
+                            }
+                        ],
+                    }
+                ]
+            }
+        }
+    },
+    # Ids come from dashboard canvas get -> data.meta.figures; filter_state
+    # keys are declared canvas filters (range control: [start, end]).
+    "dashboard.descriptor-data": {
+        "body": {
+            "params": {
+                "descriptor_ids": ["ef28f9bcc263c0f7"],
+                "filter_state": {"Month": ["2025-01-01", "2025-03-31"]},
+            }
+        }
+    },
     # The backend accepts NUMERIC, TEXT or DATE (4PARM008 otherwise).
     "parameter.create": {"param_type": "TEXT", "value": "Q3"},
     # The backend requires a placement ("Data check position must be given");

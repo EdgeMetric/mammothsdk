@@ -152,9 +152,7 @@ def test_size_limit_is_checked_before_parse(tmp_path: Path) -> None:
 def test_depth_limit_is_checked_before_parse(tmp_path: Path) -> None:
     path = tmp_path / "deep.json"
     path.write_text(
-        "{" * (input_loader.MAX_INPUT_DEPTH + 1)
-        + "0"
-        + "}" * (input_loader.MAX_INPUT_DEPTH + 1),
+        "{" * (input_loader.MAX_INPUT_DEPTH + 1) + "0" + "}" * (input_loader.MAX_INPUT_DEPTH + 1),
         encoding="utf-8",
     )
     with pytest.raises(CliError) as excinfo:
@@ -186,3 +184,17 @@ def test_stdin_source_is_read_once(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("sys.stdin", stream)
     assert load_input_document("-", "json") == {"k": "v"}
     assert stream.reads == 1
+
+
+def test_at_prefixed_path_reads_the_file(tmp_path: Path) -> None:
+    path = tmp_path / "doc.json"
+    path.write_text('{"name": "x"}', encoding="utf-8")
+    assert load_input_document(f"@{path}", None) == {"name": "x"}
+
+
+def test_at_prefixed_missing_file_error_quotes_the_typed_value(tmp_path: Path) -> None:
+    typed = f"@{tmp_path / 'absent.json'}"
+    with pytest.raises(CliError) as excinfo:
+        load_input_document(typed, None)
+    assert excinfo.value.code == "input_not_found"
+    assert typed in excinfo.value.message

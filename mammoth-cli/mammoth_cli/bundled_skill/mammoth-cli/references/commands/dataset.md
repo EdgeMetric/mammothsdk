@@ -130,7 +130,7 @@ Example: `mammoth dataset list`. Placeholders are illustrative; resolve IDs and 
 
 Result: `DatasetListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Empty result on this fixture. Confirmed all 3 owned datasets (85,86,87) gone before deleting the project. Single invocation only.
+Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Listed the datasets the sends created in the target project. Single invocation only.
 
 ### `dataset.rename`
 

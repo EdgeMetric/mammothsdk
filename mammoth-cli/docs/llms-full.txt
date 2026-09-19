@@ -310,7 +310,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dashboard delete` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.delete
   example: mammoth dashboard delete 123
 - `mammoth dashboard descriptor-data` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.descriptor_data
-  example: mammoth dashboard descriptor-data 123 --input '{"body": {"params": {"descriptor_ids": ["resource-123"]}}}'
+  example: mammoth dashboard descriptor-data 123 --input '{"body": {"params": {"descriptor_ids": ["ef28f9bcc263c0f7"], "filter_state": {"Month": ["2025-01-01", "2025-03-31"]}}}}'
 - `mammoth dashboard duplicate` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.duplicate
   example: mammoth dashboard duplicate 123
 - `mammoth dashboard exemplar extract` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.extract_exemplar
@@ -332,7 +332,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dashboard page plan` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.page_plan
   example: mammoth dashboard page plan 123 --input '{"body": {"params": {"intent": "Summarize revenue by region"}}}'
 - `mammoth dashboard pages add` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.add_pages
-  example: mammoth dashboard pages add 123 --input '{"body": {"params": {"pages": [{}]}}}'
+  example: mammoth dashboard pages add 123 --input '{"body": {"params": {"pages": [{"title": "By region", "focus": {"measure": "Revenue", "dim": "Region", "kpis": [{"field": "Revenue", "agg": "sum", "label": "Revenue"}]}, "charts": [{"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}]}]}}}'
 - `mammoth dashboard pdf export` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.pdf_export
   example: mammoth dashboard pdf export 123 --input '{"body": {"params": {"data": {}}}}'
 - `mammoth dashboard pdf-artifact` [read/none] -> mammoth.api.dashboards.DashboardsAPI.pdf_artifact

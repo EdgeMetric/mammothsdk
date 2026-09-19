@@ -1,5 +1,34 @@
 # CLI release provenance
 
+## 2.0.29 / SDK 0.7.13
+
+The ILG rebuild brief, simulated end to end on release
+(`docs/capability-evidence/ilg-sim-20260919/SUMMARY.md`), and what it taught
+the docs. SDK unchanged.
+
+- Proven live in owned projects 57/58/59: sends from two source projects
+  into a target as pipeline steps (re-run on upstream change, pre-existing
+  export untouched), `add-sql` conform per fact + three joins into a
+  mixed-grain consolidated table, `dashboard canvas save` with a
+  `countDistinct` KPI card, `measure2` bar, derived ratio line, table and
+  range/multi filters, `dashboard descriptor-data` under a Month range
+  (111 / 64 / 110 distinct staff against the fixture key), `dashboard pages
+  add`. All four gaps in the feasibility review are closed or narrowed;
+  `docs/production-readiness.md` carries the new list.
+- `--input @FILE` is accepted (curl/gh convention); an `@` value that names
+  no file still errors with the typed value.
+- Recipes: "Authoring a board from a blank canvas" (page-level focus,
+  derived measures, bindings read-back, `descriptor-data`), `add-sql` facts
+  (single view; NUMERIC/TEXT/TIMESTAMPTZ result types; UNION ALL). Manifest
+  `known_restrictions` on `view.transform.add-sql`, `dashboard.canvas.save`,
+  `dashboard.pages.add`, `dashboard.descriptor-data`,
+  `dashboard.create-blank`; runnable examples for `pages add` (PageAdd
+  objects, `--yes --confirm`) and `descriptor-data` (`filter_state`).
+- Matrix: 13 rows folded from the run; REL-461 `proven_transforms` gains
+  `add-sql`.
+
+PYPI_HASHES_PLACEHOLDER
+
 ## 2.0.28 / SDK 0.7.13
 
 Cross-project send, the first blocker in the ILG feasibility review, proven

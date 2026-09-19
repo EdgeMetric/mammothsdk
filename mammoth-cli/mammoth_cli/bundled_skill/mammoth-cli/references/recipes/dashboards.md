@@ -34,6 +34,54 @@ Page/widget schemas vary by release. Read each schema, use returned IDs, and
 verify the binding plus draft/published data after every mutation. A
 creation response alone is not proof of a usable published view.
 
+## Authoring a board from a blank canvas
+
+`create-blank` gives one empty page. Author it by reading the canvas,
+editing the **active page** (`pages[0]`; a root-level `focus` is stored but
+never baked when pages exist) and writing the whole object back:
+
+```bash
+mammoth dashboard create-blank --yes --input '{"params": {"dataview_id": VIEW_ID, "title": "Overview"}}'
+mammoth dashboard canvas get DASHBOARD_ID > canvas.json      # data.canvas is the object to edit
+# pages[0].focus  = {"measure": "Sales Actual", "dim": "Location",
+#                    "kpis": [{"field": "Sales Actual", "agg": "sum", "label": "Sales", "unit": {"prefix": "£"}, "decimals": 0},
+#                             {"field": "Employee Ref", "agg": "countDistinct", "label": "Distinct staff"}]}
+# pages[0].added  = [{"kind": "bar", "title": "Actual vs Budget by Month", "measure": "Sales Actual", "measure2": "Sales Budget",
+#                     "agg": "sum", "date_bucket": {"field": "Month", "unit": "month"}},
+#                    {"kind": "hbar", "title": "Sales by Location", "dim": "Location", "measure": "Sales Actual", "agg": "sum", "sort": "desc"},
+#                    {"kind": "line", "title": "Occupancy rate", "measure": "occupancy_rate", "date_bucket": {"field": "Month", "unit": "month"}},
+#                    {"kind": "table", "title": "Detail", "columns": ["Location", "Month", "Places"], "sort_by": "Month", "limit": 100}]
+# derived         = [{"id": "occupancy_rate", "label": "Occupancy rate", "numerator": "Occupied", "denominator": "Places"}]
+# filters         = [{"field": "Month", "control": "range", "label": "Month"}, {"field": "Location", "control": "multi"}]
+mammoth dashboard canvas save DASHBOARD_ID --input '{"body": {"params": {"canvas": <edited data.canvas>}}}'
+mammoth job wait BAKE_JOB_ID                                  # data.bake_job_id from the save
+```
+
+Rules the backend enforces (each returns the pydantic path on failure):
+`added[].measure` is a column name — a ratio lives in `canvas.derived[]` and
+is referenced by id; `focus.kpis[].agg` accepts `countDistinct` (the only
+correct aggregation for a "distinct people" card under a date filter);
+`unit.prefix` goes on money cards only. `dashboard pages add --yes --confirm
+ID --input '{"body": {"params": {"pages": [{"title": ..., "focus": {...},
+"charts": [...]}]}}}'` adds a page, but that route runs through the LLM
+guard and may drop a unit it cannot evidence (it says so in `data.message`);
+`canvas save` keeps what you wrote.
+
+**Read the bindings back, then the numbers.** `dashboard canvas get` returns
+`data.meta.figures` — `"p1:kpi:2": {"descriptors": {"value": "<id>"}}` per
+card and tile — and `data.plan.hints.kpis` with the agg per card. Evaluate
+ids with a filter:
+
+```bash
+mammoth dashboard descriptor-data DASHBOARD_ID --input '{"body": {"params": {
+  "descriptor_ids": ["<id>", "<id>"],
+  "filter_state": {"Month": ["2025-01-01", "2025-03-31"]}}}}'
+# -> data.results.<id>.value (scalar) or .data (rows); filter fields must be declared canvas filters
+```
+
+A card that reads the same with and without the filter, or a distinct count
+that equals a row count, is a wrong binding, not a data fact.
+
 ## Canvas, widget data and PDF
 
 Never save an invented canvas. Read it, change it, write it back:

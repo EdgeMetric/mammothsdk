@@ -157,6 +157,18 @@ def _read_bytes(input_file: str) -> bytes:
         ) from exc
 
 
+def _strip_at_prefix(input_file: str) -> str:
+    """Accept the ``@path`` file convention of curl and gh.
+
+    A value that starts with ``@`` and names an existing file is read from
+    that file; anything else (inline JSON, ``-``, a plain path) is returned
+    unchanged so an error still quotes what the caller typed.
+    """
+    if len(input_file) > 1 and input_file.startswith("@") and Path(input_file[1:]).is_file():
+        return input_file[1:]
+    return input_file
+
+
 def _read_text(input_file: str) -> str:
     """Read and strictly decode one input payload.
 
@@ -348,6 +360,7 @@ def load_input_document(input_file: str | None, input_format: str | None) -> dic
     """
     if input_file is None:
         return None
+    input_file = _strip_at_prefix(input_file)
     fmt = _resolve_format(input_file, input_format)
     document = _parse(_read_text(input_file), fmt)
     if not isinstance(document, dict):

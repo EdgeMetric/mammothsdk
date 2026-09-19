@@ -142,6 +142,18 @@ Prefer `pivot` over `add-sql` for a grouped summary when `capabilities.md`
 lists it as run on release; `add-sql` replaces every column of the view, so
 never run it on a deliverable view.
 
+`add-sql` facts from release: the only table is `"view:VIEW_ID"` (the view
+itself; a second view in FROM/JOIN is `5GENR010 only one table allowed` —
+join with `view transform join` afterwards); `CASE`, `DATE_TRUNC('month',
+col)`, `GROUP BY`, `COUNT(DISTINCT col)` and `UNION ALL` over the same view
+work; result columns must be NUMERIC, TEXT or TIMESTAMPTZ (`CAST(x AS DATE)`
+is rejected; `CAST(x || '-01' AS TIMESTAMPTZ)` turns a `YYYY-MM` text month
+into a date column). A location canonicaliser plus month bucketing plus
+per-cell aggregation is one `add-sql` per fact; a mixed-grain table (summary
+rows plus one row per entity with NULL measures, for a `countDistinct` card)
+is one `UNION ALL`. The worked run is
+`docs/capability-evidence/ilg-sim-20260919/SUMMARY.md`.
+
 Reject malformed fields with the structured error envelope and stop rather than
 guessing names. Verify exact display names, join multiplicity, math values and
 remote task/pipeline readback. Draft submit is not proof all tasks persisted:

@@ -70,7 +70,7 @@ Example: `mammoth dashboard canvas get 123`. Placeholders are illustrative; reso
 
 Result: `DashboardCanvasGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.12 — Published PyPI CLI 1.1.11 / SDK 0.7.1 draft canvas read succeeded for retained dashboard 48. One dashboard only; not Full. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: canvas, dashboard_id, meta, plan, specs. returned canv…
+Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Read back the authored canvas, plan.hints.kpis and meta.figures (figure key -> descriptor id) after each bake; used as the binding check the ILG brief requires. Single invocation only.
 
 ### `dashboard.canvas.restore`
 
@@ -90,7 +90,7 @@ Example: `mammoth dashboard canvas save 123 --input '{"body": {"params": {"canva
 
 Result: `DashboardCanvasSaveResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.14 — dashboard re-verification 2026-09-18: exit 0 on release with CLI 2.0.14. CLI defect fixed, confirmed: dashboard canvas get -> save round-trip completed cleanly, sequence advanced 1->2, response {"bake_job_id":296,"changed_tiles":0,"recomposed":false,"seeded_p…
+Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Authored a canvas from a blank one: page-level focus.kpis (sum with unit.prefix GBP, and a countDistinct card), added bar (measure+measure2), hbar, line on a derived ratio measure (canvas.derived),…
 
 ### `dashboard.chat.edit`
 
@@ -178,7 +178,7 @@ Example: `mammoth dashboard create-blank --input '{"params": {"dataview_id": 1}}
 
 Result: `DashboardCreateBlankResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 0 on release with CLI 2.0.21. Created dashboard 62 (sequence 1). Single invocation only.
+Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Two blank v3 dashboards bound to owned views (ids 63, 64). Single invocation only.
 
 ### `dashboard.data.draft`
 
@@ -214,11 +214,11 @@ Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 
 
 Run: `mammoth dashboard descriptor-data`. Exact input fields: `mammoth schema get dashboard.descriptor-data`.
 
-Example: `mammoth dashboard descriptor-data 123 --input '{"body": {"params": {"descriptor_ids": ["resource-123"]}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard descriptor-data 123 --input '{"body": {"params": {"descriptor_ids": ["ef28f9bcc263c0f7"], "filter_state": {"Month": ["2025-01-01", "2025-03-31"]}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardDescriptorDataResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: completed, expected, results. endpoint works on v3 engine; returned structured per-id error (404 unknown descriptor id) for a fabricated descriptor id since no real descriptor id was…
+Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Evaluated baked descriptors by id with filter_state {Month: [start, end]}: countDistinct card = 111 unfiltered and 64 under a Q1 range (the fixture key; a summed per-cell count would read 83), sums…
 
 ### `dashboard.duplicate`
 
@@ -258,7 +258,7 @@ Example: `mammoth dashboard get 123`. Placeholders are illustrative; resolve IDs
 
 Result: `DashboardGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.12 — Published PyPI CLI 1.1.11 read-only dashboard get on retained dashboard48 returned a bounded structural object; one retained scope does not establish Full support. Also: Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: auto_publish,…
+Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. auto_sync for the bound view showed last_synced_at after the upstream data change. Single invocation only.
 
 ### `dashboard.get-by-url`
 
@@ -324,11 +324,11 @@ Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0
 
 Run: `mammoth dashboard pages add`. Exact input fields: `mammoth schema get dashboard.pages.add`.
 
-Example: `mammoth dashboard pages add 123 --input '{"body": {"params": {"pages": [{}]}}}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth dashboard pages add 123 --input '{"body": {"params": {"pages": [{"title": "By region", "focus": {"measure": "Revenue", "dim": "Region", "kpis": [{"field": "Revenue", "agg": "sum", "label": "Revenue"}]}, "charts": [{"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}]}]}}}'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `DashboardPagesAddResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `returns_job`.
 
-Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: added_page_ids, bake_job_id, message, sequence. added page p2 to D=52 after supplying --yes --confirm 52 (first attempt without confirmation correctly returned confirmation_required,…
+Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Needs --yes --confirm DASHBOARD_ID. body.params.pages[] takes PageAdd objects (title, focus{kpis}, charts[]); the route runs through the LLM guard and dropped unit.prefix on a money card ('nothing…
 
 ### `dashboard.pdf-artifact`
 
