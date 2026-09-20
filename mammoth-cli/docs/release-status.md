@@ -26,7 +26,11 @@ unchanged.
 - Skill/docs: safety reference ("Rehearse before you write", "Add-only edits
   to a pipeline someone else may touch"), operations, input, `docs/safety.md`.
 
-PYPI_HASHES_PLACEHOLDER
+Published from deterministic local artifacts built from tag `cli-v2.0.30`
+(source commit `6bf3f43`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.30-py3-none-any.whl` sha256 `717a24eadb519c6c50c787e282edc016bcb8a31c593556ecd7cc47c29cb49fbb`
+- `mammoth_cli-2.0.30.tar.gz` sha256 `863b81347b325170843c471b20791ab12431816a68643f7322981633084fcc95`
 
 ## 2.0.29 / SDK 0.7.13
 
