@@ -84,6 +84,10 @@ def enforce_confirmation(
     """
     if policy == POLICY_NONE:
         return
+    if invocation.dry_run:
+        # Nothing is sent under --dry-run, so there is nothing to confirm; the
+        # report names the confirmation the real run will need.
+        return
 
     tty = sys.stdin.isatty() if is_tty is None else is_tty
     machine = invocation.output in MACHINE_OUTPUTS

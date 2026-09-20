@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.29
+version: 2.0.30
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines, dashboards, exports, and handoffs."
 ---
 
@@ -60,6 +60,8 @@ before the next step.
   '{"full": true}'` returns the dependency and display trees too.
 - Column inputs and expressions use the exact **display names** the view
   returns, never backend aliases.
+- `--dry-run` on any API-backed command resolves everything and reports the
+  request instead of sending it; use it before a write you are not sure of.
 - Destructive commands need `--yes --confirm ID`. Preserve requested
   deliverables; cleanup is exact-ID authorized and
   never means delete-all-owned-resources: delete only ids this run created,

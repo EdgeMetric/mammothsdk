@@ -932,7 +932,7 @@ Example: `mammoth view transform extract-date 123 --input '{"column": "Status", 
 
 Result: `ViewTransformExtractDateResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.fill-missing`
 
@@ -1112,7 +1112,7 @@ Example: `mammoth view transform window 123 --input '{"function": "ROW_NUMBER", 
 
 Result: `ViewTransformWindowResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.trash`
 

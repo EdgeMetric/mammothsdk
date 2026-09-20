@@ -1445,11 +1445,15 @@ def view_task_add(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"dataview_id": dataview_id, "task_spec": task_spec}
     assert document is not None
     _forward_optional(document, kwargs, ("dataset_id",))
-    with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
-        # Imported here: view_ops imports this module for the brief record helpers.
-        from mammoth_cli.commands.view_ops import reject_pipeline_reference_errors
+    # Imported here: view_ops imports this module for the brief record helpers.
+    from mammoth_cli.commands.view_ops import (
+        reject_pipeline_reference_errors,
+        require_expected_task_count,
+    )
 
+    with open_service(invocation) as (service, auth):
+        require_expected_task_count(service, dataview_id, kwargs.get("dataset_id"), document)
+        data = service.call(_symbol(invocation), **kwargs)
         reject_pipeline_reference_errors(service, dataview_id, kwargs.get("dataset_id"), data)
     return data, _meta(invocation, auth.workspace_id, None)
 

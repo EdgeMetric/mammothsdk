@@ -10154,7 +10154,7 @@
       "capability_id": "REL-461",
       "capability": "Add a task in the pipeline",
       "status": "Partial",
-      "remarks": "Partial bounded evidence only; golden-data check golden-20260919 (CLI 2.0.18): typed transforms bulk-replace, convert-type, discard-duplicates, filter, join, pivot, set-values, text each run once on an owned fixture on release and read back with view data get against a known answer (values compared, not just exit codes). Earlier runs also proved fill-missing. Raw task_spec bodies beyond the typed transforms are not covered. ILG simulation 2026-09-19 (CLI 2.0.28): add-sql (single-view SQL task: CASE canonicaliser, DATE_TRUNC, GROUP BY, UNION ALL), three LEFT joins on a text key and a REMOVE filter each read back against a fixture key; add-sql result columns must be NUMERIC/TEXT/TIMESTAMPTZ and a second view in FROM is rejected.",
+      "remarks": "Partial bounded evidence only; golden-data check golden-20260919 (CLI 2.0.18): typed transforms bulk-replace, convert-type, discard-duplicates, filter, join, pivot, set-values, text each run once on an owned fixture on release and read back with view data get against a known answer (values compared, not just exit codes). Earlier runs also proved fill-missing. Raw task_spec bodies beyond the typed transforms are not covered. ILG simulation 2026-09-19 (CLI 2.0.28): add-sql (single-view SQL task: CASE canonicaliser, DATE_TRUNC, GROUP BY, UNION ALL), three LEFT joins on a text key and a REMOVE filter each read back against a fixture key; add-sql result columns must be NUMERIC/TEXT/TIMESTAMPTZ and a second view in FROM is rejected. 2026-09-20 (CLI 2.0.30): extract-date (month component) and window (partitioned running SUM) read back against local recomputation; expected_task_count precondition and --dry-run exercised on the same routes.",
       "core_vs_misc": "CLI_CORE_WORKFLOW",
       "operation_id": "AddTask",
       "method": "POST",
@@ -10181,9 +10181,12 @@
           "pivot",
           "set-values",
           "text",
-          "add-sql"
+          "add-sql",
+          "extract-date",
+          "window"
         ],
-        "also": "docs/capability-evidence/ilg-sim-20260919/results.jsonl sha256=c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4"
+        "also": "docs/capability-evidence/ilg-sim-20260919/results.jsonl sha256=c4240d408faca64dba2f32996d0bb58a7885c945f7a98e030d5b4c0ec019fbf4",
+        "also_20260920": "docs/capability-evidence/dryrun-precondition-20260920/results.jsonl sha256=4381609381a96e8a713d2e26901f5a5d8611b5a8e32671401ddced8ffaffc4c3"
       },
       "evidence_version": "2.0.18"
     },

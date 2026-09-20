@@ -1260,3 +1260,80 @@ def test_sdk_raised_reference_error_is_enriched_the_same_way(
         )
     assert excinfo.value.code == view_ops_cmd.CODE_PIPELINE_REFERENCE_ERROR
     assert excinfo.value.recovery_commands == ["mammoth view task delete 132 107 --yes"]
+
+
+# -- expected_task_count precondition --------------------------------------
+
+
+def _filter_doc(tmp_path: Path, expected: object) -> str:
+    return _write(
+        tmp_path,
+        {
+            "expected_task_count": expected,
+            "filter_type": "REMOVE",
+            "condition": {"column": "Status", "operator": "EQ", "value": "x"},
+        },
+    )
+
+
+def test_expected_task_count_mismatch_refuses_the_write(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[view_ops_cmd._TASK_LIST_SYMBOL] = {"tasks": [{"id": 1}, {"id": 2}]}
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_transform_filter(
+            _inv(
+                "view.transform.filter",
+                extra_args=["132"],
+                resource_ref=_parent(132),
+                positionals={"view_id": "132"},
+                input_file=_filter_doc(tmp_path, 1),
+            )
+        )
+    error = excinfo.value
+    assert error.code == view_ops_cmd.CODE_PIPELINE_CHANGED
+    assert error.details["expected_task_count"] == 1
+    assert error.details["actual_task_count"] == 2
+    assert error.details["task_ids"] == [1, 2]
+    assert error.recovery_commands == ["mammoth view task list 132"]
+    # The precondition read carried the exact parent, and no write followed.
+    assert fake_service.call_log == [
+        (view_ops_cmd._TASK_LIST_SYMBOL, {"dataview_id": 132, "dataset_id": 122})
+    ]
+    assert fake_service.view_call_log == []
+
+
+def test_expected_task_count_match_lets_the_write_through_without_the_field(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[view_ops_cmd._TASK_LIST_SYMBOL] = {"tasks": [{"id": 1}, {"id": 2}]}
+    fake_service.view_responses[(132, "filter_rows")] = {"has_error": False}
+    view_ops_cmd.view_transform_filter(
+        _inv(
+            "view.transform.filter",
+            extra_args=["132"],
+            resource_ref=_parent(132),
+            positionals={"view_id": "132"},
+            input_file=_filter_doc(tmp_path, 2),
+        )
+    )
+    view_id, method, kwargs = fake_service.view_call_log[0]
+    assert (view_id, method) == (132, "filter_rows")
+    assert "expected_task_count" not in kwargs
+
+
+def test_expected_task_count_must_be_a_non_negative_integer(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_transform_filter(
+            _inv(
+                "view.transform.filter",
+                extra_args=["132"],
+                resource_ref=_parent(132),
+                positionals={"view_id": "132"},
+                input_file=_filter_doc(tmp_path, -1),
+            )
+        )
+    assert excinfo.value.code == "invalid_resource_context"
+    assert fake_service.call_log == []

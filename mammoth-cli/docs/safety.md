@@ -39,6 +39,24 @@ mammoth workspace delete --yes --confirm WORKSPACE_ID \
  
 ```
 
+## Dry runs and preconditions
+
+`--dry-run` is a global option on every API-backed command. The command is
+admitted, its parents resolved and its inputs validated against the live
+view exactly as in a real run; the SDK call that the command exists for is
+then reported instead of made (`data.dry_run: true`, `data.would_call`). The
+gate that stops it also stops any SDK write the command's manifest does not
+declare, so a dry run cannot mutate through a side path. Confirmation flags
+are not required for a dry run. Local commands (`auth`, `config`, `skill`,
+`context`, `upgrade`) send nothing and do not take the option.
+
+Pipeline writes (`view transform *`, `view task add`) accept
+`expected_task_count` in the input document. The CLI reads the view's task
+list immediately before the write and fails with `pipeline_changed` when the
+live count differs from the one given; the recovery command is the read that
+settles it. This is the precondition that makes "add only, never disturb an
+existing step" checkable on a pipeline other people also edit.
+
 ## Scope and display-name safety
 
 Use an explicit profile, workspace, project, and parent dataset/view wherever the

@@ -79,6 +79,13 @@ def open_service(invocation: Invocation) -> Iterator[tuple[MammothService, Resol
         profile=invocation.profile or profiles.get_selected(),
         progress=not policy.progress_disabled,
     )
+    if invocation.dry_run:
+        # The production service exposes the gate; a test double may not, and
+        # then the dry run is simply the double's own behaviour.
+        if hasattr(service, "gate"):
+            from mammoth_cli.runtime.dryrun import make_gate
+
+            service.gate = make_gate(invocation.command_id)
     try:
         yield service, auth
     finally:

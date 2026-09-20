@@ -13,6 +13,8 @@ mammoth view transform filter 1039 --project 180 \
 - `--input FILE` (or `--input @FILE`) reads a JSON or YAML file; the format
   is inferred from the extension.
 - `--input -` reads stdin; then `--input-format json|yaml` is required.
+- `--dry-run` admits and resolves the document, then reports the SDK call
+  instead of making it ([safety](safety.md)).
 - The top level must be a mapping. A bad path, format, or shape fails with exit
   code 2 and a stable error code.
 - Column references use display names returned by the exact view schema. Do not

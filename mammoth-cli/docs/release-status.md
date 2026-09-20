@@ -1,5 +1,33 @@
 # CLI release provenance
 
+## 2.0.30 / SDK 0.7.13
+
+The two safety items queued from the Loops/PostHog peer review, both proven
+live (`docs/capability-evidence/dryrun-precondition-20260920/`). SDK
+unchanged.
+
+- `--dry-run` (global option on every API-backed command): the command is
+  admitted, parents resolved, columns and conditions validated against the
+  live view, then the SDK call is reported as `data.would_call` instead of
+  made. The gate that stops it also stops any SDK write the command's
+  manifest does not declare, so a dry run cannot mutate through a side
+  path; reads pass. No confirmation flag is needed for a dry run.
+- `expected_task_count` on `view transform *` and `view task add`: the CLI
+  re-reads the task list right before the write and refuses with
+  `pipeline_changed` (exit 2, `actual_task_count`, `task_ids`, recovery
+  `view task list VIEW`) when the count differs from the one read. This is
+  what makes "add only, never disturb an existing step" checkable on a
+  shared pipeline (ILG gap 2).
+- `extract-date` and `window` proven with read-back; REL-461
+  `proven_transforms` now lists twelve typed transforms.
+- `tests/contract/test_skill_hygiene.py`: every bundled-skill file is checked
+  for invisible/bidi characters, injection phrasing, shell-pipe installs and
+  unknown link hosts; the sweep it encodes found nothing.
+- Skill/docs: safety reference ("Rehearse before you write", "Add-only edits
+  to a pipeline someone else may touch"), operations, input, `docs/safety.md`.
+
+PYPI_HASHES_PLACEHOLDER
+
 ## 2.0.29 / SDK 0.7.13
 
 The ILG rebuild brief, simulated end to end on release

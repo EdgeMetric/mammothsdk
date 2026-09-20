@@ -90,6 +90,14 @@ task/list or pipeline/items result back after a successful write. Without that
 independent specification, report the route as unsupported/ambiguous and stop
 safely.
 
+Typed transforms and `view task add` append at the end of the pipeline and
+never reorder or delete an existing step. On a pipeline other people or
+agents also edit, make that checkable: read `view task list VIEW_ID`, plan,
+then write with `"expected_task_count": N` in the input; the CLI re-reads
+the list just before the write and refuses with `pipeline_changed` when the
+count moved ([safety](safety.md)). `--dry-run` on the same command shows the
+resolved call first.
+
 For a new workflow (a container for automation), discover and then read it
 back; workflow creation is not the same as adding a view pipeline task:
 

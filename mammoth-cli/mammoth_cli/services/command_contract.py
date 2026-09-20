@@ -26,7 +26,9 @@ from mammoth.models.batches import (
 from mammoth_cli.manifest.loader import command_by_id, load_commands
 from mammoth_cli.services.argspec import ArgSpec, FieldSpec, arg_spec
 from mammoth_cli.services.input_fields import (
+    TASK_COUNT_FIELD,
     accepts_resource_dataset,
+    accepts_task_count_precondition,
     excluded_input_fields,
     handler_owned_fields,
     is_closed_zero_input,
@@ -672,6 +674,12 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
         field.name for field in fields
     }:
         fields += (FieldSpec("dataset_id", required=False, annotation=int | None, default=None),)
+    if accepts_task_count_precondition(command_id) and TASK_COUNT_FIELD not in {
+        field.name for field in fields
+    }:
+        fields += (
+            FieldSpec(TASK_COUNT_FIELD, required=False, annotation=int | None, default=None),
+        )
     additional_fields = _S7_ADDITIONAL_INPUT_FIELDS.get(command_id, ())
     declared_names = {field.name for field in fields}
     fields += tuple(field for field in additional_fields if field.name not in declared_names)
@@ -686,6 +694,8 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
     # the subsequent shared bind idempotent after that protected preflight.
     if accepts_resource_dataset(command_id):
         context_values["dataset_id"] = "dataset_id"
+    if accepts_task_count_precondition(command_id):
+        context_values[TASK_COUNT_FIELD] = TASK_COUNT_FIELD
     context = MappingProxyType(context_values)
     extensibility = (
         "closed"

@@ -8,6 +8,7 @@ contract tests can import one shared fake, mirroring
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -40,6 +41,8 @@ class FakeMammothService:
     wait_log: list[Any] = field(default_factory=list)
     wait_scopes: list[str] = field(default_factory=list)
     job_result: Any = None
+    #: ``--dry-run`` hook, honoured like the production service does.
+    gate: Callable[..., None] | None = None
 
     def call_view(self, view_id: int, method: str, /, **kwargs: Any) -> Any:
         """Record a View-method call and return a programmed response.
@@ -54,6 +57,8 @@ class FakeMammothService:
             ``view_responses[(view_id, method)]`` if programmed (raised when it
             is an exception), else an empty mapping.
         """
+        if self.gate is not None:
+            self.gate(method, dict(kwargs), view_id=view_id, dataset_id=kwargs.get("dataset_id"))
         self.view_call_log.append((view_id, method, dict(kwargs)))
         key = (view_id, method)
         if key in self.view_responses:
@@ -75,6 +80,8 @@ class FakeMammothService:
             ``responses[sdk_symbol]`` if programmed (raised when it is an
             exception), else an empty mapping.
         """
+        if self.gate is not None:
+            self.gate(sdk_symbol, dict(kwargs))
         self.calls.append(sdk_symbol)
         self.call_log.append((sdk_symbol, dict(kwargs)))
         if sdk_symbol in self.responses:
@@ -137,6 +144,8 @@ class FakeMammothService:
 
     def create_project(self, name: str, **kwargs: Any) -> dict[str, Any]:
         """Create an in-memory project record."""
+        if self.gate is not None:
+            self.gate("mammoth.api.projects.ProjectsAPI.create", {"name": name, **kwargs})
         self.calls.append("create_project")
         record = {"id": len(self.projects) + 1, "name": name}
         self.projects.append(record)
@@ -144,6 +153,8 @@ class FakeMammothService:
 
     def delete_project(self, project_id: int) -> dict[str, Any]:
         """Delete an in-memory project record."""
+        if self.gate is not None:
+            self.gate("mammoth.api.projects.ProjectsAPI.delete", {"project_id": project_id})
         self.calls.append("delete_project")
         self.projects = [p for p in self.projects if p.get("id") != project_id]
         return {"deleted": project_id}

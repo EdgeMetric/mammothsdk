@@ -29,7 +29,7 @@ from typer.core import TyperGroup
 
 from mammoth_cli import __version__
 from mammoth_cli.commands import BESPOKE
-from mammoth_cli.commands.registry import HANDLERS
+from mammoth_cli.commands.registry import HANDLERS, Handler
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError, not_implemented_error
 from mammoth_cli.manifest.loader import command_by_id, load_commands
@@ -630,6 +630,18 @@ def _shared_option_params() -> list[inspect.Parameter]:
             ],
         ),
         opt(
+            "dry_run",
+            False,
+            Annotated[
+                bool,
+                typer.Option(
+                    "--dry-run",
+                    help="Resolve and validate, then report the request instead of sending it.",
+                    rich_help_panel="Safety",
+                ),
+            ],
+        ),
+        opt(
             "input_file",
             None,
             Annotated[
@@ -777,6 +789,8 @@ def _execute(invocation: Invocation) -> None:
             record = command_by_id(invocation.command_id)
             sdk_symbol = record.get("sdk_symbol", "") if record else ""
             raise not_implemented_error(invocation.command_id, sdk_symbol)
+        if invocation.dry_run:
+            return _dry_run(handler, invocation)
         return handler(invocation)
 
     executor.run(
@@ -787,6 +801,25 @@ def _execute(invocation: Invocation) -> None:
         invocation=invocation,
         profile=invocation.profile,
     )
+
+
+def _dry_run(handler: Handler, invocation: Invocation) -> tuple[Any, dict[str, Any]]:
+    """Run ``handler`` until its request would leave; report that request.
+
+    Local commands never open a service, so a dry run of one is the real run.
+    An API-backed handler that returns normally under ``--dry-run`` made no
+    gated SDK call at all (a pure read path); its result is returned as is.
+    """
+    from mammoth_cli.runtime.dryrun import DryRunStop
+    from mammoth_cli.runtime.session import resolved_project
+
+    try:
+        return handler(invocation)
+    except DryRunStop as stop:
+        return stop.record, {
+            "profile": invocation.profile,
+            "project_id": resolved_project(invocation),
+        }
 
 
 def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:

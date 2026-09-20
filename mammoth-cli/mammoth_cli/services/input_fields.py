@@ -351,6 +351,18 @@ def accepts_resource_dataset(command_id: str) -> bool:
     return command_id.startswith(_RESOURCE_DATASET_PREFIXES)
 
 
+#: Pipeline writes that admit ``expected_task_count``: the number of tasks the
+#: caller last read on the view. The write is refused when the pipeline has a
+#: different count, so an edit planned against a stale read cannot land on a
+#: pipeline someone else changed (the "add-only to a shared pipeline" rule).
+TASK_COUNT_FIELD = "expected_task_count"
+
+
+def accepts_task_count_precondition(command_id: str) -> bool:
+    """Return True when ``expected_task_count`` is admitted for ``command_id``."""
+    return command_id.startswith("view.transform.") or command_id == "view.task.add"
+
+
 def example_input_hints(command_id: str) -> dict[str, Any]:
     """Return extra ``--input`` fields to include in the generated example."""
     hints = dict(_EXAMPLE_INPUT_HINTS.get(command_id, {}))

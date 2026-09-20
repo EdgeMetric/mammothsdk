@@ -9,6 +9,7 @@ a private (``_``-prefixed) SDK member.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from types import TracebackType
 from typing import Any
 
@@ -72,6 +73,9 @@ class SdkMammothService:
         """
         self._progress = progress
         self._profile = profile
+        #: ``--dry-run`` hook (:mod:`mammoth_cli.runtime.dryrun`): called with
+        #: the resolved symbol and arguments right before each SDK call.
+        self.gate: Callable[..., None] | None = None
         self._project_id = project_id
         self._workspace_id = auth.workspace_id
         kwargs: dict[str, Any] = {}
@@ -124,6 +128,8 @@ class SdkMammothService:
         ):
             raise missing_project_error()
         kwargs = self._coerce_call_arguments(method, kwargs)
+        if self.gate is not None:
+            self.gate(sdk_symbol, kwargs)
         try:
             with spinner(self._progress):
                 return method(**kwargs)
@@ -356,6 +362,8 @@ class SdkMammothService:
             ) from exc
         if kwargs.get(CONDITION_KWARG) is not None:
             kwargs[CONDITION_KWARG] = compile_condition(kwargs[CONDITION_KWARG])
+        if self.gate is not None:
+            self.gate(method, kwargs, view_id=view_id, dataset_id=getattr(view, "dataset_id", None))
         try:
             with spinner(self._progress):
                 return attribute(**kwargs)
@@ -717,6 +725,8 @@ class SdkMammothService:
         Raises:
             CliError: Mapped from any SDK exception.
         """
+        if self.gate is not None:
+            self.gate("mammoth.api.projects.ProjectsAPI.create", {"name": name, **kwargs})
         try:
             return self._client.projects.create(name, **kwargs)
         except Exception as exc:
@@ -734,6 +744,8 @@ class SdkMammothService:
         Raises:
             CliError: Mapped from any SDK exception.
         """
+        if self.gate is not None:
+            self.gate("mammoth.api.projects.ProjectsAPI.delete", {"project_id": project_id})
         try:
             return self._client.projects.delete(project_id)
         except Exception as exc:

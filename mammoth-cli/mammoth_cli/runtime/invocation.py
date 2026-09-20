@@ -16,7 +16,11 @@ from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.output.policy import OUTPUT_AUTO, SELECTABLE_OUTPUTS, resolve_output
 from mammoth_cli.runtime.input_loader import load_input_document
 from mammoth_cli.runtime.strict import validate_input_fields
-from mammoth_cli.services.input_fields import accepts_resource_dataset
+from mammoth_cli.services.input_fields import (
+    TASK_COUNT_FIELD,
+    accepts_resource_dataset,
+    accepts_task_count_precondition,
+)
 
 
 class _UninitializedInput:
@@ -55,6 +59,7 @@ class Invocation:
     debug: bool = False
     yes: bool = False
     confirm: str | None = None
+    dry_run: bool = False
     input_file: str | None = None
     input_format: str | None = None
     positionals: dict[str, Any] = field(default_factory=dict)
@@ -231,10 +236,36 @@ class Invocation:
                         hint="Pass the exact parent dataset id for the target view.",
                         details={"field": "dataset_id", "expected_type": "positive integer"},
                     ) from None
+            expected_tasks: Any = None
+            has_expected_tasks = (
+                document is not None
+                and accepts_task_count_precondition(self.command_id)
+                and TASK_COUNT_FIELD in document
+            )
+            if has_expected_tasks:
+                assert document is not None
+                expected_tasks = document.pop(TASK_COUNT_FIELD)
+                try:
+                    if isinstance(expected_tasks, bool):
+                        raise ValueError
+                    expected_tasks = int(expected_tasks)
+                    if expected_tasks < 0:
+                        raise ValueError
+                except (TypeError, ValueError):
+                    raise CliError(
+                        code="invalid_resource_context",
+                        message=f"Input field '{TASK_COUNT_FIELD}' must be a non-negative integer.",
+                        exit_status=EXIT_USAGE,
+                        hint="Pass the task count from your last 'view task list' read.",
+                        details={"field": TASK_COUNT_FIELD, "expected_type": "integer >= 0"},
+                    ) from None
             validate_input_fields(self.command_id, document)
             if has_resource_dataset:
                 assert document is not None
                 document["dataset_id"] = resource_dataset
+            if has_expected_tasks:
+                assert document is not None
+                document[TASK_COUNT_FIELD] = expected_tasks
             object.__setattr__(self, "_prepared_input", document)
         return self._prepared_input  # type: ignore[return-value]
 

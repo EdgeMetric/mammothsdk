@@ -43,6 +43,7 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.conditions import CONDITION_KWARG
+from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -251,6 +252,7 @@ def _dispatch_view(
     with open_service(invocation) as (service, auth):
         if dataset_id is None:
             dataset_id = parents.lookup(_profile_name(invocation), auth.workspace_id, view_id)
+        require_expected_task_count(service, view_id, dataset_id, document)
         try:
             if dataset_id is None:
                 _require_discovery_allowed(invocation, view_id)
@@ -264,6 +266,60 @@ def _dispatch_view(
             raise
         reject_pipeline_reference_errors(service, view_id, dataset_id, data)
     return data, _meta(invocation, auth.workspace_id)
+
+
+CODE_PIPELINE_CHANGED = "pipeline_changed"
+_TASK_LIST_SYMBOL = "mammoth.api.pipeline.PipelineAPI.list_tasks"
+
+
+def require_expected_task_count(
+    service: Any, view_id: int, dataset_id: Any, document: dict[str, Any] | None
+) -> None:
+    """Refuse a pipeline write when the view's task count is not the one read.
+
+    ``expected_task_count`` is the count from the caller's last ``view task
+    list``. A different live count means the pipeline changed since that read
+    (another agent, a person in the web app), and an append planned against
+    the old shape must not land. Without the field nothing is checked.
+    """
+    if not document or TASK_COUNT_FIELD not in document:
+        return
+    expected = int(document[TASK_COUNT_FIELD])
+    kwargs: dict[str, Any] = {"dataview_id": view_id}
+    if dataset_id is not None:
+        kwargs["dataset_id"] = int(dataset_id)
+    listing = service.call(_TASK_LIST_SYMBOL, **kwargs)
+    tasks = listing.get("tasks") if isinstance(listing, dict) else None
+    if not isinstance(tasks, list):
+        raise CliError(
+            code=CODE_PIPELINE_CHANGED,
+            message=f"Could not read the task list of view {view_id} to check the precondition.",
+            exit_status=EXIT_USAGE,
+            details={"view_id": view_id, "expected_task_count": expected, "response": listing},
+        )
+    actual = len(tasks)
+    if actual == expected:
+        return
+    raise CliError(
+        code=CODE_PIPELINE_CHANGED,
+        message=(
+            f"View {view_id} has {actual} pipeline task(s), not the {expected} expected; "
+            "the pipeline changed since it was read, so nothing was written."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            "Re-read the pipeline, decide whether the plan still holds, and retry "
+            f"with expected_task_count {actual}."
+        ),
+        details={
+            "view_id": view_id,
+            "dataset_id": int(dataset_id) if dataset_id is not None else None,
+            "expected_task_count": expected,
+            "actual_task_count": actual,
+            "task_ids": [t.get("id") for t in tasks if isinstance(t, dict)],
+        },
+        recovery_commands=[f"mammoth view task list {view_id}"],
+    )
 
 
 def _compact_reference_error(entry: Any) -> dict[str, Any]:
@@ -362,7 +418,11 @@ def _without_resource_context(document: dict[str, Any]) -> dict[str, Any]:
     # mapping.  These identifiers select the View receiver and are not method
     # kwargs; strip both parent and receiver identities before the transform
     # adapter forwards the document.
-    return {key: value for key, value in document.items() if key not in {"dataset_id", "view_id"}}
+    return {
+        key: value
+        for key, value in document.items()
+        if key not in {"dataset_id", "view_id", TASK_COUNT_FIELD}
+    }
 
 
 def _bind_transform_inputs(invocation: Invocation, document: dict[str, Any]) -> dict[str, Any]:

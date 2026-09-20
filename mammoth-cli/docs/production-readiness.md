@@ -1,6 +1,6 @@
 # mammoth-cli production readiness
 
-Last updated 2026-09-19 for **mammoth-cli 2.0.29 / mammoth-io 0.7.13**. This is
+Last updated 2026-09-20 for **mammoth-cli 2.0.30 / mammoth-io 0.7.13**. This is
 the one page an agent or engineer reads to know what the CLI is, what is
 proven, what is not, and where every claim's evidence lives. Update it with
 every release; `docs/release-status.md` holds the per-release detail and the
@@ -37,12 +37,14 @@ card reads the true distinct count under a Month range filter (111 / 64 /
 | A transform that the backend cannot bind (missing column, wrong type) fails with `pipeline_reference_error` and the exact repair command, instead of exit 0 with a dead view | 2.0.25/2.0.26 entries in `docs/release-status.md`; live repro in `haiku-etl-20260919/REPORT-2.md` triage |
 | Long operations wait up to 300 s (`--job-timeout`), timeouts hand back a `job get` recovery command, `outcome_unknown` is never retried blindly | `references/jobs-drafts.md`, `references/recovery.md` |
 | Newer releases are announced in every envelope (`meta.update_available`), `mammoth upgrade --yes` upgrades the *running* install, `MAMMOTH_AUTO_UPGRADE=1` does it unattended | `docs/upgrade.md`; 2.0.26 entry (verified on a 2.0.24 venv) |
+| `--dry-run` on every API-backed command resolves inputs, parents and columns, then reports the SDK call instead of making it; the same gate stops any undeclared write. `expected_task_count` on pipeline writes refuses with `pipeline_changed` when the pipeline moved since it was read | `docs/safety.md`; `docs/capability-evidence/dryrun-precondition-20260920/`; `tests/unit/commands/test_dryrun.py` |
+| The bundled skill carries no hidden characters, injection phrasing or unknown links | `tests/contract/test_skill_hygiene.py` (runs on every file of the skill) |
 | Every published artifact is deterministic, scanned for local paths and secrets, and its PyPI digest is recorded | `docs/release-status.md` (one block per version) |
-| Each release runs the unit + contract + realcode suites once (4427 passed at 2.0.28), ruff, mypy strict, and three `--check`-clean generators | commit messages; `docs/release-status.md` |
+| Each release runs the unit + contract + realcode suites once (3432 passed at 2.0.30), ruff, mypy strict, and three `--check`-clean generators | commit messages; `docs/release-status.md` |
 
 Evidence directory index: `docs/capability-evidence/README.md`. Row-level
 status of all 528 API operations: `docs/release-capability-matrix.md`
-(counts at 2.0.29: Full 1, Partial 261, Not supported 2, Unassessed 264 —
+(counts at 2.0.30: Full 1, Partial 261, Not supported 2, Unassessed 264 —
 "Partial" means exercised live at least once in an owned project; it is a
 bounded proof, not a qualification of every input shape).
 
@@ -79,18 +81,20 @@ they stand after the live simulation (`ilg-sim-20260919/SUMMARY.md`):
    dataset VIEW --yes --input '{"dataset_name": ..., "target_project_id": N}'`
    (SDK 0.7.13 `to_dataset(target_project_id=...)`) appends an
    internal-dataset export that re-materialises the target on every run.
-2. **Add-only edits next to an existing send — proven for the append case.**
-   The pre-existing export's sequence and execution times did not move.
-   Still missing: a precondition (`expected_task_count` / version) that
-   refuses when the pipeline changed since the read; `view task add` still
-   takes an opaque `task_spec`.
+2. **Add-only edits next to an existing send — proven, and now checkable.**
+   The pre-existing export's sequence and execution times did not move, and
+   every `view transform *` / `view task add` takes `expected_task_count`
+   (refused with `pipeline_changed` when the live count differs) plus
+   `--dry-run` to see the resolved call first. `view task add` still takes
+   an opaque `task_spec`; prefer the typed transforms.
 3. **Dashboard measures beyond the typed surface — proven through `canvas
    save`.** `countDistinct` KPI cards, `measure2` bars, derived ratio lines,
    tables, range/multi filters persist and bake; `descriptor-data` evaluates
    them under a filter. `pages add` and the chat routes pass the LLM guard,
    which can drop a unit it cannot evidence.
-4. `add-sql DATE_TRUNC` month bucketing — proven. `view transform window` and
-   `extract-date` — commands exist, still no live run recorded.
+4. `add-sql DATE_TRUNC` month bucketing, `extract-date` (month component)
+   and `window` (partitioned running SUM) — all proven with read-back
+   (`dryrun-precondition-20260920/`).
 
 Remaining CLI limits a brief may hit: one dataview per dashboard; PDF/video
 export needs the browser; `series` on a derived-measure line was ignored in
@@ -109,15 +113,13 @@ or a bigger volume.
 
 ## Next actions (ordered)
 
-1. Add `--dry-run` (validate and print the resolved SDK call without a network
-   call) and an `expected_task_count` precondition on pipeline mutations —
-   both taken from the peer review of the Loops and PostHog agent CLIs; the
-   precondition is what remains of ILG gap 2.
-2. Run the ILG brief for real in its reduced form (`F - SchoolPnL` +
-   Overview), one production pipeline at a time, per the brief's own stop
+1. Run the ILG brief for real in its reduced form (`F - SchoolPnL` +
+   Overview), one production pipeline at a time, with `--dry-run` then
+   `expected_task_count` on every write, per the brief's own stop
    conditions; the routes are proven, the data volumes and feeds are not.
-3. Record a live run of `view transform window` and `extract-date`, and
-   look at why `series` on a derived-measure line is ignored.
+2. Look at why `series` on a derived-measure line is ignored by the
+   dashboard bake, and at the LLM unit guard on `pages add`.
+3. Host storage decision (LFS object cache / `duckdb_efs/17` / bigger volume).
 
 ## Where things live
 
