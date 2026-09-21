@@ -122,3 +122,14 @@ If the operation has no known handle, re-list or read the exact scoped target
 using the task's checkpoint. Compare IDs, status, schema, and evidence. Only
 after reconciliation should the agent choose a new operation. See
 [portable handoff](agent-handoff.md) for the checkpoint procedure.
+
+## Every command takes a couple of seconds
+
+Measured from a developer host: the CLI itself now starts in about 0.5 s
+(2.0.31 caches the parsed command manifests under the OS cache directory and
+builds command groups on demand; set `MAMMOTH_CLI_MANIFEST_CACHE=0` to
+bypass the cache). The remainder is one TLS handshake per process (~0.7 s
+from Europe to the hosted API) and 1–1.3 s of server time per request, the
+same for a trivial `GET /workspaces/{id}/projects` on release and on prague.
+Nothing in the CLI shortens that; run independent reads in parallel
+processes and keep pipeline writes sequential.

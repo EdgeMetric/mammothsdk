@@ -30,9 +30,13 @@ mammoth dataset file-settings update DATASET_ID --project PROJECT_ID \
 ```
 
 The response is a job (`operation: "understand_csv"`). Poll `dataset get`
-until `status` leaves `need_action`; it normally reaches `ready` within a few
-seconds, after which `view list` returns the generated view and typed
-transforms can proceed. If the status becomes `error`, read `status_info`
+(the record is under `data.dataset`, so read `data.dataset.status`) until
+the status leaves `need_action`. It usually reaches `ready` within seconds;
+on prague an ISO `YYYY-MM-DD` column was flagged ambiguous and took about
+three minutes, so poll for up to five minutes before treating it as stuck.
+Then `view list` returns the generated view and typed transforms can
+proceed. Which environments ask differs: release processed the same file
+straight to `ready`. If the status becomes `error`, read `status_info`
 and stop; do not retry with guessed settings.
 
 ## All-text CSV: `ready` without a view

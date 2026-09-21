@@ -44,6 +44,13 @@ mammoth view transform filter 144 --dry-run \
 # data.would_call.sdk_symbol = ...FilterOpsMixin.filter_rows, view_id 144, dataset_id 122
 ```
 
+A dry run is a full process with the same reads as the real run. On a
+hosted environment budget roughly 2 s per request (about 0.7 s of it TLS
+setup from a cold process, the rest server time), so `view task list` →
+`--dry-run` → write costs about 30–40 s per pipeline step. That is the
+price of the procedure, not a hang; do not shorten `--timeout` below the
+default to speed it up.
+
 ## Add-only edits to a pipeline someone else may touch
 
 Every `view transform *` and `view task add` accepts `expected_task_count`:

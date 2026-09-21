@@ -1,0 +1,47 @@
+{
+ "projects": {
+  "T": 4444,
+  "A": 4445,
+  "B": 4446
+ },
+ "datasets": {
+  "A": {
+   "pnl": 2546,
+   "stuck_first_attempt": 2545
+  },
+  "B": {
+   "hr": 2547,
+   "occ": 2548,
+   "targets": 2549
+  },
+  "T": {
+   "hr": 2551,
+   "occ": 2552,
+   "targets": 2553,
+   "pnl": 2554,
+   "consolidated": 2555,
+   "existing_send_in_B": 2550
+  }
+ },
+ "views": {
+  "A": {
+   "pnl": 4440
+  },
+  "B": {
+   "hr": 4441,
+   "occ": 4442,
+   "targets": 4443
+  },
+  "T": {
+   "hr": 4445,
+   "occ": 4446,
+   "targets": 4447,
+   "pnl": 4448,
+   "consolidated": 4449
+  }
+ },
+ "dashboards": [
+  526,
+  527
+ ]
+}

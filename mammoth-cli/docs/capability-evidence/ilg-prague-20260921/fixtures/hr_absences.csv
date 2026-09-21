@@ -1,0 +1,331 @@
+Location,Absence Start,Employee Ref,Reason,Days
+Northwood Prep,2025-09-04,E0084,Unplanned,2
+Riverside Academy,2025-10-10,E0085,Unplanned,4
+Eaton End,2025-01-20,E0008,Unplanned,3
+Head Office,2025-08-27,E0086,Unplanned,2
+Head Office,2025-01-21,E0001,Unplanned,1
+Northwood Prep,2025-11-06,E0004,Sickness,1
+Head Office,2025-03-05,E0041,Unplanned,5
+Head Office,2025-03-18,E0006,Unplanned,5
+Head Office,2025-01-19,E0031,Unplanned,3
+Eaton End School,2025-06-06,E0093,Unplanned,4
+Eaton End,2025-01-24,E0003,Sickness,1
+Riverside Academy,2025-01-13,E0070,Unplanned,2
+Northwood Prep,2025-03-07,E0074,Unplanned,3
+Head Office,2025-05-25,E0006,Unplanned,4
+SHREWSBURY HIGH SCHOOL,2025-11-21,E0072,Unplanned,5
+Eaton End School,2025-01-09,E0048,Unplanned,3
+Riverside Academy,2025-01-27,E0075,Sickness,4
+Riverside Academy,2025-11-05,E0035,Sickness,1
+HEAD OFFICE,2025-03-18,E0091,Sickness,2
+Head Office,2025-05-20,E0076,Unplanned,5
+Northwood Prep,2025-09-22,E0069,Unplanned,4
+Eaton End School,2025-11-16,E0068,Unplanned,5
+SHREWSBURY HIGH SCHOOL,2025-05-07,E0082,Unplanned,4
+Eaton End School,2025-02-25,E0088,Unplanned,2
+Riverside Academy,2025-06-04,E0105,Sickness,3
+Head Office,2025-12-05,E0011,Sickness,4
+HEAD OFFICE,2025-08-15,E0026,Unplanned,4
+Head Office,2025-05-09,E0046,Sickness,4
+HEAD OFFICE,2025-09-26,E0036,Sickness,5
+SHREWSBURY HIGH SCHOOL,2025-03-29,E0017,Unplanned,1
+Eaton End,2025-04-28,E0093,Sickness,4
+HEAD OFFICE,2025-03-01,E0081,Sickness,5
+SHREWSBURY HIGH SCHOOL,2025-10-23,E0087,Unplanned,1
+Northwood Prep,2025-03-04,E0104,Unplanned,1
+Shrewsbury High School,2025-10-27,E0102,Unplanned,3
+Riverside Academy,2025-01-04,E0025,Unplanned,5
+SHREWSBURY HIGH SCHOOL,2025-03-29,E0037,Sickness,2
+Head Office,2025-08-03,E0076,Unplanned,1
+Northwood Prep,2025-02-28,E0034,Unplanned,4
+SHREWSBURY HIGH SCHOOL,2025-10-24,E0047,Unplanned,1
+Riverside Academy,2025-11-20,E0105,Unplanned,5
+Shrewsbury High School,2025-03-24,E0037,Unplanned,4
+HEAD OFFICE,2025-02-11,E0021,Unplanned,3
+Head Office,2025-05-08,E0026,Sickness,1
+SHREWSBURY HIGH SCHOOL,2025-06-12,E0087,Unplanned,4
+Riverside Academy,2025-11-13,E0090,Sickness,2
+HEAD OFFICE,2025-07-18,E0096,Unplanned,3
+Northwood Prep,2025-05-09,E0054,Unplanned,5
+Northwood Prep,2025-12-14,E0014,Unplanned,4
+Head Office,2025-04-19,E0001,Unplanned,5
+Head Office,2025-02-27,E0006,Unplanned,4
+Northwood Prep,2025-03-12,E0034,Sickness,4
+Shrewsbury High School,2025-10-10,E0087,Unplanned,4
+Eaton End,2025-10-07,E0043,Unplanned,5
+Northwood Prep,2025-06-18,E0039,Unplanned,3
+Northwood Prep,2025-08-20,E0014,Unplanned,3
+Riverside Academy,2025-01-27,E0070,Unplanned,2
+Shrewsbury High School,2025-08-01,E0007,Sickness,4
+Northwood Prep,2025-10-03,E0054,Unplanned,1
+Eaton End School,2025-11-19,E0033,Unplanned,2
+Shrewsbury High School,2025-03-23,E0077,Sickness,5
+Shrewsbury High School,2025-09-24,E0077,Unplanned,2
+SHREWSBURY HIGH SCHOOL,2025-08-21,E0032,Unplanned,1
+HEAD OFFICE,2025-09-06,E0016,Sickness,4
+Northwood Prep,2025-03-14,E0059,Unplanned,1
+Head Office,2025-05-29,E0091,Unplanned,2
+Eaton End,2025-05-07,E0038,Unplanned,1
+Head Office,2025-12-20,E0021,Sickness,4
+Head Office,2025-03-24,E0001,Unplanned,2
+Shrewsbury High School,2025-02-11,E0057,Sickness,2
+HEAD OFFICE,2025-08-04,E0071,Sickness,1
+Shrewsbury High School,2025-08-04,E0052,Unplanned,5
+HEAD OFFICE,2025-05-21,E0101,Unplanned,4
+Northwood Prep,2025-06-25,E0104,Unplanned,1
+Northwood Prep,2025-05-12,E0014,Sickness,2
+Head Office,2025-03-07,E0056,Unplanned,1
+Northwood Prep,2025-12-22,E0099,Unplanned,4
+Eaton End School,2025-05-18,E0098,Unplanned,2
+HEAD OFFICE,2025-09-22,E0021,Unplanned,4
+Eaton End School,2025-10-20,E0098,Unplanned,2
+SHREWSBURY HIGH SCHOOL,2025-05-27,E0012,Unplanned,4
+Head Office,2025-01-09,E0021,Sickness,3
+Northwood Prep,2025-11-03,E0084,Unplanned,3
+Shrewsbury High School,2025-11-06,E0102,Sickness,3
+Riverside Academy,2025-04-03,E0090,Unplanned,3
+Shrewsbury High School,2025-10-26,E0067,Sickness,2
+HEAD OFFICE,2025-12-06,E0001,Sickness,3
+Northwood Prep,2025-02-12,E0019,Unplanned,1
+HEAD OFFICE,2025-10-06,E0016,Sickness,1
+HEAD OFFICE,2025-02-24,E0016,Unplanned,1
+Eaton End School,2025-05-22,E0078,Sickness,1
+Eaton End School,2025-09-20,E0063,Unplanned,1
+Eaton End,2025-01-11,E0003,Unplanned,5
+Head Office,2025-04-16,E0096,Unplanned,3
+HEAD OFFICE,2025-06-22,E0071,Unplanned,3
+HEAD OFFICE,2025-04-02,E0056,Unplanned,3
+Northwood Prep,2025-11-29,E0049,Sickness,4
+SHREWSBURY HIGH SCHOOL,2025-06-08,E0092,Sickness,4
+SHREWSBURY HIGH SCHOOL,2025-02-09,E0062,Unplanned,3
+SHREWSBURY HIGH SCHOOL,2025-08-29,E0057,Unplanned,3
+Riverside Academy,2025-02-07,E0035,Unplanned,1
+Head Office,2025-12-07,E0101,Sickness,1
+Northwood Prep,2025-11-25,E0104,Unplanned,2
+Eaton End,2025-07-23,E0028,Unplanned,2
+Riverside Academy,2025-06-13,E0010,Sickness,5
+Shrewsbury High School,2025-07-15,E0027,Unplanned,2
+SHREWSBURY HIGH SCHOOL,2025-08-03,E0002,Unplanned,5
+Riverside Academy,2025-11-13,E0075,Unplanned,4
+Eaton End School,2025-03-02,E0073,Unplanned,3
+Northwood Prep,2025-08-15,E0099,Sickness,5
+Northwood Prep,2025-12-21,E0019,Unplanned,1
+Shrewsbury High School,2025-04-01,E0032,Sickness,5
+Riverside Academy,2025-05-18,E0050,Sickness,3
+Shrewsbury High School,2025-05-25,E0062,Sickness,2
+Eaton End,2025-12-07,E0048,Unplanned,3
+Head Office,2025-05-30,E0001,Unplanned,1
+HEAD OFFICE,2025-08-23,E0041,Sickness,5
+Riverside Academy,2025-01-05,E0035,Unplanned,3
+Riverside Academy,2025-08-20,E0095,Unplanned,3
+Northwood Prep,2025-02-07,E0094,Unplanned,3
+Riverside Academy,2025-10-11,E0025,Unplanned,2
+Head Office,2025-05-03,E0046,Unplanned,4
+SHREWSBURY HIGH SCHOOL,2025-10-13,E0102,Unplanned,2
+Head Office,2025-02-10,E0056,Unplanned,2
+SHREWSBURY HIGH SCHOOL,2025-05-13,E0027,Unplanned,1
+SHREWSBURY HIGH SCHOOL,2025-05-26,E0002,Unplanned,5
+Northwood Prep,2025-04-26,E0009,Unplanned,2
+Shrewsbury High School,2025-11-02,E0087,Unplanned,4
+Head Office,2025-05-21,E0096,Unplanned,1
+Shrewsbury High School,2025-10-30,E0017,Unplanned,5
+Riverside Academy,2025-01-27,E0085,Sickness,1
+Head Office,2025-03-23,E0096,Unplanned,2
+Eaton End,2025-08-24,E0068,Unplanned,2
+Northwood Prep,2025-01-14,E0029,Sickness,2
+Shrewsbury High School,2025-07-18,E0027,Unplanned,1
+Riverside Academy,2025-01-26,E0080,Unplanned,4
+SHREWSBURY HIGH SCHOOL,2025-09-08,E0077,Unplanned,1
+Head Office,2025-12-14,E0016,Sickness,2
+Northwood Prep,2025-02-16,E0009,Unplanned,2
+SHREWSBURY HIGH SCHOOL,2025-06-04,E0047,Unplanned,1
+Eaton End School,2025-05-26,E0028,Unplanned,1
+Northwood Prep,2025-02-06,E0019,Unplanned,3
+Shrewsbury High School,2025-08-26,E0087,Unplanned,5
+Riverside Academy,2025-09-15,E0065,Sickness,2
+SHREWSBURY HIGH SCHOOL,2025-01-24,E0062,Sickness,5
+Northwood Prep,2025-09-08,E0094,Unplanned,3
+SHREWSBURY HIGH SCHOOL,2025-09-03,E0077,Unplanned,3
+HEAD OFFICE,2025-02-03,E0016,Unplanned,2
+Northwood Prep,2025-09-16,E0034,Unplanned,2
+HEAD OFFICE,2025-12-11,E0066,Unplanned,1
+HEAD OFFICE,2025-07-11,E0101,Unplanned,5
+HEAD OFFICE,2025-09-15,E0036,Unplanned,4
+Riverside Academy,2025-05-03,E0020,Sickness,2
+Riverside Academy,2025-07-19,E0095,Sickness,1
+Head Office,2025-11-28,E0036,Unplanned,2
+Northwood Prep,2025-05-02,E0094,Unplanned,1
+Head Office,2025-12-19,E0071,Unplanned,1
+SHREWSBURY HIGH SCHOOL,2025-12-23,E0042,Sickness,2
+Northwood Prep,2025-01-10,E0104,Unplanned,5
+Riverside Academy,2025-09-29,E0050,Sickness,5
+SHREWSBURY HIGH SCHOOL,2025-06-02,E0042,Sickness,1
+Shrewsbury High School,2025-04-12,E0102,Sickness,1
+Northwood Prep,2025-09-26,E0029,Unplanned,5
+Eaton End School,2025-07-06,E0103,Unplanned,5
+Riverside Academy,2025-06-07,E0100,Sickness,3
+HEAD OFFICE,2025-05-03,E0076,Unplanned,5
+Head Office,2025-01-22,E0036,Sickness,2
+Eaton End,2025-04-27,E0073,Unplanned,4
+Northwood Prep,2025-07-07,E0039,Unplanned,3
+Shrewsbury High School,2025-07-30,E0082,Unplanned,4
+Riverside Academy,2025-09-29,E0065,Sickness,2
+Eaton End,2025-04-13,E0033,Sickness,2
+Eaton End School,2025-09-23,E0058,Sickness,1
+Eaton End,2025-09-23,E0078,Unplanned,1
+Riverside Academy,2025-03-06,E0020,Unplanned,4
+Eaton End School,2025-06-02,E0048,Unplanned,3
+SHREWSBURY HIGH SCHOOL,2025-09-01,E0042,Unplanned,4
+Eaton End School,2025-04-04,E0053,Unplanned,2
+Shrewsbury High School,2025-11-04,E0072,Unplanned,4
+Northwood Prep,2025-11-19,E0094,Unplanned,1
+Riverside Academy,2025-11-19,E0075,Unplanned,1
+Northwood Prep,2025-12-13,E0019,Unplanned,5
+SHREWSBURY HIGH SCHOOL,2025-07-21,E0047,Sickness,1
+Riverside Academy,2025-12-19,E0080,Unplanned,5
+Head Office,2025-04-26,E0081,Sickness,4
+Eaton End,2025-06-07,E0023,Unplanned,5
+SHREWSBURY HIGH SCHOOL,2025-01-29,E0022,Unplanned,3
+Riverside Academy,2025-12-10,E0020,Unplanned,5
+Northwood Prep,2025-02-07,E0054,Unplanned,2
+HEAD OFFICE,2025-03-07,E0071,Unplanned,1
+Eaton End School,2025-12-10,E0083,Unplanned,1
+Northwood Prep,2025-07-25,E0079,Unplanned,3
+Northwood Prep,2025-06-27,E0019,Unplanned,1
+SHREWSBURY HIGH SCHOOL,2025-05-12,E0032,Unplanned,4
+SHREWSBURY HIGH SCHOOL,2025-04-20,E0022,Sickness,3
+Northwood Prep,2025-02-21,E0059,Sickness,1
+Riverside Academy,2025-03-12,E0085,Unplanned,3
+Northwood Prep,2025-02-22,E0064,Unplanned,2
+Northwood Prep,2025-12-06,E0014,Sickness,1
+Northwood Prep,2025-03-09,E0064,Sickness,5
+Shrewsbury High School,2025-04-01,E0037,Unplanned,4
+Northwood Prep,2025-06-19,E0044,Sickness,3
+Head Office,2025-11-10,E0031,Sickness,4
+SHREWSBURY HIGH SCHOOL,2025-05-11,E0027,Unplanned,4
+Shrewsbury High School,2025-01-03,E0047,Unplanned,5
+Shrewsbury High School,2025-07-15,E0092,Unplanned,1
+Riverside Academy,2025-09-13,E0025,Unplanned,5
+HEAD OFFICE,2025-03-15,E0076,Sickness,1
+Eaton End School,2025-08-14,E0083,Sickness,5
+Riverside Academy,2025-07-03,E0045,Unplanned,4
+Eaton End School,2025-02-14,E0033,Unplanned,4
+Northwood Prep,2025-12-20,E0044,Unplanned,2
+Riverside Academy,2025-07-19,E0095,Sickness,1
+Shrewsbury High School,2025-01-27,E0002,Unplanned,3
+HEAD OFFICE,2025-04-16,E0056,Unplanned,3
+Head Office,2025-05-09,E0066,Unplanned,3
+Northwood Prep,2025-12-19,E0074,Unplanned,4
+SHREWSBURY HIGH SCHOOL,2025-01-07,E0092,Sickness,2
+Eaton End,2025-07-18,E0043,Sickness,5
+Eaton End,2025-03-05,E0028,Unplanned,1
+Riverside Academy,2025-11-27,E0020,Sickness,2
+SHREWSBURY HIGH SCHOOL,2025-10-10,E0017,Unplanned,1
+Eaton End School,2025-06-05,E0058,Unplanned,2
+Shrewsbury High School,2025-05-29,E0052,Sickness,3
+Riverside Academy,2025-02-12,E0085,Sickness,2
+Northwood Prep,2025-03-22,E0039,Unplanned,2
+Shrewsbury High School,2025-07-01,E0097,Unplanned,5
+Northwood Prep,2025-06-06,E0084,Unplanned,5
+Head Office,2025-05-07,E0041,Unplanned,5
+Shrewsbury High School,2025-05-16,E0027,Unplanned,5
+SHREWSBURY HIGH SCHOOL,2025-11-23,E0082,Unplanned,5
+Eaton End School,2025-03-16,E0053,Unplanned,5
+Northwood Prep,2025-06-21,E0069,Unplanned,5
+Eaton End School,2025-11-15,E0048,Unplanned,5
+HEAD OFFICE,2025-02-19,E0006,Unplanned,4
+HEAD OFFICE,2025-06-03,E0076,Unplanned,1
+Shrewsbury High School,2025-01-11,E0057,Sickness,3
+Head Office,2025-03-22,E0021,Sickness,3
+Eaton End,2025-07-30,E0003,Unplanned,5
+Eaton End School,2025-06-24,E0093,Unplanned,5
+Northwood Prep,2025-03-28,E0064,Unplanned,5
+Riverside Academy,2025-09-15,E0085,Unplanned,5
+Head Office,2025-08-23,E0016,Sickness,5
+Riverside Academy,2025-08-19,E0025,Unplanned,2
+Head Office,2025-04-07,E0071,Unplanned,4
+HEAD OFFICE,2025-09-05,E0056,Unplanned,3
+Riverside Academy,2025-10-20,E0095,Unplanned,4
+HEAD OFFICE,2025-09-24,E0096,Unplanned,5
+Head Office,2025-05-15,E0086,Unplanned,4
+Riverside Academy,2025-09-03,E0100,Sickness,3
+Shrewsbury High School,2025-02-13,E0047,Sickness,4
+SHREWSBURY HIGH SCHOOL,2025-07-31,E0062,Sickness,1
+Head Office,2025-06-08,E0041,Unplanned,1
+Riverside Academy,2025-01-21,E0105,Unplanned,3
+Eaton End,2025-06-25,E0018,Sickness,5
+Northwood Prep,2025-01-17,E0059,Unplanned,4
+Riverside Academy,2025-08-07,E0075,Sickness,3
+Northwood Prep,2025-01-17,E0104,Sickness,1
+Northwood Prep,2025-05-08,E0079,Sickness,3
+Eaton End School,2025-01-29,E0073,Unplanned,1
+Riverside Academy,2025-12-10,E0045,Unplanned,2
+SHREWSBURY HIGH SCHOOL,2025-09-04,E0052,Unplanned,3
+Head Office,2025-08-30,E0076,Sickness,1
+Riverside Academy,2025-07-31,E0040,Unplanned,3
+Riverside Academy,2025-12-16,E0085,Unplanned,5
+Northwood Prep,2025-06-22,E0089,Sickness,5
+HEAD OFFICE,2025-08-27,E0026,Sickness,4
+Riverside Academy,2025-08-15,E0050,Unplanned,1
+SHREWSBURY HIGH SCHOOL,2025-05-09,E0002,Unplanned,2
+Head Office,2025-06-16,E0101,Unplanned,2
+Northwood Prep,2025-07-07,E0079,Unplanned,1
+Head Office,2025-08-05,E0076,Sickness,5
+Eaton End School,2025-03-12,E0103,Unplanned,4
+HEAD OFFICE,2025-05-21,E0031,Sickness,5
+Northwood Prep,2025-10-31,E0059,Unplanned,2
+Eaton End,2025-08-02,E0028,Unplanned,3
+Shrewsbury High School,2025-02-03,E0017,Unplanned,2
+HEAD OFFICE,2025-02-12,E0016,Sickness,2
+Northwood Prep,2025-12-17,E0099,Unplanned,4
+Eaton End,2025-07-28,E0028,Unplanned,4
+HEAD OFFICE,2025-07-26,E0051,Unplanned,2
+HEAD OFFICE,2025-06-12,E0066,Unplanned,5
+Riverside Academy,2025-01-27,E0020,Unplanned,2
+Riverside Academy,2025-02-01,E0065,Sickness,5
+Eaton End School,2025-11-27,E0063,Unplanned,4
+Northwood Prep,2025-09-16,E0034,Unplanned,4
+HEAD OFFICE,2025-10-16,E0091,Sickness,1
+HEAD OFFICE,2025-12-20,E0031,Unplanned,4
+Riverside Academy,2025-09-05,E0100,Unplanned,1
+Shrewsbury High School,2025-10-09,E0027,Sickness,4
+Shrewsbury High School,2025-11-15,E0052,Unplanned,1
+Head Office,2025-08-26,E0056,Unplanned,3
+SHREWSBURY HIGH SCHOOL,2025-12-27,E0012,Unplanned,4
+Head Office,2025-09-04,E0051,Unplanned,5
+SHREWSBURY HIGH SCHOOL,2025-06-10,E0022,Unplanned,1
+SHREWSBURY HIGH SCHOOL,2025-11-27,E0097,Sickness,1
+Shrewsbury High School,2025-10-30,E0022,Sickness,1
+Riverside Academy,2025-04-01,E0045,Unplanned,5
+Northwood Prep,2025-02-10,E0029,Unplanned,1
+Riverside Academy,2025-02-28,E0035,Unplanned,3
+Riverside Academy,2025-03-17,E0035,Sickness,2
+Northwood Prep,2025-06-23,E0014,Sickness,5
+Northwood Prep,2025-03-09,E0104,Unplanned,1
+Riverside Academy,2025-02-26,E0100,Unplanned,1
+Northwood Prep,2025-10-16,E0104,Unplanned,1
+Northwood Prep,2025-12-13,E0069,Sickness,2
+Northwood Prep,2025-01-26,E0069,Sickness,5
+Head Office,2025-09-20,E0021,Sickness,3
+Riverside Academy,2025-07-04,E0055,Unplanned,4
+Riverside Academy,2025-06-18,E0105,Unplanned,4
+Riverside Academy,2025-06-03,E0010,Unplanned,2
+Northwood Prep,2025-08-20,E0049,Unplanned,4
+Northwood Prep,2025-06-22,E0084,Unplanned,5
+Riverside Academy,2025-11-02,E0025,Sickness,2
+Riverside Academy,2025-02-16,E0045,Unplanned,3
+Riverside Academy,2025-01-26,E0025,Unplanned,5
+Head Office,2025-06-21,E0086,Sickness,5
+SHREWSBURY HIGH SCHOOL,2025-09-26,E0022,Unplanned,4
+Eaton End,2025-09-16,E0028,Unplanned,1
+Northwood Prep,2025-01-17,E0064,Unplanned,3
+Shrewsbury High School,2025-06-23,E0052,Sickness,2
+HEAD OFFICE,2025-11-04,E0081,Unplanned,5
+Eaton End,2025-04-26,E0048,Unplanned,4
+Northwood Prep,2025-12-07,E0104,Sickness,5
+Head Office,2025-07-11,E0056,Unplanned,5
+Riverside Academy,2025-11-15,E0095,Unplanned,2
+Head Office,2025-03-09,E0071,Unplanned,3
+Eaton End,2025-02-27,E0093,Unplanned,4
+Eaton End,2025-05-28,E0098,Unplanned,4
+SHREWSBURY HIGH SCHOOL,2025-05-18,E0037,Unplanned,2

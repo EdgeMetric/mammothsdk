@@ -1,0 +1,33 @@
+{
+ "pnl_rows": 302,
+ "sales_total": 2053940.17,
+ "budget_total": 2065718.1,
+ "sales_q1": 501586.29,
+ "sales_by_loc": {
+  "Head Office": 332276.43,
+  "Shrewsbury High School": 304663.9,
+  "Eaton End School": 670000.92,
+  "Northwood Prep": 318780.52,
+  "Riverside Academy": 428218.4
+ },
+ "absence_rows": 330,
+ "absence_days": 986,
+ "distinct_staff": 98,
+ "distinct_staff_q1": 55,
+ "absence_rows_q1": 90,
+ "employee_rows": 284,
+ "consolidated_rows": 344,
+ "victim": "E0084",
+ "victim_rows": 4,
+ "consolidated_rows_after": 341,
+ "distinct_staff_after": 97,
+ "places_total": 13308,
+ "occupied_total": 11184,
+ "occupied_q1": 2724,
+ "occupancy_rate_q1": {
+  "1": 83.5888,
+  "2": 76.2849,
+  "3": 85.7529
+ },
+ "target_total_x12": 1126380
+}

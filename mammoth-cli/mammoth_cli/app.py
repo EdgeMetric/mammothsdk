@@ -330,6 +330,13 @@ class _LeafGroup(TyperGroup):
 class _EnvelopeGroup(TyperGroup):
     """Root group that renders Click usage errors as the machine error envelope.
 
+    It also materialises top-level command groups lazily (see
+    :func:`_load_top_level_group`): ``list_commands`` and ``get_command`` know
+    every group by name from the manifest, but a group's Click tree is only
+    built when it is invoked, completed or listed in ``--help``. Reading
+    ``commands`` directly materialises them all, so tools that walk the tree
+    still see the full surface.
+
     Click's standalone error handling prints a human ``Usage: ... Error: ...``
     message and exits, even under ``--output json``: an agent driving the CLI
     then receives un-parseable prose (or, for a leaf that also parents
@@ -344,6 +351,28 @@ class _EnvelopeGroup(TyperGroup):
     the ``SystemExit`` contract the console entry point and the test runner rely
     on.
     """
+
+    @property  # type: ignore[override]
+    def commands(self) -> dict[str, Any]:
+        loaded: dict[str, Any] = self.__dict__.setdefault("_eager_commands", {})
+        for name in _LAZY_GROUP_NAMES:
+            if name not in loaded:
+                loaded[name] = _load_top_level_group(name)
+        return loaded
+
+    @commands.setter
+    def commands(self, value: Any) -> None:
+        self.__dict__["_eager_commands"] = dict(value or {})
+
+    def list_commands(self, ctx: Any) -> list[str]:
+        eager = self.__dict__.get("_eager_commands", {})
+        return [*eager, *(name for name in _LAZY_GROUP_NAMES if name not in eager)]
+
+    def get_command(self, ctx: Any, cmd_name: str) -> Any:
+        eager: dict[str, Any] = self.__dict__.setdefault("_eager_commands", {})
+        if cmd_name not in eager and cmd_name in _LAZY_GROUP_NAMES:
+            eager[cmd_name] = _load_top_level_group(cmd_name)
+        return eager.get(cmd_name)
 
     def main(self, *args: Any, **kwargs: Any) -> Any:
         if not kwargs.get("standalone_mode", True):
@@ -888,8 +917,122 @@ def _short_type(type_name: str) -> str:
     return " | ".join(part.strip().rsplit(".", 1)[-1] for part in text.split("|"))[:40]
 
 
+def _command_records() -> list[dict[str, Any]]:
+    return [r for r in load_commands() if r.get("disposition") != "alias"]
+
+
+@cache
+def _command_tree() -> tuple[dict[tuple[str, ...], str], frozenset[tuple[str, ...]]]:
+    """Map every command path to its id, and name the container nodes.
+
+    A "container command" sits at a node that also has deeper subcommands
+    (e.g. ``dataset file-settings``, which also has ``... undo`` / ``... update``).
+    """
+    path_to_command = {
+        tuple(r["command_path"].split()): r["command_id"] for r in _command_records()
+    }
+    prefixes: set[tuple[str, ...]] = set()
+    for tokens in path_to_command:
+        for depth in range(1, len(tokens)):
+            prefixes.add(tokens[:depth])
+    return path_to_command, frozenset(prefixes & path_to_command.keys())
+
+
+def _group_typer(tokens: tuple[str, ...], command_id: str | None) -> typer.Typer:
+    if command_id is not None:
+        # This node is both a group and an invocable command.
+        sub = typer.Typer(
+            cls=_LeafGroup,
+            no_args_is_help=False,
+            invoke_without_command=True,
+            context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+        )
+        sub.callback()(_build_leaf(command_id, is_group_callback=True))
+        return sub
+    return typer.Typer(
+        help=_GROUP_DESCRIPTIONS.get(tokens[0], f"Commands for {' '.join(tokens)}."),
+        no_args_is_help=True,
+        context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+    )
+
+
+def _populate(base: tuple[str, ...], group: typer.Typer) -> None:
+    """Register every command below ``base`` (exclusive) on ``group``."""
+    path_to_command, containers = _command_tree()
+    groups: dict[tuple[str, ...], typer.Typer] = {base: group}
+
+    def _group_for(tokens: tuple[str, ...]) -> typer.Typer:
+        if tokens in groups:
+            return groups[tokens]
+        parent = _group_for(tokens[:-1])
+        sub = _group_typer(tokens, path_to_command.get(tokens))
+        top_level = tokens[0]
+        parent.add_typer(
+            sub,
+            name=tokens[-1],
+            help=_GROUP_DESCRIPTIONS.get(top_level, f"Commands for {' '.join(tokens)}."),
+            rich_help_panel=_ROOT_HELP_PANELS.get(top_level) if len(tokens) == 1 else None,
+        )
+        groups[tokens] = sub
+        return sub
+
+    below = {t: c for t, c in path_to_command.items() if t[: len(base)] == base and t != base}
+    # Ensure every container group exists (parents before children).
+    for tokens in sorted((t for t in below if t in containers), key=len):
+        _group_for(tokens)
+
+    # Register every non-container command as a leaf under its parent group.
+    # A command_id with a bespoke, fully-typed callback overrides the generic
+    # leaf at the same registered name and path; the manifest-driven surface
+    # is otherwise unchanged.
+    for tokens, command_id in sorted(below.items()):
+        if tokens in containers:
+            continue
+        record = command_by_id(command_id)
+        callback = BESPOKE.get(command_id) or _build_leaf(command_id)
+        _group_for(tokens[:-1]).command(
+            name=tokens[-1],
+            help=_command_help(command_id, record),
+            rich_help_panel=_ROOT_HELP_PANELS.get(tokens[0]) if len(tokens) == 1 else None,
+            context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+        )(callback)
+
+
+@cache
+def _top_level_typer(name: str) -> typer.Typer:
+    """Build (once) the Typer sub-app for one top-level command group."""
+    path_to_command, _ = _command_tree()
+    sub = _group_typer((name,), path_to_command.get((name,)))
+    _populate((name,), sub)
+    return sub
+
+
+# Top-level groups are converted to Click on first use. Building the leaf
+# callbacks and ``--help`` text for all ~550 commands, then letting Typer
+# convert every one of them, used to cost most of the CLI's start-up time on
+# every invocation; a run touches one group.
+_LAZY_GROUP_NAMES: list[str] = []
+_LAZY_SETTINGS: dict[str, Any] = {}
+
+
+def _load_top_level_group(name: str) -> Any:
+    from typer.models import TyperInfo
+
+    info = TyperInfo(
+        _top_level_typer(name),
+        name=name,
+        help=_GROUP_DESCRIPTIONS.get(name, f"Commands for {name}."),
+        rich_help_panel=_ROOT_HELP_PANELS.get(name),
+    )
+    return typer.main.get_group_from_info(info, **_LAZY_SETTINGS)
+
+
 def build_app() -> typer.Typer:
-    """Construct the full Typer command tree from the command manifests."""
+    """Construct the Typer command tree from the command manifests.
+
+    Top-level leaves (``doctor``, ``version``, ...) are registered here; every
+    top-level group is materialised by :class:`_EnvelopeGroup` on demand.
+    """
     root = typer.Typer(
         name="mammoth",
         help=(
@@ -911,80 +1054,31 @@ def build_app() -> typer.Typer:
     ) -> None:
         """Root callback holding eager global options."""
 
-    records = [r for r in load_commands() if r.get("disposition") != "alias"]
-    path_to_command: dict[tuple[str, ...], str] = {
-        tuple(r["command_path"].split()): r["command_id"] for r in records
-    }
-    all_paths = set(path_to_command)
-    # A "container command" sits at a node that also has deeper subcommands
-    # (e.g. `dataset file-settings`, which also has `... undo` / `... update`).
-    containers = {
-        tokens
-        for tokens in all_paths
-        if any(other != tokens and other[: len(tokens)] == tokens for other in all_paths)
-    }
-
-    groups: dict[tuple[str, ...], typer.Typer] = {(): root}
-
-    def _make_group(tokens: tuple[str, ...]) -> typer.Typer:
-        command_id = path_to_command.get(tokens)
-        if command_id is not None:
-            # This node is both a group and an invocable command.
-            sub = typer.Typer(
-                cls=_LeafGroup,
-                no_args_is_help=False,
-                invoke_without_command=True,
-                context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
-            )
-            sub.callback()(_build_leaf(command_id, is_group_callback=True))
-        else:
-            sub = typer.Typer(
-                help=_GROUP_DESCRIPTIONS.get(tokens[0], f"Commands for {' '.join(tokens)}."),
-                no_args_is_help=True,
-                context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
-            )
-        return sub
-
-    def _group_for(tokens: tuple[str, ...]) -> typer.Typer:
-        if tokens in groups:
-            return groups[tokens]
-        parent = _group_for(tokens[:-1])
-        sub = _make_group(tokens)
-        top_level = tokens[0]
-        parent.add_typer(
-            sub,
-            name=tokens[-1],
-            help=_GROUP_DESCRIPTIONS.get(top_level, f"Commands for {' '.join(tokens)}."),
-            rich_help_panel=_ROOT_HELP_PANELS.get(top_level) if len(tokens) == 1 else None,
-        )
-        groups[tokens] = sub
-        return sub
-
-    # Ensure every container group exists (parents before children).
-    for tokens in sorted(containers, key=len):
-        _group_for(tokens)
-
-    # Register every non-container command as a leaf under its parent group.
-    # A command_id with a bespoke, fully-typed callback overrides the generic
-    # leaf at the same registered name and path; the manifest-driven surface
-    # is otherwise unchanged.
-    for tokens, command_id in sorted(path_to_command.items()):
-        if tokens in containers:
+    path_to_command, containers = _command_tree()
+    top_names = sorted({tokens[0] for tokens in path_to_command})
+    lazy: list[str] = []
+    for name in top_names:
+        if (name,) in containers or (name,) not in path_to_command:
+            lazy.append(name)
             continue
-        record = command_by_id(command_id)
-        callback = BESPOKE.get(command_id) or _build_leaf(command_id)
-        _group_for(tokens[:-1]).command(
-            name=tokens[-1],
-            help=_command_help(command_id, record),
-            rich_help_panel=_ROOT_HELP_PANELS.get(tokens[0]) if len(tokens) == 1 else None,
+        command_id = path_to_command[(name,)]
+        root.command(
+            name=name,
+            help=_command_help(command_id, command_by_id(command_id)),
+            rich_help_panel=_ROOT_HELP_PANELS.get(name),
             context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
-        )(callback)
-
+        )(BESPOKE.get(command_id) or _build_leaf(command_id))
+    _LAZY_GROUP_NAMES[:] = lazy
+    _LAZY_SETTINGS.update(
+        pretty_exceptions_short=root.pretty_exceptions_short,
+        rich_markup_mode=root.rich_markup_mode,
+        suggest_commands=root.suggest_commands,
+    )
     return root
 
 
 def registered_command_paths() -> set[str]:
-    """Return every registered command path by walking the built Typer tree.
+    """Return every registered command path by walking the built Typer trees.
 
     Container commands (a node that is both a group and invocable) are counted
     by their own path as well as their subcommands.
@@ -998,14 +1092,20 @@ def registered_command_paths() -> set[str]:
                 paths.add(" ".join((*prefix, name)))
         for group in instance.registered_groups:
             sub = group.typer_instance
-            if sub is None or not group.name:
+            name = group.name
+            if sub is None or not name:
                 continue
-            node = (*prefix, group.name)
-            if getattr(sub.info, "invoke_without_command", False) and sub.registered_callback:
+            node = (*prefix, name)
+            if sub.registered_callback is not None:
                 paths.add(" ".join(node))
             walk(sub, node)
 
-    walk(build_app(), ())
+    walk(app, ())
+    for name in _LAZY_GROUP_NAMES:
+        sub = _top_level_typer(name)
+        if sub.registered_callback is not None:
+            paths.add(name)
+        walk(sub, (name,))
     return paths
 
 
@@ -1020,7 +1120,9 @@ def _root_click_command() -> Any:
     the tree is fixed for the process lifetime (:data:`app` is built once at
     import time).
     """
-    return typer.main.get_command(app)
+    root: Any = typer.main.get_command(app)
+    root.commands  # noqa: B018 -- materialise every lazy top-level group
+    return root
 
 
 def command_option_names(command_path: str) -> set[str]:
