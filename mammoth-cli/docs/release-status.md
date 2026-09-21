@@ -1,5 +1,30 @@
 # CLI release provenance
 
+## 2.0.31 / SDK 0.7.13
+
+The ILG shape rebuilt end to end on a second environment (prague ws 4) with
+fresh mock data and the production procedure — `--dry-run` before every
+write, `expected_task_count` on every pipeline write — 126 commands, 68/68
+checks against the fixture key (`docs/capability-evidence/ilg-prague-20260921/`).
+SDK unchanged.
+
+- Start-up 2.44 s → 0.51 s: manifests parsed with libyaml and cached as JSON
+  under the OS cache directory keyed by file size/mtime
+  (`MAMMOTH_CLI_MANIFEST_CACHE=0` bypasses); top-level command groups are
+  converted to Click on demand. Tree walkers and `--help` are unchanged
+  (`tests/unit/test_startup_cost.py`). What remains per call is one TLS
+  handshake and 1–1.3 s of server time per request, measured identically on
+  release and prague; the SDK's eager import (~0.3–0.5 s) is the next lever.
+- Recipes: `view export csv` input shape; `dataset get` nests the record
+  under `data.dataset`; prague flags ISO dates as ambiguous and takes minutes
+  to resolve; the cost of the dry-run procedure stated in safety.
+
+Published from deterministic local artifacts built from tag `cli-v2.0.31`
+(source commit `3f061db`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.31-py3-none-any.whl` sha256 `17410859c4653060f3287289951013dc4b221207d7487823e43d17549fc2ae45`
+- `mammoth_cli-2.0.31.tar.gz` sha256 `7c6239ef3227398bd241d592603bc38ac687152622bc55442747816405ea48fc`
+
 ## 2.0.30 / SDK 0.7.13
 
 The two safety items queued from the Loops/PostHog peer review, both proven
