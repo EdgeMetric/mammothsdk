@@ -256,3 +256,37 @@ def test_doctor_config_check_walks_up_to_an_existing_ancestor(
     data, _meta = doctor_cmd.doctor(_inv("doctor"))
     check = next(c for c in data["checks"] if c["name"] == "config_directory")
     assert check["ok"] is True, check
+
+
+def test_doctor_passes_in_an_empty_workspace(
+    isolated_cli_config: Path, fake_service: FakeMammothService
+) -> None:
+    # A new workspace has no projects until the first `project ensure`, and
+    # the skill runs doctor before that; an empty list must not fail doctor.
+    login_default_profile()
+    fake_service.projects = []
+
+    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    checks = {c["name"]: c for c in data["checks"]}
+    assert checks["projects"]["ok"] is True
+    assert "project ensure" in checks["projects"]["detail"]
+    assert "mammoth project ensure 'PROJECT NAME'" in data["recommendations"]
+
+
+def test_doctor_reports_unresponsive_keyring_as_a_failed_check(
+    isolated_cli_config: Path, fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from mammoth_cli.context import credentials
+
+    login_default_profile()
+
+    def _unresponsive(_profile: str) -> bool:
+        raise credentials.keyring_unresponsive_error()
+
+    monkeypatch.setattr(credentials, "has_credentials", _unresponsive)
+    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    checks = {c["name"]: c for c in data["checks"]}
+    assert checks["credentials"]["ok"] is False
+    assert checks["credentials"]["detail"] == "keyring_unresponsive"
+    assert "mammoth auth login --profile default --storage file" in data["recommendations"]
+    assert data["ok"] is False

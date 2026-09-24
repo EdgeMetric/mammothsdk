@@ -135,14 +135,29 @@ def validate_extra_args(command_id: str, extra_args: Iterable[str]) -> None:
         )
 
 
+def _expected_phrase(expected: str) -> str:
+    """Return ``expected`` with the article it needs ("an integer", "one of [...]")."""
+    if expected.startswith(("a ", "an ", "one of ", "null")):
+        return expected
+    return f"{'an' if expected[:1].lower() in 'aeiou' else 'a'} {expected}"
+
+
 def _invalid_field_type_error(command_id: str, field: str, value: Any, expected: str) -> CliError:
+    command = command_id.replace(".", " ")
+    if expected == "a required field":
+        message = f"Input field '{field}' for '{command}' is required."
+        hint = f"Add '{field}'; 'mammoth schema get {command_id}' lists every field."
+    elif expected == "a declared field":
+        message = f"Input field '{field}' is not a field of '{command}'."
+        hint = f"Remove '{field}'; 'mammoth schema get {command_id}' lists every field."
+    else:
+        message = f"Input field '{field}' for '{command}' must be {_expected_phrase(expected)}."
+        hint = f"Check '{field}' against 'mammoth schema get {command_id}'."
     return CliError(
         code=CODE_INVALID_INPUT_FIELD_TYPE,
-        message=(
-            f"Input field '{field}' for '{command_id.replace('.', ' ')}' must be a " f"{expected}."
-        ),
+        message=message,
         exit_status=EXIT_USAGE,
-        hint=f"Pass '{field}' as a {expected} value.",
+        hint=hint,
         details={"field": field, "expected_type": expected},
     )
 

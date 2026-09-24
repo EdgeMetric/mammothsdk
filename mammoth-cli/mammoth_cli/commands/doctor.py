@@ -267,13 +267,15 @@ def doctor(invocation: Invocation) -> HandlerResult:
         visible_ids = [p.get("id") for p in projects]
         checks.append(
             {
+                # Not a failure: a new workspace has no projects until the
+                # first `project ensure`, which needs doctor to pass first.
                 **_check(
                     "projects",
-                    bool(projects),
+                    True,
                     (
                         f"{len(projects)} project(s) visible in workspace"
                         if projects
-                        else "no projects visible to this credential in the workspace"
+                        else "no projects visible yet; 'mammoth project ensure NAME' creates one"
                     ),
                 ),
                 "projects": [
@@ -305,6 +307,8 @@ def doctor(invocation: Invocation) -> HandlerResult:
         login_profile = f" --profile {shlex.quote(profile_name)}" if profile_name else ""
         login_storage = " --storage file" if keyring_error else ""
         recommendations.append(f"mammoth auth login{login_profile}{login_storage}")
+    elif projects == []:
+        recommendations.append("mammoth project ensure 'PROJECT NAME'")
     elif selected_project is None or (
         projects is not None and selected_project not in [p.get("id") for p in projects]
     ):

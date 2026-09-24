@@ -39,6 +39,23 @@ _PROJECT_MISS = re.compile(r"^Project (ID \d+|'.*') not found\.")
 _PROJECT_PAGE_SIZE = 100
 
 
+_TOKEN_POSITION = re.compile(r"Unrecognized token at position (\d+)")
+
+
+def _unrecognized_expression_token(message: str, expression: Any) -> str:
+    """Return the unresolved name the SDK expression parser stopped at.
+
+    The parser reports only a position; the name runs from there to the next
+    operator or parenthesis. Falls back to the whole expression.
+    """
+    match = _TOKEN_POSITION.search(message)
+    if not match or not isinstance(expression, str):
+        return str(expression)
+    tail = expression[int(match.group(1)) :]
+    token = re.split(r"[-+*/%(),]", tail, maxsplit=1)[0].strip()
+    return token or expression
+
+
 class SdkMammothService:
     """Production :class:`~mammoth_cli.services.protocol.MammothService`."""
 
@@ -372,11 +389,16 @@ class SdkMammothService:
             # SDK can POST. Preserve a useful agent-facing error envelope
             # rather than flattening it into a generic API error.
             available = sorted(getattr(view, "columns", {}) or {})
-            raise self.column_input_error(str(exc), available) from exc
+            column = (getattr(exc, "details", None) or {}).get("column_name") or str(exc)
+            raise self.column_input_error(str(column), available) from exc
         except ValueError as exc:
             if method == "math" and "Unrecognized token" in str(exc):
                 available = sorted(getattr(view, "columns", {}) or {})
-                raise self.column_input_error("expression", available) from exc
+                raise self.column_input_error(
+                    _unrecognized_expression_token(str(exc), kwargs.get("expression")),
+                    available,
+                    scope="expression",
+                ) from exc
             raise CliError(
                 code=CODE_INVALID_ARGUMENTS,
                 message=f"The supplied fields do not fit View.{method}.",

@@ -35,9 +35,10 @@ the status leaves `need_action`. It usually reaches `ready` within seconds;
 on prague an ISO `YYYY-MM-DD` column was flagged ambiguous and took about
 three minutes, so poll for up to five minutes before treating it as stuck.
 Then `view list` returns the generated view and typed transforms can
-proceed. Which environments ask differs: release processed the same file
-straight to `ready`. If the status becomes `error`, read `status_info`
-and stop; do not retry with guessed settings.
+proceed. Every environment can ask, release included: on 2026-09-24 release
+flagged an ISO `YYYY-MM-DD` column too and reached `ready` within seconds of
+the update. If the status becomes `error`, read `status_info` and stop; do
+not retry with guessed settings.
 
 ## All-text CSV: `ready` without a view
 
@@ -50,7 +51,7 @@ get` shows `at_least_one_non_text_column_present: false`.
 
 On the release backend the settings update returns a successful
 `understand_csv` job and a batch, but a view is still not created (backend
-defect, reported). If `view list DATASET_ID` stays empty after two polls of
+defect, reported; still present on 2026-09-24). If `view list DATASET_ID` stays empty after two polls of
 `dataset get`, stop and report it as a platform blocker for that file; do not
 retry the update. Where the task allows, a file with at least one numeric
 column is processed straight to `ready` with its view.

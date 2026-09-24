@@ -75,7 +75,7 @@ def test_math_uses_exact_parent_and_condition_display_names(
     _configure(
         api,
         local=[
-            _column('Prix “brut”', "column_price", "NUMERIC"),
+            _column("Prix “brut”", "column_price", "NUMERIC"),
             _column("Qty / 値", "column_qty", "NUMERIC"),
         ],
     )
@@ -84,9 +84,9 @@ def test_math_uses_exact_parent_and_condition_display_names(
         LOCAL_VIEW,
         "math",
         dataset_id=LOCAL_DATASET,
-        expression='Prix “brut” * Qty / 値',
+        expression="Prix “brut” * Qty / 値",
         new_column="Total réservé",
-        condition={"column": 'Prix “brut”', "operator": "GTE", "value": 1},
+        condition={"column": "Prix “brut”", "operator": "GTE", "value": 1},
     )
 
     assert _has_path(api, f"/datasets/{LOCAL_DATASET}/dataviews/{LOCAL_VIEW}")
@@ -137,6 +137,8 @@ def test_unknown_and_ambiguous_local_names_are_zero_post(real_service: ServiceFa
         )
     assert unknown.value.code == "unknown_column"
     assert "Price" in (unknown.value.details or {}).get("available", [])
+    assert unknown.value.details["reference"] == "Missing"
+    assert unknown.value.message == "Column reference 'Missing' is not a display name in this view."
     assert _posts(api) == []
 
     # A fresh service gives the ambiguous metadata its own independent GET;
@@ -311,3 +313,24 @@ def test_lookup_resolves_unicode_foreign_names_and_posts_once(real_service: Serv
     assert lookup["SOURCE"] == "local_source"
     assert lookup["KEY"] == "foreign_sku"
     assert lookup["VALUE"] == "foreign_value"
+
+
+def test_unknown_name_in_math_expression_is_named_in_the_error(
+    real_service: ServiceFactory,
+) -> None:
+    service, api = real_service(project_id=PROJECT_ID)
+    _configure(api, local=[_column("Price", "column_price", "NUMERIC")])
+
+    with pytest.raises(CliError) as error:
+        service.call_view(
+            LOCAL_VIEW,
+            "math",
+            dataset_id=LOCAL_DATASET,
+            expression="Price * Unit Cost",
+            new_column="Total",
+        )
+    assert error.value.code == "unknown_column"
+    assert error.value.details["reference"] == "Unit Cost"
+    assert error.value.details["scope"] == "expression"
+    assert "'Unit Cost'" in error.value.message
+    assert _posts(api) == []

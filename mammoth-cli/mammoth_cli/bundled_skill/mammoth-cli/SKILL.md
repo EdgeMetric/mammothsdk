@@ -21,8 +21,9 @@ mammoth project ensure 'PROJECT NAME'   # get-or-create; becomes the active proj
 command anyway. Production is the `app` endpoint; use `release` only when the
 task names it, and check `meta.profile`/`auth status` `endpoint` match the
 intended environment before doing anything. If no profile has credentials,
-tell the operator the exact `mammoth auth login --profile PROFILE` command to
-run in their own terminal and wait; never ask for a key or secret in chat,
+tell the operator to run `mammoth auth login` in their own terminal (add
+`--profile NAME` only for a profile other than `default`; [auth](references/auth.md)
+says where the key and secret come from) and wait; never ask for a key or secret in chat,
 never read one from a file or environment variable, never run `auth login`
 yourself. If any envelope carries `meta.update_available`, run its `command`
 before the next step.
@@ -62,7 +63,8 @@ before the next step.
   returns, never backend aliases.
 - `--dry-run` on any API-backed command resolves everything and reports the
   request instead of sending it; use it before a write you are not sure of.
-- Destructive commands need `--yes --confirm ID`. Preserve requested
+- Deletes need `--yes`; high-impact ones (`project delete`, access changes)
+  also need `--confirm ID`, and `schema get` shows which. Preserve requested
   deliverables; cleanup is exact-ID authorized and
   never means delete-all-owned-resources: delete only ids this run created,
   one per call, and read back that they are gone.

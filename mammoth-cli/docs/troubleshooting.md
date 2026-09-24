@@ -49,6 +49,7 @@ Important operation states include:
 |---|---|---|
 | 4 | `not_authenticated`, `authentication_failed` | Run protected `mammoth auth login`, then `mammoth doctor`. |
 | 4 | `authorization_required` | Check exact scope and request the required permission. |
+| 2 | `keyring_unavailable`, `keyring_unresponsive` | Unlock the OS keychain (on macOS, choose **Always Allow** for `mammoth-cli`), or run `mammoth auth login --storage file`. |
 | 2 | `login_input_required`, `project_required` | Supply the protected login document or explicit `--project PROJECT_ID`. |
 | 2 | `confirmation_required`, `confirmation_target_mismatch` | Inspect the schema, then add `--yes` and the exact target confirmation. |
 | 5 | `resource_not_found` | Re-list in the same workspace/project/parent scope. |
@@ -57,6 +58,18 @@ Important operation states include:
 | 7 | `outcome_unknown` | Reconcile the suspected resource/job first; a retry may duplicate an effect. |
 | 7 | `retryable_error` on a read | Honor `Retry-After`, then retry the read within the deadline. |
 | 130 | `interrupted` | Use the observed handle/recovery command and checkpoint the state. |
+
+## Login stops after the workspace id
+
+The CLI is saving the credential to the OS keychain. On macOS, look for a
+Keychain dialog about `mammoth-cli` and choose **Always Allow**. Over SSH the
+Keychain cannot show that dialog. The CLI waits up to 60 seconds, then saves
+the credential to an owner-only file and says so. To skip the keychain, run
+`mammoth auth login --storage file`.
+
+If the prompt asks for an API secret you do not have: in the web app, open
+**Workspace settings → API Tokens**, edit the token, and choose **Generate new
+secret**. The secret is shown only once.
 
 ## Run log
 
