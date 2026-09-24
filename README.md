@@ -26,10 +26,10 @@ Use Mammoth Analytics only through the `mammoth` CLI in bash; run
    curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
 2. Run `mammoth auth status`. If it shows no credentials, print exactly this
    and wait until I say done: "In the Mammoth web app open Workspace settings
-   → API Tokens → Create token, copy the key and the secret (shown once), and
-   note the workspace id (the number after /workspaces/ in the address bar),
-   then run in your own terminal: mammoth auth login" — never ask for, read, or pass a key
-   or secret yourself, and never run auth login.
+   → API Tokens → Create token, copy the token (it starts with mm_ and is
+   shown once), and note the workspace id (the number after /workspaces/ in the
+   address bar), then run in your own terminal: mammoth auth login" — never ask
+   for, read, or pass the token yourself, and never run auth login.
 3. Require `mammoth doctor` to pass, then run `mammoth skill show` and
    follow the guide it prints.
 Work inside `mammoth project ensure 'PROJECT NAME'` unless I name a project;
@@ -52,8 +52,7 @@ Requires Python 3.12 through 3.14.
 from mammoth import MammothClient
 
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
+    api_token="mm_your-token",
     workspace_id=11,
 )
 client.set_project_id(42)
@@ -84,8 +83,7 @@ ids = parse_path("https://app.mammoth.io/#/workspaces/11/projects/42/views/1039"
 # {"workspace_id": 11, "project_id": 42, "dataview_id": 1039}
 
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
+    api_token="mm_your-token",
     workspace_id=ids["workspace_id"],
 )
 client.set_project_id(ids["project_id"])
@@ -627,7 +625,7 @@ from mammoth import (
     MammothAPIError,
 )
 
-client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
+client = MammothClient(api_token="mm_...", workspace_id=11)
 client.set_project_id(42)
 view = client.views.get(1039)
 

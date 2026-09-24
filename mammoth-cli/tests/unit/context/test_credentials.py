@@ -321,3 +321,30 @@ def test_keyring_store_removes_stale_file_entry(
     credentials.store_credentials("default", "old-key", "old-secret", storage="file")
     credentials.store_credentials("default", "new-key", "new-secret", storage="auto")
     assert credentials.load_credentials("default") == ("new-key", "new-secret")
+
+
+def test_token_credential_round_trips_through_the_file_store(
+    isolated_cli_config: Path,
+) -> None:
+    token = "mm_" + "B" * 43
+    assert credentials.store_credentials("tok", storage="file", api_token=token) == "file"
+    stored = credentials.load_credential("tok")
+    assert stored is not None and stored.kind == "token" and stored.api_token == token
+    assert credentials.has_credentials("tok")
+    assert credentials.load_credentials("tok") is None
+
+
+def test_legacy_pair_still_loads_as_a_credential(isolated_cli_config: Path) -> None:
+    credentials.store_credentials("old", "k", "s", storage="file")
+    stored = credentials.load_credential("old")
+    assert stored is not None and stored.kind == "key_secret"
+    assert credentials.load_credentials("old") == ("k", "s")
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [{}, {"api_key": "k"}, {"api_token": "mm_x", "api_key": "k", "api_secret": "s"}],
+)
+def test_credential_requires_exactly_one_kind(fields: dict[str, str]) -> None:
+    with pytest.raises(ValueError):
+        credentials.Credential(**fields)

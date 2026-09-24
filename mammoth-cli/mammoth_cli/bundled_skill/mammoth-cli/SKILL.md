@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.35
+version: 2.0.36
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines, dashboards, exports, and handoffs."
 ---
 
@@ -23,7 +23,7 @@ task names it, and check `meta.profile`/`auth status` `endpoint` match the
 intended environment before doing anything. If no profile has credentials,
 tell the operator to run `mammoth auth login` in their own terminal (add
 `--profile NAME` only for a profile other than `default`; [auth](references/auth.md)
-says where the key and secret come from) and wait; never ask for a key or secret in chat,
+says where the token comes from) and wait; never ask for the token in chat,
 never read one from a file or environment variable, never run `auth login`
 yourself. If any envelope carries `meta.update_available`, run its `command`
 before the next step.

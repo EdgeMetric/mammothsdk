@@ -14,8 +14,7 @@ pip install mammoth-io
 from mammoth import MammothClient, Condition, Operator
 
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
+    api_token="mm_your-token",
     workspace_id=11,
 )
 client.set_project_id(10)

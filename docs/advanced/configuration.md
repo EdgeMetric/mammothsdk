@@ -8,8 +8,7 @@ Advanced configuration options for the Mammoth SDK client.
 from mammoth import MammothClient
 
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
+    api_token="mm_your-token",
     workspace_id=11,
     base_url="https://app.mammoth.io/api/v2",
     timeout=30,
@@ -29,8 +28,7 @@ If your organization uses a custom Mammoth deployment:
 
 ```python
 client = MammothClient(
-    api_key="...",
-    api_secret="...",
+    api_token="mm_...",
     workspace_id=11,
     base_url="https://your-instance.mammoth.io/api/v2",
 )
@@ -88,8 +86,7 @@ def with_retry(fn, max_retries=3, backoff=2):
 import os
 
 config = {
-    "api_key": os.environ["MAMMOTH_API_KEY"],
-    "api_secret": os.environ["MAMMOTH_API_SECRET"],
+    "api_token": os.environ["MAMMOTH_API_TOKEN"],
     "workspace_id": int(os.environ["MAMMOTH_WORKSPACE_ID"]),
     "base_url": os.getenv("MAMMOTH_BASE_URL", "https://app.mammoth.io/api/v2"),
     "timeout": int(os.getenv("MAMMOTH_TIMEOUT", "30")),

@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.7.16
+
+### Added
+
+- `MammothClient(api_token="mm_...")`: API-token (Bearer) authentication. The
+  `api_key` + `api_secret` pair is deprecated but still accepted.
+
 ## v0.7.15
 
 ### Added

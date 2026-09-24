@@ -17,8 +17,7 @@ import os
 from mammoth import MammothClient
 
 client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    api_token=os.getenv("MAMMOTH_API_TOKEN"),
     workspace_id=11,  # your workspace ID
 )
 
@@ -233,8 +232,7 @@ from mammoth import (
 
 # 1. Authenticate
 client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    api_token=os.getenv("MAMMOTH_API_TOKEN"),
     workspace_id=11,
 )
 client.set_project_id(42)

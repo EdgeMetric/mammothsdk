@@ -1,13 +1,17 @@
 # Authentication
 
-The Mammoth SDK uses API key and secret-based authentication. Every request includes your credentials in HTTP headers automatically.
+The Mammoth SDK authenticates with an API token, sent as `Authorization: Bearer mm_...` on every request.
 
-## Getting API credentials
+## Getting an API token
 
-1. Log in to your Mammoth Analytics dashboard
-2. Navigate to your profile settings
-3. Generate or retrieve your API key and secret
-4. Store these credentials securely
+1. Log in to the Mammoth web app
+2. Open **Workspace settings → API Tokens** and choose **Create token**
+3. Copy the token (it starts with `mm_`); it is shown only once
+4. Store it securely; it works only in that workspace and on that server
+
+Older tokens came as an API key and secret. They still work:
+`MammothClient(api_key=..., api_secret=..., workspace_id=...)`. Pass either
+`api_token` or the pair, not both.
 
 ## Client setup
 
@@ -17,8 +21,7 @@ The Mammoth SDK uses API key and secret-based authentication. Every request incl
 from mammoth import MammothClient
 
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
+    api_token="mm_your-token",
     workspace_id=11,
 )
 client.set_project_id(10)
@@ -29,8 +32,7 @@ client.set_project_id(10)
 Store credentials in environment variables for better security:
 
 ```bash
-export MAMMOTH_API_KEY="your-api-key"
-export MAMMOTH_API_SECRET="your-api-secret"
+export MAMMOTH_API_TOKEN="mm_your-token"
 ```
 
 ```python
@@ -38,8 +40,7 @@ import os
 from mammoth import MammothClient
 
 client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    api_token=os.getenv("MAMMOTH_API_TOKEN"),
     workspace_id=11,
 )
 ```
@@ -53,8 +54,7 @@ For projects with multiple environments:
 import os
 
 MAMMOTH_CONFIG = {
-    "api_key": os.getenv("MAMMOTH_API_KEY"),
-    "api_secret": os.getenv("MAMMOTH_API_SECRET"),
+    "api_token": os.getenv("MAMMOTH_API_TOKEN"),
     "workspace_id": int(os.getenv("MAMMOTH_WORKSPACE_ID", "11")),
     "base_url": os.getenv("MAMMOTH_BASE_URL", "https://app.mammoth.io/api/v2"),
 }
@@ -87,8 +87,7 @@ from mammoth import MammothClient, MammothAuthError
 
 try:
     client = MammothClient(
-        api_key="invalid-key",
-        api_secret="invalid-secret",
+        api_token="mm_invalid",
         workspace_id=1,
     )
     projects = client.projects.list()

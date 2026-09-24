@@ -13,15 +13,19 @@ is no environment-variable shortcut and no workspace `-w` login flag.
 New here? Install first with the [installation guide](installation.md), then
 follow the [quick start](quickstart.md).
 
-## Get an API key
+## Get an API token
 
-You need three things: an API key, an API secret, and a workspace id.
+You need two things: an API token and a workspace id.
 
 In the Mammoth web app, open **Workspace settings → API Tokens** and choose
-**Create token**. Mammoth gives you a key and a matching secret as a pair. The
-web app shows the secret only once, so copy both right away. If you have a key but lost
-its secret, edit that token and choose **Generate new secret**. Your workspace
-id is the number after `/workspaces/` in the web app's address bar.
+**Create token**. The token starts with `mm_`. The web app shows it only once,
+so copy it right away. If you lose it, create a new token. Your workspace id
+is the number after `/workspaces/` in the web app's address bar. A token works
+only in the workspace and on the server where you created it.
+
+Older tokens came as an API key and a secret. The CLI still accepts that
+pair: at the token prompt, paste the key, and the CLI then asks for the
+secret.
 
 One more input is optional. The server prefix names your Mammoth region and
 defaults to `app`. Most users leave it alone. See
@@ -54,9 +58,9 @@ Run the login command:
 mammoth auth login
 ```
 
-The CLI prompts for three things in order: your API key, your API secret, and
-then your workspace id. The two secret prompts stay hidden as you type. On
-success the CLI saves the login and confirms.
+The CLI prompts for two things in order: your API token, and then your
+workspace id. The token prompt stays hidden as you type. On success the CLI
+saves the login and confirms.
 
 Two flags fine-tune the login:
 
@@ -89,14 +93,15 @@ The file holds one JSON document:
 
 ```json
 {
-  "api_key": "your-key",
-  "api_secret": "your-secret",
+  "api_token": "mm_your-token",
   "workspace_id": 4,
   "server_prefix": "app"
 }
 ```
 
-The `server_prefix` field is optional. The other three fields are required.
+The `server_prefix` field is optional. The other two fields are required. For
+an older key and secret, use `"api_key"` and `"api_secret"` in place of
+`"api_token"`.
 
 The private file must be owner-only (`0600`) from creation. The CLI rejects a
 group- or world-readable POSIX input file with error code

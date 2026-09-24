@@ -19,8 +19,7 @@ The official Python SDK for the [Mammoth Analytics](https://mammoth.io) platform
 from mammoth import MammothClient, Condition, Operator, ColumnType, SetValue
 
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
+    api_token="mm_your-token",
     workspace_id=11,
 )
 client.set_project_id(10)

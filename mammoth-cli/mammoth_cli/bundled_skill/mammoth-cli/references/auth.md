@@ -1,7 +1,9 @@
 # Authentication and profiles
 
-Required: API key, API secret, workspace id. Optional: a one-label server
-prefix (default `app`, resolving to `https://app.mammoth.io/api/v2`).
+Required: an API token (`mm_...`) and a workspace id. Optional: a one-label
+server prefix (default `app`, resolving to `https://app.mammoth.io/api/v2`).
+An older API key + secret pair still works; `auth status` reports which kind
+(`credential`: `token` or `key_secret`).
 
 ## Precedence
 1. Explicit login handed to the current command (secure prompt or `--input`).
@@ -13,14 +15,14 @@ history, or unrelated files for them.
 
 ## How an agent obtains credentials
 
-An agent never receives the key or secret. When `auth status` reports a
+An agent never receives the token. When `auth status` reports a
 missing profile or `has_credentials=false`, stop and hand the login to the
 human operator:
 
 1. Tell the operator where the credentials come from: in the Mammoth web app,
-   **Workspace settings → API Tokens → Create token** gives a key and a secret;
-   the web app shows the secret only once (on an existing token, **Generate new
-   secret** replaces it). The workspace id is the number after `/workspaces/`
+   **Workspace settings → API Tokens → Create token** gives a token that
+   starts with `mm_`; the web app shows it only once (if it is lost, create a
+   new one). The workspace id is the number after `/workspaces/`
    in the web app's address bar. Then give the exact command to run in
    **their own** terminal. For production it is:
 
@@ -30,9 +32,9 @@ human operator:
 
    Add `--server-prefix release` only when the task names the release
    environment, and `--profile NAME` only when the operator wants a profile
-   other than `default`. The command prompts for the key and secret with
-   hidden input, then the workspace id, so no secret enters chat, argv, or
-   history. Credentials are per environment: a release key never
+   other than `default`. The command prompts for the token with hidden
+   input, then the workspace id, so no secret enters chat, argv, or history.
+   Tokens are per environment and per workspace: a release token never
    authenticates on `app`.
    On macOS the Keychain may show a dialog about `mammoth-cli`; tell the
    operator to choose **Always Allow**. If the keychain cannot be used (for
@@ -41,12 +43,12 @@ human operator:
 2. Wait for the operator to confirm, then re-run
    `mammoth auth status --profile PROFILE` and
    `mammoth doctor --profile PROFILE`.
-3. Do not ask the operator to paste the key or secret into chat. Do not run
+3. Do not ask the operator to paste the token into chat. Do not run
    `auth login` yourself, with or without `--input`, unless the operator has
    explicitly given you a protected `0600` credential file path to use.
 
-The only supported configuration is the API key, API secret, workspace id, and
-an optional one-label server prefix (default `app`). There is no base-url
+The only supported configuration is the API token (or the older key + secret),
+the workspace id, and an optional one-label server prefix (default `app`). There is no base-url
 override.
 
 ## Cold-start sequence
@@ -107,8 +109,7 @@ authorization failure. When using the selected profile, `--profile PROFILE`
 may be omitted.
 
 For an ordinary human-operated terminal, prefer the first command: it asks
-for the key and secret without putting either in shell history, argv, chat, or
-logs. For headless POSIX work, create the JSON file outside the repository, set
+for the token without putting it in shell history, argv, chat, or logs. For headless POSIX work, create the JSON file outside the repository, set
 its permissions to `0600`, and pass only its path. With a protected POSIX file,
 specify `--storage file` explicitly; `--storage auto` can require an available
 OS keyring and is not a reliable headless fallback. On Windows, do not use the
@@ -116,8 +117,9 @@ file backend as a secret store; use the OS keyring or stop and obtain a
 supported secure store. Remove any input file after the
 profile is stored.
 
-`creds.json` is a `0600` JSON file: `{"api_key": "...", "api_secret": "...",
-"workspace_id": 4, "server_prefix": "app"}` (`server_prefix` optional). You can
+`creds.json` is a `0600` JSON file: `{"api_token": "mm_...", "workspace_id": 4,
+"server_prefix": "app"}` (`server_prefix` optional; the older
+`"api_key"` + `"api_secret"` pair is accepted in place of `api_token`). You can
 also pipe it with `--input - --input-format json`.
 
 Secrets live in the OS keyring (or an explicitly selected `0600` file

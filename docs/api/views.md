@@ -9,7 +9,7 @@ Views are created via `client.views.get()` -- not instantiated directly:
 ```python
 from mammoth import MammothClient
 
-client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
+client = MammothClient(api_token="mm_...", workspace_id=11)
 client.set_project_id(10)
 
 view = client.views.get(1039)

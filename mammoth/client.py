@@ -9,8 +9,7 @@ Example::
     from mammoth import MammothClient
 
     client = MammothClient(
-        api_key="your-api-key",
-        api_secret="your-api-secret",
+        api_token="mm_...",
         workspace_id=11,
         base_url="https://app.mammoth.io/api/v2",
     )
@@ -274,11 +273,7 @@ class MammothClient:
 
     Example::
 
-        client = MammothClient(
-            api_key="your-api-key",
-            api_secret="your-api-secret",
-            workspace_id=11,
-        )
+        client = MammothClient(api_token="mm_...", workspace_id=11)
         client.set_project_id(10)
 
         # Resource-based CRUD
@@ -293,20 +288,26 @@ class MammothClient:
 
     def __init__(
         self,
-        api_key: str,
-        api_secret: str,
-        workspace_id: int,
+        api_key: str | None = None,
+        api_secret: str | None = None,
+        workspace_id: int | None = None,
         base_url: str = "https://app.mammoth.io/api/v2",
         timeout: float = DEFAULT_TIMEOUT,
         job_timeout: float = DEFAULT_JOB_TIMEOUT,
         pipeline_timeout: float = DEFAULT_PIPELINE_TIMEOUT,
         allow_insecure_loopback_http: bool = False,
+        *,
+        api_token: str | None = None,
     ) -> None:
         """Initialize the Mammoth client.
 
+        Pass either ``api_token`` (the ``mm_...`` token from Workspace settings
+        -> API Tokens, sent as ``Authorization: Bearer``) or the deprecated
+        ``api_key`` + ``api_secret`` pair, never both.
+
         Args:
-            api_key: Your Mammoth API key.
-            api_secret: Your Mammoth API secret.
+            api_key: Deprecated API key; use ``api_token``.
+            api_secret: Deprecated API secret; use ``api_token``.
             workspace_id: Your Mammoth workspace ID.
             base_url: Base URL for the Mammoth API.
             timeout: Request timeout in seconds.
@@ -315,7 +316,16 @@ class MammothClient:
             allow_insecure_loopback_http: Permit HTTP only for an explicit
                 loopback development endpoint. Production API credentials must
                 use HTTPS.
+            api_token: Your Mammoth API token (``mm_...``).
         """
+        if api_token is not None and (api_key is not None or api_secret is not None):
+            raise ValueError("pass api_token or api_key + api_secret, not both")
+        if api_token is None and (not api_key or not api_secret):
+            raise ValueError("pass api_token (mm_...) or both api_key and api_secret")
+        if api_token is not None and (not isinstance(api_token, str) or not api_token.strip()):
+            raise ValueError("api_token must be a non-empty string")
+        if workspace_id is None:
+            raise ValueError("workspace_id is required")
         if not isinstance(base_url, str):
             raise ValueError("base_url must be an HTTPS URL")
         self.base_url = base_url.rstrip("/")
@@ -346,6 +356,7 @@ class MammothClient:
                 "loopback development endpoint"
             )
 
+        self.api_token = api_token.strip() if api_token is not None else None
         self.api_key = api_key
         self.api_secret = api_secret
         self.workspace_id = workspace_id
@@ -365,10 +376,16 @@ class MammothClient:
         self.project_id: int | None = None
 
         self.session = requests.Session()
+        if self.api_token is not None:
+            credential_headers = {"Authorization": f"Bearer {self.api_token}"}
+        else:
+            credential_headers = {
+                "X-API-KEY": str(self.api_key),
+                "X-API-SECRET": str(self.api_secret),
+            }
         self.session.headers.update(
             {
-                "X-API-KEY": self.api_key,
-                "X-API-SECRET": self.api_secret,
+                **credential_headers,
                 "X-WORKSPACE-ID": str(self.workspace_id),
                 "User-Agent": f"mammoth-io/{_get_version()}",
             }

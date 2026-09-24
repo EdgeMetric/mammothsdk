@@ -7,6 +7,7 @@ import json
 import os
 import stat
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -14,6 +15,7 @@ from mammoth_cli.commands import auth as auth_cmd
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.services import factory as service_factory
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import make_runner
 
@@ -248,7 +250,7 @@ def test_login_prompt_path_when_interactive(
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
     data, _meta = auth_cmd._run_login(invocation, server_prefix=None, storage="file")
     assert data["workspace_id"] == 4
-    assert credentials.load_credentials("default") == ("prompted-API key", "prompted-API secret")
+    assert credentials.load_credentials("default") == ("prompted-API token", "prompted-API secret")
 
 
 def test_login_bare_prompts_for_workspace(
@@ -270,9 +272,9 @@ def test_login_bare_prompts_for_workspace(
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
     data, _meta = auth_cmd._run_login(invocation, server_prefix=None, storage="file")
     # credentials asked before the workspace id
-    assert asked == ["API key", "API secret", "Workspace id"], asked
+    assert asked == ["API token", "API secret", "Workspace id"], asked
     assert data["workspace_id"] == 7
-    assert credentials.load_credentials("default") == ("prompted-API key", "prompted-API secret")
+    assert credentials.load_credentials("default") == ("prompted-API token", "prompted-API secret")
 
 
 def test_login_no_tty_names_the_reason(
@@ -444,10 +446,10 @@ def test_login_prompt_strips_whitespace_and_prints_masked_receipt(
     monkeypatch.setattr(auth_cmd.typer, "prompt", fake_prompt)
     invocation = Invocation(command_id="auth.login", output="table", no_input=False)
     auth_cmd._run_login(invocation, server_prefix=None, storage="file")
-    assert credentials.load_credentials("default") == ("prompted-API key", "prompted-API secret")
+    assert credentials.load_credentials("default") == ("prompted-API token", "prompted-API secret")
     err = capsys.readouterr().err
-    assert "API key: 16 characters, ending in …" in err
-    assert "prompted-API key" not in err
+    assert "API token: 18 characters, ending in …" in err
+    assert "prompted-API token" not in err
     assert "prompted-API secret" not in err
 
 
@@ -489,3 +491,100 @@ def test_login_auth_failure_names_endpoint_workspace_and_masked_key(
     assert "release-key-1234" not in result.stderr
     assert "s3cr3t" not in result.stderr
     assert "per environment" in error["hint"]
+
+
+# --- API token (Bearer, mm_...) ------------------------------------------------
+
+_TOKEN = "mm_" + "A" * 43
+
+
+def _capture_auth(monkeypatch: pytest.MonkeyPatch, service: FakeMammothService) -> list[Any]:
+    seen: list[Any] = []
+
+    def _build(auth: Any, **_kwargs: Any) -> FakeMammothService:
+        seen.append(auth)
+        return service
+
+    monkeypatch.setattr(service_factory, "build_service", _build)
+    return seen
+
+
+def test_login_with_api_token_from_input(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen = _capture_auth(monkeypatch, fake_service)
+    doc = _write_login_doc(tmp_path, api_token=_TOKEN, workspace_id=4)
+    result = make_runner().invoke(
+        ["auth", "login", "--input", str(doc), "--storage", "file", "--output", "json"], env={}
+    )
+    assert result.exit_code == 0, result.stderr
+    assert json.loads(result.stdout)["data"]["credential"] == "token"
+    assert seen[0].api_token == _TOKEN and seen[0].api_key is None
+    stored = credentials.load_credential("default")
+    assert stored is not None and stored.api_token == _TOKEN
+    assert credentials.load_credentials("default") is None  # no legacy pair
+    assert _TOKEN not in result.stdout and _TOKEN not in result.stderr
+    status = make_runner().invoke(["auth", "status", "--output", "json"], env={})
+    assert json.loads(status.stdout)["data"]["credential"] == "token"
+
+
+def test_login_interactive_token_skips_the_secret_prompt(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(auth_cmd.sys.stdin, "isatty", lambda: True)
+    asked: list[str] = []
+
+    def fake_prompt(text: str, hide_input: bool = False, type: object = None) -> object:
+        asked.append(text)
+        return 4 if "Workspace" in text else f" {_TOKEN}\n"
+
+    monkeypatch.setattr(auth_cmd.typer, "prompt", fake_prompt)
+    invocation = Invocation(command_id="auth.login", output="table", no_input=False)
+    data, _meta = auth_cmd._run_login(invocation, server_prefix=None, storage="file")
+    assert asked == ["API token", "Workspace id"]
+    assert data["credential"] == "token"
+    stored = credentials.load_credential("default")
+    assert stored is not None and stored.api_token == _TOKEN
+
+
+def test_login_rejects_the_token_id_pasted_as_the_token(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    tmp_path: Path,
+) -> None:
+    doc = _write_login_doc(tmp_path, api_token="mm_0123456789abcdef", workspace_id=4)
+    result = make_runner().invoke(
+        ["auth", "login", "--input", str(doc), "--storage", "file", "--output", "json"], env={}
+    )
+    assert result.exit_code == 2
+    error = json.loads(result.stderr)["error"]
+    assert error["code"] == "invalid_credentials"
+    assert "id" in error["message"]
+    assert "check_connection" not in fake_service.calls
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {"api_token": _TOKEN, "api_key": "k", "api_secret": "s", "workspace_id": 4},
+        {"api_key": "k", "workspace_id": 4},
+        {"workspace_id": 4},
+    ],
+)
+def test_login_document_needs_exactly_one_credential(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    tmp_path: Path,
+    fields: dict[str, Any],
+) -> None:
+    doc = _write_login_doc(tmp_path, **fields)
+    result = make_runner().invoke(
+        ["auth", "login", "--input", str(doc), "--storage", "file", "--output", "json"], env={}
+    )
+    assert result.exit_code == 2, result.stdout
+    assert "check_connection" not in fake_service.calls

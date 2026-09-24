@@ -1,11 +1,11 @@
 """Bespoke `auth` command family: login, status, logout.
 
-Authentication has exactly three required inputs (API key, API secret,
-workspace id) and one optional input (server prefix, default ``app``).
-Authentication always requires a login; there is no environment credential
-path. These commands never accept a secret as an ordinary command-line value:
-the API key and secret come from a hidden TTY prompt or a permission-checked
-JSON/YAML login document read through the shared ``--input`` option.
+Authentication needs an API token (``mm_...``, sent as ``Authorization:
+Bearer``) and a workspace id, plus an optional server prefix (default
+``app``). The deprecated API key + secret pair is still accepted. There is no
+environment credential path. These commands never accept a secret as an
+ordinary command-line value: it comes from a hidden TTY prompt or a
+permission-checked JSON/YAML login document read through ``--input``.
 """
 
 from __future__ import annotations
@@ -160,6 +160,44 @@ def _prompt_secret(label: str) -> str:
     return str(value)
 
 
+TOKEN_PREFIX = "mm_"  # noqa: S105 - a public prefix, not a credential
+# A token is ``mm_`` + 43 url-safe characters. Its public id (``app_key``) is
+# ``mm_`` + 16 hex characters and cannot authenticate: catch that paste early.
+_APP_KEY_LENGTH = 19
+
+
+def _check_token_shape(token: str) -> None:
+    if token.startswith(TOKEN_PREFIX) and len(token) <= _APP_KEY_LENGTH:
+        raise CliError(
+            code="invalid_credentials",
+            message="That looks like the token's id (app key), not the token.",
+            exit_status=EXIT_USAGE,
+            hint=(
+                "Use the token shown once when it was created (mm_ followed by about "
+                "43 characters). If it is lost, create a new token in Workspace "
+                "settings -> API Tokens."
+            ),
+        )
+
+
+def _prompt_credential() -> tuple[str | None, str | None, str | None]:
+    """Prompt for the API token; a legacy key (no ``mm_`` prefix) also asks for its secret.
+
+    Returns:
+        ``(api_token, api_key, api_secret)`` with either the token or the pair set.
+    """
+    first = _prompt_secret("API token")
+    if first.startswith(TOKEN_PREFIX):
+        _check_token_shape(first)
+        return first, None, None
+    typer.echo(
+        "  That is not an mm_ token; treating it as a legacy API key. "
+        "New tokens from Workspace settings -> API Tokens start with mm_.",
+        err=True,
+    )
+    return None, first, _prompt_secret("API secret")
+
+
 def _prompt_blockers(invocation: Invocation) -> list[str]:
     """Reasons this invocation cannot interactively prompt, in report order.
 
@@ -208,15 +246,17 @@ def _run_login(
         document = load_input_document(invocation.input_file, invocation.input_format)
         assert document is not None
         request = _validate_login_document(document)
+        api_token = request.api_token.strip() if request.api_token is not None else None
         api_key, api_secret = request.api_key, request.api_secret
+        if api_token is not None:
+            _check_token_shape(api_token)
         effective_workspace = request.workspace_id
         effective_prefix = server_prefix if server_prefix is not None else request.server_prefix
     elif not blockers:
-        # Two flows, nothing else: a terminal prompts for everything (key,
-        # secret, then workspace id), and non-interactive uses --input. The
-        # workspace is asked last, after the credentials.
-        api_key = _prompt_secret("API key")
-        api_secret = _prompt_secret("API secret")
+        # Two flows, nothing else: a terminal prompts for everything (token,
+        # then workspace id), and non-interactive uses --input. The workspace
+        # is asked last, after the credential.
+        api_token, api_key, api_secret = _prompt_credential()
         effective_workspace = typer.prompt("Workspace id", type=int)
         effective_prefix = server_prefix
     else:
@@ -238,10 +278,10 @@ def _run_login(
             message="A positive --workspace id is required.",
             exit_status=EXIT_USAGE,
         )
-    if not api_key or not api_secret:
+    if not api_token and (not api_key or not api_secret):
         raise CliError(
             code="invalid_credentials",
-            message="The API key and secret must be non-empty.",
+            message="An API token (or the deprecated key and secret) is required.",
             exit_status=EXIT_USAGE,
         )
 
@@ -252,6 +292,7 @@ def _run_login(
         api_secret=api_secret,
         workspace_id=effective_workspace,
         base_url=resolved_base_url,
+        api_token=api_token,
     )
     service = service_factory.build_service(resolved_auth, timeout=invocation.timeout)
     try:
@@ -269,17 +310,22 @@ def _run_login(
                 # Receipts only (length and last four characters). The output
                 # layer redacts any key that looks like a credential, so these
                 # are named for what they are: descriptions, not values.
-                "credential_receipt": {
-                    "key": _masked_receipt(api_key),
-                    "second_value_length": len(api_secret),
-                },
+                "credential_receipt": (
+                    {"type": "api token", "shape": _masked_receipt(api_token)}
+                    if api_token is not None
+                    else {
+                        "key": _masked_receipt(str(api_key)),
+                        "second_value_length": len(str(api_secret)),
+                    }
+                ),
             }
+            what = "token" if api_token is not None else "key/secret"
             exc.hint = (
-                f"{resolved_base_url} rejected this key/secret for workspace "
-                f"{effective_workspace}. Credentials are per environment: a key issued on "
-                "one Mammoth server does not authenticate on another. Check the key, the "
-                "secret, the workspace id, and that --server-prefix matches where the key "
-                "was issued."
+                f"{resolved_base_url} rejected this {what} for workspace "
+                f"{effective_workspace}. Credentials are per environment and per workspace: "
+                "a token issued on one Mammoth server or workspace does not authenticate on "
+                "another. Check the token, the workspace id, and that --server-prefix "
+                "matches where it was issued."
             )
         raise
     finally:
@@ -304,6 +350,7 @@ def _run_login(
         api_secret,
         storage=cast(credentials.StorageMode, storage),
         interactive=not blockers,
+        api_token=api_token,
     )
 
     data = {
@@ -311,6 +358,7 @@ def _run_login(
         "workspace_id": effective_workspace,
         "base_url": resolved_base_url,
         "storage": storage_used,
+        "credential": "token" if api_token is not None else "key_secret",
     }
     return data, {"profile": profile_name, "workspace_id": effective_workspace}
 
@@ -337,8 +385,10 @@ def auth_login(
 ) -> None:
     """Log in and store one profile's credentials.
 
-    Prompts for the API key and secret in a terminal. For non-interactive use
-    (agents, CI), pass ``--input FILE`` with a login document instead.
+    Prompts for the API token (mm_..., from Workspace settings -> API Tokens)
+    and the workspace id in a terminal; a legacy API key is also accepted and
+    then asks for its secret. For non-interactive use (agents, CI), pass
+    ``--input FILE`` with {"api_token": ..., "workspace_id": ...} instead.
     Performs a lightweight connection check before saving anything; a failed
     check leaves existing profile state unchanged.
     """
@@ -382,7 +432,8 @@ def _run_status(invocation: Invocation, *, check: bool) -> tuple[dict[str, Any],
     """Report local (or, with `--check`, live) authentication state."""
     profile_name = invocation.profile or profiles.get_selected()
     record = profiles.get_profile(profile_name)
-    has_creds = credentials.has_credentials(profile_name)
+    credential = credentials.load_credential(profile_name)
+    has_creds = credential is not None
 
     if record is not None:
         endpoint = resolve_base_url(record.server_prefix)
@@ -396,6 +447,7 @@ def _run_status(invocation: Invocation, *, check: bool) -> tuple[dict[str, Any],
         "workspace_id": workspace_id,
         "endpoint": endpoint,
         "has_credentials": has_creds,
+        "credential": credential.kind if credential is not None else None,
         "checked": False,
         "connected": None,
     }

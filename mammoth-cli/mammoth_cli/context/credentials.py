@@ -1,7 +1,8 @@
 """Secret credential storage: OS keyring first, permission-checked file second.
 
-Stores a JSON blob ``{"api_key": ..., "api_secret": ...}`` under keyring
-service ``mammoth-cli`` with the profile name as username. When no keyring
+Stores a JSON blob ``{"api_token": ...}`` (the ``mm_...`` Bearer token) or
+the deprecated ``{"api_key": ..., "api_secret": ...}`` under keyring service
+``mammoth-cli`` with the profile name as username. When no keyring
 backend is available, an explicit or interactively-approved fallback stores
 the same blob in ``credentials.toml`` beside ``profiles.toml``, with
 directory mode ``0700`` and file mode ``0600`` on POSIX. A secret value is
@@ -23,8 +24,9 @@ import sys
 import tempfile
 import threading
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import keyring
 import keyring.errors
@@ -132,26 +134,64 @@ def _bounded_keyring_call[T](call: Callable[[], T]) -> T:
     return outcome["value"]  # type: ignore[return-value]
 
 
+@dataclass(frozen=True)
+class Credential:
+    """One stored credential: a Bearer token, or a deprecated key + secret pair."""
+
+    api_token: str | None = None
+    api_key: str | None = None
+    api_secret: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.api_token is not None:
+            if self.api_key is not None or self.api_secret is not None:
+                raise ValueError("a credential is a token or a key + secret, not both")
+        elif not self.api_key or not self.api_secret:
+            raise ValueError("a credential needs a token or both a key and a secret")
+
+    @property
+    def kind(self) -> str:
+        """``"token"`` or ``"key_secret"`` (never the value)."""
+        return "token" if self.api_token is not None else "key_secret"
+
+    def document(self) -> dict[str, str]:
+        if self.api_token is not None:
+            return {"api_token": self.api_token}
+        return {"api_key": str(self.api_key), "api_secret": str(self.api_secret)}
+
+    @classmethod
+    def from_document(cls, data: Any) -> Credential | None:
+        if not hasattr(data, "get"):
+            return None
+        token = data.get("api_token")
+        if token:
+            return cls(api_token=str(token))
+        key, secret = data.get("api_key"), data.get("api_secret")
+        if key and secret:
+            return cls(api_key=str(key), api_secret=str(secret))
+        return None
+
+
 def credentials_path() -> Path:
     """Return the path to the file-fallback credential store."""
     return config_dir() / CREDENTIALS_FILENAME
 
 
-def _store_keyring(profile: str, api_key: str, api_secret: str) -> None:
+def _store_keyring(profile: str, credential: Credential) -> None:
     """Store and read back one credential; a keyring that loses it is unusable.
 
     Raises:
         KeyringUnresponsiveError: The keyring hung, raised, or did not return
             the stored credential.
     """
-    payload = json.dumps({"api_key": api_key, "api_secret": api_secret})
+    payload = json.dumps(credential.document())
     _bounded_keyring_call(lambda: keyring.set_password(KEYRING_SERVICE, profile, payload))
     stored = _bounded_keyring_call(lambda: keyring.get_password(KEYRING_SERVICE, profile))
     if stored != payload:
         raise KeyringUnresponsiveError("read-back mismatch")
 
 
-def _load_keyring(profile: str) -> tuple[str, str] | None:
+def _load_keyring(profile: str) -> Credential | None:
     """Load one credential from the keyring.
 
     Raises:
@@ -160,8 +200,7 @@ def _load_keyring(profile: str) -> tuple[str, str] | None:
     raw = _bounded_keyring_call(lambda: keyring.get_password(KEYRING_SERVICE, profile))
     if raw is None:
         return None
-    data = json.loads(raw)
-    return str(data["api_key"]), str(data["api_secret"])
+    return Credential.from_document(json.loads(raw))
 
 
 def _delete_keyring(profile: str) -> bool:
@@ -299,26 +338,25 @@ def _write_file_document(document: TOMLDocument) -> None:
         raise
 
 
-def _store_file(profile: str, api_key: str, api_secret: str) -> None:
+def _store_file(profile: str, credential: Credential) -> None:
     document = _load_file_document()
     table = document.get("profiles")
     if table is None:
         table = tomlkit.table()
         document["profiles"] = table
     entry = tomlkit.table()
-    entry["api_key"] = api_key
-    entry["api_secret"] = api_secret
+    for field, value in credential.document().items():
+        entry[field] = value
     table[profile] = entry
     _write_file_document(document)
 
 
-def _load_file(profile: str) -> tuple[str, str] | None:
+def _load_file(profile: str) -> Credential | None:
     document = _load_file_document()
     table = document.get("profiles")
     if not table or profile not in table:
         return None
-    entry = table[profile]
-    return str(entry["api_key"]), str(entry["api_secret"])
+    return Credential.from_document(table[profile])
 
 
 def _delete_file(profile: str) -> bool:
@@ -333,23 +371,25 @@ def _delete_file(profile: str) -> bool:
 
 def store_credentials(
     profile: str,
-    api_key: str,
-    api_secret: str,
+    api_key: str | None = None,
+    api_secret: str | None = None,
     storage: StorageMode = "auto",
     *,
     interactive: bool = False,
+    api_token: str | None = None,
 ) -> str:
     """Store one profile's secret credential.
 
     Args:
         profile: The (already-validated) profile name.
-        api_key: The Mammoth API key.
-        api_secret: The Mammoth API secret.
+        api_key: The deprecated Mammoth API key (with ``api_secret``).
+        api_secret: The deprecated Mammoth API secret (with ``api_key``).
         storage: ``"auto"`` prefers the OS keyring and falls back to the file
             store only when interactive; ``"keyring"`` requires the keyring;
             ``"file"`` uses the permission-checked fallback file explicitly.
         interactive: Whether the current process has an interactive TTY.
             Only consulted by ``"auto"`` when no keyring backend exists.
+        api_token: The ``mm_...`` Bearer token, instead of a key + secret.
 
     Returns:
         The storage backend actually used: ``"keyring"`` or ``"file"``.
@@ -360,21 +400,22 @@ def store_credentials(
             ``keyring_unresponsive`` when the keyring hangs, fails, or loses
             the credential and no file fallback is allowed.
     """
+    credential = Credential(api_token=api_token, api_key=api_key, api_secret=api_secret)
     if storage == "file":
-        _store_file(profile, api_key, api_secret)
+        _store_file(profile, credential)
         return "file"
     if storage == "keyring":
         if not _keyring_available():
             raise keyring_unavailable_error()
         try:
-            _store_keyring(profile, api_key, api_secret)
+            _store_keyring(profile, credential)
         except KeyringUnresponsiveError:
             raise keyring_unresponsive_error() from None
         _delete_file(profile)
         return "keyring"
     if _keyring_available():
         try:
-            _store_keyring(profile, api_key, api_secret)
+            _store_keyring(profile, credential)
         except KeyringUnresponsiveError:
             if not interactive:
                 raise keyring_unresponsive_error() from None
@@ -388,22 +429,16 @@ def store_credentials(
             _delete_file(profile)
             return "keyring"
     if interactive:
-        _store_file(profile, api_key, api_secret)
+        _store_file(profile, credential)
         return "file"
     raise keyring_unavailable_error()
 
 
-def load_credentials(profile: str) -> tuple[str, str] | None:
-    """Load one profile's secret credential.
+def load_credential(profile: str) -> Credential | None:
+    """Load one profile's secret credential (token or key + secret).
 
     Tries the file store first, so a file-stored profile never waits on the
     OS keyring, then the keyring.
-
-    Args:
-        profile: The profile name.
-
-    Returns:
-        ``(api_key, api_secret)`` if a credential is stored, else None.
 
     Raises:
         CliError: ``keyring_unresponsive`` when the keyring hangs or fails.
@@ -419,6 +454,17 @@ def load_credentials(profile: str) -> tuple[str, str] | None:
         raise keyring_unresponsive_error() from None
 
 
+def load_credentials(profile: str) -> tuple[str, str] | None:
+    """Load a profile's deprecated ``(api_key, api_secret)`` pair.
+
+    Returns None for a token credential; use :func:`load_credential`.
+    """
+    credential = load_credential(profile)
+    if credential is None or credential.api_token is not None:
+        return None
+    return str(credential.api_key), str(credential.api_secret)
+
+
 def has_credentials(profile: str) -> bool:
     """Return True if a secret credential is stored for ``profile``.
 
@@ -428,7 +474,7 @@ def has_credentials(profile: str) -> bool:
     Raises:
         CliError: ``keyring_unresponsive`` when the keyring hangs or fails.
     """
-    return load_credentials(profile) is not None
+    return load_credential(profile) is not None
 
 
 def delete_credentials(profile: str) -> bool:

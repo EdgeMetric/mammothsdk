@@ -11,7 +11,7 @@ prompt works even when the agent's skill directory is not set up.
 
 Fill the two placeholders (`TASK`, `PROJECT NAME`), then paste. The agent
 installs the CLI if it is missing. When no login exists yet, it hands you the
-one-time `mammoth auth login` step. It never touches the key or secret.
+one-time `mammoth auth login` step. It never touches the API token.
 A short version of the same prompt is in the repository README for quick
 handovers. This page is the full form. If you use a named profile or a
 server other than `app`, say so in the task. The agent then adds
@@ -40,18 +40,18 @@ ONBOARDING (run in bash, in this order; stop at the first failure and report it)
    `has_credentials: true` → go to step 3. Otherwise print this to the
    operator, verbatim, and wait until they say it is done:
      "Mammoth needs a one-time login that only you can do. In the Mammoth web
-      app open Workspace settings → API Tokens → Create token, copy the key
-      and the secret (the secret is shown only once), and note your workspace
-      id (the number after /workspaces/ in the address bar). Then run in your
-      own terminal:
+      app open Workspace settings → API Tokens → Create token, copy the token
+      (it starts with mm_ and is shown only once), and note your workspace id
+      (the number after /workspaces/ in the address bar). Then run in your own
+      terminal:
         mammoth auth login
-      It prompts for the key, the secret (both hidden) and the workspace id
-      and saves them in your OS keyring. On a Mac, if a Keychain dialog asks
+      It prompts for the token (hidden) and the workspace id and saves them
+      in your OS keyring. On a Mac, if a Keychain dialog asks
       about mammoth-cli, choose Always Allow. Tell me when it says logged in."
    Add `--server-prefix LABEL` to that command only when the task names a
    server other than app, and `--profile NAME` (plus
    `export MAMMOTH_PROFILE=NAME` for yourself) only when it names a profile.
-   Never ask for a key or secret in chat, never read one from a file or
+   Never ask for the token in chat, never read one from a file or
    environment variable, never run `auth login` yourself. Re-run
    `mammoth auth status` after they confirm.
 3. mammoth doctor

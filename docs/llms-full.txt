@@ -33,7 +33,7 @@
   - [Key concepts](#key-concepts)
   - [Next steps](#next-steps)
 - [Authentication](#authentication)
-  - [Getting API credentials](#getting-api-credentials)
+  - [Getting an API token](#getting-an-api-token)
   - [Client setup](#client-setup)
     - [Direct authentication](#direct-authentication)
     - [Environment variables (recommended)](#environment-variables-recommended)
@@ -216,7 +216,7 @@
 - [Projects](#projects)
   - [`ProjectsAPI`](#projectsapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
-    - [`add_users(self, project_id: 'int', user_ids: '_list[int]', role: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#add_usersself-project_id-int-user_ids-_listint-role-str-none-none-workspace_id-int-none-none---dictstr-any)
+    - [`add_users(self, project_id: 'int', user_ids: '_list[str]', role: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#add_usersself-project_id-int-user_ids-_liststr-role-str-none-none-workspace_id-int-none-none---dictstr-any)
     - [`browse(self, project_id: 'int', workspace_id: 'int | None' = None, fields: 'str | None' = None, name: 'str | None' = None, browse_type: 'str | None' = None, sort: 'str | None' = None, offset: 'int | None' = None, limit: 'int | None' = None) -> 'dict[str, Any]'`](#browseself-project_id-int-workspace_id-int-none-none-fields-str-none-none-name-str-none-none-browse_type-str-none-none-sort-str-none-none-offset-int-none-none-limit-int-none-none---dictstr-any)
     - [`bulk_delete(self, project_ids: '_list[int]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#bulk_deleteself-project_ids-_listint-workspace_id-int-none-none---dictstr-any)
     - [`bulk_update(self, patch_data: 'dict[str, Any]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#bulk_updateself-patch_data-dictstr-any-workspace_id-int-none-none---dictstr-any)
@@ -230,7 +230,6 @@
     - [`publish_credentials(self, project_id: 'int', odbc_type: "Literal['postgres', 'bigquery']", workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#publish_credentialsself-project_id-int-odbc_type-literalpostgres-bigquery-workspace_id-int-none-none---dictstr-any)
     - [`remove_users(self, project_id: 'int', user_ids: '_list[str]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#remove_usersself-project_id-int-user_ids-_liststr-workspace_id-int-none-none---dictstr-any)
     - [`resource_dependencies(self, project_id: 'int', resource_ids: '_list[str]', is_recursive: 'bool | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#resource_dependenciesself-project_id-int-resource_ids-_liststr-is_recursive-bool-none-none-workspace_id-int-none-none---dictstr-any)
-    - [`resource_dependencies_update(self, project_id: 'int', patches: '_list[DataSyncPatchItem]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#resource_dependencies_updateself-project_id-int-patches-_listdatasyncpatchitem-workspace_id-int-none-none---dictstr-any)
     - [`resource_status(self, project_id: 'int', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#resource_statusself-project_id-int-workspace_id-int-none-none---dictstr-any)
     - [`sample_flow(self, project_id: 'int', label_resource_id: 'int | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#sample_flowself-project_id-int-label_resource_id-int-none-none-workspace_id-int-none-none---dictstr-any)
     - [`update(self, project_id: 'int', name: 'str | None' = None, color: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`](#updateself-project_id-int-name-str-none-none-color-str-none-none-workspace_id-int-none-none---dictstr-any)
@@ -238,21 +237,18 @@
 - [Datasets](#datasets)
   - [`DatasetsAPI`](#datasetsapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
-    - [`bulk_delete(self, dataset_ids: '_list[int] | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'None'`](#bulk_deleteself-dataset_ids-_listint-none-none-workspace_id-int-none-none-project_id-int-none-none---none)
+    - [`bulk_delete(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'None'`](#bulk_deleteself-workspace_id-int-none-none-project_id-int-none-none---none)
     - [`bulk_update(self, patch_data: 'dict[str, Any]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#bulk_updateself-patch_data-dictstr-any-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`create(self, dataset_spec: 'dict[str, Any]', ds_creation_type: 'str', folder_resource_id: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#createself-dataset_spec-dictstr-any-ds_creation_type-str-folder_resource_id-str-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`create_from_pdf(self, file_object_id: 'int', file_name: 'str', file_id: 'str | None' = None, table_list: '_list[int] | None' = None, delete_file_after_extract: 'bool' = False, is_preview_needed: 'bool | None' = None, user_instruction: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#create_from_pdfself-file_object_id-int-file_name-str-file_id-str-none-none-table_list-_listint-none-none-delete_file_after_extract-bool-false-is_preview_needed-bool-none-none-user_instruction-str-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
-    - [`delete(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#deleteself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
-    - [`delete_and_verify(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, *, timeout: 'int | None' = None, poll_interval: 'float' = 2.0, dependencies: 'Sequence[str] | None' = None) -> 'dict[str, Any]'`](#delete_and_verifyself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none-timeout-int-none-none-poll_interval-float-20-dependencies-sequencestr-none-none---dictstr-any)
+    - [`delete(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'None'`](#deleteself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none---none)
     - [`file_settings_undo(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#file_settings_undoself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`file_settings_update(self, dataset_id: 'int', delimiter: 'str', has_header: 'bool', initial_skip_count: 'int', quotechar: 'str', date_format: 'str | None' = None, preview_mode: 'bool' = False, skip_auto_process_check: 'bool' = True, date_formats: 'dict[str, str] | None' = None, set_project_level_date_format: 'bool' = False, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#file_settings_updateself-dataset_id-int-delimiter-str-has_header-bool-initial_skip_count-int-quotechar-str-date_format-str-none-none-preview_mode-bool-false-skip_auto_process_check-bool-true-date_formats-dictstr-str-none-none-set_project_level_date_format-bool-false-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`get(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#getself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`get_batch(self, dataset_id: 'int', batch_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_batchself-dataset_id-int-batch_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
-    - [`get_batch_data(self, dataset_id: 'int', batch_id: 'int', columns: 'str | None' = None, limit: 'int' = 50, offset: 'int' = 0, workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 2) -> 'dict[str, Any]'`](#get_batch_dataself-dataset_id-int-batch_id-int-columns-str-none-none-limit-int-50-offset-int-0-workspace_id-int-none-none-project_id-int-none-none-timeout-int-none-none-poll_interval-int-2---dictstr-any)
     - [`get_data(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int' = 300, poll_interval: 'int' = 2) -> 'dict[str, Any]'`](#get_dataself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none-timeout-int-300-poll_interval-int-2---dictstr-any)
     - [`get_file_settings(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_file_settingsself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
-    - [`list(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None, limit: 'int' = 100, offset: 'int' = 0, sort: 'str' = '(created_at:desc)') -> 'dict[str, Any]'`](#listself-workspace_id-int-none-none-project_id-int-none-none-limit-int-100-offset-int-0-sort-str-created_atdesc---dictstr-any)
-    - [`list_all(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None, limit: 'int' = 100, sort: 'str' = '(created_at:desc)', max_pages: 'int' = 1000) -> 'dict[str, Any]'`](#list_allself-workspace_id-int-none-none-project_id-int-none-none-limit-int-100-sort-str-created_atdesc-max_pages-int-1000---dictstr-any)
+    - [`list(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None, limit: 'int' = 100, sort: 'str' = '(created_at:desc)') -> 'dict[str, Any]'`](#listself-workspace_id-int-none-none-project_id-int-none-none-limit-int-100-sort-str-created_atdesc---dictstr-any)
     - [`list_batches(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`](#list_batchesself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none---_listdictstr-any)
     - [`rename(self, dataset_id: 'int', name: 'str', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#renameself-dataset_id-int-name-str-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`restore(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#restoreself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
@@ -262,23 +258,21 @@
   - [`DataviewsAPI`](#dataviewsapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
     - [`active_users(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#active_usersself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
-    - [`apply_exportable_config(self, dataset_id: 'int', dataview_id: 'int', *, items: '_list[dict[str, Any]] | None' = None, config: 'dict[str, Any] | None' = None, insert_after_sequence: 'int | None' = None, is_paste_mode: 'bool' = False, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#apply_exportable_configself-dataset_id-int-dataview_id-int-items-_listdictstr-any-none-none-config-dictstr-any-none-none-insert_after_sequence-int-none-none-is_paste_mode-bool-false-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`bulk_delete(self, dataset_id: 'int', dataview_ids: '_list[int] | str', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#bulk_deleteself-dataset_id-int-dataview_ids-_listint-str-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`conditional_format_create(self, dataset_id: 'int', dataview_id: 'int', rule: 'dict[str, Any]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#conditional_format_createself-dataset_id-int-dataview_id-int-rule-dictstr-any-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
-    - [`conditional_format_delete(self, dataset_id: 'int', dataview_id: 'int', rule_id: 'str | int | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#conditional_format_deleteself-dataset_id-int-dataview_id-int-rule_id-str-int-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`conditional_format_delete(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#conditional_format_deleteself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`conditional_format_list(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`](#conditional_format_listself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---_listdictstr-any)
     - [`conditional_format_update(self, dataset_id: 'int', dataview_id: 'int', rule: 'dict[str, Any]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#conditional_format_updateself-dataset_id-int-dataview_id-int-rule-dictstr-any-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`create(self, dataset_id: 'int', name: 'str | None' = 'View', clone_config_from: 'int | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#createself-dataset_id-int-name-str-none-view-clone_config_from-int-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`delete(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#deleteself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`draft_mode(self, dataset_id: 'int', dataview_id: 'int', command: 'str', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#draft_modeself-dataset_id-int-dataview_id-int-command-str-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
-    - [`get(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, sequence: 'int | None' = None, fields: 'str | None' = None) -> 'dict[str, Any]'`](#getself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none-sequence-int-none-none-fields-str-none-none---dictstr-any)
-    - [`get_data(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 2, sequence: 'int | None' = None) -> 'dict[str, Any]'`](#get_dataself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none-timeout-int-none-none-poll_interval-int-2-sequence-int-none-none---dictstr-any)
-    - [`get_exportable_config(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_exportable_configself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`get(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#getself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`get_data(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 2) -> 'dict[str, Any]'`](#get_dataself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none-timeout-int-none-none-poll_interval-int-2---dictstr-any)
     - [`list(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, limit: 'int' = 100, sort: 'str' = '(created_at:desc)') -> 'dict[str, Any]'`](#listself-dataset_id-int-workspace_id-int-none-none-project_id-int-none-none-limit-int-100-sort-str-created_atdesc---dictstr-any)
     - [`mark_active(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#mark_activeself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`parameter_context(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#parameter_contextself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`preview(self, dataset_id: 'int', dataview_id: 'int', rows: 'int | None' = None, cols: 'int | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#previewself-dataset_id-int-dataview_id-int-rows-int-none-none-cols-int-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
-    - [`query_data(self, dataset_id: 'int', dataview_id: 'int', sequence: 'int | None' = None, offset: 'int' = 1, limit: 'int' = 400, columns: '_list[str] | None' = None, condition: 'dict[str, Any] | None' = None, sort: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#query_dataself-dataset_id-int-dataview_id-int-sequence-int-none-none-offset-int-1-limit-int-400-columns-_liststr-none-none-condition-dictstr-any-none-none-sort-str-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`query_data(self, dataset_id: 'int', dataview_id: 'int', sequence: 'int' = 0, offset: 'int' = 1, limit: 'int' = 400, columns: '_list[str] | None' = None, condition: 'dict[str, Any] | None' = None, sort: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#query_dataself-dataset_id-int-dataview_id-int-sequence-int-0-offset-int-1-limit-int-400-columns-_liststr-none-none-condition-dictstr-any-none-none-sort-str-none-none-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`restore(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#restoreself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`trash(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#trashself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`update(self, dataset_id: 'int', dataview_id: 'int', patch_data: '_list[dict[str, Any]]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#updateself-dataset_id-int-dataview_id-int-patch_data-_listdictstr-any-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
@@ -290,35 +284,28 @@
     - [`delete_task(self, dataview_id: 'int', task_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#delete_taskself-dataview_id-int-task_id-int-dataset_id-int-none-none---dictstr-any)
     - [`draft_mode(self, dataview_id: 'int', command: 'str', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#draft_modeself-dataview_id-int-command-str-dataset_id-int-none-none---dictstr-any)
     - [`edit_pipeline(self, dataview_id: 'int', patches: '_list[dict[str, Any]]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#edit_pipelineself-dataview_id-int-patches-_listdictstr-any-dataset_id-int-none-none---dictstr-any)
-    - [`find_dataset_for_dataview(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'int'`](#find_dataset_for_dataviewself-dataview_id-int-dataset_id-int-none-none---int)
+    - [`find_dataset_for_dataview(self, dataview_id: 'int') -> 'int'`](#find_dataset_for_dataviewself-dataview_id-int---int)
     - [`get_draft_status(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_draft_statusself-dataview_id-int-dataset_id-int-none-none---dictstr-any)
     - [`get_pipeline(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_pipelineself-dataview_id-int-dataset_id-int-none-none---dictstr-any)
     - [`get_task(self, dataview_id: 'int', task_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#get_taskself-dataview_id-int-task_id-int-dataset_id-int-none-none---dictstr-any)
     - [`items(self, dataview_id: 'int', dataset_id: 'int | None' = None, fields: 'str | None' = None, limit: 'int | None' = None, offset: 'int | None' = None, sort: 'str | None' = None, sequence: 'int | None' = None, status: 'str | None' = None) -> 'dict[str, Any]'`](#itemsself-dataview_id-int-dataset_id-int-none-none-fields-str-none-none-limit-int-none-none-offset-int-none-none-sort-str-none-none-sequence-int-none-none-status-str-none-none---dictstr-any)
-    - [`items_all(self, dataview_id: 'int', dataset_id: 'int', fields: 'str | None' = None, limit: 'int' = 100, sort: 'str | None' = None, sequence: 'int | None' = None, status: 'str | None' = None, max_pages: 'int' = 1000) -> 'dict[str, Any]'`](#items_allself-dataview_id-int-dataset_id-int-fields-str-none-none-limit-int-100-sort-str-none-none-sequence-int-none-none-status-str-none-none-max_pages-int-1000---dictstr-any)
-    - [`latest_task_sequence(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'int'`](#latest_task_sequenceself-dataview_id-int-dataset_id-int-none-none---int)
     - [`list_tasks(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#list_tasksself-dataview_id-int-dataset_id-int-none-none---dictstr-any)
     - [`preview_task(self, dataview_id: 'int', task_spec: 'dict[str, Any]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#preview_taskself-dataview_id-int-task_spec-dictstr-any-dataset_id-int-none-none---dictstr-any)
-    - [`reconcile_draft_submission(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#reconcile_draft_submissionself-dataview_id-int-dataset_id-int-none-none---dictstr-any)
     - [`rerun(self, dataview_id: 'int', from_sequence: 'int | None' = None, dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#rerunself-dataview_id-int-from_sequence-int-none-none-dataset_id-int-none-none---dictstr-any)
-    - [`update_task(self, dataview_id: 'int', task_id: 'int', task_spec: 'dict[str, Any] | None' = None, dataset_id: 'int | None' = None, patches: 'list[dict[str, Any]] | None' = None, skip_validation: 'bool | None' = None) -> 'dict[str, Any]'`](#update_taskself-dataview_id-int-task_id-int-task_spec-dictstr-any-none-none-dataset_id-int-none-none-patches-listdictstr-any-none-none-skip_validation-bool-none-none---dictstr-any)
-    - [`wait_for_pipeline(self, dataview_id: 'int', dataset_id: 'int | None' = None, timeout: 'float | None' = None, poll_interval: 'float' = 3) -> 'dict[str, Any]'`](#wait_for_pipelineself-dataview_id-int-dataset_id-int-none-none-timeout-float-none-none-poll_interval-float-3---dictstr-any)
+    - [`update_task(self, dataview_id: 'int', task_id: 'int', task_spec: 'dict[str, Any]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`](#update_taskself-dataview_id-int-task_id-int-task_spec-dictstr-any-dataset_id-int-none-none---dictstr-any)
+    - [`wait_for_pipeline(self, dataview_id: 'int', dataset_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 3) -> 'dict[str, Any]'`](#wait_for_pipelineself-dataview_id-int-dataset_id-int-none-none-timeout-int-none-none-poll_interval-int-3---dictstr-any)
 - [Jobs](#jobs)
   - [`JobsAPI`](#jobsapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
-    - [`get_job(self, job_id: 'int', timeout: 'float | None' = None) -> 'dict[str, Any]'`](#get_jobself-job_id-int-timeout-float-none-none---dictstr-any)
-    - [`get_jobs(self, job_ids: 'list[int] | str', timeout: 'float | None' = None) -> 'dict[str, Any]'`](#get_jobsself-job_ids-listint-str-timeout-float-none-none---dictstr-any)
-    - [`wait_for_job(self, job_id: 'int', timeout: 'float | None' = None, poll_interval: 'float' = 2, fetch: 'Callable[[int, float], dict[str, Any]] | None' = None) -> 'dict[str, Any]'`](#wait_for_jobself-job_id-int-timeout-float-none-none-poll_interval-float-2-fetch-callableint-float-dictstr-any-none-none---dictstr-any)
+    - [`get_job(self, job_id: 'int', timeout: 'int' = 300) -> 'dict[str, Any]'`](#get_jobself-job_id-int-timeout-int-300---dictstr-any)
+    - [`get_jobs(self, job_ids: 'list[int] | str') -> 'dict[str, Any]'`](#get_jobsself-job_ids-listint-str---dictstr-any)
+    - [`wait_for_job(self, job_id: 'int', timeout: 'int | None' = None, poll_interval: 'int' = 2) -> 'dict[str, Any]'`](#wait_for_jobself-job_id-int-timeout-int-none-none-poll_interval-int-2---dictstr-any)
     - [`wait_for_jobs(self, job_ids: 'list[int] | str', timeout: 'int | None' = None, poll_interval: 'int' = 2) -> 'dict[str, Any]'`](#wait_for_jobsself-job_ids-listint-str-timeout-int-none-none-poll_interval-int-2---dictstr-any)
 - [Dashboards](#dashboards)
   - [`DashboardsAPI`](#dashboardsapi)
     - [`__init__(self, client: 'MammothClient') -> 'None'`](#__init__self-client-mammothclient---none)
     - [`action(self, dashboard_id: 'int', action: 'DashboardActionType', params_enabled: 'bool | None' = None, params_view_id: 'int | None' = None) -> 'dict[str, Any]'`](#actionself-dashboard_id-int-action-dashboardactiontype-params_enabled-bool-none-none-params_view_id-int-none-none---dictstr-any)
-    - [`add_pages(self, dashboard_id: 'int', body: 'AddPagesSpec') -> 'AddPagesResponse'`](#add_pagesself-dashboard_id-int-body-addpagesspec---addpagesresponse)
     - [`analytics(self: 'Any', dashboard_id: 'int') -> 'DashboardAnalyticsResponse'`](#analyticsself-any-dashboard_id-int---dashboardanalyticsresponse)
-    - [`archive(self, dashboard_id: 'int', archived: 'bool') -> 'Any'`](#archiveself-dashboard_id-int-archived-bool---any)
-    - [`assess_pbix(self, file: 'str | Path') -> 'PbixAssessResponse'`](#assess_pbixself-file-str-path---pbixassessresponse)
-    - [`assess_twb(self, file: 'str | Path') -> 'TwbAssessResponse'`](#assess_twbself-file-str-path---twbassessresponse)
     - [`cancel_generation(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#cancel_generationself-dashboard_id-int---dictstr-any)
     - [`canvas_get(self: 'Any', dashboard_id: 'int', sequence: 'int | None' = None) -> 'CanvasResponse'`](#canvas_getself-any-dashboard_id-int-sequence-int-none-none---canvasresponse)
     - [`canvas_restore(self: 'Any', dashboard_id: 'int', body: 'RestoreCanvasSpec') -> 'ObjectJobSchema | JobResponse'`](#canvas_restoreself-any-dashboard_id-int-body-restorecanvasspec---objectjobschema-jobresponse)
@@ -330,27 +317,20 @@
     - [`context_list(self: 'Any') -> 'ContextListResponse'`](#context_listself-any---contextlistresponse)
     - [`context_update(self: 'Any', context_id: 'str', body: 'ContextSpec') -> 'ContextResponse'`](#context_updateself-any-context_id-str-body-contextspec---contextresponse)
     - [`create(self, intent: 'str', source: '_list[int]', enable_filters: 'bool' = True, enable_pages: 'bool' = False) -> 'dict[str, Any]'`](#createself-intent-str-source-_listint-enable_filters-bool-true-enable_pages-bool-false---dictstr-any)
-    - [`create_blank(self, params: 'CreateBlankParams') -> 'dict[str, Any]'`](#create_blankself-params-createblankparams---dictstr-any)
     - [`data_draft(self: 'Any', dashboard_id: 'int', body: 'WidgetDataSpec') -> 'WidgetDataResponse | ObjectJobSchema | JobResponse'`](#data_draftself-any-dashboard_id-int-body-widgetdataspec---widgetdataresponse-objectjobschema-jobresponse)
     - [`data_published(self: 'Any', dashboard_id: 'int', body: 'WidgetDataSpec') -> 'WidgetDataResponse | ObjectJobSchema | JobResponse'`](#data_publishedself-any-dashboard_id-int-body-widgetdataspec---widgetdataresponse-objectjobschema-jobresponse)
     - [`delete(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#deleteself-dashboard_id-int---dictstr-any)
-    - [`delete_tag(self, tag_id: 'int') -> 'dict[str, Any] | None'`](#delete_tagself-tag_id-int---dictstr-any-none)
     - [`descriptor_data(self: 'Any', dashboard_id: 'int', body: 'DescriptorDataSpec') -> 'ObjectJobSchema | JobResponse'`](#descriptor_dataself-any-dashboard_id-int-body-descriptordataspec---objectjobschema-jobresponse)
     - [`duplicate(self: 'Any', dashboard_id: 'int') -> 'DuplicateDashboardResponse'`](#duplicateself-any-dashboard_id-int---duplicatedashboardresponse)
-    - [`extract_context(self, body: 'ContextExtractSpec') -> 'dict[str, Any]'`](#extract_contextself-body-contextextractspec---dictstr-any)
-    - [`extract_exemplar(self, body: 'ExemplarExtractSpec') -> 'dict[str, Any]'`](#extract_exemplarself-body-exemplarextractspec---dictstr-any)
     - [`figure_intent(self: 'Any', dashboard_id: 'int', body: 'FigureIntentSpec') -> 'FigureIntentResponse'`](#figure_intentself-any-dashboard_id-int-body-figureintentspec---figureintentresponse)
     - [`get(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#getself-dashboard_id-int---dictstr-any)
     - [`get_analytics(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#get_analyticsself-dashboard_id-int---dictstr-any)
     - [`get_by_url(self, url: 'str') -> 'dict[str, Any]'`](#get_by_urlself-url-str---dictstr-any)
-    - [`get_draft_data(self, dashboard_id: 'int', widget_id: 'str', global_filters: 'dict[str, Any] | None' = None, drilldown_filters: 'dict[str, Any] | None' = None) -> 'dict[str, Any]'`](#get_draft_dataself-dashboard_id-int-widget_id-str-global_filters-dictstr-any-none-none-drilldown_filters-dictstr-any-none-none---dictstr-any)
-    - [`get_publish_data(self, dashboard_id: 'int', widget_id: 'str', global_filters: 'dict[str, Any] | None' = None, drilldown_filters: 'dict[str, Any] | None' = None) -> 'dict[str, Any]'`](#get_publish_dataself-dashboard_id-int-widget_id-str-global_filters-dictstr-any-none-none-drilldown_filters-dictstr-any-none-none---dictstr-any)
+    - [`get_draft_data(self, dashboard_id: 'int', sql: 'str') -> 'dict[str, Any]'`](#get_draft_dataself-dashboard_id-int-sql-str---dictstr-any)
+    - [`get_publish_data(self, dashboard_id: 'int', sql: 'str') -> 'dict[str, Any]'`](#get_publish_dataself-dashboard_id-int-sql-str---dictstr-any)
     - [`get_sources(self) -> '_list[dict[str, Any]]'`](#get_sourcesself---_listdictstr-any)
-    - [`import_workbook(self, file: 'str | Path', project_id: 'int | None' = None) -> 'ImportDatasetResponse'`](#import_workbookself-file-str-path-project_id-int-none-none---importdatasetresponse)
     - [`job_by_url(self, url: 'str', job_id: 'int') -> 'dict[str, Any]'`](#job_by_urlself-url-str-job_id-int---dictstr-any)
     - [`list(self, project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`](#listself-project_id-int-none-none---_listdictstr-any)
-    - [`list_tags(self) -> 'dict[str, Any]'`](#list_tagsself---dictstr-any)
-    - [`merge_tag(self, tag_id: 'int', target_id: 'int') -> 'dict[str, Any]'`](#merge_tagself-tag_id-int-target_id-int---dictstr-any)
     - [`og_card(self: 'Any', dashboard_id: 'int') -> 'dict[str, Any]'`](#og_cardself-any-dashboard_id-int---dictstr-any)
     - [`page_plan(self: 'Any', dashboard_id: 'int', body: 'PlanPageSpec') -> 'PlanPageResponse'`](#page_planself-any-dashboard_id-int-body-planpagespec---planpageresponse)
     - [`pdf_artifact(self: 'Any', dashboard_id: 'int', job_id: 'int') -> 'dict[str, Any]'`](#pdf_artifactself-any-dashboard_id-int-job_id-int---dictstr-any)
@@ -378,13 +358,11 @@
     - [`qa_settings_get(self: 'Any', dashboard_id: 'int') -> 'QaSettingsResponse'`](#qa_settings_getself-any-dashboard_id-int---qasettingsresponse)
     - [`qa_settings_set(self: 'Any', dashboard_id: 'int', body: 'QaSettingsSpec') -> 'QaSettingsResponse'`](#qa_settings_setself-any-dashboard_id-int-body-qasettingsspec---qasettingsresponse)
     - [`query(self: 'Any', dashboard_id: 'int', body: 'AdhocQuerySpec') -> 'AdhocQueryResponse'`](#queryself-any-dashboard_id-int-body-adhocqueryspec---adhocqueryresponse)
-    - [`rename_tag(self, tag_id: 'int', name: 'str') -> 'dict[str, Any]'`](#rename_tagself-tag_id-int-name-str---dictstr-any)
     - [`restore(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#restoreself-dashboard_id-int---dictstr-any)
     - [`rls_assignment_list(self: 'Any', dashboard_id: 'int') -> 'RlsAssignmentsResponse'`](#rls_assignment_listself-any-dashboard_id-int---rlsassignmentsresponse)
     - [`rls_assignment_set(self: 'Any', dashboard_id: 'int', body: 'RlsAssignmentsSpec') -> 'dict[str, Any]'`](#rls_assignment_setself-any-dashboard_id-int-body-rlsassignmentsspec---dictstr-any)
     - [`rls_column_list(self: 'Any', dashboard_id: 'int') -> 'RlsColumnsResponse'`](#rls_column_listself-any-dashboard_id-int---rlscolumnsresponse)
     - [`rls_value_list(self: 'Any', dashboard_id: 'int', column: 'str', search: 'str | None' = None) -> 'RlsDistinctValuesResponse'`](#rls_value_listself-any-dashboard_id-int-column-str-search-str-none-none---rlsdistinctvaluesresponse)
-    - [`set_tags(self, dashboard_id: 'int', tags: 'builtins.list[str]') -> 'dict[str, Any]'`](#set_tagsself-dashboard_id-int-tags-builtinsliststr---dictstr-any)
     - [`share(self, dashboard_id: 'int', type_of_auth: 'DashboardAuthType', users: '_list[DashboardShareUser] | None' = None) -> 'dict[str, Any]'`](#shareself-dashboard_id-int-type_of_auth-dashboardauthtype-users-_listdashboardshareuser-none-none---dictstr-any)
     - [`signature_create(self: 'Any', body: 'SignatureSpec') -> 'SignatureResponse'`](#signature_createself-any-body-signaturespec---signatureresponse)
     - [`signature_delete(self: 'Any', signature_id: 'str') -> 'OkResponse'`](#signature_deleteself-any-signature_id-str---okresponse)
@@ -402,8 +380,6 @@
     - [`style_preset_list(self: 'Any') -> 'StylePresetsResponse'`](#style_preset_listself-any---stylepresetsresponse)
     - [`style_token_list(self: 'Any', id: 'str') -> 'StyleTokensResponse'`](#style_token_listself-any-id-str---styletokensresponse)
     - [`suggestion_list(self: 'Any', dataview_id: 'int', table_item_id: 'int | None' = None) -> 'DashboardSuggestionsResponse'`](#suggestion_listself-any-dataview_id-int-table_item_id-int-none-none---dashboardsuggestionsresponse)
-    - [`swap_data(self, dashboard_id: 'int', body: 'SwapDataSpec') -> 'ObjectJobSchema'`](#swap_dataself-dashboard_id-int-body-swapdataspec---objectjobschema)
-    - [`take_pending_template(self) -> 'dict[str, Any]'`](#take_pending_templateself---dictstr-any)
     - [`template_apply(self: 'Any', body: 'ApplyTemplateSpec') -> 'ObjectJobSchema | JobResponse'`](#template_applyself-any-body-applytemplatespec---objectjobschema-jobresponse)
     - [`template_create(self: 'Any', body: 'SaveTemplateSpec') -> 'TemplateDetailResponse'`](#template_createself-any-body-savetemplatespec---templatedetailresponse)
     - [`template_delete(self: 'Any', template_id: 'str') -> 'OkResponse'`](#template_deleteself-any-template_id-str---okresponse)
@@ -415,11 +391,9 @@
     - [`template_resolve_mapping(self: 'Any', body: 'ResolveTemplateMappingSpec') -> 'ResolveTemplateMappingResponse'`](#template_resolve_mappingself-any-body-resolvetemplatemappingspec---resolvetemplatemappingresponse)
     - [`trash(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#trashself-dashboard_id-int---dictstr-any)
     - [`update(self, dashboard_id: 'int', patch: '_list[DashboardPatchItem]') -> 'dict[str, Any]'`](#updateself-dashboard_id-int-patch-_listdashboardpatchitem---dictstr-any)
-    - [`use_template(self, slug: 'str', body: 'UseTemplateSpec') -> 'ObjectJobSchema | JobResponse'`](#use_templateself-slug-str-body-usetemplatespec---objectjobschema-jobresponse)
     - [`v3_generate(self: 'Any', body: 'GenerateDashboardV3Spec') -> 'ObjectJobSchema | JobResponse'`](#v3_generateself-any-body-generatedashboardv3spec---objectjobschema-jobresponse)
     - [`video_export(self: 'Any', dashboard_id: 'int') -> 'ObjectJobSchema | JobResponse'`](#video_exportself-any-dashboard_id-int---objectjobschema-jobresponse)
     - [`video_state(self: 'Any', dashboard_id: 'int') -> 'dict[str, Any]'`](#video_stateself-any-dashboard_id-int---dictstr-any)
-    - [`wait_for_job_by_url(self, url: 'str', job_id: 'int', timeout: 'float | None' = None, poll_interval: 'float' = 2) -> 'dict[str, Any]'`](#wait_for_job_by_urlself-url-str-job_id-int-timeout-float-none-none-poll_interval-float-2---dictstr-any)
     - [`widget_data(self, dashboard_id: 'int', body: 'dict[str, Any]') -> 'dict[str, Any]'`](#widget_dataself-dashboard_id-int-body-dictstr-any---dictstr-any)
     - [`widget_data_by_url(self, url: 'str', body: 'dict[str, Any]') -> 'dict[str, Any]'`](#widget_data_by_urlself-url-str-body-dictstr-any---dictstr-any)
 - [Webhooks](#webhooks)
@@ -535,6 +509,15 @@
   - [Import errors](#import-errors)
   - [See also](#see-also)
 - [Changelog](#changelog)
+  - [v0.7.15](#v0715)
+    - [Added](#added)
+  - [v0.7.14](#v0714)
+    - [Fixed](#fixed)
+  - [v0.7.13](#v0713)
+  - [v0.7.12](#v0712)
+    - [Fixed](#fixed)
+  - [v0.7.11](#v0711)
+    - [Added](#added)
   - [v0.7.10](#v0710)
     - [Added](#added)
   - [v0.7.9](#v079)
@@ -600,8 +583,7 @@ The official Python SDK for the [Mammoth Analytics](https://mammoth.io) platform
 from mammoth import MammothClient, Condition, Operator, ColumnType, SetValue
 
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
+    api_token="mm_your-token",
     workspace_id=11,
 )
 client.set_project_id(10)
@@ -774,7 +756,7 @@ pip install -U mammoth-io
 
 ## 2. Get your API credentials
 
-Log in to your Mammoth Analytics dashboard, navigate to your profile settings, and generate an API key and secret.
+Log in to your Mammoth Analytics dashboard, navigate to your profile settings, and create an API token: **Workspace settings → API Tokens → Create token**. It starts with `mm_` and is shown once.
 
 ## 3. Create a client
 
@@ -782,8 +764,7 @@ Log in to your Mammoth Analytics dashboard, navigate to your profile settings, a
 from mammoth import MammothClient
 
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
+    api_token="mm_your-token",
     workspace_id=11,  # your workspace ID
 )
 
@@ -888,8 +869,7 @@ from mammoth import (
 )
 
 client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    api_token=os.getenv("MAMMOTH_API_TOKEN"),
     workspace_id=11,
 )
 client.set_project_id(10)
@@ -944,14 +924,18 @@ except MammothAPIError as e:
 
 # Authentication
 
-The Mammoth SDK uses API key and secret-based authentication. Every request includes your credentials in HTTP headers automatically.
+The Mammoth SDK authenticates with an API token, sent as `Authorization: Bearer mm_...` on every request.
 
-## Getting API credentials
+## Getting an API token
 
-1. Log in to your Mammoth Analytics dashboard
-2. Navigate to your profile settings
-3. Generate or retrieve your API key and secret
-4. Store these credentials securely
+1. Log in to the Mammoth web app
+2. Open **Workspace settings → API Tokens** and choose **Create token**
+3. Copy the token (it starts with `mm_`); it is shown only once
+4. Store it securely; it works only in that workspace and on that server
+
+Older tokens came as an API key and secret. They still work:
+`MammothClient(api_key=..., api_secret=..., workspace_id=...)`. Pass either
+`api_token` or the pair, not both.
 
 ## Client setup
 
@@ -961,8 +945,7 @@ The Mammoth SDK uses API key and secret-based authentication. Every request incl
 from mammoth import MammothClient
 
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
+    api_token="mm_your-token",
     workspace_id=11,
 )
 client.set_project_id(10)
@@ -973,8 +956,7 @@ client.set_project_id(10)
 Store credentials in environment variables for better security:
 
 ```bash
-export MAMMOTH_API_KEY="your-api-key"
-export MAMMOTH_API_SECRET="your-api-secret"
+export MAMMOTH_API_TOKEN="mm_your-token"
 ```
 
 ```python
@@ -982,8 +964,7 @@ import os
 from mammoth import MammothClient
 
 client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    api_token=os.getenv("MAMMOTH_API_TOKEN"),
     workspace_id=11,
 )
 ```
@@ -997,8 +978,7 @@ For projects with multiple environments:
 import os
 
 MAMMOTH_CONFIG = {
-    "api_key": os.getenv("MAMMOTH_API_KEY"),
-    "api_secret": os.getenv("MAMMOTH_API_SECRET"),
+    "api_token": os.getenv("MAMMOTH_API_TOKEN"),
     "workspace_id": int(os.getenv("MAMMOTH_WORKSPACE_ID", "11")),
     "base_url": os.getenv("MAMMOTH_BASE_URL", "https://app.mammoth.io/api/v2"),
 }
@@ -1031,8 +1011,7 @@ from mammoth import MammothClient, MammothAuthError
 
 try:
     client = MammothClient(
-        api_key="invalid-key",
-        api_secret="invalid-secret",
+        api_token="mm_invalid",
         workspace_id=1,
     )
     projects = client.projects.list()
@@ -1082,8 +1061,7 @@ import os
 from mammoth import MammothClient
 
 client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    api_token=os.getenv("MAMMOTH_API_TOKEN"),
     workspace_id=11,
     timeout=60,
     job_timeout=120,
@@ -1102,7 +1080,7 @@ The client supports Python's context manager protocol. The HTTP session is close
 
 ```python
 with MammothClient(
-    api_key="...", api_secret="...", workspace_id=11
+    api_token="mm_...", workspace_id=11
 ) as client:
     client.set_project_id(10)
     view = client.views.get(1039)
@@ -1176,7 +1154,7 @@ Example::
     view.filter_rows(Condition("Sales", Operator.GTE, 1000))
     view.export.to_csv("output.csv")
 
-#### `__init__(self, api_key: 'str', api_secret: 'str', workspace_id: 'int', base_url: 'str' = 'https://app.mammoth.io/api/v2', timeout: 'float' = 30, job_timeout: 'float' = 60, pipeline_timeout: 'float' = 3600, allow_insecure_loopback_http: 'bool' = False) -> 'None'`
+#### `__init__(self, api_key: 'str', api_secret: 'str', workspace_id: 'int', base_url: 'str' = 'https://app.mammoth.io/api/v2', timeout: 'int' = 30, job_timeout: 'int' = 60, pipeline_timeout: 'int' = 3600) -> 'None'`
 
 Initialize the Mammoth client.
 
@@ -1188,9 +1166,6 @@ Args:
     timeout: Request timeout in seconds.
     job_timeout: Job polling timeout in seconds.
     pipeline_timeout: Pipeline readiness polling timeout in seconds.
-    allow_insecure_loopback_http: Permit HTTP only for an explicit
-        loopback development endpoint. Production API credentials must
-        use HTTPS.
 
 #### `set_project_id(self, project_id: 'int') -> 'None'`
 
@@ -1225,7 +1200,7 @@ Example::
     view = client.get_view(1039)
     print(view.display_names)
 
-#### `find_dataset_for_dataview(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'int'`
+#### `find_dataset_for_dataview(self, dataview_id: 'int') -> 'int'`
 
 Find the parent dataset ID for a given dataview.
 
@@ -1234,8 +1209,6 @@ dataset contains the specified dataview.
 
 Args:
     dataview_id: ID of the dataview.
-    dataset_id: Known parent dataset ID. When supplied, no unrelated
-        dataset is probed.
 
 Returns:
     Dataset ID that contains the dataview.
@@ -1292,14 +1265,12 @@ Access via client.views::
     views = client.views.list()                 # returns list of View objects
     view = client.views.create(dataset_id)      # returns View object
 
-#### `get(self, view_id: 'int', dataset_id: 'int | None' = None) -> 'View'`
+#### `get(self, view_id: 'int') -> 'View'`
 
 Get a rich View object for a dataview.
 
 Args:
     view_id: ID of the dataview.
-    dataset_id: Known parent dataset ID. When supplied, the SDK uses
-        that exact parent and does not probe other datasets.
 
 Returns:
     View object with transformation methods and metadata.
@@ -1326,20 +1297,17 @@ Args:
 Returns:
     View object for the newly created dataview.
 
-#### `delete(self, view_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `delete(self, view_id: 'int') -> 'dict[str, Any]'`
 
 Delete a dataview.
 
 Args:
     view_id: ID of the dataview.
-    dataset_id: Known parent dataset ID. When supplied, deletion is
-        sent directly to that nested endpoint and parent discovery is
-        skipped; API errors (including 403) are preserved.
 
 Returns:
     Dict with deletion result.
 
-#### `bulk_delete(self, view_ids: '_list[int]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `bulk_delete(self, view_ids: '_list[int]') -> 'dict[str, Any]'`
 
 Delete multiple dataviews.
 
@@ -1366,7 +1334,7 @@ See [Exceptions](#exceptions-reference) for the full error hierarchy.
 from mammoth import MammothClient, MammothAPIError, MammothAuthError
 
 try:
-    client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
+    client = MammothClient(api_token="mm_...", workspace_id=11)
     client.set_project_id(10)
     datasets = client.datasets.list()
 except MammothAuthError:
@@ -1397,7 +1365,7 @@ Views are created via `client.views.get()` -- not instantiated directly:
 ```python
 from mammoth import MammothClient
 
-client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
+client = MammothClient(api_token="mm_...", workspace_id=11)
 client.set_project_id(10)
 
 view = client.views.get(1039)
@@ -1507,7 +1475,7 @@ Transformation methods (SET, FILTER, MATH, JOIN, PIVOT, WINDOW, etc.)
 send the task to the pipeline API and automatically refresh metadata.
 Each method returns the API response dict.
 
-#### `data(self, limit: 'int' = 400, offset: 'int' = 1, columns: 'list[str] | None' = None, condition: 'Condition | CompoundCondition | None' = None, sort: 'str | None' = None, sequence: 'int | None' = None) -> 'dict[str, Any]'`
+#### `data(self, limit: 'int' = 400, offset: 'int' = 1, columns: 'list[str] | None' = None, condition: 'Condition | CompoundCondition | None' = None, sort: 'str | None' = None) -> 'dict[str, Any]'`
 
 Fetch data rows from the dataview.
 
@@ -1517,9 +1485,6 @@ Args:
     columns: List of display names to fetch. ``None`` fetches all.
     condition: Filter condition — only matching rows are returned.
     sort: Sort specification string.
-    sequence: Pipeline step to read at (default: latest, so rows
-        include every pipeline-derived column; pass ``0`` for the
-        original dataset).
 
 Returns:
     Dict with ``data`` (list of row dicts), ``columns``, and
@@ -1691,12 +1656,7 @@ Returns:
 
 #### `is_draft_mode` *property*
 
-Whether the server says this view is currently in draft mode.
-
-Every read goes through the pipeline status endpoint, which makes a
-freshly created ``View`` in another process observe existing draft
-state.  ``_draft_mode`` is only a compatibility fallback for test or
-legacy client doubles that do not implement the status seam.
+Whether this view is currently in draft mode.
 
 #### `branch_out(self, dataset_name: 'str', *, target_ds_id: 'int | None' = None, save_as_mode: 'SaveAsDatasetMode' = <SaveAsDatasetMode.REPLACE: 'REPLACE_IN_DS'>, column_mapping: 'dict[str, str] | None' = None, label_ids: 'list[int] | None' = None, condition: 'Condition | CompoundCondition | NotCondition | None' = None, timeout: 'int | None' = None) -> 'int'`
 
@@ -1788,7 +1748,7 @@ Examples::
     view.math("Price * Quantity", new_column="Total")
     view.math("(Price + Tax) * 1.1", new_column="Grand Total")
 
-#### `join(self, foreign_view: 'int | View', join_type: 'JoinType', on: 'list[JoinKeySpec]', select: 'list[str | JoinSelectSpec]', column_prefix: 'str | None' = None, foreign_dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `join(self, foreign_view: 'int | View', join_type: 'JoinType', on: 'list[JoinKeySpec]', select: 'list[str | JoinSelectSpec]', column_prefix: 'str | None' = None) -> 'dict[str, Any]'`
 
 Join with another dataview (JOIN task).
 
@@ -1808,9 +1768,6 @@ Args:
             [JoinSelectSpec(column="Category", alias="Cat")]
 
     column_prefix: Prefix for joined columns (optional).
-    foreign_dataset_id: Parent dataset for an ID-only foreign view.
-        When supplied, metadata is fetched in that exact dataset so
-        display-name resolution never probes unrelated parents.
 
 Returns:
     API response dict.
@@ -1863,7 +1820,7 @@ Example::
         )],
     )
 
-#### `window(self, function: 'WindowFunction', column: 'str | None' = None, new_column: 'str | None' = None, column_type: 'ColumnType' = <ColumnType.NUMERIC: 'NUMERIC'>, existing_column: 'str | None' = None, partition_by: 'list[str] | None' = None, order_by: 'list[list[str | SortDirection]] | None' = None, range_type: 'WindowRange' = <WindowRange.UNBOUNDED: 'UNBOUNDED'>) -> 'dict[str, Any]'`
+#### `window(self, function: 'WindowFunction', column: 'str | None' = None, new_column: 'str | None' = None, column_type: 'ColumnType' = <ColumnType.NUMERIC: 'NUMERIC'>, existing_column: 'str | None' = None, partition_by: 'list[str] | None' = None, order_by: 'list[list[str | SortDirection]] | None' = None, range_type: 'WindowRange' = <WindowRange.UNBOUNDED: 'UNBOUNDED'>, offset: 'int | None' = None, bucket_count: 'int | None' = None) -> 'dict[str, Any]'`
 
 Apply window function (WINDOW task).
 
@@ -1879,6 +1836,8 @@ Args:
         [["column_name", SortDirection.DESC]]
 
     range_type: Window range (default WindowRange.UNBOUNDED).
+    offset: Positive row position for LAG, LEAD, or NTH_VALUE.
+    bucket_count: Positive number of buckets for NTILE.
 
 Returns:
     API response dict.
@@ -2361,7 +2320,7 @@ Example::
     view.unnest(["Q1", "Q2", "Q3", "Q4"],
                 label_column="Quarter", value_column="Revenue")
 
-#### `lookup(self, source: 'str', lookup_view_id: 'int | View', key: 'str', value: 'str', new_column: 'str | None' = None, new_column_type: 'str' = 'TEXT', existing_column: 'str | None' = None, lookup_dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `lookup(self, source: 'str', lookup_view_id: 'int', key: 'str', value: 'str', new_column: 'str | None' = None, new_column_type: 'str' = 'TEXT', existing_column: 'str | None' = None) -> 'dict[str, Any]'`
 
 VLOOKUP-style value lookup from another dataview (LOOKUP task).
 
@@ -2383,9 +2342,6 @@ Args:
         It is not derived here because ``value`` lives in a different view,
         whose metadata this call does not fetch.
     existing_column: Display name of existing column to overwrite.
-    lookup_dataset_id: Parent dataset for an ID-only lookup view. If
-        provided, the foreign view metadata is fetched in that exact
-        dataset before resolving ``key`` and ``value``.
 
 Returns:
     API response dict.
@@ -2400,7 +2356,7 @@ Example::
         new_column="Product Name",
     )
 
-#### `json_extract(self, column: 'str', json_type: 'JsonType' = <JsonType.OBJECT: 'OBJECT'>, keys: 'list[str] | None' = None, extractions: 'list[JsonExtractionSpec] | None' = None, keep_source: 'bool' = False, op_type: 'JsonOpType | None' = None) -> 'dict[str, Any]'`
+#### `json_extract(self, column: 'str', json_type: 'JsonType' = <JsonType.OBJECT: 'OBJECT'>, keys: 'list[str] | None' = None, extractions: 'list[JsonExtractionSpec] | None' = None, keep_source: 'bool' = False, op_type: 'JsonOpType | None' = None, item_column: 'str' = 'Item', index_column: 'str' = 'Index', item_type: 'ColumnType' = <ColumnType.TEXT: 'TEXT'>) -> 'dict[str, Any]'`
 
 Extract data from JSON column (JSON_HANDLE task).
 
@@ -2416,6 +2372,9 @@ Args:
 
     keep_source: Keep the original JSON column (default False).
     op_type: Operation type override.
+    item_column: Output name for LIST items (default ``"Item"``).
+    index_column: Output name for LIST positions (default ``"Index"``).
+    item_type: LIST item output type (TEXT or NUMERIC).
 
 Returns:
     API response dict.
@@ -2480,28 +2439,22 @@ Example::
 
 Add a raw SQL query as a pipeline task (SQL task).
 
-The query runs against the dataview's current output. Reference the
-view as the quoted table ``"view:<dataview_id>"`` (or its quoted
-display name, e.g. ``"View 1"``) and columns by display name. An
-unquoted or placeholder table name (``data``, ``__TABLE__``) is
-rejected by the backend; the SQL task replaces the view's columns
-with the query's result, so select everything you still need.
+The query runs against the dataview's underlying data. Column
+references should use internal names (e.g. ``column_abc123``).
 
 .. note::
 
     Requires the SQL addon to be enabled on the workspace.
 
 Args:
-    query: A single SELECT statement.
+    query: SQL query string.
 
 Returns:
     API response dict.
 
 Example::
 
-    view.add_sql(
-        'SELECT region, SUM(revenue) AS revenue FROM "view:123" GROUP BY region'
-    )
+    view.add_sql("SELECT *, column_abc * 2 AS doubled FROM __TABLE__")
 
 ---
 
@@ -4918,8 +4871,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -4934,8 +4887,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -4950,8 +4903,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -4966,8 +4919,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -4982,8 +4935,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -4998,8 +4951,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5014,8 +4967,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5030,8 +4983,40 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
+
+Composite date formats (return DATE or TEXT):
+    year_month_day_as_date, month_day_year_hour_minute_second
+
+#### `HOUR_MINUTE_SECOND_MILLISECOND`
+
+Date components for extraction.
+
+Backend uses lowercase values. The enum values are lowercase
+to match the expected COMPONENT payload format.
+
+Basic components:
+    year, month, day, hour, minute, second, week, quarter
+
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
+
+Composite date formats (return DATE or TEXT):
+    year_month_day_as_date, month_day_year_hour_minute_second
+
+#### `MILLISECOND`
+
+Date components for extraction.
+
+Backend uses lowercase values. The enum values are lowercase
+to match the expected COMPONENT payload format.
+
+Basic components:
+    year, month, day, hour, minute, second, week, quarter
+
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5046,8 +5031,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5062,8 +5047,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5078,8 +5063,24 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
+
+Composite date formats (return DATE or TEXT):
+    year_month_day_as_date, month_day_year_hour_minute_second
+
+#### `MONTH_DAY_YEAR`
+
+Date components for extraction.
+
+Backend uses lowercase values. The enum values are lowercase
+to match the expected COMPONENT payload format.
+
+Basic components:
+    year, month, day, hour, minute, second, week, quarter
+
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5094,8 +5095,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5110,8 +5111,24 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
+
+Composite date formats (return DATE or TEXT):
+    year_month_day_as_date, month_day_year_hour_minute_second
+
+#### `MONTH_YEAR`
+
+Date components for extraction.
+
+Backend uses lowercase values. The enum values are lowercase
+to match the expected COMPONENT payload format.
+
+Basic components:
+    year, month, day, hour, minute, second, week, quarter
+
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5126,8 +5143,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5142,8 +5159,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5158,8 +5175,24 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
+
+Composite date formats (return DATE or TEXT):
+    year_month_day_as_date, month_day_year_hour_minute_second
+
+#### `WEEKDAY`
+
+Date components for extraction.
+
+Backend uses lowercase values. The enum values are lowercase
+to match the expected COMPONENT payload format.
+
+Basic components:
+    year, month, day, hour, minute, second, week, quarter
+
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5174,8 +5207,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5190,8 +5223,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5206,8 +5239,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5222,8 +5255,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5238,8 +5271,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5254,8 +5287,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5270,8 +5303,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -5286,8 +5319,8 @@ to match the expected COMPONENT payload format.
 Basic components:
     year, month, day, hour, minute, second, week, quarter
 
-Text-based extractions (return TEXT columns):
-    weekday_text, month_text
+Text-based extractions (return TEXT columns) include names and composite formats.
+Numeric extractions include ``weekday`` and ``millisecond``.
 
 Composite date formats (return DATE or TEXT):
     year_month_day_as_date, month_day_year_hour_minute_second
@@ -6122,6 +6155,10 @@ Aggregate functions for pivot/group operations.
 
 Aggregate functions for pivot/group operations.
 
+#### `PERCENTAGE`
+
+Aggregate functions for pivot/group operations.
+
 #### `STDDEV`
 
 Aggregate functions for pivot/group operations.
@@ -6514,6 +6551,10 @@ Window function types.
 
 Window function types.
 
+#### `CUMULATIVE_PERCENT_RANK`
+
+Window function types.
+
 #### `DENSE_RANK`
 
 Window function types.
@@ -6539,6 +6580,10 @@ Window function types.
 Window function types.
 
 #### `MIN`
+
+Window function types.
+
+#### `NTH_VALUE`
 
 Window function types.
 
@@ -11575,7 +11620,7 @@ Example::
         )],
     )
 
-#### `__init__(self, column: 'str', function: 'AggregateFunction', as_name: 'str | None' = None, delimiter: 'str | None' = None) -> None`
+#### `__init__(self, column: 'str', function: 'AggregateFunction', as_name: 'str | None' = None, delimiter: 'str | None' = None, aggregation: 'AggregateFunction | None' = None) -> None`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
@@ -11678,7 +11723,7 @@ MammothError
 from mammoth import MammothClient, MammothAPIError, MammothAuthError
 
 try:
-    client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
+    client = MammothClient(api_token="mm_...", workspace_id=11)
     client.set_project_id(10)
     view = client.get_view(1039)
     view.filter_rows(Condition("Sales", Operator.GTE, 1000))
@@ -11735,7 +11780,7 @@ Example::
         print(e.status_code)     # 404
         print(e.response_body)   # {"detail": "Not found"}
 
-#### `__init__(self, message: 'str', status_code: 'int | None' = None, response_body: 'dict[str, Any] | None' = None, details: 'dict[str, Any] | None' = None, *, method: 'str | None' = None, request_id: 'str | None' = None, retry_after: 'str | None' = None, operation_state: 'str | None' = None, phase: 'str | None' = None, job_handle: 'object | None' = None, resource_handle: 'object | None' = None, endpoint: 'str | None' = None) -> 'None'`
+#### `__init__(self, message: 'str', status_code: 'int | None' = None, response_body: 'dict[str, Any] | None' = None, details: 'dict[str, Any] | None' = None) -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
@@ -11755,7 +11800,7 @@ Attributes:
     message: ``"Authentication failed"`` (default).
     status_code: Always ``401``.
 
-#### `__init__(self, message: 'str' = 'Authentication failed', response_body: 'dict[str, Any] | None' = None, **kwargs: 'Any') -> 'None'`
+#### `__init__(self, message: 'str' = 'Authentication failed') -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
@@ -11775,7 +11820,7 @@ Attributes:
     message: Description including job ID and timeout.
     details: ``{"job_id": int, "timeout": int}``.
 
-#### `__init__(self, job_id: 'int', timeout_seconds: 'int', *, observed_job: 'dict[str, Any] | None' = None, phase: 'str | None' = 'polling') -> 'None'`
+#### `__init__(self, job_id: 'int', timeout_seconds: 'int') -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
@@ -11795,7 +11840,7 @@ Attributes:
     message: Description including job ID and failure reason.
     details: ``{"job_id": int, "failure_reason": str | None}``.
 
-#### `__init__(self, job_id: 'int', failure_reason: 'str | None' = None, *, observed_job: 'dict[str, Any] | None' = None, phase: 'str | None' = 'polling') -> 'None'`
+#### `__init__(self, job_id: 'int', failure_reason: 'str | None' = None) -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
 
@@ -12276,8 +12321,7 @@ from mammoth import (
 )
 
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
+    api_token="mm_your-token",
     workspace_id=11,
 )
 client.set_project_id(10)
@@ -12746,7 +12790,7 @@ from mammoth import (
     ConversionSpec, SortDirection, TextCase,
 )
 
-client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
+client = MammothClient(api_token="mm_...", workspace_id=11)
 client.set_project_id(10)
 
 # 1. Get the view
@@ -13240,7 +13284,7 @@ Returns:
 Raises:
     MammothValidationError: If *dataview_id* or *export_id* ≤ 0.
 
-#### `list(self, dataview_id: 'int', fields: 'str | None' = None, limit: 'int' = 50, offset: 'int' = 0, sort: 'str | None' = None, sequence: 'int | None' = None, status: 'ExportStatus | None' = None, reordered: 'bool | None' = None, handler_type: 'HandlerType | None' = None, end_of_pipeline: 'bool | None' = None, runnable: 'bool | None' = None, dataset_id: 'int | None' = None) -> 'PipelineExportsPaginated'`
+#### `list(self, dataview_id: 'int', fields: 'str | None' = None, limit: 'int' = 50, offset: 'int' = 0, sort: 'str | None' = None, sequence: 'int | None' = None, status: 'ExportStatus | None' = None, reordered: 'bool | None' = None, handler_type: 'HandlerType | None' = None, end_of_pipeline: 'bool | None' = None, runnable: 'bool | None' = None) -> 'PipelineExportsPaginated'`
 
 Get dataview pipeline exports with optional filtering and pagination.
 
@@ -13256,7 +13300,6 @@ Args:
     handler_type: Filter by handler type.
     end_of_pipeline: Filter by end of pipeline status.
     runnable: Filter by runnable status.
-    dataset_id: ID of the dataset (auto-detected if not provided).
 
 Returns:
     PipelineExportsPaginated with paginated list of exports.
@@ -13391,8 +13434,12 @@ The `ProjectsAPI` manages projects within a workspace. Projects are siloed areas
 **Access**: `client.projects`
 
 ```python
-# List all projects
+# List projects (one page; the route caps limit at 100)
 projects = client.projects.list()
+page_two = client.projects.list(offset=100)
+
+# Every project across pages
+all_projects = client.projects.list_all()
 
 # Get a specific project
 project = client.projects.get(project_id=10)
@@ -13418,18 +13465,14 @@ Access via client.projects:
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-### `add_users(self, project_id: 'int', user_ids: '_list[int]', role: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `add_users(self, project_id: 'int', user_ids: '_list[str]', role: 'str | None' = None, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Add users to a project.
 
-The route takes ``{"users": [{"user_id", "role"}]}``; users are
-addressed by numeric id (see ``workspace user list``), not by email.
-
 Args:
     project_id: ID of the project.
-    user_ids: Numeric user ids to add.
-    role: ``project_admin`` or ``project_analyst`` (server default
-        ``project_analyst``) applied to every listed user.
+    user_ids: List of user email addresses or IDs.
+    role: Role to assign (optional).
     workspace_id: ID of the workspace (uses client default if not provided).
 
 Returns:
@@ -13628,15 +13671,6 @@ Returns:
 Raises:
     MammothValidationError: If project_id is not a positive integer.
 
-### `resource_dependencies_update(self, project_id: 'int', patches: '_list[DataSyncPatchItem]', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
-
-Apply typed data-sync patches to resources in a project.
-
-The release API accepts one or more ``data_sync`` replacements and
-returns a job handle (HTTP 202). The CLI owns waiting and confirmation;
-this SDK method only validates/serializes the public request and emits
-the exact PATCH wire contract.
-
 ### `resource_status(self, project_id: 'int', workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Get resource status summary for a project.
@@ -13738,14 +13772,11 @@ Access via client.datasets:
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-### `bulk_delete(self, dataset_ids: '_list[int] | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'None'`
+### `bulk_delete(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'None'`
 
-Delete several datasets by id (bulk operation).
+Delete multiple datasets (bulk operation).
 
 Args:
-    dataset_ids: Ids of the datasets to delete (sent as the ``ids``
-        query parameter). Required: the route has no delete-all form
-        and rejects an empty id list.
     workspace_id: ID of the workspace (uses client default if not provided).
     project_id: ID of the project (uses client default if not provided).
 
@@ -13753,12 +13784,8 @@ Args:
 
 Update multiple datasets (bulk operation).
 
-The plural route accepts one ``DatasetsPatchOperation``; to rename
-several datasets at once pass
-``{"op": "replace", "path": "name", "value": {"12": "a", "13": "b"}}``.
-
 Args:
-    patch_data: One patch operation object, sent as ``{"patch": patch_data}``.
+    patch_data: Patch operation data for multiple datasets.
     workspace_id: ID of the workspace (uses client default if not provided).
     project_id: ID of the project (uses client default if not provided).
 
@@ -13805,7 +13832,7 @@ Returns:
 Raises:
     MammothValidationError: If *file_object_id* ≤ 0.
 
-### `delete(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `delete(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'None'`
 
 Delete a dataset.
 
@@ -13813,15 +13840,6 @@ Args:
     dataset_id: ID of the dataset to delete.
     workspace_id: ID of the workspace (uses client default if not provided).
     project_id: ID of the project (uses client default if not provided).
-
-### `delete_and_verify(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, *, timeout: 'int | None' = None, poll_interval: 'float' = 2.0, dependencies: 'Sequence[str] | None' = None) -> 'dict[str, Any]'`
-
-Delete one dataset and verify its supported GET readback is absent.
-
-``dependencies`` is an optional caller-supplied dependency record. It
-is deliberately not inferred from arbitrary inventory differences. If
-known dependents are supplied, the operation is blocked before DELETE;
-callers must explicitly remove owned dependents first.
 
 ### `file_settings_undo(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -13891,10 +13909,6 @@ Args:
 Returns:
     Dict with batch details.
 
-### `get_batch_data(self, dataset_id: 'int', batch_id: 'int', columns: 'str | None' = None, limit: 'int' = 50, offset: 'int' = 0, workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 2) -> 'dict[str, Any]'`
-
-Get data for a batch; the API returns an asynchronous job.
-
 ### `get_data(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int' = 300, poll_interval: 'int' = 2) -> 'dict[str, Any]'`
 
 Get the actual data from a dataset. Polls the job until completion.
@@ -13921,7 +13935,7 @@ Args:
 Returns:
     Dict with file settings.
 
-### `list(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None, limit: 'int' = 100, offset: 'int' = 0, sort: 'str' = '(created_at:desc)') -> 'dict[str, Any]'`
+### `list(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None, limit: 'int' = 100, sort: 'str' = '(created_at:desc)') -> 'dict[str, Any]'`
 
 Get list of datasets in a project.
 
@@ -13929,20 +13943,10 @@ Args:
     workspace_id: ID of the workspace (uses client default if not provided).
     project_id: ID of the project (uses client default if not provided).
     limit: Maximum number of results (default 100).
-    offset: Number of results to skip (default 0).
     sort: Sort order (default "(created_at:desc)").
 
 Returns:
     Dict containing datasets list with id, name and other info.
-
-### `list_all(self, workspace_id: 'int | None' = None, project_id: 'int | None' = None, limit: 'int' = 100, sort: 'str' = '(created_at:desc)', max_pages: 'int' = 1000) -> 'dict[str, Any]'`
-
-List all datasets with bounded, progress-checked pagination.
-
-The server's supported ``offset``/``next`` contract is used directly.
-Repeated pages, empty pages carrying ``next``, non-advancing hints and
-unbounded continuation raise :class:`MammothPaginationError` instead
-of silently claiming complete inventory coverage.
 
 ### `list_batches(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`
 
@@ -13960,9 +13964,8 @@ Returns:
 
 Rename a dataset.
 
-Sends ``PATCH /datasets/{dataset_id}`` with the OpenAPI
-``DatasetPatchOperation`` ``{"op": "replace", "path": "name",
-"value": name}``.
+Convenience method wrapping :meth:`update` with a ``rename_dataset``
+patch operation.
 
 Args:
     dataset_id: ID of the dataset to rename.
@@ -14005,22 +14008,30 @@ Raises:
 
 ### `update(self, patch_data: '_list[dict[str, Any]]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
-Send raw patch operations to the plural ``/datasets`` endpoint.
+Update datasets using JSON Patch operations.
 
-This is a low-level passthrough; the payload is sent as
-``{"patch": patch_data}`` without validation. The current OpenAPI
-contract for this route (``DatasetsPatchOperation``) accepts a single
-``{"op": "replace", "path": "name", "value": {"<dataset_id>": "<new
-name>"}}`` object, so most callers want :meth:`rename` (one dataset)
-or :meth:`bulk_update` (several datasets) instead.
+The server expects patch operations sent to the plural ``/datasets``
+endpoint. Each operation must include ``op``, ``path``, and ``value``.
+
+Supported operations (mapped via ``OP_PATCH_TO_FUNCTION_MAP`` on the
+backend): ``rename_dataset``, ``update_datasets``, ``delete_datasets``,
+``change_ds_column_type``, ``add_columns``, ``remove_columns``,
+``rename_column``, ``refresh_data``, ``reattach_connection``.
 
 Args:
-    patch_data: Patch payload, passed through unchanged.
+    patch_data: List of patch operations.
     workspace_id: ID of the workspace (uses client default if not provided).
     project_id: ID of the project (uses client default if not provided).
 
 Returns:
     Dict with update result.
+
+Example::
+
+    # Rename a dataset
+    client.datasets.update([
+        {"op": "rename_dataset", "path": "/123", "value": {"name": "New Name"}}
+    ])
 
 
 ---
@@ -14062,10 +14073,6 @@ Args:
 Returns:
     Dict with list of active users.
 
-### `apply_exportable_config(self, dataset_id: 'int', dataview_id: 'int', *, items: '_list[dict[str, Any]] | None' = None, config: 'dict[str, Any] | None' = None, insert_after_sequence: 'int | None' = None, is_paste_mode: 'bool' = False, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
-
-Apply exactly one of items or full config.
-
 ### `bulk_delete(self, dataset_id: 'int', dataview_ids: '_list[int] | str', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Delete multiple dataviews.
@@ -14093,17 +14100,13 @@ Args:
 Returns:
     Dict with created rule.
 
-### `conditional_format_delete(self, dataset_id: 'int', dataview_id: 'int', rule_id: 'str | int | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `conditional_format_delete(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
-Delete one conditional formatting rule.
-
-The route requires the ``rule_id`` query parameter (from
-:meth:`conditional_format_list`); there is no delete-all form.
+Delete all conditional formatting rules.
 
 Args:
     dataset_id: ID of the dataset.
     dataview_id: ID of the dataview.
-    rule_id: ID of the rule to delete.
     workspace_id: ID of the workspace (uses client default if not provided).
     project_id: ID of the project (uses client default if not provided).
 
@@ -14121,10 +14124,7 @@ Args:
     project_id: ID of the project (uses client default if not provided).
 
 Returns:
-    List of conditional format rule dicts. The release route returns
-    the rules as a mapping keyed by rule id; each returned dict
-    carries that key as ``rule_id`` (the value
-    :meth:`conditional_format_delete` needs).
+    List of conditional format rule dicts.
 
 ### `conditional_format_update(self, dataset_id: 'int', dataview_id: 'int', rule: 'dict[str, Any]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -14181,33 +14181,22 @@ Args:
 Returns:
     Dict with draft mode state.
 
-### `get(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, sequence: 'int | None' = None, fields: 'str | None' = None) -> 'dict[str, Any]'`
+### `get(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Get dataview information.
-
-Metadata is scoped to a pipeline task *sequence*. When ``sequence`` is
-omitted it defaults to the latest task sequence, so the returned
-``metadata`` reflects every pipeline-derived column (math, add_column,
-etc.). Pass ``sequence=0`` for the original dataset columns.
 
 Args:
     dataset_id: ID of the dataset.
     dataview_id: ID of the dataview.
     workspace_id: ID of the workspace (uses client default if not provided).
     project_id: ID of the project (uses client default if not provided).
-    sequence: Pipeline step to read metadata at (default: latest).
-    fields: Field set to return (e.g. ``"__full"``); server default if omitted.
 
 Returns:
     Dict with complete dataview information.
 
-### `get_data(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 2, sequence: 'int | None' = None) -> 'dict[str, Any]'`
+### `get_data(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 2) -> 'dict[str, Any]'`
 
 Get dataview data (GET method).
-
-Data is scoped to a pipeline task *sequence*. When ``sequence`` is
-omitted it defaults to the latest task sequence, so rows include every
-pipeline-derived column. Pass ``sequence=0`` for the original dataset.
 
 Args:
     dataset_id: ID of the dataset.
@@ -14216,14 +14205,9 @@ Args:
     project_id: ID of the project (uses client default if not provided).
     timeout: Max job wait time in seconds (default: client.job_timeout).
     poll_interval: Seconds between job polls (default: 2).
-    sequence: Pipeline step to read data at (default: latest).
 
 Returns:
     Dict with dataview data.
-
-### `get_exportable_config(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
-
-Get the pipeline/export configuration for a dataview.
 
 ### `list(self, dataset_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None, limit: 'int' = 100, sort: 'str' = '(created_at:desc)') -> 'dict[str, Any]'`
 
@@ -14286,16 +14270,14 @@ Returns:
 Raises:
     MammothValidationError: If *dataview_id* ≤ 0.
 
-### `query_data(self, dataset_id: 'int', dataview_id: 'int', sequence: 'int | None' = None, offset: 'int' = 1, limit: 'int' = 400, columns: '_list[str] | None' = None, condition: 'dict[str, Any] | None' = None, sort: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+### `query_data(self, dataset_id: 'int', dataview_id: 'int', sequence: 'int' = 0, offset: 'int' = 1, limit: 'int' = 400, columns: '_list[str] | None' = None, condition: 'dict[str, Any] | None' = None, sort: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Get dataview data with filtering options (POST method).
 
 Args:
     dataset_id: ID of the dataset.
     dataview_id: ID of the dataview.
-    sequence: Pipeline step to fetch data at (default: latest task
-        sequence, so rows include every pipeline-derived column; pass
-        ``0`` for the original dataset).
+    sequence: Pipeline step to fetch data at (default 0).
     offset: One-indexed starting row (default 1).
     limit: Number of rows to fetch (default 400).
     columns: List of column names to fetch (optional).
@@ -14435,7 +14417,7 @@ Manage draft mode for a dataview pipeline.
 
 Args:
     dataview_id: ID of the dataview.
-    command: Draft mode command ("enter", "exit", "submit", "discard").
+    command: Draft mode command ("enter", "commit", "discard").
     dataset_id: Dataset ID (auto-detected if not provided).
 
 Returns:
@@ -14453,7 +14435,7 @@ Args:
 Returns:
     Updated pipeline state dict.
 
-### `find_dataset_for_dataview(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'int'`
+### `find_dataset_for_dataview(self, dataview_id: 'int') -> 'int'`
 
 Public typed resolver: find the dataset that contains a dataview.
 
@@ -14463,9 +14445,6 @@ helper across sub-clients.
 
 Args:
     dataview_id: ID of the dataview to resolve.
-    dataset_id: Known parent dataset ID. This is an identity hint,
-        not a request to search: it is returned as-is so callers do
-        not probe unrelated datasets.
 
 Returns:
     The dataset_id that contains this dataview.
@@ -14527,35 +14506,6 @@ Args:
 Returns:
     Dict with the pipeline items list.
 
-### `items_all(self, dataview_id: 'int', dataset_id: 'int', fields: 'str | None' = None, limit: 'int' = 100, sort: 'str | None' = None, sequence: 'int | None' = None, status: 'str | None' = None, max_pages: 'int' = 1000) -> 'dict[str, Any]'`
-
-Read the complete bounded pipeline-item listing.
-
-``items`` intentionally mirrors the CLI's single-page
-``view.pipeline.items`` operation.  Use this method when a readback
-needs completeness: every page is requested through :meth:`items`,
-which re-resolves the same workspace/project/dataset/dataview parent,
-while the shared paginator rejects repeated pages, non-advancing
-offsets, empty pages with a continuation, and excessive page counts.
-No mutation or server-provided URL is followed directly.
-
-### `latest_task_sequence(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'int'`
-
-Return the highest non-deleted task sequence in the pipeline.
-
-Data and metadata reads are scoped to a task *sequence*. Sequence 0 is
-the original dataset; each task adds a sequence, and the columns a task
-produces exist only from its sequence onward. Reading at the latest
-sequence is therefore what surfaces every pipeline-derived column
-(math, add_column, etc.).
-
-Args:
-    dataview_id: ID of the dataview.
-    dataset_id: Dataset ID (auto-detected if not provided).
-
-Returns:
-    The highest task sequence, or ``0`` when the view has no tasks.
-
 ### `list_tasks(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 List all pipeline tasks for a dataview.
@@ -14579,13 +14529,6 @@ Args:
 Returns:
     Preview result dict with sample data.
 
-### `reconcile_draft_submission(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
-
-Read the server state after an interrupted draft submission.
-
-This performs no mutation. A caller can safely invoke it from a fresh
-process before deciding whether another SUBMIT is necessary.
-
 ### `rerun(self, dataview_id: 'int', from_sequence: 'int | None' = None, dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Rerun the pipeline starting from a specific task sequence.
@@ -14606,28 +14549,20 @@ Returns:
 Raises:
     MammothValidationError: If from_sequence is negative.
 
-### `update_task(self, dataview_id: 'int', task_id: 'int', task_spec: 'dict[str, Any] | None' = None, dataset_id: 'int | None' = None, patches: 'list[dict[str, Any]] | None' = None, skip_validation: 'bool | None' = None) -> 'dict[str, Any]'`
+### `update_task(self, dataview_id: 'int', task_id: 'int', task_spec: 'dict[str, Any]', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Update an existing pipeline task.
-
-The route takes ``{"patches": [{"op", "path", "value"}]}`` with ``op``
-``replace`` or ``command`` and ``path`` one of ``params``,
-``display_info``, ``suspend``, ``restore``, ``discard``. ``task_spec``
-is the shortcut for ``[{"op": "replace", "path": "params", "value":
-task_spec}]``.
 
 Args:
     dataview_id: ID of the dataview.
     task_id: ID of the task to update.
-    task_spec: New task params (replaces the ``params`` path).
-    dataset_id: Exact parent dataset id.
-    patches: Explicit patch operations, used instead of ``task_spec``.
-    skip_validation: Forwarded as the ``skip_validation`` query flag.
+    task_spec: Updated task specification.
+    dataset_id: Dataset ID (auto-detected if not provided).
 
 Returns:
     Updated task dict.
 
-### `wait_for_pipeline(self, dataview_id: 'int', dataset_id: 'int | None' = None, timeout: 'float | None' = None, poll_interval: 'float' = 3) -> 'dict[str, Any]'`
+### `wait_for_pipeline(self, dataview_id: 'int', dataset_id: 'int | None' = None, timeout: 'int | None' = None, poll_interval: 'int' = 3) -> 'dict[str, Any]'`
 
 Poll pipeline state until it reaches a terminal state.
 
@@ -14671,14 +14606,13 @@ Client for interacting with Mammoth Jobs API.
 
 Initialize self.  See help(type(self)) for accurate signature.
 
-### `get_job(self, job_id: 'int', timeout: 'float | None' = None) -> 'dict[str, Any]'`
+### `get_job(self, job_id: 'int', timeout: 'int' = 300) -> 'dict[str, Any]'`
 
 Get job status by ID.
 
 Args:
     job_id: ID of the job to track
-    timeout: Maximum time for this observation request.  Waiters pass
-        their remaining polling budget so one request cannot exceed it.
+    timeout: Timeout for the request (unused, kept for compatibility)
 
 Returns:
     Dict containing job information including status, response, timestamps
@@ -14686,7 +14620,7 @@ Returns:
 Raises:
     MammothAPIError: If the API request fails
 
-### `get_jobs(self, job_ids: 'list[int] | str', timeout: 'float | None' = None) -> 'dict[str, Any]'`
+### `get_jobs(self, job_ids: 'list[int] | str') -> 'dict[str, Any]'`
 
 Track multiple job IDs.
 
@@ -14699,7 +14633,7 @@ Returns:
 Raises:
     MammothAPIError: If the API request fails
 
-### `wait_for_job(self, job_id: 'int', timeout: 'float | None' = None, poll_interval: 'float' = 2, fetch: 'Callable[[int, float], dict[str, Any]] | None' = None) -> 'dict[str, Any]'`
+### `wait_for_job(self, job_id: 'int', timeout: 'int | None' = None, poll_interval: 'int' = 2) -> 'dict[str, Any]'`
 
 Wait for a job to complete and return the result.
 
@@ -14707,10 +14641,6 @@ Args:
     job_id: ID of the job to wait for
     timeout: Maximum time to wait in seconds (default: client.job_timeout)
     poll_interval: Time between polling attempts in seconds (default: 2)
-    fetch: Optional observer ``(job_id, remaining_timeout) -> job dict``
-        used instead of ``GET /jobs/{id}``. Published-dashboard jobs
-        are only readable through the URL-scoped job route, for
-        example, and ``GET /jobs/{id}`` answers ``4PERM002`` for them.
 
 Returns:
     Dict containing the completed job information
@@ -14790,31 +14720,9 @@ Raises:
         ``auto-publish`` are called without *params_enabled*, or
         ``delete-source`` is called without a positive *params_view_id*.
 
-### `add_pages(self, dashboard_id: 'int', body: 'AddPagesSpec') -> 'AddPagesResponse'`
-
-Append structural pages and start the asynchronous dashboard bake.
-
 ### `analytics(self: 'Any', dashboard_id: 'int') -> 'DashboardAnalyticsResponse'`
 
 Get Dashboard Analytics.
-
-### `archive(self, dashboard_id: 'int', archived: 'bool') -> 'Any'`
-
-Set whether a dashboard is archived.
-
-``archived=True`` archives the dashboard and ``archived=False``
-restores it. The API declares no response body schema and the live
-server answers with a non-object JSON value, so any 2xx JSON body is
-accepted and returned unchanged instead of being rejected as a
-response-contract violation on a write that already committed.
-
-### `assess_pbix(self, file: 'str | Path') -> 'PbixAssessResponse'`
-
-Assess a Power BI workbook without importing it.
-
-### `assess_twb(self, file: 'str | Path') -> 'TwbAssessResponse'`
-
-Assess a Tableau workbook without importing it.
 
 ### `cancel_generation(self, dashboard_id: 'int') -> 'dict[str, Any]'`
 
@@ -14886,14 +14794,6 @@ Raises:
     MammothValidationError: If *intent* is shorter than 10 characters,
         *source* is empty, or any source ID is not a positive integer.
 
-### `create_blank(self, params: 'CreateBlankParams') -> 'dict[str, Any]'`
-
-Create an empty v3 dashboard bound to a dataview.
-
-The release endpoint returns the created dashboard ``id`` and seeded
-canvas ``sequence``. Style is an unrestricted release string with a
-default of ``dashboard``; the server owns any further style policy.
-
 ### `data_draft(self: 'Any', dashboard_id: 'int', body: 'WidgetDataSpec') -> 'WidgetDataResponse | ObjectJobSchema | JobResponse'`
 
 Get draft data from given SQL query.
@@ -14912,10 +14812,6 @@ Args:
 Returns:
     Dict with deletion result.
 
-### `delete_tag(self, tag_id: 'int') -> 'dict[str, Any] | None'`
-
-Delete a tag from the workspace vocabulary.
-
 ### `descriptor_data(self: 'Any', dashboard_id: 'int', body: 'DescriptorDataSpec') -> 'ObjectJobSchema | JobResponse'`
 
 Descriptor data — future-request.
@@ -14923,14 +14819,6 @@ Descriptor data — future-request.
 ### `duplicate(self: 'Any', dashboard_id: 'int') -> 'DuplicateDashboardResponse'`
 
 Duplicate a v3 dashboard.
-
-### `extract_context(self, body: 'ContextExtractSpec') -> 'dict[str, Any]'`
-
-Extract a context file into slot suggestions (release route).
-
-### `extract_exemplar(self, body: 'ExemplarExtractSpec') -> 'dict[str, Any]'`
-
-Extract an example report into an editable dashboard spec.
 
 ### `figure_intent(self: 'Any', dashboard_id: 'int', body: 'FigureIntentSpec') -> 'FigureIntentResponse'`
 
@@ -14966,39 +14854,27 @@ Args:
 Returns:
     Dict with dashboard details.
 
-### `get_draft_data(self, dashboard_id: 'int', widget_id: 'str', global_filters: 'dict[str, Any] | None' = None, drilldown_filters: 'dict[str, Any] | None' = None) -> 'dict[str, Any]'`
+### `get_draft_data(self, dashboard_id: 'int', sql: 'str') -> 'dict[str, Any]'`
 
-Get one widget's rows from a dashboard's draft (unpublished) state.
-
-The route is historically named ``GetDraftDataFromSql`` but the API
-contract takes a ``WidgetDataSpec``: ``{"params": {"widget_id", ...}}``.
-A top-level ``sql`` body is rejected with HTTP 400 ``params: Field
-required``.
+Get draft data using SQL query.
 
 Args:
     dashboard_id: ID of the dashboard.
-    widget_id: UUID of the widget whose data to fetch.
-    global_filters: Sidebar filters, ``{column: value}``.
-    drilldown_filters: Chart-click filters, ``{column: value}``
-        (always exact match).
+    sql: SQL query to execute against draft data.
 
 Returns:
-    Dict with a ``data`` list of row dicts.
+    Dict with query results.
 
-### `get_publish_data(self, dashboard_id: 'int', widget_id: 'str', global_filters: 'dict[str, Any] | None' = None, drilldown_filters: 'dict[str, Any] | None' = None) -> 'dict[str, Any]'`
+### `get_publish_data(self, dashboard_id: 'int', sql: 'str') -> 'dict[str, Any]'`
 
-Get one widget's rows from a dashboard's published state.
-
-Same ``WidgetDataSpec`` contract as :meth:`get_draft_data`.
+Get published data using SQL query.
 
 Args:
     dashboard_id: ID of the dashboard.
-    widget_id: UUID of the widget whose data to fetch.
-    global_filters: Sidebar filters, ``{column: value}``.
-    drilldown_filters: Chart-click filters, ``{column: value}``.
+    sql: SQL query to execute against published data.
 
 Returns:
-    Dict with a ``data`` list of row dicts.
+    Dict with query results.
 
 ### `get_sources(self) -> '_list[dict[str, Any]]'`
 
@@ -15010,10 +14886,6 @@ Get available dashboard data sources.
 
 Returns:
     List of source dicts.
-
-### `import_workbook(self, file: 'str | Path', project_id: 'int | None' = None) -> 'ImportDatasetResponse'`
-
-Import a workbook into a project-scoped dataset.
 
 ### `job_by_url(self, url: 'str', job_id: 'int') -> 'dict[str, Any]'`
 
@@ -15035,14 +14907,6 @@ List all dashboards.
 
 Returns:
     List of dashboard dicts.
-
-### `list_tags(self) -> 'dict[str, Any]'`
-
-List the workspace dashboard-tag vocabulary.
-
-### `merge_tag(self, tag_id: 'int', target_id: 'int') -> 'dict[str, Any]'`
-
-Merge one workspace tag into another using the release request shape.
 
 ### `og_card(self: 'Any', dashboard_id: 'int') -> 'dict[str, Any]'`
 
@@ -15161,10 +15025,6 @@ Update this dashboard's Q&A settings (editors only).
 
 Editor ad-hoc descriptor query.
 
-### `rename_tag(self, tag_id: 'int', name: 'str') -> 'dict[str, Any]'`
-
-Rename one workspace dashboard tag using the release request shape.
-
 ### `restore(self, dashboard_id: 'int') -> 'dict[str, Any]'`
 
 Restore a trashed dashboard.
@@ -15193,10 +15053,6 @@ Candidate columns for the RLS filter.
 ### `rls_value_list(self: 'Any', dashboard_id: 'int', column: 'str', search: 'str | None' = None) -> 'RlsDistinctValuesResponse'`
 
 Distinct values for an RLS filter column.
-
-### `set_tags(self, dashboard_id: 'int', tags: 'builtins.list[str]') -> 'dict[str, Any]'`
-
-Replace a dashboard's complete tag set using the release request shape.
 
 ### `share(self, dashboard_id: 'int', type_of_auth: 'DashboardAuthType', users: '_list[DashboardShareUser] | None' = None) -> 'dict[str, Any]'`
 
@@ -15282,14 +15138,6 @@ Full Style bundle by id (stock or custom).
 
 Data-grounded starting points for the create screen.
 
-### `swap_data(self, dashboard_id: 'int', body: 'SwapDataSpec') -> 'ObjectJobSchema'`
-
-Re-point a v3 dashboard at a different dataset.
-
-### `take_pending_template(self) -> 'dict[str, Any]'`
-
-Claim the pending dashboard template for the workspace.
-
 ### `template_apply(self: 'Any', body: 'ApplyTemplateSpec') -> 'ObjectJobSchema | JobResponse'`
 
 Apply a template to a target dataset.
@@ -15341,12 +15189,7 @@ Raises:
 
 ### `update(self, dashboard_id: 'int', patch: '_list[DashboardPatchItem]') -> 'dict[str, Any]'`
 
-Update a dashboard with patch operations.
-
-The patch items look like RFC 6902 JSON Patch but ``path`` is a bare
-field name from :class:`~mammoth.models.dashboards.DashboardPatchPath`
-(``"title"``, ``"intent"``, ``"theme"``, ``"pages"``, ``"filters"``),
-not a JSON pointer: ``"/title"`` is rejected.
+Update a dashboard via JSON-patch operations.
 
 Args:
     dashboard_id: ID of the dashboard (must be > 0).
@@ -15367,10 +15210,6 @@ Raises:
         an ``intent`` value is too short / a ``title``/``theme`` value is
         not a string.
 
-### `use_template(self, slug: 'str', body: 'UseTemplateSpec') -> 'ObjectJobSchema | JobResponse'`
-
-Instantiate a dashboard template on its sample data.
-
 ### `v3_generate(self: 'Any', body: 'GenerateDashboardV3Spec') -> 'ObjectJobSchema | JobResponse'`
 
 Generate a v3 dashboard.
@@ -15382,15 +15221,6 @@ Kick a motion-story video export.
 ### `video_state(self: 'Any', dashboard_id: 'int') -> 'dict[str, Any]'`
 
 Motion-story video export state (never kicks a render).
-
-### `wait_for_job_by_url(self, url: 'str', job_id: 'int', timeout: 'float | None' = None, poll_interval: 'float' = 2) -> 'dict[str, Any]'`
-
-Wait for a published-dashboard job through the URL-scoped job route.
-
-Jobs dispatched by the ``/dashboards/url/{url}/...`` routes are not
-readable through ``GET /jobs/{id}`` (the server answers ``4PERM002``),
-so poll :meth:`job_by_url` with the same timeout and failure semantics
-as :meth:`~mammoth.api.jobs.JobsAPI.wait_for_job`.
 
 ### `widget_data(self, dashboard_id: 'int', body: 'dict[str, Any]') -> 'dict[str, Any]'`
 
@@ -16007,19 +15837,12 @@ Args:
 Returns:
     Dict with updated profile.
 
-#### `update_preferences(self, patch: 'list[dict[str, Any]] | None' = None, **prefs: 'Any') -> 'dict[str, Any]'`
+#### `update_preferences(self, **prefs: 'Any') -> 'dict[str, Any]'`
 
 Update user preferences.
 
-The route takes ``{"patch": [{"op": "replace", "path": ..., "value": ...}]}``
-where ``path`` is a dot-separated preference path rooted at ``GLOBAL``
-or ``WORKSPACE_PREFERENCES`` (for example
-``GLOBAL.PREFERENCES.TOP_TABS``). Keyword arguments are turned into
-``replace`` operations on the given path.
-
 Args:
-    patch: Explicit patch operations.
-    **prefs: ``path=value`` shortcuts, each becoming a ``replace``.
+    **prefs: Preference fields to update.
 
 Returns:
     Dict with updated preferences.
@@ -16220,29 +16043,24 @@ Args:
 Returns:
     Dict with deletion result.
 
-#### `create(self, dataset_id: 'int', source_id: 'int', mapping: 'dict[str, str] | _list[dict[str, Any]]', project_id: 'int | None' = None, new_ds_params: 'dict[str, Any] | None' = None, is_validation_required: 'bool | None' = None, change_map: 'dict[str, Any] | None' = None, delete_source_ds: 'bool' = False, expected_destination_c_type: 'str' = 'TEXT') -> 'dict[str, Any]'`
+#### `create(self, dataset_id: 'int', source_id: 'int', mapping: 'dict[str, str]', project_id: 'int | None' = None, new_ds_params: 'dict[str, Any] | None' = None, is_validation_required: 'bool | None' = None, change_map: 'dict[str, Any] | None' = None, delete_source_ds: 'bool' = False) -> 'dict[str, Any]'`
 
 Create a new batch for a dataset.
 
+The ``source`` field is hardcoded to ``"datasource"`` — the only
+supported source type.
 
 Args:
     dataset_id: ID of the destination dataset.
     source_id: ID of the source dataset (must be a positive integer).
-    mapping: Non-empty ``{"src_col": "dst_col"}`` dict (expanded to
-        ``ColumnNameMapping`` items, each stamped with
-        ``expected_destination_c_type``) or an explicit list of
-        ``ColumnNameMapping`` / ``ColumnIdMapping`` objects, every
-        item carrying its own ``expected_destination_c_type``
-        (``TEXT``, ``NUMERIC`` or ``DATE``; the route requires it).
+    mapping: Non-empty dict mapping source column names to destination
+        column names, e.g. ``{"src_col": "dst_col"}``.
     project_id: Project ID (uses client default if not provided).
     new_ds_params: Optional params for creating a new dataset.
     is_validation_required: Whether to validate the batch.
     change_map: Optional change-tracking column map.
     delete_source_ds: Whether to delete the source dataset after batch
         (default ``False``).
-    expected_destination_c_type: Type stamped on every item of a
-        ``{src: dst}`` mapping dict (default ``"TEXT"``); ignored for
-        list mappings, which carry their own.
 
 Returns:
     Dict with created batch info.
@@ -16250,14 +16068,6 @@ Returns:
 Raises:
     MammothValidationError: If ``source_id`` is not positive or ``mapping``
         is empty.
-
-#### `create_spec(self, dataset_id: 'int', spec: 'BatchesPostRequest | dict[str, Any]', project_id: 'int | None' = None) -> 'dict[str, Any]'`
-
-Create a batch using the release ``BatchesPostRequest`` shape.
-
-This additive method preserves the older ``create`` contract while
-supporting either ``source_id`` plus array ``mapping`` or ``file_id``
-alone.  The CLI owns confirmation policy for destructive calls.
 
 #### `delete(self, dataset_id: 'int', batch_id: 'int', project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -16773,24 +16583,6 @@ Access via client.ai:
     client.ai.generate_sql(intent="total sales by region")
     suggestions = client.ai.get_suggestions()
 
-#### `PROFILE_ACTIONS`
-
-Built-in immutable sequence.
-
-If no argument is given, the constructor returns an empty tuple.
-If iterable is specified the tuple is initialized from iterable's items.
-
-If the argument is a tuple, the return value is the same object.
-
-#### `SUGGESTION_TYPES`
-
-Built-in immutable sequence.
-
-If no argument is given, the constructor returns an empty tuple.
-If iterable is specified the tuple is initialized from iterable's items.
-
-If the argument is a tuple, the return value is the same object.
-
 #### `__init__(self, client: 'MammothClient') -> 'None'`
 
 Initialize self.  See help(type(self)) for accurate signature.
@@ -16855,37 +16647,26 @@ Raises:
     MammothValidationError: If ``prompt`` is empty or ``no_of_rows``
         is outside the 1–100 range.
 
-#### `generate_profile(self, dataview_id: 'int', dataset_id: 'int | None' = None, action: 'str' = 'insights') -> 'dict[str, Any]'`
+#### `generate_profile(self, dataview_id: 'int', dataset_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Generate an AI profile/summary of the dataview data.
-
-Corresponds to the backend ``ProfileGenerationSpec``:
-``{"params": {"action": <action>}}``.
 
 Args:
     dataview_id: ID of the dataview.
     dataset_id: ID of the dataset (auto-detected if not provided).
-    action: One of ``"stats"``, ``"insights"`` (default),
-        ``"data_quality"`` or ``"join_recommendation"``.
 
 Returns:
     Dict with profile information.
 
-Raises:
-    MammothValidationError: If ``action`` is not a supported value.
-
-#### `generate_sql(self, intent: 'str', sequence_number: 'int' = 0, dataset_id: 'int | None' = None, dataview_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `generate_sql(self, intent: 'str', sequence_number: 'int' = 0) -> 'dict[str, Any]'`
 
 Generate SQL from natural language intent.
 
-Uses the project-level sql_generation endpoint, which requires the
-``dataset_id`` query parameter (``dataview_id`` optional).
+Uses the project-level sql_generation endpoint.
 
 Args:
     intent: Natural language description of the query.
     sequence_number: Sequence number for the SQL generation request.
-    dataset_id: Dataset the SQL is generated against (required).
-    dataview_id: Optional dataview within that dataset.
 
 Returns:
     Dict with generated SQL and metadata.
@@ -16901,59 +16682,25 @@ Args:
 Returns:
     Dict with data generation info.
 
-#### `get_suggestions(self, suggestion_type: 'str | None' = None, params: 'dict[str, Any] | None' = None, dataset_id: 'int | None' = None, dataview_id: 'int | None' = None) -> 'dict[str, Any]'`
+#### `get_suggestions(self) -> 'dict[str, Any]'`
 
-Get AI-powered suggestions for the current project.
-
-Corresponds to the backend ``UnifiedPromptSpec``:
-``{"suggestion_type": <type>, "params": {...}}`` where the ``params``
-shape depends on the type (e.g. ``generate_task`` takes ``{"prompt"}``,
-``add_condition`` takes ``{"prompt", "sequence_number"}``,
-``extract_text`` takes ``{"column_name", "sequence_number", "prompt"}``).
-
-Args:
-    suggestion_type: One of ``extract_text``, ``add_condition``,
-        ``generate_task``, ``apply_ai_template``, ``dashboards`` or
-        ``derivative_fuzzy_bucket`` (required).
-    params: Type-specific parameters (required).
-    dataset_id: Optional dataset to scope the suggestions to
-        (query parameter).
-    dataview_id: Optional dataview to scope the suggestions to
-        (query parameter).
+Get AI-powered transformation suggestions for the current project.
 
 Returns:
-    Dict with suggestions.
+    Dict with suggested transformations.
 
-Raises:
-    MammothValidationError: If ``suggestion_type`` or ``params`` is
-        missing or the type is unknown.
-
-#### `query_gen(self, connector_key: 'str', connection_key: 'str', query: 'str', project_id: 'int | None' = None, profile: 'str | None' = None) -> 'dict[str, Any]'`
+#### `query_gen(self, connector_key: 'str', connection_key: 'str', prompt: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Generate a query for a connector using AI.
-
-Corresponds to the backend ``Intent`` body: ``{"query": <intent>,
-"profile": <optional profile>}``.
 
 Args:
     connector_key: Key identifying the connector type.
     connection_key: Key identifying the connection.
-    query: Natural language intent describing the query.
+    prompt: Natural language prompt describing the query.
     project_id: Project ID (uses client default if not provided).
-    profile: Optional connector profile name.
 
 Returns:
     Dict with generated query.
-
-#### `retention_condition(self, dataset_id: 'int', mode: 'str', intent: 'str | None' = None, condition_sql: 'str | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
-
-Generate or test a retention-policy WHERE clause.
-
-``mode='generate'`` requires a natural-language ``intent`` and may
-return an asynchronous job. ``mode='test'`` requires ``condition_sql``
-and returns per-batch row counts (the API's union response may still
-be a job envelope). The request is always explicitly scoped to the
-client's workspace and selected project.
 
 #### `status(self, connector_key: 'str', connection_key: 'str', project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -17020,8 +16767,7 @@ import os
 from mammoth import MammothClient
 
 client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    api_token=os.getenv("MAMMOTH_API_TOKEN"),
     workspace_id=11,  # your workspace ID
 )
 
@@ -17240,8 +16986,7 @@ from mammoth import (
 
 # 1. Authenticate
 client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    api_token=os.getenv("MAMMOTH_API_TOKEN"),
     workspace_id=11,
 )
 client.set_project_id(42)
@@ -17304,8 +17049,7 @@ import os
 from mammoth import MammothClient, parse_path
 
 client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    api_token=os.getenv("MAMMOTH_API_TOKEN"),
     workspace_id=11,
 )
 client.set_project_id(10)
@@ -17407,8 +17151,7 @@ print(f"Saved to {path}")
 
 ```python
 with MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    api_token=os.getenv("MAMMOTH_API_TOKEN"),
     workspace_id=11,
 ) as client:
     client.set_project_id(10)
@@ -17456,8 +17199,7 @@ from mammoth import (
 
 def main():
     client = MammothClient(
-        api_key=os.getenv("MAMMOTH_API_KEY"),
-        api_secret=os.getenv("MAMMOTH_API_SECRET"),
+        api_token=os.getenv("MAMMOTH_API_TOKEN"),
         workspace_id=11,
     )
     client.set_project_id(10)
@@ -17524,11 +17266,11 @@ MammothError                     # Base -- catch-all for any SDK error
 from mammoth import MammothClient, MammothAuthError
 
 try:
-    client = MammothClient(api_key="bad", api_secret="bad", workspace_id=1)
+    client = MammothClient(api_token="mm_bad", workspace_id=1)
     client.set_project_id(1)
     client.projects.list()
 except MammothAuthError:
-    print("Authentication failed -- check your API key and secret")
+    print("Authentication failed -- check your API token")
 ```
 
 ### API errors
@@ -17673,8 +17415,7 @@ If jobs time out, increase the `job_timeout` on the client:
 
 ```python
 client = MammothClient(
-    api_key="...",
-    api_secret="...",
+    api_token="mm_...",
     workspace_id=11,
     job_timeout=300,  # 5 minutes instead of default 60s
 )
@@ -17705,8 +17446,7 @@ Advanced configuration options for the Mammoth SDK client.
 from mammoth import MammothClient
 
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
+    api_token="mm_your-token",
     workspace_id=11,
     base_url="https://app.mammoth.io/api/v2",
     timeout=30,
@@ -17726,8 +17466,7 @@ If your organization uses a custom Mammoth deployment:
 
 ```python
 client = MammothClient(
-    api_key="...",
-    api_secret="...",
+    api_token="mm_...",
     workspace_id=11,
     base_url="https://your-instance.mammoth.io/api/v2",
 )
@@ -17785,8 +17524,7 @@ def with_retry(fn, max_retries=3, backoff=2):
 import os
 
 config = {
-    "api_key": os.environ["MAMMOTH_API_KEY"],
-    "api_secret": os.environ["MAMMOTH_API_SECRET"],
+    "api_token": os.environ["MAMMOTH_API_TOKEN"],
     "workspace_id": int(os.environ["MAMMOTH_WORKSPACE_ID"]),
     "base_url": os.getenv("MAMMOTH_BASE_URL", "https://app.mammoth.io/api/v2"),
     "timeout": int(os.getenv("MAMMOTH_TIMEOUT", "30")),
@@ -17942,7 +17680,7 @@ Pull data from an external database and upload to Mammoth:
 import pandas as pd
 from mammoth import MammothClient
 
-client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
+client = MammothClient(api_token="mm_...", workspace_id=11)
 client.set_project_id(10)
 
 # 1. Export from your source database to CSV
@@ -18087,7 +17825,7 @@ Common issues and their solutions.
 
 **Solutions**:
 
-- Verify your API key and secret are correct
+- Verify your API token is correct (it starts with `mm_`)
 - Confirm the `workspace_id` matches your account
 - Check that the `base_url` points to the correct Mammoth instance
 - Ensure your API credentials have not been revoked or rotated
@@ -18095,7 +17833,7 @@ Common issues and their solutions.
 ```python
 # Verify your credentials
 try:
-    client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
+    client = MammothClient(api_token="mm_...", workspace_id=11)
     if client.test_connection():
         print("Credentials are valid")
 except MammothAuthError:
@@ -18162,7 +17900,7 @@ except MammothJobFailedError as e:
 **Solution**: Call `client.set_project_id(id)` before performing operations:
 
 ```python
-client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
+client = MammothClient(api_token="mm_...", workspace_id=11)
 client.set_project_id(10)  # Required before most operations
 ```
 
@@ -18215,6 +17953,48 @@ client = MammothClient(..., timeout=120)  # 2 minutes per request
 
 
 # Changelog
+
+## v0.7.15
+
+### Added
+
+- Math expressions accept a quoted display name (`"Unit Price"` or
+  `` `Unit Price` ``) as well as the bare form; an unknown quoted name is
+  named in the error.
+
+## v0.7.14
+
+### Fixed
+
+- Transform methods returned the server's submit record (`status:
+  "processing"`) after the pipeline had already finished. Outside draft mode
+  the result now says `status: "done"` with `pipeline_state` (`"ready"`);
+  in draft mode it is unchanged, since the task is only queued.
+
+## v0.7.13
+
+- Added `target_project_id` to `View.to_dataset()` and `View.branch_out()`:
+  send a view into another project as a pipeline step that re-materialises
+  on every run. The SDK fills the backend's `USER_ID` / `export_project` /
+  `project_id` / `source_project_id` target properties from `/self`.
+
+## v0.7.12
+
+### Fixed
+
+- Every transform method read the server's draft flag *after* submitting the
+  task. The backend flips that flag when the new task carries a reference
+  error (missing column, wrong column type), so the SDK skipped the pipeline
+  wait and returned `{"has_error": true, "status": "done"}` as success while
+  the view sat in `ref_error`. Draft state is now read before the submit and
+  a `has_error` result raises `MammothTransformError`.
+
+## v0.7.11
+
+### Added
+
+- `ProjectsAPI.list` takes a server-side `offset`; `list_all` walks the
+  route's 100-row pages; `get(project="name")` searches every page.
 
 ## v0.7.10
 

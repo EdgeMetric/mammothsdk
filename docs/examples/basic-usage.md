@@ -9,8 +9,7 @@ import os
 from mammoth import MammothClient, parse_path
 
 client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    api_token=os.getenv("MAMMOTH_API_TOKEN"),
     workspace_id=11,
 )
 client.set_project_id(10)
@@ -112,8 +111,7 @@ print(f"Saved to {path}")
 
 ```python
 with MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    api_token=os.getenv("MAMMOTH_API_TOKEN"),
     workspace_id=11,
 ) as client:
     client.set_project_id(10)
@@ -161,8 +159,7 @@ from mammoth import (
 
 def main():
     client = MammothClient(
-        api_key=os.getenv("MAMMOTH_API_KEY"),
-        api_secret=os.getenv("MAMMOTH_API_SECRET"),
+        api_token=os.getenv("MAMMOTH_API_TOKEN"),
         workspace_id=11,
     )
     client.set_project_id(10)

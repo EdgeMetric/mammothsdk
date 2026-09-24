@@ -34,16 +34,18 @@ class ExplicitLogin:
     stdin, or a permission-checked file the caller already validated.
 
     Attributes:
-        api_key: The Mammoth API key.
-        api_secret: The Mammoth API secret.
+        api_key: The deprecated Mammoth API key (with ``api_secret``).
+        api_secret: The deprecated Mammoth API secret.
         workspace_id: The Mammoth workspace id.
         server_prefix: A one-label server prefix, or None.
+        api_token: The ``mm_...`` Bearer token, instead of a key + secret.
     """
 
-    api_key: str
-    api_secret: str
+    api_key: str | None
+    api_secret: str | None
     workspace_id: int
     server_prefix: str | None = None
+    api_token: str | None = None
 
 
 @dataclass(frozen=True)
@@ -51,16 +53,18 @@ class ResolvedAuth:
     """Fully resolved credentials and endpoint for one command invocation.
 
     Attributes:
-        api_key: The Mammoth API key.
-        api_secret: The Mammoth API secret.
+        api_key: The deprecated Mammoth API key, or None with a token.
+        api_secret: The deprecated Mammoth API secret, or None with a token.
         workspace_id: The Mammoth workspace id.
         base_url: The resolved API base url.
+        api_token: The ``mm_...`` Bearer token, or None with a key + secret.
     """
 
-    api_key: str
-    api_secret: str
+    api_key: str | None
+    api_secret: str | None
     workspace_id: int
     base_url: str
+    api_token: str | None = None
 
 
 def not_authenticated_error() -> CliError:
@@ -129,20 +133,21 @@ def resolve_auth(
             api_secret=explicit_login.api_secret,
             workspace_id=_require_positive_workspace(explicit_login.workspace_id, source="login"),
             base_url=base_url,
+            api_token=explicit_login.api_token,
         )
 
     profile_name = invocation.profile or profiles.get_selected()
     record = profiles.get_profile(profile_name)
     if record is not None:
-        creds = credentials.load_credentials(profile_name)
-        if creds is not None:
-            api_key, api_secret = creds
+        credential = credentials.load_credential(profile_name)
+        if credential is not None:
             base_url = _endpoint(record.server_prefix)
             return ResolvedAuth(
-                api_key,
-                api_secret,
+                credential.api_key,
+                credential.api_secret,
                 _require_positive_workspace(record.workspace_id, source="profile"),
                 base_url,
+                api_token=credential.api_token,
             )
 
     raise not_authenticated_error()

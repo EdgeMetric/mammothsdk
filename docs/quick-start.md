@@ -10,7 +10,7 @@ pip install -U mammoth-io
 
 ## 2. Get your API credentials
 
-Log in to your Mammoth Analytics dashboard, navigate to your profile settings, and generate an API key and secret.
+Log in to your Mammoth Analytics dashboard, navigate to your profile settings, and create an API token: **Workspace settings → API Tokens → Create token**. It starts with `mm_` and is shown once.
 
 ## 3. Create a client
 
@@ -18,8 +18,7 @@ Log in to your Mammoth Analytics dashboard, navigate to your profile settings, a
 from mammoth import MammothClient
 
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
+    api_token="mm_your-token",
     workspace_id=11,  # your workspace ID
 )
 
@@ -122,8 +121,7 @@ from mammoth import (
 )
 
 client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    api_token=os.getenv("MAMMOTH_API_TOKEN"),
     workspace_id=11,
 )
 client.set_project_id(10)

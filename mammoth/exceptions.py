@@ -13,6 +13,7 @@ _SECRET_FIELDS = frozenset(
         "set_cookie",
         "api_key",
         "api_secret",
+        "api_token",
         "x_api_key",
         "x_api_secret",
         "access_token",

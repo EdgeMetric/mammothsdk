@@ -9,8 +9,7 @@ import os
 from mammoth import MammothClient
 
 client = MammothClient(
-    api_key=os.getenv("MAMMOTH_API_KEY"),
-    api_secret=os.getenv("MAMMOTH_API_SECRET"),
+    api_token=os.getenv("MAMMOTH_API_TOKEN"),
     workspace_id=11,
     timeout=60,
     job_timeout=120,
@@ -27,7 +26,7 @@ The client supports Python's context manager protocol. The HTTP session is close
 
 ```python
 with MammothClient(
-    api_key="...", api_secret="...", workspace_id=11
+    api_token="mm_...", workspace_id=11
 ) as client:
     client.set_project_id(10)
     view = client.views.get(1039)
@@ -115,7 +114,7 @@ See [Exceptions](exceptions.md) for the full error hierarchy.
 from mammoth import MammothClient, MammothAPIError, MammothAuthError
 
 try:
-    client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
+    client = MammothClient(api_token="mm_...", workspace_id=11)
     client.set_project_id(10)
     datasets = client.datasets.list()
 except MammothAuthError:

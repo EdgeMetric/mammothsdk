@@ -3,7 +3,8 @@
 A server prefix is the only endpoint input the CLI exposes; it maps to
 ``https://PREFIX.mammoth.io/api/v2`` with default ``app``. There is no
 public base-url override: the supported configuration surface is exactly the
-API key, API secret, workspace id, and this optional one-label server prefix.
+API token (or the deprecated key + secret), workspace id, and this optional
+one-label server prefix.
 """
 
 from __future__ import annotations

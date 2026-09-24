@@ -4,6 +4,19 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.16]
+
+### Added
+
+- `MammothClient(api_token="mm_...", workspace_id=...)` authenticates with the
+  API token (`Authorization: Bearer`), the server's primary credential. Tokens
+  created in the web app today come without a separate secret.
+
+### Deprecated
+
+- `api_key` + `api_secret` (the `X-API-KEY`/`X-API-SECRET` headers) still
+  work; pass either `api_token` or the pair, not both.
+
 ## [0.7.15]
 
 ### Added

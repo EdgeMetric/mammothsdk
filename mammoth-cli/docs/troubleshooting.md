@@ -67,9 +67,17 @@ Keychain cannot show that dialog. The CLI waits up to 60 seconds, then saves
 the credential to an owner-only file and says so. To skip the keychain, run
 `mammoth auth login --storage file`.
 
-If the prompt asks for an API secret you do not have: in the web app, open
-**Workspace settings → API Tokens**, edit the token, and choose **Generate new
-secret**. The secret is shown only once.
+## Login asks for a secret you do not have
+
+Upgrade: `mammoth upgrade --yes`. From 2.0.36 the login asks for one API
+token, which starts with `mm_`. Tokens created in the web app today have no
+separate secret. Older CLI versions asked for a key and a secret, so a new
+token could not log in there. The CLI asks for a secret only when the value
+you paste does not start with `mm_`, which means an older API key.
+
+If login says the value looks like the token's id: the web app also shows a
+short `mm_` id for each token. That id does not log in. Use the token shown
+once at creation, or create a new token.
 
 ## Run log
 

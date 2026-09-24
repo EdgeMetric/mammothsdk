@@ -50,9 +50,7 @@ class _RedirectAdapter(BaseAdapter):
         "http://api.example.test/api/v2/redirected",  # HTTPS downgrade
     ],
 )
-def test_authenticated_requests_never_follow_redirects(
-    status_code: int, location: str
-) -> None:
+def test_authenticated_requests_never_follow_redirects(status_code: int, location: str) -> None:
     """No redirect target is contacted, regardless of origin or redirect type."""
     client = MammothClient(
         api_key="dummy-key",
@@ -321,4 +319,12 @@ def test_binary_wrapper_describes_png_and_returns_html_as_text() -> None:
     described = client._request_binary("GET", "/dashboards/url/x/share")
     assert described["text"] == "<html>share</html>"
     assert "content_base64" not in described
+    client.close()
+
+
+def test_signed_download_session_has_no_bearer_token() -> None:
+    client = MammothClient(api_token="mm_dummy", workspace_id=4)
+
+    assert "Authorization" not in client.download_session.headers
+    assert client.session.headers["Authorization"] == "Bearer mm_dummy"
     client.close()

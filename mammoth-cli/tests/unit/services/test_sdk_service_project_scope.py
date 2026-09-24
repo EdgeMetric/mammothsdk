@@ -148,3 +148,18 @@ def test_foreign_view_without_parent_is_refused_before_discovery(
     assert excinfo.value.code == "missing_argument"
     assert excinfo.value.details == {view_kwarg: 308756, "missing_field": parent_kwarg}
     assert probed == []
+
+
+def test_token_profile_sends_a_bearer_header() -> None:
+    auth = ResolvedAuth(
+        api_key=None,
+        api_secret=None,
+        workspace_id=4,
+        base_url="https://app.mammoth.io/api/v2",
+        api_token="mm_" + "C" * 43,
+    )
+    service = SdkMammothService(auth)
+    headers = service._client.session.headers
+    assert headers["Authorization"] == "Bearer mm_" + "C" * 43
+    assert "X-API-KEY" not in headers and "X-API-SECRET" not in headers
+    service.close()

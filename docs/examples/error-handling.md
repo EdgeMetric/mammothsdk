@@ -22,11 +22,11 @@ MammothError                     # Base -- catch-all for any SDK error
 from mammoth import MammothClient, MammothAuthError
 
 try:
-    client = MammothClient(api_key="bad", api_secret="bad", workspace_id=1)
+    client = MammothClient(api_token="mm_bad", workspace_id=1)
     client.set_project_id(1)
     client.projects.list()
 except MammothAuthError:
-    print("Authentication failed -- check your API key and secret")
+    print("Authentication failed -- check your API token")
 ```
 
 ### API errors
@@ -171,8 +171,7 @@ If jobs time out, increase the `job_timeout` on the client:
 
 ```python
 client = MammothClient(
-    api_key="...",
-    api_secret="...",
+    api_token="mm_...",
     workspace_id=11,
     job_timeout=300,  # 5 minutes instead of default 60s
 )

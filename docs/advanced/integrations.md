@@ -55,7 +55,7 @@ Pull data from an external database and upload to Mammoth:
 import pandas as pd
 from mammoth import MammothClient
 
-client = MammothClient(api_key="...", api_secret="...", workspace_id=11)
+client = MammothClient(api_token="mm_...", workspace_id=11)
 client.set_project_id(10)
 
 # 1. Export from your source database to CSV

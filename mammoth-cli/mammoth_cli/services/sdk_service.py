@@ -104,9 +104,13 @@ class SdkMammothService:
             kwargs["job_timeout"] = job_timeout
         if pipeline_timeout is not None:
             kwargs["pipeline_timeout"] = pipeline_timeout
+        credential: dict[str, Any] = (
+            {"api_token": auth.api_token}
+            if auth.api_token is not None
+            else {"api_key": auth.api_key, "api_secret": auth.api_secret}
+        )
         self._client = MammothClient(
-            api_key=auth.api_key,
-            api_secret=auth.api_secret,
+            **credential,
             workspace_id=auth.workspace_id,
             base_url=auth.base_url,
             **kwargs,

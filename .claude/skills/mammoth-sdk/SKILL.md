@@ -3,7 +3,7 @@ name: mammoth-sdk
 description: Practical knowledge base for the Mammoth Analytics Python SDK — client setup, View transformations, condition building, exports, and documented API sub-clients. Use this skill when the user asks to "use the SDK", "write SDK code", "apply a transformation", "build a condition", "export data", mentions "MammothClient", "View", "Condition", "Operator", "filter_rows", "set_values", "pivot", "window", "join", "export", or needs to understand or write code using the Mammoth Python SDK. Covers documented SDK workflows from authentication through transformations to exports.
 ---
 
-# Mammoth Python SDK Knowledge Base (v0.7.15)
+# Mammoth Python SDK Knowledge Base (v0.7.16)
 
 The Mammoth Python SDK (`mammoth` package) provides programmatic access to the Mammoth Analytics platform. It wraps the REST API with Pythonic classes, rich View objects, a condition builder with operator overloading, and export helpers.
 
@@ -13,8 +13,7 @@ The Mammoth Python SDK (`mammoth` package) provides programmatic access to the M
 from mammoth import MammothClient, Condition, Operator, ColumnType, SetValue
 
 client = MammothClient(
-    api_key="your-api-key",
-    api_secret="your-api-secret",
+    api_token="mm_your-token",
     workspace_id=11,
     base_url="https://app.mammoth.io/api/v2",  # default
 )
@@ -235,7 +234,7 @@ from mammoth import DEFAULT_TIMEOUT, DEFAULT_JOB_TIMEOUT
 
 # Override per-client:
 client = MammothClient(
-    api_key="...", api_secret="...", workspace_id=1,
+    api_token="mm_...", workspace_id=1,
     timeout=60,       # custom API timeout
     job_timeout=120,  # custom job timeout
 )
