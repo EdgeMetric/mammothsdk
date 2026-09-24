@@ -73,8 +73,7 @@ def _write_uv_stub(directory: Path, log_file: Path, bin_dir: Path) -> None:
     directory.mkdir(parents=True, exist_ok=True)
     stub = directory / "uv"
     stub.write_text(
-        "#!/bin/sh\n"
-        f'printf "%s\\n" "$*" >> "{log_file}"\n'
+        "#!/bin/sh\n" f'printf "%s\\n" "$*" >> "{log_file}"\n'
         # The installer now gates an existing uv on its version; report the
         # pinned version so this stub is accepted and used directly.
         'if [ "$1" = "--version" ]; then printf "uv 0.11.30\\n"; exit 0; fi\n'
@@ -88,6 +87,11 @@ def _write_uv_stub(directory: Path, log_file: Path, bin_dir: Path) -> None:
         f'    printf "%s\\n" "{bin_dir}"\n'
         'elif [ "$1" = "tool" ] && [ "$2" = "dir" ]; then\n'
         f'    printf "%s\\n" "{bin_dir.parent}"\n'
+        "fi\n"
+        'if [ "$1" = "tool" ] && [ "$2" = "install" ]; then\n'
+        f'    mkdir -p "{bin_dir}"\n'
+        f'    printf "#!/bin/sh\\necho 0.6.0\\n" > "{bin_dir}/mammoth"\n'
+        f'    chmod +x "{bin_dir}/mammoth"\n'
         "fi\n"
         "exit 0\n",
         encoding="utf-8",

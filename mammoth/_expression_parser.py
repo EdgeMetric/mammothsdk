@@ -100,6 +100,20 @@ def _tokenize(expression: str, column_map: dict[str, str]) -> list[dict[str, Any
 
         char = text[pos]
 
+        # A quoted display name ("Unit Price" or `Unit Price`): the quotes are
+        # optional, but people and agents write them for multi-word names.
+        if char in ('"', "`"):
+            end = text.find(char, pos + 1)
+            name = text[pos + 1 : end] if end != -1 else ""
+            if end != -1 and name in column_map:
+                tokens.append({"TYPE": "COLUMN", "VALUE": column_map[name]})
+                pos = end + 1
+                continue
+            raise ValueError(
+                f"Unrecognized token at position {pos} in expression: {expression!r}"
+                + (f" (no column named {name!r})" if end != -1 else " (unclosed quote)")
+            )
+
         # Commas (argument separator in functions)
         if char == ",":
             tokens.append(",")

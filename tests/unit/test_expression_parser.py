@@ -148,3 +148,23 @@ class TestFunctionParsing:
         assert result[0]["TYPE"] == "FUNCTION"
         assert result[1] == {"TYPE": "OPERATOR", "VALUE": "*"}
         assert result[2] == {"TYPE": "COLUMN", "VALUE": "column_qty123"}
+
+
+class TestQuotedColumnNames:
+    """Multi-word names may be quoted; the quotes are optional."""
+
+    def test_double_quoted_name_matches_bare_form(self):
+        quoted = parse_expression('Price * "Total Sales"', COLUMN_MAP)
+        assert quoted == parse_expression("Price * Total Sales", COLUMN_MAP)
+
+    def test_backtick_quoted_name(self):
+        result = parse_expression("`Total Sales` + 1", COLUMN_MAP)
+        assert result[0] == {"TYPE": "COLUMN", "VALUE": "column_total_s123"}
+
+    def test_quoted_unknown_name_is_named_in_the_error(self):
+        with pytest.raises(ValueError, match="no column named 'Unit Price'"):
+            parse_expression('Price * "Unit Price"', COLUMN_MAP)
+
+    def test_unclosed_quote(self):
+        with pytest.raises(ValueError, match="unclosed quote"):
+            parse_expression('Price * "Total Sales', COLUMN_MAP)

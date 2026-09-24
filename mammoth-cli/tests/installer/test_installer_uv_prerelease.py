@@ -59,6 +59,11 @@ def _write_uv_stub(directory: Path, log_file: Path, bin_dir: Path, version: str)
         'elif [ "$1" = "tool" ] && [ "$2" = "dir" ]; then\n'
         f'    printf "%s\\n" "{bin_dir.parent}"\n'
         "fi\n"
+        'if [ "$1" = "tool" ] && [ "$2" = "install" ]; then\n'
+        f'    mkdir -p "{bin_dir}"\n'
+        f'    printf "#!/bin/sh\\necho 0.6.0\\n" > "{bin_dir}/mammoth"\n'
+        f'    chmod +x "{bin_dir}/mammoth"\n'
+        "fi\n"
         "exit 0\n",
         encoding="utf-8",
     )
@@ -78,9 +83,7 @@ def _prepare_tool_python(home: Path) -> None:
     _make_executable(tool_python)
 
 
-def _run_local(
-    tmp_path: Path, uv_version: str
-) -> tuple[subprocess.CompletedProcess[str], Path]:
+def _run_local(tmp_path: Path, uv_version: str) -> tuple[subprocess.CompletedProcess[str], Path]:
     assert _SH is not None
     stub_dir = tmp_path / "bin"
     home = tmp_path / "home"

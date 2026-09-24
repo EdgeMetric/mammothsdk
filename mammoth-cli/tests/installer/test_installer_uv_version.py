@@ -58,6 +58,11 @@ def _write_uv_stub(directory: Path, log_file: Path, bin_dir: Path, version: str)
         'elif [ "$1" = "tool" ] && [ "$2" = "dir" ]; then\n'
         f'    printf "%s\\n" "{bin_dir.parent}"\n'
         "fi\n"
+        'if [ "$1" = "tool" ] && [ "$2" = "install" ]; then\n'
+        f'    mkdir -p "{bin_dir}"\n'
+        f'    printf "#!/bin/sh\\necho 0.6.0\\n" > "{bin_dir}/mammoth"\n'
+        f'    chmod +x "{bin_dir}/mammoth"\n'
+        "fi\n"
         "exit 0\n",
         encoding="utf-8",
     )
@@ -107,6 +112,46 @@ def test_existing_uv_at_pinned_version_is_used_directly(tmp_path: Path) -> None:
 
 @pytest.mark.skipif(_SH is None, reason="POSIX sh not available")
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX installer test")
+def test_installed_cli_that_cannot_start_fails_the_install(tmp_path: Path) -> None:
+    """A Python that cannot load the compiled deps installs cleanly, then fails on import.
+
+    Seen on a host whose /usr/local/bin/python3 was a 3.13.0a0 debug build: the
+    installer must stop there with the real cause, not report success or blame
+    the skill install that runs next.
+    """
+    assert _SH is not None
+    stub_dir = tmp_path / "bin"
+    home = tmp_path / "home"
+    home.mkdir(parents=True, exist_ok=True)
+    bin_dir = home / ".local" / "bin"
+    _write_uv_stub(stub_dir, tmp_path / "uv.log", bin_dir, _pinned_version())
+    stub = (stub_dir / "uv").read_text(encoding="utf-8")
+    (stub_dir / "uv").write_text(
+        stub.replace(
+            "echo 0.6.0",
+            "echo ImportError: undefined symbol: PyDict_GetItemRef; exit 1",
+        ),
+        encoding="utf-8",
+    )
+    _prepare_tool_python(home)
+
+    result = subprocess.run(
+        [_SH, str(_INSTALLER_SH), "--local", "--no-modify-path"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env={"PATH": f"{stub_dir}:/usr/bin:/bin", "HOME": str(home)},
+    )
+
+    assert result.returncode != 0
+    assert "PyDict_GetItemRef" in result.stderr
+    assert "does not start" in result.stderr
+    assert "--python" in result.stderr
+    assert "skill install" not in result.stderr
+
+
+@pytest.mark.skipif(_SH is None, reason="POSIX sh not available")
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX installer test")
 def test_existing_prerelease_uv_is_refused(tmp_path: Path) -> None:
     """A prerelease/suffixed uv must NOT satisfy the pin, even at the pin number.
 
@@ -137,9 +182,9 @@ def test_existing_prerelease_uv_is_refused(tmp_path: Path) -> None:
     assert "installing pinned uv" in result.stderr
     assert "could not download uv" in result.stderr
     log = log_file.read_text(encoding="utf-8") if log_file.exists() else ""
-    assert not [ln for ln in log.splitlines() if ln.startswith("build ")], (
-        "installer must not build with a prerelease uv"
-    )
+    assert not [
+        ln for ln in log.splitlines() if ln.startswith("build ")
+    ], "installer must not build with a prerelease uv"
 
 
 @pytest.mark.skipif(_SH is None, reason="POSIX sh not available")
@@ -175,6 +220,6 @@ def test_existing_uv_older_than_pinned_is_refused(tmp_path: Path) -> None:
     assert "could not download uv" in result.stderr
     # The old uv was never used to build the wheels.
     log = log_file.read_text(encoding="utf-8") if log_file.exists() else ""
-    assert not [ln for ln in log.splitlines() if ln.startswith("build ")], (
-        "installer must not build with an out-of-date uv"
-    )
+    assert not [
+        ln for ln in log.splitlines() if ln.startswith("build ")
+    ], "installer must not build with an out-of-date uv"

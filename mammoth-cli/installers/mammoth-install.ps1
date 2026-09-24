@@ -151,16 +151,26 @@ function Install-PinnedUv {
     Die "uv was installed but its executable could not be located under $installDir"
 }
 
+# Install with a uv-managed CPython first (a system Python can be a build the
+# compiled dependencies do not load on); fall back to uv's normal choice when
+# the managed Python cannot be downloaded.
+function Invoke-UvToolInstall($uvBin, [string[]]$installArgs) {
+    & $uvBin tool install --managed-python @installArgs
+    if ($LASTEXITCODE -eq 0) { return }
+    Write-Log "uv-managed Python unavailable; retrying with a system Python"
+    & $uvBin tool install @installArgs
+}
+
 function Install-Cli($uvBin) {
     if ($Version) {
         $spec = "$CliPackage==$Version"
         Write-Log "installing $spec with uv"
-        & $uvBin tool install --force $spec
+        Invoke-UvToolInstall $uvBin @("--force", $spec)
     } else {
         # Newest: bypass uv's cached index pages and let an existing install move up.
         $spec = $CliPackage
         Write-Log "installing the newest $spec with uv"
-        & $uvBin tool install --force --upgrade --refresh-package $CliPackage --refresh-package mammoth-io $spec
+        Invoke-UvToolInstall $uvBin @("--force", "--upgrade", "--refresh-package", $CliPackage, "--refresh-package", "mammoth-io", $spec)
     }
     if ($LASTEXITCODE -ne 0) { Die "uv tool install failed for $spec" }
     $binDir = (& $uvBin tool dir --bin) 2>$null
@@ -202,7 +212,7 @@ function Install-CliLocal($uvBin) {
         # Install the exact CLI artifact and explicitly inject the exact SDK
         # artifact. PyPI stays enabled only for their third-party dependencies;
         # it cannot substitute either monorepo distribution.
-        & $uvBin tool install --force $cliWheel.FullName --with $sdkWheel.FullName
+        Invoke-UvToolInstall $uvBin @("--force", $cliWheel.FullName, "--with", $sdkWheel.FullName)
         if ($LASTEXITCODE -ne 0) { Die "uv tool install failed from the local wheelhouse" }
     } finally {
         Remove-Item -LiteralPath $wheelhouse -Recurse -Force -ErrorAction SilentlyContinue

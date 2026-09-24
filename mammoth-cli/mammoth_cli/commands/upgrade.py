@@ -201,6 +201,17 @@ def uv_executable() -> str:
     return candidates[0] if candidates else "uv"
 
 
+def running_base_python() -> str | None:
+    """Return the base interpreter this CLI runs on, when it can be found.
+
+    A uv upgrade re-creates the tool environment; passing the interpreter the
+    CLI already runs on keeps a known-good Python instead of letting uv pick
+    another one (a system python3 can be a debug or pre-release build).
+    """
+    base = getattr(sys, "_base_executable", "") or ""
+    return base if base and os.path.isfile(base) else None
+
+
 def build_upgrade_command(manager: str, target_version: str | None) -> list[str]:
     """Build the argv that upgrades (or pins) the CLI for a given manager.
 
@@ -216,8 +227,10 @@ def build_upgrade_command(manager: str, target_version: str | None) -> list[str]
     spec = f"{PACKAGE_NAME}=={target_version}" if target_version else PACKAGE_NAME
     if manager == MANAGER_UV:
         uv = uv_executable()
+        python = running_base_python()
+        keep_python = ["--python", python] if python else []
         if target_version:
-            return [uv, "tool", "install", "--force", spec]
+            return [uv, "tool", "install", "--force", *keep_python, spec]
         # Not `uv tool upgrade`: it keeps an install pinned with ==X.Y.Z on
         # that version. The refresh skips uv's cached index pages.
         return [
@@ -226,6 +239,7 @@ def build_upgrade_command(manager: str, target_version: str | None) -> list[str]
             "install",
             "--force",
             "--upgrade",
+            *keep_python,
             "--refresh-package",
             PACKAGE_NAME,
             "--refresh-package",

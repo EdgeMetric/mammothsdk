@@ -63,6 +63,7 @@ UV_LATEST = [
 def _uv_on_path(monkeypatch: pytest.MonkeyPatch) -> None:
     """Pin uv lookup so results do not depend on the host's PATH."""
     monkeypatch.setattr(upgrade_cmd, "uv_executable", lambda: "uv")
+    monkeypatch.setattr(upgrade_cmd, "running_base_python", lambda: None)
 
 
 def test_build_command_uv_latest() -> None:
@@ -333,6 +334,28 @@ def test_detect_manager_uv_from_a_custom_tool_dir(
         upgrade_cmd, "_tool_root", lambda argv: str(root) if argv[1:] == ["tool", "dir"] else None
     )
     assert upgrade_cmd.detect_manager() == "uv"
+
+
+def test_build_command_uv_keeps_the_running_python(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An upgrade must not let uv swap in another (possibly broken) interpreter."""
+    monkeypatch.setattr(upgrade_cmd, "running_base_python", lambda: "/opt/py/bin/python3.13")
+    latest = upgrade_cmd.build_upgrade_command("uv", None)
+    assert latest[latest.index("--python") + 1] == "/opt/py/bin/python3.13"
+    pinned = upgrade_cmd.build_upgrade_command("uv", "1.2.3")
+    assert pinned == [
+        "uv",
+        "tool",
+        "install",
+        "--force",
+        "--python",
+        "/opt/py/bin/python3.13",
+        "mammoth-cli==1.2.3",
+    ]
+
+
+def test_running_base_python_is_an_existing_file() -> None:
+    found = upgrade_cmd.running_base_python()
+    assert found is None or Path(found).is_file()
 
 
 def _fake_installer_uv(root: Path, version: str) -> Path:

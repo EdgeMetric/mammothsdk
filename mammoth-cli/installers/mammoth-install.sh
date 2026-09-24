@@ -188,16 +188,26 @@ resolve_bin_dir() {
     [ -n "$BIN_DIR" ] || BIN_DIR="$HOME/.local/bin"
 }
 
+# Install with a uv-managed CPython first: a system python3 can be a debug,
+# pre-release or vendor build that the compiled dependencies do not load on
+# (seen: a 3.13.0a0 debug build in /usr/local/bin). When the managed Python
+# cannot be downloaded (offline, proxy), fall back to uv's normal choice.
+uv_tool_install() {
+    "$UV_BIN" tool install --managed-python "$@" && return 0
+    log "uv-managed Python unavailable; retrying with a system Python"
+    "$UV_BIN" tool install "$@"
+}
+
 install_cli() {
     if [ -n "$VERSION" ]; then
         spec="$CLI_PACKAGE==$VERSION"
         log "installing $spec with uv"
-        "$UV_BIN" tool install --force "$spec" || die "uv tool install failed for $spec"
+        uv_tool_install --force "$spec" || die "uv tool install failed for $spec"
     else
         # Newest: bypass uv's cached index pages and let an existing install move up.
         spec="$CLI_PACKAGE"
         log "installing the newest $spec with uv"
-        "$UV_BIN" tool install --force --upgrade \
+        uv_tool_install --force --upgrade \
             --refresh-package "$CLI_PACKAGE" --refresh-package mammoth-io "$spec" \
             || die "uv tool install failed for $spec"
     fi
@@ -251,7 +261,7 @@ install_cli_local() {
     # Install the exact CLI artifact and explicitly inject the exact SDK
     # artifact. PyPI remains enabled only for their third-party dependencies;
     # it cannot substitute either monorepo distribution.
-    "$UV_BIN" tool install --force "$cli_wheel" --with "$sdk_wheel" \
+    uv_tool_install --force "$cli_wheel" --with "$sdk_wheel" \
         || die "uv tool install failed from the local wheelhouse"
     resolve_bin_dir
     tool_root="$("$UV_BIN" tool dir 2>/dev/null)"
@@ -306,6 +316,18 @@ modify_path() {
     log "open a new shell, or run: $line"
 }
 
+# The CLI must start before anything else relies on it: a Python that cannot
+# load the compiled dependencies installs cleanly and then fails on import.
+verify_cli() {
+    exe="$BIN_DIR/mammoth"
+    [ -x "$exe" ] || die "mammoth was not installed at $exe"
+    if ! installed="$("$exe" --version 2>&1)"; then
+        printf '%s\n' "$installed" | tail -n 3 >&2
+        die "the installed mammoth does not start: its Python cannot load the CLI's dependencies. Reinstall on another Python 3.12-3.14: $UV_BIN tool install --force --python /path/to/python3 $CLI_PACKAGE"
+    fi
+    log "installed mammoth-cli $installed"
+}
+
 install_skills() {
     exe="$BIN_DIR/mammoth"
     [ -x "$exe" ] || exe="mammoth"
@@ -328,6 +350,7 @@ main() {
         else
             install_cli
         fi
+        verify_cli
         modify_path
     else
         BIN_DIR="$($(command -v uv || echo uv) tool dir --bin 2>/dev/null || echo "$HOME/.local/bin")"
