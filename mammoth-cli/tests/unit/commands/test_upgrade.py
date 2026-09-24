@@ -7,6 +7,7 @@ request or process launch ever happens.
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -44,13 +45,29 @@ def _no_subprocess(monkeypatch: pytest.MonkeyPatch) -> list[list[str]]:
 # --- build_upgrade_command (pure) -----------------------------------------
 
 
+UV_LATEST = [
+    "uv",
+    "tool",
+    "install",
+    "--force",
+    "--upgrade",
+    "--refresh-package",
+    "mammoth-cli",
+    "--refresh-package",
+    "mammoth-io",
+    "mammoth-cli",
+]
+
+
+@pytest.fixture(autouse=True)
+def _uv_on_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pin uv lookup so results do not depend on the host's PATH."""
+    monkeypatch.setattr(upgrade_cmd, "uv_executable", lambda: "uv")
+
+
 def test_build_command_uv_latest() -> None:
-    assert upgrade_cmd.build_upgrade_command("uv", None) == [
-        "uv",
-        "tool",
-        "upgrade",
-        "mammoth-cli",
-    ]
+    """Not `uv tool upgrade`: that keeps an ==X.Y.Z install on X.Y.Z."""
+    assert upgrade_cmd.build_upgrade_command("uv", None) == UV_LATEST
 
 
 def test_build_command_uv_pinned() -> None:
@@ -162,8 +179,8 @@ def test_upgrade_to_latest_runs_built_command_with_yes(monkeypatch: pytest.Monke
         _inv(output="json", no_input=True, yes=True), check=False, target_version=None
     )
     assert data["action"] == "upgraded"
-    assert ran == [["uv", "tool", "upgrade", "mammoth-cli"]]
-    assert data["command"] == ["uv", "tool", "upgrade", "mammoth-cli"]
+    assert ran == [UV_LATEST]
+    assert data["command"] == UV_LATEST
 
 
 def test_upgrade_pinned_version_forces_install_without_pypi(
@@ -313,9 +330,45 @@ def test_detect_manager_uv_from_a_custom_tool_dir(
     monkeypatch.setattr(upgrade_cmd.sys, "prefix", str(prefix))
     monkeypatch.setattr(upgrade_cmd.sys, "base_prefix", "/usr")
     monkeypatch.setattr(
-        upgrade_cmd, "_tool_root", lambda argv: str(root) if argv[0] == "uv" else None
+        upgrade_cmd, "_tool_root", lambda argv: str(root) if argv[1:] == ["tool", "dir"] else None
     )
     assert upgrade_cmd.detect_manager() == "uv"
+
+
+def _fake_installer_uv(root: Path, version: str) -> Path:
+    binary = root / "mammoth-cli" / f"uv-{version}" / "uv"
+    binary.parent.mkdir(parents=True)
+    binary.write_text("#!/bin/sh\n")
+    binary.chmod(0o755)
+    return binary
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX installer layout")
+def test_uv_executable_falls_back_to_the_installer_uv(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The one-line installer keeps its uv off PATH (fresh macOS/Linux host)."""
+    monkeypatch.undo()
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+    monkeypatch.setattr(upgrade_cmd.shutil, "which", lambda name: None)
+    _fake_installer_uv(tmp_path, "0.9.2")
+    newest = _fake_installer_uv(tmp_path, "0.11.30")
+    assert upgrade_cmd.uv_executable() == str(newest)
+    assert upgrade_cmd.build_upgrade_command("uv", None)[0] == str(newest)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX installer layout")
+def test_uv_executable_prefers_path_and_defaults_to_uv(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.undo()
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+    _fake_installer_uv(tmp_path, "0.11.30")
+    monkeypatch.setattr(upgrade_cmd.shutil, "which", lambda name: "/usr/local/bin/uv")
+    assert upgrade_cmd.uv_executable() == "uv"
+    monkeypatch.setattr(upgrade_cmd.shutil, "which", lambda name: None)
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "empty"))
+    assert upgrade_cmd.uv_executable() == "uv"
 
 
 # --- option surface --------------------------------------------------------

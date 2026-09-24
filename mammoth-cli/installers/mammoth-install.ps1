@@ -9,8 +9,8 @@
     never modifies a certificate store. It honors standard HTTP proxy settings.
 
 .PARAMETER Version
-    Exact CLI version to install (X.Y.Z). The versioned release embeds a
-    default; omit to install the latest published release.
+    Exact CLI version to install (X.Y.Z). Omit it to install (or upgrade to)
+    the newest release on PyPI.
 
 .PARAMETER CliOnly
     Install only the CLI. Mutually exclusive with -SkillsOnly.
@@ -41,7 +41,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$Version = "__CLI_VERSION__",
+    [string]$Version = "",
     [switch]$CliOnly,
     [switch]$SkillsOnly,
     [switch]$NoModifyPath,
@@ -152,9 +152,16 @@ function Install-PinnedUv {
 }
 
 function Install-Cli($uvBin) {
-    if ($Version -and $Version -ne "__CLI_VERSION__") { $spec = "$CliPackage==$Version" } else { $spec = $CliPackage }
-    Write-Log "installing $spec with uv"
-    & $uvBin tool install --force $spec
+    if ($Version) {
+        $spec = "$CliPackage==$Version"
+        Write-Log "installing $spec with uv"
+        & $uvBin tool install --force $spec
+    } else {
+        # Newest: bypass uv's cached index pages and let an existing install move up.
+        $spec = $CliPackage
+        Write-Log "installing the newest $spec with uv"
+        & $uvBin tool install --force --upgrade --refresh-package $CliPackage --refresh-package mammoth-io $spec
+    }
     if ($LASTEXITCODE -ne 0) { Die "uv tool install failed for $spec" }
     $binDir = (& $uvBin tool dir --bin) 2>$null
     if (-not $binDir) { $binDir = Join-Path $env:USERPROFILE ".local\bin" }

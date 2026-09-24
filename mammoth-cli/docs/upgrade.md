@@ -14,6 +14,11 @@ mammoth upgrade --yes      # upgrade to the latest release
 mammoth upgrade --version X.Y.Z --yes               # pin an exact version
 ```
 
+`mammoth upgrade --yes` always moves to the newest release, also from an
+install that was pinned with `--version`. It finds the uv that the one-line
+installer keeps off PATH, so it works on a fresh macOS or Linux host with no
+uv of its own. Running the one-line installer again has the same effect.
+
 `--check` is read-only. The upgrade itself is a mutation with an external
 effect, so at a terminal it prompts for confirmation and in non-interactive
 (`--no-input` / machine-output) mode it requires `--yes`.

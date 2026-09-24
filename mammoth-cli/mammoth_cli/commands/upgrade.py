@@ -111,7 +111,7 @@ def detect_manager() -> str:
     if sys.prefix != sys.base_prefix:
         # Inside some virtual environment: only a manager that owns *this*
         # environment may upgrade it.
-        if _runs_under(_tool_root(["uv", "tool", "dir"])):
+        if _runs_under(_tool_root([uv_executable(), "tool", "dir"])):
             return MANAGER_UV
         if _runs_under(_tool_root(["pipx", "environment", "--value", "PIPX_LOCAL_VENVS"])):
             return MANAGER_PIPX
@@ -158,6 +158,49 @@ def latest_version() -> str | None:
     return str(version) if version else None
 
 
+def _installer_uv_candidates() -> list[str]:
+    """Return the uv binaries ``mammoth-install.sh``/``.ps1`` keep off PATH, newest first."""
+    if os.name == "nt":
+        base = os.environ.get("LOCALAPPDATA", "")
+        names = ("uv.exe", os.path.join("bin", "uv.exe"))
+    else:
+        base = os.environ.get("XDG_DATA_HOME") or os.path.join(
+            os.path.expanduser("~"), ".local", "share"
+        )
+        names = ("uv", os.path.join("bin", "uv"))
+    root = os.path.join(base, "mammoth-cli")
+    try:
+        entries = [entry for entry in os.listdir(root) if entry.startswith("uv-")]
+    except OSError:
+        return []
+
+    def _key(entry: str) -> tuple[int, ...]:
+        fields = entry[3:].split(".")
+        return tuple(int(field) if field.isdigit() else -1 for field in fields)
+
+    found = []
+    for entry in sorted(entries, key=_key, reverse=True):
+        for name in names:
+            candidate = os.path.join(root, entry, name)
+            if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+                found.append(candidate)
+                break
+    return found
+
+
+def uv_executable() -> str:
+    """Return the uv to run: the one on PATH, else the installer's own, else ``"uv"``.
+
+    The one-line installer puts a pinned uv in the user data directory and
+    leaves PATH alone, so on a fresh macOS or Linux host ``uv`` is often not
+    on PATH even though uv manages this CLI.
+    """
+    if shutil.which("uv"):
+        return "uv"
+    candidates = _installer_uv_candidates()
+    return candidates[0] if candidates else "uv"
+
+
 def build_upgrade_command(manager: str, target_version: str | None) -> list[str]:
     """Build the argv that upgrades (or pins) the CLI for a given manager.
 
@@ -172,9 +215,23 @@ def build_upgrade_command(manager: str, target_version: str | None) -> list[str]
     """
     spec = f"{PACKAGE_NAME}=={target_version}" if target_version else PACKAGE_NAME
     if manager == MANAGER_UV:
+        uv = uv_executable()
         if target_version:
-            return ["uv", "tool", "install", "--force", spec]
-        return ["uv", "tool", "upgrade", PACKAGE_NAME]
+            return [uv, "tool", "install", "--force", spec]
+        # Not `uv tool upgrade`: it keeps an install pinned with ==X.Y.Z on
+        # that version. The refresh skips uv's cached index pages.
+        return [
+            uv,
+            "tool",
+            "install",
+            "--force",
+            "--upgrade",
+            "--refresh-package",
+            PACKAGE_NAME,
+            "--refresh-package",
+            "mammoth-io",
+            PACKAGE_NAME,
+        ]
     if manager == MANAGER_PIPX:
         if target_version:
             return ["pipx", "install", "--force", spec]

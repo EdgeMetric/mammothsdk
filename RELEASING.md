@@ -116,15 +116,15 @@ point at an old version. Cut them right after the PyPI upload.
 
 The one-line `curl … | sh` installer downloads the installer script from a
 GitHub release, which then installs the CLI from PyPI. Cut the releases with the
-built assets (installer scripts with the version substituted for
-`__CLI_VERSION__`, plus wheels and `SHA256SUMS`):
+built assets (the installer scripts as they are, plus wheels and `SHA256SUMS`).
+The installers carry no version: without `--version` they always install the
+newest mammoth-cli on PyPI, so an old release's installer still gets the newest.
 
 ```bash
 cd mammoth-cli
 ver=<ver>; mkdir -p release-assets
 cp dist/mammoth_cli-${ver}-py3-none-any.whl dist/mammoth_cli-${ver}.tar.gz release-assets/
-sed "s/__CLI_VERSION__/${ver}/g" installers/mammoth-install.sh  > release-assets/mammoth-install.sh
-sed "s/__CLI_VERSION__/${ver}/g" installers/mammoth-install.ps1 > release-assets/mammoth-install.ps1
+cp installers/mammoth-install.sh installers/mammoth-install.ps1 release-assets/
 ( cd release-assets && sha256sum -- * > SHA256SUMS )
 gh release create cli-v${ver} --verify-tag --latest --title "mammoth-cli ${ver}" \
   release-assets/mammoth_cli-* release-assets/mammoth-install.* release-assets/SHA256SUMS

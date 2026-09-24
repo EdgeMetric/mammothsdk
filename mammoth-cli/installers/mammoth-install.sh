@@ -11,7 +11,8 @@
 #                      [--local[=DIR]] [--no-modify-path] [--noninteractive]
 #                      [--help]
 #
-# The versioned release embeds an exact --version default. A checksum- and
+# Without --version it always installs (or upgrades to) the newest mammoth-cli
+# on PyPI, whichever release this script was downloaded from. A checksum- and
 # Sigstore-verified flow is documented in the release notes; this script is the
 # convenience path.
 #
@@ -33,7 +34,7 @@ MODIFY_PATH=1
 NONINTERACTIVE=0
 LOCAL_SOURCE=0
 LOCAL_DIR=""
-VERSION="__CLI_VERSION__" # replaced at release build; empty/placeholder = latest published
+VERSION="" # empty = newest published; --version X.Y.Z pins
 
 log() { printf '%s\n' "mammoth-install: $1" >&2; }
 die() { log "error: $1"; exit 1; }
@@ -188,13 +189,18 @@ resolve_bin_dir() {
 }
 
 install_cli() {
-    if [ -n "$VERSION" ] && [ "$VERSION" != "__CLI_VERSION__" ]; then
+    if [ -n "$VERSION" ]; then
         spec="$CLI_PACKAGE==$VERSION"
+        log "installing $spec with uv"
+        "$UV_BIN" tool install --force "$spec" || die "uv tool install failed for $spec"
     else
+        # Newest: bypass uv's cached index pages and let an existing install move up.
         spec="$CLI_PACKAGE"
+        log "installing the newest $spec with uv"
+        "$UV_BIN" tool install --force --upgrade \
+            --refresh-package "$CLI_PACKAGE" --refresh-package mammoth-io "$spec" \
+            || die "uv tool install failed for $spec"
     fi
-    log "installing $spec with uv"
-    "$UV_BIN" tool install --force "$spec" || die "uv tool install failed for $spec"
     resolve_bin_dir
 }
 

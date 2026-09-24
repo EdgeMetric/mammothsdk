@@ -43,8 +43,8 @@ sequence is in [Agent and CI operation](agents.md).
 
 ### Pinning and automation
 
-The bare command intentionally installs the installer’s release-selected
-version. Use `--version X.Y.Z` only when a release record, test, or deployment
+The bare command always installs the newest release on PyPI, and upgrades an
+existing install to it. Use `--version X.Y.Z` only when a release record, test, or deployment
 requires an exact artifact. The installer has no normal prompts, so
 `--noninteractive` is not needed.
 

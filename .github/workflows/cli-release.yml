@@ -142,9 +142,8 @@ jobs:
           mkdir -p "$staging"
           cp "dist/mammoth_cli-${version}-py3-none-any.whl" "$staging/"
           cp "dist/mammoth_cli-${version}.tar.gz" "$staging/"
-          # Embed the exact version into the installer copies.
-          sed "s/__CLI_VERSION__/${version}/g" installers/mammoth-install.sh > "$staging/mammoth-install.sh"
-          sed "s/__CLI_VERSION__/${version}/g" installers/mammoth-install.ps1 > "$staging/mammoth-install.ps1"
+          # The installers carry no version: they always install the newest release.
+          cp installers/mammoth-install.sh installers/mammoth-install.ps1 "$staging/"
           # SHA256SUMS: two spaces between the lowercase digest and the name.
           ( cd "$staging" && sha256sum -- * > SHA256SUMS )
           cat "$staging/SHA256SUMS"

@@ -292,7 +292,7 @@ jobs:
           "$mammoth" schema list --output json > /dev/null
 
       # Release-style install: assemble the installer exactly as
-      # cli-release.yml does (substituting the embedded __CLI_VERSION__), then
+      # cli-release.yml does (a plain copy), then
       # run that shipped script. It installs --local because the mammoth-io
       # 0.7.0 / mammoth-cli release is not on PyPI yet (see the R12 gate in
       # cli-release.yml); the PyPI path activates once those are published.
@@ -304,8 +304,7 @@ jobs:
           set -eu
           staging="${{ runner.temp }}/release-assets"
           mkdir -p "$staging"
-          version="$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")"
-          sed "s/__CLI_VERSION__/${version}/g" installers/mammoth-install.sh > "$staging/mammoth-install.sh"
+          cp installers/mammoth-install.sh "$staging/mammoth-install.sh"
           chmod +x "$staging/mammoth-install.sh"
           # The assembled script runs from a staging dir, so point --local at
           # this CLI checkout explicitly ($PWD is the mammoth-cli directory).
