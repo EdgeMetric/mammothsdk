@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.7.15
+
+### Added
+
+- Math expressions accept a quoted display name (`"Unit Price"` or
+  `` `Unit Price` ``) as well as the bare form; an unknown quoted name is
+  named in the error.
+
 ## v0.7.14
 
 ### Fixed

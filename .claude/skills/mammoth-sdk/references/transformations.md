@@ -137,7 +137,7 @@ view.math("base_salary * 1.1", new_column="salary_with_raise")
 view.math("(Revenue - Cost) / Revenue * 100", new_column="Margin %")
 ```
 
-String expression parser: column names are auto-resolved, supports `+`, `-`, `*`, `/`, `%`, and parentheses.
+String expression parser: column names are auto-resolved, supports `+`, `-`, `*`, `/`, `%`, and parentheses. A multi-word name works bare (`Unit Price * Quantity`) or quoted (`"Unit Price"` or `` `Unit Price` ``, 0.7.15+).
 
 ---
 
