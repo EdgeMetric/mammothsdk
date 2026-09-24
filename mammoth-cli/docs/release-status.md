@@ -1,5 +1,38 @@
 # CLI release provenance
 
+## 2.0.32 / SDK 0.7.14
+
+Fixes a login that never finished on macOS ("it's looking for secret"), plus
+an audit of the skill, docs and core commands.
+
+- Keyring calls are bounded: the CLI says what it waits on after 2 s and stops
+  after 60 s. An interactive `auth login --storage auto` then stores the
+  credential in the owner-only file and says so; any other command fails with
+  `keyring_unresponsive` (recovery `mammoth auth login --storage file`). A store
+  is read back before it counts; a profile in the file store is read without
+  asking the keyring; the null/fail backends count as no keyring.
+- Installed skill copies follow CLI upgrades (`skill-synced-version` marker);
+  `skill update` with no agent touches only recorded installs; `skill list`
+  and `doctor` report stale copies.
+- `doctor` passes in an empty workspace and points at `project ensure`.
+- Column errors name the column; a bad math token is named with scope
+  `expression`; strict type errors read correctly.
+- An all-text CSV upload that the backend ingests without a view returns
+  `needs_view` with `next_command` `mammoth view create DATASET_ID`.
+- SDK 0.7.14: a transform returns `"status": "done"` and
+  `"pipeline_state": "ready"` after the pipeline wait (draft mode unchanged).
+
+Published from deterministic local artifacts built from tags `sdk-v0.7.14`
+(source commit `24be6f5`) and `cli-v2.0.32` (source commit `b49de57`). PyPI
+reports the uploaded local artifact hashes:
+
+- `mammoth_io-0.7.14-py3-none-any.whl` sha256 `ec06192119e0dec17ef12e0202c7d3c11228fecd04dea5dadb61d43e360e50c2`
+- `mammoth_io-0.7.14.tar.gz` sha256 `113ed1151e0ede35da5817ca15d9b33d3b350ddc4dd251348daf97eb3ec2fd30`
+- `mammoth_cli-2.0.32-py3-none-any.whl` sha256 `f3dfe14c4ce0a07740af281045c688cc383a4d94a10a967a1e86cdb9298491dc`
+- `mammoth_cli-2.0.32.tar.gz` sha256 `a8471c64b3093d463d392b8b8f32b59b1dba24a1409e805089b3469b8b00a692`
+
+A fresh install from PyPI resolves `mammoth-cli 2.0.32` with `mammoth-io 0.7.14`.
+
 ## 2.0.31 / SDK 0.7.13
 
 The ILG shape rebuilt end to end on a second environment (prague ws 4) with
