@@ -24,8 +24,8 @@ is the number after `/workspaces/` in the web app's address bar. A token works
 only in the workspace and on the server where you created it.
 
 A token can be limited to one project when you create it. That token works
-only in that project: any other project answers HTTP 403, even a project the
-token has just created. If an agent should create its own projects, create the
+only in that project: any other project answers HTTP 403, even a project that
+the token created. If an agent should create its own projects, create the
 token without a project. If you keep a project-limited token, give the agent
 that project's id and have it pass `--project ID` (or run
 `mammoth context project use ID` once).

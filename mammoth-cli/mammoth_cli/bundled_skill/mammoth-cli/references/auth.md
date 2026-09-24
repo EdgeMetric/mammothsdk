@@ -8,7 +8,7 @@ Login accepts nothing else. If `auth status` reports `credential: key_secret`
 
 A token may be limited to one project. It then gets HTTP 403
 `authorization_required` in every other project, including a project it has
-just created. When that happens, stop creating projects: ask the operator which
+created. When that happens, stop creating projects: ask the operator which
 project the token belongs to and pass `--project ID`, or ask for a token
 created without a project.
 
