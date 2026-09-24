@@ -57,6 +57,9 @@ mammoth view transform math VIEW_ID --project PROJECT_ID \
   --input '{"dataset_id":DATASET_ID,"expression":"GDP / Population","new_column":"GDP per capita"}'
 ```
 
+In a math `expression`, write a multi-word display name bare (`Quantity * Unit
+Price`) or quoted (`Quantity * \"Unit Price\"` inside the JSON string).
+
 The released catalog exposes typed dedupe through `schema find duplicate` as
 `view.transform.discard-duplicates`. Inspect its optional `ignore_columns`
 field before submitting. For a join, verify both schemas and
