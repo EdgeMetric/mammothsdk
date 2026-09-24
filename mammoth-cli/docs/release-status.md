@@ -1,5 +1,36 @@
 # CLI release provenance
 
+## 2.0.33 / SDK 0.7.14
+
+The installer and `mammoth upgrade` always reach the newest release. SDK
+unchanged.
+
+- The installers carry no embedded version: without `--version` they
+  install, or upgrade to, the newest mammoth-cli on PyPI (index cache
+  refreshed). The old release-time substitution also rewrote the
+  placeholder check, so the "pinned" default never pinned.
+- `mammoth upgrade` ran `uv tool upgrade`, which keeps an `==X.Y.Z` install
+  on X.Y.Z; it now runs `uv tool install --force --upgrade`.
+- `mammoth upgrade` finds the uv the installer keeps off PATH, so it works
+  on a fresh macOS/Linux host with no uv of its own.
+- CI gains the full offline suite on macOS and a macOS check that a pinned
+  install, re-run, lands on the newest PyPI release.
+
+CLI CI ran once before the release (Actions enabled for the run, then
+disabled again): run 35974665866, all 11 jobs green — full suite on macOS
+arm64 and Linux py3.12/3.13/3.14, installers on macOS arm64 and Intel,
+Linux and Windows. `uv.lock` is tracked from this release on.
+
+Published from deterministic local artifacts built from tag `cli-v2.0.33`
+(source commit `7e30242`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.33-py3-none-any.whl` sha256 `3665952e7a499e57a9e2701091e55ae8a75307f513b5919078567e9adab14986`
+- `mammoth_cli-2.0.33.tar.gz` sha256 `76db382ceb58caefc0e99d99e43b5adf0d5c2461afad5bd9eafd853827468138`
+
+GitHub release `cli-v2.0.33` (Latest) carries these, both installers and
+`SHA256SUMS`. Checked after publication: the release installer URL moved a
+pinned 2.0.31 install to 2.0.33 with no uv on PATH.
+
 ## 2.0.32 / SDK 0.7.14
 
 Fixes a login that never finished on macOS ("it's looking for secret"), plus
