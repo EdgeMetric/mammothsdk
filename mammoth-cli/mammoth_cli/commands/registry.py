@@ -127,11 +127,25 @@ def _schema_get(invocation: Invocation) -> HandlerResult:
     command_id = _require_arg(invocation, "command id")
     entry = schema_cmd.get_schema(command_id)
     if entry is None:
+        # Also accept the command as typed: 'view transform math' (quoted or
+        # not) or 'mammoth view transform math' for view.transform.math.
+        rest = [str(arg) for arg in invocation.extra_args or []]
+        if rest and rest[0] == command_id:
+            rest = rest[1:]
+        words = [*command_id.split(), *rest]
+        if words and words[0] == "mammoth":
+            words = words[1:]
+        dotted = ".".join(words)
+        if dotted and dotted != command_id:
+            entry = schema_cmd.get_schema(dotted)
+            if entry is not None:
+                command_id = dotted
+    if entry is None:
         raise CliError(
             code="schema_not_found",
             message=f"No schema record for command '{command_id}'.",
             exit_status=EXIT_USAGE,
-            hint="List commands with 'mammoth schema list'.",
+            hint="Use the dotted id (view.transform.math); 'mammoth schema find WORDS' searches.",
         )
     if invocation.bound_input().get("full"):
         return entry, {}

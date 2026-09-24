@@ -1,6 +1,6 @@
 # mammoth-cli production readiness
 
-Last updated 2026-09-24 (mammoth-cli 2.0.34, mammoth-io 0.7.15).
+Last updated 2026-09-24 (mammoth-cli 2.0.35, mammoth-io 0.7.15).
 
 Read this page to learn what the CLI is, what is proven, and what is not. It
 also says where the evidence for each claim is. Update it with every release.
@@ -46,7 +46,7 @@ replayed a real customer rebuild brief on synthetic data. It proved:
 | `--dry-run` on every API-backed command resolves inputs, parents and columns, then reports the SDK call instead of making it; the same gate stops any undeclared write. `expected_task_count` on pipeline writes refuses with `pipeline_changed` when the pipeline moved since the last read | `docs/safety.md`; `docs/capability-evidence/dryrun-precondition-20260920/`; `tests/unit/commands/test_dryrun.py` |
 | The bundled skill carries no hidden characters, injection phrasing or unknown links | `tests/contract/test_skill_hygiene.py` (runs on every file of the skill) |
 | Every published artifact is deterministic and scanned for local paths and secrets; `release-status.md` records its PyPI digest | `docs/release-status.md` (one block per version) |
-| Each release runs the unit + contract + realcode suites once (4405 passed at 2.0.34), ruff, mypy strict, and three `--check`-clean generators | commit messages; `docs/release-status.md` |
+| Each release runs the unit + contract + realcode suites once (4411 passed at 2.0.35), ruff, mypy strict, and three `--check`-clean generators | commit messages; `docs/release-status.md` |
 | The ILG shape rebuilt on a second environment (prague ws 4) with fresh mock data and the production procedure (`--dry-run` then `expected_task_count` on every write; a stale count refused): 126 CLI commands, 68/68 checks against a Python key, upstream change propagated to a countDistinct card | `docs/capability-evidence/ilg-prague-20260921/SUMMARY.md` |
 | CLI start-up 2.44 s → 0.51 s (libyaml, cached parsed manifests, command groups built on demand); the remaining ~2 s per call is TLS setup plus 1–1.3 s server time per request, measured identically on release and prague | `docs/troubleshooting.md`, `tests/unit/test_startup_cost.py` |
 

@@ -1,5 +1,56 @@
 # CLI release provenance
 
+## 2.0.35 / SDK 0.7.15
+
+Two findings from the 2.0.34 cold-start rerun (fresh Sonnet agent, README
+prompt only; it installed, stopped for login, upgraded itself 2.0.33 → 2.0.34
+and finished the task). SDK unchanged.
+
+- `doctor` now carries `meta.update_available` like every other command
+  (only `upgrade` does not), and every envelope reflects a cache refresh the
+  command itself made. Before, `doctor` reported a newer release only inside
+  its `cli_version` check, so the skill's "if `meta.update_available` is set,
+  upgrade" rule never fired on the first command an agent runs.
+- `schema get` accepts the command as typed: `'view transform math'` and
+  `'mammoth view transform math'` resolve to `view.transform.math`.
+
+Not re-run on CI (pure-Python changes; the 2.0.34 run covered the installers
+and macOS). Local: 4411 passed, 2 skipped; ruff, mypy strict, generators
+clean.
+
+## 2.0.34 / SDK 0.7.15
+
+Found by a cold-start run: a fresh Sonnet agent given only the README prompt
+installed the CLI, stopped for the operator's `auth login`, then uploaded,
+computed and read back revenue per region and deleted its project. On that
+host uv chose `/usr/local/bin/python3`, a 3.13.0a0 debug build that cannot
+load `pydantic_core`, so the installed CLI crashed on import and the
+installer blamed the skill install.
+
+- Installers (POSIX and PowerShell) install on a uv-managed CPython first
+  and fall back to the system Python when it cannot be downloaded.
+- The POSIX installer runs `mammoth --version` after installing and stops
+  with the real error and a reinstall command when it fails.
+- `mammoth upgrade` passes the interpreter the CLI runs on to uv.
+- SDK 0.7.15: math expressions accept a quoted display name
+  (`"Unit Price"` or `` `Unit Price` ``); the CLI requires it.
+
+CLI CI ran once before the release (Actions enabled for the run, then
+disabled again): run 35978255584, all 11 jobs green, including the
+PowerShell installer on Windows.
+
+Published from deterministic local artifacts built from tags `sdk-v0.7.15`
+(source commit `3381402`) and `cli-v2.0.34` (source commit `6397db0`). PyPI
+reports the uploaded local artifact hashes:
+
+- `mammoth_io-0.7.15-py3-none-any.whl` sha256 `edc11e3125926b658fce9fc579c5d74ff957d03a18e4b2ef76ab36c8fde95a15`
+- `mammoth_io-0.7.15.tar.gz` sha256 `100790df05a9296287d19b9b64b671632e12b5cb4ec606be0433467372ea9e69`
+- `mammoth_cli-2.0.34-py3-none-any.whl` sha256 `36032443c74dcbf8c974c624d6243b8617cb8524a4d9793cb733b5cb3a6bf20e`
+- `mammoth_cli-2.0.34.tar.gz` sha256 `6a718710958f34b3907e820a047573f1998e3eb672b2b625897c13d5eb214390`
+
+GitHub releases `cli-v2.0.34` (Latest; wheel, sdist, both installers,
+`SHA256SUMS`) and `sdk-v0.7.15` (wheel, sdist).
+
 ## 2.0.33 / SDK 0.7.14
 
 The installer and `mammoth upgrade` always reach the newest release. SDK

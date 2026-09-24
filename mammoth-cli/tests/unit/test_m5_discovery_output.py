@@ -453,6 +453,27 @@ def test_subprocess_machine_success_and_error_keep_streams_separate() -> None:
     assert json.loads(failure.stderr)["error"]["code"] == "schema_not_found"
 
 
+@pytest.mark.parametrize(
+    "typed", ["view transform math", "mammoth view transform math", "view.transform.math"]
+)
+def test_schema_get_accepts_the_command_as_typed(typed: str) -> None:
+    """A first-time agent asked for 'view transform math' and got schema_not_found."""
+    cli_root = Path(__file__).parents[2]
+    env = dict(os.environ)
+    env["PYTHONPATH"] = os.pathsep.join(str(path) for path in (cli_root.parent, cli_root))
+    env["MAMMOTH_NO_UPDATE_CHECK"] = "1"
+    result = subprocess.run(
+        [sys.executable, "-m", "mammoth_cli", "schema", "get", typed, "--output", "json"],
+        cwd=cli_root,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)["data"]["command_id"] == "view.transform.math"
+
+
 def test_normalize_keeps_dashboard_style_tokens_but_redacts_credential_tokens() -> None:
     # ``dashboard canvas get`` returns ``style_tokens``; erasing it broke the
     # documented canvas get -> save round-trip (HTTP 400: must be a dict).

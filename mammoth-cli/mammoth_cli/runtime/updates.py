@@ -43,7 +43,12 @@ CACHE_TTL = _dt.timedelta(hours=24)
 #: The background refresh must not hold a finished command hostage.
 REFRESH_TIMEOUT_SECONDS = 3.0
 #: Commands that manage the install themselves; no hint, no auto-upgrade.
+# Commands that check PyPI themselves, so the background refresh skips them.
 _SELF_MANAGING = frozenset({"upgrade", "doctor"})
+# Commands whose envelope never carries the notice: only ``upgrade``. doctor
+# carries it too, because agents act on ``meta.update_available`` and doctor
+# is the first command they run.
+_NO_NOTICE = frozenset({"upgrade"})
 
 UPGRADE_COMMAND = "mammoth upgrade --yes"
 
@@ -136,7 +141,7 @@ def cache_is_fresh(document: dict[str, Any] | None) -> bool:
 
 def available_update(command_id: str | None = None) -> dict[str, Any] | None:
     """The cached answer for ``meta.update_available``; never touches the network."""
-    if not enabled() or (command_id or "").split(".")[0] in _SELF_MANAGING:
+    if not enabled() or (command_id or "").split(".")[0] in _NO_NOTICE:
         return None
     document = read_cache()
     latest = document.get("latest") if document else None

@@ -182,6 +182,9 @@ def run(
         _validate_output(output)
         updates.auto_upgrade(command_id, run_log)
         data, meta_extra = producer()
+        # Re-read: a command that asked PyPI itself (doctor) refreshed the
+        # cache, and its envelope must not carry the older answer.
+        update = updates.available_update(command_id)
         emit_success(command_id, data, output, update_available=update, **meta_extra)
         updates.emit_hint(update, output=output)
     except CliError as error:

@@ -69,7 +69,8 @@ def test_available_update_comes_from_the_cache_only(check_enabled: Path) -> None
 def test_self_managing_commands_get_no_notice(check_enabled: Path) -> None:
     _write(check_enabled, "99.0.0")
     assert updates.available_update("upgrade") is None
-    assert updates.available_update("doctor") is None
+    # doctor carries the notice: agents act on meta.update_available.
+    assert updates.available_update("doctor") is not None
 
 
 def test_refresh_only_when_stale(check_enabled: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -127,6 +128,25 @@ def test_success_envelope_carries_update_available(
     executor.run("project.list", "json", lambda: ({"projects": []}, {}))
     second = json.loads(capsys.readouterr().out)
     assert second["meta"]["update_available"]["latest"] == "99.0.0"
+
+
+def test_envelope_carries_what_the_command_itself_learned(
+    check_enabled: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """doctor asks PyPI and refreshes the cache; its own envelope must say so.
+
+    Seen after a release: the daily cache still said the installed version was
+    newest, doctor reported the newer one in its checks, and meta did not.
+    """
+    _write(check_enabled, __version__)
+
+    def _doctor_like() -> tuple[dict[str, Any], dict[str, Any]]:
+        updates.write_cache("99.0.0")
+        return {"ok": True}, {}
+
+    executor.run("doctor", "json", _doctor_like)
+    envelope = json.loads(capsys.readouterr().out)
+    assert envelope["meta"]["update_available"]["latest"] == "99.0.0"
 
 
 def test_auto_upgrade_is_opt_in(check_enabled: Path, monkeypatch: pytest.MonkeyPatch) -> None:
