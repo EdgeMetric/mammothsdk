@@ -202,3 +202,28 @@ def test_dataset_delete_verifies_absence_and_blocks_known_dependents() -> None:
     api.delete.assert_called_once_with(8, workspace_id=None, project_id=None)
     with pytest.raises(MammothDeletionVerificationError):
         api.delete_and_verify(8, dependencies=["view:9"])
+
+
+def test_add_task_reports_done_after_the_pipeline_finishes() -> None:
+    """The submit record says "processing"; after the wait it is finished."""
+    pipeline = MagicMock()
+    pipeline.add_task.return_value = {"future_id": 77, "status": "processing"}
+    pipeline.wait_for_pipeline.return_value = {"state": "ready"}
+    pipeline.get_draft_status.return_value = {"is_draft": False}
+    view = _view_with_pipeline(pipeline)
+
+    result = view._add_task({"LIMIT": {"N": 3}})
+
+    assert result == {"future_id": 77, "status": "done", "pipeline_state": "ready"}
+
+
+def test_add_task_in_draft_mode_returns_the_submit_record_unchanged() -> None:
+    pipeline = MagicMock()
+    pipeline.add_task.return_value = {"future_id": 77, "status": "processing"}
+    pipeline.get_draft_status.return_value = {"is_draft": True}
+    view = _view_with_pipeline(pipeline)
+
+    result = view._add_task({"LIMIT": {"N": 3}})
+
+    pipeline.wait_for_pipeline.assert_not_called()
+    assert result == {"future_id": 77, "status": "processing"}

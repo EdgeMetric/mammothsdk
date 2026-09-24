@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.7.14
+
+### Fixed
+
+- Transform methods returned the server's submit record (`status:
+  "processing"`) after the pipeline had already finished. Outside draft mode
+  the result now says `status: "done"` with `pipeline_state` (`"ready"`);
+  in draft mode it is unchanged, since the task is only queued.
+
 ## v0.7.13
 
 - Added `target_project_id` to `View.to_dataset()` and `View.branch_out()`:

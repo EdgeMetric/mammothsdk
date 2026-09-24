@@ -5,7 +5,7 @@ All transformation methods are on the `View` class. Each method:
 2. Sends a pipeline task to the API
 3. Blocks until the operation completes (unless in draft mode)
 4. Refreshes view metadata (unless in draft mode)
-5. Returns the API response dict
+5. Returns the add-task response; outside draft mode `status` is `"done"` and `pipeline_state` the final state (0.7.14+). Do not poll its `future_id`
 
 ---
 

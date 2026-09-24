@@ -29,8 +29,7 @@ lists them. Pick the operation by what it does, not by its name:
 ```bash
 mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID   # before: note which rows have a blank revenue, and a few non-blank values
 mammoth view transform set-values VIEW_ID --project PROJECT_ID \
-  --input '{"dataset_id":DATASET_ID,"existing_column":"revenue","values":[{"value":0}],"condition":{"column":"revenue","operator":"IS_EMPTY"}}' \
- 
+  --input '{"dataset_id":DATASET_ID,"existing_column":"revenue","values":[{"value":0}],"condition":{"column":"revenue","operator":"IS_EMPTY"}}'
 mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID   # after
 ```
 
@@ -52,12 +51,10 @@ command manifest; substitute only observed view IDs and display names:
 ```bash
 mammoth schema get view.transform.convert-type
 mammoth view transform convert-type VIEW_ID --project PROJECT_ID \
-  --input '{"dataset_id":DATASET_ID,"conversions":[{"column":"Amount","to":"NUMERIC"}]}' \
- 
+  --input '{"dataset_id":DATASET_ID,"conversions":[{"column":"Amount","to":"NUMERIC"}]}'
 mammoth schema get view.transform.math
 mammoth view transform math VIEW_ID --project PROJECT_ID \
-  --input '{"dataset_id":DATASET_ID,"expression":"GDP / Population","new_column":"GDP per capita"}' \
- 
+  --input '{"dataset_id":DATASET_ID,"expression":"GDP / Population","new_column":"GDP per capita"}'
 ```
 
 The released catalog exposes typed dedupe through `schema find duplicate` as
@@ -107,8 +104,7 @@ or use the SQL task with `MAX(monthly_target) AS monthly_target`.
 ```bash
 mammoth schema get view.transform.pivot
 mammoth view transform add-sql VIEW_ID --project PROJECT_ID \
-  --input '{"dataset_id":DATASET_ID,"query":"SELECT region, SUM(amount) AS total_amount, COUNT(*) AS order_count FROM \"view:VIEW_ID\" GROUP BY region"}' \
- 
+  --input '{"dataset_id":DATASET_ID,"query":"SELECT region, SUM(amount) AS total_amount, COUNT(*) AS order_count FROM \"view:VIEW_ID\" GROUP BY region"}'
 mammoth view data get VIEW_ID DATASET_ID --project PROJECT_ID
 ```
 

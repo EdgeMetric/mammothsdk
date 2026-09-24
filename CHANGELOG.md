@@ -4,6 +4,18 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.14]
+
+### Fixed
+
+- `View._add_task` (every transform method) returned the server's submit
+  record, whose `status` is `"processing"`, even though it had already
+  waited for the pipeline to finish. Callers took that as unfinished work
+  and polled the `future_id`. Outside draft mode the result now carries
+  `status: "done"` and `pipeline_state` (the final state, `"ready"`); the
+  other submit fields (`future_id`, `type_of_modification`, ...) are kept.
+  In draft mode nothing has run, so the submit record is returned unchanged.
+
 ## [0.7.13]
 
 ### Added

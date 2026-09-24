@@ -11,15 +11,18 @@ operator logs in from their own terminal as described in [auth](auth.md).
 
 ## Required record
 
-Include `format: "mammoth-agent-handoff"`, `format_version`, producer
-`cli_version`, `sdk_version`, `contract_schema_version`, and `skill_version`
-(the `version:` field in this skill's `SKILL.md` frontmatter; `mammoth
---version` gives the other two);
-the intent and acceptance criteria; authorized `profile` name and exact
-workspace/project scope; observed resources with dataset/view parents and
-dependencies; last verified state and hashes of bounded secret-free evidence;
-pending known jobs and `unknown_outcomes`; completed actions; remaining
-objectives; and a cleanup owner plus dependency order.
+Include `format: "mammoth-agent-handoff"`, `format_version`, and the producer
+versions: `cli_version`, `sdk_version`, `contract_schema_version`, and
+`skill_version`. `skill_version` is the `version:` field in this skill's
+`SKILL.md` frontmatter; `mammoth --version` gives the other two. Also include
+the intent and acceptance criteria and the authorized `profile` name and exact
+workspace/project scope. Then add:
+
+- observed resources with dataset/view parents and dependencies;
+- the last verified state and hashes of bounded secret-free evidence;
+- pending known jobs and `unknown_outcomes`;
+- completed actions and remaining objectives;
+- a cleanup owner plus dependency order.
 
 Never include API keys, API secrets, tokens, headers, credentials files, raw
 secret-bearing input, or unredacted response bodies. IDs and display names are

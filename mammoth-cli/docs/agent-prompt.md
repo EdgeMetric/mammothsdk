@@ -4,17 +4,17 @@
 
 Hand this to a shell-capable agent (Claude Code, Codex, Cursor, or any agent
 with a bash tool) together with the task. It is the recommended way to give an
-agent Mammoth: **everything goes through the `mammoth` command in bash**. No
-Python SDK code, no MCP server, no browser — the CLI is the contract, and its
-bundled skill is read from disk with `cat`, so the prompt works even when the
-agent's skill directory is not wired up.
+agent Mammoth. **Everything goes through the `mammoth` command in bash.** The
+agent uses no Python SDK code, no MCP server, and no browser. The CLI is the
+contract. The agent reads the bundled skill from disk with `cat`, so the
+prompt works even when the agent's skill directory is not set up.
 
 Fill the two placeholders (`TASK`, `PROJECT NAME`), then paste. The agent
-installs the CLI if it is missing and, when no login exists yet, hands you
-the one-time `mammoth auth login` step; it never touches the key or secret.
-A short version of the same prompt sits in the repository README for quick
-handovers; this page is the full form. If you use a named profile or a
-server other than `app`, say so in the task and the agent adds
+installs the CLI if it is missing. When no login exists yet, it hands you the
+one-time `mammoth auth login` step. It never touches the key or secret.
+A short version of the same prompt is in the repository README for quick
+handovers. This page is the full form. If you use a named profile or a
+server other than `app`, say so in the task. The agent then adds
 `export MAMMOTH_PROFILE=NAME` and tells you the matching login flags.
 
 ---

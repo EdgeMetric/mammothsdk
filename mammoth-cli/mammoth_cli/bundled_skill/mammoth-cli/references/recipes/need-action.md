@@ -25,8 +25,7 @@ operator only when neither does.
 
 ```bash
 mammoth dataset file-settings update DATASET_ID --project PROJECT_ID \
-  --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\"", "date_format": "US"}' \
- 
+  --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\"", "date_format": "US"}'
 ```
 
 The response is a job (`operation: "understand_csv"`). Poll `dataset get`
@@ -40,18 +39,20 @@ flagged an ISO `YYYY-MM-DD` column too and reached `ready` within seconds of
 the update. If the status becomes `error`, read `status_info` and stop; do
 not retry with guessed settings.
 
-## All-text CSV: `ready` without a view
+## All-text CSV: ingested, but no view
 
 A CSV whose columns are all text (ids, names, regions, no number or date)
 comes back `status: "ready"` with `status_info.ready` = "This file has more
-than one plausible way to be read." and still gets no view. `file upload`
-reports this as `status: "need_action"` with the same `next_command` as
-above. Confirm the settings exactly as for ambiguous dates; `file-settings
-get` shows `at_least_one_non_text_column_present: false`.
+than one plausible way to be read." The rows are ingested (`dataset get`
+shows `stats.row_count`), but the platform creates no view. This is not a
+parsing question: confirming file settings does not create a view.
+`file upload` reports it as `status: "needs_view"` with this `next_command`:
 
-On the release backend the settings update returns a successful
-`understand_csv` job and a batch, but a view is still not created (backend
-defect, reported; still present on 2026-09-24). If `view list DATASET_ID` stays empty after two polls of
-`dataset get`, stop and report it as a platform blocker for that file; do not
-retry the update. Where the task allows, a file with at least one numeric
-column is processed straight to `ready` with its view.
+```bash
+mammoth view create DATASET_ID --project PROJECT_ID
+mammoth view list DATASET_ID --project PROJECT_ID    # the new view, row_count set
+```
+
+The new view is ready at once and takes transforms like any other (verified
+on release, 2026-09-24). Run `view create` only when `view list DATASET_ID`
+is empty, so that a retry does not add a second view.

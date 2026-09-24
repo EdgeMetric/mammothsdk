@@ -30,7 +30,7 @@ Example: `mammoth automation get 123`. Placeholders are illustrative; resolve ID
 
 Result: `AutomationGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: observed blocker — backend_error: SUSPECTED DEFECT: automation.get on the id just returned by automation.create (id=1) returns HTTP 500 empty body every time (3 retries, several seconds apart), not e. Re-check before relying on it.
+Status on release: observed blocker — backend_error: SUSPECTED DEFECT: automation.get on the id that automation.create returned (id=1) returns HTTP 500 empty body every time (3 retries, several seconds apart), not even. Re-check before relying on it.
 
 ### `automation.list`
 

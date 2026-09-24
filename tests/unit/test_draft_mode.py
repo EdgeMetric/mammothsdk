@@ -88,7 +88,7 @@ class TestAddTaskDraftAware:
 
         mock_client.pipeline.add_task.assert_called_once()
         mock_client.pipeline.wait_for_pipeline.assert_called_once_with(view.id, SAMPLE_DATASET_ID)
-        assert result == {"id": 999}
+        assert result == {"id": 999, "status": "done", "pipeline_state": "ready"}
 
 
 class TestDraftContextManager:

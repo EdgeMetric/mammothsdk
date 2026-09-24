@@ -14,7 +14,7 @@ mammoth project list          # baseline: ids that exist before you start
 mammoth project ensure 'From Claude'                # -> PROJECT_ID (data.project_id; reused next time)
 mammoth file upload orders.csv --project PROJECT_ID # -> data.datasets[].id/status
 mammoth file upload customers.csv --project PROJECT_ID
-# a dataset in need_action is not usable yet: follow need-action.md (file-settings update), then re-read
+# need_action: follow need-action.md (file-settings update), then re-read; needs_view: run its next_command (view create)
 mammoth dataset list --project PROJECT_ID
 mammoth view list ORDERS_DS --project PROJECT_ID    # -> ORDERS_VIEW
 mammoth view list CUSTOMERS_DS --project PROJECT_ID # -> CUSTOMERS_VIEW

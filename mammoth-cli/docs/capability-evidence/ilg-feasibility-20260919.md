@@ -253,7 +253,7 @@ Phase 1 itself as the thing to de-risk first, separately, before spending any Ph
 | 4 | `countDistinct` on a KPI card via a route other than chat | `dashboard.canvas.save` | One proven run writing a widget with `agg: "countDistinct"` and reading it back correctly under a date filter |
 | 5 | `view.transform.window` | `view.transform.window` | One proven run of the actual DISTINCTCOUNT-fix shape (`MIN(...) OVER (PARTITION BY ...)`), read back |
 | 6 | Month-bucketing transform | `view.transform.add-sql` or `extract-date` | One proven `DATE_TRUNC('month', ...)`-equivalent run, since `pivot`/`Group & Pivot` cannot bucket a date by month (confirmed independently in `PIPELINE.md:721`) |
-| 7 | Dashboard Month range filter | `dashboard.query` (`kind: "range"`) or canvas filter config | One proven run of a range/date filter descriptor, not just `kind: "scalar"` |
+| 7 | Dashboard Month range filter | `dashboard.query` (`kind: "range"`) or canvas filter config | One proven run of a range/date filter descriptor, not only `kind: "scalar"` |
 
 ---
 

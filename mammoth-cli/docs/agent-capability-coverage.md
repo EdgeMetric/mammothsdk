@@ -33,7 +33,7 @@ bounded evidence only; it is not Full support or Not supported.
 | `dataset delete` | `DeleteDataset` | `CAP-REL-214` | Partial | job succeeded; final `dataset.get(364)` returned 403 and dataset120 postcheck was not executed |
 
 All remaining rows retain their pending/unassessed state. The final cleanup
-boundary is intentionally unverified; no Full support claim is made.
+boundary is intentionally unverified; this page makes no Full support claim.
 
 ## Reconciled counts
 
@@ -47,7 +47,7 @@ boundary is intentionally unverified; no Full support claim is made.
 
 The CLI map contains **524 command records across 42 families**. Every record has a local manifest entry and a handler path/symbol that resolves (524/524); this is structural routing evidence only.
 
-The pinned API snapshot has **445 operations**: 433 user operations map to commands, 11 are protocol-only, and 1 is an alias. The current release matrix is **528 operations / 355 paths**; its row-level evidence and statuses are maintained in the readiness workbook. The public SDK manifest has **549 methods**; 496 have canonical command associations. The remaining 53 have explicit alias or reviewed SDK-only reasons.
+The pinned API snapshot has **445 operations**: 433 user operations map to commands, 11 are protocol-only, and 1 is an alias. The current release matrix is **528 operations / 355 paths**; the readiness workbook holds its row-level evidence and statuses. The public SDK manifest has **549 methods**; 496 have canonical command associations. The remaining 53 have explicit alias or reviewed SDK-only reasons.
 
 ## Matrix workflow grouping
 

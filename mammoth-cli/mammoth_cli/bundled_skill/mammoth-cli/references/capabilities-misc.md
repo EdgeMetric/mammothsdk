@@ -33,7 +33,7 @@ Ran once: `automation.create`, `automation.delete`, `automation.list`
 
 | Command | State | Note |
 |---|---|---|
-| `automation.get` | observed blocker | backend_error: SUSPECTED DEFECT: automation.get on the id just returned by automation.create (id=1) returns HTTP 500 empty body every time (3 retries, several seconds apart), not e |
+| `automation.get` | observed blocker | backend_error: SUSPECTED DEFECT: automation.get on the id that automation.create returned (id=1) returns HTTP 500 empty body every time (3 retries, several seconds apart), not even |
 | `automation.update` | observed blocker | cli_error: CLI rejected 'name' field; error message says accepted field is 'patch' (nested patch object), not documented in agent_example |
 
 ## `batch`

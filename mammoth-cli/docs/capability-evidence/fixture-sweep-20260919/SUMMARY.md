@@ -36,8 +36,8 @@ for mutation or touched.
 | `schedule.create` | backend_error | Backend returned 5GENR011 NOT_IMPLEMENTED for bare-rrule schedule create. |
 | `schedule.create` | backend_error | Second create attempt (with work_items bound to dataset 85) returned HTTP 500 with empty response body, surfaced by CLI as code=outcome_unknown. Immediately following schedule.list also 400 NOT_IMPLEMENTED, confirming the feature is unimplemented on this release backend. |
 | `schedule.list` | backend_error | Backend 5GENR011 NOT_IMPLEMENTED confirms schedule feature is entirely unavailable on this release backend; skipped schedule.get/update/delete per brief. |
-| `automation.create` | ok | Created automation id=1 after two failed attempts: agent_example's run_data_retrieval needs cloud-source dataset ids (4AUTO006), and send_an_alert needed attachments.dataview_ids (undocumented shape) not just recipients/subject. |
-| `automation.get` | backend_error | automation.get on the id just returned by automation.create (id=1) returns HTTP 500 empty body every time (3 retries, several seconds apart). |
+| `automation.create` | ok | Created automation id=1 after two failed attempts: agent_example's run_data_retrieval needs cloud-source dataset ids (4AUTO006), and send_an_alert needed attachments.dataview_ids (undocumented shape) in addition to recipients/subject. |
+| `automation.get` | backend_error | automation.get on the id that automation.create returned (id=1) returns HTTP 500 empty body every time (3 retries, several seconds apart). |
 | `automation.list` | ok_empty | list never shows automation id=1 even though create returned it with status=active; repeated after delays, still empty data:[]. |
 | `automation.update` | cli_error | CLI rejected 'name' field; error message says accepted field is 'patch' (nested patch object), not documented in agent_example. |
 | `automation.delete` | ok | Delete returned 200/data:{} despite get/list never having shown the resource; cannot independently confirm deletion given get/list breakage for this id. |
@@ -156,13 +156,13 @@ before any mutation committed — see defects below).
    (`outcome_unknown`), but a follow-up `get` shows the mutation *did* apply server-side (`enabled: false`).
    The write succeeds; the response envelope is a 500.
 5. **`view.derivative.data`** — using the CLI's own documented `agent_example` body verbatim
-   (`{"body": {"condition": {"FILTER_TYPE": "SHOW"}}}`) against a derivative we just created returns
+   (`{"body": {"condition": {"FILTER_TYPE": "SHOW"}}}`) against a derivative this run created returns
    empty-body **HTTP 500** / `outcome_unknown`, reproduced twice. This is a read, not a mutation.
 6. **`batch.create`** — same empty-body **HTTP 500** / `outcome_unknown` pattern, confirmed via
    `batch.list` immediately after that nothing was actually created. Also: the schema/agent_example calls
    the second positional `SOURCE_ID`, but it must be another **dataset id**, not the file-source id
    returned in `dataset.get().sources[].details.id` (400 `4BATC010 INVALID_SOURCE_DATASET` if you use the
-   latter) — undocumented and easy to get wrong.
+   latter) — undocumented and error-prone.
 7. **`file.upload` with `append_to_ds_id`** — raises a raw client-side `ValueError` in ~100ms with no
    HTTP call logged and no message beyond `exception_type: ValueError`, both when combined with a
    positional file path and when passed entirely via `--input`. Blocks the append-to-existing-dataset

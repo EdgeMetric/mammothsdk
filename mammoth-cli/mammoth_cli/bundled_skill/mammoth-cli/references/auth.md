@@ -19,10 +19,10 @@ human operator:
 
 1. Tell the operator where the credentials come from: in the Mammoth web app,
    **Workspace settings → API Tokens → Create token** gives a key and a secret;
-   the secret is shown only once (on an existing token, **Generate new
+   the web app shows the secret only once (on an existing token, **Generate new
    secret** replaces it). The workspace id is the number after `/workspaces/`
    in the web app's address bar. Then give the exact command to run in
-   **their own** terminal. For production it is just:
+   **their own** terminal. For production it is:
 
    ```bash
    mammoth auth login

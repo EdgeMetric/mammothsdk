@@ -3,8 +3,8 @@
 Read [deliverable retention and cleanup authorization](../retention.md) first.
 Classify temporary, intermediate, retained-deliverable, and protected
 resources before choosing a cleanup target. “Owned” is not by itself cleanup
-authorization: never delete all resources created by a task, and never delete
-a requested dataset, dashboard, view, or export artifact as incidental tidy-up.
+authorization. Never delete all resources created by a task. Never delete a
+requested dataset, dashboard, view, or export artifact as incidental tidy-up.
 
 ```bash
 mammoth schema find "trash"

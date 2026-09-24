@@ -57,8 +57,7 @@ mammoth schema get folder.create
 Then create a folder and save its returned resource ID in your task record:
 
 ```bash
-mammoth folder create "Quickstart Demo" --project PROJECT_ID \
- 
+mammoth folder create "Quickstart Demo" --project PROJECT_ID
 ```
 
 Use the returned `resource_id` as `FOLDER_RESOURCE_ID`; never copy the
@@ -98,8 +97,7 @@ names shown by `view get` or preview metadata:
 ```bash
 mammoth schema get view.transform.math
 mammoth view transform math VIEW_ID --project PROJECT_ID \
-  --input '{"dataset_id": 456, "expression": "Quantity Sold * Unit Price", "new_column": "Revenue"}' \
- 
+  --input '{"dataset_id": 456, "expression": "Quantity Sold * Unit Price", "new_column": "Revenue"}'
 ```
 
 `dataset_id` (456 here) is the view's exact parent, known from the upload or
@@ -129,8 +127,7 @@ Inspect the dataset you created, then delete it explicitly:
 
 ```bash
 mammoth dataset get DATASET_ID --project PROJECT_ID
-mammoth dataset delete DATASET_ID --project PROJECT_ID --yes \
- 
+mammoth dataset delete DATASET_ID --project PROJECT_ID --yes
 ```
 
 Verify disappearance or the deletion job before removing its folder. Delete a

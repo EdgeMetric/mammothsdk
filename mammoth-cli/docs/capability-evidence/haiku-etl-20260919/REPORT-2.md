@@ -74,8 +74,11 @@ the pre-existing project 3.
 2. 4DTVW018 on pivot `as_name` — "my mistake"; transforms.md was clear.
 3. "No built-in extract-date command" — used `add-sql` SUBSTRING instead.
 4. Pivot schema silent on name conflicts (transforms.md documents it).
+<!-- vale off -->
 5. `file upload --project 54` did not persist the active project; needed
-   `context project use` later — "not a blocker, just unintuitive".
+   `context project use` later — "not a blocker, just unintuitive" (the
+   agent's words, quoted verbatim).
+<!-- vale on -->
 6. `view data get` default 50 rows — always passed `limit: 400`.
 
 ## Triage (operator, with the release apiv2 and celery logs)

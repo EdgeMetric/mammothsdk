@@ -129,7 +129,7 @@ project 23 were never read or written.
     --input '{"file_name":"sample.pdf","is_preview_needed":true}'
   ```
 - **Alternative tried:** the provided `sample.pdf` is a minimal synthetic PDF (plain text, no drawn table lines). To rule out "no real table in the fixture" as the sole explanation, hand-built a second PDF (`sample_table.pdf`, raw PDF byte construction, no external libraries available — `pip` and `reportlab`/`fpdf` were not available in the venv) containing an actual vector-drawn 3×4 grid (`m`/`l`/`S` line operators forming real cell borders) with aligned cell text, uploaded as file 57, and re-ran the identical `is_preview_needed:true` request → **identical** HTTP 400 4DTSTO003.
-- **Classification:** `backend` — a structurally genuine table PDF fails with the exact same generic, non-diagnostic error as the trivial text-only PDF, ruling out "bad fixture" as the sole cause. The error message gives zero actionable diagnostic detail (no page/line info, no distinction between "no table found" and a parser failure) in either case.
+- **Classification:** `backend` — a structurally genuine table PDF fails with the exact same generic, non-diagnostic error as the minimal text-only PDF, ruling out "bad fixture" as the sole cause. The error message gives zero actionable diagnostic detail (no page/line info, no distinction between "no table found" and a parser failure) in either case.
 - **Suggested fix owner:** backend (PDF table extraction service) — both for the underlying extraction/parsing behavior and for making `PDF_TABLES_DATASET_CREATION_FAILED` a diagnosable error.
 
 ---

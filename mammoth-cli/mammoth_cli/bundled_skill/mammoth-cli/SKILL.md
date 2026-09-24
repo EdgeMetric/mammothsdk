@@ -8,7 +8,7 @@ description: "Use Mammoth Analytics from a terminal: install or authenticate the
 
 Use this skill for Mammoth shell work, not for Python SDK integration. The
 CLI is the contract: it validates every request locally, returns one JSON
-envelope, and never needs a flag to do so when its output is piped.
+envelope, and needs no flag for that when you pipe its output.
 
 ## Start
 

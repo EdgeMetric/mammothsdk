@@ -31,14 +31,14 @@ a human reader. Off a terminal it emits JSON for parsing. Set an explicit mode w
 you need a fixed format.
 
 Scripts and agents normally need no flag: piped output is JSON, compact (one
-line) so it costs half the bytes, and prompts are disabled. `--output json`
+line) so it costs half the bytes, and the CLI does not prompt. `--output json`
 pins it regardless of the terminal (pretty-printed on a TTY,
 `MAMMOTH_JSON_PRETTY=1` forces indentation). It never adds color or progress
 output. See [output and error envelopes](output-and-errors.md) for the shape.
 
 Session defaults: `MAMMOTH_PROFILE`, `MAMMOTH_PROJECT`, `MAMMOTH_OUTPUT` and
 `MAMMOTH_NO_INPUT` stand in for `--profile`, `--project`, `--output` and
-`--no-input` when the flag is omitted; a flag always wins. `project ensure
+`--no-input` when you omit the flag; a flag always wins. `project ensure
 NAME` also saves its project as the profile's active project, so `--project`
 is rarely needed after it.
 

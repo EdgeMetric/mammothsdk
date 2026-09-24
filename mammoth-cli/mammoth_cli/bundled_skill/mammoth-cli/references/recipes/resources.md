@@ -11,7 +11,7 @@ Discover exact contracts, then upload and read back explicit parents.
 ## Where uploads land
 
 Unless the task names a project, work in one project of your own and put
-every dataset of the task there, so the user's real projects stay clean and
+every dataset of the task there. The user's real projects then stay clean, and
 one sweep removes everything. `project ensure` is idempotent get-or-create
 by exact name: re-running it (or a second task) returns the same id
 (`created: false`) instead of making another project. A one-off task can
@@ -68,8 +68,8 @@ retry in a loop.
 `file upload` takes the local path as its positional argument; there is no
 `--source`/`--file` option. A path that does not exist is a usage error
 (`Local file not found`) before any request. Its result carries the status the platform holds
-for each created dataset: `ready`, or `need_action` with a `next_command`, in
-which case follow [need-action](need-action.md) before looking for a view. `dataset delete` is asynchronous: re-read
+for each created dataset: `ready`, or `need_action` / `needs_view` with a
+`next_command`, in which case follow [need-action](need-action.md) before looking for a view. `dataset delete` is asynchronous: re-read
 `dataset list` (the id disappears once the job completes) before reporting.
 
 Use display names from the exact view schema. For settings, folders and other
@@ -113,8 +113,7 @@ that every freeform creation type or `dataset_spec` variant works:
 ```bash
 mammoth schema get dataset.create
 mammoth dataset create --project PROJECT_ID --input \
-  '{"ds_creation_type":"weburl","dataset_spec":{"url":"https://example.org/source.csv"}}' \
- 
+  '{"ds_creation_type":"weburl","dataset_spec":{"url":"https://example.org/source.csv"}}'
 ```
 
 Use the `data` keys actually returned by that response for the subsequent

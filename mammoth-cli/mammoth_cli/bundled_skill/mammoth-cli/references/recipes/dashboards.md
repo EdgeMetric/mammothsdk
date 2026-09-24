@@ -1,8 +1,8 @@
 # Dashboards
 
-`dashboard create` (legacy engine) is retired on release (HTTP 409
+Release has retired `dashboard create` (legacy engine; HTTP 409
 `4DASH012`): `schema find "dashboard create"` lists it first, do not use it.
-Create with `create-blank` (or `v3 generate` when an AI route is allowed).
+Create with `create-blank` (or `v3 generate` when the task allows an AI route).
 `dashboard source list` is an observed blocker on release (see
 capabilities); verify the view binding with `dashboard get DASHBOARD_ID`
 (`data.dataview_id`) instead.

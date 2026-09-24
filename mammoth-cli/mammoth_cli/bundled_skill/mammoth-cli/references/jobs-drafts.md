@@ -6,9 +6,10 @@ happens with the job, so you do not have to guess:
 
 - `always_wait` and `start_or_wait` commands resolve the job for you and return
   the final result. You do NOT wait manually. A `view transform` success
-  envelope still shows the submit record (`"status": "processing"`,
-  `future_id`): the pipeline has already finished when it returns, so do not
-  poll that `future_id`; verify with `view data get`.
+  envelope says `"status": "done"` and `"pipeline_state": "ready"`: the
+  pipeline has finished, so do not poll its `future_id`; verify the values
+  with `view data get`. (With SDK ≤ 0.7.13 the same envelope said
+  `"processing"`; it meant the same thing.)
 - Only a `returns_job` command normally needs you to wait on the job id
   explicitly:
   ```bash

@@ -33,10 +33,8 @@ and a structured `confirmation_required` or
 `confirmation_target_mismatch` error. There is no interactive fallback.
 
 ```bash
-mammoth dataset delete DATASET_ID --project PROJECT_ID --yes \
- 
-mammoth workspace delete --yes --confirm WORKSPACE_ID \
- 
+mammoth dataset delete DATASET_ID --project PROJECT_ID --yes
+mammoth workspace delete --yes --confirm WORKSPACE_ID
 ```
 
 ## Dry runs and preconditions
@@ -116,8 +114,7 @@ deletion job because an acknowledgement can precede disappearance.
 
 ```bash
 mammoth dataset get DATASET_ID --project PROJECT_ID
-mammoth dataset delete DATASET_ID --project PROJECT_ID --yes \
- 
+mammoth dataset delete DATASET_ID --project PROJECT_ID --yes
 mammoth dataset list --project PROJECT_ID
 ```
 

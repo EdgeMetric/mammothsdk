@@ -2,7 +2,7 @@
 
 Use [Mammoth Analytics](https://mammoth.io) from a terminal. The `mammoth`
 command covers data import and export, transformations, project organization,
-automation, and administration. Its interface is designed to be readable at a
+automation, and administration. Its interface is readable at a
 shell and predictable in scripts and agent runs.
 
 [![PyPI](https://img.shields.io/pypi/v/mammoth-cli)](https://pypi.org/project/mammoth-cli/)
@@ -10,14 +10,14 @@ shell and predictable in scripts and agent runs.
 [![License](https://img.shields.io/pypi/l/mammoth-cli)](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/LICENSE)
 
 - **Human-friendly by default.** In a terminal, commands print a readable table.
-- **Agent-native.** When output is piped, you get a stable JSON envelope with a
+- **Agent-native.** When you pipe the output, you get a stable JSON envelope with a
   documented schema, exit codes, and error codes — no flags required.
 - **Guarded mutations.** Commands expose their confirmation policy; promptless
   destructive operations require an explicit `--yes`.
 - **Discoverable.** `mammoth capability list` and `mammoth schema get` describe
   every command, so an agent can learn the surface at runtime.
 
-The CLI is built on the public [`mammoth-io`](https://pypi.org/project/mammoth-io/)
+The CLI uses the public [`mammoth-io`](https://pypi.org/project/mammoth-io/)
 SDK. It adds no second HTTP client and calls no private SDK members.
 
 See the [capability matrix](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/release-capability-matrix.md)
@@ -75,8 +75,7 @@ history, or command arguments. On POSIX, put the required JSON credentials in a
 private owner-only (0600) file outside the repository and pass its path to:
 
 ```bash
-mammoth auth login --input /private/path/credentials.json --storage file \
- 
+mammoth auth login --input /private/path/credentials.json --storage file
 ```
 
 On Windows, use the approved OS keyring instead; do not use a file fallback
@@ -108,8 +107,7 @@ To pin it for a whole session, `export MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1`
 the private, permission-checked file described above:
 
 ```bash
-mammoth auth login --input /private/path/credentials.json --storage file \
- 
+mammoth auth login --input /private/path/credentials.json --storage file
 ```
 
 Feed multi-field requests as one document instead of many flags:

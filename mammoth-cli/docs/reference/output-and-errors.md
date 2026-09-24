@@ -58,7 +58,7 @@ an `end`/`complete: true` frame. When stderr remains writable, it receives one
 terminal `error` frame with `complete: false` and the normal error envelope
 payload. A broken stderr or terminated process cannot guarantee that error
 frame. An absent `end` frame means the stream is incomplete (for example, the
-caller lost the process or transport) and must not be treated as success.
+caller lost the process or transport). Never treat it as success.
 
 Example successful list stream:
 

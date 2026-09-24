@@ -18,9 +18,9 @@ free-form. The examples mention a rename and reset but do not define allowed
 values, postconditions, or recovery behavior. The CLI therefore rejects the
 raw SDK pass-through rather than exposing a deceptively benign mutation.
 
-To enable a future typed command, the API/spec must provide a discriminated
-operation union with exact paths, value schemas, effect class, confirmation
-requirements, async/result shape, and readback/recovery rules. The SDK must
+A future typed command needs the API/spec to provide a discriminated
+operation union. The union must give exact paths, value schemas, effect class,
+confirmation requirements, async/result shape, and readback/recovery rules. The SDK must
 then expose a public method for the exact singular dataset endpoint or a
 reviewed equivalent. Add focused contract tests and bounded owned-fixture
 evidence before changing either matrix row from `Unassessed`.

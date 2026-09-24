@@ -1,54 +1,60 @@
 # mammoth-cli production readiness
 
-Last updated 2026-09-21 for **mammoth-cli 2.0.31 / mammoth-io 0.7.13**. This is
-the one page an agent or engineer reads to know what the CLI is, what is
-proven, what is not, and where every claim's evidence lives. Update it with
-every release; `docs/release-status.md` holds the per-release detail and the
-PyPI hashes.
+Last updated 2026-09-21 (mammoth-cli 2.0.31, mammoth-io 0.7.13).
+
+Read this page to learn what the CLI is, what is proven, and what is not. It
+also says where the evidence for each claim is. Update it with every release.
+`docs/release-status.md` holds the per-release detail and the PyPI hashes.
 
 ## Verdict
 
 **Production-ready for the core ETL loop through an agent or a shell, against
 the `app` endpoint, with the caveats in "Not ready / not proven" below.**
 
-Proven end to end, live, from a cold start by a small model (Haiku 4.5) with
-no notes other than the bundled skill: install → doctor → `project ensure` →
-upload four CSVs → clean (discard duplicates, set-values, convert-type,
-filters, text case/trim) → joins on mismatched and composite keys → math →
-export CSV → deliver into a second project → pivot as the last step → read
-back → delete only what it created and prove it is gone. Report:
-`docs/capability-evidence/haiku-etl-20260919/REPORT-2.md`.
+A small model (Haiku 4.5) proved this path live, end to end, from a cold
+start, with no notes other than the bundled skill:
 
-Also proven live (2026-09-19, `docs/capability-evidence/ilg-sim-20260919/`),
-replaying a real customer rebuild brief on synthetic data: sends from two
-source projects into a target project as pipeline steps that re-run on
-upstream change, SQL conform per fact (`add-sql`) and joins into a
-mixed-grain consolidated table, and authored dashboards whose `countDistinct`
-card reads the true distinct count under a Month range filter (111 / 64 /
-110 against the fixture key), with bindings read back by descriptor id.
+1. Install, `doctor`, `project ensure`, upload four CSVs.
+2. Clean: discard duplicates, set-values, convert-type, filters, text case/trim.
+3. Join on mismatched and composite keys; math; export CSV.
+4. Deliver into a second project; pivot as the last step; read back.
+5. Delete only what it created, and prove it is gone.
 
-## What "ready" is backed by
+Report: `docs/capability-evidence/haiku-etl-20260919/REPORT-2.md`.
+
+A second live run (2026-09-19, `docs/capability-evidence/ilg-sim-20260919/`)
+replayed a real customer rebuild brief on synthetic data. It proved:
+
+- Sends from two source projects into a target project, as pipeline steps
+  that re-run on upstream change.
+- SQL conform per fact (`add-sql`) and joins into a mixed-grain consolidated
+  table.
+- Authored dashboards whose `countDistinct` card reads the true distinct
+  count under a Month range filter (111 / 64 / 110 against the fixture key).
+  The run read the bindings back by descriptor id.
+
+## Evidence for "ready"
 
 | Claim | Evidence |
 |---|---|
 | Every command validates locally, returns one JSON envelope (compact when piped), maps SDK/HTTP failures to stable codes with a hint and recovery commands | `docs/reference/output-and-errors.md`; contract suite `tests/contract` (1490 tests) |
 | Credentials never touch argv, logs or chat; profiles live in the OS keyring / `profiles.toml`; agents are told to have the operator run `auth login` | `docs/safety.md`, `docs/agent-prompt.md`, `tests/unit` (`test_auth*`, run-log redaction) |
-| Destructive commands require `--yes --confirm ID`; high-impact ones confirm the target; discovery is refused for mutations without an exact parent | `docs/safety.md`, `references/safety.md`, `tests/contract/test_recovery_commands_agent_safe.py` |
+| Destructive commands need `--yes`; high-impact ones (project delete, access changes) also need `--confirm ID`; the CLI refuses discovery for mutations without an exact parent | `docs/safety.md`, `references/safety.md`, `tests/contract/test_recovery_commands_agent_safe.py` |
 | A transform that the backend cannot bind (missing column, wrong type) fails with `pipeline_reference_error` and the exact repair command, instead of exit 0 with a dead view | 2.0.25/2.0.26 entries in `docs/release-status.md`; live repro in `haiku-etl-20260919/REPORT-2.md` triage |
 | Long operations wait up to 300 s (`--job-timeout`), timeouts hand back a `job get` recovery command, `outcome_unknown` is never retried blindly | `references/jobs-drafts.md`, `references/recovery.md` |
-| Newer releases are announced in every envelope (`meta.update_available`), `mammoth upgrade --yes` upgrades the *running* install, `MAMMOTH_AUTO_UPGRADE=1` does it unattended | `docs/upgrade.md`; 2.0.26 entry (verified on a 2.0.24 venv) |
-| `--dry-run` on every API-backed command resolves inputs, parents and columns, then reports the SDK call instead of making it; the same gate stops any undeclared write. `expected_task_count` on pipeline writes refuses with `pipeline_changed` when the pipeline moved since it was read | `docs/safety.md`; `docs/capability-evidence/dryrun-precondition-20260920/`; `tests/unit/commands/test_dryrun.py` |
+| Every envelope announces a newer release (`meta.update_available`), `mammoth upgrade --yes` upgrades the *running* install, `MAMMOTH_AUTO_UPGRADE=1` does it unattended | `docs/upgrade.md`; 2.0.26 entry (verified on a 2.0.24 venv) |
+| `--dry-run` on every API-backed command resolves inputs, parents and columns, then reports the SDK call instead of making it; the same gate stops any undeclared write. `expected_task_count` on pipeline writes refuses with `pipeline_changed` when the pipeline moved since the last read | `docs/safety.md`; `docs/capability-evidence/dryrun-precondition-20260920/`; `tests/unit/commands/test_dryrun.py` |
 | The bundled skill carries no hidden characters, injection phrasing or unknown links | `tests/contract/test_skill_hygiene.py` (runs on every file of the skill) |
-| Every published artifact is deterministic, scanned for local paths and secrets, and its PyPI digest is recorded | `docs/release-status.md` (one block per version) |
+| Every published artifact is deterministic and scanned for local paths and secrets; `release-status.md` records its PyPI digest | `docs/release-status.md` (one block per version) |
 | Each release runs the unit + contract + realcode suites once (4240 passed at 2.0.31), ruff, mypy strict, and three `--check`-clean generators | commit messages; `docs/release-status.md` |
 | The ILG shape rebuilt on a second environment (prague ws 4) with fresh mock data and the production procedure (`--dry-run` then `expected_task_count` on every write; a stale count refused): 126 CLI commands, 68/68 checks against a Python key, upstream change propagated to a countDistinct card | `docs/capability-evidence/ilg-prague-20260921/SUMMARY.md` |
 | CLI start-up 2.44 s → 0.51 s (libyaml, cached parsed manifests, command groups built on demand); the remaining ~2 s per call is TLS setup plus 1–1.3 s server time per request, measured identically on release and prague | `docs/troubleshooting.md`, `tests/unit/test_startup_cost.py` |
 
 Evidence directory index: `docs/capability-evidence/README.md`. Row-level
-status of all 528 API operations: `docs/release-capability-matrix.md`
-(counts at 2.0.30: Full 1, Partial 261, Not supported 2, Unassessed 264 —
-"Partial" means exercised live at least once in an owned project; it is a
-bounded proof, not a qualification of every input shape).
+status of all 528 API operations: `docs/release-capability-matrix.md`.
+Counts at 2.0.30: Full 1, Partial 261, Not supported 2, Unassessed 264.
+"Partial" means a live run exercised the operation at least once in an owned
+project. It is a bounded proof, not a proof of every input shape.
 
 ## How an agent starts (the whole contract in four lines)
 

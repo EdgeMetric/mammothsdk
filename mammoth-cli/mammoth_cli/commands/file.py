@@ -280,8 +280,9 @@ def _upload_result(
     ``status`` is ``ready`` only when every created dataset reads back as
     ``ready``; otherwise it is the first non-ready status so a caller that
     checks one field sees the dataset that still needs work. ``datasets``
-    carries the per-dataset status, and a ``need_action`` dataset also gets
-    the recovery route so the caller does not have to know the recipe.
+    carries the per-dataset status, and a ``need_action`` or ``needs_view``
+    dataset also gets the recovery route so the caller does not have to know
+    the recipe.
     """
     if isinstance(value, list):
         ids = [int(v) for v in value]
@@ -293,16 +294,18 @@ def _upload_result(
     for dataset_id in ids:
         status, status_info = read_status(dataset_id)
         # The platform reports an all-text CSV as ``ready`` with the message
-        # "This file has more than one plausible way to be read." and creates
-        # no view until its settings are confirmed; that is a need_action state
-        # whatever the status field says.
+        # "This file has more than one plausible way to be read.": the rows are
+        # ingested, but no view is created. Confirming file settings does not
+        # change that (verified on release, 2026-09-24); `view create` does.
         if status == "ready" and status_info and str(status_info.get("ready") or "").strip():
-            status = "need_action"
+            status = "needs_view"
         entry: dict[str, Any] = {"id": dataset_id, "status": status}
         if status_info:
             entry["status_info"] = status_info
         if status == "need_action":
             entry["next_command"] = f"mammoth dataset file-settings get {dataset_id}"
+        elif status == "needs_view":
+            entry["next_command"] = f"mammoth view create {dataset_id}"
         datasets.append(entry)
     overall = next((d["status"] for d in datasets if d["status"] != "ready"), "ready")
     result: dict[str, Any] = {"status": overall, "dataset_ids": ids, "datasets": datasets}

@@ -37,7 +37,7 @@
 - **connector.query.generate** | cli_error — CLI only accepts `prompt`; backend requires `query` (HTTP 400 `4GENR007`), rejected client-side when added.
 - **connector.query.status** | blocked_missing_fixture — no real connector connection exists in workspace 4 (none `is_added`); creating one needs external credentials, out of scope.
 - **dataset.bulk-update** | cli_error — matches documented `BLOCKED[B07 DATASET_PATCH_UNTYPED]`; even after discovering the real `patch:{op,path,value}` JSON-Patch shape live, `path` must be the literal string `name` and `value` a dict, none of which the CLI schema hints at.
-- **dataset.create-from-pdf** | backend_error — HTTP 400 `4DSET053`/`4DTSTO003`; used a synthetic PDF (no real tabular PDF fixture available), so this may just reflect no real table in the input.
+- **dataset.create-from-pdf** | backend_error — HTTP 400 `4DSET053`/`4DTSTO003`; used a synthetic PDF (no real tabular PDF fixture available), so this may only reflect no real table in the input.
 - **dataset.file-settings.undo** | cli_error — backend returns HTTP 200 but CLI reports `outcome_unknown`; a follow-up read then 500s.
 - **dataset.update** | skipped_out_of_scope — intentional guardrail (`unsupported_contract B07`), CLI refuses client-side with typed alternatives suggested. Working as designed.
 - **file.update** | backend_error — job accepted then stuck in `processing` forever (polled twice over 20s); CLI correctly reported timeout rather than a false success.

@@ -312,7 +312,12 @@ class View(
             task_spec: Task specification dict.
 
         Returns:
-            API response dict.
+            The add-task response. Outside draft mode the pipeline has finished
+            when this returns, so ``status`` is ``"done"`` and
+            ``pipeline_state`` carries the final state (``"ready"``); the
+            server's submit record said ``"processing"``, which described the
+            job at submit time and misled callers into polling it. In draft
+            mode the response is returned unchanged: the task is only queued.
         """
         # Read draft state *before* submitting: the server flips a view's
         # draft flag to "dirty" when the new task carries a reference error
@@ -339,7 +344,7 @@ class View(
             )
         if not in_draft:
             try:
-                self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+                pipeline = self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
                 self.refresh()
             except Exception as exc:
                 # The POST has already returned successfully.  A timeout or
@@ -371,6 +376,9 @@ class View(
                     job_handle=job_handle,
                     phase="post_submit_readback",
                 ) from exc
+            if isinstance(result, dict):
+                state = pipeline.get("state") if isinstance(pipeline, dict) else None
+                result = {**result, "status": "done", "pipeline_state": state or "ready"}
         return result
 
     def _run_internal_dataset_export(

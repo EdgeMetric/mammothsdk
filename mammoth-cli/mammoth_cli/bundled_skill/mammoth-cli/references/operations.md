@@ -1,12 +1,16 @@
 # Typed operations and verification
 
 The installed CLI manifest is the source of truth for local CLI routes. Use
-`schema list/find TEXT` to discover those routes; `capability list` is a
+`schema list/find TEXT` to discover those routes. `capability list` is a
 separate API-binding inventory and can omit typed/local commands such as view
-transforms. `schema get COMMAND_ID` returns the command path, typed positionals/options,
-request/result models, accepted input shape, effect/confirmation policy,
-wait policy, known restrictions, and recovery/verification metadata. Read the
-schema immediately before composing a request because support and fields can
+transforms. `schema get COMMAND_ID` returns the full contract of one command:
+
+- command path and typed positionals/options;
+- request/result models and the accepted input shape;
+- effect/confirmation policy and wait policy;
+- known restrictions and recovery/verification metadata.
+
+Read the schema immediately before composing a request. Support and fields can
 vary by release, profile, or backend.
 
 ## Which id is which
@@ -24,8 +28,8 @@ vary by release, profile, or backend.
 
 `schema find`/`schema get`/`schema list` read the installed manifest. They
 need no project and no stored credentials. `dataset list`, `folder list`, and
-`view list` call the live API and are scoped to one project through
-`--project`. `dataset find NAME` and `folder find NAME` search every project
+`view list` call the live API, and `--project` scopes them to one
+project. `dataset find NAME` and `folder find NAME` search every project
 the credential can see (or one, with `--project`); they still need
 credentials because they call the live API.
 
@@ -56,50 +60,50 @@ typed routes for combining views. Appending rows is a dataset-level
 operation: upload into the existing dataset with `file upload --input
 '{"append_to_ds_id": DATASET_ID}'`, not a view transform.
 
-Use the exact returned command ID, then read its schema and the current view
+Use the command ID exactly as the search returns it. Read its schema and the current view
 schema before composing input. Join only on keys confirmed in both exact view
-schemas. Create derived measures through the typed math route after numeric
-conversion and verify them from a `view data get` readback. Deduplication is a
-semantic operation: define the key/retention rule explicitly; never treat a
-successful task submission as proof that duplicates were removed.
+schemas. After numeric conversion, create derived measures through the typed
+math route. Verify them from a `view data get` readback. Deduplication is a
+semantic operation: define the key/retention rule explicitly. A successful
+task submission does not prove that the task removed duplicates.
 
 For deduplication, discover and use `view.transform.discard-duplicates`; see
 recipes/transforms.md for the full procedure.
 
 Prefer a typed `view transform <operation>` command. Its schema is the
 discoverable request contract. A job status or pipeline/task definition only
-proves the task ran; for any value-changing step the proof is `view data get`
-rows — see SKILL.md working rules and
-[report-checklist](report-checklist.md). Every transform and draft mutation
-carries the exact parent `dataset_id` in `--input`; it never falls back to
-project-wide discovery:
+proves that the task ran. For a value-changing step, the proof is the
+`view data get` rows; see SKILL.md and [report-checklist](report-checklist.md).
+A transform needs the view's parent dataset. The CLI remembers it from any
+earlier read of the view (`view list DATASET_ID`, `view get VIEW_ID`); pass
+`dataset_id` in `--input` only when the command asks for it. It never falls
+back to project-wide discovery:
 
 ```bash
 mammoth view transform math VIEW_ID --project PROJECT_ID \
-  --input '{"dataset_id":DATASET_ID,"expression":"Unit Price * Quantity","new_column":"Revenue"}' \
- 
+  --input '{"expression":"Unit Price * Quantity","new_column":"Revenue"}'
 mammoth view pipeline get VIEW_ID --project PROJECT_ID
 ```
 
 The low-level `view task add|preview|update` routes expose an opaque
 `task_spec` object in the current schema, not a discoverable task union. Prefer
-typed transform routes. Use a low-level task route only when an independently
-documented task specification is supplied for the target backend; never infer
-SDK/backend keys from `schema get` or an illustrative example. Read the
+typed transform routes. Use a low-level task route only with an independently
+documented task specification for the target backend. Never infer SDK/backend
+keys from `schema get` or an illustrative example. Read the
 task/list or pipeline/items result back after a successful write. Without that
 independent specification, report the route as unsupported/ambiguous and stop
 safely.
 
 Typed transforms and `view task add` append at the end of the pipeline and
-never reorder or delete an existing step. On a pipeline other people or
-agents also edit, make that checkable: read `view task list VIEW_ID`, plan,
-then write with `"expected_task_count": N` in the input; the CLI re-reads
-the list just before the write and refuses with `pipeline_changed` when the
-count moved ([safety](safety.md)). `--dry-run` on the same command shows the
+never reorder or delete an existing step. Other people or agents may also
+edit the pipeline. To guard against that, read `view task list VIEW_ID`,
+plan, then write with `"expected_task_count": N` in the input. The CLI
+re-reads the list just before the write. It refuses with `pipeline_changed`
+when the count moved ([safety](safety.md)). `--dry-run` on the same command shows the
 resolved call first.
 
-For a new workflow (a container for automation), discover and then read it
-back; workflow creation is not the same as adding a view pipeline task:
+A workflow is a container for automation. Creating one is not the same as
+adding a view pipeline task. Discover its schema, create it, and read it back:
 
 ```bash
 mammoth schema get workflow.create
@@ -125,8 +129,8 @@ before extracting a field.
 First inspect `view.export.list/get` for existing configuration and the exact
 export command schema. Local CSV and dataset exports have different result
 shapes from external-effect connectors. External destinations (database,
-cloud storage, email, and similar) require `--yes`, commonly return a job, and
-must be verified with `job get/wait` and then `view export get/list` or a
+cloud storage, email, and similar) require `--yes` and commonly return a job.
+Verify them with `job get/wait`, then with `view export get/list` or a
 destination-side artifact when the schema requires it.
 
 ```bash
@@ -136,9 +140,9 @@ mammoth view export csv VIEW_ID --project PROJECT_ID
 mammoth view export list VIEW_ID DATASET_ID --project PROJECT_ID
 ```
 
-Use `--input` for connector configuration. Keep fields listed as secret by the
-schema out of argv, logs, checkpoints, and handoffs; do not claim an export
-completed from a submitted job alone. Reconcile a timed-out or uncertain
+Use `--input` for connector configuration. Keep the schema's secret fields out
+of argv, logs, checkpoints, and handoffs. A submitted job alone does not prove
+that an export completed. Reconcile a timed-out or uncertain
 export before submitting another one.
 
 ## Capability boundaries

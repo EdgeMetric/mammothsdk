@@ -47,7 +47,7 @@ No `cli_error` and no `not_run` — every command was exercised at least once wi
 | `ai.sql.generate` | Yes (CLI-side); backend conflict | `dataset_id` required/sent as query param — request reached backend and got a clear domain error (`4DTVW029` "input table from the previous rule is not available") on **two different datasets**, including one untouched by us, showing it's a backend-side condition, not the old empty api_error. |
 | `ai.expression.generate` | Yes | Invalid `mode` surfaced as `invalid_arguments` with the exact SDK message ("`mode` must be 'math' or 'metric', got 'sample'.") before dispatch — matches the fix precisely. |
 | `ai.suggestion.list` | Yes (CLI-side); backend job failure | UnifiedPromptSpec shape accepted and dispatched to a real job (381), which failed for an unrelated backend reason ("Unexpected error using param generation"), not a client-side shape rejection. |
-| `project.user.add` | Yes | `{users:[{user_id,role}]}` with numeric id accepted; `{"data":{"response":null,"status_code":201}}` on retry (first attempt legitimately 403'd because we had just self-demoted via `project.bulk-update` testing — restored via a follow-up bulk-update call, unrelated to this command's own defect). |
+| `project.user.add` | Yes | `{users:[{user_id,role}]}` with numeric id accepted; `{"data":{"response":null,"status_code":201}}` on retry (first attempt legitimately 403'd because the run had self-demoted via `project.bulk-update` testing — restored via a follow-up bulk-update call, unrelated to this command's own defect). |
 
 ## Resources created and cleanup state
 

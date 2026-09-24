@@ -9,10 +9,10 @@ uses to start, hand over, and recover a real task.
 
 ## Give an agent Mammoth access
 
-The short form is the [agent prompt](agent-prompt.md): a paste-ready block
-that has the agent install, read the shipped skill, authenticate through the
-operator, and do everything else through the `mammoth` command in bash. The
-rest of this page is the same loop in detail.
+The short form is the [agent prompt](agent-prompt.md), a paste-ready block.
+With it, the agent installs the CLI, reads the shipped skill, and has the
+operator log in. It does everything else through the `mammoth` command in
+bash. The rest of this page is the same loop in detail.
 
 Install once on the host:
 

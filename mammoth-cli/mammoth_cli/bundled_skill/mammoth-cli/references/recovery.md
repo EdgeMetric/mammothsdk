@@ -22,15 +22,15 @@ these commands are not blanket permission to replay a mutation.
 
 | What you see | Cause | Next command |
 |---|---|---|
-| `only select queries allowed` (from `view transform add-sql`) | the table name was unquoted | use `FROM "view:VIEW_ID"` (quoted) or the quoted display name; see recipes/transforms.md "Aggregate or summarise" |
+| `only select queries allowed` (from `view transform add-sql`) | the query did not quote the table name | use `FROM "view:VIEW_ID"` (quoted) or the quoted display name; see recipes/transforms.md "Aggregate or summarise" |
 | `table name ... not found` | placeholder table (`__TABLE__`, `data`) | same fix as above |
 | `unknown_option` / "'name' is positional argument 1 of 'project create'" or "pass `--input '{"dataset_id": VALUE}'` after the positional arguments" | per-field flags do not exist | follow the hint verbatim; `schema get COMMAND_ID` shows `positionals` vs `accepted_fields` |
-| `invalid_condition` (exit 2, `details.accepted` lists operators) | operator not in the accepted set (symbols `=`, `>` are accepted as aliases of EQ/GT; words like `GREATER` are not) | use an operator from references/input.md |
+| `invalid_condition` (exit 2, `details.accepted` lists operators) | operator not in the accepted set (the CLI accepts symbols `=`, `>` as aliases of EQ/GT, but not words like `GREATER`) | use an operator from references/input.md |
 | `resource_not_found` (exit 5) after `view get VIEW_ID` / `view data get VIEW_ID` without a parent | discovery could not find the view in the selected project | pass `--project PROJECT_ID` and the `DATASET_ID` positional from `view list` |
 | `{"data": "<unserializable View>"}` from `view get VIEW_ID` | CLI ≤ 2.0.17 only; fixed in 2.0.18 | upgrade, or rerun as `view get VIEW_ID DATASET_ID` |
 | `pipeline_reference_error` (exit 1) from a transform or `view task add`, `details.reference_errors[].reason` `type mismatch` / `not available` | the backend stored the task but cannot bind it to that column (find/replace and text operations take TEXT columns, math takes NUMERIC); the view is in `ref_error` and every read of it fails with `4DTVW019` until the task goes | run the printed `view task delete VIEW_ID TASK_ID --yes`, then convert-type the column or pick a transform for its type; CLI ≤ 2.0.24 reported this as success with `has_error: true` |
 | `4DTVW019 INVALID_RESPONSE_GENERATED` on every read of a view made with `view create ... "clone_from"` | backend: the clone is never processed (tasks stay `added`) | delete the copy; export the source view's rows, then run the summary in place as the last step; see recipes/end-to-end.md |
-| `status: ready` with `status_info.ready` "more than one plausible way to be read" and `view list` empty | all-text CSV; the platform did not process it | `file upload` (2.0.18) reports this as `need_action`; see recipes/need-action.md |
+| `needs_view` in `file upload` result, or `status: ready` with `status_info.ready` "more than one plausible way to be read" and `view list` empty | all-text CSV: the platform ingests the rows but creates no view | run the `next_command` (`view create DATASET_ID`) once, then `view list DATASET_ID`; see recipes/need-action.md |
 | `need_action` in `file upload` result | the platform needs a parsing decision (e.g. ambiguous dates) | run the `next_command` it returns (`dataset file-settings get ID`), then `dataset file-settings update ID`; see recipes/need-action.md |
 | `confirmation_required` (exit 2) | destructive/high-impact command without `--yes` (and `--confirm TARGET` when policy is confirm_target) | re-run with the flag after you have read the target back by id |
 | `4DASH012 DASHBOARD_LEGACY_CREATION_RETIRED` (HTTP 409) from `dashboard create` | legacy engine retired | `dashboard create-blank` or `dashboard v3 generate` |
@@ -39,10 +39,10 @@ these commands are not blanket permission to replay a mutation.
 | `timeout` / `outcome_unknown` (exit 7) | the request may have completed | `job get JOB_ID` if you have one, else re-list the resource (`dataset list`, `view task list VIEW_ID DATASET_ID`) before any replay |
 | HTTP 502 / connection errors on every command | backend outage | `mammoth doctor`; wait and re-run doctor until it succeeds; do not replay mutations blindly |
 
-Every error envelope from CLI 2.0.18 carries `error.log_ref` `{file, run_id}`;
-the file is the JSONL run log (`mammoth log path`, `mammoth log tail --input '{"errors_only": true}'`)
-and holds every HTTP request of that run with status and request id — quote
-the `run_id` when reporting a backend fault.
+Every error envelope from CLI 2.0.18 carries `error.log_ref` `{file, run_id}`.
+The file is the JSONL run log (`mammoth log path`, `mammoth log tail --input '{"errors_only": true}'`).
+It holds every HTTP request of that run with its status and request id. Quote
+the `run_id` when you report a backend fault.
 
 ## Stop conditions
 

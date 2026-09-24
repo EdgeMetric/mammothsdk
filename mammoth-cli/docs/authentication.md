@@ -19,7 +19,7 @@ You need three things: an API key, an API secret, and a workspace id.
 
 In the Mammoth web app, open **Workspace settings → API Tokens** and choose
 **Create token**. Mammoth gives you a key and a matching secret as a pair. The
-secret is shown only once, so copy both right away. If you have a key but lost
+web app shows the secret only once, so copy both right away. If you have a key but lost
 its secret, edit that token and choose **Generate new secret**. Your workspace
 id is the number after `/workspaces/` in the web app's address bar.
 
@@ -82,8 +82,7 @@ should create.
 Pass only that file's path, and select file storage explicitly:
 
 ```bash
-mammoth auth login --input /host-provisioned/credentials.json --storage file \
- 
+mammoth auth login --input /host-provisioned/credentials.json --storage file
 ```
 
 The file holds one JSON document:
