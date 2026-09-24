@@ -18,6 +18,15 @@ Not re-run on CI (pure-Python changes; the 2.0.34 run covered the installers
 and macOS). Local: 4411 passed, 2 skipped; ruff, mypy strict, generators
 clean.
 
+Published from deterministic local artifacts built from tag `cli-v2.0.35`
+(source commit `d381460`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.35-py3-none-any.whl` sha256 `97417551e2150069d1f081515cd9384238da2b48239b1492bd9fd78229d412e5`
+- `mammoth_cli-2.0.35.tar.gz` sha256 `7db858b73bdb4ee4c186d2538519f91ea8938fe6f4361de53d1c5feb4c5fb22f`
+
+GitHub release `cli-v2.0.35` (Latest) carries these, both installers and
+`SHA256SUMS`.
+
 ## 2.0.34 / SDK 0.7.15
 
 Found by a cold-start run: a fresh Sonnet agent given only the README prompt
