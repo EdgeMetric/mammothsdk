@@ -1,5 +1,42 @@
 # CLI release provenance
 
+## 2.0.36 / SDK 0.7.16
+
+Login uses an API token only. Tokens created in the web app (Workspace
+settings → API Tokens) are one `mm_...` value with no secret, and 2.0.35
+asked for a key and a secret, so a new token could not log in.
+
+- SDK 0.7.16: `MammothClient(api_token="mm_...", workspace_id=N)` sends
+  `Authorization: Bearer`. The `api_key` + `api_secret` pair is deprecated.
+- `auth login` asks for the token and the workspace id; `--input` takes
+  `api_token`, `workspace_id` and an optional `server_prefix`. A value without
+  the `mm_` prefix is refused before any request.
+- Profiles saved with a key + secret keep working; `auth status` and `doctor`
+  recommend logging in again with a token.
+- The 403 hint names project-limited tokens: such a token gets 403 in every
+  other project, including one it created.
+
+CI run 35990895848 (Linux 3.12–3.14, macOS, Windows, all installers): tests
+green; the docs job failed on one Vale term, fixed in `b7135c0` and verified
+locally with the same commands. Live on release workspace 4 with a
+project-limited token: login, `auth status --check`, `doctor`, the 403 hint,
+and a read in the token's project.
+
+SDK published from local artifacts built from tag `sdk-v0.7.16` (source
+commit `8b84a61`):
+
+- `mammoth_io-0.7.16-py3-none-any.whl` sha256 `1ecbdaa6c36c35d811b5f6a3fa1ef9def62c26a780f96829b149e82dda2fdb95`
+- `mammoth_io-0.7.16.tar.gz` sha256 `bb0f49ddd35712b27e00378b978a29f293b91efa8d378d65a640c0a2a13b934f`
+
+CLI published from deterministic local artifacts built from tag `cli-v2.0.36`
+(source commit `b7135c0`). PyPI reports the uploaded local artifact hashes:
+
+- `mammoth_cli-2.0.36-py3-none-any.whl` sha256 `a24357c0a6c49c9e70e1a54a405caa872e592e719c7cc33d1eef7c326726d0e5`
+- `mammoth_cli-2.0.36.tar.gz` sha256 `585ddc07741941b33ca451786ab7c973462c81087573655a2a99e311b4213897`
+
+GitHub release `cli-v2.0.36` (Latest) carries these, both installers and
+`SHA256SUMS`; `sdk-v0.7.16` carries the SDK artifacts.
+
 ## 2.0.35 / SDK 0.7.15
 
 Two findings from the 2.0.34 cold-start rerun (fresh Sonnet agent, README
