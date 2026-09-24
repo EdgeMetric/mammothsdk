@@ -50,15 +50,15 @@ def capability_entries() -> list[dict[str, Any]]:
                 "command_path": command["command_path"] if command else None,
                 "sdk_symbol": op.get("sdk_symbol"),
                 "mutation_class": (
-                    resolved.effects if resolved is not None else command["mutation_class"]
-                    if command
-                    else None
+                    resolved.effects
+                    if resolved is not None
+                    else command["mutation_class"] if command else None
                 ),
                 "confirmation": command["confirmation"] if command else None,
                 "wait_policy": (
-                    resolved.wait_behavior if resolved is not None else command["wait_policy"]
-                    if command
-                    else None
+                    resolved.wait_behavior
+                    if resolved is not None
+                    else command["wait_policy"] if command else None
                 ),
                 "pagination_policy": command["pagination_policy"] if command else None,
                 "acceptance_evidence": command["acceptance_evidence"] if command else None,
@@ -144,8 +144,7 @@ def _contract_fields(command: dict[str, Any]) -> dict[str, Any]:
         recovery = "Rerun only after checking the exit code and stable error code."
     else:
         recovery = (
-            "Reconcile target/job state before retry; retain IDs and verify "
-            "the postcondition."
+            "Reconcile target/job state before retry; retain IDs and verify " "the postcondition."
         )
     return {
         "scope": scope,
@@ -159,9 +158,9 @@ def _contract_fields(command: dict[str, Any]) -> dict[str, Any]:
         "recovery": recovery,
         "limits": {
             "pagination": command.get("pagination_policy"),
-            "continuation": "not_proven"
-            if command.get("pagination_policy") not in {None, "none"}
-            else None,
+            "continuation": (
+                "not_proven" if command.get("pagination_policy") not in {None, "none"} else None
+            ),
         },
     }
 

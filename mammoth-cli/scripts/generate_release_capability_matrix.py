@@ -96,13 +96,16 @@ def main() -> None:
         "# Release capability matrix (sanitized)",
         "",
         f"Source workbook SHA-256: `{digest}`.",
-        f"Current release OpenAPI: {len(safe_rows)} operations / {len({row['path'] for row in safe_rows})} paths.",
+        f"Current release OpenAPI: {len(safe_rows)} operations / "
+        f"{len({row['path'] for row in safe_rows})} paths.",
         "Statuses: " + ", ".join(f"{counts[name]} {name}" for name in counts) + ".",
-        "This is the canonical sanitized repository inventory; historical workbooks retain their original evidence context.",
+        "This is the canonical sanitized repository inventory; historical workbooks "
+        "retain their original evidence context.",
         "",
         (
             "| ID | Capability | Status | Remarks | Group | Operation | Method | "
-            "Path | CLI | Schema ID | SDK | Mapping state | Mapping gap | Evidence | Evidence version |"
+            "Path | CLI | Schema ID | SDK | Mapping state | Mapping gap | Evidence | "
+            "Evidence version |"
         ),
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]

@@ -145,12 +145,15 @@ def job_wait(invocation: Invocation) -> HandlerResult:
         # Keep the explicit handle even when the polling implementation raises
         # a bare SIGINT.  A caller can inspect/resume it without replaying the
         # operation that produced the job.
-        raise _profile_scoped_recovery(interrupted_error(
-            job_id=job_id,
-            operation_state="running",
-            phase="polling",
-            details={"interrupted": True},
-        ), invocation.profile) from exc
+        raise _profile_scoped_recovery(
+            interrupted_error(
+                job_id=job_id,
+                operation_state="running",
+                phase="polling",
+                details={"interrupted": True},
+            ),
+            invocation.profile,
+        ) from exc
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -171,10 +174,13 @@ def job_wait_many(invocation: Invocation) -> HandlerResult:
             data = service.call(_symbol(invocation), **kwargs)
     except KeyboardInterrupt as exc:
         job_ids_for_recovery = job_ids if isinstance(job_ids, list) else str(job_ids)
-        raise _profile_scoped_recovery(interrupted_error(
-            job_id=job_ids_for_recovery,
-            operation_state="running",
-            phase="polling",
-            details={"interrupted": True, "job_ids": job_ids_for_recovery},
-        ), invocation.profile) from exc
+        raise _profile_scoped_recovery(
+            interrupted_error(
+                job_id=job_ids_for_recovery,
+                operation_state="running",
+                phase="polling",
+                details={"interrupted": True, "job_ids": job_ids_for_recovery},
+            ),
+            invocation.profile,
+        ) from exc
     return data, _meta(invocation, auth.workspace_id)

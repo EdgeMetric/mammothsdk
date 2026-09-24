@@ -40,11 +40,14 @@ ONBOARDING (run in bash, in this order; stop at the first failure and report it)
    `has_credentials: true` → go to step 3. Otherwise print this to the
    operator, verbatim, and wait until they say it is done:
      "Mammoth needs a one-time login that only you can do. In the Mammoth web
-      app open your account settings, create an API key (you get a key and a
-      secret) and note your workspace id. Then run in your own terminal:
+      app open Workspace settings → API Tokens → Create token, copy the key
+      and the secret (the secret is shown only once), and note your workspace
+      id (the number after /workspaces/ in the address bar). Then run in your
+      own terminal:
         mammoth auth login
       It prompts for the key, the secret (both hidden) and the workspace id
-      and saves them in your OS keyring. Tell me when it says logged in."
+      and saves them in your OS keyring. On a Mac, if a Keychain dialog asks
+      about mammoth-cli, choose Always Allow. Tell me when it says logged in."
    Add `--server-prefix LABEL` to that command only when the task names a
    server other than app, and `--profile NAME` (plus
    `export MAMMOTH_PROFILE=NAME` for yourself) only when it names a profile.

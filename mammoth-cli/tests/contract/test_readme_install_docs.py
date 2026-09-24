@@ -3,7 +3,6 @@
 import re
 from pathlib import Path
 
-
 _ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -12,7 +11,11 @@ def test_cli_docs_use_bare_installer_and_reserve_pinning_for_explicit_cases() ->
         "curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/"
         "mammoth-cli/installers/mammoth-install.sh | bash"
     )
-    for path in (_ROOT / "README.md", _ROOT / "mammoth-cli" / "README.md", _ROOT / "mammoth-cli" / "docs" / "installation.md"):
+    for path in (
+        _ROOT / "README.md",
+        _ROOT / "mammoth-cli" / "README.md",
+        _ROOT / "mammoth-cli" / "docs" / "installation.md",
+    ):
         text = path.read_text(encoding="utf-8")
         assert expected in text
         assert "uv tool install mammoth-cli" not in text
@@ -35,4 +38,7 @@ def test_cli_readme_links_are_absolute_for_pypi_rendering() -> None:
     text = (_ROOT / "mammoth-cli" / "README.md").read_text(encoding="utf-8")
     destinations = re.findall(r"(?<!!)]\(([^)]+)\)", text)
     assert destinations
-    assert all(destination.startswith(("https://", "http://", "#", "mailto:")) for destination in destinations)
+    assert all(
+        destination.startswith(("https://", "http://", "#", "mailto:"))
+        for destination in destinations
+    )

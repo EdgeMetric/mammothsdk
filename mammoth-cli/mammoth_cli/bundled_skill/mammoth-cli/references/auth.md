@@ -17,8 +17,12 @@ An agent never receives the key or secret. When `auth status` reports a
 missing profile or `has_credentials=false`, stop and hand the login to the
 human operator:
 
-1. Tell the operator the exact command to run in **their own** terminal. For
-   production it is just:
+1. Tell the operator where the credentials come from: in the Mammoth web app,
+   **Workspace settings → API Tokens → Create token** gives a key and a secret;
+   the secret is shown only once (on an existing token, **Generate new
+   secret** replaces it). The workspace id is the number after `/workspaces/`
+   in the web app's address bar. Then give the exact command to run in
+   **their own** terminal. For production it is just:
 
    ```bash
    mammoth auth login
@@ -30,6 +34,10 @@ human operator:
    hidden input, then the workspace id, so no secret enters chat, argv, or
    history. Credentials are per environment: a release key never
    authenticates on `app`.
+   On macOS the Keychain may show a dialog about `mammoth-cli`; tell the
+   operator to choose **Always Allow**. If the keychain cannot be used (for
+   example over SSH), login falls back to the owner-only file, or the operator
+   runs `mammoth auth login --storage file`.
 2. Wait for the operator to confirm, then re-run
    `mammoth auth status --profile PROFILE` and
    `mammoth doctor --profile PROFILE`.

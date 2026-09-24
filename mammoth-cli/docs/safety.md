@@ -41,7 +41,10 @@ mammoth workspace delete --yes --confirm WORKSPACE_ID \
 
 ## Dry runs and preconditions
 
-A dry run is a full process with the same reads as the real run: budget roughly 2 s per request on a hosted environment (TLS setup from a cold process plus server time), so `view task list` → `--dry-run` → write costs about 30–40 s per pipeline step. That is the price of the procedure, not a hang.
+A dry run is a full process with the same reads as the real run. Budget
+about 2 s per request on a hosted environment, for TLS setup from a cold
+process plus server time. So `view task list` → `--dry-run` → write takes
+about 30–40 s per pipeline step. That is the cost of the procedure, not a hang.
 
 `--dry-run` is a global option on every API-backed command. The command is
 admitted, its parents resolved and its inputs validated against the live

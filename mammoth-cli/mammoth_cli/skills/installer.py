@@ -30,6 +30,9 @@ from mammoth_cli.errors.envelope import EXIT_CONFLICT, EXIT_USAGE, CliError
 SKILL_NAME = "mammoth-cli"
 STATE_FILENAME = "install-state-v1.json"
 STATE_SCHEMA_VERSION = 1
+# Records the CLI version whose bundled skill the owned installs last matched,
+# so an upgraded CLI can refresh them once instead of hashing on every command.
+SYNC_MARKER_FILENAME = "skill-synced-version"
 
 AGENTS = ("codex", "claude", "cursor")
 SCOPES = ("user", "project")
@@ -329,6 +332,7 @@ def list_() -> dict[str, object]:
         A mapping with an ``installs`` list from the ownership state.
     """
     state = _load_state()
+    canonical_hashes = _hash_tree(canonical_skill_dir())
     installs: list[dict[str, object]] = []
     for key, record in sorted(state.items()):
         agent, scope, path_str = key.split(":", 2)
@@ -337,9 +341,62 @@ def list_() -> dict[str, object]:
         present = path.exists()
         intact = present and _hash_tree(path) == owned_hashes
         installs.append(
-            {"agent": agent, "scope": scope, "path": path_str, "present": present, "intact": intact}
+            {
+                "agent": agent,
+                "scope": scope,
+                "path": path_str,
+                "present": present,
+                "intact": intact,
+                "current": intact and owned_hashes == canonical_hashes,
+            }
         )
     return {"skill": SKILL_NAME, "installs": installs}
+
+
+def _sync_marker_path() -> Path:
+    return _state_path().with_name(SYNC_MARKER_FILENAME)
+
+
+def sync_owned_installs(cli_version: str) -> list[str]:
+    """Bring every installer-owned, unmodified install up to the bundled skill.
+
+    Upgrading the CLI replaces the bundled skill but not the copies already
+    installed into agent directories, so agents kept following the guidance of
+    whichever version first installed them. This runs once per CLI version: a
+    marker records the version already synced, so the common path is one small
+    file read. Absent, locally modified, or unowned destinations are left alone.
+
+    Args:
+        cli_version: The running CLI version.
+
+    Returns:
+        The destination paths that were refreshed.
+    """
+    marker = _sync_marker_path()
+    try:
+        if marker.read_text(encoding="utf-8").strip() == cli_version:
+            return []
+    except OSError:
+        pass
+    refreshed: list[str] = []
+    with _installation_lock():
+        state = _load_state()
+        canonical = canonical_skill_dir()
+        canonical_hashes = _hash_tree(canonical)
+        for key, record in sorted(state.items()):
+            path = Path(key.split(":", 2)[2])
+            owned_hashes = {k: v for k, v in record.items() if k != "skill"}
+            if owned_hashes == canonical_hashes or not path.exists():
+                continue
+            if _hash_tree(path) != owned_hashes:
+                continue
+            _copy_tree(canonical, path)
+            state[key] = {"skill": SKILL_NAME, **canonical_hashes}
+            _save_state(state)
+            refreshed.append(str(path))
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(cli_version + "\n", encoding="utf-8")
+    return refreshed
 
 
 def path(
@@ -424,8 +481,11 @@ def update(
 ) -> dict[str, object]:
     """Re-install the canonical skill into each destination (same ownership rules).
 
+    With no ``agents``, only destinations the installer already recorded for
+    this scope are updated; an update never creates a new install.
+
     Args:
-        agents: Agent names or ``["all"]``.
+        agents: Agent names or ``["all"]``; None means the recorded installs.
         scope: ``"user"`` or ``"project"``.
         force: Back up and replace an unowned or modified destination.
         home: Home directory override (for tests).
@@ -435,4 +495,11 @@ def update(
     Returns:
         The same summary shape as :func:`install`.
     """
+    if not agents:
+        home = home or Path.home()
+        cwd = cwd or Path.cwd()
+        state = _load_state()
+        agents = [t.agent for t in _targets(list(AGENTS), scope, home, cwd) if _key(t) in state]
+        if not agents:
+            return {"skill": SKILL_NAME, "results": []}
     return install(agents, scope, force=force, home=home, cwd=cwd, timestamp=timestamp)

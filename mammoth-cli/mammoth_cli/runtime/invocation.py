@@ -142,7 +142,7 @@ class Invocation:
             if getattr(self, key) is not None:
                 continue
             raw = settings.get(key)
-            if raw in (None, ""):
+            if not raw:
                 continue
             try:
                 value = float(raw)

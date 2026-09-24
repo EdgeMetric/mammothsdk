@@ -8,6 +8,7 @@ these commands are not blanket permission to replay a mutation.
 | exit | error.code (examples) | next step |
 |---|---|---|
 | 4 | not_authenticated, authentication_failed | `mammoth auth login` |
+| 2 | keyring_unavailable, keyring_unresponsive | operator runs `mammoth auth login --storage file` (or unlocks the OS keychain) |
 | 5 | resource_not_found | re-list to find the correct id |
 | 2 | project_required | `mammoth context project use ID` or `--project` |
 | 2 | confirmation_required | re-run with `--yes` (and `--confirm TARGET`) |

@@ -40,10 +40,7 @@ def _rc_path(shell: str) -> Path:
 
 def _resolve_shell(invocation: Invocation) -> str:
     document = invocation.bound_input()
-    candidate = (
-        document.get("shell")
-        or os.path.basename(os.environ.get("SHELL", ""))
-    )
+    candidate = document.get("shell") or os.path.basename(os.environ.get("SHELL", ""))
     shell = str(candidate).strip().lower()
     if shell not in _SUPPORTED:
         raise CliError(

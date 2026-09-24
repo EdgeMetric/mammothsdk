@@ -54,6 +54,12 @@ def isolated_run_log(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         "MAMMOTH_JSON_PRETTY",
     ):
         monkeypatch.delenv(name, raising=False)
+    # The skill install state is per machine; doctor and sync must never read
+    # or refresh the developer's real installs.
+    monkeypatch.setattr(
+        "mammoth_cli.skills.installer._state_path",
+        lambda: tmp_path / "skill-state" / "install-state-v1.json",
+    )
     # The view-parent memory is per machine; tests start with an empty one.
     monkeypatch.setenv("MAMMOTH_PARENT_CACHE", str(tmp_path / "view-parents.json"))
     return log_dir

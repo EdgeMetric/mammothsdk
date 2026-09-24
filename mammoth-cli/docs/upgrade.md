@@ -60,7 +60,13 @@ mammoth skill update
 
 Update replaces only installer-owned copies. A locally modified skill directory
 is refused unless you pass a force option, which first moves it to a
-timestamped backup.
+timestamped backup. Without an `agents` input, update touches only the copies
+that are already installed. It never adds a new one.
+
+You rarely need to run it by hand. The first command after a CLI upgrade
+refreshes every installer-owned copy that you have not changed.
+`mammoth doctor` reports a copy that is older than the CLI in its `skill` check.
+`MAMMOTH_NO_UPDATE_CHECK=1` turns the automatic refresh off.
 
 ## Version policy
 

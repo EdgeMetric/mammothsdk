@@ -204,6 +204,32 @@ def run(
     if run_log is not None:
         run_log.finish(0)
     updates.refresh_if_stale(command_id)
+    _sync_skill_installs(command_id, output)
+
+
+def _sync_skill_installs(command_id: str, output: str) -> None:
+    """Refresh installed skill copies once after a CLI upgrade; never fail a command.
+
+    Part of the update machinery, so ``MAMMOTH_NO_UPDATE_CHECK`` turns it off too.
+    """
+    if not updates.enabled() or command_id.split(".")[0] == "skill":
+        return
+    try:
+        from mammoth_cli import __version__
+        from mammoth_cli.skills import installer
+
+        refreshed = installer.sync_owned_installs(__version__)
+    except Exception:  # noqa: BLE001 -- a skill refresh must not break the command
+        return
+    if refreshed and output not in {"json", "ndjson", "yaml"}:
+        try:
+            sys.stderr.write(
+                f"Updated the mammoth-cli skill to match CLI {__version__} in: "
+                + ", ".join(refreshed)
+                + "\n"
+            )
+        except OSError:
+            return
 
 
 def _open_run_log(command_id: str, invocation: Invocation | None) -> RunLog | None:

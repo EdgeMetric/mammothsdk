@@ -6,6 +6,12 @@ backend is available, an explicit or interactively-approved fallback stores
 the same blob in ``credentials.toml`` beside ``profiles.toml``, with
 directory mode ``0700`` and file mode ``0600`` on POSIX. A secret value is
 never logged or included in any rendered output.
+
+An OS keyring can block indefinitely: macOS shows a Keychain access dialog
+(or cannot, over SSH), and a Linux Secret Service waits on an unlock prompt.
+Every keyring call is therefore bounded by a timeout, a store is read back
+before it is trusted, and a profile present in the file store is loaded
+without touching the keyring at all.
 """
 
 from __future__ import annotations
@@ -13,7 +19,10 @@ from __future__ import annotations
 import json
 import os
 import stat
+import sys
 import tempfile
+import threading
+from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
 
@@ -30,7 +39,23 @@ CREDENTIALS_FILENAME = "credentials.toml"
 
 StorageMode = Literal["auto", "keyring", "file"]
 
-_FAIL_BACKEND_MODULE = "keyring.backends.fail"
+# Backends that exist but cannot hold a credential: ``fail`` refuses every
+# call and ``null`` silently discards what it is given.
+_UNUSABLE_BACKEND_MODULES = frozenset({"keyring.backends.fail", "keyring.backends.null"})
+
+# Long enough for a person to answer a macOS Keychain dialog; a keyring that
+# has not answered by then is treated as unavailable rather than waited on.
+KEYRING_TIMEOUT_SECONDS = 60.0
+# How long a keyring call may take before the waiting person is told why.
+_KEYRING_NOTICE_AFTER_SECONDS = 2.0
+
+# Set once a keyring call times out: its thread is still blocked, so later
+# calls in the same process fail fast instead of waiting out another timeout.
+_keyring_timed_out = False
+
+
+class KeyringUnresponsiveError(Exception):
+    """The OS keyring raised, timed out, or did not return what was stored."""
 
 
 def keyring_unavailable_error() -> CliError:
@@ -44,12 +69,67 @@ def keyring_unavailable_error() -> CliError:
     )
 
 
+def keyring_unresponsive_error() -> CliError:
+    """Build the stable error for an OS keyring that hung, failed, or lost data."""
+    return CliError(
+        code="keyring_unresponsive",
+        message="The OS keyring did not respond or could not be used for the credential.",
+        exit_status=EXIT_USAGE,
+        hint=(
+            "On macOS, unlock the login keychain and choose 'Always Allow' when asked "
+            "about 'mammoth-cli'; over SSH the Keychain cannot prompt. Or store the "
+            "credential in a permission-checked file instead."
+        ),
+        recovery_commands=["mammoth auth login --storage file"],
+    )
+
+
 def _keyring_available() -> bool:
     try:
         backend = keyring.get_keyring()
     except keyring.errors.NoKeyringError:
         return False
-    return type(backend).__module__ != _FAIL_BACKEND_MODULE
+    return type(backend).__module__ not in _UNUSABLE_BACKEND_MODULES
+
+
+def _bounded_keyring_call[T](call: Callable[[], T]) -> T:
+    """Run one keyring call with a timeout, surfacing any failure uniformly.
+
+    The call runs on a daemon thread so a keyring that never answers cannot
+    hold the process past the timeout. When it is slow, a one-line notice on
+    an interactive stderr says what is being waited on.
+
+    Raises:
+        KeyringUnresponsiveError: The call raised or did not finish in time.
+    """
+    global _keyring_timed_out
+    if _keyring_timed_out:
+        raise KeyringUnresponsiveError("timed out earlier")
+    outcome: dict[str, object] = {}
+
+    def _run() -> None:
+        try:
+            outcome["value"] = call()
+        except BaseException as exc:  # noqa: BLE001 - re-raised as one failure type
+            outcome["error"] = exc
+
+    worker = threading.Thread(target=_run, name="mammoth-keyring", daemon=True)
+    worker.start()
+    worker.join(_KEYRING_NOTICE_AFTER_SECONDS)
+    if worker.is_alive():
+        if sys.stderr.isatty():
+            sys.stderr.write(
+                "Waiting for the OS keyring. On macOS, answer the Keychain dialog "
+                "for 'mammoth-cli' (choose Always Allow)...\n"
+            )
+            sys.stderr.flush()
+        worker.join(max(KEYRING_TIMEOUT_SECONDS - _KEYRING_NOTICE_AFTER_SECONDS, 0.0))
+    if worker.is_alive():
+        _keyring_timed_out = True
+        raise KeyringUnresponsiveError("timed out")
+    if "error" in outcome:
+        raise KeyringUnresponsiveError(type(outcome["error"]).__name__)
+    return outcome["value"]  # type: ignore[return-value]
 
 
 def credentials_path() -> Path:
@@ -58,15 +138,26 @@ def credentials_path() -> Path:
 
 
 def _store_keyring(profile: str, api_key: str, api_secret: str) -> None:
+    """Store and read back one credential; a keyring that loses it is unusable.
+
+    Raises:
+        KeyringUnresponsiveError: The keyring hung, raised, or did not return
+            the stored credential.
+    """
     payload = json.dumps({"api_key": api_key, "api_secret": api_secret})
-    keyring.set_password(KEYRING_SERVICE, profile, payload)
+    _bounded_keyring_call(lambda: keyring.set_password(KEYRING_SERVICE, profile, payload))
+    stored = _bounded_keyring_call(lambda: keyring.get_password(KEYRING_SERVICE, profile))
+    if stored != payload:
+        raise KeyringUnresponsiveError("read-back mismatch")
 
 
 def _load_keyring(profile: str) -> tuple[str, str] | None:
-    try:
-        raw = keyring.get_password(KEYRING_SERVICE, profile)
-    except keyring.errors.KeyringError:
-        return None
+    """Load one credential from the keyring.
+
+    Raises:
+        KeyringUnresponsiveError: The keyring hung or raised.
+    """
+    raw = _bounded_keyring_call(lambda: keyring.get_password(KEYRING_SERVICE, profile))
     if raw is None:
         return None
     data = json.loads(raw)
@@ -75,9 +166,9 @@ def _load_keyring(profile: str) -> tuple[str, str] | None:
 
 def _delete_keyring(profile: str) -> bool:
     try:
-        keyring.delete_password(KEYRING_SERVICE, profile)
+        _bounded_keyring_call(lambda: keyring.delete_password(KEYRING_SERVICE, profile))
         return True
-    except keyring.errors.KeyringError:
+    except KeyringUnresponsiveError:
         return False
 
 
@@ -265,7 +356,9 @@ def store_credentials(
 
     Raises:
         CliError: ``keyring_unavailable`` when keyring storage is required (or
-            selected by ``"auto"`` noninteractively) but no backend exists.
+            selected by ``"auto"`` noninteractively) but no backend exists;
+            ``keyring_unresponsive`` when the keyring hangs, fails, or loses
+            the credential and no file fallback is allowed.
     """
     if storage == "file":
         _store_file(profile, api_key, api_secret)
@@ -273,11 +366,27 @@ def store_credentials(
     if storage == "keyring":
         if not _keyring_available():
             raise keyring_unavailable_error()
-        _store_keyring(profile, api_key, api_secret)
+        try:
+            _store_keyring(profile, api_key, api_secret)
+        except KeyringUnresponsiveError:
+            raise keyring_unresponsive_error() from None
+        _delete_file(profile)
         return "keyring"
     if _keyring_available():
-        _store_keyring(profile, api_key, api_secret)
-        return "keyring"
+        try:
+            _store_keyring(profile, api_key, api_secret)
+        except KeyringUnresponsiveError:
+            if not interactive:
+                raise keyring_unresponsive_error() from None
+            sys.stderr.write(
+                "The OS keyring did not respond; storing the credential in "
+                f"{credentials_path()} (owner-only) instead.\n"
+            )
+        else:
+            # The file store is read first, so a stale file entry would
+            # otherwise shadow the credential just stored in the keyring.
+            _delete_file(profile)
+            return "keyring"
     if interactive:
         _store_file(profile, api_key, api_secret)
         return "file"
@@ -287,19 +396,27 @@ def store_credentials(
 def load_credentials(profile: str) -> tuple[str, str] | None:
     """Load one profile's secret credential.
 
-    Tries the OS keyring first, then the file fallback.
+    Tries the file store first, so a file-stored profile never waits on the
+    OS keyring, then the keyring.
 
     Args:
         profile: The profile name.
 
     Returns:
         ``(api_key, api_secret)`` if a credential is stored, else None.
+
+    Raises:
+        CliError: ``keyring_unresponsive`` when the keyring hangs or fails.
     """
-    if _keyring_available():
-        found = _load_keyring(profile)
-        if found is not None:
-            return found
-    return _load_file(profile)
+    found = _load_file(profile)
+    if found is not None:
+        return found
+    if not _keyring_available():
+        return None
+    try:
+        return _load_keyring(profile)
+    except KeyringUnresponsiveError:
+        raise keyring_unresponsive_error() from None
 
 
 def has_credentials(profile: str) -> bool:
@@ -307,6 +424,9 @@ def has_credentials(profile: str) -> bool:
 
     Args:
         profile: The profile name.
+
+    Raises:
+        CliError: ``keyring_unresponsive`` when the keyring hangs or fails.
     """
     return load_credentials(profile) is not None
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -51,3 +52,66 @@ def test_uninstall_leaves_modified_copy(tmp_path: Path, monkeypatch: pytest.Monk
     result = installer.uninstall(agents=["codex"], home=home, cwd=tmp_path)
     assert result["results"][0]["status"] == "modified"
     assert target.exists()
+
+
+def test_sync_refreshes_owned_stale_install_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    state = tmp_path / "state" / "install-state-v1.json"
+    monkeypatch.setattr(installer, "_state_path", lambda: state)
+    home = tmp_path / "home"
+    installer.install(["claude"], home=home, cwd=tmp_path)
+    destination = home / ".claude/skills/mammoth-cli"
+    # Simulate an install made by an older CLI: the files and the ownership
+    # record both describe an older bundled skill.
+    (destination / "SKILL.md").write_text("old guidance\n", encoding="utf-8")
+    key = next(iter(json.loads(state.read_text())["installs"]))
+    document = json.loads(state.read_text())
+    document["installs"][key]["SKILL.md"] = installer._sha256(destination / "SKILL.md")
+    state.write_text(json.dumps(document))
+
+    assert installer.list_()["installs"][0]["current"] is False  # type: ignore[index]
+    assert installer.sync_owned_installs("9.9.9") == [str(destination)]
+    assert (destination / "SKILL.md").read_text(encoding="utf-8") != "old guidance\n"
+    assert installer.list_()["installs"][0]["current"] is True  # type: ignore[index]
+    # The marker makes the next run a no-op.
+    assert installer.sync_owned_installs("9.9.9") == []
+
+
+def test_sync_leaves_locally_modified_install_alone(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    state = tmp_path / "state" / "install-state-v1.json"
+    monkeypatch.setattr(installer, "_state_path", lambda: state)
+    home = tmp_path / "home"
+    installer.install(["claude"], home=home, cwd=tmp_path)
+    destination = home / ".claude/skills/mammoth-cli"
+    (destination / "SKILL.md").write_text("my own edits\n", encoding="utf-8")
+
+    assert installer.sync_owned_installs("9.9.9") == []
+    assert (destination / "SKILL.md").read_text(encoding="utf-8") == "my own edits\n"
+
+
+def test_update_without_agents_only_touches_recorded_installs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(installer, "_state_path", lambda: tmp_path / "state.json")
+    home = tmp_path / "home"
+    installer.install(["claude"], home=home, cwd=tmp_path)
+
+    result = installer.update(home=home, cwd=tmp_path)
+
+    assert [r["target"] for r in result["results"]] == [  # type: ignore[attr-defined]
+        str(home / ".claude/skills/mammoth-cli")
+    ]
+    assert not (home / ".agents").exists()
+    assert not (home / ".cursor").exists()
+
+
+def test_update_without_any_install_is_a_no_op(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(installer, "_state_path", lambda: tmp_path / "state.json")
+    home = tmp_path / "home"
+    assert installer.update(home=home, cwd=tmp_path) == {"skill": "mammoth-cli", "results": []}
+    assert not home.exists()

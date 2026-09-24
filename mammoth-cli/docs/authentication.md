@@ -17,9 +17,11 @@ follow the [quick start](quickstart.md).
 
 You need three things: an API key, an API secret, and a workspace id.
 
-In the Mammoth web app, open your account settings and create an API key. Mammoth
-gives you a key and a matching secret as a pair. Copy both right away. Your
-workspace id lives in the same account area.
+In the Mammoth web app, open **Workspace settings → API Tokens** and choose
+**Create token**. Mammoth gives you a key and a matching secret as a pair. The
+secret is shown only once, so copy both right away. If you have a key but lost
+its secret, edit that token and choose **Generate new secret**. Your workspace
+id is the number after `/workspaces/` in the web app's address bar.
 
 One more input is optional. The server prefix names your Mammoth region and
 defaults to `app`. Most users leave it alone. See
@@ -141,6 +143,15 @@ With `--storage auto`, the CLI uses an OS keyring when one is available. In a
 non-interactive process with no keyring, it fails with `keyring_unavailable`; it
 does not silently select file storage. On a POSIX host, use the protected
 `--storage file` flow above when that explicit fallback is authorized.
+
+An OS keyring can stall. On macOS the Keychain may show a dialog asking to allow
+access to `mammoth-cli` (choose **Always Allow**), and over SSH it cannot show
+one at all. The CLI waits up to 60 seconds, says what it is waiting on, and
+then stops waiting. An interactive `auth login --storage auto` then stores the
+credential in the owner-only file instead and says so. Any other command fails
+with `keyring_unresponsive`; recover with `mammoth auth login --storage file`.
+A profile stored in the file is always read from the file, without asking the
+keyring.
 
 The CLI never prints, logs, or returns a secret in any output. Never pass a
 secret as an ordinary command argument. See [safety](safety.md) for the full

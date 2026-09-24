@@ -14,7 +14,7 @@ import re
 import shlex
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlsplit
 
 from mammoth_cli import __version__
@@ -188,6 +188,23 @@ def doctor(invocation: Invocation) -> HandlerResult:
     # Informational: an older CLI still works, so the check never fails.
     checks.append(_check("cli_version", True, version_detail))
 
+    stale_skills: list[str] = []
+    try:
+        from mammoth_cli.skills import installer
+
+        installs = cast(list[dict[str, Any]], installer.list_()["installs"])
+        stale_skills = [i["path"] for i in installs if i["intact"] and not i["current"]]
+        skill_detail = (
+            f"{len(stale_skills)} installed copy(ies) older than this CLI: "
+            + ", ".join(stale_skills)
+            if stale_skills
+            else f"{len(installs)} installed copy(ies) current"
+        )
+    except Exception:  # noqa: BLE001 -- informational; never fail doctor on it
+        skill_detail = "install state unreadable"
+    # Informational, like cli_version: an older skill still works.
+    checks.append(_check("skill", True, skill_detail))
+
     record = profiles.get_profile(profile_name)
     checks.append(
         _check(
@@ -196,11 +213,17 @@ def doctor(invocation: Invocation) -> HandlerResult:
             f"profile '{profile_name}' found" if record else f"no profile '{profile_name}'",
         )
     )
+    keyring_error: str | None = None
+    try:
+        creds_present = credentials.has_credentials(profile_name)
+    except CliError as error:
+        creds_present = False
+        keyring_error = error.code
     checks.append(
         _check(
             "credentials",
-            credentials.has_credentials(profile_name),
-            "credentials present" if credentials.has_credentials(profile_name) else "none stored",
+            creds_present,
+            keyring_error or ("credentials present" if creds_present else "none stored"),
         )
     )
 
@@ -278,14 +301,17 @@ def doctor(invocation: Invocation) -> HandlerResult:
         )
 
     recommendations: list[str] = []
-    if record is None or not credentials.has_credentials(profile_name):
+    if record is None or not creds_present:
         login_profile = f" --profile {shlex.quote(profile_name)}" if profile_name else ""
-        recommendations.append(f"mammoth auth login{login_profile}")
+        login_storage = " --storage file" if keyring_error else ""
+        recommendations.append(f"mammoth auth login{login_profile}{login_storage}")
     elif selected_project is None or (
         projects is not None and selected_project not in [p.get("id") for p in projects]
     ):
         recommendations.append("mammoth project list")
         recommendations.append("mammoth context project use PROJECT_ID")
+    if stale_skills:
+        recommendations.append("mammoth skill update")
     if not connection_ok and auth_ok and not invocation.debug:
         debug_profile = f" --profile {shlex.quote(profile_name)}" if profile_name else ""
         recommendations.append(f"mammoth doctor --debug{debug_profile}")

@@ -35,8 +35,10 @@ def _graph_projection(raw: Any) -> dict[str, Any]:
     Unknown shapes are explicitly incomplete; this reader never invents an id
     or follows additional resources to fill a hidden region.
     """
-    if not isinstance(raw, dict) or not isinstance(raw.get("nodes"), list) or not isinstance(
-        raw.get("edges"), list
+    if (
+        not isinstance(raw, dict)
+        or not isinstance(raw.get("nodes"), list)
+        or not isinstance(raw.get("edges"), list)
     ):
         return {"nodes": [], "edges": [], "complete": False, "hidden_regions": ["unknown_shape"]}
     nodes: dict[str, dict[str, Any]] = {}
@@ -74,6 +76,7 @@ def _graph_projection(raw: Any) -> dict[str, Any]:
         "complete": not hidden,
         "hidden_regions": sorted(set(hidden)),
     }
+
 
 _CREATE_OPTIONAL = ("shape", "purpose", "seed_datasource_id")
 _UPDATE_OPTIONAL = ("name", "purpose", "pipeline_summary", "notes")

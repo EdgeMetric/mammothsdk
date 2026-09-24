@@ -66,12 +66,14 @@ def _construct_yaml_mapping(
     loader: _StrictYamlLoader, node: yaml.nodes.MappingNode, deep: bool = False
 ) -> dict[Any, Any]:
     loader.flatten_mapping(node)
+    # PyYAML's stubs leave ``construct_object`` untyped.
+    construct: Any = loader.construct_object
     mapping: dict[Any, Any] = {}
     for key_node, value_node in node.value:
-        key = loader.construct_object(key_node, deep=deep)
+        key = construct(key_node, deep=deep)
         if key in mapping:
             raise _DuplicateKeyError
-        mapping[key] = loader.construct_object(value_node, deep=deep)
+        mapping[key] = construct(value_node, deep=deep)
     return mapping
 
 

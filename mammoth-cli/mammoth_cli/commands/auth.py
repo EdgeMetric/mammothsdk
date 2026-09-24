@@ -68,11 +68,7 @@ def _check_file_permissions(path: Path) -> None:
 
 def _preflight_login_input(path_or_dash: str | None) -> None:
     """Check a credential file before any specialized parser reads it."""
-    if (
-        path_or_dash is None
-        or path_or_dash == "-"
-        or path_or_dash.lstrip().startswith("{")
-    ):
+    if path_or_dash is None or path_or_dash == "-" or path_or_dash.lstrip().startswith("{"):
         return
     path = Path(path_or_dash)
     if not path.exists():

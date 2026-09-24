@@ -127,9 +127,7 @@ def resolve_auth(
         return ResolvedAuth(
             api_key=explicit_login.api_key,
             api_secret=explicit_login.api_secret,
-            workspace_id=_require_positive_workspace(
-                explicit_login.workspace_id, source="login"
-            ),
+            workspace_id=_require_positive_workspace(explicit_login.workspace_id, source="login"),
             base_url=base_url,
         )
 

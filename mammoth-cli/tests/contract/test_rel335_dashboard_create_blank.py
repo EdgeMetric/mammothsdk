@@ -10,7 +10,6 @@ from typing import Any
 import pytest
 
 from mammoth_cli.commands import dashboard as dashboard_cmd
-from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 
 

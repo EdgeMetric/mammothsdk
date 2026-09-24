@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-
 _ROOT = Path(__file__).resolve().parents[2]
 _BUNDLED = _ROOT / "mammoth_cli" / "bundled_skill" / "mammoth-cli"
 

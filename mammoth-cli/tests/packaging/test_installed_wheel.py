@@ -184,7 +184,7 @@ def test_installed_wheel_runs(wheelhouse: Path, tmp_path: Path) -> None:
     task_start = installed_skill / "references" / "task-start.md"
     assert task_start.is_file()
     task_start_text = task_start.read_text(encoding="utf-8")
-    assert "mammoth skill path" in task_start_text
+    assert "mammoth skill show" in task_start_text
     assert "mammoth capability list" in task_start_text
     assert "pip install --upgrade mammoth-cli" in task_start_text
     assert "mammoth-cli==X.Y.Z" in task_start_text

@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import os
 import stat
+import threading
+import time
+from collections.abc import Iterator
 from pathlib import Path
 
+import keyring
+import keyring.backends.null
+import keyring.errors
 import pytest
 
 from mammoth_cli.context import credentials
@@ -194,3 +200,124 @@ def test_keyring_delete_works_without_file_directory(
     )
     credentials.store_credentials("default", "key-1", "secret-1", storage="keyring")
     assert credentials.delete_credentials("default") is True
+
+
+@pytest.fixture
+def short_keyring_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(credentials, "KEYRING_TIMEOUT_SECONDS", 0.2)
+    monkeypatch.setattr(credentials, "_KEYRING_NOTICE_AFTER_SECONDS", 0.05)
+    monkeypatch.setattr(credentials, "_keyring_timed_out", False)
+
+
+@pytest.fixture
+def hanging_keyring(
+    monkeypatch: pytest.MonkeyPatch, short_keyring_timeout: None
+) -> Iterator[threading.Event]:
+    """A keyring whose every call blocks, like an unanswered macOS Keychain dialog."""
+    release = threading.Event()
+
+    def _block(*_args: object) -> None:
+        release.wait(5)
+
+    monkeypatch.setattr(credentials, "_keyring_available", lambda: True)
+    monkeypatch.setattr(credentials.keyring, "set_password", _block)
+    monkeypatch.setattr(credentials.keyring, "get_password", _block)
+    monkeypatch.setattr(credentials.keyring, "delete_password", _block)
+    yield release
+    release.set()
+
+
+def test_hanging_keyring_interactive_login_falls_back_to_file(
+    isolated_cli_config: Path, hanging_keyring: threading.Event
+) -> None:
+    started = time.monotonic()
+    storage = credentials.store_credentials(
+        "default", "key-1", "secret-1", storage="auto", interactive=True
+    )
+    assert storage == "file"
+    assert time.monotonic() - started < 2
+    # The file-stored profile loads without waiting on the keyring again.
+    assert credentials.load_credentials("default") == ("key-1", "secret-1")
+
+
+def test_hanging_keyring_noninteractive_login_fails_clearly(
+    isolated_cli_config: Path, hanging_keyring: threading.Event
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        credentials.store_credentials(
+            "default", "key-1", "secret-1", storage="auto", interactive=False
+        )
+    assert excinfo.value.code == "keyring_unresponsive"
+    assert "mammoth auth login --storage file" in excinfo.value.recovery_commands
+
+
+def test_hanging_keyring_explicit_keyring_storage_fails_clearly(
+    isolated_cli_config: Path, hanging_keyring: threading.Event
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        credentials.store_credentials("default", "key-1", "secret-1", storage="keyring")
+    assert excinfo.value.code == "keyring_unresponsive"
+
+
+def test_hanging_keyring_load_times_out_then_fails_fast(
+    isolated_cli_config: Path, hanging_keyring: threading.Event
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        credentials.load_credentials("default")
+    assert excinfo.value.code == "keyring_unresponsive"
+    started = time.monotonic()
+    with pytest.raises(CliError):
+        credentials.has_credentials("default")
+    assert time.monotonic() - started < 0.1
+
+
+def test_file_profile_never_touches_keyring(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    credentials.store_credentials("default", "key-1", "secret-1", storage="file")
+
+    def _forbidden(*_args: object) -> None:
+        raise AssertionError("keyring must not be consulted for a file-stored profile")
+
+    monkeypatch.setattr(credentials, "_keyring_available", lambda: True)
+    monkeypatch.setattr(credentials.keyring, "get_password", _forbidden)
+    assert credentials.load_credentials("default") == ("key-1", "secret-1")
+
+
+def test_raising_keyring_load_reports_keyring_unresponsive(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch, short_keyring_timeout: None
+) -> None:
+    def _raise(*_args: object) -> None:
+        raise keyring.errors.KeyringError("errSecInteractionNotAllowed")
+
+    monkeypatch.setattr(credentials, "_keyring_available", lambda: True)
+    monkeypatch.setattr(credentials.keyring, "get_password", _raise)
+    with pytest.raises(CliError) as excinfo:
+        credentials.load_credentials("default")
+    assert excinfo.value.code == "keyring_unresponsive"
+
+
+def test_discarding_keyring_is_not_trusted(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch, short_keyring_timeout: None
+) -> None:
+    monkeypatch.setattr(credentials, "_keyring_available", lambda: True)
+    monkeypatch.setattr(credentials.keyring, "set_password", lambda *_a: None)
+    monkeypatch.setattr(credentials.keyring, "get_password", lambda *_a: None)
+    storage = credentials.store_credentials(
+        "default", "key-1", "secret-1", storage="auto", interactive=True
+    )
+    assert storage == "file"
+    assert credentials.load_credentials("default") == ("key-1", "secret-1")
+
+
+def test_null_backend_is_unavailable() -> None:
+    keyring.set_keyring(keyring.backends.null.Keyring())
+    assert credentials._keyring_available() is False
+
+
+def test_keyring_store_removes_stale_file_entry(
+    isolated_cli_config: Path, fake_keyring_available: dict[tuple[str, str], str]
+) -> None:
+    credentials.store_credentials("default", "old-key", "old-secret", storage="file")
+    credentials.store_credentials("default", "new-key", "new-secret", storage="auto")
+    assert credentials.load_credentials("default") == ("new-key", "new-secret")
