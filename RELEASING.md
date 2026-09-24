@@ -100,6 +100,8 @@ twine upload dist/mammoth_io-<ver>*
 
 # --- CLI (after the SDK resolves on PyPI) ---
 cd mammoth-cli
+poetry lock && uv lock          # both lock files pin the new mammoth-io; commit them
+uv lock --check
 rm -rf dist
 SOURCE_DATE_EPOCH=1700000000 poetry build --output dist
 twine check dist/*
@@ -107,6 +109,10 @@ twine upload dist/mammoth_cli-<ver>*
 ```
 
 ### GitHub releases for the installer path (local)
+
+**Every version bump gets a GitHub release, for the CLI and the SDK.** Without
+one, the Releases page and the `releases/download/cli-vX.Y.Z/…` installer URLs
+point at an old version. Cut them right after the PyPI upload.
 
 The one-line `curl … | sh` installer downloads the installer script from a
 GitHub release, which then installs the CLI from PyPI. Cut the releases with the
@@ -120,8 +126,12 @@ cp dist/mammoth_cli-${ver}-py3-none-any.whl dist/mammoth_cli-${ver}.tar.gz relea
 sed "s/__CLI_VERSION__/${ver}/g" installers/mammoth-install.sh  > release-assets/mammoth-install.sh
 sed "s/__CLI_VERSION__/${ver}/g" installers/mammoth-install.ps1 > release-assets/mammoth-install.ps1
 ( cd release-assets && sha256sum -- * > SHA256SUMS )
-gh release create cli-v${ver} --target main --title "mammoth-cli ${ver}" \
+gh release create cli-v${ver} --verify-tag --latest --title "mammoth-cli ${ver}" \
   release-assets/mammoth_cli-* release-assets/mammoth-install.* release-assets/SHA256SUMS
+
+# SDK (from the repo root): not "Latest", so the CLI keeps that badge
+gh release create sdk-v${sdkver} --verify-tag --latest=false --title "mammoth-io ${sdkver}" \
+  dist/mammoth_io-${sdkver}-py3-none-any.whl dist/mammoth_io-${sdkver}.tar.gz
 ```
 
 > **The repository must be public for the anonymous `curl … | sh` one-liner to
