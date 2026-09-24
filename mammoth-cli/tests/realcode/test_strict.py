@@ -65,13 +65,12 @@ def test_closed_bespoke_zero_input_command_rejects_document() -> None:
 def test_auth_login_contract_rejects_dropped_fields() -> None:
     """Auth's specialized parser and shared admission reject unknown keys."""
     with pytest.raises(CliError) as excinfo:
-        validate_input_fields("auth.login", {"api_key": "key", "custom": 1})
+        validate_input_fields("auth.login", {"api_token": "mm_token", "custom": 1})
     assert excinfo.value.code == "unknown_input_field"
     validate_input_fields(
         "auth.login",
         {
-            "api_key": "key",
-            "api_secret": "secret",
+            "api_token": "mm_token",
             "workspace_id": 4,
             "server_prefix": "app",
         },

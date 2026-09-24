@@ -41,7 +41,7 @@ See [references/architecture.md](references/architecture.md) for the full SDK ar
 
 ### MammothClient
 
-Single entry point. Authenticates via API key/secret. All sub-clients are attributes:
+Single entry point. Authenticates with an API token (`api_token="mm_..."`, sent as Bearer). All sub-clients are attributes:
 
 | Attribute | Class | Purpose |
 |-----------|-------|---------|

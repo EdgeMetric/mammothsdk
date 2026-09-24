@@ -47,7 +47,7 @@ def login_default_profile(*, workspace_id: int = 4) -> None:
     from mammoth_cli.context import credentials, profiles
 
     profiles.save_profile(profiles.ProfileRecord(name="default", workspace_id=workspace_id))
-    credentials.store_credentials("default", "k", "s", storage="file")
+    credentials.store_credentials("default", storage="file", api_token="mm_" + "t" * 43)
     profiles.set_selected("default")
 
 

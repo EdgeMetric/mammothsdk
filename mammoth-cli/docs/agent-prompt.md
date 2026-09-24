@@ -37,11 +37,12 @@ ONBOARDING (run in bash, in this order; stop at the first failure and report it)
    PATH yet: tell the operator to open a new shell (or `source` their profile)
    and re-run the check.
 2. mammoth auth status
-   `has_credentials: true` → go to step 3. Otherwise print this to the
+   `has_credentials: true` and no `recommendation` → go to step 3. Otherwise print this to the
    operator, verbatim, and wait until they say it is done:
      "Mammoth needs a one-time login that only you can do. In the Mammoth web
-      app open Workspace settings → API Tokens → Create token, copy the token
-      (it starts with mm_ and is shown only once), and note your workspace id
+      app open Workspace settings → API Tokens → Create token (leave the
+      project empty so I can create projects), copy the token (it starts
+      with mm_ and is shown only once), and note your workspace id
       (the number after /workspaces/ in the address bar). Then run in your own
       terminal:
         mammoth auth login

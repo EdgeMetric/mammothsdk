@@ -2,8 +2,15 @@
 
 Required: an API token (`mm_...`) and a workspace id. Optional: a one-label
 server prefix (default `app`, resolving to `https://app.mammoth.io/api/v2`).
-An older API key + secret pair still works; `auth status` reports which kind
-(`credential`: `token` or `key_secret`).
+Login accepts nothing else. If `auth status` reports `credential: key_secret`
+(a profile saved by an older CLI), it still works, but ask the operator to run
+`mammoth auth login` again with a token.
+
+A token may be limited to one project. It then gets HTTP 403
+`authorization_required` in every other project, including a project it has
+just created. When that happens, stop creating projects: ask the operator which
+project the token belongs to and pass `--project ID`, or ask for a token
+created without a project.
 
 ## Precedence
 1. Explicit login handed to the current command (secure prompt or `--input`).
@@ -47,8 +54,7 @@ human operator:
    `auth login` yourself, with or without `--input`, unless the operator has
    explicitly given you a protected `0600` credential file path to use.
 
-The only supported configuration is the API token (or the older key + secret),
-the workspace id, and an optional one-label server prefix (default `app`). There is no base-url
+The only supported configuration is the API token, the workspace id, and an optional one-label server prefix (default `app`). There is no base-url
 override.
 
 ## Cold-start sequence
@@ -118,8 +124,7 @@ supported secure store. Remove any input file after the
 profile is stored.
 
 `creds.json` is a `0600` JSON file: `{"api_token": "mm_...", "workspace_id": 4,
-"server_prefix": "app"}` (`server_prefix` optional; the older
-`"api_key"` + `"api_secret"` pair is accepted in place of `api_token`). You can
+"server_prefix": "app"}` (`server_prefix` optional). You can
 also pipe it with `--input - --input-format json`.
 
 Secrets live in the OS keyring (or an explicitly selected `0600` file

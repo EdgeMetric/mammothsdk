@@ -57,7 +57,7 @@ def test_non_positive_workspace_id_is_a_clean_envelope() -> None:
     result = _run(
         args,
         env=env,
-        stdin=json.dumps({"api_key": "k", "api_secret": "s", "workspace_id": 0}),
+        stdin=json.dumps({"api_token": "mm_" + "A" * 43, "workspace_id": 0}),
     )
 
     assert result.returncode == _EXIT_USAGE, result.stderr

@@ -24,7 +24,7 @@ workspace/project scope. Then add:
 - completed actions and remaining objectives;
 - a cleanup owner plus dependency order.
 
-Never include API keys, API secrets, tokens, headers, credentials files, raw
+Never include API tokens, headers, credentials files, raw
 secret-bearing input, or unredacted response bodies. IDs and display names are
 safe only when needed to identify the authorized task.
 

@@ -2,8 +2,7 @@
 
 Authentication needs an API token (``mm_...``, sent as ``Authorization:
 Bearer``) and a workspace id, plus an optional server prefix (default
-``app``). The deprecated API key + secret pair is still accepted. There is no
-environment credential path. These commands never accept a secret as an
+``app``). There is no environment credential path. These commands never accept a secret as an
 ordinary command-line value: it comes from a hidden TTY prompt or a
 permission-checked JSON/YAML login document read through ``--input``.
 """
@@ -128,6 +127,11 @@ def _validate_login_document(document: dict[str, Any]) -> LoginRequest:
             code="invalid_login_document",
             message="The login request document failed validation.",
             exit_status=EXIT_USAGE,
+            hint=(
+                'Expected {"api_token": "mm_...", "workspace_id": N} with an optional '
+                '"server_prefix". API key + secret pairs are no longer accepted; create '
+                "a token in Workspace settings -> API Tokens."
+            ),
             details={"errors": errors},
         ) from exc
 
@@ -167,7 +171,19 @@ _APP_KEY_LENGTH = 19
 
 
 def _check_token_shape(token: str) -> None:
-    if token.startswith(TOKEN_PREFIX) and len(token) <= _APP_KEY_LENGTH:
+    """Reject a value that cannot be an API token before any network call."""
+    if not token.startswith(TOKEN_PREFIX):
+        raise CliError(
+            code="invalid_credentials",
+            message="That is not a Mammoth API token (tokens start with mm_).",
+            exit_status=EXIT_USAGE,
+            hint=(
+                "Create a token in Workspace settings -> API Tokens and paste the value "
+                "shown once (mm_ followed by about 43 characters). API key + secret "
+                "pairs are no longer accepted at login."
+            ),
+        )
+    if len(token) <= _APP_KEY_LENGTH:
         raise CliError(
             code="invalid_credentials",
             message="That looks like the token's id (app key), not the token.",
@@ -178,24 +194,6 @@ def _check_token_shape(token: str) -> None:
                 "settings -> API Tokens."
             ),
         )
-
-
-def _prompt_credential() -> tuple[str | None, str | None, str | None]:
-    """Prompt for the API token; a legacy key (no ``mm_`` prefix) also asks for its secret.
-
-    Returns:
-        ``(api_token, api_key, api_secret)`` with either the token or the pair set.
-    """
-    first = _prompt_secret("API token")
-    if first.startswith(TOKEN_PREFIX):
-        _check_token_shape(first)
-        return first, None, None
-    typer.echo(
-        "  That is not an mm_ token; treating it as a legacy API key. "
-        "New tokens from Workspace settings -> API Tokens start with mm_.",
-        err=True,
-    )
-    return None, first, _prompt_secret("API secret")
 
 
 def _prompt_blockers(invocation: Invocation) -> list[str]:
@@ -246,17 +244,16 @@ def _run_login(
         document = load_input_document(invocation.input_file, invocation.input_format)
         assert document is not None
         request = _validate_login_document(document)
-        api_token = request.api_token.strip() if request.api_token is not None else None
-        api_key, api_secret = request.api_key, request.api_secret
-        if api_token is not None:
-            _check_token_shape(api_token)
+        api_token = request.api_token.strip()
+        _check_token_shape(api_token)
         effective_workspace = request.workspace_id
         effective_prefix = server_prefix if server_prefix is not None else request.server_prefix
     elif not blockers:
         # Two flows, nothing else: a terminal prompts for everything (token,
         # then workspace id), and non-interactive uses --input. The workspace
         # is asked last, after the credential.
-        api_token, api_key, api_secret = _prompt_credential()
+        api_token = _prompt_secret("API token")
+        _check_token_shape(api_token)
         effective_workspace = typer.prompt("Workspace id", type=int)
         effective_prefix = server_prefix
     else:
@@ -278,18 +275,11 @@ def _run_login(
             message="A positive --workspace id is required.",
             exit_status=EXIT_USAGE,
         )
-    if not api_token and (not api_key or not api_secret):
-        raise CliError(
-            code="invalid_credentials",
-            message="An API token (or the deprecated key and secret) is required.",
-            exit_status=EXIT_USAGE,
-        )
-
     resolved_base_url = resolve_base_url(effective_prefix)
 
     resolved_auth = ResolvedAuth(
-        api_key=api_key,
-        api_secret=api_secret,
+        api_key=None,
+        api_secret=None,
         workspace_id=effective_workspace,
         base_url=resolved_base_url,
         api_token=api_token,
@@ -307,21 +297,13 @@ def _run_login(
                 **exc.details,
                 "endpoint_base_url": resolved_base_url,
                 "workspace_id": effective_workspace,
-                # Receipts only (length and last four characters). The output
-                # layer redacts any key that looks like a credential, so these
-                # are named for what they are: descriptions, not values.
-                "credential_receipt": (
-                    {"type": "api token", "shape": _masked_receipt(api_token)}
-                    if api_token is not None
-                    else {
-                        "key": _masked_receipt(str(api_key)),
-                        "second_value_length": len(str(api_secret)),
-                    }
-                ),
+                # A receipt only (length and last four characters). The output
+                # layer redacts any key that looks like a credential, so this
+                # is named for what it is: a description, not the value.
+                "credential_receipt": {"type": "api token", "shape": _masked_receipt(api_token)},
             }
-            what = "token" if api_token is not None else "key/secret"
             exc.hint = (
-                f"{resolved_base_url} rejected this {what} for workspace "
+                f"{resolved_base_url} rejected this token for workspace "
                 f"{effective_workspace}. Credentials are per environment and per workspace: "
                 "a token issued on one Mammoth server or workspace does not authenticate on "
                 "another. Check the token, the workspace id, and that --server-prefix "
@@ -346,8 +328,6 @@ def _run_login(
     profiles.save_profile(record, select=True)
     storage_used = credentials.store_credentials(
         profile_name,
-        api_key,
-        api_secret,
         storage=cast(credentials.StorageMode, storage),
         interactive=not blockers,
         api_token=api_token,
@@ -358,7 +338,7 @@ def _run_login(
         "workspace_id": effective_workspace,
         "base_url": resolved_base_url,
         "storage": storage_used,
-        "credential": "token" if api_token is not None else "key_secret",
+        "credential": "token",
     }
     return data, {"profile": profile_name, "workspace_id": effective_workspace}
 
@@ -386,8 +366,7 @@ def auth_login(
     """Log in and store one profile's credentials.
 
     Prompts for the API token (mm_..., from Workspace settings -> API Tokens)
-    and the workspace id in a terminal; a legacy API key is also accepted and
-    then asks for its secret. For non-interactive use (agents, CI), pass
+    and the workspace id in a terminal. For non-interactive use (agents, CI), pass
     ``--input FILE`` with {"api_token": ..., "workspace_id": ...} instead.
     Performs a lightweight connection check before saving anything; a failed
     check leaves existing profile state unchanged.
@@ -451,6 +430,11 @@ def _run_status(invocation: Invocation, *, check: bool) -> tuple[dict[str, Any],
         "checked": False,
         "connected": None,
     }
+    if credential is not None and credential.kind == "key_secret":
+        data["recommendation"] = (
+            "This profile uses a legacy API key + secret. Create an API token in "
+            "Workspace settings -> API Tokens and run 'mammoth auth login' again."
+        )
 
     if check:
         auth = resolve_auth(invocation)

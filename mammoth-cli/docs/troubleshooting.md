@@ -48,7 +48,7 @@ Important operation states include:
 | Exit | `error.code` | Next step |
 |---|---|---|
 | 4 | `not_authenticated`, `authentication_failed` | Run protected `mammoth auth login`, then `mammoth doctor`. |
-| 4 | `authorization_required` | Check exact scope and request the required permission. |
+| 4 | `authorization_required` | Check exact scope and request the required permission. A token limited to one project gets this in every other project: pass that project's `--project ID`, or use a token created without a project. |
 | 2 | `keyring_unavailable`, `keyring_unresponsive` | Unlock the OS keychain (on macOS, choose **Always Allow** for `mammoth-cli`), or run `mammoth auth login --storage file`. |
 | 2 | `login_input_required`, `project_required` | Supply the protected login document or explicit `--project PROJECT_ID`. |
 | 2 | `confirmation_required`, `confirmation_target_mismatch` | Inspect the schema, then add `--yes` and the exact target confirmation. |
@@ -70,10 +70,14 @@ the credential to an owner-only file and says so. To skip the keychain, run
 ## Login asks for a secret you do not have
 
 Upgrade: `mammoth upgrade --yes`. From 2.0.36 the login asks for one API
-token, which starts with `mm_`. Tokens created in the web app today have no
-separate secret. Older CLI versions asked for a key and a secret, so a new
-token could not log in there. The CLI asks for a secret only when the value
-you paste does not start with `mm_`, which means an older API key.
+token, which starts with `mm_`, and nothing else. Older CLI versions asked for
+a key and a secret, so a token could not log in there. A value that does not
+start with `mm_` is refused: create a token in **Workspace settings → API
+Tokens**.
+
+A profile saved by an older CLI with a key and secret keeps working, but
+`auth status` and `doctor` ask you to run `mammoth auth login` again with a
+token.
 
 If login says the value looks like the token's id: the web app also shows a
 short `mm_` id for each token. That id does not log in. Use the token shown
@@ -127,7 +131,7 @@ mammoth context project status --profile PROFILE
 ```
 
 Capture the exit code, `error.code`, `details`, `request_id` and the
-`log_ref.run_id` for support; never include an API secret or credentials file.
+`log_ref.run_id` for support; never include an API token or credentials file.
 
 ## Recovery sequence
 

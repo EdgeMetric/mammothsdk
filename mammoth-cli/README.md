@@ -179,12 +179,13 @@ Use Mammoth Analytics only through the `mammoth` CLI in bash; run
 `export MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once. Onboard me first:
 1. If `mammoth --version` fails, install, then re-check (new shell if needed):
    curl -fsSL https://raw.githubusercontent.com/EdgeMetric/mammothsdk/main/mammoth-cli/installers/mammoth-install.sh | bash
-2. Run `mammoth auth status`. If it shows no credentials, print exactly this
-   and wait until I say done: "In the Mammoth web app open Workspace settings
-   → API Tokens → Create token, copy the token (it starts with mm_ and is
-   shown once), and note the workspace id (the number after /workspaces/ in the
-   address bar), then run in your own terminal: mammoth auth login" — never ask
-   for, read, or pass the token yourself, and never run auth login.
+2. Run `mammoth auth status`. If it shows no credentials or a
+   `recommendation`, print exactly this and wait until I say done: "In the
+   Mammoth web app open Workspace settings → API Tokens → Create token (no
+   project, so I can create projects), copy the token (it starts with mm_ and
+   is shown once), and note the workspace id (the number after /workspaces/
+   in the address bar), then run in your own terminal: mammoth auth login" —
+   never ask for, read, or pass the token yourself, and never run auth login.
 3. Require `mammoth doctor` to pass, then run `mammoth skill show` and
    follow the guide it prints.
 Work inside `mammoth project ensure 'PROJECT NAME'` unless I name a project;
@@ -237,7 +238,7 @@ The full generated list is in [docs/reference/commands.md](https://github.com/Ed
 |---|---|
 | [Installation](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/installation.md) | Install the CLI and the agent skill. |
 | [Quick start](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/quickstart.md) | Log in and run your first commands. |
-| [Authentication](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/authentication.md) | Getting an API key, login, profiles, projects. |
+| [Authentication](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/authentication.md) | Getting an API token, login, profiles, projects. |
 | [Agent handover and operation](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agents.md) | Cold start, discovery, checkpoints, recovery. |
 | [Portable handoff format](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/docs/agent-handoff.md) | Nonsecret checkpoint schema and receiving procedure. |
 | [Bundled agent skill](https://github.com/EdgeMetric/mammothsdk/blob/main/mammoth-cli/mammoth_cli/bundled_skill/mammoth-cli/SKILL.md) | Focused routing for shell-capable agents. |

@@ -3,8 +3,7 @@ an optional server prefix — and nothing else.
 
 The product requirement is that a caller configures the CLI with exactly:
 
-* an API key,
-* an API secret,
+* an API token (``mm_...``),
 * a workspace id, and
 * an OPTIONAL one-label server prefix (default ``app``).
 
@@ -50,7 +49,7 @@ def test_resolver_defines_no_base_url_env_var() -> None:
 def test_explicit_login_has_no_base_url_field() -> None:
     fields = {f.name for f in dataclasses.fields(ExplicitLogin)}
     assert "base_url" not in fields
-    assert fields == {"api_key", "api_secret", "workspace_id", "server_prefix", "api_token"}
+    assert fields == {"api_token", "api_key", "api_secret", "workspace_id", "server_prefix"}
 
 
 def test_profile_record_has_no_base_url_field() -> None:

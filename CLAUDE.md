@@ -29,7 +29,7 @@ black mammoth/ tests/ && ruff check mammoth/ && mypy mammoth/ && pytest tests/un
 ## Architecture
 
 ### Core classes
-- **MammothClient** (`client.py`) — entry point; authenticates via api_key + api_secret + workspace_id; exposes 23 sub-clients as attributes (views, projects, datasets, pipeline, exports, etc.)
+- **MammothClient** (`client.py`) — entry point; authenticates via api_token (Bearer `mm_...`) + workspace_id; exposes 23 sub-clients as attributes (views, projects, datasets, pipeline, exports, etc.)
 - **View** (`view.py`) — rich domain object wrapping a dataview; 25+ transformation methods organized via **mixin pattern** in `_mixins/`; metadata accessed via `view.display_names`, `view.column_types`, `view.columns`
 - **Condition** (`condition.py`) — filter builder with `&` (AND), `|` (OR), `~` (NOT) operator overloading
 - **ViewExport** (`view.py`) — export helper: `view.export.to_csv()`, `to_postgres()`, `to_s3()`, etc.

@@ -9,9 +9,10 @@ The Mammoth SDK authenticates with an API token, sent as `Authorization: Bearer 
 3. Copy the token (it starts with `mm_`); it is shown only once
 4. Store it securely; it works only in that workspace and on that server
 
-Older tokens came as an API key and secret. They still work:
-`MammothClient(api_key=..., api_secret=..., workspace_id=...)`. Pass either
-`api_token` or the pair, not both.
+A token can be limited to one project when it is created. Such a token works
+only in that project: it gets HTTP 403 in any other project, even one it has
+just created. Create the token without a project if your code must create or
+switch projects.
 
 ## Client setup
 
@@ -73,8 +74,7 @@ The client adds these headers to every request automatically:
 
 | Header | Value |
 |--------|-------|
-| `X-API-KEY` | Your API key |
-| `X-API-SECRET` | Your API secret |
+| `Authorization` | `Bearer mm_...` (your API token) |
 | `X-WORKSPACE-ID` | Your workspace ID |
 | `User-Agent` | `mammoth-io/<version>` |
 
@@ -101,15 +101,15 @@ except MammothAuthError:
 
 ```python
 # Do not do this:
-client = MammothClient(api_key="pk_live_123456789", ...)
+client = MammothClient(api_token="mm_live_123456789", ...)
 
 # Do this instead:
-client = MammothClient(api_key=os.getenv("MAMMOTH_API_KEY"), ...)
+client = MammothClient(api_token=os.getenv("MAMMOTH_API_TOKEN"), ...)
 ```
 
-**Use different credentials per environment** -- separate dev, staging, and production keys.
+**Use different credentials per environment** -- separate dev, staging, and production tokens.
 
-**Rotate credentials regularly** -- regenerate API keys periodically and invalidate old ones.
+**Rotate credentials regularly** -- create new API tokens periodically and delete old ones.
 
 **Do not commit credentials** -- add `.env` and config files with secrets to `.gitignore`.
 

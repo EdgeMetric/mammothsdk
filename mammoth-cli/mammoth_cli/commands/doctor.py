@@ -214,18 +214,19 @@ def doctor(invocation: Invocation) -> HandlerResult:
         )
     )
     keyring_error: str | None = None
+    legacy_credential = False
     try:
-        creds_present = credentials.has_credentials(profile_name)
+        stored = credentials.load_credential(profile_name)
+        creds_present = stored is not None
+        legacy_credential = stored is not None and stored.kind == "key_secret"
     except CliError as error:
         creds_present = False
         keyring_error = error.code
-    checks.append(
-        _check(
-            "credentials",
-            creds_present,
-            keyring_error or ("credentials present" if creds_present else "none stored"),
-        )
-    )
+    if legacy_credential:
+        creds_detail = "legacy API key + secret stored; log in again with an API token"
+    else:
+        creds_detail = "api token present" if creds_present else "none stored"
+    checks.append(_check("credentials", creds_present, keyring_error or creds_detail))
 
     endpoint_detail = "unresolved"
     auth_ok = False
@@ -303,7 +304,7 @@ def doctor(invocation: Invocation) -> HandlerResult:
         )
 
     recommendations: list[str] = []
-    if record is None or not creds_present:
+    if record is None or not creds_present or legacy_credential:
         login_profile = f" --profile {shlex.quote(profile_name)}" if profile_name else ""
         login_storage = " --storage file" if keyring_error else ""
         recommendations.append(f"mammoth auth login{login_profile}{login_storage}")

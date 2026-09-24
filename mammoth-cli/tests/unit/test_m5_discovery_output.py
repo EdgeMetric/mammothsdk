@@ -353,7 +353,7 @@ def test_schema_discovery_input_schema_survives_render_without_trusting_result_k
     parsed = json.loads(stream.getvalue())
 
     properties = parsed["data"]["schema"]["input_schema"]["properties"]
-    assert {"api_key", "api_secret", "workspace_id"}.issubset(properties)
+    assert {"api_token", "workspace_id"}.issubset(properties)
     assert parsed["data"]["api_key"] == "***REDACTED***"
 
 

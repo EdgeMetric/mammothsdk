@@ -128,7 +128,7 @@ def test_doctor_explicit_profile_scopes_recovery_command(
     isolated_cli_config: Path, fake_service: object
 ) -> None:
     profiles.save_profile(profiles.ProfileRecord(name="named", workspace_id=4))
-    credentials.store_credentials("named", "k", "s", storage="file")
+    credentials.store_credentials("named", storage="file", api_token="mm_" + "t" * 43)
     service = fake_service
     service.check_connection = lambda: (_ for _ in ()).throw(  # type: ignore[attr-defined]
         map_sdk_exception(MammothAPIError("failed", status_code=503, method="GET"))
@@ -283,7 +283,7 @@ def test_doctor_reports_unresponsive_keyring_as_a_failed_check(
     def _unresponsive(_profile: str) -> bool:
         raise credentials.keyring_unresponsive_error()
 
-    monkeypatch.setattr(credentials, "has_credentials", _unresponsive)
+    monkeypatch.setattr(credentials, "load_credential", _unresponsive)
     data, _meta = doctor_cmd.doctor(_inv("doctor"))
     checks = {c["name"]: c for c in data["checks"]}
     assert checks["credentials"]["ok"] is False

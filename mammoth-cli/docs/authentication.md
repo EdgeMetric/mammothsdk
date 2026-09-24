@@ -23,9 +23,12 @@ so copy it right away. If you lose it, create a new token. Your workspace id
 is the number after `/workspaces/` in the web app's address bar. A token works
 only in the workspace and on the server where you created it.
 
-Older tokens came as an API key and a secret. The CLI still accepts that
-pair: at the token prompt, paste the key, and the CLI then asks for the
-secret.
+A token can be limited to one project when you create it. That token works
+only in that project: any other project answers HTTP 403, even a project the
+token has just created. If an agent should create its own projects, create the
+token without a project. If you keep a project-limited token, give the agent
+that project's id and have it pass `--project ID` (or run
+`mammoth context project use ID` once).
 
 One more input is optional. The server prefix names your Mammoth region and
 defaults to `app`. Most users leave it alone. See
@@ -99,9 +102,7 @@ The file holds one JSON document:
 }
 ```
 
-The `server_prefix` field is optional. The other two fields are required. For
-an older key and secret, use `"api_key"` and `"api_secret"` in place of
-`"api_token"`.
+The `server_prefix` field is optional. The other two fields are required.
 
 The private file must be owner-only (`0600`) from creation. The CLI rejects a
 group- or world-readable POSIX input file with error code

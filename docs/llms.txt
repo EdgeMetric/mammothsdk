@@ -27,7 +27,7 @@ view.filter_rows(Condition("Sales", Operator.GTE, 1000))
 
 - [Installation](https://docs.mammoth.io/installation/): Requirements, pip/Poetry setup, dev tools
 - [Quick Start](https://docs.mammoth.io/quick-start/): 7-step guide from install to export
-- [Authentication](https://docs.mammoth.io/authentication/): API keys, environment variables, security
+- [Authentication](https://docs.mammoth.io/authentication/): API tokens, environment variables, security
 - [Client](https://docs.mammoth.io/api/client/): MammothClient entry point and sub-clients
 - [Views](https://docs.mammoth.io/api/views/): View objects with 25+ transformation methods
 - [Files](https://docs.mammoth.io/api/files/): Upload CSV/Excel, create datasets
