@@ -43,6 +43,22 @@ Live sweep (`docs/capability-evidence/transform-sweep-20260925`): all 32
 were read back against a known answer, 32 of 32. The four findings above
 came from it. The capability matrix now lists all 32 as proven.
 
+SDK published from local artifacts built from tag `sdk-v0.7.18` (source
+commit `4f82197`):
+
+- `mammoth_io-0.7.18-py3-none-any.whl` sha256 `94f213009dc0bc194ddf0b845713c76a8d7b650c0b026742fe09e7c3194f5e74`
+- `mammoth_io-0.7.18.tar.gz` sha256 `a6389ecbadd558fc9116e3aca643af99102b7275fba5de1354d8d9182495d3a7`
+
+CLI published from deterministic local artifacts built from tag `cli-v2.0.40`
+(source commit `8cbef87`):
+
+- `mammoth_cli-2.0.40-py3-none-any.whl` sha256 `0d7a697260d3a833ae60efd86549283a2b335f6e39375cf536de97d5b6c3e2b6`
+- `mammoth_cli-2.0.40.tar.gz` sha256 `faa2816a1271d26a7efdb12f8843564921ab8f8128780ea7869b509f69b9d1fc`
+
+GitHub release `cli-v2.0.40` (Latest) carries these, both installers and
+`SHA256SUMS`; `sdk-v0.7.18` carries the SDK artifacts. Tests: CLI 4500
+passed, 2 skipped; SDK unit 1875 passed, 18 skipped.
+
 ## 2.0.39 / SDK 0.7.17
 
 A cold agent (Haiku) given "I have two files, t_a and t_b. Create a

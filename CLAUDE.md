@@ -80,4 +80,5 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
 - Python target: 3.12–3.14 (`from __future__ import annotations` used throughout)
 - mypy strict mode with overrides for `api/` (return-value), `_mixins/` (attr-defined), and `view` (return-any)
 - Backend reference code lives in `mvc-service/` (param_templates, constants) — useful for verifying payload formats
-- CSV date columns upload as TEXT — must `convert_type` before date operations
+- Upload types numbers and ISO dates (`2026-01-31`) on its own; other date formats and number columns with text (`N/A`) upload as TEXT and need `convert_type` before date or math operations. Never convert a column to the type it already has: the pipeline goes to `ref_error` (verified on release, 2026-09-25)
+- `FillDirection.FIRST_VALUE` is the forward fill (previous row); `LAST_VALUE` is the back-fill (next row)
