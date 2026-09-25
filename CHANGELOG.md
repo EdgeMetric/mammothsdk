@@ -4,6 +4,27 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.20]
+
+### Fixed
+
+- `AutomationPatchItem.value` (`mammoth/models/automations.py`) is typed
+  `str | dict[str, Any] | PatchAutomationDetails`. Pydantic's default
+  "smart" union mode picked the exact `dict[str, Any]` match over coercing
+  a dict into `PatchAutomationDetails`, so any `op="replace",
+  path="details"` patch built from parsed JSON — every real caller,
+  including the CLI's `--input` and `mammoth_cli.embed.invoke` — left
+  `value` a bare `dict` and failed `_validate_automation_patch_item`'s
+  `isinstance(item.value, PatchAutomationDetails)` check with "must
+  include at least one of: name, description, tasks, conditions" even
+  when a field was set. Renaming an automation, or changing its
+  description/tasks/conditions, was unreachable through any caller that
+  builds the patch from JSON. The field now sets
+  `union_mode="left_to_right"` with `PatchAutomationDetails` ordered
+  before `dict[str, Any]`, so a dict is coerced into the structured model
+  first. Reproduced live on koyal (mammoth-cli 2.0.46); see
+  `tests/unit/test_automations.py::TestUpdate::test_update_details_patch_from_raw_dict_value`.
+
 ## [0.7.19]
 
 ### Fixed

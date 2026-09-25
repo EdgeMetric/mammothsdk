@@ -233,6 +233,33 @@ class TestUpdate:
         body = mock_client._request_json.call_args.kwargs["json"]
         assert body["patch"][0]["value"] == {"name": "new name"}
 
+    def test_update_details_patch_from_raw_dict_value(self) -> None:
+        """``AutomationPatchItem.value`` is typed ``str | dict[str, Any] |
+        PatchAutomationDetails``. Constructing the item straight from a typed
+        ``PatchAutomationDetails`` (the test above) never exercises pydantic's
+        union resolution; every real caller -- the CLI's ``--input`` JSON, and
+        ``mammoth_cli.embed.invoke``'s dict-shaped request document -- builds
+        the item from a plain dict via ``model_validate``/``TypeAdapter``.
+        Pydantic's default "smart" union mode picks the exact ``dict[str,
+        Any]`` match over coercing into ``PatchAutomationDetails`` (which
+        needs nested-model construction), so ``item.value`` came back a bare
+        dict and ``_validate_automation_patch_item``'s
+        ``isinstance(item.value, PatchAutomationDetails)`` check failed --
+        rejecting every details patch (rename, description, tasks, conditions)
+        with "must include at least one of: name, description, tasks,
+        conditions" even when a field was set. Reproduced live on koyal
+        (mammoth-cli 2.0.46): ``automation update ID --input
+        '{"patch": [{"op": "replace", "path": "details", "value":
+        {"name": "..."}}]}'``.
+        """
+        api, mock_client = _make_api()
+        item = AutomationPatchItem.model_validate(
+            {"op": "replace", "path": "details", "value": {"name": "new name"}}
+        )
+        api.update(7, patch=[item])
+        body = mock_client._request_json.call_args.kwargs["json"]
+        assert body["patch"][0]["value"] == {"name": "new name"}
+
     def test_update_empty_patch_raises(self) -> None:
         api, _ = _make_api()
         with pytest.raises(MammothValidationError, match="patch"):

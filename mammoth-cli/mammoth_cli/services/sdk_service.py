@@ -38,6 +38,13 @@ from mammoth_cli.services.mapping import map_sdk_exception
 _PROJECT_MISS = re.compile(r"^Project (ID \d+|'.*') not found\.")
 _PROJECT_PAGE_SIZE = 100
 
+#: Verbatim message every project-scoped SDK sub-client's ``_proj()`` raises
+#: when ``project_id`` is unset (identical across every ``mammoth/api/*.py``
+#: call site). Matched by exact text, not by ``sdk_symbol``, so ``call()``
+#: reports ``project_required`` for any project-scoped method, not only the
+#: ones a hand-kept list happens to name.
+_PROJECT_ID_UNSET = "project_id must be set on the client using client.set_project_id()"
+
 
 _TOKEN_POSITION = re.compile(r"Unrecognized token at position (\d+)")
 
@@ -138,20 +145,6 @@ class SdkMammothService:
                 method signature; otherwise the mapped SDK exception.
         """
         method = resolve_sdk_method(self._client, sdk_symbol)
-        # These public seams ultimately build project-scoped URLs and otherwise
-        # raise a raw SDK ValueError when ``--project`` was omitted.  Validate
-        # the CLI precondition here so release commands fail as stable usage
-        # errors before any transport call (or generic ``api_error`` envelope).
-        if (
-            sdk_symbol
-            in {
-                "mammoth.api.pipeline.PipelineAPI.items_all",
-                "mammoth.client.ViewsResource.delete",
-                "mammoth.client.ViewsResource.get",
-            }
-            and self._client.project_id is None
-        ):
-            raise missing_project_error()
         kwargs = self._coerce_call_arguments(method, kwargs)
         if self.gate is not None:
             self.gate(sdk_symbol, kwargs)
@@ -167,6 +160,14 @@ class SdkMammothService:
                 details={"reason": str(exc)},
             ) from exc
         except ValueError as exc:
+            # Every project-scoped SDK sub-client raises this exact message
+            # when ``project_id`` is unset (23 call sites across mammoth/api/
+            # *.py); catching it by text, rather than special-casing each
+            # sdk_symbol ahead of time, covers all of them at once instead of
+            # needing a new allowlist entry for every command group that
+            # reaches ``_proj()``.
+            if str(exc) == _PROJECT_ID_UNSET:
+                raise missing_project_error() from exc
             # ``ViewsResource.get`` and the view-scoped API methods reach the
             # same project-wide parent discovery as ``call_view``; a miss must
             # read as not_found here too, not "operation failed unexpectedly".
