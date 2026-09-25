@@ -390,6 +390,21 @@ def test_data_get_relabels_and_drops_system_columns(
     }
 
 
+def test_data_get_uses_renamed_column_names(fake_service: FakeMammothService) -> None:
+    # A rename lives in display_properties.COLUMN_NAMES; metadata keeps the
+    # pipeline's name. Rows must carry the name the user sees.
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {
+        "metadata": [
+            {"internal_name": "column_1", "display_name": "store"},
+            {"internal_name": "column_2", "display_name": "rev"},
+        ],
+        "display_properties": {"COLUMN_NAMES": {"column_2": "Revenue"}},
+    }
+    fake_service.responses[_DATA_GET] = {"data": [{"column_1": "A", "column_2": "10"}]}
+    data, _ = view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
+    assert data["data"] == [{"store": "A", "Revenue": "10"}]
+
+
 def test_data_get_trims_rows_to_the_limit(fake_service: FakeMammothService, tmp_path: Path) -> None:
     fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {
         "metadata": [{"internal_name": "column_1", "display_name": "n"}]

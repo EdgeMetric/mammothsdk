@@ -17,11 +17,17 @@ column-header rename and a grid sort set view display properties
   view, find the key columns, make them match, fix types and blanks, join,
   then build the dashboard, and say what was inferred.
 
-Tests: CLI suite 4479 passed, SDK unit 1875 passed. The payload shapes match
-the web app's (`SORT` as `[[internal_name, "ASC"|"DESC"]]`, `COLUMN_NAMES` as
-`{internal_name: name}`) and the backend's validation. Not yet run live:
-release.mammoth.io did not respond during publication; the live check follows
-when it is back.
+- The server keeps a view's `metadata` names after a rename. `view get`,
+  `view list` and `view data get` now show the renamed column under its new
+  name. `view get VIEW_ID --input '{"fields": "__full"}'` without a dataset
+  id failed with "unexpected keyword argument 'fields'"; it now returns the
+  full record.
+
+Live on release workspace 4 (throwaway project 80, deleted and read back as
+not found): upload, `rename-columns` (`cust_ref` to "Customer Ref"), a
+`copy-columns` task that names "Customer Ref", `sort` (qty DESC, order_id
+ASC), `view get`, `view list`, `view data get` (new name, sorted rows) and
+`view export csv` (header "Customer Ref", rows in sort order).
 
 ## 2.0.37
 

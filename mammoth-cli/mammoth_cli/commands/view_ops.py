@@ -24,6 +24,7 @@ from typing import Any
 from mammoth_cli.commands.view import (
     BRIEF_VIEW_FIELDS,
     _require_discovery_allowed,
+    apply_column_renames,
     brief_view_record,
 )
 from mammoth_cli.context import profiles
@@ -478,20 +479,28 @@ def view_get(invocation: Invocation) -> HandlerResult:
         kwargs: dict[str, Any] = {
             "dataset_id": dataset_id,
             "dataview_id": view_id,
-            # Server-side projection; the brief set unless the caller asks.
+            # Server-side projection; the brief set (plus the display
+            # properties that carry column renames) unless the caller asks.
             "fields": document.get("fields")
-            or ",".join(key for key in BRIEF_VIEW_FIELDS if key != "dataset_id"),
+            or ",".join(
+                [key for key in BRIEF_VIEW_FIELDS if key != "dataset_id"] + ["display_properties"]
+            ),
         }
         with open_service(invocation) as (service, auth):
             data = service.call("mammoth.api.dataviews.DataviewsAPI.get", **kwargs)
             parents.remember(_profile_name(invocation), auth.workspace_id, {view_id: dataset_id})
+        data = apply_column_renames(data) if document.get("fields") else brief_view_record(data)
         return data, _meta(invocation, auth.workspace_id)
     context: dict[str, Any] = {"view_id": view_id}
     if dataset_id is not None:
         context["dataset_id"] = dataset_id
     # The generated contract predates the optional parent context; preserve
     # its declared fields, then add the validated SDK parent explicitly.
-    binding_document = {key: value for key, value in document.items() if key != "dataset_id"}
+    # ``fields`` projects the exact-parent route only; the discovery route
+    # returns the full record, trimmed below unless ``fields`` was asked for.
+    binding_document = {
+        key: value for key, value in document.items() if key not in ("dataset_id", "fields")
+    }
     kwargs = bind_command_inputs(invocation.command_id, binding_document, view_id=view_id)
     if dataset_id is not None:
         kwargs["dataset_id"] = dataset_id
@@ -503,6 +512,8 @@ def view_get(invocation: Invocation) -> HandlerResult:
         # The discovery path returns the standard record; trim it to the same
         # brief shape the exact path asks the server for.
         payload = brief_view_record(payload)
+    else:
+        payload = apply_column_renames(payload)
     return payload, _meta(invocation, auth.workspace_id)
 
 

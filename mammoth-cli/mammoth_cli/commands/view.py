@@ -252,10 +252,33 @@ BRIEF_VIEW_FIELDS: tuple[str, ...] = (
 )
 
 
-def brief_view_record(record: Any) -> Any:
-    """Keep only :data:`BRIEF_VIEW_FIELDS` of a dataview record."""
+def apply_column_renames(record: Any) -> Any:
+    """Show renamed columns under their new names in a dataview record.
+
+    A rename (``view transform rename-columns`` or the web grid) is stored in
+    ``display_properties.COLUMN_NAMES`` as ``{internal_name: name}``; the
+    server's ``metadata`` keeps the name the pipeline produced. Every CLI
+    output uses the name the user sees, so the rename wins.
+    """
     if not isinstance(record, dict):
         return record
+    display = record.get("display_properties")
+    renames = display.get("COLUMN_NAMES") if isinstance(display, dict) else None
+    metadata = record.get(_METADATA_KEY)
+    if not isinstance(renames, dict) or not renames or not isinstance(metadata, list):
+        return record
+    columns = []
+    for column in metadata:
+        new_name = renames.get(column.get(_INTERNAL_NAME_KEY)) if isinstance(column, dict) else None
+        columns.append({**column, _DISPLAY_NAME_KEY: new_name} if new_name else column)
+    return {**record, _METADATA_KEY: columns}
+
+
+def brief_view_record(record: Any) -> Any:
+    """Keep only :data:`BRIEF_VIEW_FIELDS` of a dataview record, renames applied."""
+    if not isinstance(record, dict):
+        return record
+    record = apply_column_renames(record)
     return {key: record[key] for key in BRIEF_VIEW_FIELDS if key in record}
 
 
@@ -369,6 +392,7 @@ def _dataview_metadata(
         )
     except Exception:  # noqa: BLE001 -- labels are a presentation nicety, never fatal
         return []
+    info = apply_column_renames(info)
     metadata = info.get(_METADATA_KEY) if isinstance(info, dict) else None
     if not isinstance(metadata, list):
         return []

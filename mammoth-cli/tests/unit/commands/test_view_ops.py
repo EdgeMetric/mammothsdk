@@ -1112,7 +1112,7 @@ def test_non_read_view_ops_refuse_parent_discovery(
 _DV_GET = "mammoth.api.dataviews.DataviewsAPI.get"
 _BRIEF = (
     "id,ds_id,name,status,row_count,column_count,metadata,pipeline_status,"
-    "is_pipeline_running,is_dataview_data_in_sync,data_updated_at,updated_at"
+    "is_pipeline_running,is_dataview_data_in_sync,data_updated_at,updated_at,display_properties"
 )
 
 
@@ -1152,6 +1152,49 @@ def test_get_via_discovery_trims_to_the_brief_shape(fake_service: FakeMammothSer
     data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
     assert "dependencies_info" not in data and "display_properties" not in data
     assert data["row_count"] == 3 and data["dataset_id"] == 63 and data["ds_id"] == 63
+
+
+_RENAMED = {
+    "id": 7,
+    "metadata": [
+        {"display_name": "cust_ref", "internal_name": "column_2"},
+        {"display_name": "qty", "internal_name": "column_5"},
+    ],
+    "display_properties": {"COLUMN_NAMES": {"column_2": "Customer Ref"}},
+}
+
+
+def test_exact_get_shows_renamed_columns_and_drops_display_properties(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_DV_GET] = dict(_RENAMED)
+    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7", "63"]))
+    assert [c["display_name"] for c in data["metadata"]] == ["Customer Ref", "qty"]
+    assert "display_properties" not in data
+
+
+def test_discovery_get_shows_renamed_columns(fake_service: FakeMammothService) -> None:
+    rich = _RichView()
+    rich.raw = dict(_RENAMED)
+    fake_service.responses[_GET] = rich
+    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    assert [c["display_name"] for c in data["metadata"]] == ["Customer Ref", "qty"]
+
+
+def test_discovery_get_with_fields_keeps_the_full_record(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # The discovery route has no projection: ``fields`` must not reach the
+    # SDK (it raised "unexpected keyword argument 'fields'") and the full
+    # record comes back.
+    rich = _RichView()
+    rich.raw = dict(_RENAMED)
+    fake_service.responses[_GET] = rich
+    doc = _write(tmp_path, {"fields": "__full"})
+    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"], input_file=doc))
+    assert fake_service.call_log == [(_GET, {"view_id": 7})]
+    assert data["display_properties"] == _RENAMED["display_properties"]
+    assert data["metadata"][0]["display_name"] == "Customer Ref"
 
 
 # --- reference errors after a pipeline mutation ---------------------------
