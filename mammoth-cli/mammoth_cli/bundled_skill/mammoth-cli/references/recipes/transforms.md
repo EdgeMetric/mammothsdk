@@ -73,6 +73,41 @@ mammoth schema get view.transform.join
 mammoth view transform join VIEW_ID --project PROJECT_ID --input INPUT_JSON
 ```
 
+## What most pipelines look like
+
+These patterns come from how Mammoth pipelines are usually built. Use them
+as defaults, and let the user's request override them:
+
+- Keep it short. Most pipelines have one to three steps and touch a few
+  columns. Add only the steps the deliverable needs.
+- New column or overwrite? `set-values`, `math` and `lookup` take
+  `new_column` (add a column) or `existing_column` (replace the values in
+  place), never both. Overwriting is as common as adding. If the user said
+  "fix", "clean" or "change" a column, use `existing_column`. If they said
+  "add", "calculate" or "flag", use `new_column`. If it is not clear, ask.
+- Joins are nearly always `LEFT` on one key column. Use `INNER`, `RIGHT`,
+  `OUTER` or a key of two or more columns only when the user asks for it or
+  the data needs it, and say why in your report.
+- Check the key before a join or lookup. Most keys go in without a prep
+  step, so a type, case or padding difference shows up as unmatched rows. Read
+  both key columns first (`view data get`) and act on `join_check`.
+- Date steps (`increment-date`, `extract-date`, and `text` on date columns)
+  fail more often than other steps. Before a date step, confirm that the
+  column type is `DATE` (`view get`); if it is `TEXT`, run `convert-type`
+  first. Check the result on a few rows.
+- Convert several columns to the same type in one `convert-type` call (one
+  `conversions` entry for each column), not one call for each column.
+- Remove duplicates near the end, after the cleanup and joins, so the check
+  uses the final columns.
+- `filter` also takes a plain-language `prompt` instead of a `condition`.
+  Use a `condition` when the rule is exact (a column, an operator, a value).
+  Use `prompt` only when the user described the rule in words and no exact
+  condition expresses it, then check the kept rows.
+- "Top N" means the largest values first. Use the smallest values first only
+  when the user says "bottom", "lowest" or "smallest".
+- The last step of a pipeline is not a signal that it is finished. Say that
+  the work is done only after you verify the deliverable.
+
 ## Aggregate or summarise
 
 For a grouped summary (totals per region, counts per status) use the typed

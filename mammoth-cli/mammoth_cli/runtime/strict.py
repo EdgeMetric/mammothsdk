@@ -271,6 +271,17 @@ def _coerce_document_fields(
             ) from None
 
 
+#: Commands whose request nests the payload: name the nesting on a wrong key.
+_UNKNOWN_FIELD_HINTS: dict[str, str] = {
+    "dashboard.canvas.save": (
+        "Accepted field: body. Wrap the canvas: "
+        '{"body": {"params": {"canvas": CANVAS}}}, where CANVAS is data.canvas '
+        "from 'mammoth dashboard canvas get DASHBOARD_ID', edited. An --input file "
+        "takes the same wrapped document."
+    ),
+}
+
+
 def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> None:
     """Reject unknown ``--input`` keys, then coerce known keys to their type.
 
@@ -319,7 +330,9 @@ def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> N
                 f"{', '.join(unknown)}."
             ),
             exit_status=EXIT_USAGE,
-            hint=f"Accepted fields: {', '.join(sorted(fields_by_name)) or '(none)' }.",
+            hint=_UNKNOWN_FIELD_HINTS.get(
+                command_id, f"Accepted fields: {', '.join(sorted(fields_by_name)) or '(none)' }."
+            ),
             details={"unknown": unknown, "accepted": sorted(fields_by_name)},
         )
     if is_closed_zero_input(command_id) and document == {}:

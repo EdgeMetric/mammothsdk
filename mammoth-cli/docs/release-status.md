@@ -1,5 +1,35 @@
 # CLI release provenance
 
+## 2.0.39 / SDK 0.7.17
+
+A cold agent (Haiku) given "I have two files, t_a and t_b. Create a
+dashboard from them" on 2.0.38 found the key and joined, but kept `price` as
+text (so the dashboard had no money measure) and left blanks, although it
+had seen both. The guide asked for the fix; the CLI output did not.
+
+- `view data get` and `view data query` add `column_warnings`: a text column
+  whose values are mostly numbers or dates (with the `convert-type` command
+  that fixes it) and blank counts per column. The checks use the rows the
+  command already read.
+- `view transform join` adds `join_check`: `rows_before`, `rows_after`,
+  `columns_added`, `match_rate`, `unmatched_rows`, `unmatched_keys`, and
+  notes when rows repeat (a key repeats in the other view) or are dropped.
+- `view data get` takes `offset` (1-based) for later pages.
+- `dashboard canvas save` with a wrongly nested input names the nesting in
+  the error hint.
+- The transforms recipe has "What most pipelines look like": defaults drawn
+  from an aggregate study of how pipelines are built (short pipelines,
+  `new_column` or `existing_column`, `LEFT` joins on one key, key checks
+  before a join, `DATE` type before a date step, batched conversions,
+  duplicates removed last). The study used counts only; no customer data is
+  in the docs.
+- The skill tells the agent to act on `column_warnings` and `join_check`,
+  to read the uploaded views rather than the local files, and to install
+  with `--no-cache-dir` and check the version (a cached index served 2.0.37
+  minutes after 2.0.38 was published).
+- `evals/two-files-dashboard` holds the scenario, the data and a 10-point
+  checklist; RELEASING.md runs it after every CLI release.
+
 ## 2.0.38 / SDK 0.7.17
 
 The CLI had no rename or sort. Both are real web-app actions: a

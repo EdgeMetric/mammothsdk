@@ -22,6 +22,8 @@ mammoth view list CUSTOMERS_DS --project PROJECT_ID # -> CUSTOMERS_VIEW
 # 2. look before you change: column names, types, row_count, a sample
 mammoth view get ORDERS_VIEW ORDERS_DS --project PROJECT_ID
 mammoth view data get ORDERS_VIEW ORDERS_DS --project PROJECT_ID
+#   data.column_warnings: text columns of numbers/dates (with the convert-type fix) and blanks;
+#   plan step 3 from them
 
 # 3. clean orders (each call waits for its job; read back after each value change)
 mammoth view transform discard-duplicates ORDERS_VIEW --project PROJECT_ID \
@@ -43,9 +45,10 @@ mammoth view get ORDERS_VIEW ORDERS_DS --project PROJECT_ID   # row_count before
 # 5. join, then check the match rate before building on it
 mammoth view transform join ORDERS_VIEW --project PROJECT_ID \
   --input '{"dataset_id": ORDERS_DS, "foreign_view": CUSTOMERS_VIEW, "foreign_dataset_id": CUSTOMERS_DS, "join_type": "LEFT", "on": [{"left": "customer_id", "right": "customer_id"}], "select": ["region"]}'
-mammoth view data get ORDERS_VIEW ORDERS_DS --project PROJECT_ID
-#   if region is empty/"Unknown" on most rows, the key does not match: compare the two key columns' values
+#   data.join_check: rows_before/rows_after, match_rate, unmatched_rows, unmatched_keys; report them
+#   if many rows are unmatched, the key does not match: compare the two key columns' values
 #   (type, padding, case) with view data get on both views; do not summarise unmatched data
+#   rows_after > rows_before: a key repeats in the other view (use lookup for one value per key)
 
 # 6. deliverable first: export the cleaned, joined rows before any step that replaces them
 mammoth view export csv ORDERS_VIEW --project PROJECT_ID \

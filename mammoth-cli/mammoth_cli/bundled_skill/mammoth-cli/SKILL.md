@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.38
+version: 2.0.39
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
@@ -93,21 +93,29 @@ report a real gap with the command you tried.
 Users often upload related files without saying how they relate ("make a
 dashboard from t_a and t_b"). Work it out from the data before you build:
 
-1. Read every view first: `view get VIEW_ID` (columns, types, row count) and
-   `view data get VIEW_ID --input '{"limit": 20}'`.
+1. Upload every file, then read every view in Mammoth (not the local
+   files): `view get VIEW_ID` (columns, types, row count) and `view data get
+   VIEW_ID`. The data read lists `column_warnings`: numbers or dates stored
+   as text, and blanks, each with the fix.
 2. Find the keys. A column in one view whose values appear in a column of
    the other (`customer_id` and `id`, `order_ref` and `order_no`) is a
    foreign key; the view with many rows per key is the main one.
 3. Make the keys match before the join: same type (`convert-type`), same
    case and padding (`text`), no blanks (`set-values`, `filter`).
-4. Fix what the deliverable needs: numbers stored as text (`convert-type`
-   to `NUMERIC`), dates stored as text (`convert-type` to `DATE`), blanks.
-5. `view transform join` the lookup view into the main view (`LEFT`), then
-   read back and check the match rate
-   ([worked example](references/recipes/end-to-end.md), step 5).
+4. Act on every `column_warnings` entry for a column the deliverable uses:
+   run its `fix` (`convert-type` to `NUMERIC` or `DATE`; the values that are
+   not numbers become empty), then decide on blanks (fill, filter, or keep and
+   say so). A text `price` cannot be summed on a dashboard.
+5. `view transform join` the lookup view into the main view (`LEFT`). The
+   result's `join_check` gives `match_rate`, `unmatched_rows` and
+   `unmatched_keys`; put them in your report, and stop to compare the keys
+   if more than a few rows found no match.
 6. Build the dashboard from the joined view
    ([dashboards](references/recipes/dashboards.md)).
 
+For the defaults that most pipelines use (new column or overwrite, `LEFT`
+joins, date steps), see
+[transforms](references/recipes/transforms.md#what-most-pipelines-look-like).
 Say what you inferred (which columns you joined on, what you converted) in
 your report. If no column links the files, ask before you combine them.
 
@@ -149,6 +157,10 @@ your report. If no column links the files, ask before you combine them.
   target column *before* the change so the after-read has a comparison.
 - A uniform result (every amount 0, every region "Unknown", most join rows
   unmatched) means the previous step went wrong; stop and re-inspect it.
+- `column_warnings` on a data read and `join_check` on a join are findings,
+  not decoration: fix each one the deliverable depends on, or say in the
+  report why you kept it. `view data get` pages with `{"offset": 51,
+  "limit": 50}`.
 - A timeout, exit 7 or interruption does not prove failure; reconcile an
   `outcome_unknown` (`job get`, `view task list`) before replaying.
 - Run the [report checklist](references/report-checklist.md) before stating

@@ -250,3 +250,10 @@ def test_body_schema_still_rejects_a_wrong_type() -> None:
     with pytest.raises(CliError) as excinfo:
         validate_input_fields("view.data-check.create", document)
     assert excinfo.value.code == "invalid_input_field_type"
+
+
+def test_canvas_save_wrong_shape_names_the_wrapping() -> None:
+    with pytest.raises(CliError) as raised:
+        validate_input_fields("dashboard.canvas.save", {"canvas": {"pages": []}})
+    assert raised.value.code == "unknown_input_field"
+    assert '{"body": {"params": {"canvas": CANVAS}}}' in (raised.value.hint or "")

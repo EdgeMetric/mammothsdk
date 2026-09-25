@@ -108,6 +108,14 @@ twine check dist/*
 twine upload dist/mammoth_cli-<ver>*
 ```
 
+### Agent eval after every CLI release
+
+Run `mammoth-cli/evals/two-files-dashboard` (see its README) with a small
+model against the version just published, and record the checklist score
+in `mammoth-cli/docs/release-status.md`. A lower score than the previous
+release is a regression in the guide or the CLI's output, even when every
+test passes.
+
 ### GitHub releases for the installer path (local)
 
 **Every version bump gets a GitHub release, for the CLI and the SDK.** Without

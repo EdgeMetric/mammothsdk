@@ -19,6 +19,7 @@ enum-typed fields are forwarded as the plain string given on ``--input``.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from mammoth_cli.commands.view import (
@@ -26,6 +27,8 @@ from mammoth_cli.commands.view import (
     _require_discovery_allowed,
     apply_column_renames,
     brief_view_record,
+    join_snapshot,
+    with_join_check,
 )
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
@@ -232,9 +235,20 @@ def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
 
 
 def _dispatch_view(
-    invocation: Invocation, view_id: int, method: str, **kwargs: Any
+    invocation: Invocation,
+    view_id: int,
+    method: str,
+    *,
+    before: Callable[[Any, int], Any] | None = None,
+    after: Callable[[Any, int, Any, Any], Any] | None = None,
+    **kwargs: Any,
 ) -> HandlerResult:
-    """Open the service, dispatch a View method call, and build the envelope."""
+    """Open the service, dispatch a View method call, and build the envelope.
+
+    ``before(service, dataset_id)`` runs ahead of the call and its value is
+    handed to ``after(service, dataset_id, state, data)``, which returns the
+    result to emit. Both need the exact parent; without one they are skipped.
+    """
     # ``dataset_id`` is invocation-local resource context.  It is not a View
     # transform argument, but passing it through lets the service fetch the
     # exact parent endpoint and prevents the SDK's legacy bare-view resolver
@@ -254,6 +268,7 @@ def _dispatch_view(
         if dataset_id is None:
             dataset_id = parents.lookup(_profile_name(invocation), auth.workspace_id, view_id)
         require_expected_task_count(service, view_id, dataset_id, document)
+        state = before(service, int(dataset_id)) if before and dataset_id is not None else None
         try:
             if dataset_id is None:
                 _require_discovery_allowed(invocation, view_id)
@@ -266,6 +281,8 @@ def _dispatch_view(
             reject_pipeline_reference_errors(service, view_id, dataset_id, response)
             raise
         reject_pipeline_reference_errors(service, view_id, dataset_id, data)
+        if after is not None and dataset_id is not None:
+            data = after(service, int(dataset_id), state, data)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -782,7 +799,17 @@ def view_transform_join(invocation: Invocation) -> HandlerResult:
     _require_field(document, "select")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "join", **kwargs)
+    project_id = invocation.project
+
+    def before(service: Any, dataset_id: int) -> Any:
+        return join_snapshot(service, dataset_id, view_id, project_id)
+
+    def after(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
+        return with_join_check(
+            data, state, join_snapshot(service, dataset_id, view_id, project_id), document
+        )
+
+    return _dispatch_view(invocation, view_id, "join", before=before, after=after, **kwargs)
 
 
 def view_transform_json_extract(invocation: Invocation) -> HandlerResult:

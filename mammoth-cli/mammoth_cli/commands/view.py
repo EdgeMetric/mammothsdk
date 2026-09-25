@@ -46,6 +46,7 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
+from mammoth_cli.services.data_quality import column_warnings
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -424,7 +425,7 @@ def _compile_query_filters(
     project_id: int | None,
     document: dict[str, Any],
     kwargs: dict[str, Any],
-) -> dict[str, str] | None:
+) -> tuple[dict[str, str] | None, dict[str, str] | None]:
     """Translate a data query's ``condition`` and ``columns`` to the wire format.
 
     The data route takes the backend condition shape (``{internal: {OP: ...}}``,
@@ -433,11 +434,11 @@ def _compile_query_filters(
     only have one key". The spec is compiled through the shared condition
     service and built against the view's display -> internal name and type
     maps, and ``columns`` given as display names are mapped the same way.
-    Returns the internal -> display map when metadata was fetched, so the row
-    relabelling can reuse it.
+    Returns the internal -> display map and the display -> type map when
+    metadata was fetched, so the row relabelling and checks can reuse them.
     """
     if CONDITION_KWARG not in document and "columns" not in document:
-        return None
+        return None, None
     metadata = _dataview_metadata(service, dataset_id, dataview_id, project_id)
     column_map: dict[str, str] = {}
     column_types: dict[str, str] = {}
@@ -454,7 +455,9 @@ def _compile_query_filters(
     columns = document.get("columns")
     if isinstance(columns, list):
         kwargs["columns"] = [column_map.get(c, c) if isinstance(c, str) else c for c in columns]
-    return {internal: display for display, internal in column_map.items()} if metadata else None
+    if not metadata:
+        return None, None
+    return {internal: display for display, internal in column_map.items()}, column_types
 
 
 def _relabel_columns(
@@ -610,11 +613,14 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
     """Fetch a dataview's data, waiting for the backing job to complete.
 
     The dataset is resolved from the view unless given as a trailing positional
-    or a ``dataset_id`` --input field.
+    or a ``dataset_id`` --input field. ``offset`` (1-based) reads a later page
+    through the query route. The result carries ``column_warnings`` when the
+    rows show a text column of numbers or dates, or blanks.
     """
     project_id = require_project(invocation)
     view_id = _require_int_positional_at(invocation, 0, "view id")
     document = invocation.load_input() or {}
+    limit = document.get("limit", _DATA_GET_DEFAULT_LIMIT)
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
         kwargs: dict[str, Any] = {
@@ -622,12 +628,165 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
             "dataview_id": view_id,
             "project_id": project_id,
         }
-        _forward_optional(document, kwargs, ("timeout", "poll_interval", "sequence"))
-        data = service.call(_symbol(invocation), **kwargs)
-        data = _relabel_columns(service, dataset_id, view_id, project_id, data)
-    return _trim_rows(data, document.get("limit", _DATA_GET_DEFAULT_LIMIT)), _meta(
-        invocation, auth.workspace_id, project_id
-    )
+        if document.get("offset") is not None:
+            kwargs["offset"] = int(document["offset"])
+            kwargs["limit"] = int(limit) if int(limit) > 0 else 400
+            _forward_optional(document, kwargs, ("sequence",))
+            data = service.call(_QUERY_DATA_SYMBOL, **kwargs)
+        else:
+            _forward_optional(document, kwargs, ("timeout", "poll_interval", "sequence"))
+            data = service.call(_symbol(invocation), **kwargs)
+        data = _relabel_and_check(service, dataset_id, view_id, project_id, data)
+    return _trim_rows(data, limit), _meta(invocation, auth.workspace_id, project_id)
+
+
+_QUERY_DATA_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.query_data"
+
+_DATA_PAGE_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.get_data"
+_MAX_UNMATCHED_KEYS = 5
+
+
+def join_snapshot(
+    service: Any, dataset_id: int, dataview_id: int, project_id: int | None
+) -> dict[str, Any]:
+    """Row count, columns and the first data page of a view (best effort)."""
+    snapshot: dict[str, Any] = {"row_count": None, "columns": {}, "rows": []}
+    try:
+        info = apply_column_renames(
+            service.call(
+                _DATAVIEW_GET_SYMBOL,
+                dataset_id=dataset_id,
+                dataview_id=dataview_id,
+                project_id=project_id,
+            )
+        )
+        if isinstance(info, dict):
+            snapshot["row_count"] = info.get("row_count")
+            snapshot["columns"] = {
+                c.get(_INTERNAL_NAME_KEY): c.get(_DISPLAY_NAME_KEY)
+                for c in info.get(_METADATA_KEY) or []
+                if isinstance(c, dict)
+            }
+            page = service.call(
+                _DATA_PAGE_SYMBOL,
+                dataset_id=dataset_id,
+                dataview_id=dataview_id,
+                project_id=project_id,
+            )
+            page = _relabel_columns(
+                service, dataset_id, dataview_id, project_id, page, snapshot["columns"]
+            )
+            rows = page.get(_ROWS_KEY) if isinstance(page, dict) else None
+            snapshot["rows"] = [r for r in rows or [] if isinstance(r, dict)]
+    except Exception:  # noqa: BLE001 -- the check is advice; the join already ran
+        return snapshot
+    return snapshot
+
+
+def with_join_check(data: Any, before: Any, after: dict[str, Any], document: dict[str, Any]) -> Any:
+    """Add ``join_check`` (row counts, columns added, match rate) to a join result.
+
+    ``unmatched_rows`` counts rows where every added column is blank: for a
+    LEFT join these are rows whose key found no match in the other view.
+    """
+    if not isinstance(data, dict) or not isinstance(before, dict):
+        return data
+    added = [
+        name
+        for internal, name in after.get("columns", {}).items()
+        if internal not in before.get("columns", {}) and isinstance(name, str)
+    ]
+    rows = after.get("rows") or []
+    check: dict[str, Any] = {
+        "rows_before": before.get("row_count"),
+        "rows_after": after.get("row_count"),
+        "columns_added": added,
+        "rows_checked": len(rows),
+    }
+    notes: list[str] = []
+    on = document.get("on")
+    left_key = None
+    if isinstance(on, list) and on and isinstance(on[0], dict):
+        left_key = on[0].get("left")
+    if added and rows:
+        unmatched = [r for r in rows if all(r.get(c) in (None, "") for c in added)]
+        check["unmatched_rows"] = len(unmatched)
+        check["match_rate"] = round((len(rows) - len(unmatched)) / len(rows), 3)
+        if unmatched:
+            keys = sorted({str(r.get(left_key)) for r in unmatched if left_key in r})
+            check["unmatched_keys"] = keys[:_MAX_UNMATCHED_KEYS]
+            notes.append(
+                f"{len(unmatched)} of {len(rows)} rows found no match. If that is more "
+                "than a few, compare the key columns in both views (type, case, "
+                "padding) before you build on this; otherwise say so in your report."
+            )
+    before_n, after_n = check["rows_before"], check["rows_after"]
+    if isinstance(before_n, int) and isinstance(after_n, int):
+        if after_n > before_n:
+            notes.append(
+                f"The join added {after_n - before_n} rows: a key repeats in the other "
+                "view, so matching rows repeat. Totals over this view count them twice; "
+                "use view transform lookup for one value per key."
+            )
+        elif after_n < before_n:
+            notes.append(
+                f"{before_n - after_n} rows had no match and were dropped "
+                "(an INNER join keeps matched rows only)."
+            )
+    if isinstance(after_n, int) and len(rows) < after_n:
+        notes.append(f"Match rate is from the first {len(rows)} rows of {after_n}.")
+    if notes:
+        check["notes"] = notes
+    return {**data, "join_check": check}
+
+
+def _column_profile(
+    service: Any, dataset_id: int, dataview_id: int, project_id: int | None
+) -> tuple[dict[str, str], dict[str, str]]:
+    """One metadata read: internal-to-display names, and display name to type."""
+    mapping: dict[str, str] = {}
+    types: dict[str, str] = {}
+    for column in _dataview_metadata(service, dataset_id, dataview_id, project_id):
+        internal = column.get(_INTERNAL_NAME_KEY)
+        display = column.get(_DISPLAY_NAME_KEY)
+        if isinstance(internal, str) and isinstance(display, str):
+            mapping[internal] = display
+            types[display] = str(column.get("type") or "")
+    return mapping, types
+
+
+def _relabel_and_check(
+    service: Any,
+    dataset_id: int,
+    view_id: int,
+    project_id: int | None,
+    data: Any,
+    mapping: dict[str, str] | None = None,
+    types: dict[str, str] | None = None,
+) -> Any:
+    """Relabel a data page to display names and add ``column_warnings``.
+
+    The metadata read happens only when the page has rows and the caller has
+    not read it already (one read serves both the names and the types).
+    """
+    rows = data.get(_ROWS_KEY) if isinstance(data, dict) else None
+    if not isinstance(rows, list) or not rows:
+        return _relabel_columns(service, dataset_id, view_id, project_id, data, mapping)
+    if mapping is None or types is None:
+        mapping, types = _column_profile(service, dataset_id, view_id, project_id)
+    data = _relabel_columns(service, dataset_id, view_id, project_id, data, mapping)
+    return _with_column_warnings(data, types, view_id)
+
+
+def _with_column_warnings(data: Any, types: dict[str, str], view_id: int) -> Any:
+    """Add ``column_warnings`` for the rows of a data page (never fatal)."""
+    if not isinstance(data, dict) or not isinstance(data.get(_ROWS_KEY), list) or not types:
+        return data
+    try:
+        warnings = column_warnings(data[_ROWS_KEY], types, view_id)
+    except Exception:  # noqa: BLE001 -- a presentation aid must not fail the read
+        return data
+    return {**data, "column_warnings": warnings} if warnings else data
 
 
 #: Rows a plain ``view data get`` returns unless ``limit`` says otherwise.
@@ -677,9 +836,11 @@ def view_data_query(invocation: Invocation) -> HandlerResult:
             "project_id": project_id,
         }
         _forward_optional(document, kwargs, ("sequence", "offset", "limit", "sort"))
-        mapping = _compile_query_filters(service, dataset_id, view_id, project_id, document, kwargs)
+        mapping, types = _compile_query_filters(
+            service, dataset_id, view_id, project_id, document, kwargs
+        )
         data = service.call(_symbol(invocation), **kwargs)
-        data = _relabel_columns(service, dataset_id, view_id, project_id, data, mapping)
+        data = _relabel_and_check(service, dataset_id, view_id, project_id, data, mapping, types)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

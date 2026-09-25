@@ -405,6 +405,70 @@ def test_data_get_uses_renamed_column_names(fake_service: FakeMammothService) ->
     assert data["data"] == [{"store": "A", "Revenue": "10"}]
 
 
+def test_data_get_offset_reads_a_later_page_through_the_query_route(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {
+        "metadata": [{"internal_name": "column_1", "display_name": "n", "type": "NUMERIC"}]
+    }
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.query_data"] = {
+        "data": [{"column_1": 36}, {"column_1": 37}]
+    }
+    doc = tmp_path / "in.json"
+    doc.write_text('{"offset": 36, "limit": 2}', encoding="utf-8")
+    data, _ = view_cmd.view_data_get(
+        _inv("view.data.get", project=180, extra_args=["7", "9"], input_file=str(doc))
+    )
+    query = [c for c in fake_service.call_log if c[0].endswith("query_data")]
+    assert query == [
+        (
+            "mammoth.api.dataviews.DataviewsAPI.query_data",
+            {"dataset_id": 9, "dataview_id": 7, "project_id": 180, "offset": 36, "limit": 2},
+        )
+    ]
+    assert data["data"] == [{"n": 36}, {"n": 37}]
+
+
+def test_data_get_adds_column_warnings(fake_service: FakeMammothService) -> None:
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {
+        "metadata": [{"internal_name": "column_1", "display_name": "price", "type": "TEXT"}]
+    }
+    fake_service.responses[_DATA_GET] = {
+        "data": [{"column_1": v} for v in ("1.5", "2", "3", "4", "N/A")]
+    }
+    data, _ = view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
+    assert [w["issue"] for w in data["column_warnings"]] == ["numbers_stored_as_text"]
+    assert "convert-type 7" in data["column_warnings"][0]["fix"]
+
+
+def test_join_check_reports_match_rate_and_unmatched_keys() -> None:
+    before = {"row_count": 40, "columns": {"column_1": "cust_ref"}, "rows": []}
+    after = {
+        "row_count": 40,
+        "columns": {"column_1": "cust_ref", "column_9": "name"},
+        "rows": [{"cust_ref": "C1", "name": "Acme"}, {"cust_ref": "C99", "name": None}],
+    }
+    doc = {"on": [{"left": "cust_ref", "right": "id"}]}
+    check = view_cmd.with_join_check({"status": "done"}, before, after, doc)["join_check"]
+    assert check["columns_added"] == ["name"]
+    assert (check["unmatched_rows"], check["match_rate"]) == (1, 0.5)
+    assert check["unmatched_keys"] == ["C99"]
+    assert any("found no match" in n for n in check["notes"])
+    assert any("first 2 rows of 40" in n for n in check["notes"])
+
+
+def test_join_check_flags_repeated_and_dropped_rows() -> None:
+    cols = {"column_1": "k"}
+    grew = view_cmd.with_join_check(
+        {}, {"row_count": 10, "columns": cols}, {"row_count": 14, "columns": cols}, {}
+    )["join_check"]
+    assert any("added 4 rows" in n for n in grew["notes"])
+    shrank = view_cmd.with_join_check(
+        {}, {"row_count": 10, "columns": cols}, {"row_count": 7, "columns": cols}, {}
+    )["join_check"]
+    assert any("3 rows had no match and were dropped" in n for n in shrank["notes"])
+
+
 def test_data_get_trims_rows_to_the_limit(fake_service: FakeMammothService, tmp_path: Path) -> None:
     fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {
         "metadata": [{"internal_name": "column_1", "display_name": "n"}]

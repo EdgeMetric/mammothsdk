@@ -186,7 +186,7 @@ def test_installed_wheel_runs(wheelhouse: Path, tmp_path: Path) -> None:
     task_start_text = task_start.read_text(encoding="utf-8")
     assert "mammoth skill show" in task_start_text
     assert "mammoth capability list" in task_start_text
-    assert "pip install --upgrade mammoth-cli" in task_start_text
+    assert "pip install --no-cache-dir --upgrade mammoth-cli" in task_start_text
     assert "mammoth-cli==X.Y.Z" in task_start_text
     assert "do not pipe a remote script to a shell" in task_start_text
     assert "view.transform.filter" in task_start_text
