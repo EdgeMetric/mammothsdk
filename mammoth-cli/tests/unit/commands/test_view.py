@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -1663,10 +1664,12 @@ def test_task_add_rejects_a_task_that_failed_at_run_time(
     while ``has_error`` stays false and ``pipeline_state`` reads ready. Only
     the task's own ``transform_status`` (``__full`` fields) shows it.
     """
+    long_ago = (datetime.now(UTC) - timedelta(hours=1)).isoformat()
+    just_now = datetime.now(UTC).isoformat()
     fake_service.responses[_TASK_LIST] = {
         "tasks": [
-            {"id": 3, "sequence": 1, "transform_status": "DONE"},
-            {"id": 9, "sequence": 2, "transform_status": "ERROR"},
+            {"id": 3, "sequence": 1, "created_at": long_ago, "transform_status": "DONE"},
+            {"id": 9, "sequence": 2, "created_at": just_now, "transform_status": "ERROR"},
         ]
     }
     doc = _doc(tmp_path, {"task_spec": {"kind": "gen_ai"}})
@@ -1676,13 +1679,60 @@ def test_task_add_rejects_a_task_that_failed_at_run_time(
     assert excinfo.value.details["task_id"] == 9
     assert excinfo.value.details["transform_status"] == "ERROR"
     assert "mammoth view task get 7 9" in excinfo.value.recovery_commands
+    # The API does not expose the failure reason -- do not claim it does.
+    assert excinfo.value.hint is not None
+    assert "does not expose" in excinfo.value.hint
+    assert "AI quota" in excinfo.value.hint
+
+
+def test_task_add_does_not_reject_a_pipeline_with_a_pre_existing_error_on_a_later_step(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A step already in ERROR before this call (the pipeline's last step,
+    by sequence) must not fail every later add just because it sorts last.
+    """
+    long_ago = (datetime.now(UTC) - timedelta(hours=1)).isoformat()
+    just_now = datetime.now(UTC).isoformat()
+    fake_service.responses[_TASK_LIST] = {
+        "tasks": [
+            {"id": 9, "sequence": 3, "created_at": just_now, "transform_status": "DONE"},
+            {"id": 2, "sequence": 5, "created_at": long_ago, "transform_status": "ERROR"},
+        ]
+    }
+    doc = _doc(tmp_path, {"task_spec": {"kind": "filter"}})
+    view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
+
+
+def test_task_add_checks_the_task_this_call_created_not_the_last_step(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A task inserted mid-pipeline is not the highest-sequence task."""
+    long_ago = (datetime.now(UTC) - timedelta(hours=1)).isoformat()
+    just_now = datetime.now(UTC).isoformat()
+    fake_service.responses[_TASK_LIST] = {
+        "tasks": [
+            {"id": 9, "sequence": 1, "created_at": just_now, "transform_status": "ERROR"},
+            {"id": 3, "sequence": 2, "created_at": long_ago, "transform_status": "DONE"},
+        ]
+    }
+    doc = _doc(tmp_path, {"task_spec": {"kind": "gen_ai"}})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
+    assert excinfo.value.details["task_id"] == 9
 
 
 def test_task_add_accepts_a_task_that_finished_cleanly(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     fake_service.responses[_TASK_LIST] = {
-        "tasks": [{"id": 3, "sequence": 1, "transform_status": "DONE"}]
+        "tasks": [
+            {
+                "id": 3,
+                "sequence": 1,
+                "created_at": datetime.now(UTC).isoformat(),
+                "transform_status": "DONE",
+            }
+        ]
     }
     doc = _doc(tmp_path, {"task_spec": {"kind": "filter"}})
     view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
