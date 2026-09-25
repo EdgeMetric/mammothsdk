@@ -252,6 +252,29 @@ def test_export_destination_natural_spelling_ranks_it_first(command_id: str, que
     assert matches[0] == command_id, f"{query!r} -> {matches}, wanted {command_id} first"
 
 
+def test_invite_user_intent_ranks_workspace_user_add_first() -> None:
+    """T1-K-001: this query led an agent to support.workspace.user.add /
+    support.workspace.user.list (Mammoth-operator commands that act on
+    another workspace) instead of the caller's own workspace.user.add.
+    """
+    matches = [
+        item["command_id"]
+        for item in find_schemas("invite user to workspace and assign editor role")["matches"]
+    ]
+    assert matches, "no full match for the invite-user query"
+    assert matches[0] == "workspace.user.add", matches
+
+
+def test_support_family_ranks_below_any_non_support_match_and_is_labeled() -> None:
+    matches = find_schemas("workspace user")["matches"]
+    is_support = [m["command_id"].startswith("support.") for m in matches]
+    assert any(is_support) and not all(is_support), "expected a mix of support and non-support"
+    # Every support.* result must sit after every non-support result.
+    assert is_support == sorted(is_support)
+    assert all(m.get("operator_only") for m, support in zip(matches, is_support) if support)
+    assert all("operator_only" not in m for m, support in zip(matches, is_support) if not support)
+
+
 def test_brief_schema_keeps_nested_shape_for_non_scalar_fields() -> None:
     """Brief mode stripped every field's schema, even a nested object/array,
     leaving only a bare type name (e.g. 'DateDelta') to guess the shape of.
