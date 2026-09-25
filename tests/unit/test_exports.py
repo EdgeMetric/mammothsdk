@@ -731,15 +731,19 @@ class TestToDataset:
             return MagicMock()  # non-JobResponse → wait_for_job skipped
 
         executed_write = MagicMock()
-        executed_write.id = 1
+        executed_write.id = 5
         executed_write.status = ExportStatus.EXECUTED
         executed_write.target_properties = {"TARGET_DS_ID": 77}
         write_page = MagicMock()
         write_page.exports = [executed_write]
+        empty_page = MagicMock()
+        empty_page.exports = []
 
         export_view._client.exports = MagicMock()
         export_view._client.exports.create = fake_create
-        export_view._client.exports.list.return_value = write_page
+        # First call is the pre-submit floor (nothing existed yet); the poll
+        # after submit then sees this call's own export.
+        export_view._client.exports.list.side_effect = [empty_page, write_page]
 
         new_id = export_view.export.to_dataset(
             "Filtered DS", target_ds_id=77, condition=Condition("col_a", Operator.EQ, "x")
@@ -844,6 +848,7 @@ class TestRunInternalDatasetExportWaitsForExistingWrite:
         export_view._client.exports = MagicMock()
         export_view._client.exports.create.return_value = MagicMock()  # non-JobResponse
         export_view._client.exports.list.side_effect = [
+            self._page([]),  # pre-submit floor: nothing existed yet
             self._page([self._export(42, ExportStatus.EXECUTING, export_id=1)]),
             self._page([self._export(42, ExportStatus.EXECUTED, export_id=1)]),
         ]
@@ -852,7 +857,7 @@ class TestRunInternalDatasetExportWaitsForExistingWrite:
             fake_time.sleep.return_value = None
             result = export_view._run_internal_dataset_export(self._target_properties())
         assert result == 42
-        assert export_view._client.exports.list.call_count == 2
+        assert export_view._client.exports.list.call_count == 3  # floor + 2 polls
 
     def test_times_out_if_write_never_executes(self, export_view):
         export_view._client.exports = MagicMock()
@@ -887,12 +892,47 @@ class TestRunInternalDatasetExportWaitsForExistingWrite:
                 operation="create_export",
             )
         )
-        export_view._client.exports.list.return_value = self._page(
-            [self._export(42, ExportStatus.EXECUTED, export_id=1)]
-        )
+        export_view._client.exports.list.side_effect = [
+            self._page([]),  # pre-submit floor: nothing existed yet
+            self._page([self._export(42, ExportStatus.EXECUTED, export_id=1)]),
+        ]
         result = export_view._run_internal_dataset_export(self._target_properties())
         export_view._client.jobs.wait_for_job.assert_called_once_with(9001, None)
         assert result == 42
+
+    def test_target_ds_id_matches_when_returned_as_a_string(self, export_view):
+        """The wire value can come back as a string; comparison must not
+        fail closed by comparing it to the int ``target_ds_id`` directly.
+        """
+        export_view._client.exports = MagicMock()
+        export_view._client.exports.create.return_value = MagicMock()
+        export_view._client.exports.list.side_effect = [
+            self._page([]),  # pre-submit floor: nothing existed yet
+            self._page([self._export("42", ExportStatus.EXECUTED, export_id=5)]),
+        ]
+        result = export_view._run_internal_dataset_export(self._target_properties(42))
+        assert result == 42
+
+    def test_ignores_an_earlier_already_executed_append_to_the_same_target(self, export_view):
+        """ "The most recent EXECUTED export to the target" must not match an
+        EARLIER append to the same dataset that is already EXECUTED while
+        this call's own export has not yet been listed -- the original race.
+        """
+        export_view._client.exports = MagicMock()
+        export_view._client.exports.create.return_value = MagicMock()
+        earlier_append = self._export(42, ExportStatus.EXECUTED, export_id=3)
+        this_calls_export = self._export(42, ExportStatus.EXECUTED, export_id=8)
+        export_view._client.exports.list.side_effect = [
+            self._page([earlier_append]),  # pre-submit floor = 3
+            self._page([earlier_append]),  # first poll: only the earlier one listed yet
+            self._page([earlier_append, this_calls_export]),  # second poll: the new one appears
+        ]
+        with patch("mammoth.view.time") as fake_time:
+            fake_time.monotonic.side_effect = [0.0, 0.5, 1.0]
+            fake_time.sleep.return_value = None
+            result = export_view._run_internal_dataset_export(self._target_properties())
+        assert result == 42
+        assert export_view._client.exports.list.call_count == 3  # floor + 2 polls
 
 
 # ── CSV export ────────────────────────────────────────────────
