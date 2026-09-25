@@ -805,7 +805,9 @@ def _trim_rows(data: Any, limit: Any) -> Any:
         return data
     try:
         cap = int(limit)
-    except (TypeError, ValueError):
+    except TypeError:
+        cap = _DATA_GET_DEFAULT_LIMIT
+    except ValueError:
         cap = _DATA_GET_DEFAULT_LIMIT
     rows = data[_ROWS_KEY]
     total = len(rows)
@@ -2040,12 +2042,16 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
         )
     for field in required:
         _require_field(document, field)
-    # Every typed destination is an external effect except internal dataset
-    # creation, which is still a mutation. Requiring --yes keeps all helpers
-    # promptless and makes the side effect explicit for agents.
+    # The manifest is the single source of truth for each destination's
+    # confirmation policy (dataset export has no external effect and needs
+    # none; every other destination is external_effect/yes_always). Deriving
+    # it here, rather than hardcoding one policy for every route, keeps the
+    # in-app agent's confirmation card (which reads the manifest) in sync
+    # with what the CLI actually enforces.
+    export_record = command_by_id(invocation.command_id) or {}
     enforce_confirmation(
         invocation,
-        policy=POLICY_YES_ALWAYS,
+        policy=str(export_record.get("confirmation") or POLICY_YES_ALWAYS),
         action=f"export view {dataview_id} via {invocation.command_id.rsplit('.', 1)[-1]}",
     )
     kwargs = dict(document)
@@ -2062,8 +2068,10 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             "dataset_id": data,
             "project_id": int(target_project) if target_project is not None else project_id,
             "source_view_id": dataview_id,
-            "next": f"mammoth view list {data}"
-            + (f" --project {int(target_project)}" if target_project is not None else ""),
+            "next": (
+                f"mammoth view list {data}"
+                + (f" --project {int(target_project)}" if target_project is not None else "")
+            ),
         }
     return data, _meta(invocation, auth.workspace_id, project_id)
 
