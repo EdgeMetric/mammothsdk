@@ -13,6 +13,7 @@ import json
 import shlex
 from pathlib import Path
 
+import pytest
 import yaml
 
 from mammoth_cli.commands.schema import brief_schema, find_schemas, get_schema, runnable_example
@@ -198,6 +199,57 @@ def test_agent_transform_language_finds_typed_routes() -> None:
     assert "view.transform.join" in {
         item["command_id"] for item in find_schemas("join blend")["matches"]
     }
+
+
+_EXPORT_DESTINATION_NATURAL_QUERIES = {
+    "view.export.azure-blob": "export to azure blob storage",
+    "view.export.bigquery": "export to big query",
+    "view.export.csv": "export to csv file",
+    "view.export.dataset": "copy rows into another dataset",
+    "view.export.elasticsearch": "export to elastic search",
+    "view.export.email": "email the export",
+    "view.export.ftp": "export via ftp",
+    "view.export.managed-s3": "export to s3 bucket",
+    "view.export.mssql": "export to sql server",
+    "view.export.mysql": "export to mysql database",
+    "view.export.onedrive": "export to one drive",
+    "view.export.postgres": "export to postgres database",
+    "view.export.powerbi": "publish to power bi workspace",
+    "view.export.publish-db": "publish live database connection",
+    "view.export.publish-db-update": "refresh the live database connection",
+    "view.export.redshift": "export to redshift warehouse",
+    "view.export.rest": "export data to a rest endpoint",
+    "view.export.sftp": "export via sftp",
+    "view.export.sharepoint": "export to share point",
+    "view.export.tableau": "export to tableau server",
+}
+
+
+def test_every_export_destination_is_covered_by_this_test() -> None:
+    """Guards the fixture itself: a new view.export.* destination command
+    must get a natural-spelling case here, not silently go untested."""
+    destinations = {
+        item["command_id"]
+        for item in find_schemas("export")["matches"]
+        if item["command_id"].startswith("view.export.")
+        and item["command_id"].split(".")[-1] not in {"create", "get", "list", "update", "delete"}
+    }
+    assert destinations <= set(_EXPORT_DESTINATION_NATURAL_QUERIES)
+
+
+@pytest.mark.parametrize(
+    ("command_id", "query"), sorted(_EXPORT_DESTINATION_NATURAL_QUERIES.items())
+)
+def test_export_destination_natural_spelling_ranks_it_first(command_id: str, query: str) -> None:
+    """T1-H-005: 'Power BI', 'publish to Power BI workspace' and 'export data
+    to BI' all returned no match, despite view.export.powerbi existing.  Every
+    typed export destination must be reachable by how a user actually names
+    it, not only by Mammoth's own (sometimes compound, unhyphenated) route
+    spelling.
+    """
+    matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+    assert matches, f"no full match for {query!r} (wanted {command_id})"
+    assert matches[0] == command_id, f"{query!r} -> {matches}, wanted {command_id} first"
 
 
 def test_brief_schema_keeps_nested_shape_for_non_scalar_fields() -> None:
