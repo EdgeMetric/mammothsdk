@@ -1,5 +1,76 @@
 # CLI release provenance
 
+## 2.0.46
+
+Automation/scheduling gap sweep, following up the fixture-lifecycle sweep of
+2026-09-19 (`docs/capability-evidence/fixture-sweep-20260919/`).
+
+- **Fixed (CLI/SDK, `mammoth-io` 0.7.19)**: `automation update` with
+  `{"patch": [{"op": "replace", "path": "status", "value": "resume"}]}` sent
+  `value: "resume"` to the backend verbatim. The backend's wire vocabulary
+  for that path is `"suspend"`/`"restore"`
+  (mvc-service `apiv2/apiv2/automations/schema.py` `AutomationStatusValueEnum`,
+  enforced by `AutomationPatchData.validate_data`), so `"resume"` was
+  rejected with `invalid_status_to_update` (400) and a suspended automation
+  could never be re-enabled through the CLI. `AutomationsAPI.update` now
+  translates its own public `"resume"` value to `"restore"` on the wire; the
+  CLI-facing vocabulary (`"suspend"`/`"resume"`, matching `schedule`'s
+  `"pause"`/`"resume"`) is unchanged. See
+  `tests/unit/test_automations.py::TestUpdate::test_update_status_resume_sends_restore_on_the_wire`.
+  Requires `mammoth-io >= 0.7.19`.
+- **New test coverage**: `tests/unit/test_automations.py` and
+  `tests/unit/test_schedules.py` (29 tests) — the SDK's `AutomationsAPI` and
+  `SchedulesAPI` clients had zero direct unit coverage before this release;
+  every other case (create with all four task types plus `at_specific_time`
+  recurrence, get, list, delete, trash/restore, schedule create/get/update/
+  delete) already matched the backend contract and needed no code change.
+- **Confirmed backend defect, not fixed here (mvc-service is read-only for
+  this repo)**: `automation get AUTOMATION_ID` on an automation
+  `automation create` just returned can come back HTTP 500 with an empty
+  body, deterministically (three retries, seconds apart — not an
+  eventual-consistency race; same finding as the 2026-09-19 sweep).
+  Root-caused by reading mvc-service (no live re-run available from this
+  environment): the leading candidate is
+  `apiv2/apiv2/automations/utils.py` `get_automation_tasks()` line ~778,
+  `aut_task = automation_tasks[0]` indexed unconditionally before the loop
+  that would otherwise guard it — an unhandled `IndexError` for any
+  automation whose task lookup comes back empty matches the empty response
+  body (a normal `ClientError` returns a JSON envelope; this does not). A
+  second, related candidate in the same handler:
+  `apiv2/apiv2/automations/controller.py` `get_automation()` does
+  `automations[0]` on `Automation.get_filtered_list(...)` right after
+  `Automation.get_by_id()` confirmed the row exists — also unguarded. Full
+  trace: `docs/release-capability-matrix.json` `REL-181`. Guide caveat:
+  [scheduling recipe](../mammoth_cli/bundled_skill/mammoth-cli/references/recipes/scheduling.md).
+- **Confirmed backend limitation, documented (not a bug to fix)**:
+  `schedule list` (`GET .../schedules`) is unconditionally unimplemented —
+  every call returns HTTP 400, error code `5GENR011 NOT_IMPLEMENTED`
+  (`apiv2/apiv2/schedules/controller.py` `ScheduleController.list_schedules`
+  always raises `ClientError(not_implemented_error)`; its own docstring
+  says the schedule tables carry no workspace/project reference to list
+  by). The manifest's `known_restrictions` for `schedule.list` previously
+  said "may return 405" — corrected to the confirmed, unconditional 400.
+  `schedule create` only ever accepts a `pull_cloud_data` work item
+  (`apiv2/apiv2/schedules/helper.py` `ALLOWED_TASK_RESOURCE_MAP`) — this
+  already matched the CLI's `WorkItemName` enum, so no CLI change was
+  needed; documented explicitly in the new scheduling recipe so an agent
+  does not try to fit `run_data_retrieval`/`append_data`/`send_an_alert`/
+  `pull_cloud_files` into a `schedule create` body.
+- New guide: [recurring work: automations and
+  schedules](../mammoth_cli/bundled_skill/mammoth-cli/references/recipes/scheduling.md)
+  — the full create/get/update (disable/enable)/delete recipe for both
+  resources, with the `automation get` caveat above inline.
+- **UNVERIFIED live**: this sweep could not run against koyal (credentials
+  unavailable in the environment that did this work — `MMUSER`/`MMPASS` were
+  not present at `~/.zshrc` or anywhere else on the box) or reproduce the
+  backend defects with a fresh live call (same reason, plus the box's
+  locally-installed mvc-service checkout used for a from-source repro
+  attempt is a different, unrelated clone with a pre-existing, unrelated
+  import-time error). All findings above are from reading mvc-service
+  source at `origin/release` and the SDK's own unit tests; the fix is
+  covered by a unit test that fails without it, but has not been exercised
+  against a live server.
+
 ## 2.0.45
 
 From the first live use of the in-product agent (mvc-service, CLI surface).

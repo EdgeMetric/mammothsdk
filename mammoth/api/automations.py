@@ -66,6 +66,16 @@ ERR_PATCH_DETAILS_EMPTY = (
     "op='replace', path='details' value must include at least one of: "
     "name, description, tasks, conditions."
 )
+# The backend's wire vocabulary for `path=status` is "suspend"/"restore"
+# (apiv2/apiv2/automations/schema.py AutomationStatusValueEnum, enforced by
+# AutomationPatchData.validate_data and executed in
+# apiv2/apiv2/automations/utils.py suspend_or_resume_automation). The SDK
+# keeps "resume" as its own public value -- matching ScheduleStatus's
+# "pause"/"resume" vocabulary for a consistent CLI surface -- and translates
+# it to "restore" when building the request body. Sending "resume" verbatim
+# is rejected by the backend with invalid_status_to_update (400).
+_AUTOMATION_STATUS_WIRE_VALUE = {"suspend": "suspend", "resume": "restore"}
+
 ERR_SCHEDULE_ID_POSITIVE = "`schedule_id` must be a positive integer, got {0}."
 ERR_SCHEDULE_PATCH_EMPTY = "`patch` must be a non-empty list of schedule patch operations."
 ERR_SCHEDULE_PATCH_OP = "Only op='replace' is implemented for schedule patches, got {0!r}."
@@ -387,7 +397,8 @@ class AutomationsAPI:
 
                 * ``op=command, path=run`` — trigger the automation immediately.
                 * ``op=replace, path=status`` — suspend or resume; ``value``
-                  must be ``"suspend"`` or ``"resume"``.
+                  must be ``"suspend"`` or ``"resume"``. ``"resume"`` is sent
+                  to the backend as ``"restore"`` (its actual wire value).
                 * ``op=replace, path=details`` — update fields; ``value`` must
                   be a :class:`~mammoth.models.automations.PatchAutomationDetails`
                   with at least one of name/description/tasks/conditions set.
@@ -412,7 +423,7 @@ class AutomationsAPI:
             if item.op is AutomationPatchOp.COMMAND:
                 op_dict["value"] = {}
             elif item.path is AutomationPatchPath.STATUS:
-                op_dict["value"] = item.value
+                op_dict["value"] = _AUTOMATION_STATUS_WIRE_VALUE.get(item.value, item.value)
             else:
                 assert isinstance(item.value, PatchAutomationDetails)
                 op_dict["value"] = item.value.model_dump(mode="json", exclude_unset=True)

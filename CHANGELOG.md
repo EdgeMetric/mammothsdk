@@ -4,6 +4,19 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.19]
+
+### Fixed
+
+- `AutomationsAPI.update` sent `path="status", value="resume"` to the backend
+  verbatim. The backend's wire vocabulary for that path is `"suspend"` /
+  `"restore"` (`apiv2/apiv2/automations/schema.py` `AutomationStatusValueEnum`
+  in mvc-service), so a `"resume"` patch was rejected with
+  `invalid_status_to_update` (400) and an automation could never be
+  re-enabled once suspended. The SDK keeps `"resume"` as its own public
+  value — consistent with `ScheduleStatus`'s `"pause"`/`"resume"` — and now
+  translates it to `"restore"` on the wire.
+
 ## [0.7.18]
 
 ### Fixed
