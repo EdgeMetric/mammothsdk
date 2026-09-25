@@ -26,7 +26,9 @@ The two-file dashboard eval (`evals/two-files-dashboard`, three cold Haiku
 runs on 2.0.41) scored 9, 8 and 6 of 10. Every run joined on the key it
 found in the data, reported the match rate, and added revenue before the
 dashboard. The open gap is blanks: each run left one blank column
-undecided. See `docs/release-status.md` (2.0.42).
+undecided. 2.0.43 adds `mammoth project check`, which lists every open
+finding (blanks included) before the report; it has not been through the
+eval yet. See `docs/release-status.md` (2.0.42, 2.0.43).
 
 A second live run (2026-09-19, `docs/capability-evidence/ilg-sim-20260919/`)
 replayed a real customer rebuild brief on synthetic data. It proved:
