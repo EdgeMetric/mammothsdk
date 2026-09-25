@@ -41,6 +41,7 @@ import datetime
 import random
 import string
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -91,6 +92,13 @@ _K = ExportTargetKey  # short alias for the export target_properties wire keys
 ERR_EXPORT_DATASET_UNRESOLVED = (
     "Export for dataset {name!r} completed but its dataset id did not resolve "
     "before the timeout; the materialisation may still be in progress."
+)
+
+# Raised when a write into an EXISTING dataset (APPEND_TO_DS/REPLACE_IN_DS)
+# never reaches EXECUTED in time.
+ERR_EXPORT_DATASET_WRITE_UNRESOLVED = (
+    "Export into dataset {dataset_id} was submitted but did not reach EXECUTED "
+    "before the timeout; the write may still be in progress."
 )
 
 # Export-method argument validation (raised before any API call).
@@ -402,17 +410,21 @@ class View(
         payload).
 
         The submit job returns with an empty ``response`` *before* the dataset
-        is created (the materialisation is a fire-and-forget downstream action),
-        so the new id is resolved from the export trigger once it reaches
-        ``EXECUTED``. When writing into a known existing dataset
-        (``TARGET_DS_ID`` set) that id is returned directly.
+        is created or written to (the materialisation is a fire-and-forget
+        downstream action), so this always waits for the export trigger to
+        reach ``EXECUTED`` before returning — for a new dataset (``DS_NAME``)
+        that also resolves its id; for a known existing dataset
+        (``TARGET_DS_ID`` set, e.g. ``APPEND_TO_DS``/``REPLACE_IN_DS``) the id
+        is already known, but the caller still needs the write confirmed
+        before it reads the target back (a row count immediately after this
+        call must see the new rows).
 
         Returns:
             The id of the dataset the export wrote to (new or existing).
 
         Raises:
-            MammothExportError: If a new dataset's id does not resolve within
-                the timeout.
+            MammothExportError: If the write does not reach ``EXECUTED``
+                within the timeout.
         """
         spec = AddExportSpec(
             DATAVIEW_ID=self.id,
@@ -431,8 +443,30 @@ class View(
 
         existing_id = target_properties.get("TARGET_DS_ID")
         if existing_id is not None:
+            self._wait_for_dataset_export_write(int(existing_id), timeout)
             return int(existing_id)
         return self._resolve_exported_dataset_id(target_properties["DS_NAME"], timeout)
+
+    def _poll_internal_dataset_exports(
+        self, match: Callable[[Any], bool], timeout: int | None
+    ) -> Any:
+        """Poll this dataview's ``internal_dataset`` export triggers for the
+        most recent one satisfying *match* until it reaches ``EXECUTED``.
+
+        Returns the matched, executed export, or None if the timeout elapsed
+        without one.
+        """
+        deadline = time.monotonic() + (timeout or getattr(self._client, "job_timeout", 60) or 60)
+        poll_interval = 2.0
+        while time.monotonic() < deadline:
+            page = self._client.exports.list(self.id, handler_type=HandlerType.INTERNAL_DATASET)
+            matches = [e for e in page.exports if match(e)]
+            if matches:
+                export = max(matches, key=lambda e: e.id or 0)
+                if export.status == ExportStatus.EXECUTED:
+                    return export
+            time.sleep(poll_interval)
+        return None
 
     def _resolve_exported_dataset_id(self, dataset_name: str, timeout: int | None = None) -> int:
         """Resolve the id of the dataset a new internal-dataset export created.
@@ -441,25 +475,33 @@ class View(
         named *dataset_name* (the most recent, by id) until it reaches
         ``EXECUTED`` and exposes ``TARGET_DS_ID``.
         """
-        deadline = time.monotonic() + (timeout or getattr(self._client, "job_timeout", 60) or 60)
-        poll_interval = 2.0
-        while time.monotonic() < deadline:
-            page = self._client.exports.list(self.id, handler_type=HandlerType.INTERNAL_DATASET)
-            matches = [
-                e
-                for e in page.exports
-                if (e.target_properties or {}).get("DS_NAME") == dataset_name
-            ]
-            if matches:
-                export = max(matches, key=lambda e: e.id or 0)
-                target_id = (export.target_properties or {}).get("TARGET_DS_ID")
-                if export.status == ExportStatus.EXECUTED and target_id is not None:
-                    return int(target_id)
-            time.sleep(poll_interval)
+        export = self._poll_internal_dataset_exports(
+            lambda e: (e.target_properties or {}).get("DS_NAME") == dataset_name, timeout
+        )
+        if export is not None:
+            target_id = (export.target_properties or {}).get("TARGET_DS_ID")
+            if target_id is not None:
+                return int(target_id)
         raise MammothExportError(
             ERR_EXPORT_DATASET_UNRESOLVED.format(name=dataset_name),
             {"dataset_name": dataset_name, "timeout": timeout},
         )
+
+    def _wait_for_dataset_export_write(self, target_ds_id: int, timeout: int | None = None) -> None:
+        """Block until the most recent write into *target_ds_id* reaches ``EXECUTED``.
+
+        Called after submitting an ``APPEND_TO_DS``/``REPLACE_IN_DS`` export,
+        so a caller reading the target dataset's row count right after this
+        returns sees the write's rows rather than racing it.
+        """
+        export = self._poll_internal_dataset_exports(
+            lambda e: (e.target_properties or {}).get("TARGET_DS_ID") == target_ds_id, timeout
+        )
+        if export is None:
+            raise MammothExportError(
+                ERR_EXPORT_DATASET_WRITE_UNRESOLVED.format(dataset_id=target_ds_id),
+                {"dataset_id": target_ds_id, "timeout": timeout},
+            )
 
     # ── Data Access ─────────────────────────────────────────────
 

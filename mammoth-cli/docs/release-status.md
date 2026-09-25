@@ -1,5 +1,45 @@
 # CLI release provenance
 
+## 2.0.50
+
+Four defects from a tier1 luna trace replay (koyal), all in `view export
+dataset` (`target_ds_id` / `save_as_mode APPEND_TO_DS` into an existing
+dataset) and its neighbors.
+
+- **Fixed (SDK, `mammoth-io` 0.7.22)**: `View.export.to_dataset` with
+  `target_ds_id` set (writing into an existing dataset) returned the id
+  immediately after the export job was accepted, without waiting for the
+  write to materialize — unlike the new-dataset path, which already polled
+  to `EXECUTED`. A read immediately after `to_dataset` could see stale data.
+  `mammoth/view.py`'s `_run_internal_dataset_export` now waits for the
+  matching `internal_dataset` export trigger to reach `EXECUTED` (or raises
+  a typed timeout error) before returning, on both paths.
+- **Fixed (CLI, `mammoth-cli` 2.0.50)**: `view export dataset` result now
+  reports the target dataset's `rows_after` (and, for `APPEND_TO_DS`,
+  `rows_before`), so an agent does not have to guess whether an append
+  landed or re-read the dataset separately to check.
+- **Fixed (CLI)**: `view export dataset` with `target_ds_id` equal to the
+  source view's own dataset now fails fast with `invalid_arguments` before
+  the request is sent, instead of writing a view into its own dataset.
+- **Fixed (CLI)**: `file upload --input '{"append_to_ds_id": N}'` with no
+  files previously reached the SDK and failed as an opaque `api_error`
+  ("ValueError"); it now fails as `missing_argument` naming `files`.
+- **Fixed (CLI)**: `view create DATASET --input '{"clone_from": VIEW}'` where
+  `VIEW` belongs to a different dataset previously reached the backend,
+  which accepts it and produces a broken view (no columns; every later data
+  read fails). The CLI now checks `clone_from`'s own dataset against the
+  target dataset first and fails with `invalid_arguments`.
+- **Fixed (guide/discoverability)**: `mammoth schema find "append rows from
+  one dataset into another dataset"` matched only `file.upload` (which needs
+  a local file), so a cold agent with both sources already in Mammoth could
+  conclude row-stacking was impossible. `view.export.dataset` now also
+  matches (the query's filler "one" was sinking the match; added to
+  `_DISCOVERY_STOPWORDS` alongside the existing "two"). `SKILL.md`'s goal
+  table and `references/about-mammoth.md` ("Union or append two views") now
+  mention `view export dataset` for stacking a view already in Mammoth, and
+  note that an append is a standing pipeline step: re-running the source
+  view appends again, it does not run once.
+
 ## 2.0.48
 
 Two defects found from an eval trace and a live task replay on koyal

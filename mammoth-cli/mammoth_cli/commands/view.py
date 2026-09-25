@@ -28,6 +28,7 @@ from mammoth.view import ViewExport
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
+    CODE_INVALID_ARGUMENTS,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
@@ -2056,24 +2057,64 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
     )
     kwargs = dict(document)
     kwargs.pop(_DATASET_ID_FIELD, None)
+    is_dataset_route = invocation.command_id == "view.export.dataset"
+    target_ds_id = kwargs.get("target_ds_id") if is_dataset_route else None
+    target_project = kwargs.get("target_project_id")
+    result_project_id = int(target_project) if target_project is not None else project_id
     with open_service(invocation) as (service, auth):
         if dataset_id is None:
             dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        if target_ds_id is not None and int(target_ds_id) == dataset_id:
+            raise CliError(
+                code=CODE_INVALID_ARGUMENTS,
+                message="target_ds_id equals the view's own dataset.",
+                exit_status=EXIT_USAGE,
+                hint=(
+                    "A view cannot write into its own dataset. Export to a new "
+                    "dataset name (omit target_ds_id), or target a different dataset."
+                ),
+                details={"dataset_id": dataset_id, "target_ds_id": int(target_ds_id)},
+            )
+        rows_before = None
+        if target_ds_id is not None and kwargs.get("save_as_mode") == "APPEND_TO_DS":
+            rows_before = _dataset_row_count(service, int(target_ds_id), result_project_id)
         data = service.call_view(dataview_id, method, dataset_id=dataset_id, **kwargs)
-    if invocation.command_id == "view.export.dataset" and isinstance(data, int):
-        # The SDK returns the bare id of the dataset written to; name it, and
-        # say which project it landed in, so the agent's next read is obvious.
-        target_project = kwargs.get("target_project_id")
-        data = {
-            "dataset_id": data,
-            "project_id": int(target_project) if target_project is not None else project_id,
-            "source_view_id": dataview_id,
-            "next": (
-                f"mammoth view list {data}"
-                + (f" --project {int(target_project)}" if target_project is not None else "")
-            ),
-        }
+        if is_dataset_route and isinstance(data, int):
+            # The SDK returns the bare id of the dataset written to; name it, and
+            # say which project it landed in, so the agent's next read is obvious.
+            data = {
+                "dataset_id": data,
+                "project_id": result_project_id,
+                "source_view_id": dataview_id,
+                "next": (
+                    f"mammoth view list {data}"
+                    + (f" --project {result_project_id}" if target_project is not None else "")
+                ),
+            }
+            rows_after = _dataset_row_count(service, data["dataset_id"], result_project_id)
+            if rows_after is not None:
+                data["rows_after"] = rows_after
+            if rows_before is not None:
+                data["rows_before"] = rows_before
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _dataset_row_count(service: Any, dataset_id: int, project_id: int | None) -> int | None:
+    """Best-effort row count for a dataset, read from its first view.
+
+    Row counts are exposed per-view, not per-dataset; this reads the first
+    dataview's ``row_count`` (mirrors ``upload_preview``). ``None`` on any
+    failure rather than failing the export result.
+    """
+    try:
+        listing = service.call(_DATAVIEW_LIST_SYMBOL, dataset_id=dataset_id, project_id=project_id)
+        views = listing.get("dataviews") if isinstance(listing, dict) else None
+        if not isinstance(views, list) or not views or not isinstance(views[0], dict):
+            return None
+        row_count = views[0].get("row_count")
+        return int(row_count) if row_count is not None else None
+    except Exception:  # noqa: BLE001 -- row count is advisory, never fails the export
+        return None
 
 
 _DATAVIEW_LIST_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.list"

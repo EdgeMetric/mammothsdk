@@ -218,6 +218,13 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         **({"files": list(invocation.extra_args)} if invocation.extra_args else {}),
     )
     _require_local_files(kwargs.get("files"))
+    if kwargs.get("append_to_ds_id") is not None and not kwargs.get("files"):
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="This command requires 'files' when append_to_ds_id is set.",
+            exit_status=EXIT_USAGE,
+            hint="Pass the file(s) as positional arguments or a 'files' input field.",
+        )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
         # The SDK waits for the upload job and returns the created dataset

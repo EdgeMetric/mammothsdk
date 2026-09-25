@@ -24,6 +24,7 @@ from collections.abc import Callable
 from typing import Any
 
 from mammoth_cli.commands.view import (
+    _FIND_DATASET_SYMBOL,
     BRIEF_VIEW_FIELDS,
     _dataview_metadata,
     _require_discovery_allowed,
@@ -35,6 +36,7 @@ from mammoth_cli.commands.view import (
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
+    CODE_INVALID_ARGUMENTS,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
@@ -499,9 +501,37 @@ def view_create(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input() or {}
     kwargs = bind_command_inputs(invocation.command_id, document, dataset_id=dataset_id)
     with open_service(invocation) as (service, auth):
+        clone_from = kwargs.get("clone_from")
+        if clone_from is not None:
+            _require_clone_from_same_dataset(service, int(clone_from), dataset_id)
         data = service.call(_symbol(invocation), **kwargs)
     # The SDK returns a rich ``View``; emit its dataview record like ``view get``.
     return _view_payload(data), _meta(invocation, auth.workspace_id)
+
+
+def _require_clone_from_same_dataset(service: Any, clone_from: int, dataset_id: int) -> None:
+    """Refuse ``clone_from`` when it is a view of a different dataset.
+
+    The backend accepts a cross-dataset clone and produces a broken view (no
+    columns; every later data read fails), so this is checked here before the
+    request is sent rather than surfaced by the server.
+    """
+    source_dataset_id = int(service.call(_FIND_DATASET_SYMBOL, dataview_id=clone_from))
+    if source_dataset_id != dataset_id:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message="clone_from must be a view of the same dataset.",
+            exit_status=EXIT_USAGE,
+            hint=(
+                f"View {clone_from} belongs to dataset {source_dataset_id}, not "
+                f"{dataset_id}. Create a plain view (omit clone_from) instead."
+            ),
+            details={
+                "clone_from": clone_from,
+                "source_dataset_id": source_dataset_id,
+                "dataset_id": dataset_id,
+            },
+        )
 
 
 def view_get(invocation: Invocation) -> HandlerResult:

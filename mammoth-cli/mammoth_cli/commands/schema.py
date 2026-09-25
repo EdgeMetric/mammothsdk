@@ -112,9 +112,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.filter": (
         "filter rows keep drop exclude remove delete rows where condition subset"
     ),
-    "view.transform.generate-sql": (
-        "generate write sql query from natural language intent question"
-    ),
+    "view.transform.generate-sql": "generate write sql query from natural language intent question",
     "view.transform.increment-date": "add subtract days months years to a date column shift",
     "view.transform.join": (
         "join blend merge combine enrich match matching keys rows add columns from another "
@@ -240,6 +238,7 @@ _DISCOVERY_STOPWORDS = frozenset(
         # turns on these words, so they must not sink an otherwise good match.
         "my",
         "our",
+        "one",
         "two",
         "another",
         "other",
@@ -1158,7 +1157,7 @@ def find_schemas(
             "command_path": command_path,
             "mutation_class": record["mutation_class"],
             "confirmation": record["confirmation"],
-            "full_schema_command": (f"mammoth schema get {command_id}"),
+            "full_schema_command": f"mammoth schema get {command_id}",
         }
         if len(matched_terms) == len(terms):
             ranked_matches.append((score, entry))

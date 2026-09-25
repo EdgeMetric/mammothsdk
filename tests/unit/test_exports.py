@@ -719,23 +719,32 @@ class TestToDataset:
 
     def test_seam_builds_typed_condition_into_export_spec(self, export_view):
         # Exercise the REAL seam and capture the spec it builds, proving the
-        # typed condition becomes the correct wire dict. target_ds_id is set so
-        # the seam returns it directly (no new-dataset id resolution needed) —
-        # this isolates the condition-building behaviour AND verifies the
-        # existing-target id is returned.
+        # typed condition becomes the correct wire dict. target_ds_id is set,
+        # so once the write is confirmed EXECUTED the seam returns it
+        # directly (no new-dataset id resolution needed) — this isolates the
+        # condition-building behaviour AND verifies the existing-target id is
+        # returned.
         captured_spec: dict[str, Any] = {}
 
         def fake_create(dataview_id, export_spec, dataset_id):
             captured_spec["spec"] = export_spec
             return MagicMock()  # non-JobResponse → wait_for_job skipped
 
+        executed_write = MagicMock()
+        executed_write.id = 1
+        executed_write.status = ExportStatus.EXECUTED
+        executed_write.target_properties = {"TARGET_DS_ID": 77}
+        write_page = MagicMock()
+        write_page.exports = [executed_write]
+
         export_view._client.exports = MagicMock()
         export_view._client.exports.create = fake_create
+        export_view._client.exports.list.return_value = write_page
 
         new_id = export_view.export.to_dataset(
             "Filtered DS", target_ds_id=77, condition=Condition("col_a", Operator.EQ, "x")
         )
-        assert new_id == 77  # existing-target id returned directly
+        assert new_id == 77  # existing-target id returned once the write is confirmed
         spec = captured_spec["spec"]
         # TEXT column + EQ is remapped to IN_LIST and keyed by the INTERNAL name.
         assert "column_aaa" in spec.condition
@@ -797,6 +806,93 @@ class TestExportedDatasetIdResolution:
             with pytest.raises(MammothExportError) as exc:
                 export_view._resolve_exported_dataset_id("Pending", timeout=1)
         assert exc.value.details["dataset_name"] == "Pending"
+
+
+class TestRunInternalDatasetExportWaitsForExistingWrite:
+    """Writing into an EXISTING dataset (TARGET_DS_ID set — APPEND_TO_DS or
+    REPLACE_IN_DS) must not return until the write actually lands, exactly
+    like the new-dataset path. Returning the already-known id the instant the
+    submit job acks left callers reading row_count before the append/replace
+    had materialised."""
+
+    @staticmethod
+    def _export(target_ds_id, status, export_id=1):
+        e = MagicMock()
+        e.id = export_id
+        e.status = status
+        e.target_properties = {"TARGET_DS_ID": target_ds_id}
+        return e
+
+    def _page(self, exports):
+        page = MagicMock()
+        page.exports = exports
+        return page
+
+    def _target_properties(self, target_ds_id=42):
+        return {
+            "TARGET_DS_ID": target_ds_id,
+            "SAVE_AS_DS_MODE": "APPEND_TO_DS",
+            "DS_NAME": None,
+            "COLUMN_MAPPING": {},
+            "TRANSFORM": None,
+        }
+
+    def test_does_not_return_early_when_not_yet_executed_on_first_poll(self, export_view):
+        # First poll: still EXECUTING. Second poll: EXECUTED. The call must
+        # not return after the first poll — this is the regression the fix
+        # closes: the old code returned the id synchronously, never polling.
+        export_view._client.exports = MagicMock()
+        export_view._client.exports.create.return_value = MagicMock()  # non-JobResponse
+        export_view._client.exports.list.side_effect = [
+            self._page([self._export(42, ExportStatus.EXECUTING, export_id=1)]),
+            self._page([self._export(42, ExportStatus.EXECUTED, export_id=1)]),
+        ]
+        with patch("mammoth.view.time") as fake_time:
+            fake_time.monotonic.side_effect = [0.0, 0.5, 1.0]
+            fake_time.sleep.return_value = None
+            result = export_view._run_internal_dataset_export(self._target_properties())
+        assert result == 42
+        assert export_view._client.exports.list.call_count == 2
+
+    def test_times_out_if_write_never_executes(self, export_view):
+        export_view._client.exports = MagicMock()
+        export_view._client.exports.create.return_value = MagicMock()
+        export_view._client.exports.list.return_value = self._page(
+            [self._export(42, ExportStatus.EXECUTING, export_id=1)]
+        )
+        with patch("mammoth.view.time") as fake_time:
+            fake_time.monotonic.side_effect = [0.0, 0.5, 99.0]
+            fake_time.sleep.return_value = None
+            with pytest.raises(MammothExportError) as exc:
+                export_view._run_internal_dataset_export(self._target_properties(), timeout=1)
+        assert exc.value.details["dataset_id"] == 42
+
+    def test_waits_for_job_before_polling_the_write(self, export_view):
+        # An async submit (JobResponse) must wait for the submit job, then
+        # still poll for the write itself — the submit job completing only
+        # means the request was accepted, not that the write landed.
+        from datetime import UTC, datetime
+
+        from mammoth.models.jobs import JobResponse, JobSchema
+
+        export_view._client.exports = MagicMock()
+        export_view._client.exports.create.return_value = JobResponse(
+            job=JobSchema(
+                id=9001,
+                status="success",
+                response={},
+                last_updated_at=datetime.now(UTC),
+                created_at=datetime.now(UTC),
+                path="/exports",
+                operation="create_export",
+            )
+        )
+        export_view._client.exports.list.return_value = self._page(
+            [self._export(42, ExportStatus.EXECUTED, export_id=1)]
+        )
+        result = export_view._run_internal_dataset_export(self._target_properties())
+        export_view._client.jobs.wait_for_job.assert_called_once_with(9001, None)
+        assert result == 42
 
 
 # ── CSV export ────────────────────────────────────────────────
