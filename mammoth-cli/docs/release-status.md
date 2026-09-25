@@ -17,6 +17,12 @@ column-header rename and a grid sort set view display properties
   view, find the key columns, make them match, fix types and blanks, join,
   then build the dashboard, and say what was inferred.
 
+Tests: CLI suite 4479 passed, SDK unit 1875 passed. The payload shapes match
+the web app's (`SORT` as `[[internal_name, "ASC"|"DESC"]]`, `COLUMN_NAMES` as
+`{internal_name: name}`) and the backend's validation. Not yet run live:
+release.mammoth.io did not respond during publication; the live check follows
+when it is back.
+
 ## 2.0.37
 
 An agent that stated a goal in its own words did not find the command. With
