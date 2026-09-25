@@ -377,6 +377,116 @@ class DatasetsAPI:
             "DELETE", f"/workspaces/{ws}/projects/{proj}/datasets", params={"ids": ids}
         )
 
+    def preview_interpretation(
+        self,
+        dataset_id: int,
+        instruction: str,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Show how a file would be read differently, without changing it.
+
+        A file that has more than one plausible reading — a title above the
+        header, say, or two rows of headers — is read one way and left waiting.
+        This asks for another reading in words and shows what it would give.
+
+        Args:
+            dataset_id: ID of the dataset.
+            instruction: How to read the file, in plain words.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict describing the reading: the columns it would give and a sample.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/interpretation/preview",
+            json={"user_instruction": instruction},
+        )
+
+    def confirm_interpretation(
+        self,
+        dataset_id: int,
+        instruction: str,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Apply the reading last previewed for this instruction.
+
+        The plan itself is never sent: it carries SQL, which would then run
+        unchecked. An empty ``structure_map`` is what tells the route to re-read
+        the plan its own preview saved, rather than working the instruction out
+        again and possibly answering differently.
+
+        Args:
+            dataset_id: ID of the dataset.
+            instruction: The same instruction the preview was asked for.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/interpretation",
+            json={"user_instruction": instruction, "structure_map": {}},
+        )
+
+    def get_unstructured_rows(
+        self,
+        dataset_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Get the lines of a file that did not fit the dataset built from it.
+
+        A file whose rows are ragged is read as far as it can be, and the lines
+        that did not fit are set aside. The dataset then holds data and still
+        waits, because nobody has said what to do about them.
+
+        Args:
+            dataset_id: ID of the dataset.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``unstructured_rows`` (each with its line, line number and
+            the reason it did not fit) and ``row_count``.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/unstructured_data"
+        )
+
+    def discard_unstructured_rows(
+        self,
+        dataset_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Discard the set-aside lines and finish the dataset without them.
+
+        The discarded lines do not come back. A line worth keeping has to be
+        corrected in the source file and the dataset built again.
+
+        Args:
+            dataset_id: ID of the dataset.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``rows_deleted``.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return self._client._request_json(
+            "DELETE", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/unstructured_data"
+        )
+
     def list_batches(
         self,
         dataset_id: int,

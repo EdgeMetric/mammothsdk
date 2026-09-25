@@ -389,6 +389,37 @@ class TestDatasetsAPI:
         client.datasets.delete(dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/datasets/500")
 
+    def test_preview_interpretation(self, client: MammothClient):
+        client.datasets.preview_interpretation(dataset_id=500, instruction="rows 3 down")
+        assert_called_with_method_and_endpoint(
+            client._request_json, "POST", "/datasets/500/interpretation/preview"
+        )
+        assert client._request_json.call_args.kwargs["json"] == {"user_instruction": "rows 3 down"}
+
+    def test_confirm_interpretation_reuses_the_previewed_plan(self, client: MammothClient):
+        # The route never trusts a client's copy of the plan — it carries SQL.
+        # An empty structure_map is what tells it to re-read its own.
+        client.datasets.confirm_interpretation(dataset_id=500, instruction="rows 3 down")
+        assert_called_with_method_and_endpoint(
+            client._request_json, "PATCH", "/datasets/500/interpretation"
+        )
+        assert client._request_json.call_args.kwargs["json"] == {
+            "user_instruction": "rows 3 down",
+            "structure_map": {},
+        }
+
+    def test_get_unstructured_rows(self, client: MammothClient):
+        client.datasets.get_unstructured_rows(dataset_id=500)
+        assert_called_with_method_and_endpoint(
+            client._request_json, "GET", "/datasets/500/unstructured_data"
+        )
+
+    def test_discard_unstructured_rows(self, client: MammothClient):
+        client.datasets.discard_unstructured_rows(dataset_id=500)
+        assert_called_with_method_and_endpoint(
+            client._request_json, "DELETE", "/datasets/500/unstructured_data"
+        )
+
     def test_list_batches(self, client: MammothClient):
         client.datasets.list_batches(dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/datasets/500/batches")
