@@ -1,5 +1,87 @@
 # CLI release provenance
 
+## 2.0.47
+
+Full live automation lifecycle (`create` → `list` → `get` → `update` rename/
+suspend/resume → `delete`, plus `schedule list`) driven through
+`mammoth_cli.embed.invoke` on koyal (workspace 4, project 1887
+`eval-automation-lifecycle`, deleted after the run), the CLI's actual
+in-product-agent entry point. Two defects found and fixed; one previously
+documented backend candidate did not reproduce; one backend gap confirmed
+unchanged and needs its own design, not a CLI fix.
+
+- **Fixed (CLI, `mammoth-cli` 2.0.47)**: `automation list` with no project in
+  context returned the generic `api_error` envelope ("The Mammoth operation
+  failed unexpectedly") instead of an actionable error. The in-product agent
+  often has no project set. Root cause:
+  `AutomationsAPI.list` (`mammoth/api/automations.py` `_proj()`, ~line 308)
+  raises a raw `ValueError("project_id must be set on the client using
+  client.set_project_id()")`, and `SdkMammothService.call`
+  (`mammoth_cli/services/sdk_service.py`) only pre-empted that ValueError for
+  three hardcoded `sdk_symbol` strings
+  (`PipelineAPI.items_all`, `ViewsResource.delete`, `ViewsResource.get`) —
+  every other project-scoped SDK method, including all of `AutomationsAPI`
+  (and `FilesAPI`, `WebhooksAPI`, `AIAPI`, `DataviewsAPI`, and 18 more
+  `mammoth/api/*.py` call sites sharing the identical message), fell through
+  to the generic handler. `call()`'s `except ValueError` branch now matches
+  that exact message and raises `missing_project_error()` (code
+  `project_required`, recovery `mammoth project list` /
+  `mammoth context project use PROJECT_ID`) for any project-scoped method,
+  not a hand-kept allowlist; the three-symbol preflight is removed as
+  redundant. See
+  `mammoth-cli/tests/unit/services/test_sdk_service_project_scope.py::test_every_project_scoped_sdk_method_requires_project_before_transport`.
+- **Fixed (SDK, `mammoth-io` 0.7.20)**: `automation update` with
+  `path="details"` (rename, description, tasks, or conditions) always
+  failed with "must include at least one of: name, description, tasks,
+  conditions" even when a field was set — reproduced live for a plain
+  rename. Root cause: `AutomationPatchItem.value`
+  (`mammoth/models/automations.py`) is typed `str | dict[str, Any] |
+  PatchAutomationDetails`; pydantic's default "smart" union mode resolves a
+  dict input (what every real caller sends — the CLI's `--input` JSON is
+  parsed to a dict before reaching the model) against the exact
+  `dict[str, Any]` match rather than coercing it into
+  `PatchAutomationDetails`, so `_validate_automation_patch_item`'s
+  `isinstance(item.value, PatchAutomationDetails)` check
+  (`mammoth/api/automations.py` ~line 236) always failed. The field now
+  declares `union_mode="left_to_right"` with `PatchAutomationDetails`
+  ordered before `dict[str, Any]`. See
+  `tests/unit/test_automations.py::TestUpdate::test_update_details_patch_from_raw_dict_value`.
+  Requires `mammoth-io >= 0.7.20`.
+- **Not reproduced live (previously documented as a backend candidate in
+  2.0.46)**: `automation get AUTOMATION_ID` returning HTTP 500 on an
+  automation `automation create` just returned. Live on koyal against
+  `feat/agent-cli-surface` (mvc-service commit `8e28a0a594`): two separate
+  automations, each read back immediately after creation and three more
+  times over 2 s, all returned 200 with the full record — both before and
+  after a `status` suspend/resume round trip. The static candidate in
+  mvc-service (`apiv2/apiv2/automations/utils.py` `get_automation_tasks()`
+  `aut_task = automation_tasks[0]`, unguarded) is still present in that
+  commit and remains a real latent defect for an automation whose task
+  lookup comes back empty, but the CLI's own create → get lifecycle never
+  produces that state (every `automation create` requires at least one
+  task), so it is left undisturbed — no live repro, no fix, per this
+  project's RCA-before-fix discipline. Re-check if a future sweep finds a
+  path that empties an automation's tasks.
+- **Confirmed backend limitation, unchanged**: `schedule list` still
+  returns HTTP 400 `5GENR011 NOT_IMPLEMENTED` on koyal, matching 2.0.46's
+  finding. `apiv2/apiv2/schedules/controller.py`
+  `ScheduleController.list_schedules` raises `ClientError` unconditionally;
+  its own docstring says the schedule/recurrence tables carry no
+  workspace_id or project_id to list by. `ScheduleManager` resolves a
+  single schedule's project only indirectly, through
+  `validate_and_get_ds(schedule_id, project_id)` (`api/api/scheduler/
+  manager.py`) walking to the schedule's `Datasource` and checking its
+  `mm_auth_resource_id` against `project_{project_id}` — there is no
+  reverse index from project to schedules, so a list would need a new join
+  (or a denormalized column) across `ScheduleJob`/recurrence and
+  `Datasource`. This is a backend design task, not a simple read; not
+  implemented here, per this sweep's own scope.
+- **UNVERIFIED**: the mvc-service side of this sweep (both fixed CLI/SDK
+  defects) has unit-test coverage only; the live koyal lifecycle run used
+  the mammoth-cli 2.0.46 / mammoth-io 0.7.19 build already installed there,
+  which is what reproduced the two defects above — it has not yet run
+  against a koyal install carrying this release's SDK/CLI fix.
+
 ## 2.0.46
 
 Automation/scheduling gap sweep, following up the fixture-lifecycle sweep of

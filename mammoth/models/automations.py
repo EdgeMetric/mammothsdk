@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 # ── Read/response models (existing, kept as-is) ──────────────────────────────
 
@@ -352,4 +352,15 @@ class AutomationPatchItem(BaseModel):
 
     op: AutomationPatchOp
     path: AutomationPatchPath
-    value: str | dict[str, Any] | PatchAutomationDetails
+    # ``union_mode="left_to_right"``, with ``PatchAutomationDetails`` ordered
+    # before the catch-all ``dict[str, Any]``: pydantic's default "smart"
+    # union mode picks the exact ``dict[str, Any]`` match over coercing a
+    # dict into ``PatchAutomationDetails`` (which needs nested-model
+    # construction), so a ``path="details"`` patch built from a plain dict --
+    # every real caller, since ``AutomationsAPI.update`` is invoked from
+    # parsed JSON -- left ``value`` a bare dict and failed
+    # ``_validate_automation_patch_item``'s ``isinstance`` check even when a
+    # field like ``name`` was set.
+    value: Annotated[
+        str | PatchAutomationDetails | dict[str, Any], Field(union_mode="left_to_right")
+    ]

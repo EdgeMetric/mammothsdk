@@ -48,6 +48,38 @@ def test_project_scoped_view_calls_require_project_before_transport(
     assert excinfo.value.exit_status == 2
 
 
+@pytest.mark.parametrize(
+    "symbol",
+    [
+        # The in-product agent often has no project in context. Every SDK
+        # sub-client that builds a project-scoped URL raises the identical
+        # raw ``ValueError("project_id must be set on the client using
+        # client.set_project_id()")`` when ``project_id`` is unset (see
+        # ``mammoth/api/*.py``, 23 call sites across ai/annotations/
+        # automations/batches/browse/checkpoints/connector_ai/connectors/
+        # data_checks/datasets/dataviews/derivatives/exports/files/folders/
+        # pipeline/pipeline_versions/schedules/trash/webhooks). Before this
+        # fix, only the three symbols above were special-cased, so every
+        # other project-scoped command group (confirmed live: ``automation
+        # list``) fell through to the generic ``api_error`` envelope
+        # ("The Mammoth operation failed unexpectedly") instead of the
+        # actionable ``project_required`` error these three symbols get.
+        # The fix must be message-based, not another entry in a hand-kept
+        # symbol list, so it covers all 23 (and future) call sites at once.
+        "mammoth.api.automations.AutomationsAPI.list",
+        "mammoth.api.files.FilesAPI.list",
+        "mammoth.api.webhooks.WebhooksAPI.list",
+    ],
+)
+def test_every_project_scoped_sdk_method_requires_project_before_transport(
+    service: SdkMammothService, symbol: str
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        service.call(symbol)
+    assert excinfo.value.code == "project_required"
+    assert excinfo.value.exit_status == 2
+
+
 def test_parent_discovery_miss_is_a_named_not_found_error(
     service: SdkMammothService, monkeypatch: pytest.MonkeyPatch
 ) -> None:
