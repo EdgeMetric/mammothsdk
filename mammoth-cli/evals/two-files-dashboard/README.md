@@ -53,6 +53,7 @@ without reading the CLI's `column_warnings` and `join_check` output.
 | 2.0.37 | 5 of 10 | 2 (read local files), 4, 5, 6, 8 |
 | 2.0.38 | 7 of 10 | 5, 6, 8 (saw the problems, did not fix them) |
 | 2.0.39 | 8 of 10 | 6 (`qty` blank seen, not decided), 8 (converted `price`, but charted only `qty`) |
+| 2.0.40 | 7 of 10 | 2 (read the local files; `view data get` on t_a only), 6 (blanks listed, not decided), 8 (charted counts only, no revenue) |
 
 2.0.39 notes: the agent acted on `column_warnings` (converted `price`) and
 reported `join_check` (39 of 40, `C099`). New friction: `dashboard pages add`
@@ -60,3 +61,9 @@ with a chart the data does not support (`pie`, `vbar`, a date as `dim`)
 still adds the page, so the dashboard kept two empty pages. A first run
 that could not find 2.0.39 on the index installed 2.0.38; it was discarded,
 and the brief now forbids another version.
+
+2.0.40 notes: one run, so one point either way is noise. The guidance
+added for checks 6 and 8 (a report line for each blank, revenue on the
+board) is in the skill, but the agent built the board with `canvas save`
+and never reached it. Guidance alone does not move these checks; the next
+step is to say it in the output the agent already reads.

@@ -56,7 +56,11 @@ CLI published from deterministic local artifacts built from tag `cli-v2.0.40`
 - `mammoth_cli-2.0.40.tar.gz` sha256 `faa2816a1271d26a7efdb12f8843564921ab8f8128780ea7869b509f69b9d1fc`
 
 GitHub release `cli-v2.0.40` (Latest) carries these, both installers and
-`SHA256SUMS`; `sdk-v0.7.18` carries the SDK artifacts. Tests: CLI 4500
+`SHA256SUMS`; `sdk-v0.7.18` carries the SDK artifacts. Agent eval (Haiku, 2.0.40 from PyPI): 7 of 10 (2.0.39: 8). It
+converted `price` from the warning and reported the join (39 of 40,
+`C099`), but read the local files first, left the blanks undecided and
+charted counts only. The skill's new revenue and blanks guidance was not
+reached. Tests: CLI 4500
 passed, 2 skipped; SDK unit 1875 passed, 18 skipped.
 
 ## 2.0.39 / SDK 0.7.17
