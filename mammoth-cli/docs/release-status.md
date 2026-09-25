@@ -1,6 +1,6 @@
 # CLI release provenance
 
-## 2.0.37 / SDK 0.7.16
+## 2.0.37
 
 An agent that stated a goal in its own words did not find the command. With
 2.0.36, `schema find` returned no match for "merge two datasets", "combine
@@ -23,6 +23,25 @@ agent then did a join in the web app, although `view transform join` exists.
 - The `AGENTS.md` steering block and the agent prompts say the same.
 
 The SDK is unchanged (0.7.16).
+
+Tests: the full CLI suite passed locally (4461); the doc-example gate now
+routes nested `GROUP SUBGROUP --help` examples such as `mammoth view
+transform --help`. A clean install of 2.0.37 from PyPI returned
+`view.transform.join` for "merge two datasets" and `suggestions` for "union
+two views". The live check on release was not run: release.mammoth.io did not
+respond (connection timeout) during publication. This release changes no API
+call.
+
+CLI published from deterministic local artifacts built from tag `cli-v2.0.37`
+(source commit `cce1040`):
+
+- `mammoth_cli-2.0.37-py3-none-any.whl` sha256 `b52921c0e072b75790c9bf17a3a46fd2f713651893b76b1ea961f14b177e7c5a`
+- `mammoth_cli-2.0.37.tar.gz` sha256 `88e87557737d7602f58d1ad0648dc29fb1b22cdf004e062f1f05c3d72b8e8278`
+
+GitHub release `cli-v2.0.37` (Latest) carries these, both installers and
+`SHA256SUMS`.
+
+## 2.0.36 / SDK 0.7.16
 
 Login uses an API token only. Tokens created in the web app (Workspace
 settings → API Tokens) are one `mm_...` value with no secret, and 2.0.35
