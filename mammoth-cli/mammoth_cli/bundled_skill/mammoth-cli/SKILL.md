@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.40
+version: 2.0.41
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
@@ -93,10 +93,11 @@ report a real gap with the command you tried.
 Users often upload related files without saying how they relate ("make a
 dashboard from t_a and t_b"). Work it out from the data before you build:
 
-1. Upload every file, then read every view in Mammoth (not the local
-   files): `view get VIEW_ID` (columns, types, row count) and `view data get
-   VIEW_ID`. The data read lists `column_warnings`: numbers or dates stored
-   as text, and blanks, each with the fix.
+1. Upload every file. Each upload result carries a `view` preview of what
+   Mammoth made of the file (`view_id`, column types, sample rows,
+   `column_warnings`, and `before_dashboard`). Read every view in Mammoth, not
+   the local files: `view data get VIEW_ID` for each one. The warnings list
+   numbers or dates stored as text, and blanks, each with the fix.
 2. Find the keys. A column in one view whose values appear in a column of
    the other (`customer_id` and `id`, `order_ref` and `order_no`) is a
    foreign key; the view with many rows per key is the main one.
@@ -112,10 +113,14 @@ dashboard from t_a and t_b"). Work it out from the data before you build:
    result's `join_check` gives `match_rate`, `unmatched_rows` and
    `unmatched_keys`; put them in your report, and stop to compare the keys
    if more than a few rows found no match.
-6. Build the dashboard from the joined view
-   ([dashboards](references/recipes/dashboards.md)). If the data has money,
-   show it: add `revenue` (`math`, `qty * price`, `new_column`) and chart
-   its sum. Do not sum a unit price.
+6. If the data has money, add it before you make the dashboard: `revenue`
+   (`math`, `qty * price`, `new_column`), the `fix` in `before_dashboard`.
+   A dashboard sees only the columns the view had when it was made.
+7. Build the dashboard from the joined view
+   ([dashboards](references/recipes/dashboards.md)) and chart the sum of
+   revenue. Do not sum a unit price. `create-blank`, `canvas save` and
+   `pages add` return `deliverable_check`: fix each warning, or say in the
+   report why not.
 
 For the defaults that most pipelines use (new column or overwrite, `LEFT`
 joins, date steps), see

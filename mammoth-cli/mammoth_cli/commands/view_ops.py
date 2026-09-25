@@ -290,6 +290,11 @@ def _dispatch_view(
             reject_pipeline_reference_errors(service, view_id, dataset_id, response)
             raise
         reject_pipeline_reference_errors(service, view_id, dataset_id, data)
+        if dataset_id is not None:
+            # Later commands that know only the view (a dashboard's check) use it.
+            parents.remember(
+                _profile_name(invocation), auth.workspace_id, {view_id: int(dataset_id)}
+            )
         if after is not None and dataset_id is not None:
             data = after(service, int(dataset_id), state, data)
     return data, _meta(invocation, auth.workspace_id)
@@ -513,9 +518,12 @@ def view_get(invocation: Invocation) -> HandlerResult:
             "dataview_id": view_id,
             # Server-side projection; the brief set (plus the display
             # properties that carry column renames) unless the caller asks.
-            "fields": document.get("fields")
-            or ",".join(
-                [key for key in BRIEF_VIEW_FIELDS if key != "dataset_id"] + ["display_properties"]
+            "fields": (
+                document.get("fields")
+                or ",".join(
+                    [key for key in BRIEF_VIEW_FIELDS if key != "dataset_id"]
+                    + ["display_properties"]
+                )
             ),
         }
         with open_service(invocation) as (service, auth):

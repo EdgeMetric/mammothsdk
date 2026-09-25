@@ -46,6 +46,7 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
+from mammoth_cli.services.dashboard_review import UPLOAD_NOTE, upload_hints
 from mammoth_cli.services.data_quality import column_warnings
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -2065,3 +2066,108 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
             + (f" --project {int(target_project)}" if target_project is not None else ""),
         }
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+_DATAVIEW_LIST_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.list"
+#: Rows an upload shows of each new view (enough to see keys and formats).
+_UPLOAD_SAMPLE_ROWS = 3
+
+
+def upload_preview(service: Any, dataset_id: int, project_id: int | None) -> dict[str, Any] | None:
+    """The first view of a new dataset: columns, types, sample rows, warnings.
+
+    ``before_dashboard`` names the columns to add before any dashboard is
+    made (revenue from a unit price and a quantity), since a dashboard does
+    not see columns added after it.
+
+    An agent that has just uploaded files tends to read the local copies
+    instead of the data in Mammoth, and so misses what Mammoth made of them
+    (a price read as TEXT, blanks). The upload result carries the answer.
+    Best effort: any failure returns ``None`` and the upload result is
+    unchanged.
+    """
+    try:
+        listing = service.call(_DATAVIEW_LIST_SYMBOL, dataset_id=dataset_id, project_id=project_id)
+        views = listing.get("dataviews") if isinstance(listing, dict) else None
+        if not isinstance(views, list) or not views or not isinstance(views[0], dict):
+            return None
+        record = apply_column_renames(views[0])
+        view_id = record.get("id")
+        if not isinstance(view_id, int):
+            return None
+        mapping: dict[str, str] = {}
+        types: dict[str, str] = {}
+        for column in record.get(_METADATA_KEY) or []:
+            if not isinstance(column, dict):
+                continue
+            internal = column.get(_INTERNAL_NAME_KEY)
+            display = column.get(_DISPLAY_NAME_KEY)
+            if isinstance(internal, str) and isinstance(display, str):
+                mapping[internal] = display
+                types[display] = str(column.get("type") or "")
+        page = service.call(
+            _DATA_PAGE_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+        )
+        page = _relabel_columns(service, dataset_id, view_id, project_id, page, mapping)
+        rows = page.get(_ROWS_KEY) if isinstance(page, dict) else None
+        rows = [row for row in rows or [] if isinstance(row, dict)]
+    except Exception:  # noqa: BLE001 -- a preview must never fail the upload
+        return None
+    preview: dict[str, Any] = {
+        "view_id": view_id,
+        "row_count": record.get("row_count"),
+        "columns": types,
+        "sample_rows": rows[:_UPLOAD_SAMPLE_ROWS],
+    }
+    try:
+        warnings = column_warnings(rows, types, view_id) if rows else []
+    except Exception:  # noqa: BLE001
+        warnings = []
+    if warnings:
+        preview["column_warnings"] = warnings
+    try:
+        text_numbers = [
+            str(w.get("column"))
+            for w in warnings
+            if isinstance(w, dict) and w.get("issue") == "numbers_stored_as_text"
+        ]
+        hints = upload_hints(
+            view_id, record.get(_METADATA_KEY) or [], rows, dataset_id, text_numbers
+        )
+    except Exception:  # noqa: BLE001
+        hints = []
+    if hints:
+        preview["before_dashboard"] = {"warnings": hints, "note": UPLOAD_NOTE}
+    return preview
+
+
+def view_profiles(
+    service: Any, dataset_id: int, view_id: int, project_id: int | None
+) -> list[dict[str, Any]] | None:
+    """Column profile of a view (types and blank shares) for the dashboard check."""
+    from mammoth_cli.services.dashboard_review import profiles_from_view
+
+    try:
+        info = apply_column_renames(
+            service.call(
+                _DATAVIEW_GET_SYMBOL,
+                dataset_id=dataset_id,
+                dataview_id=view_id,
+                project_id=project_id,
+            )
+        )
+        metadata = [c for c in (info or {}).get(_METADATA_KEY) or [] if isinstance(c, dict)]
+        mapping = {
+            c[_INTERNAL_NAME_KEY]: c[_DISPLAY_NAME_KEY]
+            for c in metadata
+            if isinstance(c.get(_INTERNAL_NAME_KEY), str)
+            and isinstance(c.get(_DISPLAY_NAME_KEY), str)
+        }
+        page = service.call(
+            _DATA_PAGE_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+        )
+        page = _relabel_columns(service, dataset_id, view_id, project_id, page, mapping)
+        rows = page.get(_ROWS_KEY) if isinstance(page, dict) else None
+        return profiles_from_view(metadata, rows or [])
+    except Exception:  # noqa: BLE001 -- advice only
+        return None

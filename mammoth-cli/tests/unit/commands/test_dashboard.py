@@ -133,7 +133,9 @@ def test_pages_add_forwards_exact_body_and_target_confirmation(
                     }
                 },
             },
-        )
+        ),
+        # deliverable_check: one canvas read after the authoring step
+        (_CANVAS_GET, {"dashboard_id": 7}),
     ]
 
 
@@ -516,6 +518,35 @@ def test_create_blank_is_an_ordinary_create_and_needs_no_confirmation(
     ]
 
 
+def test_create_blank_checks_the_view_itself_when_the_canvas_has_no_profile(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # A blank canvas has no backend profile until its first bake; the check
+    # reads the view (parent recorded by an earlier view command) instead.
+    from mammoth_cli.runtime import parents
+
+    parents.remember("default", 4, {42: 84})
+    fake_service.responses[_CREATE_BLANK] = {"id": 9}
+    fake_service.responses[_CANVAS_GET] = {"canvas": {"dataset": {"dataview_id": 42}}}
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {
+        "metadata": [
+            {"display_name": "qty", "internal_name": "column_1", "type": "NUMERIC"},
+            {"display_name": "price", "internal_name": "column_2", "type": "NUMERIC"},
+        ]
+    }
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get_data"] = {
+        "data": [{"column_1": 2, "column_2": None}, {"column_1": 1, "column_2": 4}]
+    }
+    doc = _write_doc(tmp_path, {"params": {"dataview_id": 42}})
+    data, _ = dashboard_cmd.generated_dashboard(
+        _inv("dashboard.create-blank", input_file=doc, project=94)
+    )
+    check = data["deliverable_check"]
+    assert [w["issue"] for w in check["warnings"]] == ["money_not_shown", "blank_values"]
+    assert '"dataset_id": 84' in check["warnings"][0]["fix"]
+    assert "make a new dashboard" in check["note"]
+
+
 # --- dashboard update ---------------------------------------------------------
 
 
@@ -781,8 +812,9 @@ def test_pages_add_removes_a_new_page_whose_charts_were_all_refused(
         _ADD_PAGES,
         _CANVAS_GET,
         _CANVAS_SAVE,
+        _CANVAS_GET,  # deliverable_check
     ]
-    saved = fake_service.call_log[-1][1]
+    saved = fake_service.call_log[2][1]
     assert saved["dashboard_id"] == 7
     params = saved["body"]["params"]
     assert params["base_sequence"] == 2
@@ -815,7 +847,7 @@ def test_pages_add_without_refusals_makes_no_extra_request(
             confirm="7",
         )
     )
-    assert [symbol for symbol, _ in fake_service.call_log] == [_ADD_PAGES]
+    assert [symbol for symbol, _ in fake_service.call_log] == [_ADD_PAGES, _CANVAS_GET]
     assert data["chart_check"] == {"refused": [], "removed_pages": []}
 
 

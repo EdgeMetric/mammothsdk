@@ -1,5 +1,35 @@
 # CLI release provenance
 
+## 2.0.41
+
+The 2.0.40 agent eval scored 7 of 10. The agent read the local files, did
+not decide on blanks, and charted counts only. The guidance for all three
+was in the skill, but the agent did not read that part. This release puts it
+in the command output that the agent already reads.
+
+- `file upload` returns a `view` preview for each ready dataset: `view_id`,
+  `row_count`, column types, three sample rows, `column_warnings`, and
+  `before_dashboard` (the money column to add, with the `math` command in
+  `fix`). The view's parent dataset is recorded for later commands.
+- `dashboard create-blank`, `canvas save` and `pages add` return
+  `deliverable_check`: `money_not_shown` (with the `math` fix when the view
+  has a unit price and a quantity), `unit_price_summed`, and `blank_values`
+  for each column on the board with blanks. It uses the backend's column
+  profile for the canvas. A blank canvas has no profile until its first
+  bake, so `create-blank` reads the view instead. Advice only: a failed read
+  leaves the result unchanged. Verified live on release.
+- A dashboard sees only the columns the view had when the dashboard was
+  made. On release, `pages add` refused a `revenue` column added after
+  `create-blank` ("isn't a measure in this data"), on that dashboard and on
+  a new one made while the old one was still being edited. The backend
+  caches the profile under the view and its data version, not the table
+  that the dashboard is bound to, so an older dashboard can store a stale
+  profile for the current version. A dashboard made after the column, with
+  no older dashboard baked in between, charted it. The check's note, the
+  upload hint and the skill now say: add the columns first, then make the
+  dashboard. (Backend defect; reported, not fixed here.)
+- The eval is run three times per release; the result is the mean.
+
 ## 2.0.40 / SDK 0.7.18
 
 The 2.0.39 agent eval scored 8 of 10. The agent charted only `qty` (no

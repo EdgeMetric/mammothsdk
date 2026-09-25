@@ -88,10 +88,19 @@ mammoth view transform math VIEW_ID --project PROJECT_ID \
   --input '{"dataset_id":DATASET_ID,"expression":"qty * price","new_column":"revenue"}'
 ```
 
+- Add every column the board needs before `create-blank`. A dashboard sees
+  only the columns the view had when the dashboard was made: `pages add`
+  refuses a later column ("isn't a measure in this data"). If you added it
+  after, make a new dashboard and delete the old one if you made it for this
+  task. The upload result's `before_dashboard` names the column to add.
 - Put revenue in a KPI (`focus.kpis`, `agg` `sum`, `unit.prefix` for the
   currency) and in one or more charts (revenue by product, by segment, by
   month). Rows with an empty price give an empty revenue. Say how many there
   are in your report.
+- `create-blank`, `canvas save` and `pages add` return `deliverable_check`:
+  `money_not_shown` (with the `math` command in `fix`), `unit_price_summed`,
+  and one `blank_values` entry for each column on the board that has blanks.
+  Fix each warning, or say in your report why you kept it.
 
 **Read the bindings back, then the numbers.** `dashboard canvas get` returns
 `data.meta.figures` — `"p1:kpi:2": {"descriptors": {"value": "<id>"}}` per

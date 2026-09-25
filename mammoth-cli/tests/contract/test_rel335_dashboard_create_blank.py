@@ -45,7 +45,7 @@ def test_rel335_approved_cli_emits_exact_wire_and_returns_response(
     source.write_text(json.dumps(payload), encoding="utf-8")
     with _bind(monkeypatch, service):
         data, _meta = dashboard_cmd.generated_dashboard(_invocation(str(source)))
-    request = api.last()
+    request = api.requests[0]  # then one canvas read for deliverable_check
     assert request.method == "POST"
     assert request.path.removeprefix("/api/v2") == "/dashboards/v3/blank"
     assert request.json_body == payload
@@ -60,4 +60,4 @@ def test_rel335_create_blank_needs_no_confirmation_flag(
     source.write_text(json.dumps({"params": {"dataview_id": 42}}), encoding="utf-8")
     with _bind(monkeypatch, service):
         dashboard_cmd.generated_dashboard(_invocation(str(source)))
-    assert len(api.requests) == 1
+    assert api.requests[0].method == "POST"

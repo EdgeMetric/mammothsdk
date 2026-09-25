@@ -21,12 +21,16 @@ Built-in traps:
 ## How to run
 
 1. Fill in `BRIEF.md`: `EVAL_DIR` is this folder, `WORK_DIR` a scratch folder,
-   `VERSION_UNDER_TEST` the version just published.
+   `VERSION_UNDER_TEST` the version you published.
 2. Give the filled brief to a fresh agent with shell access and nothing else
    (no repository, no chat context). The `release` profile must hold a
    credential for release workspace 4.
-3. Grade its report against the checklist below. Record the result in
-   `docs/release-status.md` under the release.
+3. Do steps 1 and 2 three times, each with its own `WORK_DIR` and a fresh
+   agent. One run varies too much to compare releases: 2.0.39 scored 8 and
+   2.0.40 scored 7 with better guidance.
+4. Grade each report against the checklist below. Record the three scores,
+   their mean and the misses in `docs/release-status.md` under the release,
+   and add a row to the history.
 
 ## Checklist
 
@@ -47,6 +51,8 @@ A run passes with all ten. Checks 4 to 6 fail when an agent builds
 without reading the CLI's `column_warnings` and `join_check` output.
 
 ## History
+
+Up to 2.0.40, one run per release; from 2.0.41, the mean of three.
 
 | CLI | Result | Misses |
 |---|---|---|

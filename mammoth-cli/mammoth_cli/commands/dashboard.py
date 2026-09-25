@@ -16,6 +16,8 @@ from typing import Any
 from mammoth.models.dashboards import AddPagesSpec
 from pydantic import ValidationError
 
+from mammoth_cli.commands.view import view_profiles
+from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -25,6 +27,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.runtime import parents
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
     POLICY_NONE,
@@ -33,10 +36,16 @@ from mammoth_cli.runtime.confirm import (
     enforce_confirmation,
 )
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.runtime.session import open_service, require_project, resolved_project
 from mammoth_cli.services.argspec import arg_spec
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.dashboard_pages import check_added_pages
+from mammoth_cli.services.dashboard_review import (
+    CANVAS_GET,
+    NEW_COLUMN_NOTE,
+    has_profiles,
+    review,
+)
 from mammoth_cli.services.positionals import resolve_positionals
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -675,7 +684,66 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
         if invocation.command_id == "dashboard.pages.add" and "body" in kwargs:
             requested = kwargs["body"].get("params", {}).get("pages", [])
             data = check_added_pages(service, positionals["dashboard_id"], requested, data)
+        if invocation.command_id in _REVIEWED_COMMANDS:
+            data = _with_deliverable_check(invocation, service, auth, positionals, data)
     return data, _meta(invocation, auth.workspace_id)
+
+
+#: Authoring steps whose result carries ``deliverable_check``.
+_REVIEWED_COMMANDS = frozenset(
+    {"dashboard.create-blank", "dashboard.canvas.save", "dashboard.pages.add"}
+)
+
+
+def _with_deliverable_check(
+    invocation: Invocation, service: Any, auth: Any, positionals: dict[str, Any], data: Any
+) -> Any:
+    """Add ``deliverable_check`` (money shown? blanks decided?) to an authoring result.
+
+    One canvas read; advice only, so a failed read leaves the result as it was.
+    """
+    if hasattr(data, "model_dump"):
+        data = data.model_dump(mode="json")
+    if not isinstance(data, dict):
+        return data
+    dashboard_id = positionals.get("dashboard_id") or data.get("id")
+    if not isinstance(dashboard_id, int):
+        return data
+    try:
+        canvas_doc = service.call(CANVAS_GET, dashboard_id=dashboard_id)
+        if hasattr(canvas_doc, "model_dump"):
+            canvas_doc = canvas_doc.model_dump(mode="json")
+        source = (canvas_doc.get("canvas") or {}).get("dataset") or {}
+        view_id = source.get("dataview_id")
+        profile = invocation.profile or profiles.get_selected()
+        dataset_id = (
+            parents.lookup(profile, auth.workspace_id, view_id)
+            if isinstance(view_id, int)
+            else None
+        )
+        fallback = None
+        if not has_profiles(canvas_doc) and isinstance(view_id, int) and dataset_id is not None:
+            fallback = view_profiles(service, dataset_id, view_id, resolved_project(invocation))
+        warnings = review(canvas_doc, dataset_id, fallback)
+    except Exception:  # noqa: BLE001 -- advice must never fail the authoring step
+        return data
+    if warnings:
+        data = {
+            **data,
+            "deliverable_check": {
+                "warnings": warnings,
+                "note": (
+                    "Fix these before you report the dashboard as done, or say in your "
+                    "report why not."
+                    + (
+                        " " + NEW_COLUMN_NOTE
+                        if any("fix" in warning for warning in warnings)
+                        else ""
+                    )
+                ),
+            },
+        }
+    return data
 
 
 def dashboard_assess_twb(invocation: Invocation) -> HandlerResult:
