@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.41
+version: 2.0.42
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
@@ -95,9 +95,10 @@ dashboard from t_a and t_b"). Work it out from the data before you build:
 
 1. Upload every file. Each upload result carries a `view` preview of what
    Mammoth made of the file (`view_id`, column types, sample rows,
-   `column_warnings`, and `before_dashboard`). Read every view in Mammoth, not
-   the local files: `view data get VIEW_ID` for each one. The warnings list
-   numbers or dates stored as text, and blanks, each with the fix.
+   `column_warnings`, and `before_dashboard`). Do not open the local files
+   (`cat`, `head`): what counts is what Mammoth made of them. Run `view data
+   get VIEW_ID` for each view. The warnings list numbers or dates stored as
+   text, and blanks, each with the fix.
 2. Find the keys. A column in one view whose values appear in a column of
    the other (`customer_id` and `id`, `order_ref` and `order_no`) is a
    foreign key; the view with many rows per key is the main one.

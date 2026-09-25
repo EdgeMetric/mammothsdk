@@ -1,5 +1,28 @@
 # CLI release provenance
 
+## 2.0.42
+
+Docs and skill only; no code change. The 2.0.41 agent eval was run three
+times on a healthy release backend: 9, 8 and 6 of 10 (mean 7.7; 2.0.40
+scored 7). All three runs converted `price` and added `revenue` before the
+dashboard step, as the upload's `before_dashboard` said. The two runs whose
+dashboards baked both charted revenue. The remaining misses:
+
+- Check 6 (blanks decided) in all three runs: one column's blanks (usually
+  `segment`, in the second file) were kept without a word. The report
+  checklist now has a row for it: one line for each `blank_values` entry,
+  in every view, and kept counts only when it is written down.
+- Check 2 (inspect in Mammoth) in two runs: the agent opened the local
+  files with `cat`. Step 1 of the multi-file playbook now says not to.
+- Checks 7 and 8 in one run: release returned HTTP 500 on `dashboard pages
+  add` and `canvas save` (backend).
+
+A first set of three runs was void: release returned 502 and 504 errors
+for about 15 minutes. The eval README now says to check release health
+first, and to run the three runs one after another, since parallel runs
+share the profile's active project (one run uploaded into another run's
+project).
+
 ## 2.0.41
 
 The 2.0.40 agent eval scored 7 of 10. The agent read the local files, did

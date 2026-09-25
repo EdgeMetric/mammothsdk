@@ -27,8 +27,13 @@ Built-in traps:
    credential for release workspace 4.
 3. Do steps 1 and 2 three times, each with its own `WORK_DIR` and a fresh
    agent. One run varies too much to compare releases: 2.0.39 scored 8 and
-   2.0.40 scored 7 with better guidance.
-4. Grade each report against the checklist below. Record the three scores,
+   2.0.40 scored 7 with better guidance. Run them one after another: the
+   runs share the profile's active project, and on 2.0.41 a parallel run
+   uploaded into another run's project.
+4. Check that release is healthy first (`mammoth doctor`). A run that hits
+   502 or 504 errors measures the backend, not the CLI: void it and run it
+   again.
+5. Grade each report against the checklist below. Record the three scores,
    their mean and the misses in `docs/release-status.md` under the release,
    and add a row to the history.
 
@@ -60,6 +65,7 @@ Up to 2.0.40, one run per release; from 2.0.41, the mean of three.
 | 2.0.38 | 7 of 10 | 5, 6, 8 (saw the problems, did not fix them) |
 | 2.0.39 | 8 of 10 | 6 (`qty` blank seen, not decided), 8 (converted `price`, but charted only `qty`) |
 | 2.0.40 | 7 of 10 | 2 (read the local files; `view data get` on t_a only), 6 (blanks listed, not decided), 8 (charted counts only, no revenue) |
+| 2.0.41 | 9, 8, 6 (mean 7.7) | 6 in all three (a blank column left undecided); 2 in two (read the local files); 7 and 8 in one (backend HTTP 500 on `pages add` and `canvas save`). Revenue was added before the dashboard in all three |
 
 2.0.39 notes: the agent acted on `column_warnings` (converted `price`) and
 reported `join_check` (39 of 40, `C099`). New friction: `dashboard pages add`
