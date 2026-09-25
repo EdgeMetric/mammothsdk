@@ -99,6 +99,9 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "webhook.delete": "webhook http endpoint api delete",
     "webhook.send": "webhook http endpoint api push send",
     "webhook.send-get": "webhook http endpoint api pull send get",
+    "workspace.user.add": (
+        "invite add member teammate email role editor viewer admin assign permission access"
+    ),
     "automation.create": (
         "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
         "hour hourly month monthly automatically trigger alert email a dataset pipeline"
@@ -1260,6 +1263,7 @@ def find_schemas(
         action = command_path.split()[1] if len(command_path.split()) > 1 else ""
         if "show" in matched_terms and action in {"list", "get", "browse"}:
             score += 80
+        is_support = command_id.startswith("support.")
         entry = {
             "command_id": command_id,
             "command_path": command_path,
@@ -1267,11 +1271,26 @@ def find_schemas(
             "confirmation": record["confirmation"],
             "full_schema_command": f"mammoth schema get {command_id}",
         }
+        if is_support:
+            # These operate on another workspace/customer on the caller's
+            # behalf (Mammoth-operator tooling), not the caller's own
+            # workspace. A query that also has an ordinary match should
+            # never surface the operator command first.
+            entry["operator_only"] = (
+                "support.* commands act on another workspace as an operator, not the "
+                "caller's own; ordinary workspace work uses the non-support command."
+            )
         if len(matched_terms) == len(terms):
             ranked_matches.append((score, entry))
         else:
             near_misses.append((len(matched_terms), score, entry, matched_terms))
-    ranked_matches.sort(key=lambda item: (-item[0], item[1]["command_id"]))
+    ranked_matches.sort(
+        key=lambda item: (
+            item[1]["command_id"].startswith("support."),
+            -item[0],
+            item[1]["command_id"],
+        )
+    )
     total_matches = len(ranked_matches)
     page = [match for _, match in ranked_matches[offset : offset + bounded_limit]]
     has_more = offset + len(page) < total_matches
