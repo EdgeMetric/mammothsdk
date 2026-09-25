@@ -2620,8 +2620,31 @@ class TestUserProfileAPI:
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/self")
 
     def test_update(self, client: MammothClient):
-        client.user_profile.update(first_name="Alice")
+        # SelfPatchData: the backend takes a JSON-Patch envelope keyed by
+        # `path` (first_name/last_name/password/mfa), not a flat field dict.
+        client.user_profile.update(first_name="Alice", last_name="Doe")
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/self")
+        assert_json_body(
+            client._request_json,
+            {
+                "patch": [
+                    {"op": "replace", "path": "first_name", "value": "Alice"},
+                    {"op": "replace", "path": "last_name", "value": "Doe"},
+                ]
+            },
+        )
+
+    def test_update_one_name_part(self, client: MammothClient):
+        client.user_profile.update(first_name="Alice")
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "replace", "path": "first_name", "value": "Alice"}]},
+        )
+
+    def test_update_requires_a_name_part(self, client: MammothClient):
+        with pytest.raises(MammothValidationError, match="first_name.*last_name"):
+            client.user_profile.update()
+        client._request_json.assert_not_called()
 
     def test_change_password(self, client: MammothClient):
         client.user_profile.change_password(current_password="old", new_password="new")

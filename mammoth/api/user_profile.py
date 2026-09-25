@@ -16,7 +16,7 @@ class UserProfileAPI:
     Access via client.user_profile::
 
         profile = client.user_profile.get()
-        client.user_profile.update(name="New Name")
+        client.user_profile.update(first_name="New Name")
     """
 
     def __init__(self, client: MammothClient) -> None:
@@ -30,16 +30,37 @@ class UserProfileAPI:
         """
         return self._client._request_json("GET", "/self")
 
-    def update(self, **fields: Any) -> dict[str, Any]:
-        """Update current user profile.
+    def update(
+        self, *, first_name: str | None = None, last_name: str | None = None
+    ) -> dict[str, Any]:
+        """Update the current user's own display name.
+
+        The endpoint (``PATCH /self``) takes a JSON-Patch-shaped body
+        (``{"patch": [{"op": "replace", "path": ..., "value": ...}]}``), not a
+        flat field dict, so this builds that envelope from the given name
+        parts. There is no ``email`` path on this endpoint's accepted
+        ``path`` values (``first_name``, ``last_name``, ``password``,
+        ``mfa``) -- an email change is out of scope here.
 
         Args:
-            **fields: Profile fields to update (name, email, etc.).
+            first_name: New first name.
+            last_name: New last name.
 
         Returns:
-            Dict with updated profile.
+            Dict with the updated profile.
+
+        Raises:
+            MammothValidationError: Neither ``first_name`` nor ``last_name``
+                was given.
         """
-        return self._client._request_json("PATCH", "/self", json=fields)
+        operations = [
+            {"op": "replace", "path": path, "value": value}
+            for path, value in (("first_name", first_name), ("last_name", last_name))
+            if value is not None
+        ]
+        if not operations:
+            raise MammothValidationError("Provide first_name and/or last_name to update.")
+        return self._client._request_json("PATCH", "/self", json={"patch": operations})
 
     def change_password(self, current_password: str, new_password: str) -> dict[str, Any]:
         """Change user password.

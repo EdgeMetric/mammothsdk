@@ -622,10 +622,13 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         # GLOBAL or WORKSPACE_PREFERENCES.
         FieldSpec("patch", required=False, annotation=list[Any] | None, default=None),
     ),
-    "user.update": (
-        FieldSpec("name", required=False, annotation=str | None, default=None),
-        FieldSpec("email", required=False, annotation=str | None, default=None),
-    ),
+    # user.update previously pinned name/email here as a guess, from when
+    # UserProfileAPI.update took **fields and so had nothing introspectable.
+    # The SDK method is now typed (first_name, last_name -- the backend's
+    # real SelfPatchData path values), so its own signature is the source of
+    # truth and this override is gone rather than fixed to match: keeping a
+    # hardcoded shadow of a typed signature is exactly how it drifted wrong
+    # the first time.
 }
 CONTRACT_BOUND_COMMANDS = frozenset(
     S2_COMMANDS | S3_COMMANDS | S4_COMMANDS | S6_COMMANDS | S7_COMMANDS

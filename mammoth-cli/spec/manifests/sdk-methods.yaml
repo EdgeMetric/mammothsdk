@@ -5803,12 +5803,13 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.user_profile.UserProfileAPI.update
   implementation_origin: mammoth.api.user_profile.UserProfileAPI.update
-  signature: 'update(self, **fields: ''Any'') -> ''dict[str, Any]'''
+  signature: 'update(self, *, first_name: ''str | None'' = None, last_name: ''str | None''
+    = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: user.update
   alias_of: null
   no_command_reason: null
-  mutation_class: high_impact
+  mutation_class: benign_mutation
   wait_policy: not_async
   pagination_policy: none
   secret_fields: []
