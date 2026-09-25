@@ -70,4 +70,4 @@ Example: `mammoth automation update 123 --input '{"patch": [{"op": "replace", "p
 
 Result: `AutomationUpdateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
-Status on release: observed blocker — cli_error: CLI rejected 'name' field; error message says accepted field is 'patch' (nested patch object), not documented in agent_example. Re-check before relying on it.
+Status on release: CLI defect fixed, untried since — CLI defect fixed in mammoth-io 0.7.19 / mammoth-cli 2.0.46: AutomationsAPI.update sent path=status value='resume' to the backend verbatim; the backend's wire vocabulary for that path is 'suspend'/'restore' (apiv2/apiv2/automations/schema.py AutomationStatusVa…

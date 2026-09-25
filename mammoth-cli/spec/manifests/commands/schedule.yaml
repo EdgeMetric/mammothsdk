@@ -147,7 +147,13 @@ commands:
   - CT-SCHEDULE-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'B04 SERVER_VARIANCE: schedule list may return 405.'
+  known_restrictions: 'B04 SERVER_VARIANCE: unconditionally unimplemented on every backend
+    release tested, not intermittent -- GET .../schedules always returns HTTP 400 with error
+    code 5GENR011 NOT_IMPLEMENTED (mvc-service apiv2/apiv2/schedules/controller.py
+    ScheduleController.list_schedules always raises ClientError(not_implemented_error); its
+    own docstring says schedules carry no workspace/project reference to list by). Do not poll
+    it; there is no way to list schedules for a project from the CLI today. Use `schedule get
+    SCHEDULE_ID` with an id obtained elsewhere.'
   reviewed_by: primary
 - command_id: schedule.update
   command_path: schedule update

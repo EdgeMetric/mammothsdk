@@ -120,7 +120,12 @@ commands:
   - CT-AUTOMATION-GET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'B04 SERVER_VARIANCE: observed on release returning HTTP 500 with an
+    empty body for an automation automation.create just returned (deterministic, not eventual
+    consistency; see docs/capability-evidence/fixture-sweep-20260919/). Backend defect, not a CLI
+    request-shape issue; root-caused (not live-reproduced) to mvc-service apiv2/apiv2/automations/utils.py
+    get_automation_tasks() indexing automation_tasks[0] unconditionally -- see REL-181 in
+    docs/release-capability-matrix.json for the full trace. Do not retry more than once.'
   reviewed_by: primary
 - command_id: automation.list
   command_path: automation list

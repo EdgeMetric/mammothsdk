@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.45
+version: 2.0.46
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
@@ -82,7 +82,7 @@ mammoth view transform --help              # every data transformation
 | Rank, running total, previous row | `view transform window` |
 | A dashboard | `dashboard create-blank` ([dashboards](references/recipes/dashboards.md)) |
 | Deliver the rows | `view export csv`, `view export postgres` (and other destinations), `view export dataset` |
-| Run something on a schedule or on new data (refresh, append, alert) | `automation create`: a condition (`at_specific_time`, new file in a folder, ...) and tasks (`run_data_retrieval`, `append_data`, `send_an_alert`, `pull_cloud_files`). `schedule create` only pulls a connector's data. A dataset made from an uploaded file has no source to refresh from; say so |
+| Run something on a schedule or on new data (refresh, append, alert) | `automation create`: a condition (`at_specific_time`, new file in a folder, ...) and tasks (`run_data_retrieval`, `append_data`, `send_an_alert`, `pull_cloud_files`). `schedule create` only pulls a connector's data. A dataset made from an uploaded file has no source to refresh from; say so. Full recipe, including a known `automation get` backend caveat: [recurring work](references/recipes/scheduling.md) |
 
 A search with no full match returns `suggestions` and a `hint`. Before you
 conclude the CLI cannot do something the web app does, check
