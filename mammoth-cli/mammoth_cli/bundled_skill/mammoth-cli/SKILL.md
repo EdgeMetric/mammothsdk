@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.48
+version: 2.0.49
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
@@ -73,7 +73,8 @@ mammoth view transform --help              # every data transformation
 | Add rows to an existing dataset, or combine two sources | `file upload FILE --input '{"append_to_ds_id": DATASET_ID}'`; then `discard-duplicates` and diff `row_count` before/after ([about Mammoth](references/about-mammoth.md#view-settings-and-what-has-no-command)) |
 | Keep or remove rows | `view transform filter` |
 | Remove duplicate rows | `view transform discard-duplicates` |
-| Totals, counts, averages per group | `view transform pivot` |
+| Totals, counts, averages per group — just to read the number | `view data aggregate` (read-only: `--input '{"group_by": [...], "aggregations": [{"column": ..., "function": "SUM"}]}'` or `{"metric": {...}}`); never add a `pivot` task just to answer a question |
+| Totals, counts, averages per group — as a lasting change to the pipeline | `view transform pivot` |
 | A calculated column | `view transform math` |
 | Blanks to a constant, or to the previous row's value | `view transform set-values` (`IS_EMPTY`), `view transform fill-missing` |
 | Clean text | `view transform text`, `replace`, `bulk-replace` |

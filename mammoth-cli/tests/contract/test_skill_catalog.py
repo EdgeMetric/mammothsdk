@@ -56,6 +56,6 @@ def test_every_entry_carries_a_release_status_joined_from_the_matrix() -> None:
     assert "ran once on CLI" in _section("view", "view.data.get")
     assert "untried" in _section("view", "view.transform.unnest")
     assert "through `view.task.add`" in _section("view", "view.transform.filter")
-    unsupported = _section("dashboard", "dashboard.create")
+    unsupported = _section("dashboard", "dashboard.pdf.export")
     assert unsupported.startswith("\n\nRun:") and "Do not run:" in unsupported
     assert "Result:" not in unsupported

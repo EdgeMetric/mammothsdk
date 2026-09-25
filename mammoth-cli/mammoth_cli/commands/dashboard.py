@@ -490,24 +490,6 @@ def dashboard_source_list(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
-def dashboard_create(invocation: Invocation) -> HandlerResult:
-    """Create a dashboard. Intent comes from a positional or the ``intent`` field."""
-    document = invocation.load_input() or {}
-    intent = _string_positional(invocation) or document.get("intent")
-    if not intent:
-        raise CliError(
-            code=CODE_MISSING_ARGUMENT,
-            message="A dashboard intent is required.",
-            exit_status=EXIT_USAGE,
-            hint="Pass the intent as a positional argument or an 'intent' input field.",
-        )
-    _require_field(document, "source")
-    kwargs = bind_command_inputs(invocation.command_id, document, intent=intent)
-    with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
-    return data, _meta(invocation, auth.workspace_id)
-
-
 def dashboard_update(invocation: Invocation) -> HandlerResult:
     """Apply a JSON Patch to one dashboard. Dashboard id is positional."""
     dashboard_id = _require_int_positional(invocation, "dashboard id")

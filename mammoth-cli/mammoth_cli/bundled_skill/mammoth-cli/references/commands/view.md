@@ -212,6 +212,16 @@ Result: `ViewDataCheckUpdateResult`; mutation `benign_mutation`, confirmation `n
 
 Status on release: observed blocker — backend_error: PATCH with the schema's documented {op: command, path: enable|disable, value: null} shape returns HTTP 500 empty body (CLI outcome_unknown, exit 7) while the mutatio. Re-check before relying on it.
 
+### `view.data.aggregate`
+
+Run: `mammoth view data aggregate`. Exact input fields: `mammoth schema get view.data.aggregate`.
+
+Example: `mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewDataAggregateResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.data.get`
 
 Run: `mammoth view data get`. Exact input fields: `mammoth schema get view.data.get`.

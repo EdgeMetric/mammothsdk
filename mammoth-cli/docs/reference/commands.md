@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.48.
+Generated from the reviewed command manifests for mammoth-cli 2.0.49.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -1194,17 +1194,6 @@ Total commands: 557.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.context_update`
 - Agent example: `mammoth dashboard context update resource-123 --input '{"body": {"params": {"name": "Revenue report"}}}'`
-
-### `mammoth dashboard create`
-
-**Arguments**
-
-- `INTENT` (str, optional) — Generation intent for the new dashboard; or pass it via the 'intent' input field.
-
-- Mutation class: `benign_mutation`
-- Confirmation: `none`
-- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.create`
-- Agent example: `mammoth dashboard create 'Summarize revenue by region' --input '{"source": [1]}'`
 
 ### `mammoth dashboard create-blank`
 
@@ -4123,6 +4112,18 @@ Total commands: 557.
 - Confirmation: `none`
 - Backing SDK: `mammoth.client.ViewsResource.create`
 - Agent example: `mammoth view create 123`
+
+### `mammoth view data aggregate`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — ID of the dataset the view belongs to; resolved from the view when omitted.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.aggregate`
+- Agent example: `mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'`
 
 ### `mammoth view data get`
 

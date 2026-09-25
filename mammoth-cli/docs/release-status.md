@@ -1,5 +1,44 @@
 # CLI release provenance
 
+## 2.0.49
+
+An in-app agent driving the CLI as its only surface had no read-only way to
+answer a question like "total spend by channel" and was mutating the user's
+pipeline (`view transform pivot`, then `view task delete` to clean up) just to
+read a number. Two more defects found alongside it while reviewing the same
+`view.data.*` surface.
+
+- **New (SDK, `mammoth-io` 0.7.21; CLI, `mammoth-cli` 2.0.49)**:
+  `DataviewsAPI.aggregate(...)` and `view data aggregate` — a read-only PIVOT
+  group-by or single METRIC query against `ExecuteVolatileQuery`
+  (`POST .../dataviews/{id}/data/query`). It computes and returns an
+  aggregated result without adding a task to the view's pipeline or otherwise
+  changing it. `mammoth view data aggregate VIEW_ID --input
+  '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function":
+  "SUM", "as_name": "Total Spend"}]}'`; pass `metric` instead of
+  `aggregations`/`group_by` for a single value. The bundled guide's goal
+  table now steers an agent here instead of `view transform pivot` for a
+  read.
+- **Fixed**: `view.data.query`'s manifest declared `operation_ids:
+  [ExecuteVolatileQuery]`, but its SDK method (`DataviewsAPI.query_data`)
+  actually calls `GetDataviewDataPost` (`POST .../dataviews/{id}/data`, no
+  `/query`). The two commands' operation ids were swapped; corrected in
+  `spec/manifests/openapi-operations.yaml` and
+  `spec/manifests/commands/view.yaml`.
+- **Removed**: `dashboard.create` (the legacy AI dashboard-generation
+  command, backed by `GenerateDashboard`/`POST /dashboards`). Current apiv2
+  has no handler for a bare `POST /dashboards`
+  (`apiv2/apiv2/mmai/dashboard/controller.py`); every call 404s. It
+  historically returned a structured HTTP 409 `4DASH012
+  DASHBOARD_LEGACY_CREATION_RETIRED`, which the bundled guide already
+  documented as "not supported" without saying the command can never
+  succeed on release. Removed the manifest entry, the CLI handler
+  (`dashboard_create`), the SDK method (`DashboardsAPI.create`), and their
+  tests; `GenerateDashboard` is now `disposition: server_unavailable` in
+  `spec/manifests/openapi-operations.yaml` so it stays a reviewed,
+  documented operation rather than disappearing silently. Use
+  `dashboard create-blank` or `dashboard v3 generate` instead.
+
 ## 2.0.48
 
 Two defects found from an eval trace and a live task replay on koyal

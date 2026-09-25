@@ -244,7 +244,6 @@ _PILOT_ADAPTER_INPUTS: dict[str, frozenset[str]] = {
     "file.upload": frozenset({"files"}),
     "view.transform.math": frozenset({"condition"}),
     "view.transform.lookup": frozenset(),
-    "dashboard.create": frozenset({"intent"}),
     "dashboard.source.list": frozenset(),
 }
 
@@ -631,7 +630,7 @@ CONTRACT_BOUND_COMMANDS = frozenset(
     S2_COMMANDS | S3_COMMANDS | S4_COMMANDS | S6_COMMANDS | S7_COMMANDS
 )
 
-# The five reviewed adapter shapes remain separately named for compatibility
+# The four reviewed adapter shapes remain separately named for compatibility
 # with existing pilot tests and release notes.
 PILOT_COMMANDS = frozenset(_PILOT_ADAPTER_INPUTS)
 LOCAL_COMMANDS = _LOCAL_COMMANDS

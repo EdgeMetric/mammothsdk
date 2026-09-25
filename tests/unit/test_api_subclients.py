@@ -587,6 +587,95 @@ class TestDataviewsAPI:
         client.dataviews.query_data(dataset_id=500, dataview_id=42, sequence=0)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/dataviews/42/data")
 
+    def test_aggregate_pivot(self, client: MammothClient):
+        client.dataviews.aggregate(
+            dataset_id=500,
+            dataview_id=42,
+            group_by=["column_1"],
+            aggregations=[{"column": "column_2", "function": "SUM", "as_name": "Total"}],
+        )
+        assert_called_with_method_and_endpoint(
+            client._request_json, "POST", "/dataviews/42/data/query"
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "param": {
+                    "PIVOT": {
+                        "SELECT": [
+                            {
+                                "FUNCTION": "SUM",
+                                "AS": "Total",
+                                "INTERNAL_NAME": "agg_0",
+                                "COLUMN": "column_2",
+                            }
+                        ],
+                        "GROUP_BY": [{"COLUMN": "column_1", "INTERNAL_NAME": "group_0"}],
+                    }
+                }
+            },
+        )
+
+    def test_aggregate_metric(self, client: MammothClient):
+        client.dataviews.aggregate(
+            dataset_id=500,
+            dataview_id=42,
+            metric={"function": "COUNT"},
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "param": {
+                    "METRIC": {
+                        "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": {"FUNCTION": "COUNT"}}],
+                        "AS": "COUNT",
+                        "INTERNAL_NAME": "metric",
+                    }
+                }
+            },
+        )
+
+    def test_aggregate_forwards_condition_sequence_and_limit(self, client: MammothClient):
+        client.dataviews.aggregate(
+            dataset_id=500,
+            dataview_id=42,
+            metric={"function": "COUNT"},
+            condition={"column_1": {"GT": {"VALUE": 0}}},
+            sequence=3,
+            limit=10,
+        )
+        body = client._request_json.call_args.kwargs.get("json")
+        assert body["param"]["CONDITION"] == {"column_1": {"GT": {"VALUE": 0}}}
+        assert body["param"]["SEQUENCE_NUMBER"] == 3
+        assert body["display_properties"] == {"LIMIT": 10}
+
+    def test_aggregate_requires_exactly_one_of_aggregations_or_metric(self, client: MammothClient):
+        with pytest.raises(MammothValidationError):
+            client.dataviews.aggregate(dataset_id=500, dataview_id=42)
+        with pytest.raises(MammothValidationError):
+            client.dataviews.aggregate(
+                dataset_id=500,
+                dataview_id=42,
+                group_by=["column_1"],
+                metric={"function": "COUNT"},
+            )
+
+    def test_aggregate_rejects_unsupported_function(self, client: MammothClient):
+        with pytest.raises(MammothValidationError):
+            client.dataviews.aggregate(
+                dataset_id=500,
+                dataview_id=42,
+                metric={"column": "column_1", "function": "MEDIAN"},
+            )
+
+    def test_aggregate_requires_column_unless_count(self, client: MammothClient):
+        with pytest.raises(MammothValidationError):
+            client.dataviews.aggregate(
+                dataset_id=500,
+                dataview_id=42,
+                metric={"function": "SUM"},
+            )
+
     def test_exportable_config_get(self, client: MammothClient):
         client.dataviews.get_exportable_config(dataset_id=500, dataview_id=42)
         assert_called_with_method_and_endpoint(
@@ -1466,44 +1555,7 @@ class TestDashboardsAPI:
             client.dashboards.get_draft_data(dashboard_id=5, widget_id="")
         client._request_json.assert_not_called()
 
-    # ── create ───────────────────────────────────────────────────────────────
-
-    def test_create_sends_correct_body(self, client: MammothClient):
-        client.dashboards.create(
-            intent="Show quarterly revenue by region",
-            source=[101, 102],
-        )
-        assert_called_with_method_and_endpoint(client._request_json, "POST", "/dashboards")
-        assert_json_body(
-            client._request_json,
-            {
-                "params": {
-                    "intent": "Show quarterly revenue by region",
-                    "source": [101, 102],
-                    "enable_filters": True,
-                    "enable_pages": False,
-                }
-            },
-        )
-
-    def test_create_explicit_flags(self, client: MammothClient):
-        client.dashboards.create(
-            intent="Sales performance breakdown for EMEA",
-            source=[7],
-            enable_filters=False,
-            enable_pages=True,
-        )
-        assert_json_body(
-            client._request_json,
-            {
-                "params": {
-                    "intent": "Sales performance breakdown for EMEA",
-                    "source": [7],
-                    "enable_filters": False,
-                    "enable_pages": True,
-                }
-            },
-        )
+    # ── create_blank ─────────────────────────────────────────────────────────
 
     def test_create_blank_sends_release_wire(self, client: MammothClient):
         client.dashboards.create_blank(
@@ -1524,21 +1576,6 @@ class TestDashboardsAPI:
     def test_create_blank_rejects_nonpositive_dataview_before_request(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dataview_id"):
             client.dashboards.create_blank({"dataview_id": 0})
-        client._request_json.assert_not_called()
-
-    def test_create_rejects_short_intent(self, client: MammothClient):
-        with pytest.raises(MammothValidationError, match="intent"):
-            client.dashboards.create(intent="too short", source=[1])
-        client._request_json.assert_not_called()
-
-    def test_create_rejects_empty_source(self, client: MammothClient):
-        with pytest.raises(MammothValidationError, match="source"):
-            client.dashboards.create(intent="Show quarterly revenue by region", source=[])
-        client._request_json.assert_not_called()
-
-    def test_create_rejects_nonpositive_source_id(self, client: MammothClient):
-        with pytest.raises(MammothValidationError, match="source"):
-            client.dashboards.create(intent="Show quarterly revenue by region", source=[1, 0])
         client._request_json.assert_not_called()
 
     # ── update ───────────────────────────────────────────────────────────────

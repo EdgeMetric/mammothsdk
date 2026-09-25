@@ -1,8 +1,9 @@
 # Dashboards
 
-Release has retired `dashboard create` (legacy engine; HTTP 409
-`4DASH012`): `schema find "dashboard create"` lists it first, do not use it.
-Create with `create-blank` (or `v3 generate` when the task allows an AI route).
+`dashboard create` (the legacy AI-generation engine) does not exist as a
+command: it has no handler in current apiv2 (always 404s; historically HTTP
+409 `4DASH012 DASHBOARD_LEGACY_CREATION_RETIRED`). Create with `create-blank`
+(or `v3 generate` when the task allows an AI route).
 `dashboard source list` is an observed blocker on release (see
 capabilities); verify the view binding with `dashboard get DASHBOARD_ID`
 (`data.dataview_id`) instead.

@@ -384,7 +384,6 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
         for command, field, label in (
             ("automation.create", "name", "Name of the new automation"),
             ("client-app.create", "app_name", "Name of the new client app"),
-            ("dashboard.create", "intent", "Generation intent for the new dashboard"),
             ("folder.create", "name", "Name of the new folder"),
             ("parameter.create", "name", "Name of the new parameter"),
             ("parameter.group.create", "name", "Name of the new parameter group"),
@@ -517,7 +516,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
                 falls_back_to_field="dataset_id",
             ),
         )
-        for command in ("view.preview", "view.data.get", "view.data.query")
+        for command in ("view.preview", "view.data.get", "view.data.query", "view.data.aggregate")
     },
     # The view sub-resource commands take VIEW_ID first, then an OPTIONAL trailing
     # DATASET_ID resolved from the view -- mirroring the view data commands so the

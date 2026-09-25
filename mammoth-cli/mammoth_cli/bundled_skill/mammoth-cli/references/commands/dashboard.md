@@ -162,14 +162,6 @@ Result: `DashboardContextUpdateResult`; mutation `benign_mutation`, confirmation
 
 Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: context. renamed context 1 Single invocation only; no error-path or variant coverage.
 
-### `dashboard.create`
-
-Run: `mammoth dashboard create`. Exact input fields: `mammoth schema get dashboard.create`.
-
-Example: `mammoth dashboard create 'Summarize revenue by region' --input '{"source": [1]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Do not run: not supported — backend returns HTTP 409 4DASH012 DASHBOARD_LEGACY_CREATION_RETIRED (legacy dashboard creation retired). Use dashboard.create-blank or dashboard.v3.generate. Dashboard sweep 2026-09-18, CLI 2.0.12.
-
 ### `dashboard.create-blank`
 
 Run: `mammoth dashboard create-blank`. Exact input fields: `mammoth schema get dashboard.create-blank`.

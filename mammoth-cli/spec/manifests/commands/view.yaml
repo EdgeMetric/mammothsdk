@@ -1046,7 +1046,7 @@ commands:
   disposition: command
   alias_of: null
   operation_ids:
-  - ExecuteVolatileQuery
+  - GetDataviewDataPost
   positionals:
   - name: view_id
     type: int
@@ -1087,6 +1087,56 @@ commands:
   undo_test: null
   known_restrictions: 'B11 QUERY_OFFSET_SEMANTICS: one-indexed (offset=1) with no proven continuation;
     --all is blocked.'
+  reviewed_by: primary
+- command_id: view.data.aggregate
+  command_path: view data aggregate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ExecuteVolatileQuery
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: ID of the dataset the view belongs to; resolved from the view when omitted.
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.aggregate
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.aggregate with validated request fields.
+  request_model: ViewDataAggregateRequest
+  result_model: ViewDataAggregateResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: No automated disposable-view fixture wired into tests/live yet for this command.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view data aggregate VIEW_ID --help
+  agent_example: 'mammoth view data aggregate 123 --input ''{"group_by": ["Channel"], "aggregations":
+    [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'''
+  unit_tests:
+  - UT-VIEW-DATA-AGGREGATE
+  contract_tests:
+  - CT-VIEW-DATA-AGGREGATE-HUMAN
+  - CT-VIEW-DATA-AGGREGATE-JSON
+  - CT-VIEW-DATA-AGGREGATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only: computes and returns an aggregated result without adding a task to
+    the view''s pipeline or otherwise changing it. Pass exactly one of ''aggregations'' (a PIVOT
+    group-by; ''group_by'' is optional) or ''metric'' (a single METRIC value). ''function'' is one of
+    SUM, COUNT, AVG, MIN, MAX.'
   reviewed_by: primary
 - command_id: view.delete
   command_path: view delete

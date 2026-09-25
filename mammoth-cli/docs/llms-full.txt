@@ -299,8 +299,6 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard context list
 - `mammoth dashboard context update` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.context_update
   example: mammoth dashboard context update resource-123 --input '{"body": {"params": {"name": "Revenue report"}}}'
-- `mammoth dashboard create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.create
-  example: mammoth dashboard create 'Summarize revenue by region' --input '{"source": [1]}'
 - `mammoth dashboard create-blank` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.create_blank
   example: mammoth dashboard create-blank --input '{"params": {"dataview_id": 1}}' --yes
 - `mammoth dashboard data draft` [read/none] -> mammoth.api.dashboards.DashboardsAPI.get_draft_data
@@ -947,6 +945,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view conditional-format update 123 123 --input '{"rule": {"sample_key": "Status"}}'
 - `mammoth view create` [benign_mutation/none] -> mammoth.client.ViewsResource.create
   example: mammoth view create 123
+- `mammoth view data aggregate` [read/none] -> mammoth.api.dataviews.DataviewsAPI.aggregate
+  example: mammoth view data aggregate 123 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'
 - `mammoth view data get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.get_data
   example: mammoth view data get 123 123
 - `mammoth view data query` [read/none] -> mammoth.api.dataviews.DataviewsAPI.query_data
