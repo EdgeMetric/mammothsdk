@@ -70,6 +70,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.export.dataset": (
         "send copy branch out rows into a dataset in another project append union stack rows"
     ),
+    "automation.create": (
+        "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
+        "hour hourly month monthly automatically trigger alert email a dataset pipeline"
+    ),
     # One entry per ``view transform`` command, in the words a user states a
     # goal in rather than Mammoth's own task names.  This is the CLI's version
     # of the web app's Transform menu; keep every transform listed.

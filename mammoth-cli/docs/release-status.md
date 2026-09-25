@@ -1,5 +1,20 @@
 # CLI release provenance
 
+## 2.0.45
+
+From the first live use of the in-product agent (mvc-service, CLI surface).
+
+- `schema find` knows how people ask for recurring work: "schedule a daily
+  refresh", "run every week automatically" and "automation refresh dataset"
+  now resolve to `automation create`. Before, none matched, the suggestions
+  led with `view export dataset`, and the agent concluded there was no
+  automation command and used `schedule create` instead.
+- The guide's goal table has a scheduling row: `automation create` takes a
+  condition (`at_specific_time`, new file in a folder, ...) and tasks
+  (`run_data_retrieval`, `append_data`, `send_an_alert`, `pull_cloud_files`);
+  `schedule create` only pulls a connector's data; a dataset made from an
+  uploaded file has no source to refresh from.
+
 ## 2.0.44
 
 For hosts that run commands for their own signed-in users (the Mammoth
@@ -16,6 +31,19 @@ in-product agent). No command changes.
   headers so they replace them. A host uses it to send its user's own
   session (`Authorization` and `Cookie`). The endpoint still comes only from
   the server prefix.
+
+Eval `two-files-dashboard`, run through the in-product agent (mvc-service
+`AGENT_CLI_SURFACE`, Sonnet 5) on koyal, graded from the persisted transcript:
+content checks 2-8 = 7, 7 and one run that stopped at a confirmation card the
+eval driver does not answer (2.0.41 baseline: 6, 5, 3). The read-back of the
+baked board (`dashboard canvas get`) returned the true revenue in both
+finished runs.
+
+CLI published from deterministic local artifacts built from tag `cli-v2.0.44`
+(source commit `47d1111`); requires mammoth-io 0.7.18 (unchanged):
+
+- `mammoth_cli-2.0.44-py3-none-any.whl` sha256 `2c1e9b3c1f5fd5c3cddb5192ee0741183a611e7e99c1db1c5faf2cdb226db343`
+- `mammoth_cli-2.0.44.tar.gz` sha256 `d0fdbbebffa50f92ab7027936aea17577a6a0557b05acbecde4f9f61b9d4b28c`
 
 ## 2.0.43
 

@@ -95,6 +95,9 @@ def test_schema_find_prioritizes_path_matches_and_caps_broad_results() -> None:
         ("top 10 rows", "view.transform.limit-rows"),
         ("days between two dates", "view.transform.date-diff"),
         ("append rows", "file.upload"),
+        ("automation refresh dataset", "automation.create"),
+        ("schedule a daily refresh", "automation.create"),
+        ("run every week automatically", "automation.create"),
     ],
 )
 def test_schema_find_resolves_goal_phrasing_to_the_transform(query: str, command_id: str) -> None:
