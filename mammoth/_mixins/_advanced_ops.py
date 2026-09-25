@@ -303,9 +303,11 @@ class AdvancedOpsMixin(ViewHost):
     def generate_sql(self, intent: str) -> str:
         """Generate SQL from natural language using the Mammoth LLM.
 
-        Calls the ``/sql_generation`` endpoint which converts the intent
-        into SQL, adds the resulting task to the pipeline, waits for
-        completion, and returns the generated query.
+        Calls the ``/sql_generation`` endpoint, which converts the intent
+        into SQL and validates it against the view, waits for the job, and
+        returns the query. It does not change the view: no task is added
+        (verified on release, 2026-09-25). To apply the query, pass it to
+        :meth:`add_sql`.
 
         Args:
             intent: Natural language description of the desired query
@@ -318,6 +320,7 @@ class AdvancedOpsMixin(ViewHost):
 
             sql = view.generate_sql("show total sales by region")
             print(sql)  # "SELECT region, SUM(sales) FROM ... GROUP BY region"
+            view.add_sql(sql)  # apply it (replaces the view's columns)
         """
         ws = self._client.workspace_id
         proj = getattr(self._client, "project_id", None)

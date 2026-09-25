@@ -65,7 +65,33 @@ correct aggregation for a "distinct people" card under a date filter);
 ID --input '{"body": {"params": {"pages": [{"title": ..., "focus": {...},
 "charts": [...]}]}}}'` adds a page, but that route runs through the LLM
 guard and may drop a unit it cannot evidence (it says so in `data.message`);
-`canvas save` keeps what you wrote.
+`canvas save` keeps what you wrote. When the route refuses a chart (for
+example a `pie` that the data does not support), `data.chart_check.refused`
+names it. A new page that got no charts is removed, and
+`data.chart_check.removed_pages` lists it. Add a chart of a different kind
+(`hbar`, `line`, `table`) for that page.
+
+## Put the money on the board
+
+If the data has money (a price, an amount, revenue or cost), the dashboard
+must show it. A board that shows only counts or quantities has left out the
+number the user most likely wants.
+
+- A money column must be `NUMERIC` first. `view data get` flags a money
+  column that is stored as text in `column_warnings`.
+- A unit price is not revenue. Do not sum a price. If the data has a
+  quantity and a unit price, add a revenue column before you build the
+  board, then chart the sum of that column:
+
+```bash
+mammoth view transform math VIEW_ID --project PROJECT_ID \
+  --input '{"dataset_id":DATASET_ID,"expression":"qty * price","new_column":"revenue"}'
+```
+
+- Put revenue in a KPI (`focus.kpis`, `agg` `sum`, `unit.prefix` for the
+  currency) and in one or more charts (revenue by product, by segment, by
+  month). Rows with an empty price give an empty revenue. Say how many there
+  are in your report.
 
 **Read the bindings back, then the numbers.** `dashboard canvas get` returns
 `data.meta.figures` — `"p1:kpi:2": {"descriptors": {"value": "<id>"}}` per

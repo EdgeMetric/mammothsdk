@@ -93,6 +93,11 @@ def build_all() -> dict[Path, str]:
     unsupported = sum(1 for row in rows if row["status"] == "Not supported")
     published = sum(1 for _ in load_commands())
     total_operations = len(matrix["rows"])
+    task_add = next(
+        (row for row in matrix["rows"] if row.get("canonical_command") == "view.task.add"), {}
+    )
+    proven = (task_add.get("evidence") or {}).get("proven_transforms") or []
+    proven_text = ", ".join(f"`{name}`" for name in sorted(proven)) or "none yet"
     lines = [
         "# What is proven on release",
         "",
@@ -121,11 +126,11 @@ def build_all() -> dict[Path, str]:
         "and this release repairs it; nobody has re-run the route yet.",
         "- Commands not listed under a family are untried.",
         "",
-        "The typed `view transform *` commands all submit through `view.task.add`; "
-        "its matrix row names the transformations that ran end to end and were read "
-        "back (filter, fill-missing, join, pivot, set-values with a condition, text, "
-        "bulk-replace, convert-type, discard-duplicates). A transformation not named "
-        "there has the same untried status as any other command.",
+        "The typed `view transform *` commands all submit through `view.task.add` "
+        "(`rename-columns` and `sort` through `view.update`); its matrix row names the "
+        "transformations that ran end to end and were read back against a known "
+        f"answer: {proven_text}. A transformation not named there has the same "
+        "untried status as any other command.",
         "",
         "## Coverage by family",
         "",

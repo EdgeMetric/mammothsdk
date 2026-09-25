@@ -32,9 +32,10 @@ class RowOpsMixin(ViewHost):
 
         Args:
             column: Display name of column to fill.
-            direction: Fill direction — ``FillDirection.LAST_VALUE``
-                fills downward (forward-fill), ``FillDirection.FIRST_VALUE``
-                fills upward (back-fill).
+            direction: Fill direction — ``FillDirection.FIRST_VALUE``
+                fills downward (forward-fill: a blank takes the previous
+                row's value), ``FillDirection.LAST_VALUE`` fills upward
+                (back-fill: a blank takes the next row's value).
             partition_by: Display name of column to partition by (optional).
                 Fill restarts at each partition boundary.
             order_by: Sort order applied before filling (optional)::
@@ -48,12 +49,12 @@ class RowOpsMixin(ViewHost):
 
             from mammoth import FillDirection, SortDirection
 
-            # Forward-fill missing values
-            view.fill_missing("Price", FillDirection.LAST_VALUE)
+            # Forward-fill missing values (carry the previous value down)
+            view.fill_missing("Price", FillDirection.FIRST_VALUE)
 
-            # Fill within partitions, ordered by date
+            # Forward-fill within partitions, ordered by date
             view.fill_missing(
-                "Metric", FillDirection.LAST_VALUE,
+                "Metric", FillDirection.FIRST_VALUE,
                 partition_by="Region",
                 order_by=[["Date", SortDirection.ASC]],
             )

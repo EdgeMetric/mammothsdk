@@ -109,7 +109,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "filter rows keep drop exclude remove delete rows where condition subset"
     ),
     "view.transform.generate-sql": (
-        "generate sql from natural language intent question and run it as a task"
+        "generate write sql query from natural language intent question"
     ),
     "view.transform.increment-date": "add subtract days months years to a date column shift",
     "view.transform.join": (

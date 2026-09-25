@@ -220,7 +220,12 @@ class WindowRange(str, Enum):
 
 
 class FillDirection(str, Enum):
-    """Fill directions for missing value imputation."""
+    """Fill directions for missing value imputation.
+
+    ``FIRST_VALUE`` is a forward fill: a blank takes the previous row's value
+    in the ``order_by`` order. ``LAST_VALUE`` is a back-fill: a blank takes the
+    next row's value (verified on release, 2026-09-25).
+    """
 
     FIRST_VALUE = "FIRST_VALUE"
     LAST_VALUE = "LAST_VALUE"

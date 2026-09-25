@@ -413,6 +413,50 @@ def test_transform_convert_type_forwards(fake_service: FakeMammothService, tmp_p
     ]
 
 
+_DATAVIEW_GET = "mammoth.api.dataviews.DataviewsAPI.get"
+_TYPED_METADATA = {
+    "metadata": [
+        {"display_name": "a", "internal_name": "column_1", "type": "NUMERIC"},
+        {"display_name": "b", "internal_name": "column_2", "type": "TEXT"},
+    ]
+}
+
+
+def test_transform_convert_type_skips_a_column_that_already_has_the_type(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # Converting NUMERIC -> NUMERIC puts the pipeline in ref_error on release.
+    fake_service.responses[_DATAVIEW_GET] = _TYPED_METADATA
+    doc = _write(
+        tmp_path,
+        {"conversions": [{"column": "a", "to": "NUMERIC"}, {"column": "b", "to": "NUMERIC"}]},
+    )
+    data, _ = view_ops_cmd.view_transform_convert_type(
+        _inv(
+            "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
+    )
+    assert fake_service.view_call_log == [
+        (3, "convert_type", {"dataset_id": 122, "conversions": [{"column": "b", "to": "NUMERIC"}]})
+    ]
+    assert data["skipped"] == [{"column": "a", "type": "NUMERIC"}]
+
+
+def test_transform_convert_type_adds_no_task_when_every_column_has_the_type(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = _TYPED_METADATA
+    doc = _write(tmp_path, {"conversions": [{"column": "a", "to": "NUMERIC"}]})
+    data, _ = view_ops_cmd.view_transform_convert_type(
+        _inv(
+            "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
+    )
+    assert fake_service.view_call_log == []
+    assert data["status"] == "no_change"
+    assert data["skipped"] == [{"column": "a", "type": "NUMERIC"}]
+
+
 def test_transform_copy_columns_requires_copies(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         view_ops_cmd.view_transform_copy_columns(
@@ -632,6 +676,25 @@ def test_transform_generate_sql_requires_intent(fake_service: FakeMammothService
             _inv("view.transform.generate-sql", extra_args=["3"])
         )
     assert excinfo.value.code == "missing_field"
+
+
+def test_transform_generate_sql_says_the_view_is_unchanged(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # The route returns a validated query and adds no task (release).
+    query = 'SELECT "city", COUNT(*) AS n FROM "View 1" GROUP BY "city"'
+    fake_service.view_responses[(3, "generate_sql")] = query
+    doc = _write(tmp_path, {"intent": "Count rows per city"})
+    data, _ = view_ops_cmd.view_transform_generate_sql(
+        _inv(
+            "view.transform.generate-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
+    )
+    assert data["sql"] == query
+    assert data["applied"] is False
+    assert data["apply"].startswith("mammoth view transform add-sql 3 --input '")
+    applied = json.loads(data["apply"].split("--input ", 1)[1].strip("'"))
+    assert applied == {"dataset_id": 122, "query": query}
 
 
 def test_transform_generate_sql_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:
@@ -1265,7 +1328,9 @@ def test_transform_with_reference_errors_fails_with_the_repair_command(
             "error_code": 7003,
         }
     ]
-    assert error.recovery_commands == ["mammoth view task delete 132 107 --yes"]
+    assert error.recovery_commands == [
+        "mammoth view task delete 132 107 --yes --input '{\"dataset_id\": 122}'"
+    ]
     assert "amount" in error.message and "TEXT" in (error.hint or "")
     # The follow-up reads carry the exact parent so they never fall into discovery.
     assert (
@@ -1344,7 +1409,9 @@ def test_sdk_raised_reference_error_is_enriched_the_same_way(
             )
         )
     assert excinfo.value.code == view_ops_cmd.CODE_PIPELINE_REFERENCE_ERROR
-    assert excinfo.value.recovery_commands == ["mammoth view task delete 132 107 --yes"]
+    assert excinfo.value.recovery_commands == [
+        "mammoth view task delete 132 107 --yes --input '{\"dataset_id\": 122}'"
+    ]
 
 
 # -- expected_task_count precondition --------------------------------------

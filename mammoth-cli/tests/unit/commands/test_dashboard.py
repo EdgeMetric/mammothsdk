@@ -719,3 +719,131 @@ def test_dashboard_tag_merge_is_destructive_and_target_confirmed() -> None:
     assert record is not None
     assert record["mutation_class"] == "destructive"
     assert record["confirmation"] == "confirm_target"
+
+
+_CANVAS_GET = "mammoth.api.dashboards.DashboardsAPI.canvas_get"
+_CANVAS_SAVE = "mammoth.api.dashboards.DashboardsAPI.canvas_save"
+_REFUSED_MESSAGE = (
+    "\n\n_Built: Page added · Bad, Page added · Good. "
+    "Couldn’t do: a pie isn't a chart type this data supports._"
+)
+
+
+def _pages_doc(tmp_path: Path) -> str:
+    chart = {"title": "Qty", "dim": "product", "measure": "qty", "agg": "sum"}
+    return _write_doc(
+        tmp_path,
+        {
+            "body": {
+                "params": {
+                    "pages": [
+                        {"title": "Bad", "charts": [{**chart, "kind": "pie"}]},
+                        {"title": "Good", "charts": [{**chart, "kind": "hbar"}]},
+                    ]
+                }
+            }
+        },
+    )
+
+
+def test_pages_add_removes_a_new_page_whose_charts_were_all_refused(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_ADD_PAGES] = {
+        "added_page_ids": ["p2", "p3"],
+        "bake_job_id": 221,
+        "message": _REFUSED_MESSAGE,
+        "sequence": 2,
+    }
+    fake_service.responses[_CANVAS_GET] = {
+        "canvas": {
+            "active_page_id": "p2",
+            "title": "probe",
+            "pages": [
+                {"id": "p1", "title": "Overview", "added": [], "focus": None},
+                {"id": "p2", "title": "Bad", "added": [], "focus": None},
+                {"id": "p3", "title": "Good", "added": [{"kind": "hbar"}], "focus": None},
+            ],
+        },
+        "meta": {"sequence": 2},
+    }
+    fake_service.responses[_CANVAS_SAVE] = {"sequence": 3, "bake_job_id": 223}
+    data, _ = dashboard_cmd.generated_dashboard(
+        _inv(
+            "dashboard.pages.add",
+            extra_args=["7"],
+            input_file=_pages_doc(tmp_path),
+            yes=True,
+            confirm="7",
+        )
+    )
+    assert [symbol for symbol, _ in fake_service.call_log] == [
+        _ADD_PAGES,
+        _CANVAS_GET,
+        _CANVAS_SAVE,
+    ]
+    saved = fake_service.call_log[-1][1]
+    assert saved["dashboard_id"] == 7
+    params = saved["body"]["params"]
+    assert params["base_sequence"] == 2
+    # The pre-existing blank page stays; only the new, empty page goes.
+    assert [page["id"] for page in params["canvas"]["pages"]] == ["p1", "p3"]
+    assert params["canvas"]["active_page_id"] == "p1"
+    assert data["chart_check"] == {
+        "refused": ["a pie isn't a chart type this data supports"],
+        "removed_pages": [{"id": "p2", "title": "Bad"}],
+    }
+    assert data["added_page_ids"] == ["p3"]
+    assert (data["sequence"], data["bake_job_id"]) == (3, 223)
+
+
+def test_pages_add_without_refusals_makes_no_extra_request(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_ADD_PAGES] = {
+        "added_page_ids": ["p2", "p3"],
+        "bake_job_id": 221,
+        "message": "\n\n_Built: Page added · Bad, Page added · Good._",
+        "sequence": 2,
+    }
+    data, _ = dashboard_cmd.generated_dashboard(
+        _inv(
+            "dashboard.pages.add",
+            extra_args=["7"],
+            input_file=_pages_doc(tmp_path),
+            yes=True,
+            confirm="7",
+        )
+    )
+    assert [symbol for symbol, _ in fake_service.call_log] == [_ADD_PAGES]
+    assert data["chart_check"] == {"refused": [], "removed_pages": []}
+
+
+def test_pages_add_reports_the_fix_when_the_cleanup_save_fails(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_ADD_PAGES] = {
+        "added_page_ids": ["p2", "p3"],
+        "bake_job_id": 221,
+        "message": _REFUSED_MESSAGE,
+        "sequence": 2,
+    }
+    fake_service.responses[_CANVAS_GET] = {
+        "canvas": {"pages": [{"id": "p2", "title": "Bad", "added": []}]},
+        "meta": {"sequence": 2},
+    }
+    fake_service.responses[_CANVAS_SAVE] = RuntimeError("conflict")
+    data, _ = dashboard_cmd.generated_dashboard(
+        _inv(
+            "dashboard.pages.add",
+            extra_args=["7"],
+            input_file=_pages_doc(tmp_path),
+            yes=True,
+            confirm="7",
+        )
+    )
+    check = data["chart_check"]
+    assert check["removed_pages"] == []
+    assert check["empty_pages"] == [{"id": "p2", "title": "Bad"}]
+    assert "dashboard canvas get 7" in check["fix"]
+    assert data["bake_job_id"] == 221

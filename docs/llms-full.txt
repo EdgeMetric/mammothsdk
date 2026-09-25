@@ -537,6 +537,8 @@
   - [Import errors](#import-errors)
   - [See also](#see-also)
 - [Changelog](#changelog)
+  - [v0.7.18](#v0718)
+    - [Fixed](#fixed)
   - [v0.7.17](#v0717)
     - [Added](#added)
     - [Fixed](#fixed)
@@ -2317,9 +2319,10 @@ Fill missing (null/empty) values using adjacent rows (FILL task).
 
 Args:
     column: Display name of column to fill.
-    direction: Fill direction — ``FillDirection.LAST_VALUE``
-        fills downward (forward-fill), ``FillDirection.FIRST_VALUE``
-        fills upward (back-fill).
+    direction: Fill direction — ``FillDirection.FIRST_VALUE``
+        fills downward (forward-fill: a blank takes the previous
+        row's value), ``FillDirection.LAST_VALUE`` fills upward
+        (back-fill: a blank takes the next row's value).
     partition_by: Display name of column to partition by (optional).
         Fill restarts at each partition boundary.
     order_by: Sort order applied before filling (optional)::
@@ -2333,12 +2336,12 @@ Examples::
 
     from mammoth import FillDirection, SortDirection
 
-    # Forward-fill missing values
-    view.fill_missing("Price", FillDirection.LAST_VALUE)
+    # Forward-fill missing values (carry the previous value down)
+    view.fill_missing("Price", FillDirection.FIRST_VALUE)
 
-    # Fill within partitions, ordered by date
+    # Forward-fill within partitions, ordered by date
     view.fill_missing(
-        "Metric", FillDirection.LAST_VALUE,
+        "Metric", FillDirection.FIRST_VALUE,
         partition_by="Region",
         order_by=[["Date", SortDirection.ASC]],
     )
@@ -7397,13 +7400,25 @@ The string is never truncated.
 
 Fill directions for missing value imputation.
 
+``FIRST_VALUE`` is a forward fill: a blank takes the previous row's value
+in the ``order_by`` order. ``LAST_VALUE`` is a back-fill: a blank takes the
+next row's value (verified on release, 2026-09-25).
+
 #### `FIRST_VALUE`
 
 Fill directions for missing value imputation.
 
+``FIRST_VALUE`` is a forward fill: a blank takes the previous row's value
+in the ``order_by`` order. ``LAST_VALUE`` is a back-fill: a blank takes the
+next row's value (verified on release, 2026-09-25).
+
 #### `LAST_VALUE`
 
 Fill directions for missing value imputation.
+
+``FIRST_VALUE`` is a forward fill: a blank takes the previous row's value
+in the ``order_by`` order. ``LAST_VALUE`` is a back-fill: a blank takes the
+next row's value (verified on release, 2026-09-25).
 
 #### `__init__(self, /, *args, **kwargs)`
 
@@ -12682,9 +12697,11 @@ view.limit_rows(10, bottom=True, order_by=[["Sales", SortDirection.ASC]])
 ### Fill missing values
 
 ```python
+# FIRST_VALUE carries the previous row's value down (forward fill);
+# LAST_VALUE takes the next row's value (back-fill).
 view.fill_missing(
     "Price",
-    direction=FillDirection.LAST_VALUE,
+    direction=FillDirection.FIRST_VALUE,
     order_by=[["Date", SortDirection.ASC]],
 )
 ```
@@ -18305,6 +18322,15 @@ client = MammothClient(..., timeout=120)  # 2 minutes per request
 
 
 # Changelog
+
+## v0.7.18
+
+### Fixed
+
+- `View.fill_missing` and `FillDirection` documented the directions the wrong
+  way round. `FIRST_VALUE` is the forward fill (a blank takes the previous
+  row's value in the `order_by` order); `LAST_VALUE` is the back-fill (the
+  next row's value). Verified on release; behaviour is unchanged.
 
 ## v0.7.17
 

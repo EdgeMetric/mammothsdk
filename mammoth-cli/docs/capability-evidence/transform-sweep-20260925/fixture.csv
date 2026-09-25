@@ -1,0 +1,8 @@
+id,name,city,amount,qty,start_date,end_date,tags,payload,q1,q2,status,code,score
+1, alice smith ,boston,10.5,2,2026-01-01,2026-01-11,red|blue,"{""k"":""a"",""n"":1}",5,7,active,AB-001,3
+2,bob jones,austin,4,5,2026-02-01,2026-02-15,green|red,"{""k"":""b"",""n"":2}",9,1,,CD-002,
+3,carol white,boston,20,1,2026-03-10,2026-03-12,blue|green,"{""k"":""c"",""n"":3}",2,8,inactive,EF-003,5
+4,dan brown,denver,7.25,4,2026-04-05,2026-05-05,red|red,"{""k"":""d"",""n"":4}",6,6,active,GH-004,
+5,erin black,austin,12,3,2026-05-20,2026-05-21,blue|blue,"{""k"":""e"",""n"":5}",1,3,,IJ-005,8
+6,frank green,denver,3,10,2026-06-01,2026-06-30,green|blue,"{""k"":""f"",""n"":6}",4,2,active,KL-006,2
+6,frank green,denver,3,10,2026-06-01,2026-06-30,green|blue,"{""k"":""f"",""n"":6}",4,2,active,KL-006,2

@@ -36,6 +36,7 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services.argspec import arg_spec
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.dashboard_pages import check_added_pages
 from mammoth_cli.services.positionals import resolve_positionals
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -671,6 +672,9 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
         data = _resolve_job(service, invocation, data)
+        if invocation.command_id == "dashboard.pages.add" and "body" in kwargs:
+            requested = kwargs["body"].get("params", {}).get("pages", [])
+            data = check_added_pages(service, positionals["dashboard_id"], requested, data)
     return data, _meta(invocation, auth.workspace_id)
 
 

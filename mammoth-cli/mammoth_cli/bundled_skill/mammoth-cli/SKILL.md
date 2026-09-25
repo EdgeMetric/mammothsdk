@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.39
+version: 2.0.40
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
@@ -104,14 +104,18 @@ dashboard from t_a and t_b"). Work it out from the data before you build:
    case and padding (`text`), no blanks (`set-values`, `filter`).
 4. Act on every `column_warnings` entry for a column the deliverable uses:
    run its `fix` (`convert-type` to `NUMERIC` or `DATE`; the values that are
-   not numbers become empty), then decide on blanks (fill, filter, or keep and
-   say so). A text `price` cannot be summed on a dashboard.
+   not numbers become empty). A text `price` cannot be summed on a dashboard.
+   Then decide on each `blank_values` entry: fill, filter, or keep. Write one
+   line for each in your report (the column, the count, what you did and
+   why). A blank that you saw but did not mention is a miss.
 5. `view transform join` the lookup view into the main view (`LEFT`). The
    result's `join_check` gives `match_rate`, `unmatched_rows` and
    `unmatched_keys`; put them in your report, and stop to compare the keys
    if more than a few rows found no match.
 6. Build the dashboard from the joined view
-   ([dashboards](references/recipes/dashboards.md)).
+   ([dashboards](references/recipes/dashboards.md)). If the data has money,
+   show it: add `revenue` (`math`, `qty * price`, `new_column`) and chart
+   its sum. Do not sum a unit price.
 
 For the defaults that most pipelines use (new column or overwrite, `LEFT`
 joins, date steps), see

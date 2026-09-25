@@ -762,7 +762,7 @@ Example: `mammoth view task add 123 --input '{"task_spec": {"DATAVIEW_ID": 123, 
 
 Result: `ViewTaskAddResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 — golden-data check golden-20260919 (CLI 2.0.18): typed transforms bulk-replace, convert-type, discard-duplicates, filter, join, pivot, set-values, text each run once on an owned fixture on release and read back with view data get against a known answer (values…
+Status on release: ran once on CLI 2.0.40 — golden-data check golden-20260919 (CLI 2.0.18): typed transforms bulk-replace, convert-type, discard-duplicates, filter, join, pivot, set-values, text each run once on an owned fixture on release and read back with view data get against a known answer (values…
 
 ### `view.task.delete`
 
@@ -822,7 +822,7 @@ Example: `mammoth view transform add-column 123 --input '{"name": "Revenue repor
 
 Result: `ViewTransformAddColumnResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.add-sql`
 
@@ -832,7 +832,7 @@ Example: `mammoth view transform add-sql 123 --input '{"query": "SELECT region, 
 
 Result: `ViewTransformAddSqlResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.ai`
 
@@ -842,7 +842,7 @@ Example: `mammoth view transform ai 123 --input '{"prompt": "Summarize revenue b
 
 Result: `ViewTransformAiResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.bulk-replace`
 
@@ -852,7 +852,7 @@ Example: `mammoth view transform bulk-replace 123 --input '{"columns": ["Status"
 
 Result: `ViewTransformBulkReplaceResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.combine-columns`
 
@@ -862,7 +862,7 @@ Example: `mammoth view transform combine-columns 123 --input '{"sources": ["Stat
 
 Result: `ViewTransformCombineColumnsResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.convert-type`
 
@@ -872,7 +872,7 @@ Example: `mammoth view transform convert-type 123 --input '{"conversions": [{"co
 
 Result: `ViewTransformConvertTypeResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.copy-columns`
 
@@ -882,7 +882,7 @@ Example: `mammoth view transform copy-columns 123 --input '{"copies": [{"source"
 
 Result: `ViewTransformCopyColumnsResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.crosstab`
 
@@ -892,7 +892,7 @@ Example: `mammoth view transform crosstab 123 --input '{"rows": ["sample"], "piv
 
 Result: `ViewTransformCrosstabResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.date-diff`
 
@@ -902,7 +902,7 @@ Example: `mammoth view transform date-diff 123 --input '{"component": "YEAR", "s
 
 Result: `ViewTransformDateDiffResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.delete-columns`
 
@@ -912,7 +912,7 @@ Example: `mammoth view transform delete-columns 123 --input '{"columns": ["Statu
 
 Result: `ViewTransformDeleteColumnsResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.discard-duplicates`
 
@@ -922,7 +922,7 @@ Example: `mammoth view transform discard-duplicates 123 --input '{"dataset_id": 
 
 Result: `ViewTransformDiscardDuplicatesResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.extract-date`
 
@@ -932,7 +932,7 @@ Example: `mammoth view transform extract-date 123 --input '{"column": "Status", 
 
 Result: `ViewTransformExtractDateResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.fill-missing`
 
@@ -942,7 +942,7 @@ Example: `mammoth view transform fill-missing 123 --input '{"column": "Status", 
 
 Result: `ViewTransformFillMissingResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.filter`
 
@@ -952,7 +952,7 @@ Example: `mammoth view transform filter 123 --input '{"condition": {"column": "S
 
 Result: `ViewTransformFilterResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.generate-sql`
 
@@ -962,7 +962,7 @@ Example: `mammoth view transform generate-sql 123 --input '{"intent": "Summarize
 
 Result: `ViewTransformGenerateSqlResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.increment-date`
 
@@ -972,7 +972,7 @@ Example: `mammoth view transform increment-date 123 --input '{"column": "Status"
 
 Result: `ViewTransformIncrementDateResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.join`
 
@@ -982,7 +982,7 @@ Example: `mammoth view transform join 123 --input '{"foreign_view": 1, "join_typ
 
 Result: `ViewTransformJoinResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.json-extract`
 
@@ -992,7 +992,7 @@ Example: `mammoth view transform json-extract 123 --input '{"column": "Status", 
 
 Result: `ViewTransformJsonExtractResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.limit-rows`
 
@@ -1002,7 +1002,7 @@ Example: `mammoth view transform limit-rows 123 --input '{"n": 1, "dataset_id": 
 
 Result: `ViewTransformLimitRowsResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.lookup`
 
@@ -1012,7 +1012,7 @@ Example: `mammoth view transform lookup 123 --input '{"source": "Status", "looku
 
 Result: `ViewTransformLookupResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.math`
 
@@ -1022,7 +1022,7 @@ Example: `mammoth view transform math 123 --input '{"expression": "price * quant
 
 Result: `ViewTransformMathResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.pivot`
 
@@ -1032,7 +1032,7 @@ Example: `mammoth view transform pivot 123 --input '{"group_by": ["sample"], "ag
 
 Result: `ViewTransformPivotResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.rename-columns`
 
@@ -1042,7 +1042,7 @@ Example: `mammoth view transform rename-columns 123 --input '{"renames": {"cust_
 
 Result: `ViewTransformRenameColumnsResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.replace`
 
@@ -1052,7 +1052,7 @@ Example: `mammoth view transform replace 123 --input '{"columns": ["Status"], "f
 
 Result: `ViewTransformReplaceResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.set-values`
 
@@ -1062,7 +1062,7 @@ Example: `mammoth view transform set-values 123 --input '{"values": [{"value": "
 
 Result: `ViewTransformSetValuesResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.small-large`
 
@@ -1072,7 +1072,7 @@ Example: `mammoth view transform small-large 123 --input '{"function": "SMALL", 
 
 Result: `ViewTransformSmallLargeResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.sort`
 
@@ -1082,7 +1082,7 @@ Example: `mammoth view transform sort 123 --input '{"order_by": [["Revenue", "DE
 
 Result: `ViewTransformSortResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.split`
 
@@ -1092,7 +1092,7 @@ Example: `mammoth view transform split 123 --input '{"column": "Status", "delimi
 
 Result: `ViewTransformSplitResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.substring`
 
@@ -1102,7 +1102,7 @@ Example: `mammoth view transform substring 123 --input '{"column": "Status", "da
 
 Result: `ViewTransformSubstringResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.text`
 
@@ -1112,7 +1112,7 @@ Example: `mammoth view transform text 123 --input '{"columns": ["Status"], "data
 
 Result: `ViewTransformTextResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.unnest`
 
@@ -1122,7 +1122,7 @@ Example: `mammoth view transform unnest 123 --input '{"columns": ["Status"], "da
 
 Result: `ViewTransformUnnestResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.transform.window`
 
@@ -1132,7 +1132,7 @@ Example: `mammoth view transform window 123 --input '{"function": "ROW_NUMBER", 
 
 Result: `ViewTransformWindowResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
 
-Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
+Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
 ### `view.trash`
 

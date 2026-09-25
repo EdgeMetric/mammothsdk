@@ -4251,8 +4251,9 @@ commands:
   - CT-VIEW-TRANSFORM-GENERATE-SQL-ERROR
   draft_test: LT-VIEW-TRANSFORM-GENERATE-SQL-DRAFT
   undo_test: LT-VIEW-TRANSFORM-GENERATE-SQL-UNDO
-  known_restrictions: Adds and executes a SQL task; it is not a read-only generator. Differs from ai sql
-    generate (AIAPI.generate_sql), which only returns a query.
+  known_restrictions: 'Writes and validates a SQL query from the intent and returns it as data.sql; it
+    does not change the view (release, 2026-09-25: no task was added). Apply the query with view transform
+    add-sql (data.apply is the exact command); add-sql replaces the view''s columns with the result.'
   reviewed_by: primary
 - command_id: view.transform.increment-date
   command_path: view transform increment-date

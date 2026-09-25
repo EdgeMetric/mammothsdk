@@ -43,7 +43,7 @@ anything else fails with `invalid_condition` before any request is sent.
 | `view transform filter` | `filter_type` | `SHOW` (keep matches, default), `REMOVE` |
 | `view transform text` | `case` | `UPPER`, `LOWER`, `TITLE`; `trim`: true/false |
 | `view transform convert-type` | `conversions[].to` | `TEXT`, `NUMERIC`, `DATE` |
-| `view transform fill-missing` | `direction` | `LAST_VALUE` (forward fill), `FIRST_VALUE` |
+| `view transform fill-missing` | `direction` | `FIRST_VALUE` (forward fill: previous row), `LAST_VALUE` (back-fill: next row) |
 | `view transform join` | `join_type` | `INNER`, `LEFT`, `RIGHT`, `OUTER` |
 | `view transform set-values` | `column_type` (new column) | `TEXT`, `NUMERIC`, `DATE` |
 

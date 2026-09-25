@@ -1,5 +1,48 @@
 # CLI release provenance
 
+## 2.0.40 / SDK 0.7.18
+
+The 2.0.39 agent eval scored 8 of 10. The agent charted only `qty` (no
+money), did not decide on a blank, and its dashboard kept two empty pages.
+
+- `dashboard pages add` adds `chart_check`. `refused` lists the charts that
+  the server refused (for example a `pie` that the data does not support).
+  A new page that asked for charts and got none is removed with one canvas
+  save and listed in `removed_pages`; `added_page_ids`, `sequence` and
+  `bake_job_id` then describe the saved canvas. If the save fails, the
+  pages are listed in `empty_pages` with the manual `fix`. Verified live on
+  release: the refused page was removed, the other page kept its chart, and
+  the bake had no error.
+- The dashboards recipe has "Put the money on the board": convert money
+  columns to `NUMERIC`, add `revenue` with `math` (`qty * price`) instead
+  of summing a unit price, and show it in a KPI and charts.
+- The multi-file playbook asks for one report line for each
+  `blank_values` entry (column, count, what was done and why).
+- `view transform convert-type` skips a conversion to the type the column
+  already has, and lists it in `skipped`; when every entry is skipped, no
+  task is added (`status: no_change`). On release, converting a NUMERIC
+  column to NUMERIC put the pipeline in `ref_error` ("type mismatch"), and
+  every read of the view failed until the task was removed. Uploads type
+  numbers and ISO dates on their own, so an agent converting "to be safe"
+  hit this. Found by the live transform sweep.
+- The `pipeline_reference_error` recovery command carries
+  `--input '{"dataset_id": N}'`, so it does not fall back to project-wide
+  discovery (`/browse`, which returned 502 on release).
+- `view transform generate-sql` returns `{sql, applied: false, note,
+  apply}`. The route writes and validates a query but adds no task (the
+  SDK docstring and the manifest said it did); `apply` is the exact
+  `add-sql` command, verified live to give the expected grouped rows.
+- SDK 0.7.18 (docs only; behaviour unchanged): `fill_missing` and
+  `FillDirection` had the directions reversed. `FIRST_VALUE` is the forward
+  fill (previous row's value); `LAST_VALUE` is the back-fill (next row's
+  value). `generate_sql` is documented as returning the query without
+  changing the view. The CLI skill's fill-missing text is corrected too.
+
+Live sweep (`docs/capability-evidence/transform-sweep-20260925`): all 32
+`view transform` commands ran once on release on a synthetic fixture and
+were read back against a known answer, 32 of 32. The four findings above
+came from it. The capability matrix now lists all 32 as proven.
+
 ## 2.0.39 / SDK 0.7.17
 
 A cold agent (Haiku) given "I have two files, t_a and t_b. Create a

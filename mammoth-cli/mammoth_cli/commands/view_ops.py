@@ -19,11 +19,13 @@ enum-typed fields are forwarded as the plain string given on ``--input``.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from typing import Any
 
 from mammoth_cli.commands.view import (
     BRIEF_VIEW_FIELDS,
+    _dataview_metadata,
     _require_discovery_allowed,
     apply_column_renames,
     brief_view_record,
@@ -241,13 +243,16 @@ def _dispatch_view(
     *,
     before: Callable[[Any, int], Any] | None = None,
     after: Callable[[Any, int, Any, Any], Any] | None = None,
+    prepare: Callable[[Any, int, dict[str, Any]], Any] | None = None,
     **kwargs: Any,
 ) -> HandlerResult:
     """Open the service, dispatch a View method call, and build the envelope.
 
     ``before(service, dataset_id)`` runs ahead of the call and its value is
     handed to ``after(service, dataset_id, state, data)``, which returns the
-    result to emit. Both need the exact parent; without one they are skipped.
+    result to emit. ``prepare(service, dataset_id, kwargs)`` may edit the call
+    arguments in place; when it returns a value, that value is emitted and no
+    call is made. All three need the exact parent; without one they are skipped.
     """
     # ``dataset_id`` is invocation-local resource context.  It is not a View
     # transform argument, but passing it through lets the service fetch the
@@ -268,6 +273,10 @@ def _dispatch_view(
         if dataset_id is None:
             dataset_id = parents.lookup(_profile_name(invocation), auth.workspace_id, view_id)
         require_expected_task_count(service, view_id, dataset_id, document)
+        if prepare is not None and dataset_id is not None:
+            early = prepare(service, int(dataset_id), kwargs)
+            if early is not None:
+                return early, _meta(invocation, auth.workspace_id)
         state = before(service, int(dataset_id)) if before and dataset_id is not None else None
         try:
             if dataset_id is None:
@@ -419,7 +428,13 @@ def reject_pipeline_reference_errors(
             "response": data,
         },
         recovery_commands=[
-            f"mammoth view task delete {view_id} {task_id} --yes" for task_id in task_ids
+            f"mammoth view task delete {view_id} {task_id} --yes"
+            + (
+                f" --input '{{\"dataset_id\": {kwargs['dataset_id']}}}'"
+                if "dataset_id" in kwargs
+                else ""
+            )
+            for task_id in task_ids
         ]
         or [f'mammoth view pipeline items {view_id} --input \'{{"fields": "__full"}}\''],
     )
@@ -679,7 +694,56 @@ def view_transform_convert_type(invocation: Invocation) -> HandlerResult:
     _require_field(document, "conversions")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "convert_type", **kwargs)
+    project_id = invocation.project
+
+    def drop_same_type(service: Any, dataset_id: int, call: dict[str, Any]) -> Any:
+        # Converting a column to the type it already has puts the pipeline in
+        # ref_error ("type mismatch") and every read of the view fails until
+        # the task is removed (release, 2026-09-25). Uploads type numbers and
+        # ISO dates on their own, so this is easy to hit: skip those entries.
+        conversions = call.get("conversions")
+        if not isinstance(conversions, list):
+            return None
+        current = {
+            column.get("display_name"): str(column.get("type") or "").upper()
+            for column in _dataview_metadata(service, dataset_id, view_id, project_id)
+            if isinstance(column, dict)
+        }
+        kept, skipped = [], []
+        for entry in conversions:
+            name = entry.get("column") if isinstance(entry, dict) else None
+            target = str(entry.get("to") or "").upper() if isinstance(entry, dict) else ""
+            if name is not None and target and current.get(name) == target:
+                skipped.append({"column": name, "type": target})
+            else:
+                kept.append(entry)
+        if not skipped:
+            return None
+        if not kept:
+            return {
+                "status": "no_change",
+                "skipped": skipped,
+                "note": "Every column already has the requested type; no task was added.",
+            }
+        call["conversions"] = kept
+        skipped_record.extend(skipped)
+        return None
+
+    skipped_record: list[dict[str, Any]] = []
+
+    def note_skipped(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
+        if skipped_record and isinstance(data, dict):
+            data = {**data, "skipped": skipped_record}
+        return data
+
+    return _dispatch_view(
+        invocation,
+        view_id,
+        "convert_type",
+        prepare=drop_same_type,
+        after=note_skipped,
+        **kwargs,
+    )
 
 
 def view_transform_copy_columns(invocation: Invocation) -> HandlerResult:
@@ -775,7 +839,22 @@ def view_transform_generate_sql(invocation: Invocation) -> HandlerResult:
     _require_field(document, "intent")
     assert document is not None
     kwargs = _bind_transform_inputs(invocation, document)
-    return _dispatch_view(invocation, view_id, "generate_sql", **kwargs)
+
+    def describe(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
+        # The route writes and validates a query but adds no task (release,
+        # 2026-09-25); a bare string read as "done" by an agent that expected
+        # the view to change. Say so, and give the command that applies it.
+        if not isinstance(data, str):
+            return data
+        spec = json.dumps({"dataset_id": dataset_id, "query": data})
+        return {
+            "sql": data,
+            "applied": False,
+            "note": "The view is unchanged. Run 'apply' to add the query as a SQL task.",
+            "apply": f"mammoth view transform add-sql {view_id} --input '{spec}'",
+        }
+
+    return _dispatch_view(invocation, view_id, "generate_sql", after=describe, **kwargs)
 
 
 def view_transform_increment_date(invocation: Invocation) -> HandlerResult:

@@ -4,6 +4,15 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.18]
+
+### Fixed
+
+- `View.fill_missing` and `FillDirection` documented the directions the wrong
+  way round. `FIRST_VALUE` is the forward fill (a blank takes the previous
+  row's value in the `order_by` order); `LAST_VALUE` is the back-fill (the
+  next row's value). Verified on release; behaviour is unchanged.
+
 ## [0.7.17]
 
 ### Added

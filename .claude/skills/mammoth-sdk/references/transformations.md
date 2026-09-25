@@ -518,11 +518,13 @@ view.lookup(
 
 ### generate_sql(intent) -> str
 
-Generate SQL from natural language using the LLM backend.
+Generate SQL from natural language using the LLM backend. It returns the
+query only; the view does not change until you pass it to `add_sql`.
 
 ```python
 sql = view.generate_sql("count employees by department")
 # Returns: "SELECT department, COUNT(*) FROM ... GROUP BY department"
+view.add_sql(sql)  # apply it
 ```
 
 ### add_sql(query) -> dict
