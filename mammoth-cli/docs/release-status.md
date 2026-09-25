@@ -23,6 +23,12 @@ first, and to run the three runs one after another, since parallel runs
 share the profile's active project (one run uploaded into another run's
 project).
 
+CLI published from deterministic local artifacts built from tag `cli-v2.0.42`
+(source commit `4bae7e7`); requires mammoth-io 0.7.18 (unchanged):
+
+- `mammoth_cli-2.0.42-py3-none-any.whl` sha256 `4b231873b744b817caaf198a1f53f7a898b85463e57c07d1ab2207552c46b5a5`
+- `mammoth_cli-2.0.42.tar.gz` sha256 `428a1a33c5d90ece934ea0ea842731bdedb378507754c2dabae7a06732c53ed8`
+
 ## 2.0.41
 
 The 2.0.40 agent eval scored 7 of 10. The agent read the local files, did
