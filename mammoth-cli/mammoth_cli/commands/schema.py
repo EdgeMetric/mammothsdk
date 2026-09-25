@@ -238,6 +238,7 @@ _DISCOVERY_STOPWORDS = frozenset(
         # turns on these words, so they must not sink an otherwise good match.
         "my",
         "our",
+        "one",
         "two",
         "another",
         "other",

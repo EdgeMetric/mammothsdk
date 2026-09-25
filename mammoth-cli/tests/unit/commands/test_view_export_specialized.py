@@ -15,6 +15,8 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
+_DATAVIEW_LIST = "mammoth.api.dataviews.DataviewsAPI.list"
+
 
 def _inv(command_id: str, **overrides: object) -> Invocation:
     return Invocation(command_id=command_id, **overrides)  # type: ignore[arg-type]
@@ -70,6 +72,66 @@ def test_dataset_route_names_the_written_dataset_and_its_project(
         "source_view_id": 7,
         "next": "mammoth view list 114 --project 57",
     }
+
+
+def test_dataset_route_reports_rows_after_for_a_new_dataset(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.view_responses[(7, "to_dataset")] = 114
+    fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 42}]}
+    data, _meta = view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=180,
+            extra_args=["7", "9"],
+            input_file=_doc(tmp_path, {"dataset_name": "snapshot"}),
+            yes=True,
+        )
+    )
+    assert data["rows_after"] == 42
+    assert "rows_before" not in data
+    assert (_DATAVIEW_LIST, {"dataset_id": 114, "project_id": 180}) in fake_service.call_log
+
+
+def test_dataset_route_reports_rows_before_and_after_for_append(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.view_responses[(7, "to_dataset")] = 9
+    fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
+    data, _meta = view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=180,
+            extra_args=["7", "3"],
+            input_file=_doc(
+                tmp_path,
+                {"dataset_name": "orders", "target_ds_id": 9, "save_as_mode": "APPEND_TO_DS"},
+            ),
+            yes=True,
+        )
+    )
+    assert data["rows_before"] == 60
+    assert data["rows_after"] == 60
+    assert fake_service.call_log.count((_DATAVIEW_LIST, {"dataset_id": 9, "project_id": 180})) == 2
+
+
+def test_dataset_route_rejects_target_ds_id_equal_to_own_dataset(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    with pytest.raises(CliError) as error:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["7", "9"],
+                input_file=_doc(tmp_path, {"dataset_name": "snapshot", "target_ds_id": 9}),
+                yes=True,
+            )
+        )
+    assert error.value.code == "invalid_arguments"
+    assert error.value.hint is not None
+    assert "own dataset" in error.value.hint
+    assert fake_service.view_call_log == []
 
 
 @pytest.mark.parametrize("file_type", ["csv", "json", "parquet"])

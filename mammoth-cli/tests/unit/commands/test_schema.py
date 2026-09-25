@@ -200,6 +200,22 @@ def test_agent_transform_language_finds_typed_routes() -> None:
     }
 
 
+def test_append_rows_between_datasets_finds_view_export_dataset() -> None:
+    """A cold agent must find the row-stacking route, not just file.upload.
+
+    'append rows from one dataset into another dataset' previously matched
+    only file.upload (which needs a local file); an agent that has both
+    sources already in Mammoth would wrongly conclude row-stacking is
+    impossible. view.export.dataset (target_ds_id + save_as_mode
+    APPEND_TO_DS) must also surface.
+    """
+    matches = {
+        item["command_id"]
+        for item in find_schemas("append rows from one dataset into another dataset")["matches"]
+    }
+    assert "view.export.dataset" in matches
+
+
 def test_csv_export_contract_does_not_preserve_stale_permission_block() -> None:
     """Retained live evidence supersedes the old blanket export restriction."""
     schema = get_schema("view.export.csv")
