@@ -22,12 +22,15 @@ Example::
 
 from __future__ import annotations
 
+import io
 from collections.abc import Sequence
+from contextlib import redirect_stdout
 from typing import Any
 
 from mammoth_cli.app import _ABORT_ERRORS, _USAGE_ERRORS, _root_click_command
 from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.errors.envelope import EXIT_API, EXIT_INTERRUPT, EXIT_USAGE, CliError
+from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.runtime import embedded
 
 
@@ -83,16 +86,43 @@ def _has_option(argv: Sequence[str], name: str) -> bool:
 def _run(argv: list[str]) -> None:
     """Run the command; every outcome ends as a captured envelope."""
     root = _root_click_command()
+    buffer = io.StringIO()
     try:
-        root.main(args=argv, prog_name="mammoth", standalone_mode=False)
+        with redirect_stdout(buffer):
+            root.main(args=argv, prog_name="mammoth", standalone_mode=False)
     except _USAGE_ERRORS as error:
         root.render_usage_error(error, argv)
     except _ABORT_ERRORS:
         embedded.capture(_error("aborted", "The command was aborted.", EXIT_INTERRUPT))
     except SystemExit:
-        return
+        pass
     except Exception as exc:  # noqa: BLE001 -- the host gets an envelope, never a traceback
         embedded.capture(_error("internal_error", f"{type(exc).__name__}: {exc}", EXIT_API))
+    # --help (and a bare --version) print and return/exit normally, whether or
+    # not an exception was raised, instead of going through the executor's
+    # own embedded.capture; a normal command's envelope is already captured
+    # by then, so this only fires for output that bypassed it entirely.
+    _capture_printed_output(argv, buffer.getvalue())
+
+
+def _capture_printed_output(argv: list[str], text: str) -> None:
+    """``--help`` (and bare ``--version``) print instead of building an envelope.
+
+    A normal command's envelope is already captured (see
+    ``runtime.executor.render_success``) before its ``SystemExit`` reaches
+    ``_run``, so this only fires for output that bypassed the envelope
+    machinery entirely -- previously lost, and reported as ``no_output``.
+    """
+    call = embedded.current()
+    if call is None or call.envelopes or not text.strip():
+        return
+    command_tokens: list[str] = []
+    for token in argv:
+        if token.startswith("--"):
+            break
+        command_tokens.append(token)
+    meta = Meta(command=" ".join(command_tokens) or " ".join(argv))
+    embedded.capture(Result(data={"help": text}, meta=meta).to_envelope())
 
 
 def _error(code: str, message: str, exit_status: int) -> dict[str, Any]:

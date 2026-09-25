@@ -1752,6 +1752,7 @@ def view_task_add(invocation: Invocation) -> HandlerResult:
     # Imported here: view_ops imports this module for the brief record helpers.
     from mammoth_cli.commands.view_ops import (
         reject_pipeline_reference_errors,
+        reject_task_runtime_error,
         require_expected_task_count,
     )
 
@@ -1759,6 +1760,7 @@ def view_task_add(invocation: Invocation) -> HandlerResult:
         require_expected_task_count(service, dataview_id, kwargs.get("dataset_id"), document)
         data = service.call(_symbol(invocation), **kwargs)
         reject_pipeline_reference_errors(service, dataview_id, kwargs.get("dataset_id"), data)
+        reject_task_runtime_error(service, dataview_id, kwargs.get("dataset_id"), data)
     return data, _meta(invocation, auth.workspace_id, None)
 
 

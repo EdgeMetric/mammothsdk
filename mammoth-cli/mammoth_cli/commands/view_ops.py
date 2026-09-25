@@ -57,9 +57,12 @@ HandlerResult = tuple[Any, dict[str, Any]]
 
 #: Error code for a task the backend accepted but could not bind to the view.
 CODE_PIPELINE_REFERENCE_ERROR = "pipeline_reference_error"
+#: Error code for a task that bound fine but errored while it ran.
+CODE_TASK_RUNTIME_ERROR = "task_runtime_error"
 _PIPELINE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.get_pipeline"
 _PIPELINE_ITEMS_SYMBOL = "mammoth.api.pipeline.PipelineAPI.items"
 _PIPELINE_ITEMS_FULL = "__full"
+_ERROR_TRANSFORM_STATUSES = {"ERROR", "REFERROR"}
 _REFERROR_REASON_HINTS = {
     "type mismatch": (
         "the task needs a different column type (find/replace and text operations "
@@ -444,6 +447,59 @@ def reject_pipeline_reference_errors(
             for task_id in task_ids
         ]
         or [f'mammoth view pipeline items {view_id} --input \'{{"fields": "__full"}}\''],
+    )
+
+
+def reject_task_runtime_error(service: Any, view_id: int, dataset_id: Any, data: Any) -> None:
+    """Fail a task add whose step errored at run time without flipping has_error.
+
+    A GEN_AI (or other runtime-dependent) step can fail after the backend has
+    already accepted and bound the task -- a workspace AI quota outage, for
+    example -- leaving the new column blank while the SDK's ``has_error``
+    stays false and ``pipeline_state`` reads ``ready``. The only signal is
+    the task's own ``transform_status`` (``ERROR``/``REFERROR``), which
+    ``list_tasks`` now reads back at ``__full``. A reference-binding failure
+    already raised via :func:`reject_pipeline_reference_errors` before this
+    runs, so ``has_error`` here is always false or absent.
+    """
+    kwargs: dict[str, Any] = {"dataview_id": view_id}
+    if dataset_id is not None:
+        kwargs["dataset_id"] = int(dataset_id)
+    listing = service.call(_TASK_LIST_SYMBOL, **kwargs)
+    tasks = listing.get("tasks") if isinstance(listing, dict) else None
+    if not isinstance(tasks, list) or not tasks:
+        return
+    newest = max(
+        (task for task in tasks if isinstance(task, dict)),
+        key=lambda task: task.get("sequence") or 0,
+        default=None,
+    )
+    if newest is None:
+        return
+    status = newest.get("transform_status")
+    if status not in _ERROR_TRANSFORM_STATUSES:
+        return
+    task_id = newest.get("id")
+    dataset_kwarg = kwargs.get("dataset_id")
+    recovery = f"mammoth view task get {view_id} {task_id}"
+    if dataset_kwarg is not None:
+        recovery += f" --input '{{\"dataset_id\": {dataset_kwarg}}}'"
+    raise CliError(
+        code=CODE_TASK_RUNTIME_ERROR,
+        message=(
+            f"Task {task_id} was added to view {view_id} but failed at run time "
+            f"(transform_status {status}); its output may be blank or wrong even "
+            "though the pipeline reports ready."
+        ),
+        exit_status=EXIT_API,
+        hint=f"Run `{recovery}` for the failure detail.",
+        details={
+            "view_id": view_id,
+            "dataset_id": dataset_kwarg,
+            "task_id": task_id,
+            "transform_status": status,
+        },
+        recovery_commands=[recovery],
     )
 
 

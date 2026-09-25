@@ -45,6 +45,13 @@ Use `view data get` (paged, 400 rows per page) for this, not `view preview`
   rows, say so: `{"condition":{"column":"units","operator":"LT","value":0},"filter_type":"REMOVE"}`. For each operation, a successful result should contain a returned
 task/job reference or updated view envelope; then verify with `view task list`,
 `view task get`, `view pipeline items`, or preview according to its schema.
+A step can run and still fail at run time -- a GEN_AI step hitting a
+workspace AI quota, for example -- leaving the column blank while the
+envelope's `has_error` stays false and `pipeline_state` reads `ready`; the
+only signal is the task's own `transform_status` (`view task get`/`view task
+list` always read it at full detail). `DONE` means the step actually
+produced output; `ERROR` or `REFERROR` means it did not, even though the
+mutation "succeeded".
 
 These examples use the released route IDs and input shapes documented by the
 command manifest; substitute only observed view IDs and display names:

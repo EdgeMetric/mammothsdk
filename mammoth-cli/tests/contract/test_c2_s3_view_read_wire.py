@@ -141,7 +141,11 @@ def test_s3_pipeline_and_task_reads_have_literal_http_wires(
             (
                 "GET",
                 f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/tasks/41",
-                {},
+                # __full: __standard (the server default) omits transform_status
+                # and reference_errors, so a task that failed at run time (a
+                # GEN_AI step hitting a workspace AI quota, for example) would
+                # otherwise be invisible.
+                {"fields": ["__full"]},
                 None,
             ),
         ),
@@ -153,7 +157,7 @@ def test_s3_pipeline_and_task_reads_have_literal_http_wires(
             (
                 "GET",
                 f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/tasks",
-                {},
+                {"fields": ["__full"]},
                 None,
             ),
         ),
@@ -271,26 +275,32 @@ def test_s3_dropped_field_is_rejected_before_transport(
 
 
 @pytest.mark.parametrize(
-    ("argv", "expected_path", "expected_query"),
+    ("argv", "expected_path", "expected_query", "input_extra"),
     [
         (
             ["view", "pipeline", "get", str(VIEW)],
             f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline",
+            {},
             {},
         ),
         (
             ["view", "pipeline", "items", str(VIEW)],
             f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/items",
             {"fields": "CLI_S3_FIELDS", "limit": "23", "offset": "7", "sequence": "19"},
+            {"fields": "CLI_S3_FIELDS", "limit": 23, "offset": 7, "sequence": 19},
         ),
         (
             ["view", "task", "get", str(VIEW), "41"],
             f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/tasks/41",
+            # Hardcoded by the handler, not a passable input field -- see (a):
+            # __standard (the server default) omits transform_status.
+            {"fields": "__full"},
             {},
         ),
         (
             ["view", "task", "list", str(VIEW)],
             f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/tasks",
+            {"fields": "__full"},
             {},
         ),
     ],
@@ -299,6 +309,7 @@ def test_true_cli_runner_reaches_recording_transport(
     argv: list[str],
     expected_path: str,
     expected_query: dict[str, str],
+    input_extra: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
     real_service: Any,
     tmp_path: Path,
@@ -308,9 +319,7 @@ def test_true_cli_runner_reaches_recording_transport(
     service, api = real_service(project_id=PROJECT)
     _bind_runner_auth(monkeypatch)
     monkeypatch.setattr(factory, "build_service", lambda *args, **kwargs: service)
-    body: dict[str, Any] = {"dataset_id": DATASET}
-    if expected_query:
-        body.update({"fields": "CLI_S3_FIELDS", "limit": 23, "offset": 7, "sequence": 19})
+    body: dict[str, Any] = {"dataset_id": DATASET, **input_extra}
     doc = tmp_path / "cli-s3.json"
     doc.write_text(json.dumps(body), encoding="utf-8")
     result = make_runner().invoke(

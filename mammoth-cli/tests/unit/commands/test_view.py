@@ -1650,8 +1650,42 @@ def test_task_add_passes_task_spec(fake_service: FakeMammothService, tmp_path: P
     doc = _doc(tmp_path, {"task_spec": {"kind": "filter"}})
     view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
     assert fake_service.call_log == [
-        (_TASK_ADD, {"dataview_id": 7, "task_spec": {"kind": "filter"}})
+        (_TASK_ADD, {"dataview_id": 7, "task_spec": {"kind": "filter"}}),
+        (_TASK_LIST, {"dataview_id": 7}),
     ]
+
+
+def test_task_add_rejects_a_task_that_failed_at_run_time(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A GEN_AI step can fail after the backend accepts and binds the task --
+    a workspace AI quota outage, for example -- leaving the column blank
+    while ``has_error`` stays false and ``pipeline_state`` reads ready. Only
+    the task's own ``transform_status`` (``__full`` fields) shows it.
+    """
+    fake_service.responses[_TASK_LIST] = {
+        "tasks": [
+            {"id": 3, "sequence": 1, "transform_status": "DONE"},
+            {"id": 9, "sequence": 2, "transform_status": "ERROR"},
+        ]
+    }
+    doc = _doc(tmp_path, {"task_spec": {"kind": "gen_ai"}})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
+    assert excinfo.value.code == "task_runtime_error"
+    assert excinfo.value.details["task_id"] == 9
+    assert excinfo.value.details["transform_status"] == "ERROR"
+    assert "mammoth view task get 7 9" in excinfo.value.recovery_commands
+
+
+def test_task_add_accepts_a_task_that_finished_cleanly(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_TASK_LIST] = {
+        "tasks": [{"id": 3, "sequence": 1, "transform_status": "DONE"}]
+    }
+    doc = _doc(tmp_path, {"task_spec": {"kind": "filter"}})
+    view_cmd.view_task_add(_inv("view.task.add", extra_args=["7"], input_file=doc))
 
 
 def test_task_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:

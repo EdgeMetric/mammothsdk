@@ -15,7 +15,7 @@ from pathlib import Path
 
 import yaml
 
-from mammoth_cli.commands.schema import find_schemas, get_schema, runnable_example
+from mammoth_cli.commands.schema import brief_schema, find_schemas, get_schema, runnable_example
 from mammoth_cli.services.positionals import positionals_for
 
 _BULK_REPLACE = "view.transform.bulk-replace"
@@ -216,6 +216,40 @@ def test_append_rows_between_datasets_finds_view_export_dataset() -> None:
     assert "view.export.dataset" in matches
 
 
+def test_brief_schema_keeps_nested_shape_for_non_scalar_fields() -> None:
+    """Brief mode stripped every field's schema, even a nested object/array,
+    leaving only a bare type name (e.g. 'DateDelta') to guess the shape of.
+    Non-scalar fields must keep their schema; scalars still get stripped.
+    """
+    full = get_schema("view.transform.increment-date")
+    assert full is not None
+    brief = brief_schema(full)
+    fields = {field["name"]: field for field in brief["accepted_fields"]}
+
+    delta = fields["delta"]
+    assert "schema" in delta
+    assert set(delta["schema"]["properties"]) >= {"days", "weeks", "months", "years"}
+
+    column = fields["column"]
+    assert "schema" not in column
+
+
+def test_math_intent_phrasings_rank_math_first() -> None:
+    """Cold-agent recall gap: both phrasings took 3 searches to reach math.
+
+    view.transform.math already supports a per-row 'condition' (a formula
+    applied only where the condition holds, e.g. a value over a threshold),
+    so the second query legitimately targets math, not just the first.
+    """
+    for query in (
+        "calculate a new column using multiplication",
+        "math conditional formula text if greater than threshold",
+    ):
+        matches = [item["command_id"] for item in find_schemas(query)["matches"]]
+        assert matches, f"no full match for {query!r}"
+        assert matches[0] == "view.transform.math", f"{query!r} -> {matches}"
+
+
 def test_csv_export_contract_does_not_preserve_stale_permission_block() -> None:
     """Retained live evidence supersedes the old blanket export restriction."""
     schema = get_schema("view.export.csv")
@@ -243,6 +277,20 @@ def test_ingestion_contract_preserves_supported_path_and_variant_boundaries() ->
     assert "not json" in file_upload["preconditions"]
     assert "HTTP 413" in file_upload["preconditions"]
     assert "do not assume other upload variants are qualified" in file_upload["preconditions"]
+
+
+def test_date_diff_documents_diffing_against_today() -> None:
+    """date-diff's start/end only accept existing DATE columns; the server's
+    SYSTEM_TIME operand (diff against the current execution time, e.g. 'days
+    since order') is undocumented and only reachable via a raw task. The
+    schema's preconditions must say so, with the exact recipe.
+    """
+    schema = get_schema("view.transform.date-diff")
+    assert schema is not None
+    restrictions = schema["preconditions"]
+    assert "today" in restrictions.casefold()
+    assert "view task add" in restrictions
+    assert "__TIME__" in restrictions
 
 
 def test_dataset_create_sdk_catalog_does_not_conflate_cli_waiting() -> None:

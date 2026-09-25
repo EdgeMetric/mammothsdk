@@ -1,5 +1,66 @@
 # CLI release provenance
 
+## 2.0.49
+
+Seven usability gaps found across tier1 luna eval traces (koyal): three
+pipeline/discovery blind spots, an over-cap reference file, an undocumented
+diff-against-today recipe, an embedded-mode dead end on the CLI's own
+`--help` advice, and two search recall gaps.
+
+- **Fixed (CLI + SDK, `mammoth-cli` 2.0.49 / `mammoth-io` 0.7.21)**: a task
+  can run and still fail at run time -- a GEN_AI step hitting a workspace AI
+  quota, for example -- with the column coming out blank while `has_error`
+  stays false and `pipeline_state` reads `ready`. The only signal is the
+  task's own `transform_status` (`ERROR`/`REFERROR`), which the server's
+  default `__standard` fields mode omits; only `__full` carries it. Root
+  cause: `mammoth.api.pipeline.PipelineAPI.get_task`/`list_tasks`
+  (`mammoth/api/pipeline.py`) never requested it. Both now always request
+  `__full`. `view task add` (`mammoth-cli/mammoth_cli/commands/view.py`,
+  `view_ops.reject_task_runtime_error`) also reads the newly added task back
+  after the pipeline settles and rejects it with a `task_runtime_error`
+  envelope naming the task, its `transform_status`, and the `view task get`
+  recovery command, when the run failed without ever flipping `has_error`.
+  See `tests/unit/test_api_subclients.py::TestPipelineAPI::test_list_tasks_requests_full_fields`,
+  `test_get_task_requests_full_fields`, and
+  `mammoth-cli/tests/unit/commands/test_view.py::test_task_add_rejects_a_task_that_failed_at_run_time`.
+- **Fixed (guide)**: `references/recipes/transforms.md`'s "verify the write"
+  guidance now names `transform_status` explicitly, so an agent reading the
+  bundled skill knows a `DONE` step is what "succeeded" actually means.
+- **Fixed (CLI)**: the bundled `commands/view.md` and `commands/dashboard.md`
+  reference pages exceeded the 65,536-byte agent read cap (71,702 and 69,729
+  bytes), so an agent could not read either in one call.
+  `scripts/build_skill_catalog.py` now shards an over-cap family by its
+  largest `command_id` second segment (`view.transform` ->
+  `view-transform.md`, `dashboard.qa` -> `dashboard-qa.md`), peeling the
+  largest groups first until the remainder fits, and
+  `tests/contract/test_skill_catalog.py::test_every_shipped_reference_file_is_under_the_agent_read_cap`
+  guards every shipped reference file going forward.
+- **Fixed (guide)**: `view.transform.date-diff`'s manifest entry now
+  documents diffing against "today" -- `{"TYPE": "SYSTEM_TIME"}` on either
+  operand, sent through the raw `view task add` escape hatch with the
+  column's `internal_name` -- verified against the server's task spec
+  (`api/api/dataview/helpers/validators/date_diff.py`,
+  `CommonConstants/CommonConstants/dba_const.py`'s `__TIME__` wire value).
+- **Fixed (CLI)**: `dataset list --input {"project_id": N}` returned a
+  generic unknown-field error. `runtime/strict.py`'s
+  `_UNKNOWN_FIELD_HINTS` now names the `--project` global option for
+  `dataset.list` instead.
+- **Fixed (CLI)**: embedded mode (`mammoth_cli.embed.invoke`) discarded
+  `--help` output and returned `no_output`, which dead-ended an agent
+  following `schema find`'s own no-match hint to run `--help`.
+  `embed._run` now captures printed stdout and returns it as a success
+  envelope (`data: {"help": ...}`) whenever a call produces no envelope of
+  its own.
+- **Fixed (CLI)**: `schema get`'s brief mode dropped every field's nested
+  JSON Schema, even for non-scalar fields (a union, an object, or an
+  array-of-object), forcing an extra `--input {"full": true}` round trip to
+  see their keys. `brief_schema` now keeps a field's schema when it is not a
+  plain scalar.
+- **Fixed (CLI)**: `schema find` had no recall for common math-transform
+  phrasings ("calculate ... multiplication", "math conditional formula ...
+  threshold") and took multiple searches to reach `view.transform.math`.
+  Its discovery purpose text now covers the common phrasings directly.
+
 ## 2.0.48
 
 Two defects found from an eval trace and a live task replay on koyal

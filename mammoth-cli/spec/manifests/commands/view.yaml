@@ -4052,7 +4052,21 @@ commands:
   - CT-VIEW-TRANSFORM-DATE-DIFF-ERROR
   draft_test: LT-VIEW-TRANSFORM-DATE-DIFF-DRAFT
   undo_test: LT-VIEW-TRANSFORM-DATE-DIFF-UNDO
-  known_restrictions: null
+  known_restrictions: >-
+    start/end must both be existing DATE columns; there is no today input
+    here. To diff against the current execution time (e.g. days since
+    order), the server task itself supports it but this typed command does
+    not expose it: use view task add with a raw task_spec:
+    {"DATE_DIFF": {"COMPONENT": "DAY", "MINUEND": {"TYPE": "__TIME__"},
+    "SUBTRAHEND": {"TYPE": "COLUMN", "VALUE": "INTERNAL_COLUMN_NAME"}, "AS":
+    {"COLUMN": "Days Since Order", "TYPE": "NUMERIC", "INTERNAL_NAME":
+    "column_days_since_order"}}}, where INTERNAL_COLUMN_NAME is that
+    column's internal_name from view get (not its display name -- a raw
+    task skips display-name resolution). MINUEND minus SUBTRAHEND; swap
+    them to flip the sign. Evidence: mvc-service
+    api/api/dataview/helpers/validators/date_diff.py (allowed TYPE values
+    COLUMN/VALUE/SYSTEM_TIME) and CommonConstants/dba_const.py
+    KEYWORDS.SYSTEM_TIME = "__TIME__".
   reviewed_by: primary
 - command_id: view.transform.delete-columns
   command_path: view transform delete-columns
