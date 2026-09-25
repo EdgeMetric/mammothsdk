@@ -279,6 +279,10 @@ _UNKNOWN_FIELD_HINTS: dict[str, str] = {
         "from 'mammoth dashboard canvas get DASHBOARD_ID', edited. An --input file "
         "takes the same wrapped document."
     ),
+    "dataset.list": (
+        "project_id is not an --input field; pass the project with the global "
+        "--project option (or omit it to use the active project)."
+    ),
 }
 
 

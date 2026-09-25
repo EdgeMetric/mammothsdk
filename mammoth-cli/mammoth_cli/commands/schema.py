@@ -112,9 +112,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.filter": (
         "filter rows keep drop exclude remove delete rows where condition subset"
     ),
-    "view.transform.generate-sql": (
-        "generate write sql query from natural language intent question"
-    ),
+    "view.transform.generate-sql": "generate write sql query from natural language intent question",
     "view.transform.increment-date": "add subtract days months years to a date column shift",
     "view.transform.join": (
         "join blend merge combine enrich match matching keys rows add columns from another "
@@ -127,8 +125,9 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "from another view dataset"
     ),
     "view.transform.math": (
-        "math arithmetic multiply divide add subtract formula expression amount "
-        "calculate compute ratio percentage round"
+        "math arithmetic multiply multiplication divide add subtract formula "
+        "expression amount calculate compute ratio percentage round new column "
+        "conditional threshold greater than if text"
     ),
     "view.transform.pivot": (
         "pivot group by aggregate aggregation sum count average summary summarize "
@@ -254,6 +253,8 @@ _DISCOVERY_STOPWORDS = frozenset(
         "do",
         "want",
         "need",
+        "using",
+        "than",
     }
 )
 # How many near misses a search with no full match returns.
@@ -1063,15 +1064,42 @@ def schema_index(family: str | None = None) -> dict[str, Any]:
     }
 
 
+def _is_scalar_field_schema(schema: Any) -> bool:
+    """Whether a field's JSON Schema is a plain scalar with no nested shape.
+
+    A caller composing ``--input`` for a scalar field just needs its type
+    name. An object, an array of objects, or a union that includes an
+    object (e.g. increment-date's ``delta``, convert-type's
+    ``conversions``, a ``condition``) needs its nested shape too, or the
+    bare type name (``DateDelta``) leaves it to guess.
+    """
+    if not isinstance(schema, dict):
+        return True
+    branches = schema.get("anyOf") or schema.get("oneOf")
+    if branches:
+        return all(_is_scalar_field_schema(branch) for branch in branches)
+    schema_type = schema.get("type")
+    if schema_type == "object":
+        return False
+    if schema_type == "array":
+        return _is_scalar_field_schema(schema.get("items"))
+    return True
+
+
 def brief_schema(entry: dict[str, Any]) -> dict[str, Any]:
     """Reduce a full ``schema get`` record to what composing one call needs."""
     brief = {key: entry[key] for key in _BRIEF_SCHEMA_KEYS if key in entry}
     accepted = brief.get("accepted_fields")
     if isinstance(accepted, list):
-        # Type and requirement are what a caller reads; the per-field JSON
-        # Schema is available under ``full``.
+        # Type and requirement are what a caller reads for a scalar; a
+        # non-scalar field keeps its JSON Schema too, since a bare type name
+        # does not say what shape it needs. ``full`` still has everything.
         brief["accepted_fields"] = [
-            {key: value for key, value in field.items() if key != "schema"}
+            {
+                key: value
+                for key, value in field.items()
+                if key != "schema" or not _is_scalar_field_schema(field.get("schema"))
+            }
             for field in accepted
             if isinstance(field, dict)
         ]
@@ -1158,7 +1186,7 @@ def find_schemas(
             "command_path": command_path,
             "mutation_class": record["mutation_class"],
             "confirmation": record["confirmation"],
-            "full_schema_command": (f"mammoth schema get {command_id}"),
+            "full_schema_command": f"mammoth schema get {command_id}",
         }
         if len(matched_terms) == len(terms):
             ranked_matches.append((score, entry))

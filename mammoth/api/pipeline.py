@@ -291,6 +291,11 @@ class PipelineAPI:
     def list_tasks(self, dataview_id: int, dataset_id: int | None = None) -> dict[str, Any]:
         """List all pipeline tasks for a dataview.
 
+        Requests ``__full`` fields: the server's default (``__standard``)
+        omits ``transform_status`` and ``reference_errors``, so a task that
+        failed at run time (a GEN_AI step hitting a workspace AI quota, for
+        example) is otherwise invisible -- the pipeline still reads ready.
+
         Args:
             dataview_id: ID of the dataview.
             dataset_id: Dataset ID (auto-detected if not provided).
@@ -299,7 +304,9 @@ class PipelineAPI:
             Dict with tasks list.
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
-        return self._client._request_json("GET", f"{self._base_url(ws, proj, ds, dv)}/tasks")
+        return self._client._request_json(
+            "GET", f"{self._base_url(ws, proj, ds, dv)}/tasks", params={"fields": "__full"}
+        )
 
     def add_task(
         self, dataview_id: int, task_spec: dict[str, Any], dataset_id: int | None = None
@@ -326,6 +333,8 @@ class PipelineAPI:
     ) -> dict[str, Any]:
         """Get a specific pipeline task.
 
+        Requests ``__full`` fields; see :meth:`list_tasks` for why.
+
         Args:
             dataview_id: ID of the dataview.
             task_id: ID of the task.
@@ -336,7 +345,9 @@ class PipelineAPI:
         """
         ws, proj, ds, dv = self._resolve_ids(dataview_id, dataset_id)
         return self._client._request_json(
-            "GET", f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}"
+            "GET",
+            f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}",
+            params={"fields": "__full"},
         )
 
     def update_task(

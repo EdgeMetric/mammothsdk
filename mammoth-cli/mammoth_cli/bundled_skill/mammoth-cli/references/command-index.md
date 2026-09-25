@@ -20,7 +20,8 @@ Load only the applicable domain file:
 - [config](commands/config.md) — 4 published commands
 - [connector](commands/connector.md) — 22 published commands
 - [context](commands/context.md) — 3 published commands
-- [dashboard](commands/dashboard.md) — 104 published commands
+- [dashboard-qa](commands/dashboard-qa.md) — 13 published commands
+- [dashboard](commands/dashboard.md) — 91 published commands
 - [data-app](commands/data-app.md) — 12 published commands
 - [dataset](commands/dataset.md) — 17 published commands
 - [doctor](commands/doctor.md) — 1 published commands
@@ -43,7 +44,8 @@ Load only the applicable domain file:
 - [upgrade](commands/upgrade.md) — 1 published commands
 - [user](commands/user.md) — 8 published commands
 - [version](commands/version.md) — 1 published commands
-- [view](commands/view.md) — 118 published commands
+- [view-transform](commands/view-transform.md) — 32 published commands
+- [view](commands/view.md) — 86 published commands
 - [webhook](commands/webhook.md) — 7 published commands
 - [workflow](commands/workflow.md) — 16 published commands
 - [workspace](commands/workspace.md) — 20 published commands

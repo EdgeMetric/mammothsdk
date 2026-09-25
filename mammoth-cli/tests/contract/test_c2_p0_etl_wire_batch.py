@@ -73,14 +73,22 @@ def test_p0_upload_view_create_and_task_add_wires(
     )
     with _bind(monkeypatch, view_cmd, service):
         view_cmd.view_task_add(_inv("view.task.add", [str(VIEW)], str(task_input)))
-    assert api.last().method == "POST"
-    assert _path(api) == (
+    # The add is followed by an unconditional read-back (list_tasks, __full
+    # fields) that catches a task whose step errored at run time without
+    # flipping has_error; that GET is the last request, the POST the one before.
+    add_request, readback_request = api.requests[-2], api.requests[-1]
+    assert add_request.method == "POST"
+    assert add_request.path.removeprefix("/api/v2") == (
         f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/tasks"
     )
-    assert api.last().json_body == {
+    assert add_request.json_body == {
         "DATAVIEW_ID": VIEW,
         "MATH": {"expression": "value"},
     }
+    assert readback_request.method == "GET"
+    assert readback_request.path.removeprefix("/api/v2") == (
+        f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}/pipeline/tasks"
+    )
 
 
 def test_p0_export_wire_and_delete_confirmation_controls(
@@ -142,7 +150,5 @@ def test_p0_export_wire_and_delete_confirmation_controls(
     wrong_parent = tmp_path / "wrong-parent.json"
     wrong_parent.write_text(json.dumps({"dataset_id": 999}), encoding="utf-8")
     with _bind(monkeypatch, view_ops, service):
-        view_ops.view_delete(
-            _inv("view.delete", [str(VIEW)], str(wrong_parent), yes=True)
-        )
+        view_ops.view_delete(_inv("view.delete", [str(VIEW)], str(wrong_parent), yes=True))
     assert _path(api) == f"/workspaces/4/projects/{PROJECT}/datasets/999/dataviews/{VIEW}"

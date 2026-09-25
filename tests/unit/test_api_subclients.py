@@ -747,6 +747,15 @@ class TestPipelineAPI:
         client.pipeline.list_tasks(dataview_id=42, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/pipeline/tasks")
 
+    def test_list_tasks_requests_full_fields(self, client: MammothClient):
+        # __standard (the server default) omits transform_status and
+        # reference_errors, so a task that failed at run time (a GEN_AI step
+        # hitting a workspace AI quota, for example) is invisible: has_error
+        # stays false and pipeline_state reads ready. __full is the only mode
+        # that carries transform_status.
+        client.pipeline.list_tasks(dataview_id=42, dataset_id=500)
+        assert client._request_json.call_args.kwargs["params"] == {"fields": "__full"}
+
     def test_add_task(self, client: MammothClient):
         client.pipeline.add_task(dataview_id=42, task_spec={"MATH": {}}, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/pipeline/tasks")
@@ -754,6 +763,10 @@ class TestPipelineAPI:
     def test_get_task(self, client: MammothClient):
         client.pipeline.get_task(dataview_id=42, task_id=7, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/pipeline/tasks/7")
+
+    def test_get_task_requests_full_fields(self, client: MammothClient):
+        client.pipeline.get_task(dataview_id=42, task_id=7, dataset_id=500)
+        assert client._request_json.call_args.kwargs["params"] == {"fields": "__full"}
 
     def test_update_task(self, client: MammothClient):
         # TaskPatch: ``patches``; task_spec is the replace-params shortcut.
