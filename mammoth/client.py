@@ -303,6 +303,7 @@ class MammothClient:
         allow_insecure_loopback_http: bool = False,
         *,
         api_token: str | None = None,
+        api_root: str | None = "/api/v2",
     ) -> None:
         """Initialize the Mammoth client.
 
@@ -322,6 +323,11 @@ class MammothClient:
                 loopback development endpoint. Production API credentials must
                 use HTTPS.
             api_token: Your Mammoth API token (``mm_...``).
+            api_root: The path the API is served under, appended to
+                ``base_url`` when it is not already there. ``None`` takes
+                ``base_url`` exactly as given, which is what a caller inside
+                the network needs: the server mounts these routes at their own
+                paths, and whatever sits in front of it adds the prefix.
         """
         if api_token is not None and (api_key is not None or api_secret is not None):
             raise ValueError("pass api_token or api_key + api_secret, not both")
@@ -343,8 +349,8 @@ class MammothClient:
                 supplied_base_url.fragment,
             )
         )
-        if not self.base_url.endswith("/api/v2"):
-            self.base_url = urljoin(self.base_url, "/api/v2")
+        if api_root is not None and not self.base_url.endswith(api_root):
+            self.base_url = urljoin(self.base_url, api_root)
         parsed_base_url = urlsplit(self.base_url)
         valid_base_url = not has_unsafe_url_components and (
             parsed_base_url.scheme == "https"

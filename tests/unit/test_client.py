@@ -27,6 +27,33 @@ class TestClientInit:
             )
         assert client.base_url == "https://custom.example.com/api/v2"
 
+    async def test_an_api_root_of_none_takes_the_url_exactly_as_given(self):
+        # The server that mounts these routes does not itself serve them under
+        # /api/v2 — whatever sits in front adds that. A caller inside the
+        # network reaches the routes directly, and must be able to say so.
+        with patch("mammoth.client.httpx.AsyncClient"):
+            client = MammothClient(
+                api_key="key",
+                api_secret="secret",
+                workspace_id=1,
+                base_url="http://127.0.0.1:8260",
+                api_root=None,
+                allow_insecure_loopback_http=True,
+            )
+        assert client.base_url == "http://127.0.0.1:8260"
+
+    async def test_an_api_root_of_none_still_refuses_a_public_http_url(self):
+        # Dropping the prefix must not drop the rule that credentials never
+        # travel unencrypted off this machine.
+        with patch("mammoth.client.httpx.AsyncClient"), pytest.raises(ValueError):
+            MammothClient(
+                api_key="key",
+                api_secret="secret",
+                workspace_id=1,
+                base_url="http://example.invalid",
+                api_root=None,
+            )
+
     async def test_base_url_normalization(self):
         with patch("mammoth.client.httpx.AsyncClient"):
             client = MammothClient(
