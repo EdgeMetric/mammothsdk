@@ -1,5 +1,44 @@
 # CLI release provenance
 
+## 2.0.48
+
+Two defects found from an eval trace and a live task replay on koyal
+(mammoth-cli 2.0.47), both in how the CLI treats mutation confirmation and
+how its bundled guide teaches combining data.
+
+- **Fixed (CLI, `mammoth-cli` 2.0.48)**: `view export dataset` (and every
+  other typed `view.export.*` destination) returned `confirmation_required`
+  regardless of the manifest's own `confirmation` field. Root cause:
+  `view_export_specialized` (`mammoth_cli/commands/view.py`, the shared
+  handler for all 17 typed export routes) passed one hardcoded
+  `policy=POLICY_YES_ALWAYS` to `enforce_confirmation` for every route,
+  ignoring that the manifest declares `confirmation: none` for
+  `view.export.dataset` and `view.export.csv` (no external effect) and
+  `confirmation: yes_always` only for routes with one (database, SFTP, BI,
+  email, webhook, ...). The in-app agent product decides whether to show a
+  confirmation card purely from the manifest, so this runtime-only gate was
+  invisible to it and just cost an unconditional extra `--yes`. The handler
+  now derives its policy from `command_by_id(invocation.command_id)
+  ["confirmation"]`, the same pattern `generated_dashboard` already used for
+  the dashboard command family. See
+  `mammoth-cli/tests/unit/commands/test_view_export_specialized.py::test_export_route_confirmation_matches_manifest`
+  (parametrized over every typed export route) and the tree-wide static
+  guard
+  `mammoth-cli/tests/contract/test_confirmation_policy_parity.py::test_runtime_confirmation_gate_matches_manifest_for_every_command`.
+- **Fixed (guide)**: the bundled skill taught appending/combining two
+  sources into one dataset (`file upload --input
+  '{"append_to_ds_id": ...}'`, `view export dataset` with `target_ds_id`/
+  `save_as_mode APPEND_TO_DS`) but never told the agent to check for rows
+  the two sources share. Replaying "combine the east and west orders":
+  3 orders present in both source files were counted twice after the
+  append, overstating revenue; an earlier run of the same task happened to
+  dedupe, so this was variance in agent behavior, not a capability gap.
+  `references/about-mammoth.md` ("Union or append two views") and
+  `SKILL.md`'s goal table now say to compare the appended view's `row_count`
+  against the distinct count of its natural key and run
+  `view transform discard-duplicates` (reporting how many rows it removed)
+  when they differ.
+
 ## 2.0.47
 
 Full live automation lifecycle (`create` → `list` → `get` → `update` rename/

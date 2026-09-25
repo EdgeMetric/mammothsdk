@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.47
+version: 2.0.48
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
@@ -70,7 +70,7 @@ mammoth view transform --help              # every data transformation
 | Goal | Command |
 |---|---|
 | Combine two datasets on a key (merge, VLOOKUP) | `view transform join`; one value per key: `view transform lookup` |
-| Add rows to an existing dataset | `file upload FILE --input '{"append_to_ds_id": DATASET_ID}'` |
+| Add rows to an existing dataset, or combine two sources | `file upload FILE --input '{"append_to_ds_id": DATASET_ID}'`; after, check for rows the sources share (row count vs. distinct key count) and `discard-duplicates` if any ([about Mammoth](references/about-mammoth.md#view-settings-and-what-has-no-command)) |
 | Keep or remove rows | `view transform filter` |
 | Remove duplicate rows | `view transform discard-duplicates` |
 | Totals, counts, averages per group | `view transform pivot` |

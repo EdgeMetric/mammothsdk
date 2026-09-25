@@ -9,6 +9,8 @@ import pytest
 
 from mammoth_cli.commands import view as view_cmd
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.runtime.confirm import POLICY_NONE
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
@@ -188,3 +190,104 @@ def test_secret_destination_requires_required_secret_field(
         )
     assert error.value.code == "missing_field"
     assert fake_service.view_call_log == []
+
+
+# ---------------------------------------------------------------------------
+# DEFECT 1 parity: runtime confirmation gate vs. manifest `confirmation`
+# ---------------------------------------------------------------------------
+#
+# The in-app agent product decides whether to show a confirmation card from
+# the MANIFEST's `confirmation` field alone -- it never runs the CLI to find
+# out. A runtime gate the manifest does not declare (or a manifest promise
+# the runtime does not honor) is therefore invisible to that product. This
+# sweeps every typed `view.export.*` destination and asserts the two agree,
+# so a future destination cannot silently drift the same way
+# `view.export.dataset` did (manifest: confirmation=none; runtime: always
+# demanded --yes).
+
+# One plausible value per required field name used across `_SPECIAL_EXPORTS`,
+# just enough to satisfy `_require_field` and reach the confirmation gate.
+_FIELD_FAKES: dict[str, object] = {
+    "dataset_name": "snapshot",
+    "storage_account_name": "acct",
+    "tenant_id": "tenant",
+    "client_id": "client",
+    "client_secret": "secret",
+    "container_name": "exports",
+    "selected_profile": {"name": "dataset", "value": [["proj", "dataset"]]},
+    "selected_identity": {"identity_config": {}, "host": "sa@example.iam.gserviceaccount.com"},
+    "table": "sales",
+    "host": "db.example",
+    "username": "agent",
+    "password": "secret",
+    "index": "logs",
+    "emails": ["a@example.com"],
+    "domain": "example.com",
+    "directory": "/exports",
+    "file": "out.csv",
+    "port": 5432,
+    "database": "analytics",
+    "user_id": "user-1",
+    "dataset": "reports",
+    "base_url": "https://api.example.com",
+    "endpoint_path": "/ingest",
+    "site_url": "https://tenant.sharepoint.com/sites/team",
+    "server_url": "https://tableau.example.com",
+    "token_name": "token",
+    "token_secret": "token-secret",
+}
+
+
+def _payload_for(required: tuple[str, ...]) -> dict[str, object]:
+    return {name: _FIELD_FAKES[name] for name in required}
+
+
+@pytest.mark.parametrize("command_id", sorted(view_cmd._SPECIAL_EXPORTS))
+def test_export_route_confirmation_matches_manifest(
+    command_id: str, fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    record = command_by_id(command_id)
+    assert record is not None, command_id
+    _method, required, _secrets = view_cmd._SPECIAL_EXPORTS[command_id]
+    payload = _payload_for(required)
+
+    try:
+        view_cmd.view_export_specialized(
+            _inv(
+                command_id,
+                project=180,
+                extra_args=["7", "9"],
+                input_file=_doc(tmp_path, payload),
+            )
+        )
+    except CliError as error:
+        runtime_requires_confirmation = error.code == "confirmation_required"
+    else:
+        runtime_requires_confirmation = False
+
+    manifest_requires_confirmation = record["confirmation"] != POLICY_NONE
+    assert runtime_requires_confirmation == manifest_requires_confirmation, (
+        f"{command_id}: manifest confirmation={record['confirmation']!r} but the runtime "
+        f"{'did' if runtime_requires_confirmation else 'did not'} demand --yes without it"
+    )
+
+
+def test_csv_export_route_confirmation_matches_manifest(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """`view.export.csv` never calls `enforce_confirmation`; assert that
+    matches its manifest entry (`confirmation: none`) rather than assuming it."""
+    record = command_by_id("view.export.csv")
+    assert record is not None
+    assert record["confirmation"] == POLICY_NONE
+
+    try:
+        view_cmd.view_export_csv(
+            _inv(
+                "view.export.csv",
+                extra_args=["7"],
+                input_file=_doc(tmp_path, {"output_path": str(tmp_path / "out.csv")}),
+            )
+        )
+    except CliError as error:
+        assert error.code != "confirmation_required"

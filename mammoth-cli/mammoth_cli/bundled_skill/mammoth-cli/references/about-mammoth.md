@@ -140,7 +140,12 @@ No command:
 - **Union or append two views.** There is no union task. Upload a file into
   an existing dataset with `append_to_ds_id`, or send a view's rows into an
   existing dataset with `view export dataset` (`target_ds_id` and
-  `save_as_mode` `APPEND_TO_DS`; that mode is untried on release).
+  `save_as_mode` `APPEND_TO_DS`; that mode is untried on release). A row
+  present in both sources lands twice: after either append, compare the
+  appended view's `row_count` (`view get`) against the distinct count of its
+  natural key (`view transform pivot` grouped on that key, `COUNT`) and, if
+  they differ, run `view transform discard-duplicates` on the appended view
+  and report how many rows it removed.
 - **Hide or reorder columns.** Display changes in the web app; they do not
   change the data.
 
