@@ -29,6 +29,21 @@ not found): upload, `rename-columns` (`cust_ref` to "Customer Ref"), a
 ASC), `view get`, `view list`, `view data get` (new name, sorted rows) and
 `view export csv` (header "Customer Ref", rows in sort order).
 
+SDK published from local artifacts built from tag `sdk-v0.7.17` (source
+commit `fd13f5f`):
+
+- `mammoth_io-0.7.17-py3-none-any.whl` sha256 `607aeb6c655b63b7991e9dcd906c13cad5b5f60d2668518ed438dde3d775e80a`
+- `mammoth_io-0.7.17.tar.gz` sha256 `b8c8439c78ad3f238d19fe726e03623d8a5b0c28bd783fa3816c998b342a21da`
+
+CLI published from deterministic local artifacts built from tag `cli-v2.0.38`
+(source commit `4f98fbe`):
+
+- `mammoth_cli-2.0.38-py3-none-any.whl` sha256 `4588f1b2ff2c9eb082bbe9f9930093ab35f1a4fa4837cc6f9c77aa79aace4a97`
+- `mammoth_cli-2.0.38.tar.gz` sha256 `98668487cf6920115dbe359b0a3d874f17cce669d2efbbf9dcfbe77ecdddf143`
+
+GitHub release `cli-v2.0.38` (Latest) carries these, both installers and
+`SHA256SUMS`; `sdk-v0.7.17` carries the SDK artifacts.
+
 ## 2.0.37
 
 An agent that stated a goal in its own words did not find the command. With
