@@ -265,18 +265,18 @@ commands:
   sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.update with validated request fields.
   request_model: UserUpdateRequest
   result_model: UserUpdateResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: benign_mutation
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
   live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  live_exemption_reason: Account or workspace mutation without a disposable fixture.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth user update --help
-  agent_example: mammoth user update
+  agent_example: 'mammoth user update --input ''{"first_name": "Jane"}'''
   unit_tests:
   - UT-USER-UPDATE
   contract_tests:
@@ -285,5 +285,5 @@ commands:
   - CT-USER-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'BLOCKED[B17 VARIADIC_INPUT_UNTYPED]: **fields is unconstrained; reserved, not registered.'
+  known_restrictions: null
   reviewed_by: primary

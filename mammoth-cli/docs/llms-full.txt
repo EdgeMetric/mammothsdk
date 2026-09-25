@@ -903,8 +903,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth user preference get
 - `mammoth user preference update` [benign_mutation/none] -> mammoth.api.user_profile.UserProfileAPI.update_preferences
   example: mammoth user preference update --input '{"patch": [{"op": "replace", "path": "GLOBAL.PREFERENCES.TOP_TABS", "value": []}]}'
-- `mammoth user update` [high_impact/confirm_target] -> mammoth.api.user_profile.UserProfileAPI.update
-  example: mammoth user update
+- `mammoth user update` [benign_mutation/none] -> mammoth.api.user_profile.UserProfileAPI.update
+  example: mammoth user update --input '{"first_name": "Jane"}'
 
 ## version
 

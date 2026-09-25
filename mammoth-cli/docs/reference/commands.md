@@ -3907,10 +3907,10 @@ Total commands: 557.
 
 ### `mammoth user update`
 
-- Mutation class: `high_impact`
-- Confirmation: `confirm_target`
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
 - Backing SDK: `mammoth.api.user_profile.UserProfileAPI.update`
-- Agent example: `mammoth user update`
+- Agent example: `mammoth user update --input '{"first_name": "Jane"}'`
 
 ## version
 
