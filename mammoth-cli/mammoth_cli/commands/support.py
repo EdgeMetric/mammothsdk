@@ -136,9 +136,8 @@ def _confirm(invocation: Invocation, *, action: str, target: str) -> None:
 
 
 def support_connector_list(invocation: Invocation) -> HandlerResult:
-    """List all subscription connectors. Confirm target: the auth workspace id."""
+    """List all subscription connectors."""
     with open_service(invocation) as (service, auth):
-        _confirm(invocation, action="list connectors", target=str(auth.workspace_id))
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id)
 
@@ -180,9 +179,8 @@ def support_connector_delete(invocation: Invocation) -> HandlerResult:
 
 
 def support_connector_profile_list(invocation: Invocation) -> HandlerResult:
-    """List all connector profiles. Confirm target: the auth workspace id."""
+    """List all connector profiles."""
     with open_service(invocation) as (service, auth):
-        _confirm(invocation, action="list connector profiles", target=str(auth.workspace_id))
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id)
 
@@ -248,9 +246,8 @@ def support_connector_profile_add_connector(invocation: Invocation) -> HandlerRe
 
 
 def support_feature_list(invocation: Invocation) -> HandlerResult:
-    """List all subscription features. Confirm target: the auth workspace id."""
+    """List all subscription features."""
     with open_service(invocation) as (service, auth):
-        _confirm(invocation, action="list features", target=str(auth.workspace_id))
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id)
 
@@ -294,9 +291,8 @@ def support_feature_delete(invocation: Invocation) -> HandlerResult:
 
 
 def support_feature_profile_list(invocation: Invocation) -> HandlerResult:
-    """List all feature profiles. Confirm target: the auth workspace id."""
+    """List all feature profiles."""
     with open_service(invocation) as (service, auth):
-        _confirm(invocation, action="list feature profiles", target=str(auth.workspace_id))
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id)
 
@@ -405,28 +401,25 @@ _PLAN_UPDATE_OPTIONAL = ("name", "monthly_price", "is_self_serve") + _PLAN_OPTIO
 
 
 def support_plan_list(invocation: Invocation) -> HandlerResult:
-    """List all subscription plans. Confirm target: the auth workspace id."""
+    """List all subscription plans."""
     with open_service(invocation) as (service, auth):
-        _confirm(invocation, action="list plans", target=str(auth.workspace_id))
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id)
 
 
 def support_plan_self_serve_list(invocation: Invocation) -> HandlerResult:
-    """List self-serve subscription plans. Confirm target: the auth workspace id."""
+    """List self-serve subscription plans."""
     with open_service(invocation) as (service, auth):
-        _confirm(invocation, action="list self-serve plans", target=str(auth.workspace_id))
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id)
 
 
 def support_plan_chargebee_list(invocation: Invocation) -> HandlerResult:
-    """List available Chargebee plans/resources. Confirm target: the auth workspace id."""
+    """List available Chargebee plans/resources."""
     document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("resource",))
     with open_service(invocation) as (service, auth):
-        _confirm(invocation, action="list chargebee plans", target=str(auth.workspace_id))
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
 
@@ -434,7 +427,6 @@ def support_plan_chargebee_list(invocation: Invocation) -> HandlerResult:
 def support_plan_get(invocation: Invocation) -> HandlerResult:
     """Get one subscription plan by id."""
     plan_id = _require_int_positional(invocation, "plan id")
-    _confirm(invocation, action=f"get plan {plan_id}", target=str(plan_id))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), plan_id=plan_id)
     return data, _meta(invocation, auth.workspace_id)
@@ -508,11 +500,6 @@ def support_subscription_get(invocation: Invocation) -> HandlerResult:
     document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"workspace_id": workspace_id}
     _forward_optional(document, kwargs, ("fields",))
-    _confirm(
-        invocation,
-        action=f"get subscription for workspace {workspace_id}",
-        target=str(workspace_id),
-    )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
@@ -570,12 +557,11 @@ def support_subscription_update(invocation: Invocation) -> HandlerResult:
 
 
 def support_user_list_all(invocation: Invocation) -> HandlerResult:
-    """List users across workspaces. Confirm target: the auth workspace id."""
+    """List users across workspaces."""
     document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("fields", "sort", "offset", "limit"))
     with open_service(invocation) as (service, auth):
-        _confirm(invocation, action="list users across workspaces", target=str(auth.workspace_id))
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
 
@@ -619,7 +605,6 @@ def support_user_update(invocation: Invocation) -> HandlerResult:
 def support_workspace_list(invocation: Invocation) -> HandlerResult:
     """List all workspaces visible to the current admin/support user."""
     with open_service(invocation) as (service, auth):
-        _confirm(invocation, action="list workspaces", target=str(auth.workspace_id))
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id)
 
@@ -630,7 +615,6 @@ def support_workspace_get(invocation: Invocation) -> HandlerResult:
     document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"workspace_id": workspace_id}
     _forward_optional(document, kwargs, ("fields",))
-    _confirm(invocation, action=f"get workspace {workspace_id}", target=str(workspace_id))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
@@ -734,11 +718,6 @@ def support_workspace_user_list(invocation: Invocation) -> HandlerResult:
     document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"workspace_id": workspace_id}
     _forward_optional(document, kwargs, ("limit", "offset", "fields", "sort"))
-    _confirm(
-        invocation,
-        action=f"list users in workspace {workspace_id}",
-        target=str(workspace_id),
-    )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)

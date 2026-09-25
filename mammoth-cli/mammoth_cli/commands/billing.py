@@ -128,14 +128,8 @@ def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> 
 
 
 def billing_chargebee_plan(invocation: Invocation) -> HandlerResult:
-    """Get the workspace's Chargebee plan details. ``--yes --confirm WS`` required."""
+    """Get the workspace's Chargebee plan details."""
     with open_service(invocation) as (service, auth):
-        enforce_confirmation(
-            invocation,
-            policy=POLICY_CONFIRM_TARGET,
-            action=f"view the Chargebee plan for workspace {auth.workspace_id}",
-            target=str(auth.workspace_id),
-        )
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id, None)
 
@@ -178,31 +172,19 @@ def billing_invoice_charge(invocation: Invocation) -> HandlerResult:
 
 
 def billing_invoice_get(invocation: Invocation) -> HandlerResult:
-    """Get one invoice by id. ``--yes --confirm INVOICE_ID`` required."""
+    """Get one invoice by id."""
     invoice_id = _require_int_positional(invocation, "invoice id")
-    enforce_confirmation(
-        invocation,
-        policy=POLICY_CONFIRM_TARGET,
-        action=f"view invoice {invoice_id}",
-        target=str(invoice_id),
-    )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), invoice_id=invoice_id)
     return data, _meta(invocation, auth.workspace_id, None)
 
 
 def billing_invoice_list(invocation: Invocation) -> HandlerResult:
-    """List invoices for the workspace. ``--yes --confirm WS`` required."""
+    """List invoices for the workspace."""
     document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("limit", "sort"))
     with open_service(invocation) as (service, auth):
-        enforce_confirmation(
-            invocation,
-            policy=POLICY_CONFIRM_TARGET,
-            action=f"list invoices for workspace {auth.workspace_id}",
-            target=str(auth.workspace_id),
-        )
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, None)
 
@@ -273,27 +255,15 @@ def billing_stripe_end_trial(invocation: Invocation) -> HandlerResult:
 
 
 def billing_stripe_get(invocation: Invocation) -> HandlerResult:
-    """Get the workspace's Stripe billing state. ``--yes --confirm WS`` required."""
+    """Get the workspace's Stripe billing state."""
     with open_service(invocation) as (service, auth):
-        enforce_confirmation(
-            invocation,
-            policy=POLICY_CONFIRM_TARGET,
-            action=f"view Stripe billing state for workspace {auth.workspace_id}",
-            target=str(auth.workspace_id),
-        )
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id, None)
 
 
 def billing_stripe_history(invocation: Invocation) -> HandlerResult:
-    """Get the workspace's Stripe billing history. ``--yes --confirm WS`` required."""
+    """Get the workspace's Stripe billing history."""
     with open_service(invocation) as (service, auth):
-        enforce_confirmation(
-            invocation,
-            policy=POLICY_CONFIRM_TARGET,
-            action=f"view Stripe billing history for workspace {auth.workspace_id}",
-            target=str(auth.workspace_id),
-        )
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id, None)
 
@@ -313,14 +283,8 @@ def billing_stripe_payment_method_delete(invocation: Invocation) -> HandlerResul
 
 
 def billing_stripe_payment_method_list(invocation: Invocation) -> HandlerResult:
-    """List the workspace's Stripe payment methods. ``--yes --confirm WS`` required."""
+    """List the workspace's Stripe payment methods."""
     with open_service(invocation) as (service, auth):
-        enforce_confirmation(
-            invocation,
-            policy=POLICY_CONFIRM_TARGET,
-            action=f"list Stripe payment methods for workspace {auth.workspace_id}",
-            target=str(auth.workspace_id),
-        )
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id, None)
 
@@ -356,19 +320,13 @@ def billing_stripe_portal_url(invocation: Invocation) -> HandlerResult:
 
 
 def billing_stripe_preview_invoice(invocation: Invocation) -> HandlerResult:
-    """Preview the workspace's next Stripe invoice. ``--yes --confirm WS`` required."""
+    """Preview the workspace's next Stripe invoice."""
     document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(
         document, kwargs, ("connector_ids", "additional_storage_gb", "additional_user_seats")
     )
     with open_service(invocation) as (service, auth):
-        enforce_confirmation(
-            invocation,
-            policy=POLICY_CONFIRM_TARGET,
-            action=f"preview the Stripe invoice for workspace {auth.workspace_id}",
-            target=str(auth.workspace_id),
-        )
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, None)
 
@@ -387,14 +345,8 @@ def billing_stripe_retry_payment(invocation: Invocation) -> HandlerResult:
 
 
 def billing_stripe_status(invocation: Invocation) -> HandlerResult:
-    """Get the workspace's Stripe subscription status. ``--yes --confirm WS`` required."""
+    """Get the workspace's Stripe subscription status."""
     with open_service(invocation) as (service, auth):
-        enforce_confirmation(
-            invocation,
-            policy=POLICY_CONFIRM_TARGET,
-            action=f"view Stripe status for workspace {auth.workspace_id}",
-            target=str(auth.workspace_id),
-        )
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id, None)
 
@@ -413,43 +365,25 @@ def billing_stripe_sync(invocation: Invocation) -> HandlerResult:
 
 
 def billing_stripe_upcoming_invoice(invocation: Invocation) -> HandlerResult:
-    """Get the workspace's upcoming Stripe invoice. ``--yes --confirm WS`` required."""
+    """Get the workspace's upcoming Stripe invoice."""
     with open_service(invocation) as (service, auth):
-        enforce_confirmation(
-            invocation,
-            policy=POLICY_CONFIRM_TARGET,
-            action=f"view the upcoming Stripe invoice for workspace {auth.workspace_id}",
-            target=str(auth.workspace_id),
-        )
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id, None)
 
 
 def billing_stripe_usage(invocation: Invocation) -> HandlerResult:
-    """Get the workspace's Stripe usage figures. ``--yes --confirm WS`` required."""
+    """Get the workspace's Stripe usage figures."""
     with open_service(invocation) as (service, auth):
-        enforce_confirmation(
-            invocation,
-            policy=POLICY_CONFIRM_TARGET,
-            action=f"view Stripe usage for workspace {auth.workspace_id}",
-            target=str(auth.workspace_id),
-        )
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id, None)
 
 
 def billing_subscription_get(invocation: Invocation) -> HandlerResult:
-    """Get the workspace's subscription details. ``--yes --confirm WS`` required."""
+    """Get the workspace's subscription details."""
     document = _bound_document(invocation)
     kwargs: dict[str, Any] = {}
     _forward_optional(document, kwargs, ("fields",))
     with open_service(invocation) as (service, auth):
-        enforce_confirmation(
-            invocation,
-            policy=POLICY_CONFIRM_TARGET,
-            action=f"view the subscription for workspace {auth.workspace_id}",
-            target=str(auth.workspace_id),
-        )
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, None)
 

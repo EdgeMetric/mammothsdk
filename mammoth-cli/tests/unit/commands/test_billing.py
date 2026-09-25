@@ -57,22 +57,9 @@ def _write(tmp_path: Path, payload: dict[str, object]) -> str:
 # --- chargebee-plan ---------------------------------------------------------------
 
 
-def test_chargebee_plan_blocked_without_yes(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_chargebee_plan(_inv("billing.chargebee-plan", output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_chargebee_plan_requires_confirm_target(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_chargebee_plan(_inv("billing.chargebee-plan", yes=True, confirm="999"))
-    assert excinfo.value.code == "confirmation_target_mismatch"
-    assert fake_service.call_log == []
-
-
-def test_chargebee_plan_proceeds_with_confirm(fake_service: FakeMammothService) -> None:
-    billing_cmd.billing_chargebee_plan(_inv("billing.chargebee-plan", yes=True, confirm="4"))
+def test_chargebee_plan_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    billing_cmd.billing_chargebee_plan(_inv("billing.chargebee-plan", output="json"))
     assert fake_service.call_log == [(_CHARGEBEE_PLAN, {})]
 
 
@@ -157,41 +144,19 @@ def test_invoice_get_invalid_invoice_id(fake_service: FakeMammothService) -> Non
     assert fake_service.call_log == []
 
 
-def test_invoice_get_blocked_without_yes(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_invoice_get(
-            _inv("billing.invoice.get", extra_args=["501"], output="json")
-        )
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_invoice_get_requires_confirm_equal_to_invoice_id(
-    fake_service: FakeMammothService,
-) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_invoice_get(
-            _inv("billing.invoice.get", extra_args=["501"], yes=True, confirm="4")
-        )
-    assert excinfo.value.code == "confirmation_target_mismatch"
-    assert fake_service.call_log == []
-
-
-def test_invoice_get_proceeds_with_matching_confirm(fake_service: FakeMammothService) -> None:
-    billing_cmd.billing_invoice_get(
-        _inv("billing.invoice.get", extra_args=["501"], yes=True, confirm="501")
-    )
+def test_invoice_get_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    billing_cmd.billing_invoice_get(_inv("billing.invoice.get", extra_args=["501"], output="json"))
     assert fake_service.call_log == [(_INVOICE_GET, {"invoice_id": 501})]
 
 
 # --- invoice.list --------------------------------------------------------------------
 
 
-def test_invoice_list_blocked_without_yes(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_invoice_list(_inv("billing.invoice.list", output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+def test_invoice_list_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    billing_cmd.billing_invoice_list(_inv("billing.invoice.list", output="json"))
+    assert fake_service.call_log == [(_INVOICE_LIST, {})]
 
 
 def test_invoice_list_forwards_optional_fields(
@@ -327,30 +292,18 @@ def test_stripe_end_trial_proceeds_with_confirm(fake_service: FakeMammothService
 # --- stripe.get ------------------------------------------------------------------------
 
 
-def test_stripe_get_blocked_without_yes(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_stripe_get(_inv("billing.stripe.get", output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_stripe_get_proceeds_with_confirm(fake_service: FakeMammothService) -> None:
-    billing_cmd.billing_stripe_get(_inv("billing.stripe.get", yes=True, confirm="4"))
+def test_stripe_get_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    billing_cmd.billing_stripe_get(_inv("billing.stripe.get", output="json"))
     assert fake_service.call_log == [(_STRIPE_GET, {})]
 
 
 # --- stripe.history --------------------------------------------------------------------
 
 
-def test_stripe_history_blocked_without_yes(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_stripe_history(_inv("billing.stripe.history", output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_stripe_history_proceeds_with_confirm(fake_service: FakeMammothService) -> None:
-    billing_cmd.billing_stripe_history(_inv("billing.stripe.history", yes=True, confirm="4"))
+def test_stripe_history_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    billing_cmd.billing_stripe_history(_inv("billing.stripe.history", output="json"))
     assert fake_service.call_log == [(_STRIPE_HISTORY, {})]
 
 
@@ -408,18 +361,10 @@ def test_pm_delete_proceeds_with_matching_confirm(fake_service: FakeMammothServi
 # --- stripe.payment-method.list ----------------------------------------------------------
 
 
-def test_pm_list_blocked_without_yes(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_stripe_payment_method_list(
-            _inv("billing.stripe.payment-method.list", output="json")
-        )
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_pm_list_proceeds_with_confirm(fake_service: FakeMammothService) -> None:
+def test_pm_list_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
     billing_cmd.billing_stripe_payment_method_list(
-        _inv("billing.stripe.payment-method.list", yes=True, confirm="4")
+        _inv("billing.stripe.payment-method.list", output="json")
     )
     assert fake_service.call_log == [(_STRIPE_PM_LIST, {})]
 
@@ -484,13 +429,12 @@ def test_portal_url_forwards_return_url(fake_service: FakeMammothService, tmp_pa
 # --- stripe.preview-invoice ----------------------------------------------------------------
 
 
-def test_preview_invoice_blocked_without_yes(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_stripe_preview_invoice(
-            _inv("billing.stripe.preview-invoice", output="json")
-        )
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+def test_preview_invoice_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    billing_cmd.billing_stripe_preview_invoice(
+        _inv("billing.stripe.preview-invoice", output="json")
+    )
+    assert fake_service.call_log == [(_STRIPE_PREVIEW_INVOICE, {})]
 
 
 def test_preview_invoice_forwards_optional_fields(
@@ -541,15 +485,9 @@ def test_retry_payment_proceeds_with_confirm(fake_service: FakeMammothService) -
 # --- stripe.status --------------------------------------------------------------------------
 
 
-def test_stripe_status_blocked_without_yes(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_stripe_status(_inv("billing.stripe.status", output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_stripe_status_proceeds_with_confirm(fake_service: FakeMammothService) -> None:
-    billing_cmd.billing_stripe_status(_inv("billing.stripe.status", yes=True, confirm="4"))
+def test_stripe_status_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    billing_cmd.billing_stripe_status(_inv("billing.stripe.status", output="json"))
     assert fake_service.call_log == [(_STRIPE_STATUS, {})]
 
 
@@ -571,18 +509,10 @@ def test_stripe_sync_proceeds_with_confirm(fake_service: FakeMammothService) -> 
 # --- stripe.upcoming-invoice ------------------------------------------------------------------
 
 
-def test_upcoming_invoice_blocked_without_yes(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_stripe_upcoming_invoice(
-            _inv("billing.stripe.upcoming-invoice", output="json")
-        )
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_upcoming_invoice_proceeds_with_confirm(fake_service: FakeMammothService) -> None:
+def test_upcoming_invoice_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
     billing_cmd.billing_stripe_upcoming_invoice(
-        _inv("billing.stripe.upcoming-invoice", yes=True, confirm="4")
+        _inv("billing.stripe.upcoming-invoice", output="json")
     )
     assert fake_service.call_log == [(_STRIPE_UPCOMING_INVOICE, {})]
 
@@ -590,33 +520,24 @@ def test_upcoming_invoice_proceeds_with_confirm(fake_service: FakeMammothService
 # --- stripe.usage -------------------------------------------------------------------------------
 
 
-def test_stripe_usage_blocked_without_yes(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_stripe_usage(_inv("billing.stripe.usage", output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
-
-
-def test_stripe_usage_proceeds_with_confirm(fake_service: FakeMammothService) -> None:
-    billing_cmd.billing_stripe_usage(_inv("billing.stripe.usage", yes=True, confirm="4"))
+def test_stripe_usage_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    billing_cmd.billing_stripe_usage(_inv("billing.stripe.usage", output="json"))
     assert fake_service.call_log == [(_STRIPE_USAGE, {})]
 
 
 # --- subscription.get --------------------------------------------------------------------------
 
 
-def test_subscription_get_blocked_without_yes(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        billing_cmd.billing_subscription_get(_inv("billing.subscription.get", output="json"))
-    assert excinfo.value.code == "confirmation_required"
-    assert fake_service.call_log == []
+def test_subscription_get_needs_no_confirmation(fake_service: FakeMammothService) -> None:
+    """Item 11: a read (GET) is never high_impact/confirm_target."""
+    billing_cmd.billing_subscription_get(_inv("billing.subscription.get", output="json"))
+    assert fake_service.call_log == [(_SUBSCRIPTION_GET, {})]
 
 
 def test_subscription_get_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"fields": "plan,status"})
-    billing_cmd.billing_subscription_get(
-        _inv("billing.subscription.get", input_file=doc, yes=True, confirm="4")
-    )
+    billing_cmd.billing_subscription_get(_inv("billing.subscription.get", input_file=doc))
     assert fake_service.call_log == [(_SUBSCRIPTION_GET, {"fields": "plan,status"})]
 
 

@@ -141,8 +141,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.connector_profile_list with validated request fields.
   request_model: SupportConnectorProfileListRequest
   result_model: SupportConnectorProfileListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -296,8 +296,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.connector_list with validated request fields.
   request_model: SupportConnectorListRequest
   result_model: SupportConnectorListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -497,8 +497,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.feature_profile_list with validated request fields.
   request_model: SupportFeatureProfileListRequest
   result_model: SupportFeatureProfileListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -651,8 +651,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.feature_list with validated request fields.
   request_model: SupportFeatureListRequest
   result_model: SupportFeatureListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -811,8 +811,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.plan_chargebee_list with validated request fields.
   request_model: SupportPlanChargebeeListRequest
   result_model: SupportPlanChargebeeListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -932,8 +932,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.plan_get with validated request fields.
   request_model: SupportPlanGetRequest
   result_model: SupportPlanGetResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -966,8 +966,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.plan_list with validated request fields.
   request_model: SupportPlanListRequest
   result_model: SupportPlanListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -1000,8 +1000,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.plan_self_serve_list with validated request fields.
   request_model: SupportPlanSelfServeListRequest
   result_model: SupportPlanSelfServeListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -1168,8 +1168,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.subscription_get with validated request fields.
   request_model: SupportSubscriptionGetRequest
   result_model: SupportSubscriptionGetResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -1248,8 +1248,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.user_list_all with validated request fields.
   request_model: SupportUserListAllRequest
   result_model: SupportUserListAllResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -1450,8 +1450,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_get with validated request fields.
   request_model: SupportWorkspaceGetRequest
   result_model: SupportWorkspaceGetResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
@@ -1484,8 +1484,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_list with validated request fields.
   request_model: SupportWorkspaceListRequest
   result_model: SupportWorkspaceListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
@@ -1688,8 +1688,8 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_user_list with validated request fields.
   request_model: SupportWorkspaceUserListRequest
   result_model: SupportWorkspaceUserListResult
-  mutation_class: high_impact
-  confirmation: confirm_target
+  mutation_class: read
+  confirmation: none
   wait_policy: not_async
   pagination_policy: single_page
   acceptance_evidence: contract_only_high_impact
