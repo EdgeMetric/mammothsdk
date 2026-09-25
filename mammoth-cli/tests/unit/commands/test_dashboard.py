@@ -17,7 +17,6 @@ _ACTION = "mammoth.api.dashboards.DashboardsAPI.action"
 _ARCHIVE = "mammoth.api.dashboards.DashboardsAPI.archive"
 _ANALYTICS = "mammoth.api.dashboards.DashboardsAPI.get_analytics"
 _CANCEL_GENERATION = "mammoth.api.dashboards.DashboardsAPI.cancel_generation"
-_CREATE = "mammoth.api.dashboards.DashboardsAPI.create"
 _CREATE_BLANK = "mammoth.api.dashboards.DashboardsAPI.create_blank"
 _DATA_DRAFT = "mammoth.api.dashboards.DashboardsAPI.get_draft_data"
 _DATA_PUBLISHED = "mammoth.api.dashboards.DashboardsAPI.get_publish_data"
@@ -451,53 +450,6 @@ def test_widget_data_by_url_forwards_url_and_body(
 def test_source_list_passes_no_kwargs(fake_service: FakeMammothService) -> None:
     dashboard_cmd.dashboard_source_list(_inv("dashboard.source.list"))
     assert fake_service.call_log == [(_SOURCE_LIST, {})]
-
-
-# --- dashboard create --------------------------------------------------------
-
-
-def test_create_uses_positional_intent(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write_doc(tmp_path, {"source": [1, 2]})
-    dashboard_cmd.dashboard_create(
-        _inv("dashboard.create", extra_args=["Sales overview"], input_file=doc)
-    )
-    assert fake_service.call_log == [(_CREATE, {"intent": "Sales overview", "source": [1, 2]})]
-
-
-def test_create_without_intent_is_usage_error(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = _write_doc(tmp_path, {"source": [1]})
-    with pytest.raises(CliError) as excinfo:
-        dashboard_cmd.dashboard_create(_inv("dashboard.create", input_file=doc))
-    assert excinfo.value.code == "missing_argument"
-    assert fake_service.call_log == []
-
-
-def test_create_requires_source(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        dashboard_cmd.dashboard_create(_inv("dashboard.create", extra_args=["Sales"]))
-    assert excinfo.value.code == "missing_field"
-    assert fake_service.call_log == []
-
-
-def test_create_forwards_optional_flags(fake_service: FakeMammothService, tmp_path: Path) -> None:
-    doc = _write_doc(
-        tmp_path,
-        {"intent": "Sales", "source": [1], "enable_filters": False, "enable_pages": True},
-    )
-    dashboard_cmd.dashboard_create(_inv("dashboard.create", input_file=doc))
-    assert fake_service.call_log == [
-        (
-            _CREATE,
-            {
-                "intent": "Sales",
-                "source": [1],
-                "enable_filters": False,
-                "enable_pages": True,
-            },
-        )
-    ]
 
 
 def test_create_blank_is_an_ordinary_create_and_needs_no_confirmation(

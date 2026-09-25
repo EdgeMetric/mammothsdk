@@ -62,6 +62,7 @@ def fake_family_service(
 
     def context(_invocation: Invocation) -> _ServiceContext:
         return _ServiceContext()
+
     for module in (dashboard_cmd, data_app_cmd, report_cmd, template_cmd):
         monkeypatch.setattr(module, "open_service", context)
     return service
@@ -85,11 +86,11 @@ def _ledger() -> dict[str, Any]:
 def test_s6_ledger_closes_exact_106_route_surface() -> None:
     ledger = _ledger()
     routes = ledger["routes"]
-    assert ledger["route_count"] == 106
-    assert ledger["families"] == {"dashboard": 88, "data-app": 12, "report": 1, "template": 5}
-    assert len(routes) == 106
+    assert ledger["route_count"] == 105
+    assert ledger["families"] == {"dashboard": 87, "data-app": 12, "report": 1, "template": 5}
+    assert len(routes) == 105
     ids = {route["command_id"] for route in routes}
-    assert len(ids) == 106
+    assert len(ids) == 105
     for route in routes:
         command_id = route["command_id"]
         record = command_by_id(command_id)

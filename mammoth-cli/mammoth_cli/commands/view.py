@@ -28,6 +28,7 @@ from mammoth.view import ViewExport
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
+    CODE_INVALID_ARGUMENTS,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
@@ -844,6 +845,121 @@ def view_data_query(invocation: Invocation) -> HandlerResult:
         )
         data = service.call(_symbol(invocation), **kwargs)
         data = _relabel_and_check(service, dataset_id, view_id, project_id, data, mapping, types)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _resolved_aggregate_item(agg: dict[str, Any], column_map: dict[str, str]) -> dict[str, Any]:
+    """Resolve one ``{column, function, as_name}`` input entry's column to its
+    internal name and default its ``as_name``, ready to forward to the SDK.
+
+    Function/column validity is the SDK's job (:meth:`DataviewsAPI.aggregate`
+    raises ``MammothValidationError``, mapped to an ``invalid_arguments``
+    envelope) — this only resolves the display name and computes the default
+    label so the result can be relabeled below.
+    """
+    function = str(agg.get("function") or "").upper()
+    column = agg.get("column")
+    resolved: dict[str, Any] = {
+        "function": function,
+        "as_name": agg.get("as_name") or (f"{function}_{column}" if column else function),
+    }
+    if column:
+        resolved["column"] = column_map.get(column, column)
+    return resolved
+
+
+def _build_pivot_fields(
+    document: dict[str, Any], column_map: dict[str, str]
+) -> tuple[dict[str, Any], dict[str, str]]:
+    """Resolve ``aggregations``/``group_by`` into SDK kwargs and an as_map.
+
+    The as_map (``agg_0``/``group_0``/... -> the display label) mirrors the
+    internal-name scheme :func:`mammoth.api.dataviews._build_pivot_param`
+    assigns from the same list, in the same order — keep the two in step.
+    """
+    aggregations = document.get("aggregations")
+    if not isinstance(aggregations, list) or not aggregations:
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message="'aggregations' is required for a PIVOT and must be a non-empty list.",
+            exit_status=EXIT_USAGE,
+            hint='--input \'{"aggregations": [{"column": "Sales", "function": "SUM"}]}\'',
+        )
+    resolved_aggregations = [_resolved_aggregate_item(agg, column_map) for agg in aggregations]
+    as_map = {f"agg_{index}": item["as_name"] for index, item in enumerate(resolved_aggregations)}
+    fields: dict[str, Any] = {"aggregations": resolved_aggregations}
+    group_by = document.get("group_by")
+    if group_by:
+        fields["group_by"] = [column_map.get(column, column) for column in group_by]
+        as_map.update({f"group_{index}": column for index, column in enumerate(group_by)})
+    return fields, as_map
+
+
+def _build_metric_fields(
+    document: dict[str, Any], column_map: dict[str, str]
+) -> tuple[dict[str, Any], dict[str, str]]:
+    """Resolve a ``metric`` field into SDK kwargs and an as_map."""
+    metric = document.get("metric")
+    if not isinstance(metric, dict):
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message="'metric' is required and must be an object.",
+            exit_status=EXIT_USAGE,
+            hint='--input \'{"metric": {"column": "Sales", "function": "SUM"}}\'',
+        )
+    resolved = _resolved_aggregate_item(metric, column_map)
+    return {"metric": resolved}, {"metric": resolved["as_name"]}
+
+
+def view_data_aggregate(invocation: Invocation) -> HandlerResult:
+    """Aggregate a dataview's data: a PIVOT group-by or a single METRIC value.
+
+    Read-only: computes and returns the aggregated result without adding a
+    task to the view's pipeline or otherwise changing it. Pass exactly one of
+    ``aggregations`` (a PIVOT; ``group_by`` is optional) or ``metric`` (a
+    METRIC). ``function`` is one of SUM, COUNT, AVG, MIN, MAX. An optional
+    ``condition`` filters rows before aggregating, and ``sequence`` pins the
+    read to a pipeline step (default: latest). Never use ``view transform
+    pivot`` just to read a number — it mutates the view's pipeline.
+    """
+    project_id = require_project(invocation)
+    view_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    has_pivot = "aggregations" in document or "group_by" in document
+    has_metric = "metric" in document
+    if has_pivot == has_metric:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message="Pass exactly one of 'aggregations' (a PIVOT group-by, 'group_by' optional) "
+            "or 'metric' (a single METRIC value).",
+            exit_status=EXIT_USAGE,
+        )
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
+        internal_to_display, column_types = _column_profile(
+            service, dataset_id, view_id, project_id
+        )
+        display_to_internal = {
+            display: internal for internal, display in internal_to_display.items()
+        }
+        if has_pivot:
+            fields, as_map = _build_pivot_fields(document, display_to_internal)
+        else:
+            fields, as_map = _build_metric_fields(document, display_to_internal)
+        kwargs: dict[str, Any] = {
+            "dataset_id": dataset_id,
+            "dataview_id": view_id,
+            "project_id": project_id,
+            **fields,
+        }
+        if document.get(CONDITION_KWARG) is not None:
+            compiled = compile_condition(document[CONDITION_KWARG])
+            kwargs[CONDITION_KWARG] = compiled.build(
+                display_to_internal or None, column_types or None
+            )
+        _forward_optional(document, kwargs, ("sequence", "limit"))
+        data = service.call(_symbol(invocation), **kwargs)
+        data = _relabel_columns(service, dataset_id, view_id, project_id, data, as_map)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

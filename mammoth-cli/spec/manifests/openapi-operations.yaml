@@ -177,11 +177,15 @@ operations:
   - ObjectJobSchema
   - JobResponse
   deprecated: false
-  disposition: command
-  disposition_reason: User-initiated production operation.
-  canonical_command: dashboard.create
+  disposition: server_unavailable
+  disposition_reason: 'No POST handler for this route exists in current apiv2
+    (apiv2/apiv2/mmai/dashboard/controller.py has no bare POST); every call 404s.
+    Historically returned a structured 409 (4DASH012 DASHBOARD_LEGACY_CREATION_RETIRED)
+    per dated evidence in docs/capability-evidence/dashboard-sweep-20260918/. Use
+    dashboard create-blank or dashboard v3 generate instead.'
+  canonical_command: null
   alias_of: null
-  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create
+  sdk_symbol: null
   reviewed_by: primary
 - identity: GET /dashboards/sources
   method: GET
@@ -5860,11 +5864,11 @@ operations:
   response_schemas:
   - JobResponse
   deprecated: false
-  disposition: alias
-  disposition_reason: Identical behavior to the aliased command.
-  canonical_command: null
-  alias_of: view.data.get
-  sdk_symbol: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: view.data.query
+  alias_of: null
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.query_data
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/data/generate
   method: GET
@@ -5922,9 +5926,9 @@ operations:
   deprecated: false
   disposition: command
   disposition_reason: User-initiated production operation.
-  canonical_command: view.data.query
+  canonical_command: view.data.aggregate
   alias_of: null
-  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.query_data
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.aggregate
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/derivatives
   method: GET

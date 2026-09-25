@@ -627,48 +627,6 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
-- command_id: dashboard.create
-  command_path: dashboard create
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GenerateDashboard
-  positionals:
-  - name: intent
-    type: str
-    required: false
-    metavar: INTENT
-    falls_back_to_field: intent
-    help: Generation intent for the new dashboard; or pass it via the 'intent' input field.
-  options: []
-  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create
-  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.create with validated request fields.
-  request_model: DashboardCreateRequest
-  result_model: DashboardCreateResult
-  mutation_class: benign_mutation
-  confirmation: none
-  wait_policy: returns_job
-  pagination_policy: none
-  acceptance_evidence: contract_only_no_disposable_fixture
-  live_test: null
-  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
-    fixture in tests/live.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dashboard create --help
-  agent_example: 'mammoth dashboard create ''Summarize revenue by region'' --input ''{"source": [1]}'''
-  unit_tests:
-  - UT-DASHBOARD-CREATE
-  contract_tests:
-  - CT-DASHBOARD-CREATE-HUMAN
-  - CT-DASHBOARD-CREATE-JSON
-  - CT-DASHBOARD-CREATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'B13 DASHBOARD_ASYNC_UNTYPED: no stable typed job or waiter exposed; keep returns_job,
-    do not claim completion.'
-  reviewed_by: primary
 - command_id: dashboard.create-blank
   command_path: dashboard create-blank
   disposition: command

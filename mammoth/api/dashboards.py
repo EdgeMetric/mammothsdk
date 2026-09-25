@@ -44,9 +44,6 @@ _list = list  # Alias to avoid shadowing by method name
 # ── Validation error constants ────────────────────────────────────────────────
 
 ERR_DASHBOARD_ID_POSITIVE = "`dashboard_id` must be a positive integer, got {0}."
-ERR_INTENT_TOO_SHORT = "`intent` must be at least 10 characters, got {0!r}."
-ERR_SOURCE_EMPTY = "`source` must be a non-empty list of dataview IDs."
-ERR_SOURCE_IDS_POSITIVE = "All `source` IDs must be positive integers; got invalid ID {0}."
 ERR_PATCH_EMPTY = "`patch` must be a non-empty list of patch operations."
 ERR_INTENT_VALUE_TOO_SHORT = "Patch value for `intent` must be at least 10 characters, got {0!r}."
 ERR_INTENT_VALUE_NOT_STR = "Patch value for `intent` must be a string."
@@ -68,9 +65,8 @@ class DashboardsAPI:
     Access via ``client.dashboards``::
 
         dashboards = client.dashboards.list()
-        dashboard = client.dashboards.create(
-            intent="Show quarterly revenue by region",
-            source=[101, 102],
+        dashboard = client.dashboards.create_blank(
+            CreateBlankParams(dataview_id=101, title="Revenue by region"),
         )
         client.dashboards.share(
             dashboard_id=5,
@@ -148,50 +144,6 @@ class DashboardsAPI:
         return self._client._request_json(
             "POST", f"/dashboards/tags/{tag_id}/merge", json=typed.model_dump(mode="json")
         )
-
-    def create(
-        self,
-        intent: str,
-        source: _list[int],
-        enable_filters: bool = True,
-        enable_pages: bool = False,
-    ) -> dict[str, Any]:
-        """Create a new AI-generated dashboard.
-
-        Args:
-            intent: Natural-language description of what the dashboard should
-                show (minimum 10 characters).
-            source: Non-empty list of dataview IDs to use as the data source.
-                All IDs must be positive integers; existence is validated
-                server-side.
-            enable_filters: Whether to include filter widgets (default ``True``).
-            enable_pages: Whether to generate multiple pages (default ``False``).
-
-        Returns:
-            Dict with created dashboard info (may include a job ID for async
-            creation).
-
-        Raises:
-            MammothValidationError: If *intent* is shorter than 10 characters,
-                *source* is empty, or any source ID is not a positive integer.
-        """
-        if len(intent) < _INTENT_MIN_LEN:
-            raise MammothValidationError(ERR_INTENT_TOO_SHORT.format(intent))
-        if not source:
-            raise MammothValidationError(ERR_SOURCE_EMPTY)
-        for sid in source:
-            if sid <= 0:
-                raise MammothValidationError(ERR_SOURCE_IDS_POSITIVE.format(sid))
-
-        body: dict[str, Any] = {
-            "params": {
-                "intent": intent,
-                "source": source,
-                "enable_filters": enable_filters,
-                "enable_pages": enable_pages,
-            }
-        }
-        return self._client._request_json("POST", "/dashboards", json=body)
 
     def create_blank(self, params: CreateBlankParams) -> dict[str, Any]:
         """Create an empty v3 dashboard bound to a dataview.

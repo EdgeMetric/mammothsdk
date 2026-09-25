@@ -1165,15 +1165,6 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
-- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create
-  canonical_command: dashboard.create
-  alias_of: null
-  mutation_class: benign_mutation
-  wait_policy: returns_job
-  pagination_policy: none
-  openapi_operation_ids: []
-  notes: 'B13 DASHBOARD_ASYNC_UNTYPED: no stable typed job or waiter exposed; keep returns_job, do not
-    claim completion.'
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create_blank
   canonical_command: dashboard.create-blank
   alias_of: null

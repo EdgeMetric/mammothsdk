@@ -115,9 +115,6 @@ def _invoke(client: RecordingClient, route: str) -> None:
             sort="C2_SORT",
         ),  # type: ignore[arg-type]
         "dashboard.list": lambda: dashboards.list(project_id=41),
-        "dashboard.create": lambda: dashboards.create(
-            "C2 dashboard intent", [1001, 1002], False, True
-        ),
         "dashboard.analytics": lambda: dashboards.get_analytics(1001),
         "dashboard.action": lambda: dashboards.action(
             1001, DashboardActionType.AUTO_SYNC, False, 1002
@@ -182,5 +179,5 @@ def test_coverage_scope_is_explicit_without_workbook_dependencies() -> None:
     case_routes = {case["route"] for case in fixture["cases"]}
     assert covered == case_routes
     assert fixture["route_inventory"] == {"s2": 94, "s6": 106, "total": 200}
-    assert len(covered) == 32
-    assert fixture["route_inventory"]["total"] - len(covered) == 168
+    assert len(covered) == 31
+    assert fixture["route_inventory"]["total"] - len(covered) == 169

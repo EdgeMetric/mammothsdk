@@ -25,6 +25,7 @@ _TRASH = "mammoth.api.dataviews.DataviewsAPI.trash"
 _UPDATE = "mammoth.api.dataviews.DataviewsAPI.update"
 _DATA_GET = "mammoth.api.dataviews.DataviewsAPI.get_data"
 _DATA_QUERY = "mammoth.api.dataviews.DataviewsAPI.query_data"
+_DATA_AGGREGATE = "mammoth.api.dataviews.DataviewsAPI.aggregate"
 _EXPORTABLE_GET = "mammoth.api.dataviews.DataviewsAPI.get_exportable_config"
 _EXPORTABLE_APPLY = "mammoth.api.dataviews.DataviewsAPI.apply_exportable_config"
 _FIND_DATASET = "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"
@@ -655,6 +656,143 @@ def test_data_query_dataset_from_input_field_skips_resolution(
     assert fake_service.call_log == [
         (_DATA_QUERY, {"dataset_id": 9, "dataview_id": 7, "project_id": 180, "limit": 5}),
     ]
+
+
+# ── view.data.aggregate ─────────────────────────────────────────────────────
+
+
+def test_data_aggregate_pivot_group_by_and_sum(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [
+            {"internal_name": "column_1", "display_name": "Channel", "type": "TEXT"},
+            {"internal_name": "column_2", "display_name": "Spend", "type": "NUMERIC"},
+        ]
+    }
+    fake_service.responses[_DATA_AGGREGATE] = {
+        "data": [{"group_0": "Email", "agg_0": 120}, {"group_0": "Search", "agg_0": 80}]
+    }
+    doc = _doc(
+        tmp_path,
+        {
+            "group_by": ["Channel"],
+            "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}],
+        },
+    )
+    data = view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+    assert fake_service.call_log == [
+        (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
+        (
+            _DATA_AGGREGATE,
+            {
+                "dataset_id": 9,
+                "dataview_id": 7,
+                "project_id": 180,
+                "aggregations": [
+                    {"function": "SUM", "as_name": "Total Spend", "column": "column_2"}
+                ],
+                "group_by": ["column_1"],
+            },
+        ),
+    ]
+    assert data["data"] == [
+        {"Channel": "Email", "Total Spend": 120},
+        {"Channel": "Search", "Total Spend": 80},
+    ]
+
+
+def test_data_aggregate_pivot_count_no_group_by(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _doc(tmp_path, {"aggregations": [{"function": "COUNT"}]})
+    view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )
+    assert fake_service.call_log == [
+        (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
+        (
+            _DATA_AGGREGATE,
+            {
+                "dataset_id": 9,
+                "dataview_id": 7,
+                "project_id": 180,
+                "aggregations": [{"function": "COUNT", "as_name": "COUNT"}],
+            },
+        ),
+    ]
+
+
+def test_data_aggregate_metric(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [{"internal_name": "column_2", "display_name": "Spend", "type": "NUMERIC"}]
+    }
+    doc = _doc(tmp_path, {"metric": {"column": "Spend", "function": "SUM", "as_name": "Total"}})
+    view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )
+    assert fake_service.call_log == [
+        (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
+        (
+            _DATA_AGGREGATE,
+            {
+                "dataset_id": 9,
+                "dataview_id": 7,
+                "project_id": 180,
+                "metric": {"function": "SUM", "as_name": "Total", "column": "column_2"},
+            },
+        ),
+    ]
+
+
+def test_data_aggregate_forwards_condition_sequence_and_limit(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [{"internal_name": "column_2", "display_name": "Spend", "type": "NUMERIC"}]
+    }
+    doc = _doc(
+        tmp_path,
+        {
+            "metric": {"column": "Spend", "function": "SUM"},
+            "condition": {"column": "Spend", "operator": ">", "value": 0},
+            "sequence": 3,
+            "limit": 10,
+        },
+    )
+    view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )
+    call = fake_service.call_log[-1][1]
+    assert call["condition"] == {"column_2": {"GT": {"VALUE": 0}}}
+    assert call["sequence"] == 3
+    assert call["limit"] == 10
+
+
+def test_data_aggregate_requires_exactly_one_of_aggregations_or_metric(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    for payload in ({}, {"group_by": ["Channel"], "metric": {"function": "COUNT"}}):
+        doc = _doc(tmp_path, payload)
+        with pytest.raises(CliError) as excinfo:
+            view_cmd.view_data_aggregate(
+                _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+            )
+        assert excinfo.value.code == "invalid_arguments"
+    assert fake_service.call_log == []
+
+
+def test_data_aggregate_resolves_dataset_from_view_when_omitted(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_FIND_DATASET] = 9
+    doc = _doc(tmp_path, {"metric": {"function": "COUNT"}})
+    view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7"], input_file=doc)
+    )
+    assert fake_service.call_log[0] == (_FIND_DATASET, {"dataview_id": 7})
 
 
 def test_active_user_list_resolves_dataset_from_view_when_omitted(

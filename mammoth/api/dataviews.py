@@ -15,6 +15,78 @@ _list = list  # Alias to avoid shadowing by method name
 
 ERR_DATAVIEW_ID_POSITIVE = "`dataview_id` must be a positive integer, got {0}."
 
+#: Aggregate functions supported by :meth:`DataviewsAPI.aggregate`. Deliberately
+#: a small, exact-match subset of the backend's ``PivotAggregationFunction``
+#: wire vocabulary (which also has PERCENTAGE, DISTINCT_COUNT, CONCAT) — the
+#: five an agent needs for "total/count/average/min/max of a column".
+_AGGREGATE_FUNCTIONS = frozenset({"SUM", "COUNT", "AVG", "MIN", "MAX"})
+ERR_AGGREGATE_FUNCTION_UNSUPPORTED = (
+    "`function` must be one of SUM, COUNT, AVG, MIN, MAX for a volatile aggregation query, "
+    "got {0!r}."
+)
+ERR_AGGREGATE_COLUMN_REQUIRED = "`column` is required for {0} aggregation."
+ERR_AGGREGATE_EXACTLY_ONE = (
+    "Pass exactly one of `aggregations` (a PIVOT; `group_by` is optional) or `metric`."
+)
+
+
+def _build_aggregate_select_item(agg: dict[str, Any], internal_name: str) -> dict[str, Any]:
+    """Build one volatile-query PIVOT/METRIC aggregate item from ``{column, function, as_name}``.
+
+    Raises:
+        MammothValidationError: If *agg*'s function is not one of SUM, COUNT,
+            AVG, MIN, MAX, or its column is missing for a non-COUNT function.
+    """
+    function = str(agg.get("function") or "").upper()
+    if function not in _AGGREGATE_FUNCTIONS:
+        raise MammothValidationError(ERR_AGGREGATE_FUNCTION_UNSUPPORTED.format(agg.get("function")))
+    column = agg.get("column")
+    if not column and function != "COUNT":
+        raise MammothValidationError(ERR_AGGREGATE_COLUMN_REQUIRED.format(function))
+    as_name = agg.get("as_name") or (f"{function}_{column}" if column else function)
+    item: dict[str, Any] = {"FUNCTION": function, "AS": as_name, "INTERNAL_NAME": internal_name}
+    if column:
+        item["COLUMN"] = column
+    return item
+
+
+def _build_pivot_param(
+    aggregations: list[dict[str, Any]], group_by: list[str] | None
+) -> dict[str, Any]:
+    """Build a volatile-query PIVOT param (distinct from the pipeline PIVOT task).
+
+    Raises:
+        MammothValidationError: If *aggregations* is empty, or (from
+            :func:`_build_aggregate_select_item`) an aggregation is invalid.
+    """
+    if not aggregations:
+        raise MammothValidationError("`aggregations` must be a non-empty list.")
+    pivot: dict[str, Any] = {
+        "SELECT": [
+            _build_aggregate_select_item(agg, f"agg_{index}")
+            for index, agg in enumerate(aggregations)
+        ]
+    }
+    if group_by:
+        pivot["GROUP_BY"] = [
+            {"COLUMN": column, "INTERNAL_NAME": f"group_{index}"}
+            for index, column in enumerate(group_by)
+        ]
+    return pivot
+
+
+def _build_metric_param(metric: dict[str, Any]) -> dict[str, Any]:
+    """Build a volatile-query METRIC param from a single ``{column, function, as_name}`` dict."""
+    item = _build_aggregate_select_item(metric, "metric")
+    value: dict[str, Any] = {"FUNCTION": item["FUNCTION"]}
+    if "COLUMN" in item:
+        value["ARGUMENT"] = item["COLUMN"]
+    return {
+        "EXPRESSION": [{"TYPE": "FUNCTION", "VALUE": value}],
+        "AS": item["AS"],
+        "INTERNAL_NAME": item["INTERNAL_NAME"],
+    }
+
 
 class DataviewsAPI:
     """Client for interacting with Mammoth Dataviews API.
@@ -321,6 +393,90 @@ class DataviewsAPI:
             json=payload,
         )
         return self._client._wait_if_job(response)
+
+    def aggregate(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        aggregations: _list[dict[str, Any]] | None = None,
+        group_by: _list[str] | None = None,
+        metric: dict[str, Any] | None = None,
+        condition: dict[str, Any] | None = None,
+        sequence: int | None = None,
+        limit: int | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+        timeout: int | None = None,
+        poll_interval: int = 2,
+    ) -> dict[str, Any]:
+        """Run a read-only aggregation query against a dataview (POST .../data/query).
+
+        This is a volatile query: it computes and returns an aggregated result
+        (a PIVOT group-by, or a single METRIC value) without adding a task to
+        the view's pipeline or otherwise changing it — unlike :meth:`View.pivot`,
+        which adds a PIVOT task. Exactly one of *aggregations* or *metric* is
+        required.
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview.
+            aggregations: One or more ``{"column": ..., "function": ...,
+                "as_name": ...}`` dicts for a PIVOT query (mutually exclusive
+                with *metric*). ``function`` is one of SUM, COUNT, AVG, MIN,
+                MAX; ``column`` is required unless ``function`` is COUNT;
+                ``as_name`` defaults to ``f"{function}_{column}"``.
+            group_by: Columns to group the PIVOT by (optional; a PIVOT with no
+                ``group_by`` aggregates the whole view into one row).
+            metric: A single ``{"column": ..., "function": ..., "as_name": ...}``
+                dict for a METRIC query (mutually exclusive with
+                *aggregations*/*group_by*), same shape as an *aggregations* entry.
+            condition: Filter condition dict applied before aggregating (optional).
+            sequence: Pipeline step to read data at (default: latest).
+            limit: Maximum number of result rows to return (optional).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+            timeout: Max job wait time in seconds (default: client.job_timeout).
+            poll_interval: Seconds between job polls (default: 2).
+
+        Returns:
+            Dict with the aggregated result rows.
+
+        Raises:
+            MammothValidationError: If neither or both of *aggregations*/
+                *group_by* and *metric* are given, if a *function* is not one
+                of SUM, COUNT, AVG, MIN, MAX, or if *column* is missing for a
+                non-COUNT aggregation.
+
+        Example::
+
+            client.dataviews.aggregate(
+                dataset_id=500, dataview_id=42,
+                group_by=["Channel"],
+                aggregations=[{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}],
+            )
+        """
+        if (aggregations is not None or group_by is not None) == (metric is not None):
+            raise MammothValidationError(ERR_AGGREGATE_EXACTLY_ONE)
+        ws = workspace_id or self._ws()
+        proj = project_id or self._proj()
+        param: dict[str, Any] = (
+            {"METRIC": _build_metric_param(metric)}
+            if metric is not None
+            else {"PIVOT": _build_pivot_param(aggregations or [], group_by)}
+        )
+        if condition is not None:
+            param["CONDITION"] = condition
+        if sequence is not None:
+            param["SEQUENCE_NUMBER"] = sequence
+        payload: dict[str, Any] = {"param": param}
+        if limit is not None:
+            payload["display_properties"] = {"LIMIT": limit}
+        response = self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/data/query",
+            json=payload,
+        )
+        return self._client._wait_if_job(response, timeout=timeout, poll_interval=poll_interval)
 
     def get_exportable_config(
         self,

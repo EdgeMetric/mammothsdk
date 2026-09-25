@@ -112,9 +112,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.filter": (
         "filter rows keep drop exclude remove delete rows where condition subset"
     ),
-    "view.transform.generate-sql": (
-        "generate write sql query from natural language intent question"
-    ),
+    "view.transform.generate-sql": "generate write sql query from natural language intent question",
     "view.transform.increment-date": "add subtract days months years to a date column shift",
     "view.transform.join": (
         "join blend merge combine enrich match matching keys rows add columns from another "
@@ -651,6 +649,24 @@ def runnable_example(
                 *_OUTPUT_JSON_NO_INPUT,
             ]
         )
+    if record["command_id"] == "view.data.aggregate":
+        return shlex.join(
+            [
+                "mammoth",
+                *record["command_path"].split(),
+                "123",
+                "--input",
+                json.dumps(
+                    {
+                        "group_by": ["Channel"],
+                        "aggregations": [
+                            {"column": "Spend", "function": "SUM", "as_name": "Total Spend"}
+                        ],
+                    }
+                ),
+                *_OUTPUT_JSON_NO_INPUT,
+            ]
+        )
     if record["command_id"] == "view.exportable-config.get":
         return shlex.join(
             ["mammoth", *record["command_path"].split(), "123", *_OUTPUT_JSON_NO_INPUT]
@@ -1158,7 +1174,7 @@ def find_schemas(
             "command_path": command_path,
             "mutation_class": record["mutation_class"],
             "confirmation": record["confirmation"],
-            "full_schema_command": (f"mammoth schema get {command_id}"),
+            "full_schema_command": f"mammoth schema get {command_id}",
         }
         if len(matched_terms) == len(terms):
             ranked_matches.append((score, entry))
