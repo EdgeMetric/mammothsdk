@@ -1,4 +1,4 @@
-# SDK Architecture (v0.7.16)
+# SDK Architecture (v0.7.17)
 
 ## File Layout
 
@@ -14,13 +14,13 @@ mammoth/
 ├── exceptions.py            # Exception hierarchy
 ├── _mixins/                 # View transformation mixin classes
 │   ├── __init__.py
-│   ├── _column_ops.py       # add_column, delete_columns, copy_columns, combine, convert
+│   ├── _column_ops.py       # add_column, delete_columns, copy_columns, combine, convert, rename_columns
 │   ├── _filter_ops.py       # filter_rows, set_values
 │   ├── _math_ops.py         # math (string expression parser)
 │   ├── _text_ops.py         # text_transform, replace_values, bulk_replace, split, substring
 │   ├── _date_ops.py         # extract_date, date_diff, increment_date
 │   ├── _aggregate_ops.py    # pivot, window, crosstab
-│   ├── _row_ops.py          # fill_missing, limit_rows, discard_duplicates, unnest
+│   ├── _row_ops.py          # fill_missing, limit_rows, discard_duplicates, unnest, sort_rows
 │   └── _advanced_ops.py     # join, lookup, json_extract, gen_ai, sql
 ├── api/                     # 23 API sub-client classes
 │   ├── __init__.py

@@ -346,6 +346,16 @@ view.limit_rows(n=5, order_by=[["Sales", SortDirection.DESC]])
 view.limit_rows(n=5, bottom=True)
 ```
 
+### sort_rows(order_by) and rename_columns(renames)
+
+View settings, like the web grid's sort and column rename: no pipeline task
+is added. Data reads and exports use the order and the new names.
+
+```python
+view.sort_rows([["Sales", "DESC"]])          # up to three columns; [] clears
+view.rename_columns({"cust_id": "Customer ID"})
+```
+
 ### discard_duplicates(ignore_columns=None)
 
 Remove duplicate rows.

@@ -157,3 +157,47 @@ class ColumnOpsMixin(ViewHost):
             ])
         """
         return self._add_task(build_convert_params(conversions, self.columns, self._internal_names))
+
+    def rename_columns(self, renames: dict[str, str]) -> dict[str, Any]:
+        """Rename columns (the web grid's rename; not a pipeline task).
+
+        The new name is a view display property (``COLUMN_NAMES``), the same
+        change as renaming a column header in the web app. The column keeps
+        its internal name, so pipeline tasks that use it keep working, and
+        later operations, data reads, exports and dashboards use the new name.
+
+        Args:
+            renames: ``{current display name: new display name}``.
+
+        Returns:
+            ``{"renamed": {old: new}, "columns": [display names after]}``.
+
+        Raises:
+            MammothColumnError: A current name is not a column of the view.
+            ValueError: ``renames`` is empty, a new name is blank, or two
+                columns would end up with the same name.
+
+        Example::
+
+            view.rename_columns({"cust_id": "Customer ID", "amt": "Amount"})
+        """
+        if not renames:
+            raise ValueError("renames must name at least one column")
+        value: dict[str, str] = {}
+        cleaned: dict[str, str] = {}
+        for old, new in renames.items():
+            new_name = " ".join(str(new).split())
+            if not new_name:
+                raise ValueError(f"new name for {old!r} is blank")
+            value[self._resolve_column(old)] = new_name
+            cleaned[old] = new_name
+        final = [cleaned.get(name, name).lower() for name in self.columns]
+        if len(final) != len(set(final)):
+            raise ValueError("two columns would have the same name after the rename")
+        self._client.dataviews.update(
+            self.dataset_id,
+            self.id,
+            [{"op": "replace", "path": "display_properties/COLUMN_NAMES", "value": value}],
+        )
+        self.refresh()
+        return {"renamed": cleaned, "columns": list(self.columns)}

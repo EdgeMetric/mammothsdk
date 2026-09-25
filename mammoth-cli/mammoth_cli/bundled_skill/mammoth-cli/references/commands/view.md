@@ -1034,6 +1034,16 @@ Result: `ViewTransformPivotResult`; mutation `reversible_pipeline`, confirmation
 
 Status on release: ran once on CLI 2.0.18 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
+### `view.transform.rename-columns`
+
+Run: `mammoth view transform rename-columns`. Exact input fields: `mammoth schema get view.transform.rename-columns`.
+
+Example: `mammoth view transform rename-columns 123 --input '{"renames": {"cust_id": "Customer ID"}, "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewTransformRenameColumnsResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+
 ### `view.transform.replace`
 
 Run: `mammoth view transform replace`. Exact input fields: `mammoth schema get view.transform.replace`.
@@ -1061,6 +1071,16 @@ Run: `mammoth view transform small-large`. Exact input fields: `mammoth schema g
 Example: `mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["Status"], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewTransformSmallLargeResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+
+### `view.transform.sort`
+
+Run: `mammoth view transform sort`. Exact input fields: `mammoth schema get view.transform.sort`.
+
+Example: `mammoth view transform sort 123 --input '{"order_by": [["Revenue", "DESC"]], "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewTransformSortResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
 

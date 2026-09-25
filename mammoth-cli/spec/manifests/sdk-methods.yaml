@@ -170,6 +170,18 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.rename_columns
+  implementation_origin: mammoth._mixins._column_ops.ColumnOpsMixin.rename_columns
+  signature: 'rename_columns(self, renames: ''dict[str, str]'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.transform.rename-columns
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth._mixins._date_ops.DateOpsMixin.date_diff
   implementation_origin: mammoth._mixins._date_ops.DateOpsMixin.date_diff
   signature: 'date_diff(self, component: ''DateDiffUnit'', start: ''str'', end: ''str'', new_column: ''str | None'' = None, existing_column: ''str | None'' = None) -> ''dict[str, Any]'''
@@ -311,6 +323,18 @@ methods:
   no_command_reason: null
   mutation_class: reversible_pipeline
   wait_policy: always_wait
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.sort_rows
+  implementation_origin: mammoth._mixins._row_ops.RowOpsMixin.sort_rows
+  signature: 'sort_rows(self, order_by: ''list[list[str | SortDirection]]'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.transform.sort
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary

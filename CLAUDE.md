@@ -49,11 +49,11 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
 |------|---------|
 | `_filter_ops.py` | filter_rows, set_values |
 | `_math_ops.py` | math |
-| `_column_ops.py` | add_column, delete_columns, copy_columns, combine_columns, convert_type |
+| `_column_ops.py` | add_column, delete_columns, copy_columns, combine_columns, convert_type, rename_columns |
 | `_text_ops.py` | text_transform, replace_values, bulk_replace, split_column, substring |
 | `_date_ops.py` | extract_date, date_diff, increment_date |
 | `_aggregate_ops.py` | pivot, window, crosstab |
-| `_row_ops.py` | fill_missing, limit_rows, discard_duplicates, unnest |
+| `_row_ops.py` | fill_missing, limit_rows, discard_duplicates, unnest, sort_rows |
 | `_advanced_ops.py` | join, lookup, json_extract, gen_ai, generate_sql, add_sql |
 
 ### Other key files

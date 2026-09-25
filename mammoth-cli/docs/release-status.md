@@ -1,5 +1,22 @@
 # CLI release provenance
 
+## 2.0.38 / SDK 0.7.17
+
+The CLI had no rename or sort. Both are real web-app actions: a
+column-header rename and a grid sort set view display properties
+(`COLUMN_NAMES`, `SORT`) through the view PATCH; they add no pipeline task.
+
+- SDK 0.7.17: `View.rename_columns({"old": "new"})` and
+  `View.sort_rows([["Col", "DESC"]])`. `View` applies `COLUMN_NAMES` when it
+  reads column metadata, so a renamed column (also one renamed in the web
+  app) resolves by its new name in later operations.
+- CLI: `view transform rename-columns` and `view transform sort`, listed by
+  `view transform --help` and found by `schema find "rename column"` and
+  `schema find "sort rows by revenue"`.
+- The skill has a "Several files, one deliverable" playbook: read every
+  view, find the key columns, make them match, fix types and blanks, join,
+  then build the dashboard, and say what was inferred.
+
 ## 2.0.37
 
 An agent that stated a goal in its own words did not find the command. With

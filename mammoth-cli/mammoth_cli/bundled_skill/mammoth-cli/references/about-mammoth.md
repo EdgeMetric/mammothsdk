@@ -100,6 +100,8 @@ Checkpoint Alert are the `view data-check` and `view checkpoint` families.
 | Shift a date by an interval | Add / Subtract Date Values | `increment-date` |
 | Add an empty column | Add Column | `add-column` |
 | Copy a column under a new name | Copy Columns | `copy-columns` |
+| Rename a column | Rename (column header) | `rename-columns` (a view setting, not a task) |
+| Sort the rows | Sort (grid) | `sort` (a view setting, not a task) |
 | Remove columns | Remove Column | `delete-columns` |
 | Add columns from another view by matching keys | Join | `join` (`INNER`, `LEFT`, `RIGHT`, `OUTER`) |
 | Bring one value per key from another view | Lookup | `lookup` |
@@ -117,15 +119,24 @@ value per key into one new column. Before either, confirm the key columns
 in both views have the same type and values; recipes/transforms.md has the
 read-back.
 
-## Not a pipeline step, and the nearest route
+## View settings, and what has no command
 
-- **Rename a column.** The web app's rename is a display change, not a
-  task; the CLI has no rename command. Name new columns when you create them
-  (`new_column`, `as_name`); for an existing column, `copy-columns` under
-  the new name.
-- **Sort.** There is no sort task, and the CLI has no sort command. For
-  "top N by X" use `limit-rows` with `order_by`; for a rank column use
-  `window` (`RANK`, `ROW_NUMBER`).
+Two commands change how the view shows its rows, not the rows. They add no
+pipeline task, like their web counterparts (a column-header rename, a grid
+sort):
+
+- **Rename a column:** `view transform rename-columns` with `{"renames":
+  {"cust_id": "Customer ID"}}`. The column keeps its internal name, so
+  earlier tasks keep working; later commands, data reads, exports and
+  dashboards use the new name. To name a column you create, use its
+  `new_column` or `as_name` field instead.
+- **Sort the rows:** `view transform sort` with `{"order_by": [["Revenue",
+  "DESC"]]}` (up to three columns; `[]` clears it). Data reads and exports
+  return rows in this order. To keep only the top N rows, use `limit-rows`
+  with `order_by`; for a rank column, `window` (`RANK`, `ROW_NUMBER`).
+
+No command:
+
 - **Union or append two views.** There is no union task. Upload a file into
   an existing dataset with `append_to_ds_id`, or send a view's rows into an
   existing dataset with `view export dataset` (`target_ds_id` and
@@ -139,6 +150,6 @@ Both call the same API. Do not switch to the web app in a browser for a
 task the CLI covers. Before you conclude that the CLI cannot do something,
 run `mammoth view transform --help`, search in plain words (`mammoth schema
 find "merge two datasets"` finds `join`; a search with no full match lists
-`suggestions`), and read the section above. If it is still missing, report
-the gap with the command you tried; do not work around it in the browser or
-by computing the result locally.
+`suggestions`), and read "View settings, and what has no command" above.
+If it is still missing, report the gap with the command you tried; do not
+work around it in the browser or by computing the result locally.

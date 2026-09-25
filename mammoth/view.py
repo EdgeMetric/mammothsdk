@@ -223,9 +223,16 @@ class View(
             properties = data.get("properties", {})
             columns_list = properties.get("columns", []) if isinstance(properties, dict) else []
 
+        # A column renamed in the grid (``rename_columns``) keeps its task
+        # metadata name; the new name lives in display_properties.COLUMN_NAMES.
+        display_props = data.get("display_properties")
+        renamed = display_props.get("COLUMN_NAMES") if isinstance(display_props, dict) else None
+        if not isinstance(renamed, dict):
+            renamed = {}
+
         for col in columns_list:
-            display = col.get("display_name") or col.get("name", "")
             internal = col.get("internal_name") or col.get("name", "")
+            display = renamed.get(internal) or col.get("display_name") or col.get("name", "")
             col_type = col.get("type", "TEXT")
 
             if display:

@@ -89,11 +89,11 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.convert-type": (
         "convert type cast numeric number text date column parse to number to date"
     ),
-    "view.transform.copy-columns": "copy duplicate rename column into a new column name",
+    "view.transform.copy-columns": "copy duplicate column into a new column",
     "view.transform.crosstab": (
         "crosstab cross tab pivot table matrix rows by columns summary into a new dataset"
     ),
-    "view.transform.date-diff": "date difference days between two date columns age duration",
+    "view.transform.date-diff": "date dates difference days between two date columns age duration",
     "view.transform.delete-columns": "delete drop remove columns",
     "view.transform.discard-duplicates": (
         "duplicate duplicates dedup dedupe deduplicate remove repeated rows unique distinct"
@@ -117,7 +117,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "second view views dataset datasets table tables vlookup"
     ),
     "view.transform.json-extract": "json extract parse nested fields keys into columns",
-    "view.transform.limit-rows": "limit top bottom first last n rows order by sorted head",
+    "view.transform.limit-rows": "limit top bottom first last n rows head",
     "view.transform.lookup": (
         "lookup look up vlookup reference table map code to name enrich one value "
         "from another view dataset"
@@ -130,12 +130,19 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "pivot group by aggregate aggregation sum count average summary summarize "
         "summarise per region total"
     ),
+    "view.transform.rename-columns": (
+        "rename column columns header headers relabel change column name names title"
+    ),
     "view.transform.replace": "find replace substitute text value in columns",
     "view.transform.set-values": (
         "set values assign overwrite blank empty default where condition label "
         "category bucket flag if then conditional value"
     ),
     "view.transform.small-large": "nth smallest largest value across columns",
+    "view.transform.sort": (
+        "sort sorting order rows by column ascending descending asc desc arrange "
+        "highest lowest newest oldest latest earliest date dates alphabetical"
+    ),
     "view.transform.split": "split column by delimiter separator into columns",
     "view.transform.substring": "substring left right characters regex pattern extract part text",
     "view.transform.text": (
@@ -404,7 +411,12 @@ def _tokens(value: str) -> frozenset[str]:
 
 
 def _query_tokens(query: str) -> tuple[str, ...]:
-    return tuple(token for token in _tokens(query) if token not in _DISCOVERY_STOPWORDS)
+    # Bare numbers ("top 10") are values, not intent words.
+    return tuple(
+        token
+        for token in _tokens(query)
+        if token not in _DISCOVERY_STOPWORDS and not token.isdigit()
+    )
 
 
 def _token_aliases(token: str) -> frozenset[str]:

@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.0.37.
+Generated from the reviewed command manifests for mammoth-cli 2.0.38.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 554.
+Total commands: 556.
 
 ## activity
 
@@ -5125,6 +5125,17 @@ Total commands: 554.
 - Backing SDK: `mammoth.View.pivot`
 - Agent example: `mammoth view transform pivot 123 --input '{"group_by": ["sample"], "aggregations": [{"column": "Status", "function": "SUM"}], "dataset_id": 456}'`
 
+### `mammoth view transform rename-columns`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.View.rename_columns`
+- Agent example: `mammoth view transform rename-columns 123 --input '{"renames": {"cust_id": "Customer ID"}, "dataset_id": 456}'`
+
 ### `mammoth view transform replace`
 
 **Arguments**
@@ -5157,6 +5168,17 @@ Total commands: 554.
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.small_large`
 - Agent example: `mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["Status"], "dataset_id": 456}'`
+
+### `mammoth view transform sort`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.View.sort_rows`
+- Agent example: `mammoth view transform sort 123 --input '{"order_by": [["Revenue", "DESC"]], "dataset_id": 456}'`
 
 ### `mammoth view transform split`
 

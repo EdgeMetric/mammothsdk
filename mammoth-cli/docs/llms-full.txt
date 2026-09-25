@@ -1118,12 +1118,16 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view transform math 123 --input '{"expression": "price * quantity", "dataset_id": 456}'
 - `mammoth view transform pivot` [reversible_pipeline/none] -> mammoth.View.pivot
   example: mammoth view transform pivot 123 --input '{"group_by": ["sample"], "aggregations": [{"column": "Status", "function": "SUM"}], "dataset_id": 456}'
+- `mammoth view transform rename-columns` [benign_mutation/none] -> mammoth.View.rename_columns
+  example: mammoth view transform rename-columns 123 --input '{"renames": {"cust_id": "Customer ID"}, "dataset_id": 456}'
 - `mammoth view transform replace` [reversible_pipeline/none] -> mammoth.View.replace_values
   example: mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "sample", "replace": "sample", "dataset_id": 456}'
 - `mammoth view transform set-values` [reversible_pipeline/none] -> mammoth.View.set_values
   example: mammoth view transform set-values 123 --input '{"values": [{"value": "sample"}], "existing_column": "Status", "condition": {"column": "Status", "operator": "IS_EMPTY"}, "dataset_id": 456}'
 - `mammoth view transform small-large` [reversible_pipeline/none] -> mammoth.View.small_large
   example: mammoth view transform small-large 123 --input '{"function": "SMALL", "columns": ["Status"], "dataset_id": 456}'
+- `mammoth view transform sort` [benign_mutation/none] -> mammoth.View.sort_rows
+  example: mammoth view transform sort 123 --input '{"order_by": [["Revenue", "DESC"]], "dataset_id": 456}'
 - `mammoth view transform split` [reversible_pipeline/none] -> mammoth.View.split_column
   example: mammoth view transform split 123 --input '{"column": "Status", "delimiter": "sample", "new_columns": [{"name": "Revenue report"}], "dataset_id": 456}'
 - `mammoth view transform substring` [reversible_pipeline/none] -> mammoth.View.substring

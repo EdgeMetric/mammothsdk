@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.0.37
+version: 2.0.38
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
@@ -76,16 +76,40 @@ mammoth view transform --help              # every data transformation
 | Blanks to a constant, or to the previous row's value | `view transform set-values` (`IS_EMPTY`), `view transform fill-missing` |
 | Clean text | `view transform text`, `replace`, `bulk-replace` |
 | Change a column's type | `view transform convert-type` |
+| Rename a column, sort the rows (view settings, not tasks) | `view transform rename-columns`, `view transform sort` |
 | Rank, running total, previous row | `view transform window` |
 | A dashboard | `dashboard create-blank` ([dashboards](references/recipes/dashboards.md)) |
 | Deliver the rows | `view export csv`, `view export postgres` (and other destinations), `view export dataset` |
 
 A search with no full match returns `suggestions` and a `hint`. Before you
 conclude the CLI cannot do something the web app does, check
-`view transform --help` and "Not a pipeline step" in
+`view transform --help` and "View settings, and what has no command" in
 [about Mammoth](references/about-mammoth.md). Do not switch to the web app
 in a browser, or compute the result locally, for work the CLI covers;
 report a real gap with the command you tried.
+
+## Several files, one deliverable
+
+Users often upload related files without saying how they relate ("make a
+dashboard from t_a and t_b"). Work it out from the data before you build:
+
+1. Read every view first: `view get VIEW_ID` (columns, types, row count) and
+   `view data get VIEW_ID --input '{"limit": 20}'`.
+2. Find the keys. A column in one view whose values appear in a column of
+   the other (`customer_id` and `id`, `order_ref` and `order_no`) is a
+   foreign key; the view with many rows per key is the main one.
+3. Make the keys match before the join: same type (`convert-type`), same
+   case and padding (`text`), no blanks (`set-values`, `filter`).
+4. Fix what the deliverable needs: numbers stored as text (`convert-type`
+   to `NUMERIC`), dates stored as text (`convert-type` to `DATE`), blanks.
+5. `view transform join` the lookup view into the main view (`LEFT`), then
+   read back and check the match rate
+   ([worked example](references/recipes/end-to-end.md), step 5).
+6. Build the dashboard from the joined view
+   ([dashboards](references/recipes/dashboards.md)).
+
+Say what you inferred (which columns you joined on, what you converted) in
+your report. If no column links the files, ask before you combine them.
 
 ## Calling a command
 

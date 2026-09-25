@@ -257,6 +257,12 @@ TRANSFORM_CASES: tuple[tuple[str, str, str, dict[str, Any]], ...] = (
         },
     ),
     (
+        "view.transform.rename-columns",
+        "view_transform_rename_columns",
+        "rename_columns",
+        {"renames": {"S3_OLD": "S3_NEW"}},
+    ),
+    (
         "view.transform.replace",
         "view_transform_replace",
         "replace_values",
@@ -293,6 +299,12 @@ TRANSFORM_CASES: tuple[tuple[str, str, str, dict[str, Any]], ...] = (
             "new_column": "S3_EXTREME",
             "existing_column": "S3_EXTREME_EXISTING",
         },
+    ),
+    (
+        "view.transform.sort",
+        "view_transform_sort",
+        "sort_rows",
+        {"order_by": [["S3_ORDER", "DESC"]]},
     ),
     (
         "view.transform.split",
@@ -413,7 +425,7 @@ def test_substring_regex_without_direction_is_forwarded(
 
 def test_transform_inventory_is_explicit_and_complete() -> None:
     expected = {item[0] for item in TRANSFORM_CASES}
-    assert len(expected) == 30
+    assert len(expected) == 32
     for command_id, handler_name, _method, _payload in TRANSFORM_CASES:
         record = command_by_id(command_id)
         assert record is not None
@@ -474,7 +486,7 @@ def test_s3_every_route_has_closed_shared_admission() -> None:
             ("view.checkpoint.", "view.draft.", "view.pipeline.", "view.task.", "view.version.")
         )
     }
-    assert len(route_ids) == 63
+    assert len(route_ids) == 65
     for command_id in route_ids:
         contract = resolve_command_contract(command_id)
         assert contract is not None

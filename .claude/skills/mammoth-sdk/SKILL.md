@@ -3,7 +3,7 @@ name: mammoth-sdk
 description: Practical knowledge base for the Mammoth Analytics Python SDK — client setup, View transformations, condition building, exports, and documented API sub-clients. Use this skill when the user asks to "use the SDK", "write SDK code", "apply a transformation", "build a condition", "export data", mentions "MammothClient", "View", "Condition", "Operator", "filter_rows", "set_values", "pivot", "window", "join", "export", or needs to understand or write code using the Mammoth Python SDK. Covers documented SDK workflows from authentication through transformations to exports.
 ---
 
-# Mammoth Python SDK Knowledge Base (v0.7.16)
+# Mammoth Python SDK Knowledge Base (v0.7.17)
 
 The Mammoth Python SDK (`mammoth` package) provides programmatic access to the Mammoth Analytics platform. It wraps the REST API with Pythonic classes, rich View objects, a condition builder with operator overloading, and export helpers.
 
@@ -76,13 +76,13 @@ Rich domain object for a dataview. Created via `client.views.get(id)` or `client
 
 **Architecture**: The View class uses a mixin pattern — transformation methods are organized into 8 mixin classes in `mammoth/_mixins/`:
 
-- `ColumnOpsMixin`: add_column, delete_columns, copy_columns, combine_columns, convert_type
+- `ColumnOpsMixin`: add_column, delete_columns, copy_columns, combine_columns, convert_type, rename_columns
 - `FilterOpsMixin`: filter_rows, set_values
 - `MathOpsMixin`: math (string expression parser)
 - `TextOpsMixin`: text_transform, replace_values, bulk_replace, split_column, substring
 - `DateOpsMixin`: extract_date, date_diff, increment_date
 - `AggregateOpsMixin`: pivot, window, crosstab
-- `RowOpsMixin`: fill_missing, limit_rows, discard_duplicates, unnest
+- `RowOpsMixin`: fill_missing, limit_rows, discard_duplicates, unnest, sort_rows
 - `AdvancedOpsMixin`: join, lookup, json_extract, gen_ai, generate_sql, add_sql
 
 **Metadata**: `view.columns`, `view.display_names`, `view.column_types`, `view.name`, `view.id`

@@ -4543,6 +4543,47 @@ commands:
     must be a display name that does not already exist on the view (4DTVW018 SAME_DISPLAY_NAME_CANNOT_BE_REUSED):
     aggregate a joined column under a new name.'
   reviewed_by: primary
+- command_id: view.transform.rename-columns
+  command_path: view transform rename-columns
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - Patch
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  options: []
+  sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.rename_columns
+  sdk_conversion: Call mammoth._mixins._column_ops.ColumnOpsMixin.rename_columns with validated request
+    fields.
+  request_model: ViewTransformRenameColumnsRequest
+  result_model: ViewTransformRenameColumnsResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-RENAME-COLUMNS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform rename-columns VIEW_ID --help
+  agent_example: 'mammoth view transform rename-columns 123 --input ''{"renames": {"cust_id": "Customer ID"}, "dataset_id": 456}'''
+  unit_tests:
+  - UT-VIEW-TRANSFORM-RENAME-COLUMNS
+  contract_tests:
+  - CT-VIEW-TRANSFORM-RENAME-COLUMNS-HUMAN
+  - CT-VIEW-TRANSFORM-RENAME-COLUMNS-JSON
+  - CT-VIEW-TRANSFORM-RENAME-COLUMNS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'A view display setting (the web grid''s column rename), not a pipeline task: it changes no data and adds no task.'
+  reviewed_by: primary
 - command_id: view.transform.replace
   command_path: view transform replace
   disposition: command
@@ -4665,6 +4706,47 @@ commands:
   draft_test: LT-VIEW-TRANSFORM-SMALL-LARGE-DRAFT
   undo_test: LT-VIEW-TRANSFORM-SMALL-LARGE-UNDO
   known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.sort
+  command_path: view transform sort
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - Patch
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  options: []
+  sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.sort_rows
+  sdk_conversion: Call mammoth._mixins._row_ops.RowOpsMixin.sort_rows with validated request
+    fields.
+  request_model: ViewTransformSortRequest
+  result_model: ViewTransformSortResult
+  mutation_class: benign_mutation
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-SORT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform sort VIEW_ID --help
+  agent_example: 'mammoth view transform sort 123 --input ''{"order_by": [["Revenue", "DESC"]], "dataset_id": 456}'''
+  unit_tests:
+  - UT-VIEW-TRANSFORM-SORT
+  contract_tests:
+  - CT-VIEW-TRANSFORM-SORT-HUMAN
+  - CT-VIEW-TRANSFORM-SORT-JSON
+  - CT-VIEW-TRANSFORM-SORT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'A view display setting (the web grid''s sort), not a pipeline task: data reads and exports return rows in this order. At most three columns.'
   reviewed_by: primary
 - command_id: view.transform.split
   command_path: view transform split

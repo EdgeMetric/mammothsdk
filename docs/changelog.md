@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.7.17
+
+### Added
+
+- `View.rename_columns({"old": "new"})` and `View.sort_rows([["Col", "DESC"]])`:
+  the web grid's column rename and sort, set as view display properties
+  (`COLUMN_NAMES`, `SORT`). They add no pipeline task.
+
+### Fixed
+
+- A column renamed in the web app resolves by its new name: `View` applies
+  the view's `COLUMN_NAMES` display property when it reads column metadata.
+
 ## v0.7.16
 
 ### Added

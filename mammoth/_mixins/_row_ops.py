@@ -1,4 +1,4 @@
-"""Row operation mixins: fill_missing, limit_rows, discard_duplicates, unnest."""
+"""Row operation mixins: fill_missing, limit_rows, discard_duplicates, unnest, sort_rows."""
 
 from __future__ import annotations
 
@@ -179,3 +179,54 @@ class RowOpsMixin(ViewHost):
             if only:
                 return only
         return "TEXT"
+
+    def sort_rows(self, order_by: list[list[str | SortDirection]]) -> dict[str, Any]:
+        """Set the view's row order (the web grid's sort; not a pipeline task).
+
+        The order is a view display property (``SORT``), the same change as
+        sorting in the web app. Data reads and exports return rows in this
+        order. It does not add a pipeline task; to keep only the top N rows,
+        use :meth:`limit_rows` with ``order_by``.
+
+        Args:
+            order_by: Up to three ``[display name, direction]`` pairs, where
+                direction is ``"ASC"`` or ``"DESC"`` (default ``"ASC"``). An
+                empty list clears the sort.
+
+        Returns:
+            ``{"sort": [[display name, direction], ...]}``.
+
+        Raises:
+            MammothColumnError: A column is not in the view.
+            ValueError: More than three columns, a column listed twice, or a
+                direction other than ASC/DESC.
+
+        Example::
+
+            view.sort_rows([["Revenue", "DESC"], ["Region", "ASC"]])
+        """
+        if len(order_by) > 3:
+            raise ValueError("sort takes at most three columns")
+        value: list[list[str]] = []
+        shown: list[list[str]] = []
+        seen: set[str] = set()
+        for item in order_by:
+            if not item:
+                raise ValueError("each sort entry is [column, direction]")
+            name = str(item[0])
+            raw = item[1] if len(item) > 1 else SortDirection.ASC
+            direction = str(getattr(raw, "value", raw)).upper()
+            if direction not in ("ASC", "DESC"):
+                raise ValueError(f"direction for {name!r} must be ASC or DESC")
+            internal = self._resolve_column(name)
+            if internal in seen:
+                raise ValueError(f"{name!r} is listed twice")
+            seen.add(internal)
+            value.append([internal, direction])
+            shown.append([name, direction])
+        self._client.dataviews.update(
+            self.dataset_id,
+            self.id,
+            [{"op": "replace", "path": "display_properties/SORT", "value": value}],
+        )
+        return {"sort": shown}

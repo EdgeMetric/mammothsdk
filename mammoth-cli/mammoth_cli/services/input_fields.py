@@ -48,6 +48,9 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "existing_column": "Status",
         "condition": {"column": "Status", "operator": "IS_EMPTY"},
     },
+    # View display settings: real column names read better than sample keys.
+    "view.transform.rename-columns": {"renames": {"cust_id": "Customer ID"}},
+    "view.transform.sort": {"order_by": [["Revenue", "DESC"]]},
     # The backend requires integer resource ids ("resource_ids must be
     # comma-separated integers"); the SDK annotation is a plain list[str].
     "project.resource-dependencies": {"resource_ids": [456]},

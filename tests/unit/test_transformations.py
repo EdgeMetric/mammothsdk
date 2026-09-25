@@ -859,6 +859,120 @@ class TestLimitRows:
         assert "ORDER_BY" in p
 
 
+# ── Display properties: rename and sort (view PATCH, not pipeline tasks) ──
+
+
+def _patch_view(mock_view, monkeypatch):
+    """Capture dataviews.update calls and make refresh re-read SAMPLE data."""
+    from unittest.mock import MagicMock
+
+    from tests.unit.conftest import SAMPLE_VIEW_DATA
+
+    calls = []
+    mock_view._client.dataviews = MagicMock()
+    mock_view._client.dataviews.update = MagicMock(side_effect=lambda *a, **k: calls.append(a))
+    stored = {"COLUMN_NAMES": {}}
+
+    def fake_refresh():
+        for op in calls[-1][2]:
+            if op["path"] == "display_properties/COLUMN_NAMES":
+                stored["COLUMN_NAMES"].update(op["value"])
+        mock_view._build_column_maps({**SAMPLE_VIEW_DATA, "display_properties": dict(stored)})
+        return mock_view
+
+    monkeypatch.setattr(mock_view, "refresh", fake_refresh)
+    return calls
+
+
+class TestRenameColumns:
+    def test_patches_column_names_by_internal_name(self, mock_view, monkeypatch):
+        calls = _patch_view(mock_view, monkeypatch)
+        result = mock_view.rename_columns({"emp_id": "Employee ID"})
+        dataset_id, view_id, patch = calls[-1]
+        assert (dataset_id, view_id) == (500, 1001)
+        assert patch == [
+            {
+                "op": "replace",
+                "path": "display_properties/COLUMN_NAMES",
+                "value": {"column_abc1234567": "Employee ID"},
+            }
+        ]
+        assert result["renamed"] == {"emp_id": "Employee ID"}
+        assert "Employee ID" in result["columns"] and "emp_id" not in result["columns"]
+        # The new name resolves for later operations; no pipeline task was added.
+        assert mock_view._resolve_column("Employee ID") == "column_abc1234567"
+        assert mock_view._captured_payloads == []
+
+    def test_unknown_column_raises(self, mock_view, monkeypatch):
+        from mammoth.exceptions import MammothColumnError
+
+        calls = _patch_view(mock_view, monkeypatch)
+        with pytest.raises(MammothColumnError):
+            mock_view.rename_columns({"nope": "X"})
+        assert calls == []
+
+    def test_duplicate_target_name_refused(self, mock_view, monkeypatch):
+        calls = _patch_view(mock_view, monkeypatch)
+        with pytest.raises(ValueError, match="same name"):
+            mock_view.rename_columns({"emp_id": "Full_Name"})
+        assert calls == []
+
+    def test_blank_and_empty_refused(self, mock_view, monkeypatch):
+        _patch_view(mock_view, monkeypatch)
+        with pytest.raises(ValueError):
+            mock_view.rename_columns({})
+        with pytest.raises(ValueError, match="blank"):
+            mock_view.rename_columns({"emp_id": "   "})
+
+    def test_column_names_overlay_on_load(self, mock_client):
+        from mammoth.view import View
+        from tests.unit.conftest import SAMPLE_VIEW_DATA
+
+        data = {
+            **SAMPLE_VIEW_DATA,
+            "display_properties": {"COLUMN_NAMES": {"column_abc1234567": "Employee ID"}},
+        }
+        view = View(mock_client, data, 500)
+        assert view.columns["Employee ID"] == "column_abc1234567"
+        assert "emp_id" not in view.columns
+
+
+class TestSortRows:
+    def test_patches_sort_with_internal_names(self, mock_view, monkeypatch):
+        calls = _patch_view(mock_view, monkeypatch)
+        result = mock_view.sort_rows([["base_salary", SortDirection.DESC], ["emp_id"]])
+        assert calls[-1][2] == [
+            {
+                "op": "replace",
+                "path": "display_properties/SORT",
+                "value": [["column_jkl1234567", "DESC"], ["column_abc1234567", "ASC"]],
+            }
+        ]
+        assert result == {"sort": [["base_salary", "DESC"], ["emp_id", "ASC"]]}
+        assert mock_view._captured_payloads == []
+
+    def test_lowercase_direction_and_clear(self, mock_view, monkeypatch):
+        calls = _patch_view(mock_view, monkeypatch)
+        mock_view.sort_rows([["emp_id", "desc"]])
+        assert calls[-1][2][0]["value"] == [["column_abc1234567", "DESC"]]
+        mock_view.sort_rows([])
+        assert calls[-1][2][0]["value"] == []
+
+    @pytest.mark.parametrize(
+        "order_by",
+        [
+            [["emp_id", "UP"]],
+            [["emp_id"], ["emp_id", "DESC"]],
+            [["emp_id"], ["full_name"], ["department"], ["base_salary"]],
+        ],
+    )
+    def test_invalid_refused(self, mock_view, monkeypatch, order_by):
+        calls = _patch_view(mock_view, monkeypatch)
+        with pytest.raises(ValueError):
+            mock_view.sort_rows(order_by)
+        assert calls == []
+
+
 class TestDiscardDuplicates:
     def test_all_columns(self, mock_view):
         mock_view.discard_duplicates()

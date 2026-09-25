@@ -60,6 +60,7 @@
   - [Draft mode](#draft-mode)
     - [draft() (context manager)](#draft-context-manager)
     - [Explicit draft workflow](#explicit-draft-workflow)
+  - [Rename and sort (view settings)](#rename-and-sort-view-settings)
   - [Full API Reference](#full-api-reference)
     - [`View`](#view)
   - [Exports](#exports)
@@ -536,6 +537,9 @@
   - [Import errors](#import-errors)
   - [See also](#see-also)
 - [Changelog](#changelog)
+  - [v0.7.17](#v0717)
+    - [Added](#added)
+    - [Fixed](#fixed)
   - [v0.7.16](#v0716)
     - [Added](#added)
   - [v0.7.15](#v0715)
@@ -1491,6 +1495,17 @@ view.submit_draft()  # pipeline runs once, metadata refreshed
 
 ---
 
+## Rename and sort (view settings)
+
+`rename_columns` and `sort_rows` change how the view shows its rows, like a
+column-header rename or a grid sort in the web app. They add no pipeline
+task, and later operations, data reads and exports use the result.
+
+```python
+view.rename_columns({"cust_id": "Customer ID"})
+view.sort_rows([["Revenue", "DESC"], ["Region", "ASC"]])  # at most three; [] clears
+```
+
 ## Full API Reference
 
 ### `View`
@@ -1987,6 +2002,30 @@ Args:
 Returns:
     API response dict.
 
+#### `rename_columns(self, renames: 'dict[str, str]') -> 'dict[str, Any]'`
+
+Rename columns (the web grid's rename; not a pipeline task).
+
+The new name is a view display property (``COLUMN_NAMES``), the same
+change as renaming a column header in the web app. The column keeps
+its internal name, so pipeline tasks that use it keep working, and
+later operations, data reads, exports and dashboards use the new name.
+
+Args:
+    renames: ``{current display name: new display name}``.
+
+Returns:
+    ``{"renamed": {old: new}, "columns": [display names after]}``.
+
+Raises:
+    MammothColumnError: A current name is not a column of the view.
+    ValueError: ``renames`` is empty, a new name is blank, or two
+        columns would end up with the same name.
+
+Example::
+
+    view.rename_columns({"cust_id": "Customer ID", "amt": "Amount"})
+
 #### `combine_columns(self, sources: 'list[str]', new_column: 'str | None' = None, column_type: 'ColumnType' = <ColumnType.TEXT: 'TEXT'>, existing_column: 'str | None' = None, separator: 'str' = ' ', condition: 'Condition | CompoundCondition | NotCondition | None' = None) -> 'dict[str, Any]'`
 
 Concatenate multiple columns into one (COMBINE task).
@@ -2326,6 +2365,32 @@ Examples::
     view.limit_rows(100)
     view.limit_rows(10, order_by=[["Sales", SortDirection.DESC]])
     view.limit_rows(5, bottom=True)
+
+#### `sort_rows(self, order_by: 'list[list[str | SortDirection]]') -> 'dict[str, Any]'`
+
+Set the view's row order (the web grid's sort; not a pipeline task).
+
+The order is a view display property (``SORT``), the same change as
+sorting in the web app. Data reads and exports return rows in this
+order. It does not add a pipeline task; to keep only the top N rows,
+use :meth:`limit_rows` with ``order_by``.
+
+Args:
+    order_by: Up to three ``[display name, direction]`` pairs, where
+        direction is ``"ASC"`` or ``"DESC"`` (default ``"ASC"``). An
+        empty list clears the sort.
+
+Returns:
+    ``{"sort": [[display name, direction], ...]}``.
+
+Raises:
+    MammothColumnError: A column is not in the view.
+    ValueError: More than three columns, a column listed twice, or a
+        direction other than ASC/DESC.
+
+Example::
+
+    view.sort_rows([["Revenue", "DESC"], ["Region", "ASC"]])
 
 #### `discard_duplicates(self, ignore_columns: 'list[str] | None' = None) -> 'dict[str, Any]'`
 
@@ -18240,6 +18305,19 @@ client = MammothClient(..., timeout=120)  # 2 minutes per request
 
 
 # Changelog
+
+## v0.7.17
+
+### Added
+
+- `View.rename_columns({"old": "new"})` and `View.sort_rows([["Col", "DESC"]])`:
+  the web grid's column rename and sort, set as view display properties
+  (`COLUMN_NAMES`, `SORT`). They add no pipeline task.
+
+### Fixed
+
+- A column renamed in the web app resolves by its new name: `View` applies
+  the view's `COLUMN_NAMES` display property when it reads column metadata.
 
 ## v0.7.16
 

@@ -4,6 +4,19 @@ All notable changes to `mammoth-io` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.17]
+
+### Added
+
+- `View.rename_columns({"old": "new"})` and `View.sort_rows([["Col", "DESC"]])`:
+  the web grid's column rename and sort, set as view display properties
+  (`COLUMN_NAMES`, `SORT`). They add no pipeline task.
+
+### Fixed
+
+- A column renamed in the web app resolves by its new name: `View` applies
+  the view's `COLUMN_NAMES` display property when it reads column metadata.
+
 ## [0.7.16]
 
 ### Added

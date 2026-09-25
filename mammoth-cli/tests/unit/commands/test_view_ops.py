@@ -751,6 +751,48 @@ def test_transform_limit_rows_forwards_optional(
     ]
 
 
+@pytest.mark.parametrize(
+    "command_id,handler,field",
+    [
+        ("view.transform.rename-columns", "view_transform_rename_columns", "renames"),
+        ("view.transform.sort", "view_transform_sort", "order_by"),
+    ],
+)
+def test_display_setting_transforms_require_field(
+    fake_service: FakeMammothService, command_id: str, handler: str, field: str
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        getattr(view_ops_cmd, handler)(_inv(command_id, extra_args=["3"]))
+    assert excinfo.value.code == "missing_field"
+
+
+def test_transform_rename_columns_forwards(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"renames": {"cust_id": "Customer ID"}})
+    view_ops_cmd.view_transform_rename_columns(
+        _inv(
+            "view.transform.rename-columns",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=doc,
+        )
+    )
+    assert fake_service.view_call_log == [
+        (3, "rename_columns", {"dataset_id": 122, "renames": {"cust_id": "Customer ID"}})
+    ]
+
+
+def test_transform_sort_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {"order_by": [["Revenue", "DESC"]]})
+    view_ops_cmd.view_transform_sort(
+        _inv("view.transform.sort", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
+    )
+    assert fake_service.view_call_log == [
+        (3, "sort_rows", {"dataset_id": 122, "order_by": [["Revenue", "DESC"]]})
+    ]
+
+
 def test_transform_lookup_requires_value(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         view_ops_cmd.view_transform_lookup(_inv("view.transform.lookup", extra_args=["3"]))

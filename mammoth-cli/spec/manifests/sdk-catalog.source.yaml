@@ -106,6 +106,13 @@ sdk_methods:
   pagination_policy: null
   openapi_operation_ids: []
   notes: Standard transformation policy; task deletion restores columns only when the task ID is stable.
+- sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.rename_columns
+  canonical_command: view.transform.rename-columns
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth._mixins._date_ops.DateOpsMixin.date_diff
   canonical_command: view.transform.date-diff
   alias_of: null
@@ -191,6 +198,13 @@ sdk_methods:
   alias_of: null
   mutation_class: reversible_pipeline
   wait_policy: always_wait
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.sort_rows
+  canonical_command: view.transform.sort
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.unnest

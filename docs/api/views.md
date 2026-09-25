@@ -95,6 +95,17 @@ view.submit_draft()  # pipeline runs once, metadata refreshed
 
 ---
 
+## Rename and sort (view settings)
+
+`rename_columns` and `sort_rows` change how the view shows its rows, like a
+column-header rename or a grid sort in the web app. They add no pipeline
+task, and later operations, data reads and exports use the result.
+
+```python
+view.rename_columns({"cust_id": "Customer ID"})
+view.sort_rows([["Revenue", "DESC"], ["Region", "ASC"]])  # at most three; [] clears
+```
+
 ## Full API Reference
 
 ::: mammoth.view.View
@@ -124,6 +135,7 @@ view.submit_draft()  # pipeline runs once, metadata refreshed
         - add_column
         - delete_columns
         - copy_columns
+        - rename_columns
         - combine_columns
         - convert_type
         - text_transform
@@ -136,6 +148,7 @@ view.submit_draft()  # pipeline runs once, metadata refreshed
         - increment_date
         - fill_missing
         - limit_rows
+        - sort_rows
         - discard_duplicates
         - unnest
         - lookup
