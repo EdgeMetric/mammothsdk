@@ -15,6 +15,15 @@ From the first live use of the in-product agent (mvc-service, CLI surface).
   `schedule create` only pulls a connector's data; a dataset made from an
   uploaded file has no source to refresh from.
 
+CLI published from deterministic local artifacts built from tag `cli-v2.0.45`
+(source commit `7f31950`); requires mammoth-io 0.7.18 (unchanged):
+
+- `mammoth_cli-2.0.45-py3-none-any.whl` sha256 `2942fc7019976835db4e5af89f7d04f16d913234dabe8baff2e0cb907cf9ebfd`
+- `mammoth_cli-2.0.45.tar.gz` sha256 `622cc0b24bae855a5b2883e5c634803a1403f7601dbd90886c0c15f7372a13e9`
+
+Verified: a fresh venv installs 2.0.45 from PyPI and `schema find "schedule a
+daily refresh"` returns `automation.create` first.
+
 ## 2.0.44
 
 For hosts that run commands for their own signed-in users (the Mammoth
