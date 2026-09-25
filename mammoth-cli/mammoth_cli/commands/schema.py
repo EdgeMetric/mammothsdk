@@ -70,6 +70,35 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.export.dataset": (
         "send copy branch out rows into a dataset in another project append union stack rows"
     ),
+    # One entry per typed export destination, in the way users name the
+    # destination rather than Mammoth's route spelling (which a two-word
+    # phrase like "power bi" may not literally contain -- see the adjacent
+    # term-pair match in find_schemas for "powerbi"/"bigquery"/etc).
+    "view.export.azure-blob": "azure blob storage container",
+    "view.export.bigquery": "big query bigquery google cloud database table",
+    "view.export.elasticsearch": "elasticsearch elastic search index",
+    "view.export.email": "email send mail attachment",
+    "view.export.ftp": "ftp file transfer protocol server",
+    "view.export.managed-s3": "s3 amazon aws bucket managed storage",
+    "view.export.mssql": "sql server mssql microsoft database",
+    "view.export.mysql": "mysql database",
+    "view.export.onedrive": "one drive onedrive microsoft cloud storage",
+    "view.export.postgres": "postgres postgresql database",
+    "view.export.powerbi": "power bi powerbi microsoft dashboard workspace",
+    "view.export.publish-db": "publish database live connection odbc",
+    "view.export.publish-db-update": "publish database update refresh live connection",
+    "view.export.redshift": "redshift amazon aws database warehouse",
+    "view.export.rest": "webhook http endpoint api push rest",
+    "view.export.sftp": "sftp secure file transfer server",
+    "view.export.sharepoint": "share point sharepoint microsoft",
+    "view.export.tableau": "tableau server dashboard",
+    "webhook.create": "webhook http endpoint api push create",
+    "webhook.update": "webhook http endpoint api update",
+    "webhook.get": "webhook http endpoint api get",
+    "webhook.list": "webhook http endpoint api list",
+    "webhook.delete": "webhook http endpoint api delete",
+    "webhook.send": "webhook http endpoint api push send",
+    "webhook.send-get": "webhook http endpoint api pull send get",
     "automation.create": (
         "schedule scheduled recurring repeat refresh rerun run every day daily week weekly "
         "hour hourly month monthly automatically trigger alert email a dataset pipeline"
@@ -201,6 +230,11 @@ _DISCOVERY_SYNONYMS: dict[str, tuple[str, ...]] = {
     "csv": ("spreadsheet", "file", "upload"),
     "local": ("file", "download", "csv", "artifact"),
     "download": ("export", "file", "csv", "artifact", "local"),
+    # "publish" a dataset almost always means one of the typed exports
+    # (Power BI, a live DB connection, a webhook, ...); every export
+    # command's path literally contains "export", so this one alias covers
+    # any "publish data to X" phrasing without a per-destination entry.
+    "publish": ("export",),
     "column": ("columns", "field", "fields", "schema"),
     "columns": ("column", "field", "fields", "schema"),
     "display-name": ("name", "column", "columns", "field", "fields", "schema"),
@@ -256,6 +290,7 @@ _DISCOVERY_STOPWORDS = frozenset(
         "need",
         "using",
         "than",
+        "via",
     }
 )
 # How many near misses a search with no full match returns.
@@ -428,6 +463,25 @@ def _query_tokens(query: str) -> tuple[str, ...]:
 def _token_aliases(token: str) -> frozenset[str]:
     """Return the finite synonym neighborhood for one intent token."""
     return frozenset((token, *_DISCOVERY_SYNONYMS.get(token, ())))
+
+
+def _adjacent_compound_forms(terms: tuple[str, ...]) -> dict[str, frozenset[str]]:
+    """Map each query term to the compound spellings an adjacent pair makes.
+
+    A route's un-hyphenated compound name (``powerbi``, ``bigquery``,
+    ``onedrive``, ``sharepoint``, ...) never shares a token with the natural
+    two-word phrasing a user types ("power bi", "big query"), since neither
+    half is a substring match in the token-set membership test. Generalizes
+    over any adjacent pair rather than hardcoding destination names: "azure
+    blob" -> "azureblob"/"azure-blob", "share point" -> "sharepoint", and so
+    on for whatever the query happens to contain.
+    """
+    forms: dict[str, set[str]] = {}
+    for left, right in zip(terms, terms[1:], strict=False):
+        for compound in (left + right, f"{left}-{right}"):
+            forms.setdefault(left, set()).add(compound)
+            forms.setdefault(right, set()).add(compound)
+    return {term: frozenset(compounds) for term, compounds in forms.items()}
 
 
 def _compact_contract(record: dict[str, Any]) -> dict[str, Any]:
@@ -1148,6 +1202,7 @@ def find_schemas(
     # A query made only of filler words keeps them, rather than matching
     # every command.
     terms = _query_tokens(query) or tuple(_tokens(query))
+    compound_forms = _adjacent_compound_forms(terms)
     # Clamp caller-provided bounds instead of allowing an accidental unbounded
     # discovery response.  A negative cursor is a usage mistake, not a request
     # to wrap around the catalog.
@@ -1173,7 +1228,12 @@ def find_schemas(
         )
         searchable = " ".join(source for _, source in sources).casefold()
         searchable_tokens = _tokens(f"{primary_text} {searchable}")
-        matched_terms = [term for term in terms if _token_aliases(term) & searchable_tokens]
+        matched_terms = [
+            term
+            for term in terms
+            if (_token_aliases(term) & searchable_tokens)
+            or (compound_forms.get(term, frozenset()) & searchable_tokens)
+        ]
         if not matched_terms:
             continue
         score = 0
