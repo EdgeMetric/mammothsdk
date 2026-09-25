@@ -31,6 +31,12 @@ so a dashboard bound to an older table can store a stale profile for the
 current version (see 2.0.41). The fix is to add `table_item_id` to the
 key in `dashboards_v3/profile/service.py`.
 
+CLI published from deterministic local artifacts built from tag `cli-v2.0.43`
+(source commit `dba1e03`); requires mammoth-io 0.7.18 (unchanged):
+
+- `mammoth_cli-2.0.43-py3-none-any.whl` sha256 `84b8b3d7066b70e1a9bd181c278a85a56a03ecc7eeb2030c16696b7240a998ef`
+- `mammoth_cli-2.0.43.tar.gz` sha256 `48f1ad8871b7269191e569630d04ae1241acecb485ae24dc3abb13dbba0301f6`
+
 ## 2.0.42
 
 Docs and skill only; no code change. The 2.0.41 agent eval was run three
