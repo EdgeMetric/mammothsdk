@@ -384,7 +384,7 @@ class _EnvelopeGroup(TyperGroup):
             argv = kwargs.get("args")
             if argv is None:
                 argv = args[0] if args else None
-            self._render_usage_error(error, argv)
+            self.render_usage_error(error, argv)
             raise SystemExit(getattr(error, "exit_code", EXIT_USAGE)) from None
         except _ABORT_ERRORS:
             typer.echo("Aborted!", err=True)
@@ -395,7 +395,7 @@ class _EnvelopeGroup(TyperGroup):
         # in-process test runner observe the exit status as before.
         raise SystemExit(result if isinstance(result, int) else 0)
 
-    def _render_usage_error(self, error: Any, argv: Sequence[str] | None) -> None:
+    def render_usage_error(self, error: Any, argv: Sequence[str] | None) -> None:
         """Emit a usage error as the JSON envelope (machine) or Click prose (human).
 
         A *missing required argument* is reported with the stable

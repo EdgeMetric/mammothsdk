@@ -1,5 +1,22 @@
 # CLI release provenance
 
+## 2.0.44
+
+For hosts that run commands for their own signed-in users (the Mammoth
+in-product agent). No command changes.
+
+- `mammoth_cli.embed.invoke(args, login=..., project_id=..., timeout=...)`
+  runs one command in the calling process and returns its success or error
+  envelope as a dict. It never raises for a CLI error and writes nothing to
+  stdout or stderr. Output is always `json` and prompts are off.
+- The login and the result are held in a context variable, so calls in
+  different threads do not share them. An embedded call does not read saved
+  profiles, does not check for updates and does not write a run log.
+- `ExplicitLogin.headers`: extra request headers, set after the credential
+  headers so they replace them. A host uses it to send its user's own
+  session (`Authorization` and `Cookie`). The endpoint still comes only from
+  the server prefix.
+
 ## 2.0.43
 
 From the 2.0.41 eval and the release outage the same day.

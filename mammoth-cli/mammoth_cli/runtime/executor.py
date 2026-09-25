@@ -18,9 +18,10 @@ import typer
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.output.envelope import Meta, Result
+from mammoth_cli.output.normalize import normalize
 from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
 from mammoth_cli.output.render import render
-from mammoth_cli.runtime import updates
+from mammoth_cli.runtime import embedded, updates
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.runlog import RunLog
 from mammoth_cli.services.mapping import map_sdk_exception
@@ -98,6 +99,8 @@ def emit_success(
         update_available=update_available,
     )
     envelope = Result(data=data, meta=meta).to_envelope()
+    if embedded.capture(normalize(envelope)):
+        return
     render(envelope, output=output)
 
 
@@ -113,6 +116,8 @@ def emit_error(error: CliError, *, machine: bool, output: str = "json") -> None:
         output: The selected machine mode. Only ``ndjson`` selects lifecycle
             framing; all other machine errors retain the JSON envelope.
     """
+    if embedded.capture(normalize(error.to_envelope())):
+        return
     if machine:
         render(
             error.to_envelope(),
@@ -237,7 +242,7 @@ def _sync_skill_installs(command_id: str, output: str) -> None:
 
 def _open_run_log(command_id: str, invocation: Invocation | None) -> RunLog | None:
     """Open the run log for ``invocation``; never let logging break a command."""
-    if invocation is None:
+    if invocation is None or embedded.active():
         return None
     try:
         return RunLog.start(

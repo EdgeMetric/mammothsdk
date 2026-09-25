@@ -115,6 +115,10 @@ class SdkMammothService:
             base_url=auth.base_url,
             **kwargs,
         )
+        if auth.headers:
+            # After construction: the client sets its credential headers in
+            # ``__init__``, and a forwarded session must replace them.
+            self._client.session.headers.update(auth.headers)
         if project_id is not None:
             self._client.set_project_id(project_id)
 

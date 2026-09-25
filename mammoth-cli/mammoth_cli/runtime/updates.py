@@ -33,6 +33,7 @@ from typing import Any
 import platformdirs
 
 from mammoth_cli import __version__
+from mammoth_cli.runtime import embedded
 
 DISABLE_ENV = "MAMMOTH_NO_UPDATE_CHECK"
 AUTO_UPGRADE_ENV = "MAMMOTH_AUTO_UPGRADE"
@@ -60,8 +61,8 @@ def _flag(name: str) -> bool:
 
 
 def enabled() -> bool:
-    """Whether the check runs at all (``MAMMOTH_NO_UPDATE_CHECK`` unset)."""
-    return not _flag(DISABLE_ENV)
+    """Whether the check runs at all (``MAMMOTH_NO_UPDATE_CHECK`` unset, not embedded)."""
+    return not _flag(DISABLE_ENV) and not embedded.active()
 
 
 def auto_upgrade_enabled() -> bool:
